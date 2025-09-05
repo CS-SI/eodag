@@ -53,11 +53,11 @@ class TestCoreProvidersConfig(TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_core_providers_config_update(
-        self, mock__request, mock_fetch_product_types_list, mock_auth_session_request
+        self, mock__request, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Providers config must be updatable"""
         mock__request.return_value = mock.Mock()
@@ -325,13 +325,13 @@ class TestCoreProvidersConfig(TestCase):
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_core_providers_add_update(
-        self, mock__request, mock_fetch_product_types_list
+        self, mock__request, mock_fetch_collections_list
     ):
         """add_provider method must add provider using given conf and update if exists"""
         mock__request.return_value = mock.Mock()
@@ -397,7 +397,7 @@ class TestCoreCollectionsConfig(TestCase):
     )
     @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
-    def test_core_discover_product_types_auth(
+    def test_core_discover_collections_auth(
         self, mock_requests_get, mock_urlopen, mock_build_response
     ):
         # without auth plugin
@@ -407,7 +407,7 @@ class TestCoreCollectionsConfig(TestCase):
                 search:
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
-                    discover_product_types:
+                    discover_collections:
                         fetch_url: https://foo.bar/collections
                     need_auth: true
                 products:
@@ -416,10 +416,10 @@ class TestCoreCollectionsConfig(TestCase):
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
+            ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
             )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.assertIsNone(ext_collections_conf["foo_provider"])
             self.assertIn(
                 "Could not authenticate on foo_provider for product types discovery",
                 str(cm.output),
@@ -437,10 +437,10 @@ class TestCoreCollectionsConfig(TestCase):
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
+            ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
             )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.assertIsNone(ext_collections_conf["foo_provider"])
             self.assertIn(
                 "Could not authenticate on foo_provider: Missing credentials",
                 str(cm.output),
@@ -455,11 +455,11 @@ class TestCoreCollectionsConfig(TestCase):
                         apikey: my-api-key
             """
         )
-        self.dag.discover_product_types(provider="foo_provider")
+        self.dag.discover_collections(provider="foo_provider")
 
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            self.dag.providers_config["foo_provider"].search.discover_product_types[
+            self.dag.providers_config["foo_provider"].search.discover_collections[
                 "fetch_url"
             ],
             auth=mock.ANY,
@@ -481,7 +481,7 @@ class TestCoreCollectionsConfig(TestCase):
                         - ']'
             """
         )
-        self.dag.discover_product_types(provider="foo_provider")
+        self.dag.discover_collections(provider="foo_provider")
 
         mock_urlopen.assert_called_once()
         self.assertDictEqual(
@@ -506,10 +506,10 @@ class TestCoreCollectionsConfig(TestCase):
             mock_get_auth_plugins.return_value = iter([mock_auth_plugin])
 
             with self.assertLogs(level="DEBUG") as cm:
-                ext_product_types_conf = self.dag.discover_product_types(
+                ext_collections_conf = self.dag.discover_collections(
                     provider="foo_provider"
                 )
-                self.assertIsNone(ext_product_types_conf["foo_provider"])
+                self.assertIsNone(ext_collections_conf["foo_provider"])
                 self.assertIn(
                     "Could not authenticate on foo_provider: cannot auth for test",
                     str(cm.output),

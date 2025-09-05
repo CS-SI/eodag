@@ -85,7 +85,7 @@ class EODagTestCase(unittest.TestCase):
             "lonmax": 1.6754150390625007,
             "latmax": 43.699651229671446,
         }
-        self.product_type = "S2_MSI_L1C"
+        self.collection = "S2_MSI_L1C"
         self.platform = "S2A"
         self.instrument = "MSI"
         self.provider_id = "9deb7e78-9341-5530-8fe8-f81fd99c9f0f"
@@ -104,7 +104,7 @@ class EODagTestCase(unittest.TestCase):
                     ]
                 ],
             },
-            "productType": self.product_type,
+            "productType": self.collection,
             "platform": "Sentinel-2",
             "platformSerialIdentifier": self.platform,
             "instrument": self.instrument,
@@ -291,7 +291,7 @@ class EODagTestCase(unittest.TestCase):
         return EOProduct(
             self.provider if provider is None else provider,
             self.eoproduct_props if properties is None else properties,
-            productType=self.product_type if productType is None else productType,
+            productType=self.collection if productType is None else productType,
             **kwargs,
         )
 

@@ -83,7 +83,7 @@ class Download(PluginTopic):
       (e.g. ``file:///tmp/product_folder`` on Linux or
       ``file:///C:/Users/username/AppData/Local/Temp`` on Windows)
     - save a *record* file in the directory ``{output_dir}/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
+      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
       attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an
@@ -278,7 +278,7 @@ class Download(PluginTopic):
     def generate_record_hash(self, product: EOProduct) -> str:
         """Generate the record hash of the given product.
 
-        The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
+        The MD5 hash is built from the product's ``collection`` and ``properties['id']`` attributes
         (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
 
         :param product: The product to calculate the record hash

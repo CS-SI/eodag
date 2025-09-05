@@ -73,7 +73,7 @@ class PluginManager:
 
     supported_topics = set(PLUGINS_TOPICS_KEYS)
 
-    product_type_to_provider_config_map: dict[str, list[ProviderConfig]]
+    collection_to_provider_config_map: dict[str, list[ProviderConfig]]
 
     skipped_plugins: list[str]
 
@@ -133,12 +133,12 @@ class PluginManager:
         if providers_config is not None:
             self.providers_config = providers_config
 
-        self.build_product_type_to_provider_config_map()
+        self.build_collection_to_provider_config_map()
         self._built_plugins_cache: dict[tuple[str, str, str], Any] = {}
 
-    def build_product_type_to_provider_config_map(self) -> None:
+    def build_collection_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""
-        self.product_type_to_provider_config_map = {}
+        self.collection_to_provider_config_map = {}
         for provider in list(self.providers_config):
             provider_config = self.providers_config[provider]
             if not hasattr(provider_config, "products") or not provider_config.products:
@@ -153,22 +153,22 @@ class PluginManager:
             if getattr(provider_config, "priority", None) is None:
                 self.providers_config[provider].priority = provider_config.priority = 0
 
-            for product_type in provider_config.products:
-                product_type_providers = (
-                    self.product_type_to_provider_config_map.setdefault(  # noqa
-                        product_type, []
+            for collection in provider_config.products:
+                collection_providers = (
+                    self.collection_to_provider_config_map.setdefault(  # noqa
+                        collection, []
                     )
                 )
-                product_type_providers.append(provider_config)
-                product_type_providers.sort(key=attrgetter("priority"), reverse=True)
+                collection_providers.append(provider_config)
+                collection_providers.sort(key=attrgetter("priority"), reverse=True)
 
     def get_search_plugins(
-        self, product_type: Optional[str] = None, provider: Optional[str] = None
+        self, collection: Optional[str] = None, provider: Optional[str] = None
     ) -> Iterator[Union[Search, Api]]:
         """Build and return all the search plugins supporting the given product type,
         ordered by highest priority, or the search plugin of the given provider
 
-        :param product_type: (optional) The product type that the constructed plugins
+        :param collection: (optional) The product type that the constructed plugins
                              must support
         :param provider: (optional) The provider or the provider group on which to get
             the search plugins
@@ -195,13 +195,13 @@ class PluginManager:
             return plugin
 
         configs: Optional[list[ProviderConfig]]
-        if product_type:
-            configs = self.product_type_to_provider_config_map.get(product_type)
+        if collection:
+            configs = self.collection_to_provider_config_map.get(collection)
             if not configs:
                 logger.info(
-                    "UnsupportedCollection: %s, using generic settings", product_type
+                    "UnsupportedCollection: %s, using generic settings", collection
                 )
-                configs = self.product_type_to_provider_config_map[GENERIC_PRODUCT_TYPE]
+                configs = self.collection_to_provider_config_map[GENERIC_PRODUCT_TYPE]
         else:
             configs = list(self.providers_config.values())
 
@@ -210,9 +210,9 @@ class PluginManager:
                 c for c in configs if provider in [getattr(c, "group", None), c.name]
             ]
 
-        if not configs and product_type:
+        if not configs and collection:
             raise UnsupportedProvider(
-                f"{provider} is not (yet) supported for {product_type}"
+                f"{provider} is not (yet) supported for {collection}"
             )
         if not configs:
             raise UnsupportedProvider(f"{provider} is not (yet) supported")
@@ -288,7 +288,7 @@ class PluginManager:
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
     ) -> Iterator[Authentication]:
-        """Build and return the authentication plugin for the given product_type and
+        """Build and return the authentication plugin for the given collection and
         provider
 
         :param provider: The provider for which to get the authentication plugin
@@ -399,7 +399,7 @@ class PluginManager:
 
     def sort_providers(self) -> None:
         """Sort providers taking into account current priority order"""
-        for provider_configs in self.product_type_to_provider_config_map.values():
+        for provider_configs in self.collection_to_provider_config_map.values():
             provider_configs.sort(key=attrgetter("priority"), reverse=True)
 
     def set_priority(self, provider: str, priority: int) -> None:
@@ -413,7 +413,7 @@ class PluginManager:
         for (
             _,
             provider_configs,
-        ) in self.product_type_to_provider_config_map.items():
+        ) in self.collection_to_provider_config_map.items():
             for config in provider_configs:
                 if config.name == provider:
                     config.priority = priority

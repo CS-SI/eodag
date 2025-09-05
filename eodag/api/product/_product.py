@@ -619,7 +619,7 @@ class EOProduct:
                     <td style='text-align: left; vertical-align: top;'>
                         {dict_to_html_table({
                          "provider": self.provider,
-                         "product_type": self.product_type,
+                         "collection": self.collection,
                          "properties[&quot;id&quot;]": self.properties.get('id'),
                          "properties[&quot;start_datetime&quot;]": self.properties.get(
                              'start_datetime'

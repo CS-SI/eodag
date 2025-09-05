@@ -166,7 +166,7 @@ class QueryStringSearch(Search):
             page that the provider can handle; default: ``50``
           * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the first page; default: ``1``
 
-        * :attr:`~eodag.config.PluginConfig.discover_product_types`
+        * :attr:`~eodag.config.PluginConfig.discover_collections`
           (:class:`~eodag.config.PluginConfig.DiscoverCollections`): configuration for product type discovery based on
           information from the provider; It contains the keys:
 
@@ -178,15 +178,15 @@ class QueryStringSearch(Search):
             currently only ``json`` is supported (other types could be used in an extension of this plugin)
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.results_entry` (``str``) (**mandatory**): json path
             to the list of product types
-          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_id` (``str``): mapping for the
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_id` (``str``): mapping for the
             product type id
-          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_parsable_metadata`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_parsable_metadata`
             (``dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
             from the provider result
-          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_parsable_properties`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_parsable_properties`
             (``dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
             product type metadata
-          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_unparsable_properties`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_unparsable_properties`
             (``dict[str, str]``): mapping for product type properties which cannot be parsed from the result and are not
             product type metadata
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_fetch_url` (``str``): url to fetch
@@ -195,7 +195,7 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_fetch_qs` (``str``): query string
             to be added to the :attr:`~eodag.config.PluginConfig.DiscoverCollections.fetch_url` to filter for a
             collection
-          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_product_type_parsable_metadata`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_parsable_metadata`
             (``dict[str, str]``): mapping for product type metadata returned by the endpoint given in
             :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_fetch_url`.
 
@@ -270,7 +270,7 @@ class QueryStringSearch(Search):
 
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` (``str``): url to fetch the queryables valid
             for all product types
-          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` (``str``): url to fetch the
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` (``str``): url to fetch the
             queryables for a specific product type
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.result_type` (``str``): type of the result (currently
             only ``json`` is used)
@@ -333,43 +333,41 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: product types discovery
         if (
-            getattr(self.config, "discover_product_types", {}).get("results_entry")
-            and getattr(self.config, "discover_product_types", {}).get("result_type")
+            getattr(self.config, "discover_collections", {}).get("results_entry")
+            and getattr(self.config, "discover_collections", {}).get("result_type")
             == "json"
         ):
-            self.config.discover_product_types["results_entry"] = string_to_jsonpath(
-                self.config.discover_product_types["results_entry"], force=True
+            self.config.discover_collections["results_entry"] = string_to_jsonpath(
+                self.config.discover_collections["results_entry"], force=True
             )
-            self.config.discover_product_types[
-                "generic_product_type_id"
+            self.config.discover_collections[
+                "generic_collection_id"
             ] = mtd_cfg_as_conversion_and_querypath(
-                {"foo": self.config.discover_product_types["generic_product_type_id"]}
+                {"foo": self.config.discover_collections["generic_collection_id"]}
             )[
                 "foo"
             ]
-            self.config.discover_product_types[
-                "generic_product_type_parsable_properties"
+            self.config.discover_collections[
+                "generic_collection_parsable_properties"
             ] = mtd_cfg_as_conversion_and_querypath(
-                self.config.discover_product_types[
-                    "generic_product_type_parsable_properties"
+                self.config.discover_collections[
+                    "generic_collection_parsable_properties"
                 ]
             )
-            self.config.discover_product_types[
-                "generic_product_type_parsable_metadata"
+            self.config.discover_collections[
+                "generic_collection_parsable_metadata"
             ] = mtd_cfg_as_conversion_and_querypath(
-                self.config.discover_product_types[
-                    "generic_product_type_parsable_metadata"
-                ]
+                self.config.discover_collections["generic_collection_parsable_metadata"]
             )
             if (
-                "single_product_type_parsable_metadata"
-                in self.config.discover_product_types
+                "single_collection_parsable_metadata"
+                in self.config.discover_collections
             ):
-                self.config.discover_product_types[
-                    "single_product_type_parsable_metadata"
+                self.config.discover_collections[
+                    "single_collection_parsable_metadata"
                 ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.discover_product_types[
-                        "single_product_type_parsable_metadata"
+                    self.config.discover_collections[
+                        "single_collection_parsable_metadata"
                     ]
                 )
 
@@ -386,14 +384,14 @@ class QueryStringSearch(Search):
         # parse jsonpath on init: product type specific metadata-mapping
         for collection in self.config.products.keys():
 
-            product_type_metadata_mapping = {}
+            collection_metadata_mapping = {}
             # product-type specific metadata-mapping
             if any(
                 mm in self.config.products[collection].keys()
                 for mm in ("metadata_mapping", "metadata_mapping_from_product")
             ):
                 # Complete and ready to use product type specific metadata-mapping
-                product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
+                collection_metadata_mapping = deepcopy(self.config.metadata_mapping)
 
             # metadata_mapping from another product
             if other_product_for_mapping := self.config.products[collection].get(
@@ -403,21 +401,19 @@ class QueryStringSearch(Search):
                     other_product_for_mapping,
                 )
                 # parse mapping to apply
-                if other_product_type_mtd_mapping := other_collection_def_params.get(
+                if other_collection_mtd_mapping := other_collection_def_params.get(
                     "metadata_mapping", {}
                 ):
-                    other_product_type_mtd_mapping = (
-                        mtd_cfg_as_conversion_and_querypath(
-                            other_collection_def_params.get("metadata_mapping", {})
-                        )
+                    other_collection_mtd_mapping = mtd_cfg_as_conversion_and_querypath(
+                        other_collection_def_params.get("metadata_mapping", {})
                     )
                 else:
                     msg = f"Cannot reuse empty metadata_mapping from {other_product_for_mapping} for {collection}"
                     raise MisconfiguredError(msg)
                 # update mapping
-                for metadata, mapping in other_product_type_mtd_mapping.items():
-                    product_type_metadata_mapping.pop(metadata, None)
-                    product_type_metadata_mapping[metadata] = mapping
+                for metadata, mapping in other_collection_mtd_mapping.items():
+                    collection_metadata_mapping.pop(metadata, None)
+                    collection_metadata_mapping[metadata] = mapping
 
             # metadata_mapping from current product
             if "metadata_mapping" in self.config.products[collection].keys():
@@ -432,13 +428,13 @@ class QueryStringSearch(Search):
                 for metadata, mapping in self.config.products[collection][
                     "metadata_mapping"
                 ].items():
-                    product_type_metadata_mapping.pop(metadata, None)
-                    product_type_metadata_mapping[metadata] = mapping
+                    collection_metadata_mapping.pop(metadata, None)
+                    collection_metadata_mapping[metadata] = mapping
 
-            if product_type_metadata_mapping:
+            if collection_metadata_mapping:
                 self.config.products[collection][
                     "metadata_mapping"
-                ] = product_type_metadata_mapping
+                ] = collection_metadata_mapping
 
     def clear(self) -> None:
         """Clear search context"""
@@ -450,32 +446,32 @@ class QueryStringSearch(Search):
         self.next_page_query_obj = None
         self.next_page_merge = None
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
-        """Fetch product types list from provider using `discover_product_types` conf
+    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Fetch product types list from provider using `discover_collections` conf
 
         :returns: configuration dict containing fetched product types information
         """
-        unpaginated_fetch_url = self.config.discover_product_types.get("fetch_url")
+        unpaginated_fetch_url = self.config.discover_collections.get("fetch_url")
         if not unpaginated_fetch_url:
             return None
 
         # product types pagination
-        next_page_url_tpl = self.config.discover_product_types.get("next_page_url_tpl")
-        page = self.config.discover_product_types.get("start_page", 1)
+        next_page_url_tpl = self.config.discover_collections.get("next_page_url_tpl")
+        page = self.config.discover_collections.get("start_page", 1)
 
         if not next_page_url_tpl:
             # no pagination
-            return self.discover_product_types_per_page(**kwargs)
+            return self.discover_collections_per_page(**kwargs)
 
         conf_update_dict: dict[str, Any] = {
             "providers_config": {},
-            "product_types_config": {},
+            "collections_config": {},
         }
 
         while True:
             fetch_url = next_page_url_tpl.format(url=unpaginated_fetch_url, page=page)
 
-            conf_update_dict_per_page = self.discover_product_types_per_page(
+            conf_update_dict_per_page = self.discover_collections_per_page(
                 fetch_url=fetch_url, **kwargs
             )
 
@@ -490,18 +486,16 @@ class QueryStringSearch(Search):
                 conf_update_dict["providers_config"].update(
                     conf_update_dict_per_page["providers_config"]
                 )
-                conf_update_dict["product_types_config"].update(
-                    conf_update_dict_per_page["product_types_config"]
+                conf_update_dict["collections_config"].update(
+                    conf_update_dict_per_page["collections_config"]
                 )
 
             page += 1
 
         return conf_update_dict
 
-    def discover_product_types_per_page(
-        self, **kwargs: Any
-    ) -> Optional[dict[str, Any]]:
-        """Fetch product types list from provider using `discover_product_types` conf
+    def discover_collections_per_page(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Fetch product types list from provider using `discover_collections` conf
         using paginated ``kwargs["fetch_url"]``
 
         :returns: configuration dict containing fetched product types information
@@ -509,10 +503,10 @@ class QueryStringSearch(Search):
         try:
             prep = PreparedSearch()
 
-            # url from discover_product_types() or conf
+            # url from discover_collections() or conf
             fetch_url: Optional[str] = kwargs.get("fetch_url")
             if fetch_url is None:
-                if fetch_url := self.config.discover_product_types.get("fetch_url"):
+                if fetch_url := self.config.discover_collections.get("fetch_url"):
                     fetch_url = fetch_url.format(**self.config.__dict__)
                 else:
                     return None
@@ -524,9 +518,9 @@ class QueryStringSearch(Search):
 
             # try updating fetch_url qs using collection
             fetch_qs_dict = {}
-            if "single_collection_fetch_qs" in self.config.discover_product_types:
+            if "single_collection_fetch_qs" in self.config.discover_collections:
                 try:
-                    fetch_qs = self.config.discover_product_types[
+                    fetch_qs = self.config.discover_collections[
                         "single_collection_fetch_qs"
                     ].format(**kwargs)
                     fetch_qs_dict = dict(parse_qsl(fetch_qs))
@@ -547,8 +541,8 @@ class QueryStringSearch(Search):
             ).format(self.provider, self.__class__.__name__)
 
             # Query using appropriate method
-            fetch_method = self.config.discover_product_types.get("fetch_method", "GET")
-            fetch_body = self.config.discover_product_types.get("fetch_body", {})
+            fetch_method = self.config.discover_collections.get("fetch_method", "GET")
+            fetch_body = self.config.discover_collections.get("fetch_body", {})
             if fetch_method == "POST" and isinstance(self, PostJsonSearch):
                 prep.query_params = fetch_body
                 response = self._request(prep)
@@ -560,15 +554,15 @@ class QueryStringSearch(Search):
             try:
                 conf_update_dict: dict[str, Any] = {
                     "providers_config": {},
-                    "product_types_config": {},
+                    "collections_config": {},
                 }
-                if self.config.discover_product_types["result_type"] == "json":
+                if self.config.discover_collections["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json
-                    results_entry = self.config.discover_product_types["results_entry"]
+                    results_entry = self.config.discover_collections["results_entry"]
                     if not isinstance(results_entry, JSONPath):
                         logger.warning(
-                            f"Could not parse {self.provider} discover_product_types.results_entry"
+                            f"Could not parse {self.provider} discover_collections.results_entry"
                             f" as JSONPath: {results_entry}"
                         )
                         return None
@@ -576,75 +570,75 @@ class QueryStringSearch(Search):
                     if result and isinstance(result[0], list):
                         result = result[0]
 
-                    def conf_update_from_product_type_result(
-                        product_type_result: dict[str, Any],
+                    def conf_update_from_collection_result(
+                        collection_result: dict[str, Any],
                     ) -> None:
                         """Update ``conf_update_dict`` using given product type json response"""
                         # providers_config extraction
                         extracted_mapping = properties_from_json(
-                            product_type_result,
+                            collection_result,
                             dict(
-                                self.config.discover_product_types[
-                                    "generic_product_type_parsable_properties"
+                                self.config.discover_collections[
+                                    "generic_collection_parsable_properties"
                                 ],
                                 **{
-                                    "generic_product_type_id": self.config.discover_product_types[
-                                        "generic_product_type_id"
+                                    "generic_collection_id": self.config.discover_collections[
+                                        "generic_collection_id"
                                     ]
                                 },
                             ),
                         )
-                        generic_product_type_id = extracted_mapping.pop(
-                            "generic_product_type_id"
+                        generic_collection_id = extracted_mapping.pop(
+                            "generic_collection_id"
                         )
                         conf_update_dict["providers_config"][
-                            generic_product_type_id
+                            generic_collection_id
                         ] = dict(
                             extracted_mapping,
-                            **self.config.discover_product_types.get(
-                                "generic_product_type_unparsable_properties", {}
+                            **self.config.discover_collections.get(
+                                "generic_collection_unparsable_properties", {}
                             ),
                         )
-                        # product_types_config extraction
-                        conf_update_dict["product_types_config"][
-                            generic_product_type_id
+                        # collections_config extraction
+                        conf_update_dict["collections_config"][
+                            generic_collection_id
                         ] = properties_from_json(
-                            product_type_result,
-                            self.config.discover_product_types[
-                                "generic_product_type_parsable_metadata"
+                            collection_result,
+                            self.config.discover_collections[
+                                "generic_collection_parsable_metadata"
                             ],
                         )
 
                         if (
-                            "single_product_type_parsable_metadata"
-                            in self.config.discover_product_types
+                            "single_collection_parsable_metadata"
+                            in self.config.discover_collections
                         ):
-                            collection_data = self._get_product_type_metadata_from_single_collection_endpoint(
-                                generic_product_type_id
+                            collection_data = self._get_collection_metadata_from_single_collection_endpoint(
+                                generic_collection_id
                             )
-                            conf_update_dict["product_types_config"][
-                                generic_product_type_id
+                            conf_update_dict["collections_config"][
+                                generic_collection_id
                             ].update(collection_data)
 
                             # update product type id if needed
                             if collection_data_id := collection_data.get("ID"):
-                                if generic_product_type_id != collection_data_id:
+                                if generic_collection_id != collection_data_id:
                                     logger.debug(
                                         "Rename %s product type to %s",
-                                        generic_product_type_id,
+                                        generic_collection_id,
                                         collection_data_id,
                                     )
                                     conf_update_dict["providers_config"][
                                         collection_data_id
                                     ] = conf_update_dict["providers_config"].pop(
-                                        generic_product_type_id
+                                        generic_collection_id
                                     )
-                                    conf_update_dict["product_types_config"][
+                                    conf_update_dict["collections_config"][
                                         collection_data_id
-                                    ] = conf_update_dict["product_types_config"].pop(
-                                        generic_product_type_id
+                                    ] = conf_update_dict["collections_config"].pop(
+                                        generic_collection_id
                                     )
-                                    generic_product_type_id = collection_data_id
+                                    generic_collection_id = collection_data_id
 
                         # update keywords
                         keywords_fields = [
@@ -655,20 +649,20 @@ class QueryStringSearch(Search):
                             "keywords",
                         ]
                         keywords_values_str = ",".join(
-                            [generic_product_type_id]
+                            [generic_collection_id]
                             + [
                                 str(
-                                    conf_update_dict["product_types_config"][
-                                        generic_product_type_id
+                                    conf_update_dict["collections_config"][
+                                        generic_collection_id
                                     ][kf]
                                 )
                                 for kf in keywords_fields
                                 if kf
-                                in conf_update_dict["product_types_config"][
-                                    generic_product_type_id
+                                in conf_update_dict["collections_config"][
+                                    generic_collection_id
                                 ]
-                                and conf_update_dict["product_types_config"][
-                                    generic_product_type_id
+                                and conf_update_dict["collections_config"][
+                                    generic_collection_id
                                 ][kf]
                                 != NOT_AVAILABLE
                             ]
@@ -687,26 +681,26 @@ class QueryStringSearch(Search):
                         keywords_values_str = ",".join(
                             sorted(set(keywords_values_str.split(",")))
                         )
-                        conf_update_dict["product_types_config"][
-                            generic_product_type_id
-                        ]["keywords"] = keywords_values_str
+                        conf_update_dict["collections_config"][generic_collection_id][
+                            "keywords"
+                        ] = keywords_values_str
 
                     # runs concurrent requests and aggregate results in conf_update_dict
-                    max_connections = self.config.discover_product_types.get(
+                    max_connections = self.config.discover_collections.get(
                         "max_connections"
                     )
                     with concurrent.futures.ThreadPoolExecutor(
                         max_workers=max_connections
                     ) as executor:
                         futures = (
-                            executor.submit(conf_update_from_product_type_result, r)
+                            executor.submit(conf_update_from_collection_result, r)
                             for r in result
                         )
                         [f.result() for f in concurrent.futures.as_completed(futures)]
 
             except KeyError as e:
                 logger.warning(
-                    "Incomplete %s discover_product_types configuration: %s",
+                    "Incomplete %s discover_collections configuration: %s",
                     self.provider,
                     e,
                 )
@@ -717,28 +711,28 @@ class QueryStringSearch(Search):
                     f"{self.provider}, {type(e).__name__}: {e.args}"
                 )
                 return None
-        conf_update_dict["product_types_config"] = dict_items_recursive_apply(
-            conf_update_dict["product_types_config"],
+        conf_update_dict["collections_config"] = dict_items_recursive_apply(
+            conf_update_dict["collections_config"],
             lambda k, v: v if v != NOT_AVAILABLE else None,
         )
         return conf_update_dict
 
-    def _get_product_type_metadata_from_single_collection_endpoint(
-        self, product_type: str
+    def _get_collection_metadata_from_single_collection_endpoint(
+        self, collection: str
     ) -> dict[str, Any]:
         """
         retrieves additional product type information from an endpoint returning data for a single collection
-        :param product_type: product type
+        :param collection: product type
         :return: product types and their metadata
         """
-        single_collection_url = self.config.discover_product_types[
+        single_collection_url = self.config.discover_collections[
             "single_collection_fetch_url"
-        ].format(_collection=product_type)
+        ].format(_collection=collection)
         resp = QueryStringSearch._request(
             self,
             PreparedSearch(
                 url=single_collection_url,
-                info_message=f"Fetching data for product type: {product_type}",
+                info_message=f"Fetching data for product type: {collection}",
                 exception_message="Skipping error while fetching product types for "
                 "{} {} instance:".format(self.provider, self.__class__.__name__),
             ),
@@ -746,7 +740,7 @@ class QueryStringSearch(Search):
         product_data = resp.json()
         return properties_from_json(
             product_data,
-            self.config.discover_product_types["single_product_type_parsable_metadata"],
+            self.config.discover_collections["single_collection_parsable_metadata"],
         )
 
     def query(
@@ -771,7 +765,7 @@ class QueryStringSearch(Search):
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
 
-        provider_collection = self.map_product_type(collection)
+        provider_collection = self.map_collection(collection)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["collection"] = (
             provider_collection
@@ -791,7 +785,7 @@ class QueryStringSearch(Search):
             keywords.pop("collection", None)
 
         if self.config.metadata_mapping:
-            product_type_metadata_mapping = dict(
+            collection_metadata_mapping = dict(
                 self.config.metadata_mapping,
                 **prep.collection_def_params.get("metadata_mapping", {}),
             )
@@ -800,8 +794,8 @@ class QueryStringSearch(Search):
                     k: v
                     for k, v in prep.collection_def_params.items()
                     if k not in keywords.keys()
-                    and k in product_type_metadata_mapping.keys()
-                    and isinstance(product_type_metadata_mapping[k], list)
+                    and k in collection_metadata_mapping.keys()
+                    and isinstance(collection_metadata_mapping[k], list)
                 }
             )
 
@@ -830,13 +824,13 @@ class QueryStringSearch(Search):
         return eo_products, total_items
 
     def build_query_string(
-        self, product_type: str, query_dict: dict[str, Any]
+        self, collection: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        error_context = f"Product type: {product_type} / provider : {self.provider}"
+        error_context = f"Product type: {collection} / provider : {self.provider}"
         query_params = format_query_params(
-            product_type, self.config, query_dict, error_context
+            collection, self.config, query_dict, error_context
         )
 
         # Build the final query string, in one go without quoting it
@@ -1177,7 +1171,7 @@ class QueryStringSearch(Search):
             provider_collection = getattr(self.config, "_collection", None)
             if provider_collection is None:
                 try:
-                    for product_type, product_config in self.config.products.items():
+                    for collection, product_config in self.config.products.items():
                         if collection != GENERIC_PRODUCT_TYPE:
                             collections.add(product_config["_collection"])
                         else:
@@ -1196,7 +1190,7 @@ class QueryStringSearch(Search):
         if provider_collection is None:
             provider_collection = (
                 getattr(prep, "collection_def_params", {}).get("_collection")
-                or product_type
+                or collection
             )
 
         if provider_collection is None:
@@ -1470,13 +1464,13 @@ class PostJsonSearch(QueryStringSearch):
         """Perform a search on an OpenSearch-like interface"""
         collection = kwargs.get("collection", "")
         count = prep.count
-        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
-        kwargs.pop("product_type", None)
+        # remove "collection" from search args if exists for compatibility with QueryStringSearch methods
+        kwargs.pop("collection", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         _, sort_by_qp = (
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
-        provider_collection = self.map_product_type(collection)
+        provider_collection = self.map_collection(collection)
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
             qs = unquote_plus(unquote_plus(_dc_qs))
@@ -1502,7 +1496,7 @@ class PostJsonSearch(QueryStringSearch):
             )
 
             # Add to the query, the queryable parameters set in the provider product type definition
-            product_type_metadata_mapping = {
+            collection_metadata_mapping = {
                 **getattr(self.config, "metadata_mapping", {}),
                 **prep.collection_def_params.get("metadata_mapping", {}),
             }
@@ -1511,8 +1505,8 @@ class PostJsonSearch(QueryStringSearch):
                     k: v
                     for k, v in prep.collection_def_params.items()
                     if k not in keywords.keys()
-                    and k in product_type_metadata_mapping.keys()
-                    and isinstance(product_type_metadata_mapping[k], list)
+                    and k in collection_metadata_mapping.keys()
+                    and isinstance(collection_metadata_mapping[k], list)
                 }
             )
 
@@ -1569,14 +1563,14 @@ class PostJsonSearch(QueryStringSearch):
         # If we were not able to build query params but have queryable search criteria,
         # this means the provider does not support the search criteria given. If so,
         # stop searching right away
-        product_type_metadata_mapping = dict(
+        collection_metadata_mapping = dict(
             self.config.metadata_mapping,
             **prep.collection_def_params.get("metadata_mapping", {}),
         )
         if not qp and any(
             k
             for k in keywords.keys()
-            if isinstance(product_type_metadata_mapping.get(k, []), list)
+            if isinstance(collection_metadata_mapping.get(k, []), list)
         ):
             return ([], 0) if prep.count else ([], None)
         prep.query_params = dict(qp, **sort_by_qp)
@@ -1785,7 +1779,7 @@ class StacSearch(PostJsonSearch):
     have to be overwritten. If certain functionalities are not available, their configuration
     parameters have to be overwritten with ``null``. E.g. if there is no queryables endpoint,
     the :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` and
-    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` in the
+    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` in the
     :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
     """
 
@@ -1799,7 +1793,7 @@ class StacSearch(PostJsonSearch):
         self.config.results_entry = results_entry
 
     def build_query_string(
-        self, product_type: str, query_dict: dict[str, Any]
+        self, collection: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
@@ -1809,9 +1803,9 @@ class StacSearch(PostJsonSearch):
             query_dict.setdefault("start_datetime", "..")
             query_dict.setdefault("end_datetime", "..")
 
-        error_context = f"Product type: {product_type} / provider : {self.provider}"
+        error_context = f"Product type: {collection} / provider : {self.provider}"
         query_params = format_query_params(
-            product_type, self.config, query_dict, error_context
+            collection, self.config, query_dict, error_context
         )
 
         # Build the final query string, in one go without quoting it
@@ -1835,7 +1829,7 @@ class StacSearch(PostJsonSearch):
         """
         if (
             not self.config.discover_queryables["fetch_url"]
-            and not self.config.discover_queryables["product_type_fetch_url"]
+            and not self.config.discover_queryables["collection_fetch_url"]
         ):
             raise NotImplementedError()
 
@@ -1847,7 +1841,7 @@ class StacSearch(PostJsonSearch):
         )
         if (
             provider_collection
-            and not self.config.discover_queryables["product_type_fetch_url"]
+            and not self.config.discover_queryables["collection_fetch_url"]
         ):
             raise NotImplementedError(
                 f"Cannot fetch queryables for a specific product type with {self.provider}"
@@ -1859,7 +1853,7 @@ class StacSearch(PostJsonSearch):
 
         try:
             unparsed_fetch_url = (
-                self.config.discover_queryables["product_type_fetch_url"]
+                self.config.discover_queryables["collection_fetch_url"]
                 if provider_collection
                 else self.config.discover_queryables["fetch_url"]
             )
@@ -1971,7 +1965,7 @@ class WekeoSearch(StacSearch, PostJsonSearch):
         PostJsonSearch.__init__(self, provider, config)
 
     def build_query_string(
-        self, product_type: str, query_dict: dict[str, Any]
+        self, collection: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
-        return PostJsonSearch.build_query_string(self, product_type, query_dict)
+        return PostJsonSearch.build_query_string(self, collection, query_dict)

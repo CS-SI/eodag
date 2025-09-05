@@ -437,9 +437,9 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_product_types = []
+    guessed_collections = []
     try:
-        guessed_product_types = dag.guess_product_type(
+        guessed_collections = dag.guess_collection(
             platformSerialIdentifier=kwargs.get("platformserialidentifier"),
             processingLevel=kwargs.get("processinglevel"),
             sensorType=kwargs.get("sensortype"),
@@ -466,22 +466,22 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             )
             sys.exit(1)
     try:
-        if guessed_product_types:
-            product_types = [
+        if guessed_collections:
+            collections = [
                 pt
-                for pt in dag.list_product_types(
+                for pt in dag.list_collections(
                     provider=provider, fetch_providers=fetch_providers
                 )
-                if pt["ID"] in guessed_product_types
+                if pt["ID"] in guessed_collections
             ]
         else:
-            product_types = dag.list_product_types(
+            collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
         click.echo("Listing available product types:")
-        for product_type in product_types:
-            click.echo("\n* {}: ".format(product_type["ID"]))
-            for prop, value in product_type.items():
+        for collection in collections:
+            click.echo("\n* {}: ".format(collection["ID"]))
+            for prop, value in collection.items():
                 if prop != "ID":
                     text_wrapper.initial_indent = "    - {}: ".format(prop)
                     text_wrapper.subsequent_indent = " " * len(
@@ -502,10 +502,10 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
 @click.option(
     "--storage",
     type=click.Path(dir_okay=False, writable=True, readable=False),
-    default="ext_product_types.json",
+    default="ext_collections.json",
     help="Path to the file where to store external product types configuration "
     "(.json extension will be automatically appended to the filename). "
-    "DEFAULT: ext_product_types.json",
+    "DEFAULT: ext_collections.json",
 )
 @click.pass_context
 def discover_pt(ctx: Context, **kwargs: Any) -> None:
@@ -514,17 +514,17 @@ def discover_pt(ctx: Context, **kwargs: Any) -> None:
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
 
-    ext_product_types_conf = (
-        dag.discover_product_types(provider=provider)
+    ext_collections_conf = (
+        dag.discover_collections(provider=provider)
         if provider
-        else dag.discover_product_types()
+        else dag.discover_collections()
     )
 
     storage_filepath = kwargs.pop("storage")
     if not storage_filepath.endswith(".json"):
         storage_filepath += ".json"
     with open(storage_filepath, "w") as f:
-        json.dump(ext_product_types_conf, f)
+        json.dump(ext_collections_conf, f)
     click.echo("Results stored at '{}'".format(storage_filepath))
 
 
