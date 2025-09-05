@@ -408,46 +408,87 @@ def stream_download_from_s3(
     Stream data from one or more S3 objects in chunks, with support for global byte ranges.
 
     This function provides efficient streaming download of S3 objects with support for:
-    - Single file streaming with direct MIME type detection
-    - Multiple file streaming as ZIP archives
-    - Byte range requests for partial content
-    - Files within ZIP archives (using .zip! notation)
-    - Concurrent chunk downloading for improved performance
-    - Memory-efficient streaming without loading entire files
+
+    * Single file streaming with direct MIME type detection
+    * Multiple file streaming as ZIP archives
+    * Byte range requests for partial content
+    * Files within ZIP archives (using ``.zip!`` notation)
+    * Concurrent chunk downloading for improved performance
+    * Memory-efficient streaming without loading entire files
 
     The response format depends on the compress parameter and number of files:
-    - Single file + compress="raw" or "auto": streams file directly with detected MIME type
-    - Multiple files + compress="zip" or "auto": creates ZIP archive containing all files
-    - compress="zip": always creates ZIP archive regardless of file count
 
-    For files stored within ZIP archives, use the .zip! notation in the S3FileInfo.key:
-    "path/to/archive.zip!internal/file.txt"
+    * Single file + ``compress="raw"`` or ``"auto"``: streams file directly with detected MIME type
+    * Multiple files + ``compress="zip"`` or ``"auto"``: creates ZIP archive containing all files
+    * ``compress="zip"``: always creates ZIP archive regardless of file count
+
+    For files stored within ZIP archives, use the ``.zip!`` notation in the ``S3FileInfo.key``:
+    ``"path/to/archive.zip!internal/file.txt"``
 
     :param s3_client: Boto3 S3 client instance for making requests
     :param files_info: List of S3FileInfo objects describing files to download.
-                      Each object must contain at minimum: bucket_name, key, and size.
-                      Optional fields include: data_type, rel_path, zip_filepath.
-    :param byte_range: Global byte range to download as (start, end) tuple.
-                      None values indicate open-ended ranges.
-                      Applied across the logical concatenation of all files.
+        Each object must contain at minimum: ``bucket_name``, ``key``, and ``size``.
+        Optional fields include: ``data_type``, ``rel_path``, ``zip_filepath``.
+    :param byte_range: Global byte range to download as ``(start, end)`` tuple.
+        ``None`` values indicate open-ended ranges.
+        Applied across the logical concatenation of all files.
     :param compress: Output format control:
-                    - "zip": Always create ZIP archive
-                    - "raw": Stream files directly (single) or as multipart (multiple)
-                    - "auto": ZIP for multiple files, raw for single file
-    :param zip_filename: Base filename for ZIP archives (without .zip extension).
-                        Only used when creating ZIP archives.
+
+        * ``"zip"``: Always create ZIP archive
+        * ``"raw"``: Stream files directly (single) or as multipart (multiple)
+        * ``"auto"``: ZIP for multiple files, raw for single file
+
+    :param zip_filename: Base filename for ZIP archives (without ``.zip`` extension).
+        Only used when creating ZIP archives.
     :param range_size: Size of each download chunk in bytes. Larger chunks reduce
-                      request overhead but use more memory. Default: 8MB.
+        request overhead but use more memory. Default: 8MB.
     :param max_workers: Maximum number of concurrent download threads.
-                       Higher values improve throughput for multiple ranges.
+        Higher values improve throughput for multiple ranges.
     :return: StreamResponse object containing:
-            - content: Iterator of bytes for the streaming response
-            - media_type: MIME type ("application/zip" for archives, detected type for single files)
-            - headers: HTTP headers including Content-Disposition for downloads
+
+        * ``content``: Iterator of bytes for the streaming response
+        * ``media_type``: MIME type (``"application/zip"`` for archives, detected type for single files)
+        * ``headers``: HTTP headers including Content-Disposition for downloads
+
+    :rtype: StreamResponse
     :raises InvalidDataError: If ZIP file structures are malformed
     :raises NotAvailableError: If S3 objects cannot be accessed
     :raises AuthenticationError: If S3 credentials are invalid
     :raises NotImplementedError: If compressed files within ZIP archives are encountered
+
+    Example usage:
+
+    .. code-block:: python
+
+        import boto3
+        from eodag.utils.s3 import stream_download_from_s3, S3FileInfo
+
+        # Create S3 client
+        s3_client = boto3.client('s3')
+
+        # Single file download
+        files = [S3FileInfo(bucket_name="bucket", key="file.txt", size=1024)]
+        response = stream_download_from_s3(s3_client, files)
+
+        # Multiple files as ZIP archive
+        files = [
+            S3FileInfo(bucket_name="bucket", key="file1.txt", size=1024),
+            S3FileInfo(bucket_name="bucket", key="file2.txt", size=2048)
+        ]
+        response = stream_download_from_s3(s3_client, files, compress="zip")
+
+        # File within ZIP archive
+        files = [S3FileInfo(
+            bucket_name="bucket",
+            key="archive.zip!internal.txt",
+            size=512
+        )]
+        response = stream_download_from_s3(s3_client, files)
+
+        # Process streaming response
+        for chunk in response.content:
+            # Handle chunk data
+            pass
     """
 
     executor = ThreadPoolExecutor(max_workers=max_workers)
