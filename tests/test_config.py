@@ -33,7 +33,7 @@ from tests.context import (
     EODataAccessGateway,
     ValidationError,
     config,
-    get_ext_product_types_conf,
+    get_ext_collections_conf,
     load_stac_provider_config,
     merge_configs,
 )
@@ -473,26 +473,24 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(peps_conf.search.pagination["start_page"], 2)
 
     @mock.patch("requests.get", autospec=True)
-    def test_get_ext_product_types_conf(self, mock_get):
+    def test_get_ext_collections_conf(self, mock_get):
         """External product types configuration must be loadable from remote or local file"""
-        ext_product_types_path = os.path.join(
-            TEST_RESOURCES_PATH, "ext_product_types.json"
-        )
+        ext_collections_path = os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")
 
         # mock get request response for remote conf file (default value)
         mock_get.return_value = mock.Mock()
         mock_get.return_value.json.return_value = {"some_parameter": "a_value"}
 
-        ext_product_types_conf = get_ext_product_types_conf()
+        ext_collections_conf = get_ext_collections_conf()
         mock_get.assert_called_once_with(
             EXT_PRODUCT_TYPES_CONF_URI, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
         )
-        self.assertEqual(ext_product_types_conf, {"some_parameter": "a_value"})
+        self.assertEqual(ext_collections_conf, {"some_parameter": "a_value"})
 
         # local conf file
-        ext_product_types_conf = get_ext_product_types_conf(ext_product_types_path)
-        self.assertIsInstance(ext_product_types_conf, dict)
-        self.assertIn("foo", ext_product_types_conf["earth_search"]["providers_config"])
+        ext_collections_conf = get_ext_collections_conf(ext_collections_path)
+        self.assertIsInstance(ext_collections_conf, dict)
+        self.assertIn("foo", ext_collections_conf["earth_search"]["providers_config"])
 
 
 class TestStacProviderConfig(unittest.TestCase):

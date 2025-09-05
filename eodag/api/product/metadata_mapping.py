@@ -1362,7 +1362,7 @@ def mtd_cfg_as_conversion_and_querypath(
 
 
 def format_query_params(
-    product_type: str,
+    collection: str,
     config: PluginConfig,
     query_dict: dict[str, Any],
     error_context: str = "",
@@ -1373,14 +1373,14 @@ def format_query_params(
     # . not allowed in eodag_search_key, replaced with %2E
     query_dict = {k.replace(".", "%2E"): v for k, v in query_dict.items()}
 
-    product_type_metadata_mapping = dict(
+    collection_metadata_mapping = dict(
         config.metadata_mapping,
-        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+        **config.products.get(collection, {}).get("metadata_mapping", {}),
     )
 
     # Raise error if non-queryables parameters are used and raise_mtd_discovery_error configured
     if (
-        raise_mtd_discovery_error := config.products.get(product_type, {})
+        raise_mtd_discovery_error := config.products.get(collection, {})
         .get("discover_metadata", {})
         .get("raise_mtd_discovery_error")
     ) is None:
@@ -1394,7 +1394,7 @@ def format_query_params(
     queryables = _get_queryables(
         query_dict,
         config,
-        product_type_metadata_mapping,
+        collection_metadata_mapping,
         raise_mtd_discovery_error,
         error_context,
     )
@@ -1419,7 +1419,7 @@ def format_query_params(
             parts = provider_search_param.split("=")
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
-                    provider_search_param, product_type, **query_dict
+                    provider_search_param, collection, **query_dict
                 )
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_param:
@@ -1443,7 +1443,7 @@ def format_query_params(
             else:
                 provider_search_key, provider_value = parts
                 query_params[provider_search_key] = format_metadata(
-                    provider_value, product_type, **query_dict
+                    provider_value, collection, **query_dict
                 )
         else:
             query_params[provider_search_param] = user_input
@@ -1457,12 +1457,12 @@ def format_query_params(
     # Now add formatted free text search parameters (this is for cases where a
     # complex query through a free text search parameter is available for the
     # provider and needed for the consumer)
-    product_type_metadata_mapping = dict(
+    collection_metadata_mapping = dict(
         config.metadata_mapping,
-        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+        **config.products.get(collection, {}).get("metadata_mapping", {}),
     )
     literal_search_params.update(
-        _format_free_text_search(config, product_type_metadata_mapping, **query_dict)
+        _format_free_text_search(config, collection_metadata_mapping, **query_dict)
     )
     for provider_search_key, provider_value in literal_search_params.items():
         if isinstance(provider_value, list):

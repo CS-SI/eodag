@@ -112,7 +112,7 @@ def _check_int_values_properties(properties: dict[str, Any]):
 class CopMarineSearch(StaticStacSearch):
     """class that implements search for the Copernicus Marine provider
 
-    It calls :meth:`~eodag.plugins.search.static_stac_search.StaticStacSearch.discover_product_types`
+    It calls :meth:`~eodag.plugins.search.static_stac_search.StaticStacSearch.discover_collections`
     inherited from :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     but for the actual search a special method which fetches the urls of the available products from an S3 storage and
     filters them has been written.
@@ -137,7 +137,7 @@ class CopMarineSearch(StaticStacSearch):
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
-        fetch_url = cast(str, self.config.discover_product_types["fetch_url"]).format(
+        fetch_url = cast(str, self.config.discover_collections["fetch_url"]).format(
             **self.config.__dict__
         )
 

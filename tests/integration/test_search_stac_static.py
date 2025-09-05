@@ -54,7 +54,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.singlefile_cat_len = 5
 
         self.stac_provider = "planetary_computer"
-        self.product_type = "S2_MSI_L2A"
+        self.collection = "S2_MSI_L2A"
 
         self.extent_big = {"lonmin": -55, "lonmax": -53, "latmin": 2, "latmax": 5}
         self.extent_small = {"lonmin": -55, "lonmax": -54.5, "latmin": 2, "latmax": 2.5}
@@ -84,7 +84,7 @@ class TestSearchStacStatic(unittest.TestCase):
 
     def test_search_stac_static(self):
         """Use StaticStacSearch plugin to search all items"""
-        # mock on fetch_product_types_list not needed with provider specified,
+        # mock on fetch_collections_list not needed with provider specified,
         #    as product types discovery must be disabled by default for stac static
         search_result = self.dag.search(
             provider=self.static_stac_provider, count=True, validate=False
@@ -99,10 +99,10 @@ class TestSearchStacStatic(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_search_stac_static_by_date(
-        self, mock_fetch_product_types_list, mock_auth_session_request
+        self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by date"""
         filtered_sr = self.dag.search(
@@ -118,10 +118,10 @@ class TestSearchStacStatic(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_search_stac_static_by_geom(
-        self, mock_fetch_product_types_list, mock_auth_session_request
+        self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by geometry"""
         search_result = self.dag.search(
@@ -135,10 +135,10 @@ class TestSearchStacStatic(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_search_stac_static_by_property(
-        self, mock_fetch_product_types_list, mock_auth_session_request
+        self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by property"""
         search_result = self.dag.search(orbitNumber=110, count=True, validate=False)
@@ -150,10 +150,10 @@ class TestSearchStacStatic(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_search_stac_static_by_cloudcover(
-        self, mock_fetch_product_types_list, mock_auth_session_request
+        self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by cloud cover"""
         search_result = self.dag.search(cloudCover=10, count=True, validate=False)

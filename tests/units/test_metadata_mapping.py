@@ -901,7 +901,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
                 "datetime: {start_datetime}",
                 "$.datetime",
             ],
-            "api_product_type": ["collection", "$.properties.collection"],
+            "api_collection": ["collection", "$.properties.collection"],
             "variable": ["variable", "$.variable"],
             "variable_type": ["variable_type", "$.variable_type"],
         }
@@ -918,7 +918,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         )
         self.assertEqual("datetime", provider_key)
         provider_key = get_provider_queryable_key(
-            "api_product_type", provider_queryables, metadata_mapping
+            "api_collection", provider_queryables, metadata_mapping
         )
         self.assertEqual("collection", provider_key)
         provider_key = get_provider_queryable_key(

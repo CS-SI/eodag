@@ -124,16 +124,14 @@ class EcmwfApi(Api, ECMWFSearch):
         # start date
         if "start_datetime" not in kwargs:
             kwargs["start_datetime"] = (
-                getattr(self.config, "product_type_config", {}).get("missionStartDate")
+                getattr(self.config, "collection_config", {}).get("missionStartDate")
                 or DEFAULT_MISSION_START_DATE
             )
         # end date
         if "end_datetime" not in kwargs:
-            kwargs["end_datetime"] = getattr(
-                self.config, "product_type_config", {}
-            ).get("missionEndDate") or datetime.now(timezone.utc).isoformat(
-                timespec="seconds"
-            )
+            kwargs["end_datetime"] = getattr(self.config, "collection_config", {}).get(
+                "missionEndDate"
+            ) or datetime.now(timezone.utc).isoformat(timespec="seconds")
 
         # geometry
         if "geometry" in kwargs:
@@ -294,5 +292,5 @@ class EcmwfApi(Api, ECMWFSearch):
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        product_type = kwargs.get("collection")
-        return self.queryables_from_metadata_mapping(product_type)
+        collection = kwargs.get("collection")
+        return self.queryables_from_metadata_mapping(collection)

@@ -41,7 +41,7 @@ from eodag.config import (
     PluginConfig,
     SimpleYamlProxyConfig,
     credentials_in_auth,
-    get_ext_product_types_conf,
+    get_ext_collections_conf,
     load_default_config,
     load_stac_provider_config,
     load_yml_config,
@@ -111,10 +111,10 @@ class EODataAccessGateway:
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
     ) -> None:
-        product_types_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
-            res_files("eodag") / "resources" / "product_types.yml"
+        collections_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
+            res_files("eodag") / "resources" / "collections.yml"
         )
-        self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
+        self.collections_config = SimpleYamlProxyConfig(collections_config_path)
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -167,7 +167,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
-        available_product_types = set(self.product_types_config.source.keys())
+        available_collections = set(self.collections_config.source.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -176,10 +176,10 @@ class EODataAccessGateway:
             )
 
             self._sync_provider_collections(
-                provider, available_product_types, strict_mode
+                provider, available_collections, strict_mode
             )
         # init product types configuration
-        self._product_types_config_init()
+        self._collections_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -222,25 +222,25 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
 
-    def _product_types_config_init(self) -> None:
+    def _collections_config_init(self) -> None:
         """Initialize product types configuration."""
-        for pt_id, pd_dict in self.product_types_config.source.items():
-            self.product_types_config.source[pt_id].setdefault("_id", pt_id)
+        for pt_id, pd_dict in self.collections_config.source.items():
+            self.collections_config.source[pt_id].setdefault("_id", pt_id)
 
     def _sync_provider_collections(
         self,
         provider: str,
-        available_product_types: set[str],
+        available_collections: set[str],
         strict_mode: bool,
     ) -> None:
         """
         Synchronize product types for a provider based on strict or permissive mode.
 
-        In strict mode, removes product types not in available_product_types.
+        In strict mode, removes product types not in available_collections.
         In permissive mode, adds empty product type configs for missing types.
 
         :param provider: The provider name whose product types should be synchronized.
-        :param available_product_types: The set of available product type IDs.
+        :param available_collections: The set of available product type IDs.
         :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
         :returns: None
         """
@@ -252,7 +252,7 @@ class EODataAccessGateway:
             if product_id == GENERIC_PRODUCT_TYPE:
                 continue
 
-            if product_id not in available_product_types:
+            if product_id not in available_collections:
                 if strict_mode:
                     products_to_remove.append(product_id)
                     continue
@@ -261,9 +261,9 @@ class EODataAccessGateway:
                     "title": product_id,
                     "abstract": NOT_AVAILABLE,
                 }
-                self.product_types_config.source[
+                self.collections_config.source[
                     product_id
-                ] = empty_product  # will update available_product_types
+                ] = empty_product  # will update available_collections
                 products_to_add.append(product_id)
 
         if products_to_add:
@@ -354,9 +354,9 @@ class EODataAccessGateway:
                 self.providers_config[provider],
                 load_stac_provider_config(),
             )
-            setattr(self.providers_config[provider], "product_types_fetched", False)
+            setattr(self.providers_config[provider], "collections_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager.build_product_type_to_provider_config_map()
+        self._plugins_manager.build_collection_to_provider_config_map()
 
     def add_provider(
         self,
@@ -538,7 +538,7 @@ class EODataAccessGateway:
             )
             self.locations_config = []
 
-    def list_product_types(
+    def list_collections(
         self, provider: Optional[str] = None, fetch_providers: bool = True
     ) -> list[dict[str, Any]]:
         """Lists supported product types.
@@ -552,9 +552,9 @@ class EODataAccessGateway:
         """
         if fetch_providers:
             # First, update product types list if possible
-            self.fetch_product_types_list(provider=provider)
+            self.fetch_collections_list(provider=provider)
 
-        product_types: list[dict[str, Any]] = []
+        collections: list[dict[str, Any]] = []
 
         providers_configs = (
             list(self.providers_config.values())
@@ -572,22 +572,22 @@ class EODataAccessGateway:
             )
 
         for p in providers_configs:
-            for product_type_id in p.products:  # type: ignore
-                if product_type_id == GENERIC_PRODUCT_TYPE:
+            for collection_id in p.products:  # type: ignore
+                if collection_id == GENERIC_PRODUCT_TYPE:
                     continue
 
-                config = self.product_types_config[product_type_id]
+                config = self.collections_config[collection_id]
                 if "alias" in config:
-                    product_type_id = config["alias"]
-                product_type = {"ID": product_type_id, **config}
+                    collection_id = config["alias"]
+                collection = {"ID": collection_id, **config}
 
-                if product_type not in product_types:
-                    product_types.append(product_type)
+                if collection not in collections:
+                    collections.append(collection)
 
-        # Return the product_types sorted in lexicographic order of their ID
-        return sorted(product_types, key=itemgetter("ID"))
+        # Return the collections sorted in lexicographic order of their ID
+        return sorted(collections, key=itemgetter("ID"))
 
-    def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
+    def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed.
 
         If strict mode is enabled (by setting the ``EODAG_STRICT_PRODUCT_TYPES`` environment variable
@@ -630,45 +630,43 @@ class EODataAccessGateway:
                 provider_search_config = provider_config.api
             else:
                 continue
-            discovery_conf = getattr(
-                provider_search_config, "discover_product_types", {}
-            )
+            discovery_conf = getattr(provider_search_config, "discover_collections", {})
             if discovery_conf.get("fetch_url"):
                 providers_discovery_configs_fetchable[
                     provider_to_fetch
                 ] = discovery_conf
-                if not getattr(provider_config, "product_types_fetched", False):
+                if not getattr(provider_config, "collections_fetched", False):
                     already_fetched = False
 
         if not already_fetched:
-            # get ext_product_types conf
-            ext_product_types_cfg_file = os.getenv("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
-            if ext_product_types_cfg_file is not None:
-                ext_product_types_conf = get_ext_product_types_conf(
-                    ext_product_types_cfg_file
+            # get ext_collections conf
+            ext_collections_cfg_file = os.getenv("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+            if ext_collections_cfg_file is not None:
+                ext_collections_conf = get_ext_collections_conf(
+                    ext_collections_cfg_file
                 )
             else:
-                ext_product_types_conf = get_ext_product_types_conf()
+                ext_collections_conf = get_ext_collections_conf()
 
-                if not ext_product_types_conf:
-                    # empty ext_product_types conf
-                    ext_product_types_conf = (
-                        self.discover_product_types(provider=provider) or {}
+                if not ext_collections_conf:
+                    # empty ext_collections conf
+                    ext_collections_conf = (
+                        self.discover_collections(provider=provider) or {}
                     )
 
             # update eodag product types list with new conf
-            self.update_product_types_list(ext_product_types_conf)
+            self.update_collections_list(ext_collections_conf)
 
         # Compare current provider with default one to see if it has been modified
         # and product types list would need to be fetched
 
-        # get ext_product_types conf for user modified providers
+        # get ext_collections conf for user modified providers
         default_providers_config = load_default_config()
         for (
             provider,
             user_discovery_conf,
         ) in providers_discovery_configs_fetchable.items():
-            # default discover_product_types conf
+            # default discover_collections conf
             if provider in default_providers_config:
                 default_provider_config = default_providers_config[provider]
                 if hasattr(default_provider_config, "search"):
@@ -678,7 +676,7 @@ class EODataAccessGateway:
                 else:
                     continue
                 default_discovery_conf = getattr(
-                    default_provider_search_config, "discover_product_types", {}
+                    default_provider_search_config, "discover_collections", {}
                 )
                 # compare confs
                 if default_discovery_conf["result_type"] == "json" and isinstance(
@@ -693,22 +691,22 @@ class EODataAccessGateway:
                         },
                         **mtd_cfg_as_conversion_and_querypath(
                             dict(
-                                generic_product_type_id=default_discovery_conf[
-                                    "generic_product_type_id"
+                                generic_collection_id=default_discovery_conf[
+                                    "generic_collection_id"
                                 ]
                             )
                         ),
                         **dict(
-                            generic_product_type_parsable_properties=mtd_cfg_as_conversion_and_querypath(
+                            generic_collection_parsable_properties=mtd_cfg_as_conversion_and_querypath(
                                 default_discovery_conf[
-                                    "generic_product_type_parsable_properties"
+                                    "generic_collection_parsable_properties"
                                 ]
                             )
                         ),
                         **dict(
-                            generic_product_type_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
+                            generic_collection_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
                                 default_discovery_conf[
-                                    "generic_product_type_parsable_metadata"
+                                    "generic_collection_parsable_metadata"
                                 ]
                             )
                         ),
@@ -720,26 +718,26 @@ class EODataAccessGateway:
                     or user_discovery_conf == default_discovery_conf_parsed
                 ) and (
                     not default_discovery_conf.get("fetch_url")
-                    or "ext_product_types_conf" not in locals()
-                    or "ext_product_types_conf" in locals()
+                    or "ext_collections_conf" not in locals()
+                    or "ext_collections_conf" in locals()
                     and (
-                        provider in ext_product_types_conf
-                        or len(ext_product_types_conf.keys()) == 0
+                        provider in ext_collections_conf
+                        or len(ext_collections_conf.keys()) == 0
                     )
                 ):
                     continue
                 # providers not skipped here should be user-modified
-                # or not in ext_product_types_conf (if eodag system conf != eodag conf used for ext_product_types_conf)
+                # or not in ext_collections_conf (if eodag system conf != eodag conf used for ext_collections_conf)
 
             if not already_fetched:
                 # discover product types for user configured provider
-                provider_ext_product_types_conf = (
-                    self.discover_product_types(provider=provider) or {}
+                provider_ext_collections_conf = (
+                    self.discover_collections(provider=provider) or {}
                 )
                 # update eodag product types list with new conf
-                self.update_product_types_list(provider_ext_product_types_conf)
+                self.update_collections_list(provider_ext_collections_conf)
 
-    def discover_product_types(
+    def discover_collections(
         self, provider: Optional[str] = None
     ) -> Optional[dict[str, Any]]:
         """Fetch providers for product types
@@ -761,7 +759,7 @@ class EODataAccessGateway:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
-        ext_product_types_conf: dict[str, Any] = {}
+        ext_collections_conf: dict[str, Any] = {}
         providers_to_fetch = [
             p
             for p in (
@@ -782,14 +780,14 @@ class EODataAccessGateway:
                 search_plugin_config = self.providers_config[provider].api
             else:
                 return None
-            if getattr(search_plugin_config, "discover_product_types", {}).get(
+            if getattr(search_plugin_config, "discover_collections", {}).get(
                 "fetch_url", None
             ):
                 search_plugin: Union[Search, Api] = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
                 )
                 # check after plugin init if still fetchable
-                if not getattr(search_plugin.config, "discover_product_types", {}).get(
+                if not getattr(search_plugin.config, "discover_collections", {}).get(
                     "fetch_url"
                 ):
                     continue
@@ -805,24 +803,24 @@ class EODataAccessGateway:
                         logger.debug(
                             f"Could not authenticate on {provider} for product types discovery"
                         )
-                        ext_product_types_conf[provider] = None
+                        ext_collections_conf[provider] = None
                         continue
 
-                ext_product_types_conf[provider] = search_plugin.discover_product_types(
+                ext_collections_conf[provider] = search_plugin.discover_collections(
                     **kwargs
                 )
 
-        return sort_dict(ext_product_types_conf)
+        return sort_dict(ext_collections_conf)
 
-    def update_product_types_list(
-        self, ext_product_types_conf: dict[str, Optional[dict[str, dict[str, Any]]]]
+    def update_collections_list(
+        self, ext_collections_conf: dict[str, Optional[dict[str, dict[str, Any]]]]
     ) -> None:
         """Update eodag product types list
 
-        :param ext_product_types_conf: external product types configuration
+        :param ext_collections_conf: external product types configuration
         """
-        for provider, new_product_types_conf in ext_product_types_conf.items():
-            if new_product_types_conf and provider in self.providers_config:
+        for provider, new_collections_conf in ext_collections_conf.items():
+            if new_collections_conf and provider in self.providers_config:
                 try:
                     search_plugin_config = getattr(
                         self.providers_config[provider], "search", None
@@ -830,7 +828,7 @@ class EODataAccessGateway:
                     if search_plugin_config is None:
                         continue
                     if not getattr(
-                        search_plugin_config, "discover_product_types", {}
+                        search_plugin_config, "discover_collections", {}
                     ).get("fetch_url"):
                         # conf has been updated and provider product types are no more discoverable
                         continue
@@ -843,64 +841,62 @@ class EODataAccessGateway:
                         provider,
                     )
                     continue
-                new_product_types: list[str] = []
+                new_collections: list[str] = []
                 for (
-                    new_product_type,
-                    new_product_type_conf,
-                ) in new_product_types_conf["providers_config"].items():
-                    if new_product_type not in provider_products_config:
-                        for existing_product_type in provider_products_config.copy():
+                    new_collection,
+                    new_collection_conf,
+                ) in new_collections_conf["providers_config"].items():
+                    if new_collection not in provider_products_config:
+                        for existing_collection in provider_products_config.copy():
                             # compare parsed extracted conf (without metadata_mapping entry)
                             unparsable_keys = (
-                                search_plugin_config.discover_product_types.get(
-                                    "generic_product_type_unparsable_properties", {}
+                                search_plugin_config.discover_collections.get(
+                                    "generic_collection_unparsable_properties", {}
                                 ).keys()
                             )
-                            new_parsed_product_types_conf = {
+                            new_parsed_collections_conf = {
                                 k: v
-                                for k, v in new_product_type_conf.items()
+                                for k, v in new_collection_conf.items()
                                 if k not in unparsable_keys
                             }
                             if (
-                                new_parsed_product_types_conf.items()
-                                <= provider_products_config[
-                                    existing_product_type
-                                ].items()
+                                new_parsed_collections_conf.items()
+                                <= provider_products_config[existing_collection].items()
                             ):
-                                # new_product_types_conf is a subset on an existing conf
+                                # new_collections_conf is a subset on an existing conf
                                 break
                         else:
-                            # new_product_type_conf does not already exist, append it
+                            # new_collection_conf does not already exist, append it
                             # to provider_products_config
                             provider_products_config[
-                                new_product_type
-                            ] = new_product_type_conf
-                            # to self.product_types_config
-                            self.product_types_config.source.update(
+                                new_collection
+                            ] = new_collection_conf
+                            # to self.collections_config
+                            self.collections_config.source.update(
                                 {
-                                    new_product_type: {"_id": new_product_type}
-                                    | new_product_types_conf["product_types_config"][
-                                        new_product_type
+                                    new_collection: {"_id": new_collection}
+                                    | new_collections_conf["collections_config"][
+                                        new_collection
                                     ]
                                 }
                             )
-                            ext_product_types_conf[provider] = new_product_types_conf
-                            new_product_types.append(new_product_type)
-                if new_product_types:
+                            ext_collections_conf[provider] = new_collections_conf
+                            new_collections.append(new_collection)
+                if new_collections:
                     logger.debug(
-                        f"Added {len(new_product_types)} product types for {provider}"
+                        f"Added {len(new_collections)} product types for {provider}"
                     )
 
             elif provider not in self.providers_config:
                 # unknown provider
                 continue
-            self.providers_config[provider].product_types_fetched = True
+            self.providers_config[provider].collections_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager.build_product_type_to_provider_config_map()
+        self._plugins_manager.build_collection_to_provider_config_map()
 
     def available_providers(
-        self, product_type: Optional[str] = None, by_group: bool = False
+        self, collection: Optional[str] = None, by_group: bool = False
     ) -> list[str]:
         """Gives the sorted list of the available providers or groups
 
@@ -908,17 +904,17 @@ class EODataAccessGateway:
         and then alphabetically in ascending order for providers or groups with the same
         priority level.
 
-        :param product_type: (optional) Only list providers configured for this product_type
+        :param collection: (optional) Only list providers configured for this collection
         :param by_group: (optional) If set to True, list groups when available instead
                          of providers, mixed with other providers
         :returns: the sorted list of the available providers or groups
         """
 
-        if product_type:
+        if collection:
             providers = [
                 (v.group if by_group and hasattr(v, "group") else k, v.priority)
                 for k, v in self.providers_config.items()
-                if product_type in getattr(v, "products", {}).keys()
+                if collection in getattr(v, "products", {}).keys()
             ]
         else:
             providers = [
@@ -940,47 +936,47 @@ class EODataAccessGateway:
         # Return only the names of the providers or groups
         return [name for name, _ in providers]
 
-    def get_product_type_from_alias(self, alias_or_id: str) -> str:
+    def get_collection_from_alias(self, alias_or_id: str) -> str:
         """Return the ID of a product type by either its ID or alias
 
         :param alias_or_id: Alias of the product type. If an existing ID is given, this
                             method will directly return the given value.
         :returns: Internal name of the product type.
         """
-        product_types = [
+        collections = [
             k
-            for k, v in self.product_types_config.items()
+            for k, v in self.collections_config.items()
             if v.get("alias") == alias_or_id
         ]
 
-        if len(product_types) > 1:
+        if len(collections) > 1:
             raise NoMatchingCollection(
-                f"Too many matching product types for alias {alias_or_id}: {product_types}"
+                f"Too many matching product types for alias {alias_or_id}: {collections}"
             )
 
-        if len(product_types) == 0:
-            if alias_or_id in self.product_types_config:
+        if len(collections) == 0:
+            if alias_or_id in self.collections_config:
                 return alias_or_id
             else:
                 raise NoMatchingCollection(
                     f"Could not find product type from alias or ID {alias_or_id}"
                 )
 
-        return product_types[0]
+        return collections[0]
 
-    def get_alias_from_product_type(self, product_type: str) -> str:
+    def get_alias_from_collection(self, collection: str) -> str:
         """Return the alias of a product type by its ID. If no alias was defined for the
         given product type, its ID is returned instead.
 
-        :param product_type: product type ID
+        :param collection: product type ID
         :returns: Alias of the product type or its ID if no alias has been defined for it.
         """
-        if product_type not in self.product_types_config:
-            raise NoMatchingCollection(product_type)
+        if collection not in self.collections_config:
+            raise NoMatchingCollection(collection)
 
-        return self.product_types_config[product_type].get("alias", product_type)
+        return self.collections_config[collection].get("alias", collection)
 
-    def guess_product_type(
+    def guess_collection(
         self,
         free_text: Optional[str] = None,
         intersect: bool = False,
@@ -1048,11 +1044,10 @@ class EODataAccessGateway:
 
         guesses_with_score: list[tuple[str, int]] = []
 
-        for pt_id, pt_dict in self.product_types_config.source.items():
+        for pt_id, pt_dict in self.collections_config.source.items():
             if (
                 pt_id == GENERIC_PRODUCT_TYPE
-                or pt_id
-                not in self._plugins_manager.product_type_to_provider_config_map
+                or pt_id not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
 
@@ -1480,21 +1475,21 @@ class EODataAccessGateway:
         # Get the search plugin and the maximized value
         # of items_per_page if defined for the provider used.
         try:
-            product_type = self.get_product_type_from_alias(
-                self.guess_product_type(**kwargs)[0]
+            collection = self.get_collection_from_alias(
+                self.guess_collection(**kwargs)[0]
             )
         except NoMatchingCollection:
-            product_type = GENERIC_PRODUCT_TYPE
+            collection = GENERIC_PRODUCT_TYPE
         else:
-            # fetch product types list if product_type is unknown
+            # fetch product types list if collection is unknown
             if (
-                product_type
-                not in self._plugins_manager.product_type_to_provider_config_map.keys()
+                collection
+                not in self._plugins_manager.collection_to_provider_config_map.keys()
             ):
                 logger.debug(
-                    f"Fetching external product types sources to find {product_type} product type"
+                    f"Fetching external product types sources to find {collection} product type"
                 )
-                self.fetch_product_types_list()
+                self.fetch_collections_list()
 
         # remove unwanted count
         kwargs.pop("count", None)
@@ -1577,7 +1572,7 @@ class EODataAccessGateway:
         collection = kwargs.get("collection")
         if collection is not None:
             try:
-                collection = self.get_product_type_from_alias(collection)
+                collection = self.get_collection_from_alias(collection)
             except NoMatchingCollection:
                 logger.debug("product type %s not found", collection)
         get_search_plugins_kwargs = dict(provider=provider, collection=collection)
@@ -1635,10 +1630,10 @@ class EODataAccessGateway:
                 results = filtered
 
             if len(results) == 1:
-                if not results[0].product_type:
+                if not results[0].collection:
                     # guess product type from properties
-                    guesses = self.guess_product_type(**results[0].properties)
-                    results[0].product_type = guesses[0]
+                    guesses = self.guess_collection(**results[0].properties)
+                    results[0].collection = guesses[0]
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1650,15 +1645,15 @@ class EODataAccessGateway:
                 )
         return SearchResult([], 0, results.errors)
 
-    def _fetch_external_product_type(self, provider: str, product_type: str):
+    def _fetch_external_collection(self, provider: str, collection: str):
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
         plugin = next(plugins)
 
         # check after plugin init if still fetchable
-        if not getattr(plugin.config, "discover_product_types", {}).get("fetch_url"):
+        if not getattr(plugin.config, "discover_collections", {}).get("fetch_url"):
             return None
 
-        kwargs: dict[str, Any] = {"collection": product_type}
+        kwargs: dict[str, Any] = {"collection": collection}
 
         # append auth if needed
         if getattr(plugin.config, "need_auth", False):
@@ -1669,8 +1664,8 @@ class EODataAccessGateway:
             ):
                 kwargs["auth"] = auth
 
-        product_type_config = plugin.discover_product_types(**kwargs)
-        self.update_product_types_list({provider: product_type_config})
+        collection_config = plugin.discover_collections(**kwargs)
+        self.update_collections_list({provider: collection_config})
 
     def _prepare_search(
         self,
@@ -1688,7 +1683,7 @@ class EODataAccessGateway:
           * By search params:
             * collection query:
               * By collection (e.g. 'S2_MSI_L1C')
-              * By params (e.g. 'platform'), see guess_product_type
+              * By params (e.g. 'platform'), see guess_collection
             * dates: 'start' and/or 'end'
             * geometry: 'geom' or 'bbox' or 'box'
             * search locations
@@ -1714,9 +1709,9 @@ class EODataAccessGateway:
         collection: Optional[str] = kwargs.get("collection")
         if collection is None:
             try:
-                guesses = self.guess_product_type(**kwargs)
+                guesses = self.guess_collection(**kwargs)
 
-                # guess_product_type raises a NoMatchingCollection error if no product
+                # guess_collection raises a NoMatchingCollection error if no product
                 # is found. Here, the supported search params are removed from the
                 # kwargs if present, not to propagate them to the query itself.
                 for param in (
@@ -1741,7 +1736,7 @@ class EODataAccessGateway:
 
         if collection is not None:
             try:
-                collection = self.get_product_type_from_alias(collection)
+                collection = self.get_collection_from_alias(collection)
             except NoMatchingCollection:
                 logger.info("unknown product type " + collection)
         kwargs["collection"] = collection
@@ -1773,30 +1768,30 @@ class EODataAccessGateway:
         # fetch collections list if collection is unknown
         if (
             collection
-            not in self._plugins_manager.product_type_to_provider_config_map.keys()
+            not in self._plugins_manager.collection_to_provider_config_map.keys()
         ):
             if provider and collection:
                 # Try to get specific collection from external provider
                 logger.debug(f"Fetching {provider} to find {collection} collection")
-                self._fetch_external_product_type(provider, collection)
+                self._fetch_external_collection(provider, collection)
             if not provider:
                 # no provider or still not found -> fetch all external collections
                 logger.debug(
                     f"Fetching external collections sources to find {collection} collection"
                 )
-                self.fetch_product_types_list()
+                self.fetch_collections_list()
 
         preferred_provider = self.get_preferred_provider()[0]
 
         search_plugins: list[Union[Search, Api]] = []
         for plugin in self._plugins_manager.get_search_plugins(
-            product_type=collection, provider=provider
+            collection=collection, provider=provider
         ):
-            # exclude MeteoblueSearch plugins from search fallback for unknown product_type
+            # exclude MeteoblueSearch plugins from search fallback for unknown collection
             if (
                 provider != plugin.provider
                 and preferred_provider != plugin.provider
-                and collection not in self.product_types_config
+                and collection not in self.collections_config
                 and isinstance(plugin, MeteoblueSearch)
             ):
                 continue
@@ -1817,11 +1812,11 @@ class EODataAccessGateway:
             )[0]
             search_plugins.remove(provider_plugin)
             search_plugins.insert(0, provider_plugin)
-        # Add product_types_config to plugin config. This dict contains product
+        # Add collections_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
             if collection is not None:
-                self._attach_product_type_config(search_plugin, collection)
+                self._attach_collection_config(search_plugin, collection)
 
         return search_plugins, kwargs
 
@@ -1907,7 +1902,7 @@ class EODataAccessGateway:
                 if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")
                     try:
-                        guesses = self.guess_product_type(
+                        guesses = self.guess_collection(
                             intersect=False,
                             **{
                                 k: pattern.sub("", str(v).upper())
@@ -1931,7 +1926,7 @@ class EODataAccessGateway:
 
                 try:
                     if eo_product.collection is not None:
-                        eo_product.collection = self.get_product_type_from_alias(
+                        eo_product.collection = self.get_collection_from_alias(
                             eo_product.collection
                         )
                 except NoMatchingCollection:
@@ -2208,7 +2203,7 @@ class EODataAccessGateway:
         # only fetch providers if collection is not found
         available_collections: list[str] = [
             pt["ID"]
-            for pt in self.list_product_types(provider=provider, fetch_providers=False)
+            for pt in self.list_collections(provider=provider, fetch_providers=False)
         ]
         collection: Optional[str] = kwargs.get("collection")
         coll_alias: Optional[str] = collection
@@ -2219,13 +2214,13 @@ class EODataAccessGateway:
                     # fetch providers and try again
                     available_collections = [
                         pt["ID"]
-                        for pt in self.list_product_types(
+                        for pt in self.list_collections(
                             provider=provider, fetch_providers=True
                         )
                     ]
                 raise UnsupportedCollection(f"{collection} is not available.")
             try:
-                kwargs["collection"] = collection = self.get_product_type_from_alias(
+                kwargs["collection"] = collection = self.get_collection_from_alias(
                     collection
                 )
             except NoMatchingCollection as e:
@@ -2245,12 +2240,12 @@ class EODataAccessGateway:
             # attach collection config
             collection_configs: dict[str, Any] = {}
             if collection:
-                self._attach_product_type_config(plugin, collection)
-                collection_configs[collection] = plugin.config.product_type_config
+                self._attach_collection_config(plugin, collection)
+                collection_configs[collection] = plugin.config.collection_config
             else:
                 for pt in available_collections:
-                    self._attach_product_type_config(plugin, pt)
-                    collection_configs[pt] = plugin.config.product_type_config
+                    self._attach_collection_config(plugin, pt)
+                    collection_configs[pt] = plugin.config.collection_config
 
             # authenticate if required
             if getattr(plugin.config, "need_auth", False) and (
@@ -2319,16 +2314,16 @@ class EODataAccessGateway:
             }
         return sortables
 
-    def _attach_product_type_config(self, plugin: Search, collection: str) -> None:
+    def _attach_collection_config(self, plugin: Search, collection: str) -> None:
         """
-        Attach product_types_config to plugin config. This dict contains product
+        Attach collections_config to plugin config. This dict contains product
         type metadata that will also be stored in each product's properties.
         """
         try:
-            plugin.config.product_type_config = dict(
+            plugin.config.collection_config = dict(
                 [
                     p
-                    for p in self.list_product_types(
+                    for p in self.list_collections(
                         plugin.provider, fetch_providers=False
                     )
                     if p["_id"] == collection
@@ -2338,13 +2333,13 @@ class EODataAccessGateway:
             # If the product isn't in the catalog, it's a generic product type.
         except IndexError:
             # Construct the GENERIC_PRODUCT_TYPE metadata
-            plugin.config.product_type_config = dict(
+            plugin.config.collection_config = dict(
                 ID=GENERIC_PRODUCT_TYPE,
-                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                **self.collections_config[GENERIC_PRODUCT_TYPE],
                 collection=collection,
             )
         # Remove the ID since this is equal to collection.
-        plugin.config.product_type_config.pop("ID", None)
+        plugin.config.collection_config.pop("ID", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
