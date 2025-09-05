@@ -271,7 +271,7 @@ class HTTPDownload(Download):
                 "orderId", product.properties["id"]
             )
             product.properties["title"] = (
-                (product.product_type or product.provider).upper()
+                (product.collection or product.provider).upper()
                 + "_"
                 + product.properties["id"]
             )
@@ -1095,9 +1095,7 @@ class HTTPDownload(Download):
             assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
 
         # product conf overrides provider conf for "flatten_top_dirs"
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
@@ -1245,9 +1243,7 @@ class HTTPDownload(Download):
             os.makedirs(fs_dir_path)
 
         # product conf overrides provider conf for "flatten_top_dirs"
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )

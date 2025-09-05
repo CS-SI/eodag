@@ -144,7 +144,7 @@ class TestEOProduct(EODagTestCase):
                 product.properties["instrument"],
                 self._tuples_to_lists(geometry.mapping(product.geometry)),
                 self._tuples_to_lists(geometry.mapping(product.search_intersection)),
-                product.product_type,
+                product.collection,
                 product.properties["productType"],
                 product.properties["platformSerialIdentifier"],
             ],
@@ -157,7 +157,7 @@ class TestEOProduct(EODagTestCase):
                 self._tuples_to_lists(
                     geometry.mapping(same_product.search_intersection)
                 ),
-                same_product.product_type,
+                same_product.collection,
                 same_product.properties["productType"],
                 same_product.properties["platformSerialIdentifier"],
             ],

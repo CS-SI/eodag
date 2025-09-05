@@ -131,7 +131,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         """Download._prepare_download must check existing record files"""
 
         self.product.location = self.product.remote_location = "http://foo.bar"
-        self.product.product_type = "foo"
+        self.product.collection = "foo"
 
         with TemporaryDirectory() as output_dir:
             download_kwargs = dict(output_dir=output_dir)
@@ -1233,7 +1233,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.download must order the product if needed"""
 
         self.product.provider = "cop_ads"
-        self.product.product_type = "CAMS_EAC4"
+        self.product.collection = "CAMS_EAC4"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
@@ -1916,7 +1916,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and no flatten_top_dirs
-        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.products[self.product.collection]["build_safe"] = False
         plugin.config.flatten_top_dirs = False
 
         plugin.download(self.product, output_dir=self.output_dir)
@@ -1971,7 +1971,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and flatten_top_dirs
-        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.products[self.product.collection]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
 
         plugin.download(self.product, output_dir=self.output_dir)
@@ -2051,7 +2051,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             }
         )
         # no SAFE build and flatten_top_dirs
-        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.products[self.product.collection]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
         auth = auth_plugin.authenticate()
 
@@ -2124,7 +2124,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
 
         # SAFE build
-        plugin.config.products[self.product.product_type]["build_safe"] = True
+        plugin.config.products[self.product.collection]["build_safe"] = True
 
         path = plugin.download(self.product, output_dir=self.output_dir)
 
@@ -2215,7 +2215,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
 
         # SAFE build
-        plugin.config.products[self.product.product_type]["build_safe"] = True
+        plugin.config.products[self.product.collection]["build_safe"] = True
 
         path = plugin.download(self.product, output_dir=self.output_dir)
 
@@ -2267,7 +2267,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and flatten_top_dirs
-        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.products[self.product.collection]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
 
         with self.assertRaises(NoMatchingProductType):

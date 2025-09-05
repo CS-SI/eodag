@@ -113,10 +113,10 @@ class EcmwfApi(Api, ECMWFSearch):
     ) -> tuple[list[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
-        # check productType, dates, geometry, use defaults if not specified
-        # productType
-        if not kwargs.get("productType"):
-            kwargs["productType"] = "%s_%s_%s" % (
+        # check collection, dates, geometry, use defaults if not specified
+        # collection
+        if not kwargs.get("collection"):
+            kwargs["collection"] = "%s_%s_%s" % (
                 kwargs.get("ecmwf:dataset", "mars"),
                 kwargs.get("ecmwf:type", ""),
                 kwargs.get("ecmwf:levtype", ""),
@@ -290,9 +290,9 @@ class EcmwfApi(Api, ECMWFSearch):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using metadata mapping
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        product_type = kwargs.get("productType")
+        product_type = kwargs.get("collection")
         return self.queryables_from_metadata_mapping(product_type)
