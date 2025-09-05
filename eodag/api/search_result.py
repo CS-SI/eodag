@@ -373,7 +373,7 @@ class RawSearchResult(UserList[dict[str, Any]]):
     """
 
     query_params: dict[str, Any]
-    product_type_def_params: dict[str, Any]
+    collection_def_params: dict[str, Any]
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

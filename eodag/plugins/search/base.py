@@ -152,7 +152,7 @@ class Search(PluginTopic):
             "_collection", GENERIC_PRODUCT_TYPE
         )
 
-    def get_product_type_def_params(
+    def get_collection_def_params(
         self, product_type: str, format_variables: Optional[dict[str, Any]] = None
     ) -> dict[str, Any]:
         """Get the provider product type definition parameters and specific settings
