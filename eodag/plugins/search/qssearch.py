@@ -759,7 +759,7 @@ class QueryStringSearch(Search):
         :param prep: Object collecting needed information for search.
         """
         count = prep.count
-        collection = cast(str, kwargs.get("collection", prep.product_type))
+        collection = cast(str, kwargs.get("collection", prep.collection))
         if collection == GENERIC_PRODUCT_TYPE:
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real collection and should only be used internally as a template"
