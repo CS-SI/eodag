@@ -295,9 +295,9 @@ class TestConfigFunctions(unittest.TestCase):
                     api_endpoint: https://api.my_new_provider/search
                 products:
                     S2_MSI_L1C:
-                        productType: sentinel2_l1c
+                        _collection: sentinel2_l1c
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
                 download:
                     type: AwsDownload
                     s3_endpoint: https://api.my_new_provider
@@ -314,7 +314,7 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(my_new_provider_conf.priority, 4)
         self.assertIsInstance(my_new_provider_conf.search, config.PluginConfig)
         self.assertEqual(
-            my_new_provider_conf.products["S2_MSI_L1C"]["productType"], "sentinel2_l1c"
+            my_new_provider_conf.products["S2_MSI_L1C"]["_collection"], "sentinel2_l1c"
         )
         self.assertEqual(
             my_new_provider_conf.auth.credentials["aws_secret_access_key"],
@@ -356,9 +356,9 @@ class TestConfigFunctions(unittest.TestCase):
                 api_endpoint: https://api.my_new_provider/search
             products:
                 S2_MSI_L1C:
-                  productType: sentinel2_l1c
+                  _collection: sentinel2_l1c
                 GENERIC_PRODUCT_TYPE:
-                  productType: '{productType}'
+                  _collection: '{collection}'
             download:
                 type: AwsDownload
                 s3_endpoint: https://api.my_new_provider
@@ -405,11 +405,11 @@ class TestConfigFunctions(unittest.TestCase):
         )
         self.assertIsInstance(my_new_provider_conf.products, dict)
         self.assertEqual(
-            my_new_provider_conf.products["S2_MSI_L1C"]["productType"], "sentinel2_l1c"
+            my_new_provider_conf.products["S2_MSI_L1C"]["_collection"], "sentinel2_l1c"
         )
         self.assertEqual(
-            my_new_provider_conf.products["GENERIC_PRODUCT_TYPE"]["productType"],
-            "{productType}",
+            my_new_provider_conf.products["GENERIC_PRODUCT_TYPE"]["_collection"],
+            "{collection}",
         )
         self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
         self.assertEqual(my_new_provider_conf.download.type, "AwsDownload")
@@ -568,7 +568,7 @@ class TestStacProviderConfig(unittest.TestCase):
                         title: '$.properties."foo:bar_baz"'
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
                 download:
                     type: HTTPDownload
                     base_uri: https://foo.bar

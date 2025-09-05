@@ -68,7 +68,7 @@ class TestSearchStacStatic(unittest.TestCase):
                     api_endpoint: {self.root_cat}
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{{productType}}'
+                        _collection: '{{collection}}'
                 download:
                     type: HTTPDownload
                     base_uri: https://fake-endpoint
