@@ -33,7 +33,11 @@ class GenericDriver(DatasetDriver):
         # data
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.jp2|\.tiff?|\.dat|\.nc|\.grib2?)$",
+                (
+                    r"^(?:.*[/\\])?([^/\\]+)"
+                    r"(\.jp2|\.tiff?|\.dat|\.nc|\.grib2?|"
+                    r"\.zarr|\.nat|\.covjson|\.parquet|\.zip|\.tar|\.gz)$"
+                ),
                 re.IGNORECASE,
             ),
             "roles": ["data"],
