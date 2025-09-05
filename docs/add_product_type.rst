@@ -1,15 +1,15 @@
 .. _add_product_type:
 
-Add a product type
-==================
+Add a collection
+================
 
-A product type in `eodag` represents a specific kind of Earth Observation data product, defined by its characteristics and metadata.
+A collection in `eodag` represents a specific kind of Earth Observation data product, defined by its characteristics and metadata.
 By following the steps outlined below, you can extend EODAG's capabilities to support additional product types from various providers.
 
-Add product type definition
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Add collection definition
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To add a new product type to EODAG, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an
+To add a new collection to EODAG, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an
 example:
 
 .. code-block:: yaml
@@ -34,12 +34,12 @@ and underscores to separate words. This name will be used when searching for
 products of the corresponding type.
 
 The following lines need to be indented because they make a dictionary of
-configuration information for the product type we are defining. Each bit of
+configuration information for the collection we are defining. Each bit of
 information can usually be found on the provider's catalog. Note how the value
 used for the ``keywords`` entry brings together values from other entries such
 as ``instrument``, ``processingLevel``, ``platform``, etc.
 
-Add product type to a provider
+Add collection to a provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the file ``eodag/resources/providers.yml``, add the product-type to the ``products``
@@ -60,7 +60,7 @@ entry of a provider:
 
 Then for each product-type listed under the ``products`` entry, you may
 specify default parameters that will be used when searching for products of this
-product type:
+collection:
 
 .. code-block:: yaml
 
@@ -82,7 +82,7 @@ Each of those parameters can be overridden when performing an actual search. Not
 parameters have to be named following the common model used in EODAG (see
 `Parameters mapping <params_mapping.rst>`_). Part of the provider search metadata
 mapping can also be overridden per product-type, by adding a ``metadata_mapping``
-section to the product type definition:
+section to the collection definition:
 
 .. code-block:: yaml
 
@@ -99,7 +99,7 @@ section to the product type definition:
             previewBaseName: '{$.sceneID#replace_str("_L4","")}'
             thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
 
-In the example above, we can see that the metadata mapping for the product type
+In the example above, we can see that the metadata mapping for the collection
 in the context of this provider can be specified in two ways:
 
 - ``metadata_mapping_from_product`` will include an existing metadata mapping

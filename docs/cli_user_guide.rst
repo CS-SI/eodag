@@ -42,7 +42,7 @@ Search
         --all \
         --storage my_search.geojson
 
-The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches
+The request above searches for `S2_MSI_L1C` collections in a given bounding box, in January 2018. The command fetches
 internally all the products that match these criteria. Without ``--all``, it would only fetch the products found on the
 first result page. It finally saves the results in a GeoJSON file.
 
@@ -69,7 +69,7 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
                      --cruncher-args FilterOverlap minimum_overlap 10 \
                      --query "foo=1&bar=2"
 
-* If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search
+* If the collection is not known, it can also be guessed by EODAG during the search based on parameters in the search
   request. The possible parameters are:
 
   - `instrument` (e.g. MSI)
@@ -79,9 +79,9 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
   - `sensorType` (e.g. OPTICAL)
   - `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
 
-For example, the following search request will first search for a product type for platform SENTINEL2 and
-processingLevel L1 (there are several product types matching these criteria, e.g., `S2_MSI_L1C`) and then use this
-product type to execute the actual search.
+For example, the following search request will first search for a collection for platform SENTINEL2 and
+processingLevel L1 (there are several collections matching these criteria, e.g., `S2_MSI_L1C`) and then use this
+collection to execute the actual search.
 
 .. code-block:: console
 
@@ -114,31 +114,31 @@ Download
 
         eodag search --productType S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01 download
 
-Product Types
+Collections
 -------------
 
 .. command-output:: eodag list --help
 
-* To list all available product types and supported providers:
+* To list all available collections and supported providers:
 
 .. code-block:: console
 
         eodag list
 
-* To list available product types on a specified supported provider:
+* To list available collections on a specified supported provider:
 
 .. code-block:: console
 
         eodag list -p creodias
 
-* By default, ``list`` command will also fetch for new product types, which may be slow depending on the network status.
+* By default, ``list`` command will also fetch for new collections, which may be slow depending on the network status.
   To skip fetching, use the following option:
 
 .. code-block:: console
 
         eodag list --no-fetch
 
-* EODAG can fetch providers (all or only a given one) to discover available product types, using the following command.
+* EODAG can fetch providers (all or only a given one) to discover available collections, using the following command.
   It will store result in a JSON file (defaults to `ext_product_types.json`):
 
 .. command-output:: eodag discover --help
@@ -154,5 +154,5 @@ Examples:
 This file can then be used in EODAG using the environment variable ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE``.
 
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
-For more information on the product types discovery mechanism, please see
-`Python API User Guide / Providers and products / Product types discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.
+For more information on the collections discovery mechanism, please see
+`Python API User Guide / Providers and products / Collections discovery <notebooks/api_user_guide/2_providers_products_available.html#Collections-discovery>`_.

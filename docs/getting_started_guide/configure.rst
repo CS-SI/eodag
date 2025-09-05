@@ -151,9 +151,9 @@ Some EODAG core settings can be overriden using environment variables:
   configuration file in place of `~/.config/eodag/locations.yml`.
 * ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
   `<python-site-packages>/eodag/resources/providers.yml`.
-* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the product types configuration file in place of
+* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the collections configuration file in place of
   `<python-site-packages>/eodag/resources/product_types.yml`.
-* ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external product types configuration file\
+* ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external collections configuration file\
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
   If the file is not readable, only user-modified providers will be fetched.
@@ -163,13 +163,13 @@ Some EODAG core settings can be overriden using environment variables:
   All other providers will be ignored, regardless of their presence in configuration files.
 
   This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
-* ``EODAG_STRICT_PRODUCT_TYPES`` to control how product types are listed.
+* ``EODAG_STRICT_PRODUCT_TYPES`` to control how collections are listed.
 
-  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list product types that are present in the main product types configuration file.
-  Product types defined only in provider configurations (but not in the main product types configuration) will be ignored.
-  If not set, EODAG will also include product types defined only in provider configurations, with minimal metadata.
+  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list collections that are present in the main collections configuration file.
+  Collections defined only in provider configurations (but not in the main collections configuration) will be ignored.
+  If not set, EODAG will also include collections defined only in provider configurations, with minimal metadata.
 
-  This is useful if you want to strictly control which product types are available, for example to ensure consistency across environments.
+  This is useful if you want to strictly control which collections are available, for example to ensure consistency across environments.
 
 Example usage:
 
@@ -195,8 +195,8 @@ API: Dynamic configuration
 Priority setting
 ^^^^^^^^^^^^^^^^
 
-Some product types are available from multiple providers, for instance
-*Sentinel 2 Level-1C* products. When a search is made for such product types,
+Some collections are available from multiple providers, for instance
+*Sentinel 2 Level-1C* products. When a search is made for such collections,
 ``eodag`` would use its pre-configured preferred/prioritary provider, which is *PEPS*
 currently.
 
@@ -211,10 +211,10 @@ an integer value that is higher than the priority of all the other providers.
 
 .. warning::
 
-   If the priority is set to a provider, and a search is made for a product type
-   available in ``eodag``'s catalog with a provider that doesn't offer this product type,
+   If the priority is set to a provider, and a search is made for a collection
+   available in ``eodag``'s catalog with a provider that doesn't offer this collection,
    then the search will still be done. The provider used would be the one with the
-   highest priority among those which offer this product type.
+   highest priority among those which offer this collection.
 
 Download settings
 ^^^^^^^^^^^^^^^^^

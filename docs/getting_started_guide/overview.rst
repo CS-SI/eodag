@@ -19,8 +19,8 @@ downloading remote sensed images while offering a unified API for data access
 regardless of the data provider. The EODAG SDK is structured around three
 functions:
 
-* List product types: list of supported products and their description
-* Search products (by product type) : searches products according to the
+* List collections: list of supported products and their description
+* Search products (by collection) : searches products according to the
   search criteria provided
 * Download products : download product “as is"
 
