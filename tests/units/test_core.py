@@ -2298,25 +2298,24 @@ class TestCoreGeometry(TestCoreBase):
 
 
 class TestCoreSearch(TestCoreBase):
-    @classmethod
-    def setUpClass(cls):
-        super(TestCoreSearch, cls).setUpClass()
-        cls.dag = EODataAccessGateway()
-        cls.dag.validate_search_request = mock.MagicMock()
+    def setUp(self):
+        super().setUp()
+        self.dag = EODataAccessGateway()
+        self.dag.validate_search_request = mock.MagicMock()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
-        cls.search_results = SearchResult.from_geojson(search_results_geojson)
-        cls.search_results_size = len(cls.search_results)
+        self.search_results = SearchResult.from_geojson(search_results_geojson)
+        self.search_results_size = len(self.search_results)
         # Change the id of these products, to emulate different products
-        search_results_data_2 = copy.deepcopy(cls.search_results.data)
+        search_results_data_2 = copy.deepcopy(self.search_results.data)
         search_results_data_2[0].properties["id"] = "a"
         search_results_data_2[1].properties["id"] = "b"
-        cls.search_results_2 = SearchResult(search_results_data_2)
-        cls.search_results_size_2 = len(cls.search_results_2)
+        self.search_results_2 = SearchResult(search_results_data_2)
+        self.search_results_size_2 = len(self.search_results_2)
 
     def test_guess_collection_with_kwargs(self):
         """guess_collection must return the products matching the given kwargs"""

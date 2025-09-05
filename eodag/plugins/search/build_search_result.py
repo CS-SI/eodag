@@ -45,7 +45,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
-from eodag.api.search_result import RawSearchResult
+from eodag.api.search_result import RawSearchResult, SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
@@ -491,7 +491,9 @@ class ECMWFSearch(PostJsonSearch):
             },
         )
 
-    def do_search(self, *args: Any, **kwargs: Any) -> RawSearchResult:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> RawSearchResult:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -502,11 +504,11 @@ class ECMWFSearch(PostJsonSearch):
         raw_search_results = RawSearchResult([{}])
         raw_search_results.search_params = kwargs
         raw_search_results.query_params = (
-            args.query_params if hasattr(args, "query_params") else {}
+            prep.query_params if hasattr(prep, "query_params") else {}
         )
         raw_search_results.product_type_def_params = (
-            args.product_type_def_params
-            if hasattr(args, "product_type_def_params")
+            prep.product_type_def_params
+            if hasattr(prep, "product_type_def_params")
             else {}
         )
         return raw_search_results
@@ -515,7 +517,7 @@ class ECMWFSearch(PostJsonSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Build ready-to-download SearchResult
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information needed for the search
