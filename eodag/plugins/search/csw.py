@@ -62,7 +62,7 @@ class CSWSearch(Search):
         * :attr:`~eodag.config.PluginConfig.version` (``str``): OGC Catalogue Service version; default: ``2.0.2``
         * :attr:`~eodag.config.PluginConfig.search_definition` (``dict[str, Any]``) (**mandatory**):
 
-          * **product_type_tags** (``list[dict[str, Any]``): dict of product type tags
+          * **collection_tags** (``list[dict[str, Any]``): dict of product type tags
           * **resource_location_filter** (``str``): regex string
           * **date_tags** (``dict[str, Any]``): tags for start and end
 
@@ -109,8 +109,8 @@ class CSWSearch(Search):
         **kwargs: Any,
     ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
-        product_type = kwargs.get("productType")
-        if product_type is None:
+        collection = kwargs.get("collection")
+        if collection is None:
             return ([], 0) if prep.count else ([], None)
         auth = kwargs.get("auth")
         if auth:
@@ -119,16 +119,16 @@ class CSWSearch(Search):
             self.__init_catalog()
         results: list[EOProduct] = []
         if self.catalog:
-            provider_collection = self.config.products[product_type]["productType"]
-            for product_type_def in self.config.search_definition["product_type_tags"]:
-                product_type_search_tag = product_type_def["name"]
+            provider_collection = self.config.products[collection]["collection"]
+            for collection_def in self.config.search_definition["collection_tags"]:
+                collection_search_tag = collection_def["name"]
                 logger.debug(
                     "Querying <%s> tag for product type %s",
-                    product_type_search_tag,
+                    collection_search_tag,
                     provider_collection,
                 )
                 constraints = self.__convert_query_params(
-                    product_type_def, provider_collection, kwargs
+                    collection_def, provider_collection, kwargs
                 )
                 with patch_owslib_requests(verify=True):
                     try:
@@ -140,19 +140,19 @@ class CSWSearch(Search):
 
                         logger.warning(
                             "Failed to query %s for product type %s : %s",
-                            product_type_search_tag,
-                            product_type,
+                            collection_search_tag,
+                            collection,
                             tb.format_exc(),
                         )
                         continue
                 partial_results = [
-                    self.__build_product(record, product_type, **kwargs)
+                    self.__build_product(record, collection, **kwargs)
                     for record in self.catalog.records.values()
                 ]
                 logger.info(
                     "Found %s results querying %s",
                     len(partial_results),
-                    product_type_search_tag,
+                    collection_search_tag,
                 )
                 results.extend(partial_results)
         logger.info("Found %s overall results", len(results))
@@ -182,7 +182,7 @@ class CSWSearch(Search):
                         e,
                     )
 
-    def __build_product(self, rec: Any, product_type: str, **kwargs: Any) -> EOProduct:
+    def __build_product(self, rec: Any, collection: str, **kwargs: Any) -> EOProduct:
         """Enable search results to be handled by http download plugin"""
         download_url = ""
         resource_filter = re.compile(
@@ -217,7 +217,7 @@ class CSWSearch(Search):
         else:
             properties["geometry"] = wkt.loads(properties["geometry"])
         return EOProduct(
-            product_type,
+            collection,
             self.provider,
             # TODO: EOProduct has no more *args in its __init__ (search_args attribute removed)
             # Not sure why download_url was here in the first place, needs to be updated,
@@ -229,8 +229,8 @@ class CSWSearch(Search):
 
     def __convert_query_params(
         self,
-        product_type_def: dict[str, Any],
-        product_type: str,
+        collection_def: dict[str, Any],
+        collection: str,
         params: dict[str, Any],
     ) -> Union[list[OgcExpression], list[list[OgcExpression]]]:
         """Translates eodag search to CSW constraints using owslib constraint classes"""
@@ -238,17 +238,17 @@ class CSWSearch(Search):
         # How the match should be performed (fuzzy, prefix, postfix or exact).
         # defaults to fuzzy
         pt_tag, matching = (
-            product_type_def["name"],
-            product_type_def.get("matching", "fuzzy"),
+            collection_def["name"],
+            collection_def.get("matching", "fuzzy"),
         )
         if matching == "prefix":
-            constraints.append(PropertyIsLike(pt_tag, "{}%".format(product_type)))
+            constraints.append(PropertyIsLike(pt_tag, "{}%".format(collection)))
         elif matching == "postfix":
-            constraints.append(PropertyIsLike(pt_tag, "%{}".format(product_type)))
+            constraints.append(PropertyIsLike(pt_tag, "%{}".format(collection)))
         elif matching == "exact":
-            constraints.append(PropertyIsEqualTo(pt_tag, product_type))
+            constraints.append(PropertyIsEqualTo(pt_tag, collection))
         else:  # unknown matching is considered to be equal to 'fuzzy'
-            constraints.append(PropertyIsLike(pt_tag, "%{}%".format(product_type)))
+            constraints.append(PropertyIsLike(pt_tag, "%{}%".format(collection)))
 
         # `footprint`
         fp = params.get("geometry")
