@@ -771,11 +771,11 @@ class QueryStringSearch(Search):
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
 
-        provider_product_type = self.map_product_type(collection)
+        provider_collection = self.map_product_type(collection)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["collection"] = (
-            provider_product_type
-            if (provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE)
+            provider_collection
+            if (provider_collection and provider_collection != GENERIC_PRODUCT_TYPE)
             else collection
         )
 
@@ -1476,7 +1476,7 @@ class PostJsonSearch(QueryStringSearch):
         _, sort_by_qp = (
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
-        provider_product_type = self.map_product_type(collection)
+        provider_collection = self.map_product_type(collection)
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
             qs = unquote_plus(unquote_plus(_dc_qs))
@@ -1491,8 +1491,8 @@ class PostJsonSearch(QueryStringSearch):
                 k: v for k, v in kwargs.items() if k != "auth" and v is not None
             }
 
-            if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
-                keywords["collection"] = provider_product_type
+            if provider_collection and provider_collection != GENERIC_PRODUCT_TYPE:
+                keywords["collection"] = provider_collection
             elif collection:
                 keywords["collection"] = collection
 
@@ -1843,22 +1843,19 @@ class StacSearch(PostJsonSearch):
             raise NotImplementedError()
 
         collection = kwargs.get("collection")
-        provider_product_type = (
+        provider_collection = (
             self.config.products.get(collection, {}).get("collection", collection)
             if collection
             else None
         )
         if (
-            provider_product_type
+            provider_collection
             and not self.config.discover_queryables["product_type_fetch_url"]
         ):
             raise NotImplementedError(
                 f"Cannot fetch queryables for a specific product type with {self.provider}"
             )
-        if (
-            not provider_product_type
-            and not self.config.discover_queryables["fetch_url"]
-        ):
+        if not provider_collection and not self.config.discover_queryables["fetch_url"]:
             raise ValidationError(
                 f"Cannot fetch global queryables for {self.provider}. A product type must be specified"
             )
@@ -1866,7 +1863,7 @@ class StacSearch(PostJsonSearch):
         try:
             unparsed_fetch_url = (
                 self.config.discover_queryables["product_type_fetch_url"]
-                if provider_product_type
+                if provider_collection
                 else self.config.discover_queryables["fetch_url"]
             )
             if unparsed_fetch_url is None:
@@ -1875,7 +1872,7 @@ class StacSearch(PostJsonSearch):
                 )
 
             fetch_url = unparsed_fetch_url.format(
-                provider_product_type=provider_product_type,
+                provider_collection=provider_collection,
                 **self.config.__dict__,
             )
             auth = (

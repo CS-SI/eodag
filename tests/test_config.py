@@ -52,7 +52,7 @@ class TestProviderConfig(unittest.TestCase):
             api: !plugin
                 type: MyPluginClass
             products:
-                EODAG_PRODUCT_TYPE: provider_product_type
+                EODAG_PRODUCT_TYPE: provider_collection
             """.format(
                 unslugified_provider_name
             )
