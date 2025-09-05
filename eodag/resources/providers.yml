@@ -887,6 +887,11 @@
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+    S1_SAR_L3_IW_MCM:
+      productType: S1SAR_L3_IW_MCM
+      collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        cloudCover: '$.null'
     # S2
     S2_MSI_L1C:
       collection: SENTINEL-2
@@ -2591,6 +2596,11 @@
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+    S1_SAR_L3_IW_MCM:
+      productType: S1SAR_L3_IW_MCM
+      collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        cloudCover: '$.null'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
@@ -3157,6 +3167,17 @@
           - '{{"tileId": "{tileIdentifier}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
+    EEA_HRL_TCF:
+      productType: EO:EEA:DAT:HRL:TCF
+      metadata_mapping:
+          startTimeFromAscendingNode:
+              - '{{"year": {startTimeFromAscendingNode#to_datetime_dict("string")}["year"]}}'
+              - $.properties.startdate
+          completionTimeFromAscendingNode: $.properties.enddate
+          resolution:
+              - '{{"resolution": "{resolution}"}}'
+              - '{$.id#replace_str(r"^.*_R([0-9]+m)_.*$",r"\1")}'
+          orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
     COP_DEM_GLO30_DGED:
       productType: EO:ESA:DAT:COP-DEM
       providerProductType: DGE_30
