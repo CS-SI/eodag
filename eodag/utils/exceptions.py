@@ -50,7 +50,7 @@ class UnsupportedProvider(EodagError):
 
 
 class UnsupportedCollection(EodagError):
-    """An error indicating that eodag does not support a product type"""
+    """An error indicating that eodag does not support a collection"""
 
     def __init__(self, collection: str) -> None:
         self.collection = collection
@@ -71,7 +71,7 @@ class NotAvailableError(EodagError):
 
 
 class NoMatchingCollection(EodagError):
-    """An error indicating that eodag was unable to derive a product type from a set
+    """An error indicating that eodag was unable to derive a collection from a set
     of search parameters"""
 
 

@@ -278,13 +278,13 @@ class PluginConfig(yaml.YAMLObject):
         raise_mtd_discovery_error: bool
 
     class DiscoverCollections(TypedDict, total=False):
-        """Configuration for product types discovery"""
+        """Configuration for collections discovery"""
 
-        #: URL from which the product types can be fetched
+        #: URL from which the collections can be fetched
         fetch_url: Optional[str]
-        #: HTTP method used to fetch product types
+        #: HTTP method used to fetch collections
         fetch_method: str
-        #: Request body to fetch product types using POST method
+        #: Request body to fetch collections using POST method
         fetch_body: dict[str, Any]
         #: Maximum number of connections for concurrent HTTP requests
         max_connections: int
@@ -294,31 +294,31 @@ class PluginConfig(yaml.YAMLObject):
         start_page: int
         #: Type of the provider result
         result_type: str
-        #: JsonPath to the list of product types
+        #: JsonPath to the list of collections
         results_entry: Union[JSONPath, str]
-        #: Mapping for the product type id
+        #: Mapping for the collection id
         generic_collection_id: str
-        #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: Mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
         #: result
         generic_collection_parsable_metadata: dict[str, str]
-        #: Mapping for product type properties which can be parsed from the result and are not product type metadata
+        #: Mapping for collection properties which can be parsed from the result and are not collection metadata
         generic_collection_parsable_properties: dict[str, str]
-        #: Mapping for product type properties which cannot be parsed from the result and are not product type metadata
+        #: Mapping for collection properties which cannot be parsed from the result and are not collection metadata
         generic_collection_unparsable_properties: dict[str, str]
         #: URL to fetch data for a single collection
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
-        #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
         #: is redefined in this mapping, it will replace ``generic_collection_id`` value
         single_collection_parsable_metadata: dict[str, str]
 
     class DiscoverQueryables(TypedDict, total=False):
         """Configuration for queryables discovery"""
 
-        #: URL to fetch the queryables valid for all product types
+        #: URL to fetch the queryables valid for all collections
         fetch_url: Optional[str]
-        #: URL to fetch the queryables for a specific product type
+        #: URL to fetch the queryables for a specific collection
         collection_fetch_url: Optional[str]
         #: Type of the result
         result_type: str
@@ -431,7 +431,7 @@ class PluginConfig(yaml.YAMLObject):
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
     priority: int
-    # per product type metadata-mapping, set in core._prepare_search
+    # per collection metadata-mapping, set in core._prepare_search
     collection_config: dict[str, Any]
 
     #: :class:`~eodag.plugins.search.base.Search` Plugin API endpoint
@@ -449,14 +449,14 @@ class PluginConfig(yaml.YAMLObject):
     sort: PluginConfig.Sort
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
-    #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the collections auto-discovery
     discover_collections: PluginConfig.DiscoverCollections
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: dict[str, Union[str, list[str]]]
     #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
-    #: product type
+    #: collection
     metadata_mapping_from_product: str
     #: :class:`~eodag.plugins.search.base.Search` A mapping for the metadata of individual assets
     assets_mapping: dict[str, dict[str, Any]]
@@ -516,7 +516,7 @@ class PluginConfig(yaml.YAMLObject):
     archive_depth: int
     #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
     ignore_assets: bool
-    #: :class:`~eodag.plugins.download.base.Download` Product type specific configuration
+    #: :class:`~eodag.plugins.download.base.Download` Collection specific configuration
     products: dict[str, dict[str, Any]]
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
@@ -1065,12 +1065,12 @@ def load_stac_provider_config() -> dict[str, Any]:
 def get_ext_collections_conf(
     conf_uri: str = EXT_PRODUCT_TYPES_CONF_URI,
 ) -> dict[str, Any]:
-    """Read external product types conf
+    """Read external collections conf
 
     :param conf_uri: URI to local or remote configuration file
-    :returns: The external product types configuration
+    :returns: The external collections configuration
     """
-    logger.info("Fetching external product types from %s", conf_uri)
+    logger.info("Fetching external collections from %s", conf_uri)
     if conf_uri.lower().startswith("http"):
         # read from remote
         try:
@@ -1082,7 +1082,7 @@ def get_ext_collections_conf(
         except requests.RequestException as e:
             logger.debug(e)
             logger.warning(
-                "Could not read remote external product types conf from %s", conf_uri
+                "Could not read remote external collections conf from %s", conf_uri
             )
             return {}
     elif conf_uri.lower().startswith("file"):
@@ -1095,6 +1095,6 @@ def get_ext_collections_conf(
     except (orjson.JSONDecodeError, FileNotFoundError) as e:
         logger.debug(e)
         logger.warning(
-            "Could not read local external product types conf from %s", conf_uri
+            "Could not read local external collections conf from %s", conf_uri
         )
         return {}

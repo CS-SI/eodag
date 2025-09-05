@@ -179,7 +179,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``split_cop_dem_id``: get the bbox by splitting the product id
-        - ``split_corine_id``: get the product type by splitting the product id
+        - ``split_corine_id``: get the collection by splitting the product id
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
@@ -1493,7 +1493,7 @@ def _get_queryables(
             # raise an error when a query param not allowed by the provider is found
             if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
                 raise ValidationError(
-                    "Search parameters which are not queryable are disallowed for this product type on this provider: "
+                    "Search parameters which are not queryable are disallowed for this collection on this provider: "
                     f"please remove '{eodag_search_key}' from your search parameters. {error_context}",
                     {eodag_search_key},
                 )

@@ -207,10 +207,10 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the
           path part of the url the bucket can be found; If no bucket_path_level is given, the bucket
           is taken from the first element of the netloc part.
-        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type
-          specific config; the keys are the product types, the values are dictionaries which can contain the keys:
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): collection
+          specific config; the keys are the collections, the values are dictionaries which can contain the keys:
 
-          * **default_bucket** (``str``): bucket where the product type can be found
+          * **default_bucket** (``str``): bucket where the collection can be found
           * **complementary_url_key** (``str``): properties keys pointing to additional urls of content to download
           * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
             be created; used for Sentinel products; default: False
@@ -233,7 +233,7 @@ class AwsDownload(Download):
         """Download method for AWS S3 API.
 
         The product can be downloaded as it is, or as SAFE-formatted product.
-        SAFE-build is configured for a given provider and product type.
+        SAFE-build is configured for a given provider and collection.
         If the product title is configured to be updated during download and
         SAFE-formatted, its destination path will be:
         `{output_dir}/{title}`
@@ -659,7 +659,7 @@ class AwsDownload(Download):
 
         #### SAFE Archive Support:
 
-        If the product type supports SAFE structure and no `asset_regex` is specified (i.e., full product download),
+        If the collection supports SAFE structure and no `asset_regex` is specified (i.e., full product download),
         the method attempts to reconstruct a valid SAFE archive layout in the streamed output.
 
         :param product: The EO product to download.

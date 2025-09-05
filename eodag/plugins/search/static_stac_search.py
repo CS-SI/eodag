@@ -85,7 +85,7 @@ class StaticStacSearch(StacSearch):
             "total_items_nb_key_path", "$.null"
         )
         self.config.__dict__["pagination"].setdefault("max_items_per_page", -1)
-        # disable product types discovery by default (if endpoints equals to STAC API default)
+        # disable collections discovery by default (if endpoints equals to STAC API default)
         if (
             getattr(self.config, "discover_collections", {}).get("fetch_url")
             == "{api_endpoint}/../collections"
@@ -93,9 +93,9 @@ class StaticStacSearch(StacSearch):
             self.config.discover_collections = {}
 
     def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
-        """Fetch product types list from a static STAC Catalog provider using `discover_collections` conf
+        """Fetch collections list from a static STAC Catalog provider using `discover_collections` conf
 
-        :returns: configuration dict containing fetched product types information
+        :returns: configuration dict containing fetched collections information
         """
         unformatted_fetch_url = self.config.discover_collections.get("fetch_url")
         if unformatted_fetch_url is None:
@@ -170,7 +170,7 @@ class StaticStacSearch(StacSearch):
             return ([], 0) if prep.count else ([], None)
 
         collection = kwargs.get("collection", prep.collection)
-        # provider product type specific conf
+        # provider collection specific conf
         self.collection_def_params = (
             self.get_collection_def_params(collection, format_variables=kwargs)
             if collection is not None

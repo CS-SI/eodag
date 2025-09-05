@@ -28,10 +28,10 @@ Options:
   --help         Show this message and exit.
 
 Commands:
-  discover         Fetch providers to discover product types
+  discover         Fetch providers to discover collections
   download         Download a list of products from a serialized search...
-  list             List supported product types
-  search           Search satellite images by their product types,...
+  list             List supported collections
+  search           Search satellite images by their collections,...
   version          Print eodag version and exit
 
   noqa: D103
@@ -142,7 +142,7 @@ def version() -> None:
 
 @eodag.command(
     name="search",
-    help="Search satellite images by their product types, instrument, platform, "
+    help="Search satellite images by their collections, instrument, platform, "
     "platform identifier, processing level or sensor type. It is mandatory to provide "
     "at least one of the previous criteria for eodag to perform a search. "
     "Optionally crunch the search results before storing them in a geojson file",
@@ -194,7 +194,7 @@ def version() -> None:
     type=click.IntRange(0, 100),
     help="Maximum cloud cover percentage needed for the product",
 )
-@click.option("-p", "--collection", help="The product type to search")
+@click.option("-p", "--collection", help="The collection to search")
 @click.option("-i", "--instrument", help="Search for products matching this instrument")
 @click.option("-P", "--platform", help="Search for products matching this platform")
 @click.option(
@@ -277,7 +277,7 @@ def version() -> None:
 )
 @click.pass_context
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
-    """Search product types and optionnaly apply crunchers to search results"""
+    """Search collections and optionnaly apply crunchers to search results"""
     # Process inputs for search
     collection = kwargs.pop("collection")
     instrument = kwargs.pop("instrument")
@@ -409,29 +409,29 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     ctx.obj["search_results"] = results
 
 
-@eodag.command(name="list", help="List supported product types")
-@click.option("-p", "--provider", help="List product types supported by this provider")
+@eodag.command(name="list", help="List supported collections")
+@click.option("-p", "--provider", help="List collections supported by this provider")
 @click.option(
-    "-i", "--instrument", help="List product types originating from this instrument"
+    "-i", "--instrument", help="List collections originating from this instrument"
 )
 @click.option(
-    "-P", "--platform", help="List product types originating from this platform"
+    "-P", "--platform", help="List collections originating from this platform"
 )
 @click.option(
     "-t",
     "--platformSerialIdentifier",
-    help="List product types originating from the satellite identified by this keyword",
+    help="List collections originating from the satellite identified by this keyword",
 )
-@click.option("-L", "--processingLevel", help="List product types of processing level")
+@click.option("-L", "--processingLevel", help="List collections of processing level")
 @click.option(
-    "-S", "--sensorType", help="List product types originating from this type of sensor"
+    "-S", "--sensorType", help="List collections originating from this type of sensor"
 )
 @click.option(
-    "--no-fetch", is_flag=True, help="Do not fetch providers for new product types"
+    "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
 )
 @click.pass_context
 def list_pt(ctx: Context, **kwargs: Any) -> None:
-    """Print the list of supported product types"""
+    """Print the list of supported collections"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
@@ -456,7 +456,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
                 "sensortype",
             ]
         ):
-            click.echo("No product type match the following criteria you provided:")
+            click.echo("No collection match the following criteria you provided:")
             click.echo(
                 "\n".join(
                     "-{param}={value}".format(**locals())
@@ -478,7 +478,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
-        click.echo("Listing available product types:")
+        click.echo("Listing available collections:")
         for collection in collections:
             click.echo("\n* {}: ".format(collection["ID"]))
             for prop, value in collection.items():
@@ -497,19 +497,19 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
         sys.exit(1)
 
 
-@eodag.command(name="discover", help="Fetch providers to discover product types")
+@eodag.command(name="discover", help="Fetch providers to discover collections")
 @click.option("-p", "--provider", help="Fetch only the given provider")
 @click.option(
     "--storage",
     type=click.Path(dir_okay=False, writable=True, readable=False),
     default="ext_collections.json",
-    help="Path to the file where to store external product types configuration "
+    help="Path to the file where to store external collections configuration "
     "(.json extension will be automatically appended to the filename). "
     "DEFAULT: ext_collections.json",
 )
 @click.pass_context
 def discover_pt(ctx: Context, **kwargs: Any) -> None:
-    """Fetch external product types configuration and save result"""
+    """Fetch external collections configuration and save result"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")

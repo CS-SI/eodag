@@ -139,9 +139,9 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
-        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type specific config; the
-          keys are the product types, the values are dictionaries which can contain the key
-          :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific product type
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): collection specific config; the
+          keys are the collections, the values are dictionaries which can contain the key
+          :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific collection
 
     """
 

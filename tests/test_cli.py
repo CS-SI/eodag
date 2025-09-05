@@ -631,7 +631,7 @@ class TestEodagCli(unittest.TestCase):
             )
 
     def test_eodag_list_collection_ok(self):
-        """Calling eodag list without provider should return all supported product types"""
+        """Calling eodag list without provider should return all supported collections"""
         all_supported_collections = [
             pt
             for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
@@ -643,7 +643,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertIn(pt, result.output)
 
     def test_eodag_list_collection_with_provider_ok(self):
-        """Calling eodag list with provider should return all supported product types of specified provider"""  # noqa
+        """Calling eodag list with provider should return all supported collections of specified provider"""  # noqa
         for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
             provider_supported_collections = [
                 pt
@@ -657,7 +657,7 @@ class TestEodagCli(unittest.TestCase):
                 self.assertIn(
                     pt,
                     result.output,
-                    f"{pt} was not found in {provider} supported product types",
+                    f"{pt} was not found in {provider} supported collections",
                 )
 
     def test_eodag_list_collection_with_provider_ko(self):
@@ -673,7 +673,7 @@ class TestEodagCli(unittest.TestCase):
 
     @mock.patch("eodag.cli.EODataAccessGateway.fetch_collections_list", autospec=True)
     def test_eodag_list_collection_fetch(self, mock_fetch_collections_list):
-        """Calling eodag list should fetch for new product types depending on passed option"""
+        """Calling eodag list should fetch for new collections depending on passed option"""
         result = self.runner.invoke(eodag, ["list", "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
         assert not mock_fetch_collections_list.called
@@ -692,8 +692,8 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_guess_collection_ok(
         self, mock_guess_collection, mock_list_collections
     ):
-        """Calling eodag list with one or several valid product type feature(s) should return
-        all supported product types with this (these) feature(s) among the ones of its provider
+        """Calling eodag list with one or several valid collection feature(s) should return
+        all supported collections with this (these) feature(s) among the ones of its provider
         and with or without fetching provider according to the command.
         """
         provider = "peps"
@@ -724,7 +724,7 @@ class TestEodagCli(unittest.TestCase):
         side_effect=NoMatchingCollection(),
     )
     def test_eodag_guess_collection_ko(self, mock_guess_collection):
-        """Calling eodag list with invalid product type feature(s) should print a
+        """Calling eodag list with invalid collection feature(s) should print a
         'no matching' type message and return error code.
         """
         result = self.runner.invoke(
@@ -732,7 +732,7 @@ class TestEodagCli(unittest.TestCase):
             ["list", "--platformSerialIdentifier", "fake_identifier", "--no-fetch"],
         )
         self.assertIn(
-            "No product type match the following criteria you provided:\n",
+            "No collection match the following criteria you provided:\n",
             result.output,
         )
         self.assertNotEqual(result.exit_code, 0)
@@ -743,7 +743,7 @@ class TestEodagCli(unittest.TestCase):
         return_value={},
     )
     def test_eodag_discover_collections(self, mock_discover_collections):
-        """Calling eodag discover should fetch providers for new product types"""
+        """Calling eodag discover should fetch providers for new collections"""
         origin_dir = os.getcwd()
         try:
             os.chdir(self.tmp_home_dir.name)

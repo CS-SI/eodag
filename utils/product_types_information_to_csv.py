@@ -34,9 +34,9 @@ DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH = os.path.join(
 def collections_info_to_csv(
     collections_csv_file_path: str = DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH,
 ) -> None:
-    """Get product types metadata and their availability for providers, and writes it to a csv file
+    """Get collections metadata and their availability for providers, and writes it to a csv file
 
-    :param collections_csv_file_path: (optional) Path to product types information csv output file
+    :param collections_csv_file_path: (optional) Path to collections information csv output file
     """
     config = {}
     for provider_config in load_default_config().values():
@@ -65,17 +65,17 @@ def collections_info_to_csv(
     metadata_params = list(k for k in collections[0].keys() if k != "ID")
 
     # csv fieldnames
-    fieldnames = ["product type"] + metadata_params + providers
+    fieldnames = ["collection"] + metadata_params + providers
 
     # write to csv
     with open(collections_csv_file_path, "w") as collections_csvfile:
         collections_writer = csv.DictWriter(collections_csvfile, fieldnames=fieldnames)
         collections_writer.writeheader()
 
-        # create product types table rows
+        # create collections table rows
         collections_rows: dict[str, Any] = {}
         for collection_name in collections_names:
-            collections_rows[collection_name] = {"product type": collection_name}
+            collections_rows[collection_name] = {"collection": collection_name}
             for metadata_param in metadata_params:
                 metadata_string = [
                     collection[metadata_param]
@@ -89,7 +89,7 @@ def collections_info_to_csv(
                 if collection_name in config[provider]:
                     collections_rows[collection_name][provider] = "available"
 
-            # write product types information
+            # write collections information
             collections_writer.writerow(
                 {k: v for k, v in collections_rows[collection_name].items()}
             )

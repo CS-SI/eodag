@@ -62,7 +62,7 @@ class CSWSearch(Search):
         * :attr:`~eodag.config.PluginConfig.version` (``str``): OGC Catalogue Service version; default: ``2.0.2``
         * :attr:`~eodag.config.PluginConfig.search_definition` (``dict[str, Any]``) (**mandatory**):
 
-          * **collection_tags** (``list[dict[str, Any]``): dict of product type tags
+          * **collection_tags** (``list[dict[str, Any]``): dict of collection tags
           * **resource_location_filter** (``str``): regex string
           * **date_tags** (``dict[str, Any]``): tags for start and end
 
@@ -123,7 +123,7 @@ class CSWSearch(Search):
             for collection_def in self.config.search_definition["collection_tags"]:
                 collection_search_tag = collection_def["name"]
                 logger.debug(
-                    "Querying <%s> tag for product type %s",
+                    "Querying <%s> tag for collection %s",
                     collection_search_tag,
                     provider_collection,
                 )
@@ -139,7 +139,7 @@ class CSWSearch(Search):
                         import traceback as tb
 
                         logger.warning(
-                            "Failed to query %s for product type %s : %s",
+                            "Failed to query %s for collection %s : %s",
                             collection_search_tag,
                             collection,
                             tb.format_exc(),
