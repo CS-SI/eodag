@@ -69,7 +69,7 @@ class StaticStacSearch(StacSearch):
         # prevent search parameters from being queried when they are known in the configuration or not
         for param, mapping in config.metadata_mapping.items():
             # only keep one queryable to allow the mock search request
-            if param != "productType":
+            if param != "collection":
                 config.metadata_mapping[param] = get_metadata_path_value(mapping)
         config.discover_metadata["auto_discovery"] = False
         # there is no endpoint for fetching queryables with a static search
@@ -131,13 +131,13 @@ class StaticStacSearch(StacSearch):
         """Set static available queryables for :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
         search plugin
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: queryable parameters dict
         """
         return {
-            "productType": Queryables.get_with_default(
-                "productType", kwargs.get("productType")
+            "collection": Queryables.get_with_default(
+                "collection", kwargs.get("collection")
             ),
             "id": Queryables.get_with_default("id", kwargs.get("id")),
             "start": Queryables.get_with_default(
@@ -169,15 +169,15 @@ class StaticStacSearch(StacSearch):
         ):
             return ([], 0) if prep.count else ([], None)
 
-        product_type = kwargs.get("productType", prep.product_type)
+        collection = kwargs.get("collection", prep.collection)
         # provider product type specific conf
         self.collection_def_params = (
-            self.get_collection_def_params(product_type, format_variables=kwargs)
-            if product_type is not None
+            self.get_collection_def_params(collection, format_variables=kwargs)
+            if collection is not None
             else {}
         )
 
-        for collection in self.get_collections(prep, **kwargs):
+        for collection in self.get_provider_collections(prep, **kwargs):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
                 continue
@@ -233,7 +233,7 @@ class StaticStacSearch(StacSearch):
         skip_eodag_internal_parameters = [
             "auth",
             "raise_errors",
-            "productType",
+            "collection",
             "locations",
             "start",
             "end",

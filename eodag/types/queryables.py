@@ -36,14 +36,14 @@ Percentage = Annotated[PositiveInt, Lt(100)]
 class CommonQueryables(BaseModel):
     """A class representing search common queryable properties."""
 
-    productType: Annotated[str, Field()]
+    collection: Annotated[str, Field()]
 
     @classmethod
     def get_queryable_from_alias(cls, value: str) -> str:
         """Get queryable parameter from alias
 
-        >>> CommonQueryables.get_queryable_from_alias('productType')
-        'productType'
+        >>> CommonQueryables.get_queryable_from_alias('collection')
+        'collection'
         """
         alias_map = {
             field_info.alias: name
