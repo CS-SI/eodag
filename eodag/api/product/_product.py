@@ -621,11 +621,11 @@ class EOProduct:
                          "provider": self.provider,
                          "product_type": self.product_type,
                          "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
-                             'startTimeFromAscendingNode'
+                         "properties[&quot;start_datetime&quot;]": self.properties.get(
+                             'start_datetime'
                          ),
-                         "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
-                             'completionTimeFromAscendingNode'
+                         "properties[&quot;end_datetime&quot;]": self.properties.get(
+                             'end_datetime'
                          ),
                          }, brackets=False)}
                         <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(

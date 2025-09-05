@@ -200,9 +200,9 @@ COP_DS_KEYWORDS = {
 
 ALLOWED_KEYWORDS = ECMWF_KEYWORDS | COP_DS_KEYWORDS
 
-END = "completionTimeFromAscendingNode"
+END = "end_datetime"
 
-START = "startTimeFromAscendingNode"
+START = "start_datetime"
 
 
 def ecmwf_mtd() -> dict[str, Any]:
@@ -543,8 +543,8 @@ class ECMWFSearch(PostJsonSearch):
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
-        to ensure that required parameters like 'collection', 'startTimeFromAscendingNode',
-        'completionTimeFromAscendingNode', and 'geometry' are properly set. If not specified
+        to ensure that required parameters like 'collection', 'start_datetime',
+        'end_datetime', and 'geometry' are properly set. If not specified
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
@@ -1162,8 +1162,8 @@ class ECMWFSearch(PostJsonSearch):
             properties["geometry"] = properties.get("area") or DEFAULT_GEOMETRY
 
             start, end = ecmwf_temporal_to_eodag(properties)
-            properties["startTimeFromAscendingNode"] = start
-            properties["completionTimeFromAscendingNode"] = end
+            properties["start_datetime"] = start
+            properties["end_datetime"] = end
 
         else:
             # use all available query_params to parse properties

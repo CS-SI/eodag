@@ -83,8 +83,8 @@ class BaseSearchPluginTest(unittest.TestCase):
         geometry = get_geometry_from_various([], geometry=geom)
         self.search_criteria_s2_msi_l1c = {
             "collection": self.collection,
-            "startTimeFromAscendingNode": "2020-08-08",
-            "completionTimeFromAscendingNode": "2020-08-16",
+            "start_datetime": "2020-08-08",
+            "end_datetime": "2020-08-16",
             "geometry": geometry,
         }
         self.provider_resp_dir = Path(TEST_RESOURCES_PATH) / "provider_responses"
@@ -1201,7 +1201,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         search_plugin.query(
             prep=PreparedSearch(),
             collection="ERA5_SL",
-            startTimeFromAscendingNode="2021-02-01T03:00:00Z",
+            start_datetime="2021-02-01T03:00:00Z",
         )
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
@@ -1331,8 +1331,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # Test #1: using the datetime
         search_criteria = {
             "collection": product_type,
-            "startTimeFromAscendingNode": "1980-01-01",
-            "completionTimeFromAscendingNode": "1981-12-31",
+            "start_datetime": "1980-01-01",
+            "end_datetime": "1981-12-31",
             "ecmwf:variable": "glacier_mass_change",
             "ecmwf:data_format": "zip",
             "ecmwf:product_version": "wgms_fog_2022_09",
@@ -1925,21 +1925,21 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, "earth_search")
 
         search_plugin.query(
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         self.assertEqual(
             mock_requests_post.call_args.kwargs["json"]["datetime"],
             "2020-01-01T00:00:00.000Z/2020-01-02T00:00:00.000Z",
         )
 
-        search_plugin.query(startTimeFromAscendingNode="2020-01-01")
+        search_plugin.query(start_datetime="2020-01-01")
         self.assertEqual(
             mock_requests_post.call_args.kwargs["json"]["datetime"],
             "2020-01-01T00:00:00.000Z/..",
         )
 
-        search_plugin.query(completionTimeFromAscendingNode="2020-01-02")
+        search_plugin.query(end_datetime="2020-01-02")
         self.assertEqual(
             mock_requests_post.call_args.kwargs["json"]["datetime"],
             "../2020-01-02T00:00:00.000Z",
@@ -2436,8 +2436,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.provider = "cop_ads"
         self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
-            "startTimeFromAscendingNode": "2020-01-01",
-            "completionTimeFromAscendingNode": "2020-01-02",
+            "start_datetime": "2020-01-01",
+            "end_datetime": "2020-01-02",
         }
         self.collection = "CAMS_EAC4"
         self.product_dataset = "cams-global-reanalysis-eac4"
@@ -2466,62 +2466,62 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # start & stop as dates -> keep end date as it is
         results, _ = self.search_plugin.query(
             collection=self.collection,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-02T00:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
         # start & stop as datetimes, not midnight -> keep and dates as it is
         results, _ = self.search_plugin.query(
             collection=self.collection,
-            startTimeFromAscendingNode="2020-01-01T02:00:00Z",
-            completionTimeFromAscendingNode="2020-01-02T03:00:00Z",
+            start_datetime="2020-01-01T02:00:00Z",
+            end_datetime="2020-01-02T03:00:00Z",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T02:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-02T03:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
         # start & stop as datetimes, midnight -> exclude end date
         results, _ = self.search_plugin.query(
             collection=self.collection,
-            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
-            completionTimeFromAscendingNode="2020-01-02T00:00:00Z",
+            start_datetime="2020-01-01T00:00:00Z",
+            end_datetime="2020-01-02T00:00:00Z",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
         # start & stop same date -> keep end date
         results, _ = self.search_plugin.query(
             collection=self.collection,
-            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
-            completionTimeFromAscendingNode="2020-01-01T00:00:00Z",
+            start_datetime="2020-01-01T00:00:00Z",
+            end_datetime="2020-01-01T00:00:00Z",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
 
     def test_plugins_search_ecmwfsearch_dates_missing(self):
@@ -2529,16 +2529,16 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # given start & stop
         results, _ = self.search_plugin.query(
             collection=self.collection,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "2020-01-01T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2020-01-02T00:00:00.000Z",
         )
 
@@ -2548,14 +2548,14 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         eoproduct = results[0]
         self.assertIn(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             DEFAULT_MISSION_START_DATE,
         )
         exp_end_date = datetime.strptime(
             DEFAULT_MISSION_START_DATE, "%Y-%m-%dT%H:%M:%S.%fZ"
         )
         self.assertIn(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             exp_end_date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-4] + "Z",
         )
 
@@ -2571,11 +2571,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual("THE.ALIAS", eoproduct.properties["alias"])
@@ -2596,11 +2596,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         eoproduct = results[0]
 
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "2020-02-20T01:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2020-02-21T01:00:00.000Z",
         )
         self.assertEqual(
@@ -2625,21 +2625,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             PreparedSearch(count=True),
             **{
                 "ecmwf:dataset": self.product_dataset,
-                "startTimeFromAscendingNode": "2020-01-01",
-                "completionTimeFromAscendingNode": "2020-01-02",
+                "start_datetime": "2020-01-01",
+                "end_datetime": "2020-01-02",
             },
         )
         assert count == 1
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
-        assert (
-            eoproduct.properties["startTimeFromAscendingNode"]
-            == "2020-01-01T00:00:00.000Z"
-        )
-        assert (
-            eoproduct.properties["completionTimeFromAscendingNode"]
-            == "2020-01-02T00:00:00.000Z"
-        )
+        assert eoproduct.properties["start_datetime"] == "2020-01-01T00:00:00.000Z"
+        assert eoproduct.properties["end_datetime"] == "2020-01-02T00:00:00.000Z"
         assert eoproduct.properties["title"] == eoproduct.properties["id"]
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
@@ -3289,8 +3283,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             stubber.activate()
             result, num_total = search_plugin.query(
                 collection="PRODUCT_A",
-                startTimeFromAscendingNode="2020-01-01T01:00:00Z",
-                completionTimeFromAscendingNode="2020-02-01T01:00:00Z",
+                start_datetime="2020-01-01T01:00:00Z",
+                end_datetime="2020-02-01T01:00:00Z",
             )
             mock_requests_get.assert_has_calls(
                 calls=[
@@ -3323,11 +3317,11 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(1, len(products_dataset2))
             self.assertEqual(
                 "2020-01-02T00:00:00Z",
-                products_dataset2[0].properties["startTimeFromAscendingNode"],
+                products_dataset2[0].properties["start_datetime"],
             )
             self.assertEqual(
                 "2020-01-03T00:00:00Z",
-                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+                products_dataset2[0].properties["end_datetime"],
             )
             self.assertEqual("P1", products_dataset2[0].properties["platform"])
 
@@ -3372,8 +3366,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             stubber.activate()
             result, num_total = search_plugin.query(
                 collection="PRODUCT_A",
-                startTimeFromAscendingNode="1969-01-01T01:00:00Z",
-                completionTimeFromAscendingNode="1970-02-01T01:00:00Z",
+                start_datetime="1969-01-01T01:00:00Z",
+                end_datetime="1970-02-01T01:00:00Z",
             )
             mock_requests_get.assert_has_calls(
                 calls=[
@@ -3400,11 +3394,11 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(2, len(products_dataset2))
             self.assertEqual(
                 "1970-01-01T00:00:00.000000Z",
-                products_dataset2[0].properties["startTimeFromAscendingNode"],
+                products_dataset2[0].properties["start_datetime"],
             )
             self.assertEqual(
                 "1970-01-01T00:00:00.000000Z",
-                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+                products_dataset2[0].properties["end_datetime"],
             )
             self.assertEqual(
                 "15325642",

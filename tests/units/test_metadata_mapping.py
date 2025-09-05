@@ -897,8 +897,8 @@ class TestMetadataMappingFunctions(unittest.TestCase):
     def test_get_provider_queryable_key(self):
         metadata_mapping = {
             "id": "id",
-            "startTimeFromAscendingNode": [
-                "datetime: {startTimeFromAscendingNode}",
+            "start_datetime": [
+                "datetime: {start_datetime}",
                 "$.datetime",
             ],
             "api_product_type": ["collection", "$.properties.collection"],
@@ -914,7 +914,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
             "variable_type": {"type": "str"},
         }
         provider_key = get_provider_queryable_key(
-            "startTimeFromAscendingNode", provider_queryables, metadata_mapping
+            "start_datetime", provider_queryables, metadata_mapping
         )
         self.assertEqual("datetime", provider_key)
         provider_key = get_provider_queryable_key(

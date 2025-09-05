@@ -75,7 +75,7 @@ class Queryables(CommonQueryables):
         str,
         Field(
             None,
-            alias="startTimeFromAscendingNode",
+            alias="start_datetime",
             description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
         ),
     ]
@@ -83,7 +83,7 @@ class Queryables(CommonQueryables):
         str,
         Field(
             None,
-            alias="completionTimeFromAscendingNode",
+            alias="end_datetime",
             description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
         ),
     ]

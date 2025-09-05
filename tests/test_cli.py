@@ -200,8 +200,8 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 page=1,
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 cloudCover=None,
                 geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
                 instrument=None,
@@ -247,8 +247,8 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 page=1,
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 cloudCover=None,
                 geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
                 instrument=None,
@@ -317,8 +317,8 @@ class TestEodagCli(unittest.TestCase):
             product_type = "whatever"
             cruncher = "FilterLatestIntersect"
             criteria = dict(
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 geometry=None,
                 cloudCover=None,
                 instrument=None,
@@ -387,8 +387,8 @@ class TestEodagCli(unittest.TestCase):
 
             product_type = "whatever"
             criteria = dict(
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 geometry=None,
                 cloudCover=None,
                 instrument=None,
@@ -436,8 +436,8 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search_all.assert_called_once_with(
                 items_per_page=None,
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 cloudCover=None,
                 geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
                 instrument=None,
@@ -472,8 +472,8 @@ class TestEodagCli(unittest.TestCase):
                 page=1,
                 items_per_page=20,
                 geometry=None,
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 cloudCover=None,
                 collection=product_type,
                 instrument=None,
@@ -510,8 +510,8 @@ class TestEodagCli(unittest.TestCase):
                 page=1,
                 items_per_page=20,
                 geometry=None,
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=None,
+                start_datetime=None,
+                end_datetime=None,
                 cloudCover=None,
                 collection=product_type,
                 instrument=None,
@@ -550,8 +550,8 @@ class TestEodagCli(unittest.TestCase):
                 page=1,
                 items_per_page=20,
                 geometry=None,
-                startTimeFromAscendingNode=start_date_datetime,
-                completionTimeFromAscendingNode=None,
+                start_datetime=start_date_datetime,
+                end_datetime=None,
                 cloudCover=None,
                 collection=product_type,
                 instrument=None,
@@ -591,8 +591,8 @@ class TestEodagCli(unittest.TestCase):
                 page=1,
                 items_per_page=20,
                 geometry=None,
-                startTimeFromAscendingNode=None,
-                completionTimeFromAscendingNode=stop_date_datetime,
+                start_datetime=None,
+                end_datetime=stop_date_datetime,
                 cloudCover=None,
                 collection=product_type,
                 instrument=None,

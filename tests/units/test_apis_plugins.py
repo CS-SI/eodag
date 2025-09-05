@@ -89,8 +89,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self.provider = "ecmwf"
         self.api_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
-            "startTimeFromAscendingNode": "2022-01-01T00:00:00.000Z",
-            "completionTimeFromAscendingNode": "2022-01-02T00:00:00.000Z",
+            "start_datetime": "2022-01-01T00:00:00.000Z",
+            "end_datetime": "2022-01-02T00:00:00.000Z",
         }
         self.product_type = "TIGGE_CF_SFC"
         self.product_type_params = {
@@ -115,16 +115,16 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         # given start & stop
         results, _ = self.api_plugin.query(
             collection=self.product_type,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "2020-01-01T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2020-01-02T00:00:00.000Z",
         )
 
@@ -134,13 +134,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         self.assertIn(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             DEFAULT_MISSION_START_DATE,
         )
         # less than 10 seconds should have passed since the product was created
         self.assertLess(
-            datetime.now(timezone.utc)
-            - isoparse(eoproduct.properties["completionTimeFromAscendingNode"]),
+            datetime.now(timezone.utc) - isoparse(eoproduct.properties["end_datetime"]),
             timedelta(seconds=10),
             "stop date should have been created from datetime.now",
         )
@@ -156,11 +155,11 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2015-10-21T00:00:00.000Z",
         )
 
@@ -174,13 +173,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert (
-            eoproduct.properties["startTimeFromAscendingNode"]
-            == self.query_dates["startTimeFromAscendingNode"]
+            eoproduct.properties["start_datetime"] == self.query_dates["start_datetime"]
         )
-        assert (
-            eoproduct.properties["completionTimeFromAscendingNode"]
-            == self.query_dates["completionTimeFromAscendingNode"]
-        )
+        assert eoproduct.properties["end_datetime"] == self.query_dates["end_datetime"]
         assert eoproduct.properties["title"] == eoproduct.properties["id"]
         assert eoproduct.properties["title"].startswith("MARS___")
         assert eoproduct.location.startswith("http")
@@ -541,8 +536,8 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
         search_kwargs = {
             "collection": "LANDSAT_C2L1",
-            "startTimeFromAscendingNode": "2020-02-01",
-            "completionTimeFromAscendingNode": "2020-02-10",
+            "start_datetime": "2020-02-01",
+            "end_datetime": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
             "prep": PreparedSearch(
                 items_per_page=5,
