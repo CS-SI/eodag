@@ -240,7 +240,7 @@ class EndToEndBase(unittest.TestCase):
         - Return one product to be downloaded
         """
         search_criteria = {
-            "productType": product_type,
+            "collection": product_type,
             "start": start,
             "end": end,
             "geom": geom,
@@ -290,7 +290,7 @@ class EndToEndBase(unittest.TestCase):
         }
         self.eodag.set_preferred_provider(provider)
         results = self.eodag.search_all(
-            productType=product_type, items_per_page=items_per_page, **search_criteria
+            collection=product_type, items_per_page=items_per_page, **search_criteria
         )
         if check_products:
             self.assertGreater(len(results), 0)
@@ -564,7 +564,7 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "creodias"
 
         products = self.eodag._search_by_id(
-            uid=uid, provider=provider, productType="S2_MSI_L1C"
+            uid=uid, provider=provider, collection="S2_MSI_L1C"
         )
         product = products[0]
 
@@ -584,7 +584,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
         for provider, product_type in supported_providers_product_types:
             products = self.eodag.search(
-                productType=product_type,
+                collection=product_type,
                 start="2021-06-01",
                 end="2021-06-30",
                 tileIdentifier=tile_id,
@@ -632,7 +632,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(
             "landsat-c2l1",
             ext_product_types_conf[provider]["providers_config"]["landsat-c2l1"][
-                "productType"
+                "collection"
             ],
         )
         self.assertEqual(
@@ -649,7 +649,7 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         # check that all pre-configured product types are listed by provider
         provider_collections = [
-            v["productType"]
+            v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]
@@ -666,7 +666,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(
             "sentinel-2-l1c",
             ext_product_types_conf[provider]["providers_config"]["sentinel-2-l1c"][
-                "productType"
+                "collection"
             ],
         )
         self.assertEqual(
@@ -683,7 +683,7 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         # check that all pre-configured product types are listed by provider
         provider_collections = [
-            v["productType"]
+            v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]
@@ -775,7 +775,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
         search_results = self.eodag.search(
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
@@ -958,7 +958,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
                 ),
             )
 
@@ -986,7 +986,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             results = eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
                 ),
             )
             self.assertGreater(len(results), 0)
@@ -1018,7 +1018,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         USGS_RECENT_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1032,7 +1032,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         METEOBLUE_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1046,7 +1046,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         HYDROWBEB_NEXT_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1060,7 +1060,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         WEKEO_MAIN_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1074,7 +1074,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         WEKEO_ECMWF_SEARCH_ARGS[1:],
                     )
                 ),

@@ -114,7 +114,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
         results, _ = self.api_plugin.query(
-            productType=self.product_type,
+            collection=self.product_type,
             startTimeFromAscendingNode="2020-01-01",
             completionTimeFromAscendingNode="2020-01-02",
         )
@@ -130,7 +130,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
         # missing start & stop
         results, _ = self.api_plugin.query(
-            productType=self.product_type,
+            collection=self.product_type,
         )
         eoproduct = results[0]
         self.assertIn(
@@ -147,12 +147,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
         self.api_plugin.config.product_type_config = {
-            "productType": self.product_type,
+            "collection": self.product_type,
             "missionStartDate": "1985-10-26",
             "missionEndDate": "2015-10-21",
         }
         results, _ = self.api_plugin.query(
-            productType=self.product_type,
+            collection=self.product_type,
         )
         eoproduct = results[0]
         self.assertEqual(
@@ -188,7 +188,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_with_producttype(self):
         """EcmwfApi.query must build a EOProduct from input parameters with predefined product type"""
         results, _ = self.api_plugin.query(
-            **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
+            **self.query_dates, collection=self.product_type, geometry=[1, 2, 3, 4]
         )
         eoproduct = results[0]
         assert eoproduct.properties["title"].startswith(self.product_type)
@@ -196,7 +196,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         # check if product_type_params is a subset of eoproduct.properties
         assert self.product_type_params.items() <= eoproduct.properties.items()
         params = deepcopy(self.query_dates)
-        params["productType"] = self.product_type
+        params["collection"] = self.product_type
         params["ecmwf:param"] = "tcc"
 
         # product type default settings can be overwritten using search kwargs
@@ -540,7 +540,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         """UsgsApi.query must search using usgs api"""
 
         search_kwargs = {
-            "productType": "LANDSAT_C2L1",
+            "collection": "LANDSAT_C2L1",
             "startTimeFromAscendingNode": "2020-02-01",
             "completionTimeFromAscendingNode": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
@@ -617,7 +617,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         """UsgsApi.query by id must search using usgs api"""
 
         search_kwargs = {
-            "productType": "LANDSAT_C2L1",
+            "collection": "LANDSAT_C2L1",
             "id": "SOME_PRODUCT_ID",
             "prep": PreparedSearch(
                 items_per_page=500,
@@ -660,7 +660,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                     id="dummy",
                     entityId="dummyEntityId",
                     productId="dummyProductId",
-                    productType="L8_OLI_TIRS_C1L1",
+                    collection="L8_OLI_TIRS_C1L1",
                 ),
             )
             product.location = product.remote_location = product.properties[

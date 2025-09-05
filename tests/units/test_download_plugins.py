@@ -270,12 +270,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def _dummy_product(
-        self, provider: str, properties: dict[str, Any], productType: str
+        self, provider: str, properties: dict[str, Any], collection: str
     ):
         return EOProduct(
             provider,
             properties,
-            kwargs={"productType": productType},
+            kwargs={"collection": collection},
         )
 
     def _dummy_downloadable_product(
@@ -284,7 +284,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         local_product_as_archive_path: str,
         provider: str,
         properties: dict[str, Any],
-        productType: str,
+        collection: str,
     ):
         self._set_download_simulation(
             mock_requests_session, local_product_as_archive_path
@@ -299,7 +299,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         downloader = HTTPDownload(provider=provider, config=dl_config)
-        product = self._dummy_product(provider, properties, productType)
+        product = self._dummy_product(provider, properties, collection)
         product.register_downloader(downloader, None)
         return product
 
@@ -338,7 +338,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     ]
                 ],
             },
-            "productType": product_type,
+            "collection": product_type,
             "platform": "Sentinel-2",
             "platformSerialIdentifier": platform,
             "instrument": instrument,
@@ -1848,7 +1848,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                 title="dummy_product",
                 id="dummy",
             ),
-            productType="S2_MSI_L2A",
+            collection="S2_MSI_L2A",
         )
         self.product.properties["downloadLink"] = "s3://sentinel-s2-l2a/123"
         self.product.location = (

@@ -601,7 +601,7 @@ class TestMetadataFormatter(unittest.TestCase):
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
-            "productType": "OL_2_LRR___",
+            "collection": "OL_2_LRR___",
             "startDate": "2021-06-01T22:38:21Z",
             "endDate": "2021-06-01T23:22:48Z",
             "timeliness": "NT",
@@ -901,14 +901,14 @@ class TestMetadataMappingFunctions(unittest.TestCase):
                 "datetime: {startTimeFromAscendingNode}",
                 "$.datetime",
             ],
-            "api_product_type": ["productType", "$.properties.productType"],
+            "api_product_type": ["collection", "$.properties.collection"],
             "variable": ["variable", "$.variable"],
             "variable_type": ["variable_type", "$.variable_type"],
         }
         provider_queryables = {
             "datetime": {"type": "str", "description": "datetime"},
             "id": {"type": "str"},
-            "productType": {"type": "str"},
+            "collection": {"type": "str"},
             "level": {"type": int},
             "variable": {"type": "str"},
             "variable_type": {"type": "str"},
@@ -920,7 +920,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         provider_key = get_provider_queryable_key(
             "api_product_type", provider_queryables, metadata_mapping
         )
-        self.assertEqual("productType", provider_key)
+        self.assertEqual("collection", provider_key)
         provider_key = get_provider_queryable_key(
             "id", provider_queryables, metadata_mapping
         )
