@@ -119,16 +119,16 @@ class CSWSearch(Search):
             self.__init_catalog()
         results: list[EOProduct] = []
         if self.catalog:
-            provider_product_type = self.config.products[product_type]["productType"]
+            provider_collection = self.config.products[product_type]["productType"]
             for product_type_def in self.config.search_definition["product_type_tags"]:
                 product_type_search_tag = product_type_def["name"]
                 logger.debug(
                     "Querying <%s> tag for product type %s",
                     product_type_search_tag,
-                    provider_product_type,
+                    provider_collection,
                 )
                 constraints = self.__convert_query_params(
-                    product_type_def, provider_product_type, kwargs
+                    product_type_def, provider_collection, kwargs
                 )
                 with patch_owslib_requests(verify=True):
                     try:
