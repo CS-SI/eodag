@@ -128,7 +128,7 @@ class TestEodagCli(unittest.TestCase):
         self.assertNotEqual(result.exit_code, 0)
 
     def test_eodag_search_without_producttype_arg(self):
-        """Calling eodag search without -p | --productType should print the help message and return error code"""  # noqa
+        """Calling eodag search without -p | --collection should print the help message and return error code"""  # noqa
         start_date = self.faker.date()
         end_date = self.faker.date()
         result = self.runner.invoke(eodag, ["search", "-s", start_date, "-e", end_date])
@@ -209,7 +209,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                productType=product_type,
+                collection=product_type,
                 id=None,
                 locations=None,
                 count=False,
@@ -256,7 +256,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                productType=product_type,
+                collection=product_type,
                 id=None,
                 locations=None,
                 count=False,
@@ -326,7 +326,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                productType=product_type,
+                collection=product_type,
                 id=None,
                 locations=None,
             )
@@ -396,7 +396,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                productType=product_type,
+                collection=product_type,
                 id=None,
                 locations=None,
             )
@@ -445,7 +445,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                productType=product_type,
+                collection=product_type,
                 id=None,
                 locations=None,
             )
@@ -475,7 +475,7 @@ class TestEodagCli(unittest.TestCase):
                 startTimeFromAscendingNode=None,
                 completionTimeFromAscendingNode=None,
                 cloudCover=None,
-                productType=product_type,
+                collection=product_type,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -513,7 +513,7 @@ class TestEodagCli(unittest.TestCase):
                 startTimeFromAscendingNode=None,
                 completionTimeFromAscendingNode=None,
                 cloudCover=None,
-                productType=product_type,
+                collection=product_type,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -553,7 +553,7 @@ class TestEodagCli(unittest.TestCase):
                 startTimeFromAscendingNode=start_date_datetime,
                 completionTimeFromAscendingNode=None,
                 cloudCover=None,
-                productType=product_type,
+                collection=product_type,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -594,7 +594,7 @@ class TestEodagCli(unittest.TestCase):
                 startTimeFromAscendingNode=None,
                 completionTimeFromAscendingNode=stop_date_datetime,
                 cloudCover=None,
-                productType=product_type,
+                collection=product_type,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,

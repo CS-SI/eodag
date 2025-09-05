@@ -112,7 +112,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_default_driver_unsupported_product_type(self):
         """EOProduct driver attr must be set even if its product type is not supported"""
-        product = self._dummy_product(productType=self.NOT_ASSOCIATED_PRODUCT_TYPE)
+        product = self._dummy_product(collection=self.NOT_ASSOCIATED_PRODUCT_TYPE)
         self.assertIsInstance(product.driver, DatasetDriver)
 
     def test_eoproduct_geointerface(self):
@@ -145,7 +145,7 @@ class TestEOProduct(EODagTestCase):
                 self._tuples_to_lists(geometry.mapping(product.geometry)),
                 self._tuples_to_lists(geometry.mapping(product.search_intersection)),
                 product.collection,
-                product.properties["productType"],
+                product.properties["collection"],
                 product.properties["platformSerialIdentifier"],
             ],
             [
@@ -158,7 +158,7 @@ class TestEOProduct(EODagTestCase):
                     geometry.mapping(same_product.search_intersection)
                 ),
                 same_product.collection,
-                same_product.properties["productType"],
+                same_product.properties["collection"],
                 same_product.properties["platformSerialIdentifier"],
             ],
         )

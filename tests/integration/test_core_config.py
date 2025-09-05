@@ -83,7 +83,7 @@ class TestCoreProvidersConfig(TestCase):
                     api_endpoint: https://foo.bar/search
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
                 download:
                     type: HTTPDownload
                     base_uri: https://foo.bar
@@ -150,7 +150,7 @@ class TestCoreProvidersConfig(TestCase):
                     type: GenericAuth
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
             """
         )
         self.assertIn("bar_provider", self.dag.providers_config)
@@ -201,7 +201,7 @@ class TestCoreProvidersConfig(TestCase):
                     api_endpoint: https://foo.bar/search
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
                 auth:
                     type: GenericAuth
                     matching_conf:
@@ -216,7 +216,7 @@ class TestCoreProvidersConfig(TestCase):
                     api_endpoint: https://foo.bar/search
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
                 auth:
                     type: GenericAuth
                     matching_conf:
@@ -352,7 +352,7 @@ class TestCoreProvidersConfig(TestCase):
         )
 
         # search method must build metadata_mapping as jsonpath object
-        self.dag.search(provider="foo", productType="abc", raise_errors=True)
+        self.dag.search(provider="foo", collection="abc", raise_errors=True)
         self.assertEqual(
             self.dag.providers_config["foo"].search.metadata_mapping["bar"],
             (None, Child(Child(Root(), Fields("properties")), Fields("bar"))),
@@ -412,7 +412,7 @@ class TestCoreProductTypesConfig(TestCase):
                     need_auth: true
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
             """
         )
         with self.assertLogs(level="DEBUG") as cm:

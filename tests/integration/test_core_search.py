@@ -30,7 +30,7 @@ from tests.context import (
     EODataAccessGateway,
     EOProduct,
     HeaderAuth,
-    NoMatchingProductType,
+    NoMatchingCollection,
     RequestError,
     USGSError,
 )
@@ -74,11 +74,11 @@ class TestCoreSearch(unittest.TestCase):
         # QueryStringSearch / peps
         self.dag.set_preferred_provider("peps")
         self.assertRaises(
-            RequestError, self.dag.search, productType="foo", raise_errors=True
+            RequestError, self.dag.search, collection="foo", raise_errors=True
         )
         # search iterator
         self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
+            RequestError, next, self.dag.search_iter_page(collection="foo")
         )
 
     @mock.patch(
@@ -168,11 +168,11 @@ class TestCoreSearch(unittest.TestCase):
         # ODataV4Search / creodias
         self.dag.set_preferred_provider("creodias")
         self.assertRaises(
-            RequestError, self.dag.search, productType="foo", raise_errors=True
+            RequestError, self.dag.search, collection="foo", raise_errors=True
         )
         # search iterator
         self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
+            RequestError, next, self.dag.search_iter_page(collection="foo")
         )
 
     @mock.patch(
@@ -196,20 +196,20 @@ class TestCoreSearch(unittest.TestCase):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
         self.assertRaises(
-            NoMatchingProductType, self.dag.search, raise_errors=True, validate=False
+            NoMatchingCollection, self.dag.search, raise_errors=True, validate=False
         )
         self.assertRaises(
             RequestError,
             self.dag.search,
             raise_errors=True,
-            productType="foo",
+            collection="foo",
             validate=False,
         )
         # search iterator
         self.assertRaises(
             RequestError,
             next,
-            self.dag.search_iter_page(productType="foo", validate=False),
+            self.dag.search_iter_page(collection="foo", validate=False),
         )
 
     @mock.patch(
@@ -291,7 +291,7 @@ class TestCoreSearch(unittest.TestCase):
             ],
         )
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.number_matched, 0)
         self.assertEqual(
@@ -328,7 +328,7 @@ class TestCoreSearch(unittest.TestCase):
         )
 
         self.assertRaises(
-            RequestError, self.dag.search, productType="S1_SAR_SLC", raise_errors=True
+            RequestError, self.dag.search, collection="S1_SAR_SLC", raise_errors=True
         )
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -372,7 +372,7 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_get.return_value.json.return_value = peps_resp_search_file_content
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), peps_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -437,7 +437,7 @@ class TestCoreSearch(unittest.TestCase):
             creodias_resp_search_file_content,
         ]
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), creodias_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -471,7 +471,7 @@ class TestCoreSearch(unittest.TestCase):
             ([EOProduct("creodias", dict(geometry="POINT (0 0)", id="a"))], 1),
         ]
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
@@ -504,7 +504,7 @@ class TestCoreSearch(unittest.TestCase):
         mock_query.return_value = ([], 0)
 
         search_result = self.dag.search(
-            productType="S1_SAR_SLC", provider="creodias", count=True
+            collection="S1_SAR_SLC", provider="creodias", count=True
         )
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.number_matched, 0)

@@ -908,7 +908,7 @@ class TestCore(TestCoreBase):
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
         autospec=True,
         return_value={
-            "providers_config": {"foo": {"productType": "foo"}},
+            "providers_config": {"foo": {"_collection": "foo"}},
             "product_types_config": {"foo": {"title": "Foo collection"}},
         },
     )
@@ -919,7 +919,7 @@ class TestCore(TestCoreBase):
         )
         self.assertEqual(
             ext_product_types_conf["earth_search"]["providers_config"]["foo"][
-                "productType"
+                "_collection"
             ],
             "foo",
         )
@@ -934,7 +934,7 @@ class TestCore(TestCoreBase):
         "eodag.plugins.apis.ecmwf.EcmwfApi.discover_product_types",
         autospec=True,
         return_value={
-            "providers_config": {"foo": {"productType": "foo"}},
+            "providers_config": {"foo": {"_collection": "foo"}},
             "product_types_config": {"foo": {"title": "Foo collection"}},
         },
     )
@@ -953,7 +953,7 @@ class TestCore(TestCoreBase):
         )
         ext_product_types_conf = self.dag.discover_product_types(provider="ecmwf")
         self.assertEqual(
-            ext_product_types_conf["ecmwf"]["providers_config"]["foo"]["productType"],
+            ext_product_types_conf["ecmwf"]["providers_config"]["foo"]["_collection"],
             "foo",
         )
         self.assertEqual(
@@ -1001,7 +1001,7 @@ class TestCore(TestCoreBase):
         # check that with a non-empty ext-conf, a provider will be marked as fetched, and eodag conf updated
         mock_get_ext_product_types_conf.return_value = {
             "earth_search": {
-                "providers_config": {"foo": {"productType": "foo"}},
+                "providers_config": {"foo": {"_collection": "foo"}},
                 "product_types_config": {"foo": {"title": "Foo collection"}},
             }
         }
@@ -1021,7 +1021,7 @@ class TestCore(TestCoreBase):
         self.assertTrue(self.dag.providers_config["earth_search"].product_types_fetched)
         self.assertEqual(
             self.dag.providers_config["earth_search"].products["foo"],
-            {"productType": "foo"},
+            {"_collection": "foo"},
         )
         self.assertEqual(
             self.dag.product_types_config.source["foo"],
@@ -1053,7 +1053,7 @@ class TestCore(TestCoreBase):
                     api_endpoint: https://foo.bar/search
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
             """
         )
         self.dag.fetch_product_types_list()
@@ -1163,7 +1163,7 @@ class TestCore(TestCoreBase):
                     api_endpoint: https://foo.bar/search
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
             """
         )
         self.dag.fetch_product_types_list()
@@ -1332,7 +1332,7 @@ class TestCore(TestCoreBase):
                     api_endpoint: https://api.my_new_provider/search
                 products:
                     GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: '{collection}'
             """
         # add new provider
         self.dag.update_providers_config(new_config)
@@ -1369,7 +1369,7 @@ class TestCore(TestCoreBase):
             self.dag.list_queryables(provider="not_supported_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(productType="not_supported_product_type")
+            self.dag.list_queryables(collection="not_supported_product_type")
 
         # No provider & no product type
         queryables_none_none = self.dag.list_queryables()
@@ -1393,12 +1393,12 @@ class TestCore(TestCoreBase):
 
         # provider & product type
         queryables_peps_s1grd = self.dag.list_queryables(
-            provider="peps", productType="S1_SAR_GRD"
+            provider="peps", collection="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
-            if key == "productType":
+            if key == "collection":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 # compare obj.__repr__
@@ -1410,19 +1410,19 @@ class TestCore(TestCoreBase):
         products = self.dag.product_types_config
         products["S1_SAR_GRD"]["alias"] = "S1_SG"
         queryables_peps_s1grd_alias = self.dag.list_queryables(
-            provider="peps", productType="S1_SG"
+            provider="peps", collection="S1_SG"
         )
         self.assertEqual(len(queryables_peps_s1grd), len(queryables_peps_s1grd_alias))
         self.assertEqual(
             "S1_SG",
-            queryables_peps_s1grd_alias["productType"].__metadata__[0].get_default(),
+            queryables_peps_s1grd_alias["collection"].__metadata__[0].get_default(),
         )
         products["S1_SAR_GRD"].pop("alias")
 
         # Only product type
         # when a product type is specified but not the provider, the union of the queryables of all providers
         # having the product type in its config is returned
-        queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
+        queryables_none_s1grd = self.dag.list_queryables(collection="S1_SAR_GRD")
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
         self.assertGreater(len(queryables_none_s1grd), len(queryables_peps_none))
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
@@ -1430,7 +1430,7 @@ class TestCore(TestCoreBase):
         # check that peps gets the highest priority
         self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
         for key, queryable in queryables_peps_s1grd.items():
-            if key == "productType":
+            if key == "collection":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 # compare obj.__repr__
@@ -1441,12 +1441,12 @@ class TestCore(TestCoreBase):
 
         # model_validate should validate input parameters using the queryables result
         queryables_validated = queryables_peps_s1grd.get_model().model_validate(
-            {"productType": "S1_SAR_GRD", "snowCover": 50}
+            {"collection": "S1_SAR_GRD", "snowCover": 50}
         )
         self.assertIn("snowCover", queryables_validated.__dict__)
         with self.assertRaises(PydanticValidationError):
             queryables_peps_s1grd.get_model().model_validate(
-                {"productType": "S1_SAR_GRD", "snowCover": 500}
+                {"collection": "S1_SAR_GRD", "snowCover": 500}
             )
 
     @mock.patch(
@@ -1467,7 +1467,7 @@ class TestCore(TestCoreBase):
         self.assertFalse(cop_marine_queryables.additional_properties)
 
         item_cop_marine_queryables = self.dag.list_queryables(
-            productType="MO_INSITU_GLO_PHY_TS_OA_NRT_013_002", provider="cop_marine"
+            collection="MO_INSITU_GLO_PHY_TS_OA_NRT_013_002", provider="cop_marine"
         )
         self.assertFalse(item_cop_marine_queryables.additional_properties)
 
@@ -1479,7 +1479,7 @@ class TestCore(TestCoreBase):
         self.assertTrue(peps_queryables.additional_properties)
 
         item_peps_queryables = self.dag.list_queryables(
-            productType="S2_MSI_L1C", provider="peps"
+            collection="S2_MSI_L1C", provider="peps"
         )
         self.assertTrue(item_peps_queryables.additional_properties)
 
@@ -1500,19 +1500,19 @@ class TestCore(TestCoreBase):
             )
         )
         # default values should be added to params
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
+        self.dag.list_queryables(provider="cop_cds", collection="ERA5_SL")
         defaults = {
-            "productType": "ERA5_SL",
+            "collection": "ERA5_SL",
             "dataset": "reanalysis-era5-single-levels",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
         res = self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "month": "02"}
+            provider="cop_cds", **{"collection": "ERA5_SL", "month": "02"}
         )
         params = {
-            "productType": "ERA5_SL",
+            "collection": "ERA5_SL",
             "dataset": "reanalysis-era5-single-levels",
             "month": "02",
         }
@@ -1522,10 +1522,10 @@ class TestCore(TestCoreBase):
 
         # unset default values
         self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "data_format": ""}
+            provider="cop_cds", **{"collection": "ERA5_SL", "data_format": ""}
         )
         defaults = {
-            "productType": "ERA5_SL",
+            "collection": "ERA5_SL",
             "dataset": "reanalysis-era5-single-levels",
             "data_format": "",
         }
@@ -1581,7 +1581,7 @@ class TestCore(TestCoreBase):
 
         self.dag.set_preferred_provider("wekeo_ecmwf")
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables["property1"], "value_from_wekeo")
         self.assertEqual(queryables["property2"], "value_cds2")
@@ -1589,7 +1589,7 @@ class TestCore(TestCoreBase):
 
         self.dag.set_preferred_provider("cop_cds")
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables["property1"], "value_cds1")
         self.assertEqual(queryables["property2"], "value_cds2")
@@ -1597,7 +1597,7 @@ class TestCore(TestCoreBase):
 
         self.dag.set_preferred_provider("dedl")
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables["property1"], "value_dedl1")
         self.assertEqual(queryables["property2"], "value_dedl2")
@@ -1645,7 +1645,7 @@ class TestCore(TestCoreBase):
             additional_information="Mocked STAC queryables for dedl",
         )
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(
             queryables.additional_information,
@@ -1661,19 +1661,19 @@ class TestCore(TestCoreBase):
             additional_properties=True,
             additional_information="Mocked STAC queryables for dedl",
         )
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables.additional_properties, True)
 
     def test_queryables_repr(self):
-        queryables = self.dag.list_queryables(provider="peps", productType="S1_SAR_GRD")
+        queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
         self.assertIsInstance(queryables, QueryablesDict)
         queryables_repr = html.fromstring(queryables._repr_html_())
         self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
         product_type_present = False
         for i, span in enumerate(spans):
-            if "productType" in span.text:
+            if "collection" in span.text:
                 product_type_present = True
                 self.assertIn("str", spans[i + 1].text)
         self.assertTrue(product_type_present)
@@ -1988,8 +1988,8 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         # setup providers config
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
         providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
-        providers_config[0].products["TEST_PRODUCT_1"] = {"productType": "TP1"}
-        providers_config[0].products["TEST_PRODUCT_2"] = {"productType": "TP2"}
+        providers_config[0].products["TEST_PRODUCT_1"] = {"_collection": "TP1"}
+        providers_config[0].products["TEST_PRODUCT_2"] = {"_collection": "TP2"}
         with open(
             os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
         ) as f:
@@ -2302,7 +2302,7 @@ class TestCoreSearch(TestCoreBase):
         self.assertListEqual(actual, expected)
 
         # with product type specified
-        actual = self.dag.guess_product_type(productType="foo")
+        actual = self.dag.guess_product_type(collection="foo")
         self.assertListEqual(actual, ["foo"])
 
         # with dates
@@ -2346,9 +2346,9 @@ class TestCoreSearch(TestCoreBase):
         _, prepared_search = self.dag._prepare_search()
         expected = {
             "geometry": None,
-            "productType": None,
+            "collection": None,
         }
-        expected = set(["geometry", "productType"])
+        expected = set(["geometry", "collection"])
         self.assertSetEqual(expected, set(prepared_search))
 
     @mock.patch(
@@ -2433,9 +2433,9 @@ class TestCoreSearch(TestCoreBase):
 
     def test__prepare_search_product_type_provided(self):
         """_prepare_search must handle when a product type is given"""
-        base = {"productType": "S2_MSI_L1C"}
+        base = {"collection": "S2_MSI_L1C"}
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["productType"], base["productType"])
+        self.assertEqual(prepared_search["collection"], base["collection"])
 
     def test__prepare_search_product_type_guess_it(self):
         """_prepare_search must guess a product type when required to"""
@@ -2447,7 +2447,7 @@ class TestCoreSearch(TestCoreBase):
             platformSerialIdentifier="S2A",
         )
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["productType"], "S2_MSI_L1C")
+        self.assertEqual(prepared_search["collection"], "S2_MSI_L1C")
 
     def test__prepare_search_remove_guess_kwargs(self):
         """_prepare_search must remove the guess kwargs"""
@@ -2471,11 +2471,11 @@ class TestCoreSearch(TestCoreBase):
     def test__prepare_search_preserve_additional_kwargs(self):
         """_prepare_search must preserve additional kwargs"""
         base = {
-            "productType": "S2_MSI_L1C",
+            "collection": "S2_MSI_L1C",
             "cloudCover": 10,
         }
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["productType"], base["productType"])
+        self.assertEqual(prepared_search["collection"], base["collection"])
         self.assertEqual(prepared_search["cloudCover"], base["cloudCover"])
 
     def test__prepare_search_search_plugin_has_known_product_properties(self):
@@ -2483,7 +2483,7 @@ class TestCoreSearch(TestCoreBase):
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "S2_MSI_L1C"}
+            base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # Just check that the title has been set correctly. There are more (e.g.
             # abstract, platform, etc.) but this is sufficient to check that the
@@ -2505,7 +2505,7 @@ class TestCoreSearch(TestCoreBase):
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "product_unknown_to_eodag"}
+            base = {"collection": "product_unknown_to_eodag"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # product_type_config is still created if the product is not known to eodag
             # however it contains no data.
@@ -2516,24 +2516,24 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available(self):
-        """_prepare_search must return the search plugins when productType is defined"""
+        """_prepare_search must return the search plugins when collection is defined"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "S2_MSI_L1C"}
+            base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available_with_alias(self):
-        """_prepare_search must return the search plugins when productType is defined and alias is used"""
+        """_prepare_search must return the search plugins when collection is defined and alias is used"""
         products = self.dag.product_types_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "S2_MSI_ALIAS"}
+            base = {"collection": "S2_MSI_ALIAS"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
@@ -2557,7 +2557,7 @@ class TestCoreSearch(TestCoreBase):
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("cop_cds")
-            base = {"productType": "S2_MSI_L1C"}
+            base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
@@ -2602,7 +2602,7 @@ class TestCoreSearch(TestCoreBase):
             return_value={"id": "foo"}
         )
 
-        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
 
         from eodag.utils.logging import get_logging_verbose
 
@@ -2620,7 +2620,7 @@ class TestCoreSearch(TestCoreBase):
             self.dag,
             mock_get_search_plugins.return_value[0],
             id="foo",
-            productType="bar",
+            collection="bar",
             raise_errors=True,
             page=1,
             items_per_page=100,
@@ -2637,7 +2637,7 @@ class TestCoreSearch(TestCoreBase):
             return_value={"id": "foo"}
         )
         with self.assertLogs(level="INFO") as cm:
-            found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+            found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
             self.assertEqual(found, SearchResult([], 0))
             self.assertIn("Several products found for this id", str(cm.output))
 
@@ -2650,7 +2650,7 @@ class TestCoreSearch(TestCoreBase):
         type(mock__do_search.return_value[1]).properties = mock.PropertyMock(
             return_value={"id": "foooooo"}
         )
-        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
         self.assertEqual(found.number_matched, 1)
         self.assertEqual(len(found), 1)
 
@@ -2877,12 +2877,12 @@ class TestCoreSearch(TestCoreBase):
         ]
 
         # no count by default
-        page_iterator = self.dag.search_iter_page(productType="S2_MSI_L1C")
+        page_iterator = self.dag.search_iter_page(collection="S2_MSI_L1C")
         next(page_iterator)
         mock_do_seach.assert_called_once_with(
             mock.ANY,
             mock.ANY,
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             geometry=None,
             raise_errors=True,
             page=1,
@@ -2896,13 +2896,13 @@ class TestCoreSearch(TestCoreBase):
             self.search_results_2,
         ]
         page_iterator = self.dag.search_iter_page(
-            productType="S2_MSI_L1C", count=True, items_per_page=2
+            collection="S2_MSI_L1C", count=True, items_per_page=2
         )
         next(page_iterator)
         mock_do_seach.assert_called_once_with(
             mock.ANY,
             mock.ANY,
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             geometry=None,
             count=True,
             raise_errors=True,
@@ -2915,7 +2915,7 @@ class TestCoreSearch(TestCoreBase):
         mock_do_seach.assert_called_with(
             mock.ANY,
             mock.ANY,
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             geometry=None,
             count=False,
             raise_errors=True,
@@ -3109,7 +3109,7 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
@@ -3182,13 +3182,13 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
 
         dag.search(
             provider="dummy_provider",
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             sort_by=[("eodagSortParam", "DESC")],
         )
 
@@ -3218,12 +3218,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         dag.search(
             provider="other_dummy_provider",
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             sort_by=[("eodagSortParam", "DESC")],
         )
 
@@ -3255,14 +3255,14 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         # raise an error with a provider which does not support sorting feature
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
                 provider="dummy_provider",
-                productType="S2_MSI_L1C",
+                collection="S2_MSI_L1C",
                 sort_by=[("eodagSortParam", "ASC")],
             )
             self.assertIn(
@@ -3288,14 +3288,14 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         # raise an error with a parameter not sortable with a provider
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
                 provider="dummy_provider",
-                productType="S2_MSI_L1C",
+                collection="S2_MSI_L1C",
                 sort_by=[("otherEodagSortParam", "ASC")],
             )
             self.assertIn(
@@ -3325,14 +3325,14 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         # raise an error with more sorting parameters than supported by the provider
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
                 provider="dummy_provider",
-                productType="S2_MSI_L1C",
+                collection="S2_MSI_L1C",
                 sort_by=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],
             )
             self.assertIn(
@@ -3385,12 +3385,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(productType="S2_MSI_L1C")
+        dag.search_all(collection="S2_MSI_L1C")
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
 
     @mock.patch(
@@ -3408,12 +3408,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(productType="S2_MSI_L1C")
+        dag.search_all(collection="S2_MSI_L1C")
         self.assertEqual(
             mocked_search_iter_page.call_args[1]["items_per_page"],
             DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -3434,12 +3434,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(productType="S2_MSI_L1C", items_per_page=7)
+        dag.search_all(collection="S2_MSI_L1C", items_per_page=7)
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
 
     @unittest.skip("Disable until fixed")
@@ -3455,7 +3455,7 @@ class TestCoreSearch(TestCoreBase):
             plugin.query = mock.MagicMock()
             plugin.query.side_effect = RequestError
 
-        dag.search_all(productType="S2_MSI_L1C")
+        dag.search_all(collection="S2_MSI_L1C")
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
@@ -3467,7 +3467,7 @@ class TestCoreSearch(TestCoreBase):
         self, mock_fetch_product_types_list, mock_search_iter_page_plugin
     ):
         """search_all must fetch product types if product_type is unknown"""
-        self.dag.search_all(productType="foo")
+        self.dag.search_all(collection="foo")
         mock_fetch_product_types_list.assert_called_with(self.dag)
         mock_search_iter_page_plugin.assert_called_once()
 
@@ -3739,7 +3739,7 @@ class TestCoreProviderGroup(TestCoreBase):
 
         mock_get_ext_product_types_conf.return_value = {
             provider: {
-                "providers_config": {"foo": {"productType": "foo"}},
+                "providers_config": {"foo": {"collection": "foo"}},
                 "product_types_config": {"foo": {"title": "Foo collection"}},
             }
             for provider in self.group
@@ -3797,7 +3797,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 )
                 self.assertEqual(
                     self.dag.providers_config[provider].products["foo"],
-                    {"productType": "foo"},
+                    {"collection": "foo"},
                 )
                 mock_discover_product_types.assert_called_with(
                     self.dag, provider=provider
@@ -3826,7 +3826,7 @@ class TestCoreProviderGroup(TestCoreBase):
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
         autospec=True,
         return_value={
-            "providers_config": {"foo": {"productType": "foo"}},
+            "providers_config": {"foo": {"collection": "foo"}},
             "product_types_config": {"foo": {"title": "Foo collection"}},
         },
     )
@@ -3862,7 +3862,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 self.assertIn(provider_search_plugin, mock_call_args_list)
                 self.assertEqual(
                     ext_product_types_conf[provider]["providers_config"]["foo"][
-                        "productType"
+                        "collection"
                     ],
                     "foo",
                 )
