@@ -543,7 +543,7 @@ class ECMWFSearch(PostJsonSearch):
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
-        to ensure that required parameters like 'productType', 'startTimeFromAscendingNode',
+        to ensure that required parameters like 'collection', 'startTimeFromAscendingNode',
         'completionTimeFromAscendingNode', and 'geometry' are properly set. If not specified
         in the input parameters, default values or values from the configuration are used.
 
@@ -670,7 +670,7 @@ class ECMWFSearch(PostJsonSearch):
         )
         default_values.pop("metadata_mapping", None)
 
-        filters["productType"] = product_type
+        filters["collection"] = product_type
         queryables = self.discover_queryables(**{**default_values, **filters}) or {}
 
         return QueryablesDict(additional_properties=False, **queryables)
@@ -680,11 +680,11 @@ class ECMWFSearch(PostJsonSearch):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using its constraints file
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        product_type = kwargs.pop("productType")
+        product_type = kwargs.pop("collection")
 
         pt_config = self.get_collection_def_params(product_type)
 
@@ -1087,7 +1087,7 @@ class ECMWFSearch(PostJsonSearch):
         :param properties: dict of properties to be formatted
         :return: dict of formatted properties
         """
-        properties["productType"] = product_type
+        properties["collection"] = product_type
 
         # provider product type specific conf
         collection_def_params = self.get_collection_def_params(
@@ -1137,7 +1137,7 @@ class ECMWFSearch(PostJsonSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        product_type = kwargs.get("productType")
+        collection = kwargs.get("collection")
 
         result = results[0]
 
@@ -1190,7 +1190,7 @@ class ECMWFSearch(PostJsonSearch):
             query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
             properties["title"] = properties["id"] = (
-                (product_type or kwargs.get("dataset", self.provider)).upper()
+                (collection or kwargs.get("dataset", self.provider)).upper()
                 + "_ORDERABLE_"
                 + query_hash
             )
@@ -1382,7 +1382,7 @@ class MeteoblueSearch(ECMWFSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        product_type = kwargs.get("productType")
+        collection = kwargs.get("collection")
 
         result = results[0]
 
@@ -1434,7 +1434,7 @@ class MeteoblueSearch(ECMWFSearch):
             return date_str.split("T")[0].replace("-", "")
 
         # build product id
-        product_id = (product_type or self.provider).upper()
+        product_id = (collection or self.provider).upper()
 
         start = properties.get(START, NOT_AVAILABLE)
         end = properties.get(END, NOT_AVAILABLE)
@@ -1453,7 +1453,7 @@ class MeteoblueSearch(ECMWFSearch):
 
         product = EOProduct(
             provider=self.provider,
-            productType=product_type,
+            collection=collection,
             properties=properties,
         )
 
@@ -1501,7 +1501,7 @@ class WekeoECMWFSearch(ECMWFSearch):
             # id is order id (only letters and numbers) -> use parent normalize results
             return super().normalize_results(results, **kwargs)
 
-        # formating of orderLink requires access to the productType value.
+        # formating of orderLink requires access to the collection value.
         results.data = [
             {**result, **results.collection_def_params} for result in results
         ]
