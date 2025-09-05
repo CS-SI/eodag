@@ -157,11 +157,11 @@ class UsgsApi(Api):
 
         self.authenticate()
 
-        product_type_def_params = self.config.products.get(  # type: ignore
+        collection_def_params = self.config.products.get(  # type: ignore
             collection,
             self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
         )
-        usgs_collection = format_dict_items(product_type_def_params, **kwargs)[
+        usgs_collection = format_dict_items(collection_def_params, **kwargs)[
             "_collection"
         ]
         start_date = kwargs.pop("start_datetime", None)

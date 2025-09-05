@@ -399,16 +399,16 @@ class QueryStringSearch(Search):
             if other_product_for_mapping := self.config.products[collection].get(
                 "metadata_mapping_from_product"
             ):
-                other_product_type_def_params = self.get_product_type_def_params(
+                other_collection_def_params = self.get_collection_def_params(
                     other_product_for_mapping,
                 )
                 # parse mapping to apply
-                if other_product_type_mtd_mapping := other_product_type_def_params.get(
+                if other_product_type_mtd_mapping := other_collection_def_params.get(
                     "metadata_mapping", {}
                 ):
                     other_product_type_mtd_mapping = (
                         mtd_cfg_as_conversion_and_querypath(
-                            other_product_type_def_params.get("metadata_mapping", {})
+                            other_collection_def_params.get("metadata_mapping", {})
                         )
                     )
                 else:
@@ -780,25 +780,25 @@ class QueryStringSearch(Search):
         )
 
         # provider product type specific conf
-        prep.product_type_def_params = (
-            self.get_product_type_def_params(collection, format_variables=kwargs)
+        prep.collection_def_params = (
+            self.get_collection_def_params(collection, format_variables=kwargs)
             if collection is not None
             else {}
         )
 
-        # if product_type_def_params is set, remove collection as it may conflict with this conf
-        if prep.product_type_def_params:
+        # if collection_def_params is set, remove collection as it may conflict with this conf
+        if prep.collection_def_params:
             keywords.pop("collection", None)
 
         if self.config.metadata_mapping:
             product_type_metadata_mapping = dict(
                 self.config.metadata_mapping,
-                **prep.product_type_def_params.get("metadata_mapping", {}),
+                **prep.collection_def_params.get("metadata_mapping", {}),
             )
             keywords.update(
                 {
                     k: v
-                    for k, v in prep.product_type_def_params.items()
+                    for k, v in prep.collection_def_params.items()
                     if k not in keywords.keys()
                     and k in product_type_metadata_mapping.keys()
                     and isinstance(product_type_metadata_mapping[k], list)
@@ -824,7 +824,7 @@ class QueryStringSearch(Search):
 
         raw_search_result = RawSearchResult(provider_results)
         raw_search_result.query_params = prep.query_params
-        raw_search_result.product_type_def_params = prep.product_type_def_params
+        raw_search_result.collection_def_params = prep.collection_def_params
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
         return eo_products, total_items
@@ -1171,8 +1171,7 @@ class QueryStringSearch(Search):
         collection: Optional[str] = kwargs.get("collection")
         provider_collection: Optional[str] = None
         if collection is None and (
-            not hasattr(prep, "product_type_def_params")
-            or not prep.product_type_def_params
+            not hasattr(prep, "collection_def_params") or not prep.collection_def_params
         ):
             collections: set[str] = set()
             provider_collection = getattr(self.config, "_collection", None)
@@ -1196,7 +1195,7 @@ class QueryStringSearch(Search):
         provider_collection = getattr(self.config, "_collection", None)
         if provider_collection is None:
             provider_collection = (
-                getattr(prep, "product_type_def_params", {}).get("_collection")
+                getattr(prep, "collection_def_params", {}).get("_collection")
                 or product_type
             )
 
@@ -1484,7 +1483,7 @@ class PostJsonSearch(QueryStringSearch):
             qp = geojson.loads(qs)
 
             # provider product type specific conf
-            prep.product_type_def_params = self.get_product_type_def_params(
+            prep.collection_def_params = self.get_collection_def_params(
                 collection, format_variables=kwargs
             )
         else:
@@ -1498,19 +1497,19 @@ class PostJsonSearch(QueryStringSearch):
                 keywords["collection"] = collection
 
             # provider product type specific conf
-            prep.product_type_def_params = self.get_product_type_def_params(
+            prep.collection_def_params = self.get_collection_def_params(
                 collection, format_variables=kwargs
             )
 
             # Add to the query, the queryable parameters set in the provider product type definition
             product_type_metadata_mapping = {
                 **getattr(self.config, "metadata_mapping", {}),
-                **prep.product_type_def_params.get("metadata_mapping", {}),
+                **prep.collection_def_params.get("metadata_mapping", {}),
             }
             keywords.update(
                 {
                     k: v
-                    for k, v in prep.product_type_def_params.items()
+                    for k, v in prep.collection_def_params.items()
                     if k not in keywords.keys()
                     and k in product_type_metadata_mapping.keys()
                     and isinstance(product_type_metadata_mapping[k], list)
@@ -1572,7 +1571,7 @@ class PostJsonSearch(QueryStringSearch):
         # stop searching right away
         product_type_metadata_mapping = dict(
             self.config.metadata_mapping,
-            **prep.product_type_def_params.get("metadata_mapping", {}),
+            **prep.collection_def_params.get("metadata_mapping", {}),
         )
         if not qp and any(
             k
@@ -1593,7 +1592,7 @@ class PostJsonSearch(QueryStringSearch):
 
         raw_search_result = RawSearchResult(provider_results)
         raw_search_result.query_params = prep.query_params
-        raw_search_result.product_type_def_params = prep.product_type_def_params
+        raw_search_result.collection_def_params = prep.collection_def_params
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
         return eo_products, total_items

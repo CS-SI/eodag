@@ -686,7 +686,7 @@ class ECMWFSearch(PostJsonSearch):
         """
         product_type = kwargs.pop("productType")
 
-        pt_config = self.get_product_type_def_params(product_type)
+        pt_config = self.get_collection_def_params(product_type)
 
         default_values = deepcopy(pt_config)
         default_values.pop("metadata_mapping", None)
@@ -1090,7 +1090,7 @@ class ECMWFSearch(PostJsonSearch):
         properties["productType"] = product_type
 
         # provider product type specific conf
-        product_type_def_params = self.get_product_type_def_params(
+        collection_def_params = self.get_collection_def_params(
             product_type, format_variables=properties
         )
 
@@ -1098,7 +1098,7 @@ class ECMWFSearch(PostJsonSearch):
         properties.update(
             {
                 k: v
-                for k, v in product_type_def_params.items()
+                for k, v in collection_def_params.items()
                 if k not in properties.keys()
                 and k in self.config.metadata_mapping.keys()
                 and isinstance(self.config.metadata_mapping[k], list)
@@ -1168,14 +1168,14 @@ class ECMWFSearch(PostJsonSearch):
         else:
             # use all available query_params to parse properties
             result_data: dict[str, Any] = {
-                **results.product_type_def_params,
+                **results.collection_def_params,
                 **sorted_unpaginated_qp,
                 **{"qs": sorted_unpaginated_qp},
             }
 
-            # update result with product_type_def_params and search args if not None (and not auth)
+            # update result with collection_def_params and search args if not None (and not auth)
             kwargs.pop("auth", None)
-            result_data.update(results.product_type_def_params)
+            result_data.update(results.collection_def_params)
             result_data = {
                 **result_data,
                 **{k: v for k, v in kwargs.items() if v is not None},
@@ -1416,9 +1416,9 @@ class MeteoblueSearch(ECMWFSearch):
 
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
-        # update result with product_type_def_params and search args if not None (and not auth)
+        # update result with collection_def_params and search args if not None (and not auth)
         kwargs.pop("auth", None)
-        result.update(results.product_type_def_params)
+        result.update(results.collection_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
         # parse properties
@@ -1503,7 +1503,7 @@ class WekeoECMWFSearch(ECMWFSearch):
 
         # formating of orderLink requires access to the productType value.
         results.data = [
-            {**result, **results.product_type_def_params} for result in results
+            {**result, **results.collection_def_params} for result in results
         ]
 
         normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
