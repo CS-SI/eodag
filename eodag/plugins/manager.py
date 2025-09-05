@@ -137,7 +137,7 @@ class PluginManager:
         self._built_plugins_cache: dict[tuple[str, str, str], Any] = {}
 
     def build_collection_to_provider_config_map(self) -> None:
-        """Build mapping conf between product types and providers"""
+        """Build mapping conf between collections and providers"""
         self.collection_to_provider_config_map = {}
         for provider in list(self.providers_config):
             provider_config = self.providers_config[provider]
@@ -165,14 +165,14 @@ class PluginManager:
     def get_search_plugins(
         self, collection: Optional[str] = None, provider: Optional[str] = None
     ) -> Iterator[Union[Search, Api]]:
-        """Build and return all the search plugins supporting the given product type,
+        """Build and return all the search plugins supporting the given collection,
         ordered by highest priority, or the search plugin of the given provider
 
-        :param collection: (optional) The product type that the constructed plugins
+        :param collection: (optional) The collection that the constructed plugins
                              must support
         :param provider: (optional) The provider or the provider group on which to get
             the search plugins
-        :returns: All the plugins supporting the product type, one by one (a generator
+        :returns: All the plugins supporting the collection, one by one (a generator
                   object)
             or :class:`~eodag.plugins.download.Api`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`

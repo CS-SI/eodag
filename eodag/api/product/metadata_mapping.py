@@ -168,7 +168,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``sanitize``: sanitize string
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``split_cop_dem_id``: get the bbox by splitting the product id
-        - ``split_corine_id``: get the product type by splitting the product id
+        - ``split_corine_id``: get the collection by splitting the product id
         - ``to_bounds_lists``: convert to list(s) of bounds
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
@@ -1559,7 +1559,7 @@ def _get_queryables(
             # raise an error when a query param not allowed by the provider is found
             if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
                 raise ValidationError(
-                    "Search parameters which are not queryable are disallowed for this product type on this provider: "
+                    "Search parameters which are not queryable are disallowed for this collection on this provider: "
                     f"please remove '{eodag_search_key}' from your search parameters. {error_context}",
                     {eodag_search_key},
                 )

@@ -657,7 +657,7 @@ class TestCore(TestCoreBase):
             self.assertIn(provider, self.SUPPORTED_PROVIDERS)
 
     def test_supported_collections_in_unit_test(self):
-        """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
+        """Every collection must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
         for collection in self.dag.list_collections(fetch_providers=False):
             assert (
                 collection["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
@@ -665,26 +665,26 @@ class TestCore(TestCoreBase):
             )
 
     def test_list_collections_ok(self):
-        """Core api must correctly return the list of supported product types"""
+        """Core api must correctly return the list of supported collections"""
         collections = self.dag.list_collections(fetch_providers=False)
         self.assertIsInstance(collections, list)
         for collection in collections:
             self.assertListCollectionsRightStructure(collection)
-        # There should be no repeated product type in the output
+        # There should be no repeated collection in the output
         self.assertEqual(len(collections), len(set(pt["ID"] for pt in collections)))
-        # add alias for product type - should still work
+        # add alias for collection - should still work
         products = self.dag.collections_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
         collections = self.dag.list_collections(fetch_providers=False)
         for collection in collections:
             self.assertListCollectionsRightStructure(collection)
-        # There should be no repeated product type in the output
+        # There should be no repeated collection in the output
         self.assertEqual(len(collections), len(set(pt["ID"] for pt in collections)))
         # use alias as id
         self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in collections])
 
     def test_list_collections_for_provider_ok(self):
-        """Core api must correctly return the list of supported product types for a given provider"""
+        """Core api must correctly return the list of supported collections for a given provider"""
         for provider in self.SUPPORTED_PROVIDERS:
             collections = self.dag.list_collections(
                 provider=provider, fetch_providers=False
@@ -718,7 +718,7 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_list_collections_fetch_providers(self, mock_fetch_collections_list):
-        """Core api must fetch providers for new product types if option is passed to list_collections"""
+        """Core api must fetch providers for new collections if option is passed to list_collections"""
         self.dag.list_collections(fetch_providers=False)
         assert not mock_fetch_collections_list.called
         self.dag.list_collections(provider="peps", fetch_providers=True)
@@ -819,7 +819,7 @@ class TestCore(TestCoreBase):
         )
 
     def test_update_collections_list(self):
-        """Core api.update_collections_list must update eodag product types list"""
+        """Core api.update_collections_list must update eodag collections list"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
@@ -851,7 +851,7 @@ class TestCore(TestCoreBase):
     def test_update_collections_list_with_api_plugin(
         self, mock_plugin_discover_collections
     ):
-        """Core api.update_collections_list with the api plugin must update eodag product types list"""
+        """Core api.update_collections_list with the api plugin must update eodag collections list"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
@@ -909,7 +909,7 @@ class TestCore(TestCoreBase):
         },
     )
     def test_discover_collections(self, mock_plugin_discover_collections):
-        """Core api must fetch providers for product types"""
+        """Core api must fetch providers for collections"""
         ext_collections_conf = self.dag.discover_collections(provider="earth_search")
         self.assertEqual(
             ext_collections_conf["earth_search"]["providers_config"]["foo"][
@@ -933,7 +933,7 @@ class TestCore(TestCoreBase):
     def test_discover_collections_with_api_plugin(
         self, mock_plugin_discover_collections
     ):
-        """Core api must fetch providers with api plugin for product types"""
+        """Core api must fetch providers with api plugin for collections"""
         self.dag.update_providers_config(
             """
             ecmwf:
@@ -969,7 +969,7 @@ class TestCore(TestCoreBase):
     def test_fetch_collections_list(
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """Core api must fetch product types list and update if needed"""
+        """Core api must fetch collections list and update if needed"""
         # check that no provider has already been fetched
         for provider_config in self.dag.providers_config.values():
             self.assertFalse(getattr(provider_config, "collections_fetched", False))
@@ -1066,7 +1066,7 @@ class TestCore(TestCoreBase):
     def test_fetch_collections_list_without_ext_conf(
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """Core api must not fetch product types list and must discover product types without ext-conf"""
+        """Core api must not fetch collections list and must discover collections without ext-conf"""
         # check that no provider has already been fetched
         for provider_config in self.dag.providers_config.values():
             self.assertFalse(getattr(provider_config, "collections_fetched", False))
@@ -1087,7 +1087,7 @@ class TestCore(TestCoreBase):
     def test_fetch_collections_list_updated_system_conf(
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """fetch_collections_list must launch product types discovery for new system-wide providers"""
+        """fetch_collections_list must launch collections discovery for new system-wide providers"""
         # add a new system-wide provider not listed in ext-conf
         new_default_conf = load_default_config()
         new_default_conf["new_provider"] = new_default_conf["earth_search"]
@@ -1101,7 +1101,7 @@ class TestCore(TestCoreBase):
 
             mock_get_ext_collections_conf.return_value = {}
 
-            # disabled product types discovery
+            # disabled collections discovery
             os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
             self.dag.fetch_collections_list()
             mock_discover_collections.assert_not_called()
@@ -1129,9 +1129,9 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
     def test_fetch_collections_list_disabled(self, mock_discover_collections):
-        """fetch_collections_list must not launch product types discovery if disabled"""
+        """fetch_collections_list must not launch collections discovery if disabled"""
 
-        # disable product types discovery
+        # disable collections discovery
         os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
 
         # default settings
@@ -1359,7 +1359,7 @@ class TestCore(TestCoreBase):
         with self.assertRaises(UnsupportedCollection):
             self.dag.list_queryables(collection="not_supported_collection")
 
-        # No provider & no product type
+        # No provider & no collection
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
         self.assertEqual(len(queryables_none_none), len(expected_result))
@@ -1369,7 +1369,7 @@ class TestCore(TestCoreBase):
         self.assertTrue(queryables_none_none.additional_properties)
 
         # Only provider
-        # when only a provider is specified, return the union of the queryables for all product types
+        # when only a provider is specified, return the union of the queryables for all collections
         queryables_peps_none = self.dag.list_queryables(provider="peps")
         expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
         self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
@@ -1379,7 +1379,7 @@ class TestCore(TestCoreBase):
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_none.additional_properties)
 
-        # provider & product type
+        # provider & collection
         queryables_peps_s1grd = self.dag.list_queryables(
             provider="peps", collection="S1_SAR_GRD"
         )
@@ -1393,7 +1393,7 @@ class TestCore(TestCoreBase):
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_s1grd.additional_properties)
 
-        # provider & product type alias
+        # provider & collection alias
         # result should be the same if alias is used
         products = self.dag.collections_config
         products["S1_SAR_GRD"]["alias"] = "S1_SG"
@@ -1407,9 +1407,9 @@ class TestCore(TestCoreBase):
         )
         products["S1_SAR_GRD"].pop("alias")
 
-        # Only product type
-        # when a product type is specified but not the provider, the union of the queryables of all providers
-        # having the product type in its config is returned
+        # Only collection
+        # when a collection is specified but not the provider, the union of the queryables of all providers
+        # having the collection in its config is returned
         queryables_none_s1grd = self.dag.list_queryables(collection="S1_SAR_GRD")
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
         self.assertGreater(len(queryables_none_s1grd), len(queryables_peps_none))
@@ -1972,7 +1972,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
 
     def test_core_collections_config_envvar(self):
-        """product types should be loaded from file defined in env var"""
+        """collections should be loaded from file defined in env var"""
         # setup providers config
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
         providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
@@ -1990,7 +1990,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             TEST_RESOURCES_PATH, "file_collections_override.yml"
         )
 
-        # check product types
+        # check collections
         try:
             self.dag = EODataAccessGateway()
             pt = self.dag.list_collections(fetch_providers=False)
@@ -2289,7 +2289,7 @@ class TestCoreSearch(TestCoreBase):
         ]
         self.assertListEqual(actual, expected)
 
-        # with product type specified
+        # with collection specified
         actual = self.dag.guess_collection(collection="foo")
         self.assertListEqual(actual, ["foo"])
 
@@ -2310,7 +2310,7 @@ class TestCoreSearch(TestCoreBase):
             platform="SENTINEL1", processingLevel="L2", intersect=True
         )
         self.assertListEqual(actual, ["S1_SAR_OCN"])
-        # without intersect, the most appropriate product type must be at first position
+        # without intersect, the most appropriate collection must be at first position
         actual = self.dag.guess_collection(platform="SENTINEL1", processingLevel="L2")
         self.assertGreater(len(actual), 1)
         self.assertEqual(actual[0], "S1_SAR_OCN")
@@ -2418,13 +2418,13 @@ class TestCoreSearch(TestCoreBase):
         self.assertNotIn("country", prepared_search)
 
     def test__prepare_search_collection_provided(self):
-        """_prepare_search must handle when a product type is given"""
+        """_prepare_search must handle when a collection is given"""
         base = {"collection": "S2_MSI_L1C"}
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["collection"], base["collection"])
 
     def test__prepare_search_collection_guess_it(self):
-        """_prepare_search must guess a product type when required to"""
+        """_prepare_search must guess a collection when required to"""
         # Uses guess_collection to find the product matching
         # the best the given params.
         base = dict(
@@ -2553,7 +2553,7 @@ class TestCoreSearch(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test__prepare_search_unknown_collection(self, mock_fetch_collections_list):
-        """_prepare_search must fetch product types if collection is unknown"""
+        """_prepare_search must fetch collections if collection is unknown"""
         self.dag._prepare_search(collection="foo")
         mock_fetch_collections_list.assert_called_once_with(self.dag)
 
@@ -3450,7 +3450,7 @@ class TestCoreSearch(TestCoreBase):
     def test_search_all_unknown_collection(
         self, mock_fetch_collections_list, mock_search_iter_page_plugin
     ):
-        """search_all must fetch product types if collection is unknown"""
+        """search_all must fetch collections if collection is unknown"""
         self.dag.search_all(collection="foo")
         mock_fetch_collections_list.assert_called_with(self.dag)
         mock_search_iter_page_plugin.assert_called_once()
@@ -3632,9 +3632,9 @@ class TestCoreProductAlias(TestCoreBase):
         self.assertEqual(
             "S2_MSI_ALIAS", self.dag.get_alias_from_collection("S2_MSI_L1C")
         )
-        # product type without alias
+        # collection without alias
         self.assertEqual("S1_SAR_GRD", self.dag.get_alias_from_collection("S1_SAR_GRD"))
-        # not existing product type
+        # not existing collection
         with self.assertRaises(NoMatchingCollection):
             self.dag.get_alias_from_collection("JUST_A_TYPE")
 
@@ -3643,15 +3643,15 @@ class TestCoreProductAlias(TestCoreBase):
         self.assertEqual(
             "S2_MSI_L1C", self.dag.get_collection_from_alias("S2_MSI_ALIAS")
         )
-        # product type without alias
+        # collection without alias
         self.assertEqual("S1_SAR_GRD", self.dag.get_collection_from_alias("S1_SAR_GRD"))
-        # not existing product type
+        # not existing collection
         with self.assertRaises(NoMatchingCollection):
             self.dag.get_collection_from_alias("JUST_A_TYPE")
 
 
 class TestCoreProviderGroup(TestCoreBase):
-    # create a group with a provider which has product type discovery mechanism
+    # create a group with a provider which has collection discovery mechanism
     # and the other one which has not it to test different cases
     group = ("creodias", "earth_search")
     group_name = "testgroup"
@@ -3685,8 +3685,8 @@ class TestCoreProviderGroup(TestCoreBase):
 
     def test_list_collections(self) -> None:
         """
-        List the product types for the provider group.
-        EODAG return the merged list of product types from both providers of the group.
+        List the collections for the provider group.
+        EODAG return the merged list of collections from both providers of the group.
         """
 
         search_products = []
@@ -3709,7 +3709,7 @@ class TestCoreProviderGroup(TestCoreBase):
     def test_fetch_collections_list_grouped_providers(
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """Core api must fetch product types list and update if needed"""
+        """Core api must fetch collections list and update if needed"""
         # store providers config
         tmp_providers_config = copy.deepcopy(self.dag.providers_config)
 
@@ -3758,12 +3758,12 @@ class TestCoreProviderGroup(TestCoreBase):
         with self.assertLogs(level="INFO") as cm:
             self.dag.fetch_collections_list(provider=self.group_name)
             self.assertIn(
-                f"Fetch product types for {self.group_name} group: {', '.join(self.group)}",
+                f"Fetch collections for {self.group_name} group: {', '.join(self.group)}",
                 str(cm.output),
             )
 
         # discover_collections() should have been called one time per each provider of the group
-        # which has product type discovery mechanism. dag configuration of these providers should have been updated
+        # which has collection discovery mechanism. dag configuration of these providers should have been updated
         for provider in self.group:
             if getattr(
                 self.dag.providers_config[provider].search, "discover_collections", {}
@@ -3813,20 +3813,20 @@ class TestCoreProviderGroup(TestCoreBase):
     def test_discover_collections_grouped_providers(
         self, mock_plugin_discover_collections
     ):
-        """Core api must fetch grouped providers for product types"""
+        """Core api must fetch grouped providers for collections"""
         with self.assertLogs(level="INFO") as cm:
             ext_collections_conf = self.dag.discover_collections(
                 provider=self.group_name
             )
             self.assertIn(
-                f"Discover product types for {self.group_name} group: {', '.join(self.group)}",
+                f"Discover collections for {self.group_name} group: {', '.join(self.group)}",
                 str(cm.output),
             )
 
         self.assertIsNotNone(ext_collections_conf)
 
         # discover_collections() of providers search plugin should have been called one time per each provider
-        # of the group which has product type discovery mechanism. Only config of these providers should have been
+        # of the group which has collection discovery mechanism. Only config of these providers should have been
         # added in the external config
         mock_call_args_list = [
             mock_plugin_discover_collections.call_args_list[i].args[0]
@@ -3897,7 +3897,7 @@ class TestCoreStrictMode(TestCoreBase):
         super().tearDown()
 
     def test_list_collections_strict_mode(self):
-        """list_collections must only return product types from the main config in strict mode"""
+        """list_collections must only return collections from the main config in strict mode"""
         try:
             os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
             dag = EODataAccessGateway()
@@ -3911,7 +3911,7 @@ class TestCoreStrictMode(TestCoreBase):
             os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
 
     def test_list_collections_permissive_mode(self):
-        """list_collections must include provider-only product types in permissive mode"""
+        """list_collections must include provider-only collections in permissive mode"""
         if "EODAG_STRICT_PRODUCT_TYPES" in os.environ:
             del os.environ["EODAG_STRICT_PRODUCT_TYPES"]
 

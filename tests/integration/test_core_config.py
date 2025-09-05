@@ -421,7 +421,7 @@ class TestCoreCollectionsConfig(TestCase):
             )
             self.assertIsNone(ext_collections_conf["foo_provider"])
             self.assertIn(
-                "Could not authenticate on foo_provider for product types discovery",
+                "Could not authenticate on foo_provider for collections discovery",
                 str(cm.output),
             )
 

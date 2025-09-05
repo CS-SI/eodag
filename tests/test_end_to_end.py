@@ -598,7 +598,7 @@ class TestEODagEndToEnd(EndToEndBase):
             )
 
     def test_end_to_end_discover_collections_creodias(self):
-        """discover_collections() must return an external product types configuration for creodias"""
+        """discover_collections() must return an external collections configuration for creodias"""
         provider = "creodias"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
@@ -611,7 +611,7 @@ class TestEODagEndToEnd(EndToEndBase):
             "SENTINEL-1",
             ext_collections_conf[provider]["collections_config"]["SENTINEL-1"]["title"],
         )
-        # check that all pre-configured product types are listed by provider
+        # check that all pre-configured collections are listed by provider
         provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
@@ -624,7 +624,7 @@ class TestEODagEndToEnd(EndToEndBase):
             )
 
     def test_end_to_end_discover_collections_usgs_satapi_aws(self):
-        """discover_collections() must return an external product types configuration for usgs_satapi_aws"""
+        """discover_collections() must return an external collections configuration for usgs_satapi_aws"""
         provider = "usgs_satapi_aws"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
@@ -645,7 +645,7 @@ class TestEODagEndToEnd(EndToEndBase):
                 "missionStartDate"
             ],
         )
-        # check that all pre-configured product types are listed by provider
+        # check that all pre-configured collections are listed by provider
         provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
@@ -658,7 +658,7 @@ class TestEODagEndToEnd(EndToEndBase):
             )
 
     def test_end_to_end_discover_collections_earth_search(self):
-        """discover_collections() must return an external product types configuration for earth_search"""
+        """discover_collections() must return an external collections configuration for earth_search"""
         provider = "earth_search"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
@@ -679,7 +679,7 @@ class TestEODagEndToEnd(EndToEndBase):
                 "license"
             ],
         )
-        # check that all pre-configured product types are listed by provider
+        # check that all pre-configured collections are listed by provider
         provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
@@ -698,7 +698,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertIsNone(ext_collections_conf[provider])
 
     def test_end_to_end_discover_collections_fedeo_ceda(self):
-        """discover_collections() must return an external product types configuration for fedeo ceda"""
+        """discover_collections() must return an external collections configuration for fedeo ceda"""
         provider = "fedeo_ceda"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(

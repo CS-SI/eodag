@@ -165,7 +165,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
     def test_plugins_apis_ecmwf_query_without_producttype(self):
         """
-        EcmwfApi.query must build a EOProduct from input parameters without product type.
+        EcmwfApi.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
         """
         results, count = self.api_plugin.query(**self.query_dates)
@@ -181,7 +181,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert eoproduct.location.startswith("http")
 
     def test_plugins_apis_ecmwf_query_with_producttype(self):
-        """EcmwfApi.query must build a EOProduct from input parameters with predefined product type"""
+        """EcmwfApi.query must build a EOProduct from input parameters with predefined collection"""
         results, _ = self.api_plugin.query(
             **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
@@ -194,13 +194,13 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         params["collection"] = self.collection
         params["ecmwf:param"] = "tcc"
 
-        # product type default settings can be overwritten using search kwargs
+        # collection default settings can be overwritten using search kwargs
         results, _ = self.api_plugin.query(**params)
         eoproduct = results[0]
         assert eoproduct.properties["ecmwf:param"] == "tcc"
 
     def test_plugins_apis_ecmwf_query_with_custom_producttype(self):
-        """EcmwfApi.query must build a EOProduct from input parameters with custom product type"""
+        """EcmwfApi.query must build a EOProduct from input parameters with custom collection"""
         results, _ = self.api_plugin.query(
             **self.query_dates,
             **self.custom_query_params,

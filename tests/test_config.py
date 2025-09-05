@@ -474,7 +474,7 @@ class TestConfigFunctions(unittest.TestCase):
 
     @mock.patch("requests.get", autospec=True)
     def test_get_ext_collections_conf(self, mock_get):
-        """External product types configuration must be loadable from remote or local file"""
+        """External collections configuration must be loadable from remote or local file"""
         ext_collections_path = os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")
 
         # mock get request response for remote conf file (default value)
