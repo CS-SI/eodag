@@ -1269,7 +1269,7 @@ def _check_id(product: EOProduct) -> EOProduct:
             isinstance(e, DownloadError) or isinstance(e, ValidationError)
         ) and "order status could not be checked" in e.args[0]:
             raise ValidationError(
-                f"Item {product_id} does not exist with {product.provider}."
+                f"Requested data is not available on {product.provider} ({product_id})."
             ) from e
         raise ValidationError(e.args[0]) from e
 

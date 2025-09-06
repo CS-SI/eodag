@@ -334,18 +334,6 @@ class HTTPDownload(Download):
                     f"Order download status request responded with {response.status_code}"
                 )
 
-                # [CFDEDL-6623]: dedt_lumi currently responds with a 400 when no data is available.
-                # This often happens when Region of Interest polygon is not available.
-                # This is ad-hoc error handling for that case.
-                if (
-                    product.provider == "dedt_lumi"
-                    and "ecmwf:feature" in product.properties
-                    and response.status_code == 400
-                ):
-                    raise DownloadError(
-                        "No data was returned by the provider. Region of Interest may not be available."
-                    )
-
                 response.raise_for_status()  # Raise an exception if status code indicates an error
 
                 # Handle redirection (if needed)
