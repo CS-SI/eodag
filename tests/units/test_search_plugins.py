@@ -3865,12 +3865,12 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
             "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
             "type": "polygon",
         }
-        results, _ = self.search_plugin.query(
+        results = self.search_plugin.query(
             collection=self.collection,
             start="2021-01-01",
             geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
 
         self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
 
