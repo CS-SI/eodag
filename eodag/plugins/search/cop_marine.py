@@ -34,6 +34,7 @@ from dateutil.utils import today
 
 from eodag import EOProduct
 from eodag.api.product import AssetsDict
+from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
@@ -297,7 +298,7 @@ class CopMarineSearch(StaticStacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """
         Implementation of search for the Copernicus Marine provider
         :param prep: object containing search parameterds
@@ -309,7 +310,10 @@ class CopMarineSearch(StaticStacSearch):
 
         # only return 1 page if pagination is disabled
         if page is None or items_per_page is None or page > 1 and items_per_page <= 0:
-            return ([], 0) if prep.count else ([], None)
+            result = SearchResult([])
+            if prep.count:
+                result.number_matched = 0
+            return result
 
         product_type = kwargs.get("productType", prep.product_type)
         if not product_type:
@@ -397,7 +401,10 @@ class CopMarineSearch(StaticStacSearch):
                     )
                 if "Contents" not in s3_objects:
                     if len(products) == 0 and i == len(datasets_items_list) - 1:
-                        return ([], 0) if prep.count else ([], None)
+                        result = SearchResult([])
+                        if prep.count:
+                            result.number_matched = 0
+                        return result
                     else:
                         break
 
@@ -411,7 +418,11 @@ class CopMarineSearch(StaticStacSearch):
                         collection_dict,
                     )
                     if product:
-                        return [product], 1
+                        formated_result = SearchResult(
+                            [product],
+                            1,
+                        )
+                        return formated_result
                     current_object = s3_objects["Contents"][-1]["Key"]
                     continue
 
@@ -480,5 +491,8 @@ class CopMarineSearch(StaticStacSearch):
                             if product:
                                 products.append(product)
                     current_object = item_key
-
-        return products, num_total
+        formated_result = SearchResult(
+            products,
+            num_total,
+        )
+        return formated_result
