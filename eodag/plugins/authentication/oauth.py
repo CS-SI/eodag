@@ -20,12 +20,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from eodag.plugins.authentication.base import Authentication
+from eodag.utils import _deprecated
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
 
 
+@_deprecated(
+    reason="Plugin was used to authenticate using S3 credentials, use AwsAuth instead",
+    version="3.8.1",
+)
 class OAuth(Authentication):
     """OAuth authentication plugin
 
