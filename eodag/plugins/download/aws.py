@@ -224,8 +224,6 @@ class AwsDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsDownload, self).__init__(provider, config)
         self.requester_pays = getattr(self.config, "requester_pays", False)
-        self.s3_session: Optional[boto3.session.Session] = None
-        self.s3_resource: Optional[boto3.resources.base.ServiceResource] = None
 
     def download(
         self,
@@ -393,11 +391,14 @@ class AwsDownload(Download):
         """
         Download file in zip from a prefix like `foo/bar.zip!file.txt`
         """
-        if self.s3_resource is None:
+        if (
+            not getattr(product, "downloader_auth", None)
+            or product.downloader_auth.s3_resource is None
+        ):
             logger.debug("Cannot check files in s3 zip without s3 resource")
             return bucket_names_and_prefixes
 
-        s3_client = self.s3_resource.meta.client
+        s3_client = product.downloader_auth.s3_client
 
         downloaded = []
         for i, pack in enumerate(bucket_names_and_prefixes):
@@ -714,9 +715,9 @@ class AwsDownload(Download):
             product,
         )
         if auth and isinstance(auth, boto3.resources.base.ServiceResource):
-            self.s3_resource = auth
+            s3_resource = auth
         else:
-            self.s3_resource = boto3.resource(
+            s3_resource = boto3.resource(
                 service_name="s3",
                 endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
@@ -773,7 +774,7 @@ class AwsDownload(Download):
         zip_filename = sanitize(title)
 
         return stream_download_from_s3(
-            cast("S3Client", self.s3_resource.meta.client),
+            cast("S3Client", s3_resource.meta.client),
             files_info,
             byte_range,
             compress,

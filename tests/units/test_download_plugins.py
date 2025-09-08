@@ -1822,7 +1822,15 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
+        "eodag.plugins.authentication.aws_auth.create_s3_session",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_resource",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client",
         autospec=True,
     )
     @mock.patch(
@@ -1837,7 +1845,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self,
         mock_get_authenticated_objects: mock.Mock,
         mock_open_s3_zipped_object: mock.Mock,
-        mock_aws_auth_init: mock.Mock,
+        mock_s3_client: mock.Mock,
+        mock_s3_resource: mock.Mock,
+        mock_s3_session: mock.Mock,
     ):
         """AwsDownload.download() must handle files in zip"""
 
@@ -1856,11 +1866,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         mock_open_s3_zipped_object.side_effect = _open_zip
 
-        mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         self.product.downloader_auth = auth_plugin
-        plugin.s3_resource = mock.Mock()
         self.product.assets.clear()
         self.product.assets.update(
             {
@@ -1883,7 +1891,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         self.assertEqual(mock_open_s3_zipped_object.call_count, 2)
         mock_open_s3_zipped_object.assert_called_with(
-            "example", "path/to/foo.zip", plugin.s3_resource.meta.client, partial=False
+            "example", "path/to/foo.zip", auth_plugin.s3_client, partial=False
         )
         self.assertTrue(
             os.path.isfile(
@@ -2387,14 +2395,24 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
+        "eodag.plugins.authentication.aws_auth.create_s3_session",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_resource",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client",
         autospec=True,
     )
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
     def test_plugins_download_creodias_s3(
         self,
         mock_requests_get,
-        mock_aws_auth_init,
+        mock_s3_client,
+        mock_s3_resource,
+        mock_s3_session,
         mock_get_authenticated_objects,
         mock_get_chunk_dest_path,
         mock_finalize_s2_safe_product,
@@ -2415,7 +2433,6 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
             "a2": {"title": "a2", "href": "s3://eodata/a/a2"},
         }
         product.assets = assets
-        mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(product)
         auth_plugin = self.get_auth_plugin(associated_plugin=plugin, product=product)
         product.downloader_auth = auth_plugin
@@ -2454,14 +2471,24 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
+        "eodag.plugins.authentication.aws_auth.create_s3_session",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_resource",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client",
         autospec=True,
     )
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
     def test_plugins_download_creodias_s3_without_assets(
         self,
         mock_requests_get,
-        mock_aws_auth_init,
+        mock_s3_client,
+        mock_s3_resource,
+        mock_s3_session,
         mock_get_authenticated_objects,
         mock_get_chunk_dest_path,
         mock_finalize_s2_safe_product,
@@ -2478,7 +2505,6 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
             ),
         )
         product.location = product.remote_location = "a"
-        mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(product)
         auth_plugin = self.get_auth_plugin(associated_plugin=plugin, product=product)
         product.downloader_auth = auth_plugin
