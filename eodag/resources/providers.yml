@@ -6521,9 +6521,9 @@
     - host
   url: https://dataspace.copernicus.eu/
   search: !plugin
-    type: ODataV4Search
+    type: CreodiasS3Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
-    s3_endpoint: 'https://eodata.cloudferro.com'
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
     need_auth: true
     timeout: 120
     ssl_verify: true
@@ -6680,7 +6680,7 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
+      downloadLink: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
       collection:
@@ -6692,14 +6692,14 @@
       productIdentifier: '$.S3Path'
   download: !plugin
     type: CreodiasS3Download
-    s3_endpoint: 'https://eodata.cloudferro.com'
-    s3_bucket: 'eodata'
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
+    s3_bucket: 'eodata.dataspace.copernicus.eu'
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
     matching_conf:
-      s3_endpoint: 'https://eodata.cloudferro.com'
+      s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
   products:
     # S2
     S2_MSI_L1C:
