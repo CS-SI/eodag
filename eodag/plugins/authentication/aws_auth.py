@@ -67,7 +67,7 @@ def create_s3_session(**kwargs) -> boto3.Session:
 class AwsAuth(Authentication):
     """AWS authentication plugin
 
-    The authentication method will be coses depending on which parameters are available in the configuration:
+    The authentication method will be chosen depending on which parameters are available in the configuration:
 
     * auth using ``profile_name`` (if credentials are given and contain ``aws_profile``)
     * auth using ``aws_access_key_id``, ``aws_secret_access_key`` and optionally ``aws_session_token``
