@@ -149,10 +149,11 @@ def get_next_link(
 
     url = str(request.state.url)
     if request.method == "POST":
-        if next_page_token.isdigit():
-            body["next_page_token"] = str(int(next_page_token) + 1)
-        elif next_page_token:
-            body["next_page_token"] = next_page_token
+        if next_page_token:
+            if next_page_token.isdigit():
+                body["next_page_token"] = str(int(next_page_token) + 1)
+            else:
+                body["next_page_token"] = next_page_token
         else:
             body["page"] = page + 1
     elif not next_page_token:
