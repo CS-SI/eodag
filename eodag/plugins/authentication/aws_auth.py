@@ -72,8 +72,10 @@ class AwsAuth(Authentication):
     * auth using ``profile_name`` (if credentials are given and contain ``aws_profile``)
     * auth using ``aws_access_key_id``, ``aws_secret_access_key`` and optionally ``aws_session_token``
       (if credentials are given but no ``aws_profile``)
-    * auth using current environment - AWS environment variables and/or ``~/aws/*``
+    * auth using current environment - AWS environment variables and/or ``~/.aws/*``
       (if no credentials are given in config)
+    * auth anonymously using no-sign-request if no credentials are given in config and
+      auth using current environment failed
 
     :param provider: provider name
     :param config: Authentication plugin configuration:
