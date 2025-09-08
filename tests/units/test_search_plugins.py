@@ -2631,21 +2631,21 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
                 None,
                 "baz",
             )
-            products, estimate = self.search_plugin.query(
+            products = self.search_plugin.query(
                 productType="S1_SAR_GRD",
             )
-            self.assertIn("bar", products[0].properties)
-            self.assertEqual(products[0].properties["bar"], "baz")
+            self.assertIn("bar", products.data[0].properties)
+            self.assertEqual(products.data[0].properties["bar"], "baz")
 
             # search with another product type
             self.assertNotIn(
                 "bar",
                 self.search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"],
             )
-            products, estimate = self.search_plugin.query(
+            products = self.search_plugin.query(
                 productType="S1_SAR_SLC",
             )
-            self.assertNotIn("bar", products[0].properties)
+            self.assertNotIn("bar", products.data[0].properties)
 
         run()
 
@@ -2686,7 +2686,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
 
             self.assertTrue(self.search_plugin.config.dates_required)
 
-            products, estimate = self.search_plugin.query(
+            self.search_plugin.query(
                 productType="S1_SAR_GRD",
             )
 
@@ -3749,7 +3749,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
             )
             stubber.activate()
-            result, num_total = search_plugin.query(
+            result = search_plugin.query(
                 productType="PRODUCT_A",
                 startTimeFromAscendingNode="2020-01-01T01:00:00Z",
                 completionTimeFromAscendingNode="2020-02-01T01:00:00Z",
@@ -3770,15 +3770,15 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                     call().json(),
                 ]
             )
-            self.assertEqual(3, num_total)
+            self.assertEqual(3, result.number_matched)
             products_dataset1 = [
                 product
-                for product in result
+                for product in result.data
                 if product.properties["dataset"] == "dataset-number-one"
             ]
             products_dataset2 = [
                 product
-                for product in result
+                for product in result.data
                 if product.properties["dataset"] == "dataset-number-two"
             ]
             self.assertEqual(2, len(products_dataset1))
@@ -3832,7 +3832,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 },
             )
             stubber.activate()
-            result, num_total = search_plugin.query(
+            result = search_plugin.query(
                 productType="PRODUCT_A",
                 startTimeFromAscendingNode="1969-01-01T01:00:00Z",
                 completionTimeFromAscendingNode="1970-02-01T01:00:00Z",
@@ -3853,10 +3853,10 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                     call().json(),
                 ]
             )
-            self.assertEqual(2, num_total)
+            self.assertEqual(2, result.number_matched)
             products_dataset2 = [
                 product
-                for product in result
+                for product in result.data
                 if product.properties["dataset"] == "dataset-number-two"
             ]
             self.assertEqual(2, len(products_dataset2))
@@ -3919,23 +3919,23 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                     },
                 )
             stubber.activate()
-            result, num_total = search_plugin.query(
+            result = search_plugin.query(
                 productType="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
-            self.assertEqual(1, num_total)
+            self.assertEqual(1, result.number_matched)
             self.assertEqual(
                 "item_20200204_20200205_niznjvnqkrf_20210101",
-                result[0].properties["id"],
+                result.data[0].properties["id"],
             )
-            result, num_total = search_plugin.query(
+            result = search_plugin.query(
                 productType="PRODUCT_A",
                 id="item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
             )
-            self.assertEqual(1, num_total)
+            self.assertEqual(1, result.number_matched)
             self.assertEqual(
                 "item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
-                result[0].properties["id"],
+                result.data[0].properties["id"],
             )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
@@ -3988,7 +3988,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 },
             )
             stubber.activate()
-            result, num_total = search_plugin.query(
+            result = search_plugin.query(
                 productType="PRODUCT_A", id="item_846282_niznjvnqkrf"
             )
             mock_requests_get.assert_has_calls(
@@ -4007,8 +4007,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                     call().json(),
                 ]
             )
-            self.assertEqual(1, num_total)
-            self.assertEqual("item_846282_niznjvnqkrf", result[0].properties["id"])
+            self.assertEqual(1, result.number_matched)
+            self.assertEqual("item_846282_niznjvnqkrf", result.data[0].properties["id"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_with_not_intersected_geom(
@@ -4037,7 +4037,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
 
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
 
-        result, num_total = search_plugin.query(
+        result = search_plugin.query(
             productType="PRODUCT_A",
             geometry=geometry,
         )
@@ -4060,8 +4060,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         )
 
         # check that no result has been found
-        self.assertListEqual(result, [])
-        self.assertEqual(num_total, 0)
+        self.assertListEqual(result.data, [])
+        self.assertEqual(result.number_matched, 0)
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):

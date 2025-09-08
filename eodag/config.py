@@ -245,6 +245,8 @@ class PluginConfig(yaml.YAMLObject):
         count_endpoint: str
         #: Index of the starting page
         start_page: int
+        #: Key in the current page URL for the next page URL
+        parse_url_key: str
 
     class Sort(TypedDict):
         """Configuration for sort during search"""
