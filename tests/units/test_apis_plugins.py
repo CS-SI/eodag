@@ -543,7 +543,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 page=2,
             ),
         }
-        search_results, total_count = self.api_plugin.query(**search_kwargs)
+        search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
             start_date="2020-02-01",
@@ -553,10 +553,10 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             max_results=5,
             starting_number=6,
         )
-        self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
+        self.assertEqual(search_results.data[0].provider, "usgs")
+        self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
         self.assertEqual(
-            search_results[0].geometry,
+            search_results.data[0].geometry,
             shape(
                 mock_api_scene_search.return_value["data"]["results"][0][
                     "spatialBounds"
@@ -564,18 +564,21 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             ),
         )
         self.assertEqual(
-            search_results[0].properties["id"],
+            search_results.data[0].properties["id"],
             mock_api_scene_search.return_value["data"]["results"][0]["displayId"],
         )
         self.assertEqual(
-            search_results[0].properties["eo:cloud_cover"],
+            search_results.data[0].properties["eo:cloud_cover"],
             float(
                 mock_api_scene_search.return_value["data"]["results"][0]["cloudCover"]
             ),
         )
-        self.assertEqual(search_results[0].properties["order:status"], ONLINE_STATUS)
         self.assertEqual(
-            total_count, mock_api_scene_search.return_value["data"]["totalHits"]
+            search_results.data[0].properties["order:status"], ONLINE_STATUS
+        )
+        self.assertEqual(
+            search_results.number_matched,
+            mock_api_scene_search.return_value["data"]["totalHits"],
         )
 
     @mock.patch("usgs.api.login", autospec=True)
@@ -618,7 +621,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 page=1,
             ),
         }
-        search_results, total_count = self.api_plugin.query(**search_kwargs)
+        search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
             where={"filter_id": "bar_id", "value": "SOME_PRODUCT_ID"},
@@ -629,9 +632,9 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             max_results=500,
             starting_number=1,
         )
-        self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
-        self.assertEqual(len(search_results), 1)
+        self.assertEqual(search_results.data[0].provider, "usgs")
+        self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
+        self.assertEqual(len(search_results.data), 1)
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)

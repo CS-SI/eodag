@@ -34,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.utils import (
@@ -59,7 +60,6 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
@@ -138,7 +138,7 @@ class UsgsApi(Api):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Search for data on USGS catalogues"""
         page = prep.page if prep.page is not None else DEFAULT_PAGE
         items_per_page = (
@@ -293,8 +293,11 @@ class UsgsApi(Api):
             total_results = path_parsed.find(results["data"])[0].value
         else:
             total_results = 0
-
-        return final, total_results
+        formated_result = SearchResult(
+            final,
+            total_results,
+        )
+        return formated_result
 
     def download(
         self,

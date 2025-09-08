@@ -54,3 +54,4 @@ class PreparedSearch:
     total_items_nb: int = field(init=False, repr=False)
     sort_by_qs: str = field(init=False, repr=False)
     next_page_token: Optional[str] = field(init=False, repr=False)
+    raise_errors: Optional[bool] = field(init=False, repr=False)

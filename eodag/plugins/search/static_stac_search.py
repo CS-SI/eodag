@@ -25,6 +25,7 @@ import geojson
 from pydantic.fields import FieldInfo
 
 from eodag.api.product.metadata_mapping import get_metadata_path_value
+from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
@@ -35,7 +36,6 @@ from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
 if TYPE_CHECKING:
-    from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
 
@@ -156,7 +156,7 @@ class StaticStacSearch(StacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Perform a search on a static STAC Catalog"""
 
         # only return 1 page if pagination is disabled
@@ -166,7 +166,10 @@ class StaticStacSearch(StacSearch):
             and prep.items_per_page is not None
             and prep.items_per_page <= 0
         ):
-            return ([], 0) if prep.count else ([], None)
+            result = SearchResult([])
+            if prep.count:
+                result.number_matched = 0
+            return result
 
         collection = kwargs.get("collection", prep.collection)
         # provider collection specific conf

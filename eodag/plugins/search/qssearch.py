@@ -763,7 +763,10 @@ class QueryStringSearch(Search):
             logger.warning(
                 "GENERIC_COLLECTION is not a real collection and should only be used internally as a template"
             )
-            return ([], 0) if prep.count else ([], None)
+            result = SearchResult([])
+            if prep.count and not result.number_matched:
+                result.number_matched = 0
+            return result
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         prep.sort_by_qs, _ = (
@@ -862,7 +865,9 @@ class QueryStringSearch(Search):
         token = getattr(prep, "next_page_token", None)
         items_per_page = prep.items_per_page
         count = prep.count
-        next_page_token_key = self.config.pagination.get("next_page_token_key", "page")
+        next_page_token_key = str(
+            self.config.pagination.get("next_page_token_key", "page")
+        )
 
         urls = []
         total_results = 0 if count else None
@@ -976,7 +981,7 @@ class QueryStringSearch(Search):
             if self.config.result_type == "xml":
                 root_node = etree.fromstring(response.content)
                 namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                resp_as_json = None
+                resp_as_json = {}
                 results_xpath = root_node.xpath(
                     self.config.results_entry or "//ns:entry", namespaces=namespaces
                 )
@@ -1141,9 +1146,14 @@ class QueryStringSearch(Search):
         if resp_as_json is None:
             return raw_search_results
         if self.config.pagination.get("next_page_query_obj_key_path") is not None:
-            href = self.config.pagination["next_page_query_obj_key_path"].find(
-                resp_as_json
+            jsonpath_expr = string_to_jsonpath(
+                self.config.pagination["next_page_query_obj_key_path"]
             )
+            if isinstance(jsonpath_expr, str):
+                raise PluginImplementationError(
+                    "next_page_query_obj_key_path must be parsed to JSONPath on plugin init"
+                )
+            href = jsonpath_expr.find(resp_as_json)
             if href:
                 next_page_token_key = (
                     unquote(self.config.pagination["parse_url_key"])
@@ -1158,28 +1168,33 @@ class QueryStringSearch(Search):
                 ):  # if next_page_token_key = $skip
                     from urllib.parse import parse_qs, urlparse
 
-                    query = urlparse(href[0].value).query
+                    query = urlparse(href_value).query
                     page_param = parse_qs(query).get(next_page_token_key)
                     if page_param:
                         raw_search_results.next_page_token = page_param[0]
                 else:
-                    raw_search_results.next_page_token = href[0].value
+                    raw_search_results.next_page_token = href_value
             else:
-                raw_search_results.next_page_token = None
+                raw_search_results.next_page_token = ""
         elif self.config.pagination.get("next_page_url_key_path") is not None:
-            token = self.config.pagination["next_page_query_obj_key_path"].find(
-                resp_as_json
+            jsonpath_expr = string_to_jsonpath(
+                self.config.pagination["next_page_query_obj_key_path"]
             )
+            if isinstance(jsonpath_expr, str):
+                raise PluginImplementationError(
+                    "next_page_query_obj_key_path must be parsed to JSONPath on plugin init"
+                )
+            token = jsonpath_expr.find(resp_as_json)
             if token:
                 raw_search_results.next_page_token = token[0].value
             else:
                 raw_search_results.next_page_token = None
         else:
-            next_page_token_key = self.config.pagination.get(
-                "next_page_token_key", "page"
+            next_page_token_key = str(
+                self.config.pagination.get("next_page_token_key", "page")
             )
             raw_search_results.next_page_token = (
-                prep.query_params[next_page_token_key] + 1
+                str(prep.query_params[next_page_token_key] + 1)
                 if prep.query_params[next_page_token_key]
                 else None
             )
@@ -1688,7 +1703,10 @@ class PostJsonSearch(QueryStringSearch):
             for k in keywords.keys()
             if isinstance(collection_metadata_mapping.get(k), list)
         ):
-            return ([], 0) if prep.count else ([], None)
+            result = SearchResult([])
+            if prep.count:
+                result.number_matched = 0
+            return result
         prep.query_params = dict(qp, **sort_by_qp)
         prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
         if not count and getattr(prep, "need_count", False):
@@ -1702,9 +1720,9 @@ class PostJsonSearch(QueryStringSearch):
         if "number_matched" in kwargs:
             total_items = kwargs["number_matched"]
 
-        eo_products = self.normalize_results(provider_results, **kwargs)
+        eo_products_normalize = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
-            eo_products,
+            eo_products_normalize,
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
@@ -1757,7 +1775,9 @@ class PostJsonSearch(QueryStringSearch):
         count = prep.count
         urls: list[str] = []
         total_results = 0 if count else None
-        next_page_token_key = self.config.pagination.get("next_page_token_key", "page")
+        next_page_token_key = str(
+            self.config.pagination.get("next_page_token_key", "page")
+        )
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result

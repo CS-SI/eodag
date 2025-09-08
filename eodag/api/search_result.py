@@ -36,6 +36,7 @@ from eodag.utils.exceptions import MisconfiguredError
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.api.core import EODataAccessGateway
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.manager import PluginManager
 
@@ -71,7 +72,7 @@ class SearchResult(UserList[EOProduct]):
         self.errors = errors if errors is not None else []
         self.search_params = search_params
         self.next_page_token = next_page_token
-        self._dag = None
+        self._dag: Optional["EODataAccessGateway"] = None
         self.raise_errors = raise_errors
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
@@ -228,7 +229,7 @@ class SearchResult(UserList[EOProduct]):
     def next_page(self, update: bool = True) -> Iterator[SearchResult]:
         """Get the next page of results based on the current search parameters."""
         if self.next_page_token is None:
-            return iter([])
+            return iter([])  # type: ignore[return-value]
 
         def get_next_page(current):
             if current.search_params is None:
@@ -278,7 +279,7 @@ class SearchResult(UserList[EOProduct]):
                     "This provider may not implement pagination.",
                 )
                 break
-        return iter([])
+        return iter([])  # type: ignore[return-value]
 
     @classmethod
     def _from_stac_item(
@@ -443,7 +444,7 @@ class RawSearchResult(UserList[dict[str, Any]]):
     query_params: dict[str, Any]
     collection_def_params: dict[str, Any]
     search_params: dict[str, Any]
-    next_page_token: str
+    next_page_token: Optional[str] = None
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)
