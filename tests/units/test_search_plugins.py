@@ -2387,7 +2387,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True

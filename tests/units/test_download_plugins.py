@@ -2098,7 +2098,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             plugin.download(self.product, outputs_prefix=self.output_dir)
 
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client",
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client",
         autospec=True,
     )
     @mock.patch(

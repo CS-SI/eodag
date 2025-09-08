@@ -67,15 +67,13 @@ def create_s3_session(**kwargs) -> boto3.Session:
 class AwsAuth(Authentication):
     """AWS authentication plugin
 
-    Authentication will use the first valid method within the following ones depending on which
-    parameters are available in the configuration:
+    The authentication method will be coses depending on which parameters are available in the configuration:
 
-    * auth anonymously using no-sign-request
-    * auth using ``aws_profile``
-    * auth using ``aws_access_key_id`` and ``aws_secret_access_key``
-      (optionally ``aws_session_token``)
-    * auth using current environment (AWS environment variables and/or ``~/aws/*``),
-      will be skipped if AWS credentials are filled in eodag conf
+    * auth using ``profile_name`` (if credentials are given and contain ``aws_profile``)
+    * auth using ``aws_access_key_id``, ``aws_secret_access_key`` and optionally ``aws_session_token``
+      (if credentials are given but no ``aws_profile``)
+    * auth using current environment - AWS environment variables and/or ``~/aws/*``
+      (if no credentials are given in config)
 
     :param provider: provider name
     :param config: Authentication plugin configuration:
@@ -90,10 +88,12 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.endpoint_url = getattr(self.config, "s3_endpoint", None)
         self.credentials = getattr(self.config, "credentials", {}) or {}
+        # auth using aws_profile
         if "aws_profile" in self.credentials:
             self.s3_session = create_s3_session(
                 profile_name=self.credentials["aws_profile"]
             )
+        # auth using aws keys
         elif self.credentials:
             s3_session_kwargs: S3SessionKwargs = {
                 "aws_access_key_id": self.credentials["aws_access_key_id"],
@@ -105,9 +105,10 @@ class AwsAuth(Authentication):
                 ]
             self.s3_session = create_s3_session(**s3_session_kwargs)
         else:
+            # auth using env variables or ~/.aws
             self.s3_session = create_s3_session()
         self.s3_resource = self._create_s3_resource()
-        self.s3_client = self.create_s3_client()
+        self.s3_client = self.get_s3_client()
 
     def _create_s3_resource(self) -> S3ServiceResource:
         """create s3 resource based on s3 session"""
@@ -116,24 +117,19 @@ class AwsAuth(Authentication):
                 service_name="s3",
                 endpoint_url=self.endpoint_url,
             )
+        # could not auth using credentials: use no-sign-request strategy
         s3_resource = boto3.resource(service_name="s3", endpoint_url=self.endpoint_url)
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )
         return s3_resource
 
-    def create_s3_client(self):
-        """Create an S3 client based on the given endpoint url and credentials
+    def get_s3_client(self):
+        """Get S3 client from S3 resource
 
         :returns: boto3 client
         """
-        return boto3.client(
-            service_name="s3",
-            endpoint_url=self.endpoint_url,
-            aws_access_key_id=self.credentials.get("aws_access_key_id"),
-            aws_secret_access_key=self.credentials.get("aws_secret_access_key"),
-            aws_session_token=self.credentials.get("aws_session_token"),
-        )
+        return self.s3_resource.meta.client
 
     def authenticate(self) -> S3ServiceResource:
         """Authenticate
@@ -146,12 +142,10 @@ class AwsAuth(Authentication):
     def _get_authenticated_objects(
         self, bucket_name: str, prefix: str
     ) -> BucketObjectsCollection:
-        """Get boto3 authenticated objects for the given bucket using
-        the most adapted auth strategy.
+        """Get boto3 authenticated objects for the given bucket
 
         :param bucket_name: Bucket containg objects
-        :param prefix: Prefix used to filter objects on auth try
-                       (not used to filter returned objects)
+        :param prefix: Prefix used to filter objects
         :returns: The boto3 authenticated objects
         """
         try:
@@ -176,12 +170,12 @@ class AwsAuth(Authentication):
         except ProfileNotFound:
             pass
         logger.debug(
-            "Authentication for bucket %s failed, please check the credentials!",
+            "Authentication for bucket %s failed, please check the credentials",
             bucket_name,
         )
 
         raise AuthenticationError(
-            "Unable do authenticate on s3://%s using any available credendials configuration"
+            "Unable do authenticate on s3://%s using credendials configuration"
             % bucket_name
         )
 

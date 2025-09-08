@@ -616,7 +616,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
     )
     def test_plugins_auth_aws_authenticate(self, mock_s3_client, mock_create_session):
         """AwsAuth.authenticate must return an S3AuthContextPool containing available auth contexts"""
@@ -688,7 +688,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
     )
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",
