@@ -1271,6 +1271,7 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
+
         search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
@@ -1771,6 +1772,11 @@ class EODataAccessGateway:
                          before sending the query to the provider
         :returns: A collection of EO products matching the criteria
         """
+        logger.info(
+            "The 'page' parameter is deprecated and no longer supported. "
+            "Pagination is now handled via 'next_page_token'. "
+            "To fetch the next page of results, please use `SearchResult.next_page()`."
+        )
         logger.info("Searching on provider %s", search_plugin.provider)
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
@@ -2011,7 +2017,7 @@ class EODataAccessGateway:
         :returns: The name of the created file
         """
         with open(filename, "w") as fh:
-            geojson.dump(search_result, fh)
+            geojson.dump(search_result.to_geojson(), fh)
         return filename
 
     @staticmethod

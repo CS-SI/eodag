@@ -157,12 +157,40 @@ class SearchResult(UserList[EOProduct]):
         :param feature_collection: A collection representing a search result.
         :returns: An eodag representation of a search result
         """
+
+        products = [
+            EOProduct.from_geojson(feature)
+            for feature in feature_collection.get("features", [])
+        ]
+        props = feature_collection.get("properties", {}) or {}
+
         return SearchResult(
-            [
-                EOProduct.from_geojson(feature)
-                for feature in feature_collection["features"]
-            ]
+            products=products,
+            number_matched=props.get("number_matched"),
+            next_page_token=props.get("next_page_token"),
+            search_params=props.get("search_params"),
+            raise_errors=props.get("raise_errors"),
         )
+
+    def to_geojson(self) -> dict:
+        """Builds a GeoJSON representation of the current :class:`~eodag.api.search_result.SearchResult` object.
+
+        The returned FeatureCollection includes the serialized EO products
+        as features, along with metadata such as ``number_matched``,
+        ``next_page_token`` and ``search_params`` in the properties.
+
+        :returns: A GeoJSON FeatureCollection representing this search result.
+        """
+        return {
+            "type": "FeatureCollection",
+            "features": [p.as_dict() for p in self.data],
+            "properties": {
+                "number_matched": self.number_matched,
+                "next_page_token": self.next_page_token,
+                "search_params": self.search_params,
+                "raise_errors": self.raise_errors,
+            },
+        }
 
     def as_geojson_object(self) -> dict[str, Any]:
         """GeoJSON representation of SearchResult"""
