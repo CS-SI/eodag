@@ -363,8 +363,8 @@ class StacItem(StacCommon):
             for link in product_item["links"]:
                 link["href"] = _quote_url_path(link["href"])
 
-            # update item link with datacube query-string
-            if _dc_qs or self.provider:
+            # update item link with datacube query-string and propagate `validate`
+            if _dc_qs or self.provider or validate is not None:
                 url_parts = urlparse(str(product_item["links"][0]["href"]))
                 without_arg_url = (
                     f"{url_parts.scheme}://{url_parts.netloc}{url_parts.path}"
