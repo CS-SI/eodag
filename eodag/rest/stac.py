@@ -317,7 +317,7 @@ class StacItem(StacCommon):
                 query_dict.update(_dc_qs=[_dc_qs])
             # add validate to query-args
             if validate is not None:
-                query_dict.update(validate="true" if validate else "false")
+                query_dict.update(validate=["true"] if validate else ["false"])
             if query_dict:
                 downloadlink_href = (
                     f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
