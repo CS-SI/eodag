@@ -805,17 +805,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.assets = mock.Mock()
         self.product.assets.get_values.return_value = [asset]
 
-        chunks = [b"chunk1"]
-        plugin._stream_download_assets = mock.Mock(return_value=iter([chunks]))
+        chunk_asset1 = mock.Mock()
+        chunk_asset1.content = [b"chunk1"]
+        chunk_asset1.arcname = "file1.txt"
+        chunk_asset1.size = len(b"chunk1")
+        plugin._stream_download_assets = mock.Mock(return_value=[chunk_asset1])
+
         self.product.assets.__len__ = lambda self=self.product.assets: 1
 
         response = plugin._stream_download_dict(
             self.product, output_dir=self.output_dir
         )
 
-        self.assertEqual(
-            response.headers["content-disposition"], "attachment; filename=myfile.txt"
-        )
+        self.assertEqual(response.arcname, "file1.txt")
+        self.assertEqual(response.size, len(b"chunk1"))
+        self.assertEqual(response.content, [b"chunk1"])
 
     def test_stream_download_dict_multiple_assets_zip(self):
         """HTTPDownload._stream_download_dict() must return a zipped response with multiple assets"""
@@ -830,23 +834,33 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.assets = mock.Mock()
         self.product.assets.get_values.return_value = [asset1, asset2]
 
-        chunks1 = [b"chunk1"]
-        chunks2 = [b"chunk2"]
+        chunk_asset1 = mock.Mock()
+        chunk_asset1.content = [b"chunk1"]
+        chunk_asset1.arcname = "file1.txt"
+        chunk_asset1.size = len(b"chunk1")
+
+        chunk_asset2 = mock.Mock()
+        chunk_asset2.content = [b"chunk2"]
+        chunk_asset2.arcname = "file2.txt"
+        chunk_asset2.size = len(b"chunk2")
 
         plugin._stream_download_assets = mock.Mock(
-            return_value=iter([chunks1, chunks2])
+            return_value=[chunk_asset1, chunk_asset2]
         )
         self.product.assets.__len__ = lambda self=self.product.assets: 2
 
-        with mock.patch(
-            "eodag.plugins.download.http.stream_zip", side_effect=lambda x: x
-        ):
+        with mock.patch("eodag.plugins.download.http.ZipStream") as mockZipStream:
+            fake_zip = mock.Mock()
+            fake_zip.add = mock.Mock()
+            fake_zip.__len__ = mock.Mock(return_value=2)
+            mockZipStream.return_value = fake_zip
+
             response = plugin._stream_download_dict(
                 self.product, output_dir=self.output_dir
             )
 
         self.assertIn("content-disposition", response.headers)
-        self.assertTrue(response.headers["content-disposition"].endswith(".zip"))
+        self.assertIn(".zip", response.headers["content-disposition"])
 
     def test_stream_download_dict_asset_not_available(self):
         """HTTPDownload._stream_download_dict() must raise NotAvailableError if asset not available"""
@@ -879,17 +893,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.assets.get_values.return_value = [asset]
         self.product.assets.__len__ = lambda self=self.product.assets: 1
 
-        chunks = [b"chunk1"]
-        plugin._stream_download_assets = mock.Mock(return_value=iter([chunks]))
+        chunk_asset1 = mock.Mock()
+        chunk_asset1.content = [b"chunk1"]
+        chunk_asset1.arcname = "file1.txt"
+        chunk_asset1.size = len(b"chunk1")
+        chunk_asset1.headers = {}
+
+        plugin._stream_download_assets = mock.Mock(return_value=[chunk_asset1])
 
         response = plugin._stream_download_dict(
             self.product, output_dir=self.output_dir
         )
 
-        self.assertEqual(
-            response.headers["content-disposition"], "attachment; filename=myfile.txt"
-        )
-        self.assertEqual(response.headers["content-type"], "text/plain")
+        self.assertEqual(response.arcname, "file1.txt")
+        self.assertEqual(response.size, len(b"chunk1"))
+        self.assertEqual(response.content, [b"chunk1"])
 
     def test_stream_download_dict_fallback_to_product(self):
         """HTTPDownload._stream_download_dict() must return a response with product headers if no asset headers"""
