@@ -644,6 +644,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_product_types_per_page_keyerror(
         self,
     ):
+        """QueryStringSearch.discover_product_types must handle missing keys in the response"""
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
         discover_product_types_conf = search_plugin.config.discover_product_types
@@ -874,6 +875,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             )
 
     def test_plugins_search_querystringsearch_count_hits_xml(self):
+        """Test QueryStringSearch.count_hits() with XML response and XPath key path"""
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
         search_plugin.config.pagination = {
@@ -891,6 +893,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             assert result == 4
 
     def test_plugins_search_querystringsearch_count_hits_json_dict_ok(self):
+        """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path"""
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
         search_plugin.config.pagination = {"total_items_nb_key_path": parse("$.total")}
@@ -903,6 +906,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             assert result == 99
 
     def test_plugins_search_querystringsearch_count_hits_json_dict_not_jsonpath(self):
+        """Test QueryStringSearch.count_hits() with JSON response and non-JSONPath key path"""
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
         search_plugin.config.pagination = {"total_items_nb_key_path": "$.total"}
@@ -917,6 +921,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_count_hits_json_dict_jsonpath_not_found(
         self,
     ):
+        """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path not found in the response"""
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
         search_plugin.config.pagination = {

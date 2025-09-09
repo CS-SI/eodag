@@ -782,6 +782,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(self.product.remote_location, "http://somewhere")
 
     def test_plugins_download_http_stream_dict_misconfigured(self):
+        """HTTPDownload._stream_download_dict() must raise an error if misconfigured"""
+
         plugin = self.get_download_plugin(self.product)
         with self.assertRaises(MisconfiguredError):
             # Wrong auth instance
@@ -791,6 +793,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
     def test_stream_download_dict_single_asset(self):
+        """HTTPDownload._stream_download_dict() must return a response with a single asset"""
+
         plugin = self.get_download_plugin(self.product)
 
         asset = mock.Mock()
@@ -814,6 +818,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def test_stream_download_dict_multiple_assets_zip(self):
+        """HTTPDownload._stream_download_dict() must return a zipped response with multiple assets"""
+
         plugin = self.get_download_plugin(self.product)
 
         asset1 = mock.Mock(filename="file1.txt")
@@ -843,6 +849,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertTrue(response.headers["content-disposition"].endswith(".zip"))
 
     def test_stream_download_dict_asset_not_available(self):
+        """HTTPDownload._stream_download_dict() must raise NotAvailableError if asset not available"""
+
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets = mock.Mock()
@@ -855,6 +863,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
     def test_stream_download_dict_single_asset_with_type(self):
+        """HTTPDownload._stream_download_dict() must return a response with a single asset and its type"""
+
         plugin = self.get_download_plugin(self.product)
 
         asset = mock.Mock()
@@ -882,6 +892,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.headers["content-type"], "text/plain")
 
     def test_stream_download_dict_fallback_to_product(self):
+        """HTTPDownload._stream_download_dict() must return a response with product headers if no asset headers"""
+
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets = mock.Mock()
@@ -900,6 +912,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(response.headers, self.product.headers)
 
     def test_stream_download_dict_product_empty_raises(self):
+        """HTTPDownload._stream_download_dict() must raise NotAvailableError if no asset and no product headers"""
+
         plugin = self.get_download_plugin(self.product)
 
         self.product.assets = mock.Mock()

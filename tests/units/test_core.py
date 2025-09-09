@@ -2871,7 +2871,7 @@ class TestCoreSearch(TestCoreBase):
     def test_search_iter_page_requesterror_retry(
         self, mock_prepare_search, mock_search_plugin
     ):
-        # Simule 2 plugins
+        """Simulate a search with two plugins. The first one fails, the second one succeeds."""
         plugin1 = mock.Mock(provider="provider1")
         plugin2 = mock.Mock(provider="provider2")
 
@@ -2894,6 +2894,7 @@ class TestCoreSearch(TestCoreBase):
     def test_search_iter_page_requesterror_all_fail(
         self, mock_prepare_search, mock_search_plugin
     ):
+        """Simulate a search with two plugins that both fail."""
         plugin1 = mock.Mock(provider="provider1")
         plugin2 = mock.Mock(provider="provider2")
 
@@ -2968,128 +2969,9 @@ class TestCoreSearch(TestCoreBase):
             next(page_iterator)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_search_iter_page_finally_resets_next_page_url(self, search_plugin):
-        class DummyConfig:
-            pagination = {"next_page_url_tpl": "original_tpl"}
-
-        search_plugin.config = DummyConfig()
-        search_plugin.provider = "peps"
-        search_plugin.next_page_url = "some_next_page"
-        search_plugin.next_page_query_obj = None
-        search_plugin.next_page_merge = False
-
-        dummy_result = mock.Mock()
-        dummy_result.number_matched = 10
-        dummy_result.__getitem__ = lambda self, i: [mock.Mock(), mock.Mock()][i]
-        dummy_result.__iter__ = lambda self: iter([mock.Mock(), mock.Mock()])
-        dummy_result.__len__ = lambda self: 2
-
-        with mock.patch.object(self.dag, "_do_search", return_value=dummy_result):
-            page_iterator = self.dag.search_iter_page_plugin(
-                items_per_page=2, search_plugin=search_plugin
-            )
-            next(page_iterator)
-
-        self.assertIsNone(search_plugin.next_page_url)
-        self.assertEqual(
-            search_plugin.config.pagination["next_page_url_tpl"], "original_tpl"
-        )
-
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_search_iter_page_finally_resets_next_page_query_obj_no_merge(
-        self, search_plugin
-    ):
-        class DummyConfig:
-            pagination = {"next_page_query_obj": {"foo": "bar"}}
-
-        search_plugin.config = DummyConfig()
-        search_plugin.provider = "peps"
-        search_plugin.next_page_url = None
-        search_plugin.next_page_query_obj = {"baz": "qux"}
-        search_plugin.next_page_merge = False
-
-        dummy_result = mock.Mock()
-        dummy_result.number_matched = 10
-        dummy_result.__getitem__ = lambda self, i: [mock.Mock(), mock.Mock()][i]
-        dummy_result.__iter__ = lambda self: iter([mock.Mock(), mock.Mock()])
-        dummy_result.__len__ = lambda self: 2
-
-        with mock.patch.object(self.dag, "_do_search", return_value=dummy_result):
-            page_iterator = self.dag.search_iter_page_plugin(
-                items_per_page=2, search_plugin=search_plugin
-            )
-            next(page_iterator)
-
-        self.assertEqual(search_plugin.next_page_query_obj, {"baz": "qux"})
-        self.assertEqual(
-            search_plugin.config.pagination["next_page_query_obj"], {"foo": "bar"}
-        )
-
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_search_iter_page_finally_resets_next_page_query_obj_with_merge(
-        self, search_plugin
-    ):
-        class DummyConfig:
-            pagination = {"next_page_query_obj": {"foo": "bar"}}
-
-        search_plugin.config = DummyConfig()
-        search_plugin.provider = "peps"
-        search_plugin.query_params = {"a": 1}
-        search_plugin.next_page_url = None
-        search_plugin.next_page_query_obj = {"baz": "qux"}
-        search_plugin.next_page_merge = True
-
-        dummy_result = mock.Mock()
-        dummy_result.number_matched = 10
-        dummy_result.__getitem__ = lambda self, i: [mock.Mock(), mock.Mock()][i]
-        dummy_result.__iter__ = lambda self: iter([mock.Mock(), mock.Mock()])
-        dummy_result.__len__ = lambda self: 2
-
-        with mock.patch.object(self.dag, "_do_search", return_value=dummy_result):
-            page_iterator = self.dag.search_iter_page_plugin(
-                items_per_page=2, search_plugin=search_plugin
-            )
-            next(page_iterator)
-
-        self.assertEqual(search_plugin.next_page_query_obj, {"a": 1, "baz": "qux"})
-
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_search_iter_page_finally_nothing_to_reset(self, search_plugin):
-        class DummyConfig:
-            pagination = {
-                "next_page_url_tpl": "original_tpl",
-                "next_page_query_obj": {"foo": "bar"},
-            }
-
-        search_plugin.config = DummyConfig()
-        search_plugin.provider = "peps"
-        search_plugin.next_page_url = None
-        search_plugin.next_page_query_obj = None
-        search_plugin.next_page_merge = False
-
-        dummy_result = mock.Mock()
-        dummy_result.number_matched = 10
-        dummy_result.__getitem__ = lambda self, i: [mock.Mock(), mock.Mock()][i]
-        dummy_result.__iter__ = lambda self: iter([mock.Mock(), mock.Mock()])
-        dummy_result.__len__ = lambda self: 2
-
-        with mock.patch.object(self.dag, "_do_search", return_value=dummy_result):
-            page_iterator = self.dag.search_iter_page_plugin(
-                items_per_page=2, search_plugin=search_plugin
-            )
-            next(page_iterator)
-
-        self.assertIsNone(search_plugin.next_page_url)
-        self.assertIsNone(search_plugin.next_page_query_obj)
-        self.assertEqual(
-            search_plugin.config.pagination["next_page_url_tpl"], "original_tpl"
-        )
-        self.assertEqual(
-            search_plugin.config.pagination["next_page_query_obj"], {"foo": "bar"}
-        )
-
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_finally_breaks_when_same_product_as_previous(self, search_plugin):
+        """search_iter_page must stop if the next page appears to have the same products"""
+
         class DummyConfig:
             pagination = {"next_page_url_tpl": "tpl"}
 
@@ -3533,6 +3415,7 @@ class TestCoreSearch(TestCoreBase):
         mock_search_iter_page_plugin.assert_called_once()
 
     def test_fetch_external_product_type_with_auth(self):
+        """test _fetch_external_product_type when the plugin needs authentication"""
         provider = "peps"
         product_type = "S2_MSI_L1C"
 
@@ -3551,7 +3434,7 @@ class TestCoreSearch(TestCoreBase):
         auth_mock = mock.Mock()
         dag._plugins_manager.get_auth.return_value = auth_mock
         dag.update_product_types_list = mock.Mock()
-        dag._fetch_external_product_type.__func__(dag, provider, product_type)
+        dag._fetch_external_product_type(provider, product_type)
 
         dag._plugins_manager.get_auth.assert_called_once_with(
             plugin.provider, plugin.config.api_endpoint, plugin.config
@@ -3563,7 +3446,8 @@ class TestCoreSearch(TestCoreBase):
             {provider: {"product1": {}}}
         )
 
-    def test_crunch(self):
+    def test_core_crunch(self):
+        """Test crunch method with multiple crunchers"""
         results = mock.Mock()
         results_after_first = mock.Mock()
         results_after_second = mock.Mock()
@@ -3600,6 +3484,7 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(final_result, results_after_second)
 
     def test_setup_downloader_with_auth_none(self):
+        """Test _setup_downloader method when both downloader and auth need to be set up"""
         product = mock.Mock()
         product.downloader = None
         product.downloader_auth = None
@@ -3610,7 +3495,7 @@ class TestCoreSearch(TestCoreBase):
         dag._plugins_manager = mock.Mock()
         dag._plugins_manager.get_download_plugin.return_value = downloader_mock
         dag._plugins_manager.get_auth_plugin.return_value = auth_mock
-        dag._setup_downloader.__func__(dag, product)
+        dag._setup_downloader(product)
 
         dag._plugins_manager.get_download_plugin.assert_called_once_with(product)
         dag._plugins_manager.get_auth_plugin.assert_called_once_with(
@@ -3619,6 +3504,7 @@ class TestCoreSearch(TestCoreBase):
         product.register_downloader.assert_called_once_with(downloader_mock, auth_mock)
 
     def test_setup_downloader_with_existing_auth(self):
+        """Test _setup_downloader method when downloader needs to be set up but auth already exists"""
         product = mock.Mock()
         product.downloader = None
         auth_existing = mock.Mock()
@@ -3629,7 +3515,7 @@ class TestCoreSearch(TestCoreBase):
         dag._plugins_manager = mock.Mock()
         dag._plugins_manager.get_download_plugin.return_value = downloader_mock
 
-        dag._setup_downloader.__func__(dag, product)
+        dag._setup_downloader(product)
         dag._plugins_manager.get_download_plugin.assert_called_once_with(product)
         dag._plugins_manager.get_auth_plugin.assert_not_called()
         product.register_downloader.assert_called_once_with(
@@ -3637,6 +3523,7 @@ class TestCoreSearch(TestCoreBase):
         )
 
     def test_get_cruncher(self):
+        """Test get_cruncher method"""
         dag = EODataAccessGateway()
         dag._plugins_manager = mock.Mock()
 

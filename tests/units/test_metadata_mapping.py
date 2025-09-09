@@ -115,6 +115,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_to_rounded_wkt_too_long(self):
+        """Test rounding WKT coordinates for long geometries"""
         to_format = "{fieldname#to_rounded_wkt}"
         coords = [(x, x * 0.5) for x in range(1000)]
         geom = LineString(coords)
@@ -127,6 +128,7 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertIn("Geometry WKT is too long", cm.output[0])
 
     def test_convert_to_rounded_wkt_warns_if_still_too_long(self):
+        """Test warning when rounding WKT coordinates does not help enough"""
         to_format = "{fieldname#to_rounded_wkt}"
         coords = [(x, x * 0.5) for x in range(10000)]
         geom = LineString(coords)
@@ -152,6 +154,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_to_bounds_lists_with_polygon(self):
+        """Test converting to bounds lists with a single polygon geometry"""
         to_format = "{fieldname#to_bounds_lists}"
         geom = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
 
@@ -275,6 +278,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_remove_extension_no_parts(self):
+        """Test removing extension from a filename with no parts"""
         to_format = "{fieldname#remove_extension}"
         self.assertEqual(
             format_metadata(to_format, fieldname=""),
@@ -291,6 +295,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_get_group_name_not_available(self):
+        """Test getting group name when no group matches"""
         to_format = "{fieldname#get_group_name(foo)}"
         string = "this has foo in it"
 
@@ -389,6 +394,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_fake_l2a_title_from_l1c_not_match(self):
+        """Test converting L1C title to fake L2A title when input does not match expected format"""
         to_format = "{fieldname#fake_l2a_title_from_l1c}"
 
         self.assertEqual(
@@ -410,6 +416,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_s2msil2a_title_to_aws_productinfo_not_available(self):
+        """Test converting S2MSIL2A title to AWS product info when input does not match expected format"""
         to_format = "{fieldname#s2msil2a_title_to_aws_productinfo}"
         self.assertEqual(
             format_metadata(
@@ -509,6 +516,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
 
     def test_convert_split_id_into_s1_params_invalid_id(self):
+        """Test converting Sentinel-1 id to parameters when input does not match expected format"""
         to_format = "{id#split_id_into_s1_params}"
         invalid_id = "S1A_IW_GRDH_1SSV_20210901"
 
@@ -620,6 +628,7 @@ class TestMetadataFormatter(unittest.TestCase):
             self.assertCountEqual(formated_dict[k], expected_result[k])
 
     def test_convert_interval_to_datetime_dict_without_separator_in_date(self):
+        """Test converting interval to datetime dict when input date does not contain a '/' separator"""
         to_format = "{date#interval_to_datetime_dict}"
         with self.assertRaises(ValueError):
             format_metadata(to_format, date="wrong_date")
@@ -755,24 +764,28 @@ class TestMetadataFormatter(unittest.TestCase):
 
 class TestMetadataMappingFunctions(unittest.TestCase):
     def test_properties_from_xml_single_value_no_conversion(self):
+        """Test extracting a single value from XML without conversion"""
         xml = """<root><id>123</id></root>"""
         mapping = {"id": (None, "./id/text()")}
         props = properties_from_xml(xml, mapping)
         assert props["id"] == "123"
 
     def test_properties_from_xml_not_available(self):
+        """Test extracting a single value from XML when not available"""
         xml = """<root></root>"""
         mapping = {"id": (None, "./id/text()")}
         props = properties_from_xml(xml, mapping)
         assert props["id"] == NOT_AVAILABLE
 
     def test_properties_from_xml_with_conversion(self):
+        """Test extracting a single value from XML with conversion"""
         xml = """<root><val>hello</val></root>"""
         mapping = {"val": (["to_upper"], "./val/text()")}
         props = properties_from_xml(xml, mapping)
         assert props["val"] == "HELLO"
 
     def test_properties_from_xml_multiple_values(self):
+        """Test extracting multiple values from XML without conversion"""
         xml = """<root>
             <item>A</item>
             <item>B</item>
@@ -782,12 +795,14 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         assert props["items"] == ["A", "B"]
 
     def test_properties_from_xml_xpath_eval_error(self):
+        """Test handling of XPath evaluation error"""
         xml = """<root><id>123</id></root>"""
         mapping = {"custom": (None, "//*invalid_xpath")}
         props = properties_from_xml(xml, mapping)
         assert props["custom"] == "//*invalid_xpath"
 
     def test_properties_from_xml_discovery(self):
+        """Test auto-discovery of metadata from XML"""
         xml = """<root>
             <auto_discovered>value1</auto_discovered>
         </root>"""
@@ -800,6 +815,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         assert props["auto_discovered"] == "value1"
 
     def test_properties_from_xml_multiple_matches_with_conversion(self):
+        """Test extracting multiple values from XML with conversion"""
         xml = """<root>
                     <val>hello</val>
                     <val>world</val>
@@ -809,6 +825,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         assert props["val"] == ["HELLO", "WORLD"]
 
     def test_properties_from_xml_multiple_matches_with_conversion_and_args(self):
+        """Test extracting multiple values from XML with conversion that requires arguments"""
         xml = """<root>
                     <val>test1</val>
                     <val>test2</val>
@@ -819,6 +836,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         assert props["val"] == ["TEST1", "TEST2"]
 
     def test_properties_from_xml_multiple_matches_no_conversion(self):
+        """Test extracting multiple values from XML without conversion"""
         xml = """<root>
                     <val>a</val>
                     <val>b</val>
@@ -830,6 +848,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         assert props["val"] == ["a", "b"]
 
     def test_get_queryable_from_provider_found(self):
+        """Test getting a queryable from provider mapping when found"""
         metadata_mapping = {
             "year": ["year"],
             "date": ["date"],
@@ -842,6 +861,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_get_provider_queryable_path(self):
+        """Test getting the provider queryable path"""
         metadata_mapping = {"id": "id", "path": ["path1", "path2"]}
         queryable_path = get_provider_queryable_path("path", metadata_mapping)
         self.assertEqual(queryable_path, "path1")
