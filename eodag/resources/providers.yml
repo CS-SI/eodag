@@ -867,6 +867,36 @@
     allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
       # S1
+    S1_AUX_GNSSRD:
+      productType: AUX_GNSSRD
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_MOEORB:
+      productType: AUX_MOEORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_POEORB:
+      productType: AUX_POEORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_PREORB:
+      productType: AUX_PREORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_PROQUA:
+      productType: AUX_PROQUA
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_RESORB:
+      productType: AUX_RESORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
@@ -4042,6 +4072,36 @@
       s3_endpoint: 'https://eodata.cloudferro.com'
   products:
       # S1
+    S1_AUX_GNSSRD:
+      productType: AUX_GNSSRD
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_MOEORB:
+      productType: AUX_MOEORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_POEORB:
+      productType: AUX_POEORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_PREORB:
+      productType: AUX_PREORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_PROQUA:
+      productType: AUX_PROQUA
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_RESORB:
+      productType: AUX_RESORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
@@ -4060,6 +4120,16 @@
     S1_SAR_OCN:
       productType: OCN
       collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_L3_IW_MCM:
+      productType: S1SAR_L3_IW_MCM
+      collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_L3_DH_MCM:
+      productType: S1SAR_L3_DH_MCM
+      collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
     # S2
@@ -4087,6 +4157,21 @@
         cloudCover: '$.null'
     S3_LAN:
       productType: SR_2_LAN___
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_HY:
+      productType: SR_2_LAN_HY
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_SI:
+      productType: SR_2_LAN_SI
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_LI:
+      productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
