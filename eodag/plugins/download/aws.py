@@ -299,10 +299,9 @@ class AwsDownload(Download):
 
         # authenticate
         if product.downloader_auth:
-            (
-                authenticated_objects,
-                s3_objects,
-            ) = product.downloader_auth.authenticate_objects(bucket_names_and_prefixes)
+            authenticated_objects = product.downloader_auth.authenticate_objects(
+                bucket_names_and_prefixes
+            )
         else:
             raise MisconfiguredError(
                 "Authentication plugin (AwsAuth) has to be configured if AwsDownload is used"
@@ -351,11 +350,17 @@ class AwsDownload(Download):
                 if not os.path.isdir(chunk_abs_path_dir):
                     os.makedirs(chunk_abs_path_dir)
 
+                bucket_objects = authenticated_objects.get(product_chunk.bucket_name)
+                extra_args = (
+                    getattr(bucket_objects, "_params", {}).copy()
+                    if bucket_objects
+                    else {}
+                )
                 if not os.path.isfile(chunk_abs_path):
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
                         chunk_abs_path,
-                        ExtraArgs=getattr(s3_objects, "_params", {}),
+                        ExtraArgs=extra_args,
                         Callback=progress_callback,
                     )
 
@@ -698,7 +703,7 @@ class AwsDownload(Download):
 
         # authenticate
         if product.downloader_auth:
-            authenticated_objects, _ = product.downloader_auth.authenticate_objects(
+            authenticated_objects = product.downloader_auth.authenticate_objects(
                 bucket_names_and_prefixes
             )
         else:

@@ -714,16 +714,14 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             ["c/y.json"],
         ]
         auth_objects = plugin.authenticate_objects(buckets_prefixes)
-        self.assertEqual(({"b": ["c/y.json"]}, ["c/y.json"]), auth_objects)
+        self.assertDictEqual({"b": ["c/y.json"]}, auth_objects)
 
         # both buckets authenticated
         plugin = self.get_auth_plugin("provider_with_auth_profile")
         buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
         mock_get_authenticated_objects.side_effect = [["b/c/x.json"], ["c/y.json"]]
         auth_objects = plugin.authenticate_objects(buckets_prefixes)
-        self.assertEqual(
-            ({"a": ["b/c/x.json"], "b": ["c/y.json"]}, ["c/y.json"]), auth_objects
-        )
+        self.assertDictEqual({"a": ["b/c/x.json"], "b": ["c/y.json"]}, auth_objects)
 
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):

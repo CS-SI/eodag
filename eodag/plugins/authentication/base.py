@@ -24,7 +24,6 @@ from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection
     from requests.auth import AuthBase
 
     from eodag.types import S3SessionKwargs
@@ -76,7 +75,7 @@ class Authentication(PluginTopic):
     def authenticate_objects(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-    ) -> tuple[dict[str, Any], BucketObjectsCollection]:
+    ) -> dict[str, Any]:
         """
         Authenticates with s3 and retrieves the available objects
         """

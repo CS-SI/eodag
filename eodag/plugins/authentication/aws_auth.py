@@ -184,13 +184,13 @@ class AwsAuth(Authentication):
     def authenticate_objects(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-    ) -> tuple[dict[str, Any], BucketObjectsCollection]:
+    ) -> dict[str, Any]:
         """
         Authenticates with s3 and retrieves the available objects
 
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
         :raises AuthenticationError: authentication is not possible
-        :return: authenticated objects per bucket, list of available objects
+        :return: authenticated objects per bucket
         """
 
         authenticated_objects: dict[str, Any] = {}
@@ -222,12 +222,9 @@ class AwsAuth(Authentication):
                             common_prefix = "/".join(prefix_split[0 : i - 1])
                             break
                     # connect to aws s3 and get bucket auhenticated objects
-                    s3_objects = self._get_authenticated_objects(
-                        bucket_name, common_prefix
-                    )
-                    authenticated_objects[bucket_name] = s3_objects
-                else:
-                    s3_objects = authenticated_objects[bucket_name]
+                    authenticated_objects[
+                        bucket_name
+                    ] = self._get_authenticated_objects(bucket_name, common_prefix)
 
             except AuthenticationError as e:
                 logger.warning("Unexpected error: %s" % e)
@@ -242,4 +239,4 @@ class AwsAuth(Authentication):
         # could not auth on any bucket
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
-        return authenticated_objects, s3_objects
+        return authenticated_objects
