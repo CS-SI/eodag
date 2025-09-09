@@ -31,7 +31,9 @@ module = [
     "shapely.*",
     "stream_zip",
     "usgs",
-    "usgs.*"
+    "usgs.*",
+    "zipstream",
+    "zipstream.*",
 ]
 ignore_missing_imports = true
 

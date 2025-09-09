@@ -203,7 +203,5 @@ def file_to_stream(
     filename = os.path.basename(filepath_to_stream)
     return StreamResponse(
         content=read_file_chunks_and_delete(open(filepath_to_stream, "rb")),
-        headers={
-            "content-disposition": f"attachment; filename={filename}",
-        },
+        filename=filename,
     )
