@@ -26,7 +26,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional, Union
 from unittest.mock import Mock, call
-from urllib.parse import quote_plus
+from urllib.parse import parse_qs, quote_plus, urlparse
 
 import geojson
 import httpx
@@ -725,8 +725,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_validate_search_from_items(self):
-        """Validate search through eodag server collection/items endpoint
-        if validate=true is given"""
+        """Validate search through endpoint /collection/{collection_id}/items"""
         # Validation by default
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
@@ -1106,7 +1105,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     def test_search_validate(self, mock_search: Mock):
-        """Search through eodag server should be validated if requested by the user"""
+        """Validate search through endpoint /search"""
 
         # Validation by default
         self.app.get(
@@ -1128,6 +1127,46 @@ class RequestTestCase(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertTrue(mock_search.call_args[1]["validate"])
+
+    def test_links_self_validate(self):
+        """The `validate` parameter must be propagated to the self and download links"""
+
+        def assert_query_string_validate(url: str, validate: Optional[str]):
+            url_parts = urlparse(url)
+            query_dict = parse_qs(url_parts.query)
+            if validate is None:
+                # in this case don't propagate the parameter
+                self.assertNotIn("validate", query_dict)
+            else:
+                self.assertIn("validate", query_dict)
+                self.assertListEqual(query_dict["validate"], [validate])
+
+        def assert_response_validate(response, validate: Optional[str]):
+            for feature in response["features"]:
+                # Download link
+                assert_query_string_validate(
+                    feature["assets"]["downloadLink"]["href"], validate
+                )
+                # Self link
+                for link in response["features"][0]["links"]:
+                    if link["rel"] == "self":
+                        assert_query_string_validate(link["href"], validate)
+
+        # No `validate` parameter in the links
+        response = self._request_valid(f"search?collections={self.tested_product_type}")
+        assert_response_validate(response, None)
+
+        # Propagate `validate=true`
+        response = self._request_valid(
+            f"search?collections={self.tested_product_type}&validate=true"
+        )
+        assert_response_validate(response, "true")
+
+        # Propagate `validate=false`
+        response = self._request_valid(
+            f"search?collections={self.tested_product_type}&validate=false"
+        )
+        assert_response_validate(response, "false")
 
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
@@ -1256,10 +1295,6 @@ class RequestTestCase(unittest.TestCase):
         ), f"File {expected_file} should have been deleted"
 
     @mock.patch(
-        "eodag.plugins.search.base.Search.validate",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.authentication.base.Authentication.authenticate",
         autospec=True,
     )
@@ -1272,7 +1307,6 @@ class RequestTestCase(unittest.TestCase):
         self,
         mock_order_and_update: Mock,
         mock_auth: Mock,
-        mock_validate: Mock,
     ):
         """Download orderable item through eodag server should order the item"""
 

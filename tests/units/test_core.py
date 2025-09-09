@@ -1886,7 +1886,7 @@ class TestCore(TestCoreBase):
         mock_validate: mock.Mock,
         mock_auth_plugin: mock.Mock,
     ) -> None:
-        """Search filter must be validated by default"""
+        """Search filter must be validated if requested"""
         filter = {
             "provider": "peps",
             "productType": "S1_SAR_GRD",
