@@ -163,8 +163,6 @@ def search_stac_items(
         stac_args["end_datetime"] = search_request.end_date
     if search_request.spatial_filter:
         stac_args["geometry"] = search_request.spatial_filter
-    if search_request.validate is not None:
-        stac_args["validate"] = search_request.validate
     try:
         eodag_args = EODAGSearch.model_validate(stac_args)
     except PydanticValidationError as e:
@@ -184,6 +182,7 @@ def search_stac_items(
     if eodag_args.ids:
         results = SearchResult([])
         for item_id in eodag_args.ids:
+            # Don't validate requests by ID. "id" is not queryable.
             results.extend(
                 eodag_api.search(
                     id=item_id,
@@ -203,6 +202,9 @@ def search_stac_items(
             if ":" in key and key.split(":")[0] not in stac_extensions:
                 new_key = key.split(":")[1]
                 criteria[new_key] = criteria.pop(key)
+        # map `validate_request` to `validate`
+        if criteria.get("validate_request", None) is not None:
+            criteria["validate"] = criteria.pop("validate_request")
 
         results = eodag_api.search(count=True, **criteria)
         total = results.number_matched or 0
@@ -232,7 +234,7 @@ def search_stac_items(
             **catalog.data,
             **{"url": catalog.url, "root": catalog.root},
         },
-        validate=eodag_args.validate,
+        validate=eodag_args.validate_request,
     )
     return items
 

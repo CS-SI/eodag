@@ -303,13 +303,21 @@ def stac_collections_item_download_asset(
     include_in_schema=False,
 )
 def stac_collections_item(
-    collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
+    collection_id: str,
+    item_id: str,
+    request: Request,
+    provider: Optional[str] = None,
+    validate: Optional[bool] = None,
 ) -> ORJSONResponse:
     """STAC collection item by id"""
     logger.info(f"{request.method} {request.state.url}")
 
     search_request = SearchPostRequest(
-        provider=provider, ids=[item_id], collections=[collection_id], limit=1
+        provider=provider,
+        ids=[item_id],
+        collections=[collection_id],
+        limit=1,
+        validate_request=validate,
     )
 
     item_collection = search_stac_items(request, search_request)
@@ -534,7 +542,7 @@ def get_search(
         "page": page,
         "sortby": sortby2list(sortby),
         "crunch": crunch,
-        "validate": validate,
+        "validate_request": validate,
     }
 
     if filter:
