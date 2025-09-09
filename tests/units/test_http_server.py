@@ -491,7 +491,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self._request_valid(
@@ -503,7 +502,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
 
@@ -629,7 +627,6 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self.assertEqual(len(result1.features), 2)
@@ -642,7 +639,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -661,7 +657,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self._request_valid(
@@ -674,7 +669,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self._request_valid(
@@ -687,7 +681,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self._request_valid(
@@ -701,7 +694,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
 
@@ -716,7 +708,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self._request_valid(
@@ -730,7 +721,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
 
@@ -747,7 +737,6 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate=True,
             ),
         )
         self._request_valid(
@@ -1123,7 +1112,7 @@ class RequestTestCase(unittest.TestCase):
         self.app.get(
             f"search?collections={self.tested_product_type}", follow_redirects=True
         )
-        self.assertTrue(mock_search.call_args[1]["validate"])
+        self.assertNotIn("validate", mock_search.call_args[1])
         mock_search.reset_mock()
 
         self.app.get(
@@ -1267,7 +1256,7 @@ class RequestTestCase(unittest.TestCase):
         ), f"File {expected_file} should have been deleted"
 
     @mock.patch(
-        "eodag.rest.core.eodag_api.validate_search_request",
+        "eodag.plugins.search.base.Search.validate",
         autospec=True,
     )
     @mock.patch(
@@ -1283,7 +1272,7 @@ class RequestTestCase(unittest.TestCase):
         self,
         mock_order_and_update: Mock,
         mock_auth: Mock,
-        validate_search_request: Mock,
+        mock_validate: Mock,
     ):
         """Download orderable item through eodag server should order the item"""
 
@@ -1310,15 +1299,11 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
         return_value={},
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.validate_order_request", autospec=True
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.validate_search_request", autospec=True
-    )
+    @mock.patch("eodag.rest.core.validate_order_request", autospec=True)
+    @mock.patch("eodag.plugins.search.base.Search.validate", autospec=True)
     def test_download_item_orderable_validate(
         self,
-        mock_validate_search_request: mock.Mock,
+        mock_validate: mock.Mock,
         mock_validate_order_request: mock.Mock,
         mock__order: Mock,
         mock_auth: Mock,
@@ -1335,23 +1320,14 @@ class RequestTestCase(unittest.TestCase):
             follow_redirects=True,
             headers={},
         )
-        # call to validate search by id
-        mock_validate_search_request.assert_called_once_with(
-            mock.ANY,
-            "cop_cds",
-            {
-                "id": "FOO_ORDERABLE_13245",
-                "productType": "foo",
-                "geometry": None,
-                "_dc_qs": '{"foo": "bar"}',
-            },
-        )
+        # no validation for the search by id
+        mock_validate.assert_not_called()
         # call to validate order
         mock_validate_order_request.assert_called_once()
-        product_validated = mock_validate_order_request.call_args.args[1]
+        product_validated = mock_validate_order_request.call_args.args[0]
         self.assertEqual(product_validated.product_type, "foo")
         self.assertEqual(product_validated.provider, "cop_cds")
-        mock_validate_search_request.reset_mock()
+        mock_validate.reset_mock()
         mock_validate_order_request.reset_mock()
 
         # Validate request
@@ -1363,23 +1339,15 @@ class RequestTestCase(unittest.TestCase):
             follow_redirects=True,
             headers={},
         )
-        # call to validate search by id
-        mock_validate_search_request.assert_called_once_with(
-            mock.ANY,
-            "cop_cds",
-            {
-                "id": "FOO_ORDERABLE_13245",
-                "productType": "foo",
-                "geometry": None,
-                "_dc_qs": '{"foo": "bar"}',
-            },
-        )
+        # no validation for the search by id
+        mock_validate.assert_not_called()
+
         # call to validate order
         mock_validate_order_request.assert_called_once()
-        product_validated = mock_validate_order_request.call_args.args[1]
+        product_validated = mock_validate_order_request.call_args.args[0]
         self.assertEqual(product_validated.product_type, "foo")
         self.assertEqual(product_validated.provider, "cop_cds")
-        mock_validate_search_request.reset_mock()
+        mock_validate.reset_mock()
         mock_validate_order_request.reset_mock()
 
         # Don't validate request
@@ -1391,7 +1359,7 @@ class RequestTestCase(unittest.TestCase):
             follow_redirects=True,
             headers={},
         )
-        mock_validate_search_request.assert_not_called()
+        mock_validate.assert_not_called()
         mock_validate_order_request.assert_not_called()
 
     @mock.patch(

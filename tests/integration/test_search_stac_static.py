@@ -107,7 +107,10 @@ class TestSearchStacStatic(unittest.TestCase):
             match="Call to deprecated function/method load_stac_items",
         ):
             items = self.dag.load_stac_items(
-                self.child_cat, recursive=True, provider=self.stac_provider
+                self.child_cat,
+                recursive=True,
+                provider=self.stac_provider,
+                validate=False,
             )
         self.assertIsInstance(items, SearchResult)
         self.assertEqual(len(items), self.child_cat_len)
@@ -146,6 +149,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 recursive=True,
                 provider=self.stac_provider,
                 productType=self.product_type,
+                validate=False,
             )
         self.assertEqual(len(items), self.root_cat_len)
         for item in items:
@@ -156,7 +160,9 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search all items"""
         # mock on fetch_product_types_list not needed with provider specified,
         #    as product types discovery must be disabled by default for stac static
-        search_result = self.dag.search(provider=self.static_stac_provider, count=True)
+        search_result = self.dag.search(
+            provider=self.static_stac_provider, count=True, validate=False
+        )
         self.assertEqual(len(search_result), self.root_cat_len)
         self.assertEqual(search_result.number_matched, self.root_cat_len)
         for item in search_result:
@@ -177,7 +183,9 @@ class TestSearchStacStatic(unittest.TestCase):
             DeprecationWarning,
             match="Call to deprecated function/method load_stac_items",
         ):
-            item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
+            item = self.dag.load_stac_items(
+                self.item, provider=self.stac_provider, validate=False
+            )
         self.assertIsInstance(item, SearchResult)
         self.assertEqual(len(item), 1)
         self.assertEqual(item[0].provider, self.stac_provider)
@@ -199,7 +207,9 @@ class TestSearchStacStatic(unittest.TestCase):
             DeprecationWarning,
             match="Call to deprecated function/method load_stac_items",
         ):
-            item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
+            item = self.dag.load_stac_items(
+                self.item, provider=self.stac_provider, validate=False
+            )
 
         self.assertEqual(item[0].properties["license"], "other")
         self.assertEqual(item[0].properties["platform"], "S2ST")
@@ -230,7 +240,7 @@ class TestSearchStacStatic(unittest.TestCase):
             match="Call to deprecated function/method load_stac_items",
         ):
             item = self.dag.load_stac_items(
-                self.item, provider="fake_provider", raise_errors=True
+                self.item, provider="fake_provider", raise_errors=True, validate=False
             )
         self.assertEqual(item[0].properties["platform"], "S2ST")
         self.assertEqual(item[0].properties["license"], "S2ST")
@@ -267,6 +277,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 recursive=True,
                 provider=self.stac_provider,
                 productType=self.product_type,
+                validate=False,
             )
         filtered_items = items.crunch(
             FilterDate({"start": "2018-01-01", "end": "2019-01-01"})
@@ -286,7 +297,9 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by date"""
-        filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01", count=True)
+        filtered_sr = self.dag.search(
+            start="2018-01-01", end="2019-01-01", count=True, validate=False
+        )
         self.assertEqual(len(filtered_sr), self.child_cat_len)
         self.assertEqual(filtered_sr.number_matched, self.child_cat_len)
         for item in filtered_sr:
@@ -305,6 +318,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 provider=self.stac_provider,
                 productType=self.product_type,
                 geom=self.extent_big,
+                validate=False,
             )
         self.assertEqual(len(items), self.root_cat_len)
 
@@ -344,6 +358,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 provider=self.stac_provider,
                 productType=self.product_type,
                 geom=self.extent_small,
+                validate=False,
             )
         self.assertEqual(len(items), self.root_cat_len)
 
@@ -363,7 +378,9 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by geometry"""
-        search_result = self.dag.search(geom=self.extent_big, count=True)
+        search_result = self.dag.search(
+            geom=self.extent_big, count=True, validate=False
+        )
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
@@ -378,6 +395,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 recursive=True,
                 provider=self.stac_provider,
                 productType=self.product_type,
+                validate=False,
             )
         self.assertEqual(len(items), self.root_cat_len)
 
@@ -410,7 +428,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by property"""
-        search_result = self.dag.search(orbitNumber=110, count=True)
+        search_result = self.dag.search(orbitNumber=110, count=True, validate=False)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
@@ -425,7 +443,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by cloud cover"""
-        search_result = self.dag.search(cloudCover=10, count=True)
+        search_result = self.dag.search(cloudCover=10, count=True, validate=False)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
 
@@ -440,6 +458,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 recursive=True,
                 provider=self.stac_provider,
                 productType=self.product_type,
+                validate=False,
             )
         self.assertEqual(len(items), self.root_cat_len)
 

@@ -284,9 +284,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
         mock_ecmwfdataserver_retrieve.side_effect = create_empty_file_for_public_dataset
         results = dag.search(
-            productType=self.product_type,
             **self.query_dates,
             **self.custom_query_params,
+            validate=False,
         )
         eoproduct = results[0]
         expected_path = os.path.join(
@@ -321,9 +321,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         operation_archive_custom_query_params = self.custom_query_params.copy()
         operation_archive_custom_query_params.pop("ecmwf:dataset")
         results = dag.search(
-            productType=self.product_type,
             **self.query_dates,
             **operation_archive_custom_query_params,
+            validate=False,
         )
         eoproduct = results[0]
         expected_path = os.path.join(
@@ -383,6 +383,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         params = deepcopy(self.query_dates)
         params.update(self.custom_query_params)
         params["ecmwf:accuracy"] = "bar"
+        params["validate"] = False
         results = dag.search(**params)
         eoproducts.extend(results)
         params["ecmwf:accuracy"] = "baz"

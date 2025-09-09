@@ -1874,9 +1874,7 @@ class TestCore(TestCoreBase):
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.validate_search_request", autospec=True
-    )
+    @mock.patch("eodag.plugins.search.base.Search.validate", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
@@ -1885,7 +1883,7 @@ class TestCore(TestCoreBase):
     def test_search_validate(
         self,
         mock_query: mock.Mock,
-        mock_validate_search_request: mock.Mock,
+        mock_validate: mock.Mock,
         mock_auth_plugin: mock.Mock,
     ) -> None:
         """Search filter must be validated by default"""
@@ -1896,22 +1894,21 @@ class TestCore(TestCoreBase):
         }
         # Validation by default
         self.dag.search(**filter)
-        mock_validate_search_request.assert_called_once()
-        args, kwargs = mock_validate_search_request.call_args
-        self.assertEqual(args[1], "peps")
+        mock_validate.assert_called_once()
+        args, kwargs = mock_validate.call_args
         # Some other default keyword may be added to the kwargs (e.g. geometry)
-        self.assertEqual("S1_SAR_GRD", args[2].get("productType"))
-        self.assertEqual("ipsum", args[2].get("lorem"))
-        mock_validate_search_request.reset_mock()
+        self.assertEqual("S1_SAR_GRD", args[1].get("productType"))
+        self.assertEqual("ipsum", args[1].get("lorem"))
+        mock_validate.reset_mock()
 
         self.dag.search(validate=True, **filter)
-        mock_validate_search_request.assert_called_once()
-        mock_validate_search_request.reset_mock()
+        mock_validate.assert_called_once()
+        mock_validate.reset_mock()
 
         # Don't validate request
         self.dag.search(validate=False, **filter)
-        mock_validate_search_request.assert_not_called()
-        mock_validate_search_request.reset_mock()
+        mock_validate.assert_not_called()
+        mock_validate.reset_mock()
 
     @mock.patch(
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
