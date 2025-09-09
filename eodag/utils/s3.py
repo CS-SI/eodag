@@ -284,8 +284,6 @@ def _build_stream_response(
     files_iterator: Iterator[tuple[int, Iterator[bytes]]],
     compress: Literal["zip", "raw", "auto"],
     executor: ThreadPoolExecutor,
-    s3_client: S3Client,
-    range_size: int,
 ) -> StreamResponse:
     """
     Build a streaming HTTP response for one or multiple files from S3, supporting ZIP, raw, and multipart formats.
@@ -310,13 +308,8 @@ def _build_stream_response(
         - "raw": Stream files directly, as a single file or multipart.
         - "auto": ZIP if multiple files, raw if single file.
     :param executor: Executor used for concurrent streaming and cleanup.
-    :param s3_client: S3 client (kept for signature compatibility).
-    :param range_size: Size of download chunks (kept for signature compatibility).
     :return: Streaming HTTP response with appropriate content, headers, and media type.
     """
-    headers = {
-        "Accept-Ranges": "bytes",
-    }
 
     def _wrap_generator_with_cleanup(
         generator: Iterable[bytes], executor: ThreadPoolExecutor
@@ -329,14 +322,13 @@ def _build_stream_response(
     def _build_response(
         content_gen: Iterable[bytes],
         media_type: str,
-        extra_headers: dict[str, str] = {},
         filename: Optional[str] = None,
         size: Optional[int] = None,
     ) -> StreamResponse:
         return StreamResponse(
             content=_wrap_generator_with_cleanup(content_gen, executor),
             media_type=media_type,
-            headers={**headers, **extra_headers},
+            headers={"Accept-Ranges": "bytes"},
             filename=filename,
             size=size,
         )
@@ -518,8 +510,6 @@ def stream_download_from_s3(
         files_iterator=files_iterator,
         compress=compress,
         executor=executor,
-        s3_client=s3_client,  # Pass s3_client
-        range_size=range_size,  # Pass range_size
     )
 
 

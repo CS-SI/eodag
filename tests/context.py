@@ -116,7 +116,6 @@ from eodag.utils.s3 import (
     _prepare_file_in_zip,
     _compute_file_ranges,
     stream_download_from_s3,
-    _build_stream_response,
 )
 
 

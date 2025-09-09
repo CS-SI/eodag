@@ -808,7 +808,12 @@ class HTTPDownload(Download):
                         else sanitize(product.properties.get("id", "download"))
                     )
 
-                    zip_stream = ZipStream(sized=True)
+                    # do not use global size if one of the assets has no size
+                    missing_length = any(not (asset.size) for asset in assets_values)
+
+                    zip_stream = (
+                        ZipStream(sized=True) if not missing_length else ZipStream()
+                    )
                     for asset_stream in assets_stream_list:
                         zip_stream.add(
                             asset_stream.content,
@@ -816,8 +821,6 @@ class HTTPDownload(Download):
                             size=asset_stream.size,
                         )
 
-                    # do not use global size if one of the assets has no size
-                    missing_length = any(not (asset.size) for asset in assets_values)
                     zip_length = len(zip_stream) if not missing_length else None
 
                     return StreamResponse(
