@@ -48,6 +48,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinxcontrib.programoutput",
     "sphinxemoji.sphinxemoji",
+    "sphinx_design",
 ]
 
 # Notebook integration parameters

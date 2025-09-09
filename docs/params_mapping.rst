@@ -3,6 +3,8 @@
 Parameters mapping
 ==================
 
+`eodag` interacts with various data providers, each having its own way of naming and structuring
+metadata parameters. To provide a unified interface for users, `eodag` maps these provider metadata parameters to a common model.
 
 Parameters mapping
 ^^^^^^^^^^^^^^^^^^

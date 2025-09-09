@@ -1,6 +1,6 @@
 .. _product_types:
 
-EO product types
+Product types
 ================
 
 ``eodag`` maintains a catalog of EO product types including some of their metadata. Each product type is
