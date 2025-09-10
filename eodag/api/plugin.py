@@ -1,8 +1,25 @@
-from typing import TypedDict, Union, Literal, Annotated, Any, Optional, Self
+# -*- coding: utf-8 -*-
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from typing import Annotated, Any, Literal, Optional, Self, TypedDict, Union
 
 import yaml
-from jsonpath_ng import JSONPath
 from annotated_types import Gt
+from jsonpath_ng import JSONPath
 
 from eodag.utils import merge_mappings, sort_dict
 from eodag.utils.exceptions import ValidationError
@@ -499,15 +516,18 @@ class PluginConfig(yaml.YAMLObject):
 
     def matches_target_auth(self, target_config: Self):
         """Check if the target auth configuration matches this one"""
-        target_matching_conf = target_config.matching_conf
-        target_matching_url = target_config.matching_url
+        target_matching_conf = getattr(target_config, "matching_conf", {})
+        target_matching_url = getattr(target_config, "matching_url", None)
+
+        matching_conf = getattr(self, "matching_conf", {})
+        matching_url = getattr(self, "matching_url", None)
 
         if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(
-            self.matching_conf
+            matching_conf
         ):
             return True
 
-        if target_matching_url and target_matching_url == self.matching_url:
+        if target_matching_url and target_matching_url == matching_url:
             return True
 
         return False

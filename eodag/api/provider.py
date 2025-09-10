@@ -1,16 +1,46 @@
-from typing import Any, Optional, Union, Self, Iterator, get_type_hints
-from collections import UserDict
-from dataclasses import dataclass
-import yaml
+# -*- coding: utf-8 -*-
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import logging
 import os
+import tempfile
+from collections import UserDict
+from dataclasses import dataclass
 from inspect import isclass
+from typing import Any, Optional, Self, Union, get_type_hints
 
-from eodag.api.plugin import credentials_in_auth, PluginConfig
-from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
-from eodag.utils import slugify, merge_mappings, deepcopy, cast_scalar_value
-from eodag.utils.repr import dict_to_html_table
+import yaml
+
+from eodag.api.plugin import PluginConfig, credentials_in_auth
+from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
+    mtd_cfg_as_conversion_and_querypath,
+)
+from eodag.utils import (
+    GENERIC_PRODUCT_TYPE,
+    STAC_SEARCH_PLUGINS,
+    cast_scalar_value,
+    deepcopy,
+    merge_mappings,
+    slugify,
+    update_nested_dict,
+)
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.repr import dict_to_html_table
 
 logger = logging.getLogger("eodag.provider")
 
@@ -125,6 +155,42 @@ class ProviderConfig(yaml.YAMLObject):
                         str(e),
                         ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
                     )
+
+
+def provider_config_init(
+    provider_config: ProviderConfig,
+    stac_search_default_conf: Optional[dict[str, Any]] = None,
+) -> None:
+    """Applies some default values to provider config
+
+    :param provider_config: An eodag provider configuration
+    :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
+    """
+    # For the provider, set the default output_dir of its download plugin
+    # as tempdir in a portable way
+    for download_topic_key in ("download", "api"):
+        if download_topic_key in vars(provider_config):
+            download_conf = getattr(provider_config, download_topic_key)
+            if not getattr(download_conf, "output_dir", None):
+                download_conf.output_dir = tempfile.gettempdir()
+            if not getattr(download_conf, "delete_archive", None):
+                download_conf.delete_archive = True
+
+    try:
+        if (
+            stac_search_default_conf is not None
+            and provider_config.search
+            and provider_config.search.type in STAC_SEARCH_PLUGINS
+        ):
+            # search config set to stac defaults overriden with provider config
+            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
+            provider_config.search.__dict__ = update_nested_dict(
+                per_provider_stac_provider_config["search"],
+                provider_config.search.__dict__,
+                allow_empty_values=True,
+            )
+    except AttributeError:
+        pass
 
 
 @dataclass
@@ -300,10 +366,63 @@ class Provider:
             provider_auth_config = getattr(self.config, key, None)
             if provider_auth_config and not credentials_in_auth(provider_auth_config):
                 for conf_with_creds in auth_confs_with_creds:
-                    if conf_with_creds.matches_target_auth(self.config):
+                    if conf_with_creds.matches_target_auth(provider_auth_config):
                         getattr(
                             self.config, key
                         ).credentials = conf_with_creds.credentials
+
+    def sync_product_types(
+        self,
+        available_product_types: set[str],
+        strict_mode: bool,
+    ) -> None:
+        """
+        Synchronize product types for a provider based on strict or permissive mode.
+
+        In strict mode, removes product types not in available_product_types.
+        In permissive mode, adds empty product type configs for missing types.
+
+        :param provider: The provider name whose product types should be synchronized.
+        :param available_product_types: The set of available product type IDs.
+        :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
+        :returns: None
+        """
+        products_to_remove: list[str] = []
+        products_to_add: list[str] = []
+
+        for product_id in self.products:
+            if product_id == GENERIC_PRODUCT_TYPE:
+                continue
+
+            if product_id not in available_product_types:
+                if strict_mode:
+                    products_to_remove.append(product_id)
+                    continue
+
+                empty_product = {
+                    "title": product_id,
+                    "abstract": NOT_AVAILABLE,
+                }
+                self.product_types_config.source[
+                    product_id
+                ] = empty_product  # will update available_product_types
+                products_to_add.append(product_id)
+
+        if products_to_add:
+            logger.debug(
+                "Product types permissive mode, %s added (provider %s)",
+                ", ".join(products_to_add),
+                self,
+            )
+
+        if products_to_remove:
+            logger.debug(
+                "Product types strict mode, ignoring %s (provider %s)",
+                ", ".join(products_to_remove),
+                self,
+            )
+            for id in products_to_remove:
+                self.delete_product(id)
 
 
 @dataclass
@@ -335,7 +454,9 @@ class ProvidersDict(UserDict[str, Provider]):
             self.data = {name: Provider(name, conf) for name, conf in providers.items()}
         else:
             self.data = {
-                p.name if isinstance(p, Provider) else p: p
+                p.name
+                if isinstance(p, Provider)
+                else p: p
                 if isinstance(p, Provider)
                 else Provider(p, {})
                 for p in providers
@@ -502,9 +623,9 @@ class ProvidersDict(UserDict[str, Provider]):
         Raises:
             KeyError: If the provider or product is not found.
         """
-        if provider := self.get(provider):
-            if product_ID in provider.products:
-                provider.delete_product(product_ID)
+        if provider_obj := self.get(provider):
+            if product_ID in provider_obj.products:
+                provider_obj.delete_product(product_ID)
             else:
                 raise KeyError(
                     f"Product '{product_ID}' not found for Provider '{provider}'."
@@ -557,7 +678,7 @@ class ProvidersDict(UserDict[str, Provider]):
             else:
                 self.data[name] = other_provider
 
-    def override_configs_from_mapping(self, mapping: dict[str, Any]) -> None:
+    def _override_configs_from_mapping(self, mapping: dict[str, Any]) -> None:
         """Override a configuration with the values in a mapping.
 
         If the environment variable ``EODAG_PROVIDERS_WHITELIST`` is set (as a comma-separated list of provider names),
@@ -644,7 +765,7 @@ class ProvidersDict(UserDict[str, Provider]):
                 logger.error("Unable to load user configuration file")
                 raise e
 
-        self.override_configs_from_mapping(config_in_file)
+        self._override_configs_from_mapping(config_in_file)
 
     def override_configs_from_env(self) -> None:
         """Override a configuration with environment variables values
@@ -713,4 +834,18 @@ class ProvidersDict(UserDict[str, Provider]):
                     mapping_from_env,
                 )
 
-        self.override_configs_from_mapping(mapping_from_env)
+        self._override_configs_from_mapping(mapping_from_env)
+
+    def update_config(
+        self, conf_update: dict[str, Any], stac_provider_config: dict[str, Any] | None
+    ) -> None:
+        """Update the configuration from environment variables and user configuration file."""
+        self._override_configs_from_mapping(conf_update)
+        self.share_credentials()
+
+        for provider in conf_update.keys():
+            provider_config_init(
+                self.providers.get_config(name=provider), stac_provider_config
+            )
+
+        setattr(self.data[provider].config, "product_types_fetched", False)

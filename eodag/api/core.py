@@ -33,14 +33,11 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 import geojson
 import yaml
 
-from eodag.api.collection import Collection, CollectionsDict, CollectionsList
-from eodag.api.provider import Provider, ProvidersDict
-from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
-    mtd_cfg_as_conversion_and_querypath,
-)
-from eodag.api.search_result import SearchResult
+from eodag.api.collection import Collection, CollectionsDict
 from eodag.api.plugin import PluginConfig, credentials_in_auth
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     SimpleYamlProxyConfig,
@@ -48,9 +45,6 @@ from eodag.config import (
     load_default_config,
     load_stac_provider_config,
     load_yml_config,
-    override_config_from_env,
-    override_config_from_file,
-    override_config_from_mapping,
     provider_config_init,
 )
 from eodag.plugins.manager import PluginManager
@@ -151,9 +145,6 @@ class EODataAccessGateway:
             makedirs(self.conf_dir)
 
         self._plugins_manager = PluginManager(self.providers)
-        # self._plugins_manager = PluginManager(self.providers_config)
-        # use updated providers_config
-        # self.providers_config = self._plugins_manager.providers_config
         self.providers = self._plugins_manager.providers
 
         # First level override: From a user configuration file
@@ -187,10 +178,7 @@ class EODataAccessGateway:
                 provider.config,
                 load_stac_provider_config(),
             )
-
-            self._sync_provider_collections(
-                provider, available_collections, strict_mode
-            )
+            provider.sync_product_types(available_collections, strict_mode)
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers)
@@ -204,34 +192,6 @@ class EODataAccessGateway:
         # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
 
-        # set locations configuration
-        if locations_conf_path is None:
-            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
-            if locations_conf_path is None:
-                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
-                if not os.path.isfile(locations_conf_path):
-                    # copy locations conf file and replace path example
-                    locations_conf_template = str(
-                        res_files("eodag") / "resources" / "locations_conf_template.yml"
-                    )
-                    with (
-                        open(locations_conf_template) as infile,
-                        open(locations_conf_path, "w") as outfile,
-                    ):
-                        # The template contains paths in the form of:
-                        # /path/to/locations/file.shp
-                        path_template = "/path/to/locations/"
-                        for line in infile:
-                            line = line.replace(
-                                path_template,
-                                os.path.join(self.conf_dir, "shp") + os.path.sep,
-                            )
-                            outfile.write(line)
-                    # copy sample shapefile dir
-                    shutil.copytree(
-                        str(res_files("eodag") / "resources" / "shp"),
-                        os.path.join(self.conf_dir, "shp"),
-                    )
         self.set_locations_conf(locations_conf_path)
 
     def _collections_config_init(
@@ -247,60 +207,6 @@ class EODataAccessGateway:
             for pt, pt_f in collections_config_dict.items()
         ]
         return CollectionsDict(collections)
-
-    def _sync_provider_collections(
-        self,
-        provider: str | Provider,
-        available_collections: set[str],
-        strict_mode: bool,
-    ) -> None:
-        """
-        Synchronize collections for a provider based on strict or permissive mode.
-
-        In strict mode, removes collections not in available_collections.
-        In permissive mode, adds empty collection configs for missing types.
-
-        :param provider: The provider name whose collections should be synchronized.
-        :param available_collections: The set of available collection IDs.
-        :param strict_mode: If True, remove unknown collections; if False, add empty configs for them.
-        :returns: None
-        """
-        provider_products = self.providers.get_products(provider)
-        products_to_remove: list[str] = []
-        products_to_add: list[str] = []
-
-        for product_id in provider_products:
-            if product_id == GENERIC_COLLECTION:
-                continue
-
-            if product_id not in available_collections:
-                if strict_mode:
-                    products_to_remove.append(product_id)
-                    continue
-
-                empty_product = Collection(
-                    dag=self, id=product_id, title=product_id, description=NOT_AVAILABLE
-                )
-                self.collections_config[
-                    product_id
-                ] = empty_product  # will update available_collections
-                products_to_add.append(product_id)
-
-        if products_to_add:
-            logger.debug(
-                "Collections permissive mode, %s added (provider %s)",
-                ", ".join(products_to_add),
-                provider,
-            )
-
-        if products_to_remove:
-            logger.debug(
-                "Collections strict mode, ignoring %s (provider %s)",
-                ", ".join(products_to_remove),
-                provider,
-            )
-            for id in products_to_remove:
-                self.providers.delete_product(provider, id)
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -359,27 +265,11 @@ class EODataAccessGateway:
                     "%s: provider restored from the pruned configurations",
                     provider,
                 )
-                # self.providers_config[provider] = self._pruned_providers_config.pop(
-                #     provider
-                # )
-                p = Provider(provider, config)
-                self.providers[provider] = p
+                self.providers[provider] = Provider(provider, config)
                 self._pruned_providers_config.pop(provider)
-                # self.providers[provider] = self._pruned_providers_config.pop(provider)
 
-        self.providers.override_configs_from_mapping(conf_update)
+        self.providers.update_config(conf_update, load_stac_provider_config())
 
-        # share credentials between updated plugins confs
-        self.providers.share_credentials()
-
-        for provider in conf_update.keys():
-            # self.providers.set_config(provider, load_stac_provider_config())
-            provider_config_init(
-                self.providers.get_config(name=provider),
-                load_stac_provider_config(),
-            )
-
-            setattr(self.providers[provider].config, "collections_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_collection_to_provider_config_map()
 
@@ -531,7 +421,7 @@ class EODataAccessGateway:
             # rebuild _plugins_manager with updated providers list
             self._plugins_manager.rebuild(self.providers)
 
-    def set_locations_conf(self, locations_conf_path: str) -> None:
+    def set_locations_conf(self, locations_conf_path: str | None) -> None:
         """Set locations configuration.
         This configuration (YML format) will contain a shapefile list associated
         to a name and attribute parameters needed to identify the needed geometry.
@@ -554,6 +444,34 @@ class EODataAccessGateway:
 
         :param locations_conf_path: Path to the locations configuration file
         """
+        if locations_conf_path is None:
+            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
+            if locations_conf_path is None:
+                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
+                if not os.path.isfile(locations_conf_path):
+                    # copy locations conf file and replace path example
+                    locations_conf_template = str(
+                        res_files("eodag") / "resources" / "locations_conf_template.yml"
+                    )
+                    with (
+                        open(locations_conf_template) as infile,
+                        open(locations_conf_path, "w") as outfile,
+                    ):
+                        # The template contains paths in the form of:
+                        # /path/to/locations/file.shp
+                        path_template = "/path/to/locations/"
+                        for line in infile:
+                            line = line.replace(
+                                path_template,
+                                os.path.join(self.conf_dir, "shp") + os.path.sep,
+                            )
+                            outfile.write(line)
+                    # copy sample shapefile dir
+                    shutil.copytree(
+                        str(res_files("eodag") / "resources" / "shp"),
+                        os.path.join(self.conf_dir, "shp"),
+                    )
+
         if os.path.isfile(locations_conf_path):
             locations_config = load_yml_config(locations_conf_path)
 
