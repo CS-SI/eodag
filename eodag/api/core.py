@@ -29,15 +29,12 @@ from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 
-from eodag.api.provider import Provider, ProvidersDict
-from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
-    mtd_cfg_as_conversion_and_querypath,
-)
-from eodag.api.search_result import SearchResult
 from eodag.api.plugin import PluginConfig, credentials_in_auth
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     SimpleYamlProxyConfig,
@@ -45,9 +42,6 @@ from eodag.config import (
     load_default_config,
     load_stac_provider_config,
     load_yml_config,
-    override_config_from_env,
-    override_config_from_file,
-    override_config_from_mapping,
     provider_config_init,
 )
 from eodag.plugins.manager import PluginManager
@@ -115,7 +109,6 @@ class EODataAccessGateway:
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
 
-        # self.providers_config = load_default_config()
         self.providers: ProvidersDict = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -141,9 +134,6 @@ class EODataAccessGateway:
             makedirs(self.conf_dir)
 
         self._plugins_manager = PluginManager(self.providers)
-        # self._plugins_manager = PluginManager(self.providers_config)
-        # use updated providers_config
-        # self.providers_config = self._plugins_manager.providers_config
         self.providers = self._plugins_manager.providers
 
         # First level override: From a user configuration file
@@ -177,10 +167,8 @@ class EODataAccessGateway:
                 provider.config,
                 load_stac_provider_config(),
             )
+            provider.sync_product_types(available_product_types, strict_mode)
 
-            self._sync_provider_product_types(
-                provider, available_product_types, strict_mode
-            )
         # init product types configuration
         self._product_types_config_init()
 
@@ -196,95 +184,12 @@ class EODataAccessGateway:
         # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
 
-        # set locations configuration
-        if locations_conf_path is None:
-            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
-            if locations_conf_path is None:
-                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
-                if not os.path.isfile(locations_conf_path):
-                    # copy locations conf file and replace path example
-                    locations_conf_template = str(
-                        res_files("eodag") / "resources" / "locations_conf_template.yml"
-                    )
-                    with (
-                        open(locations_conf_template) as infile,
-                        open(locations_conf_path, "w") as outfile,
-                    ):
-                        # The template contains paths in the form of:
-                        # /path/to/locations/file.shp
-                        path_template = "/path/to/locations/"
-                        for line in infile:
-                            line = line.replace(
-                                path_template,
-                                os.path.join(self.conf_dir, "shp") + os.path.sep,
-                            )
-                            outfile.write(line)
-                    # copy sample shapefile dir
-                    shutil.copytree(
-                        str(res_files("eodag") / "resources" / "shp"),
-                        os.path.join(self.conf_dir, "shp"),
-                    )
         self.set_locations_conf(locations_conf_path)
 
     def _product_types_config_init(self) -> None:
         """Initialize product types configuration."""
         for pt_id, pd_dict in self.product_types_config.source.items():
             self.product_types_config.source[pt_id].setdefault("_id", pt_id)
-
-    def _sync_provider_product_types(
-        self,
-        provider: str | Provider,
-        available_product_types: set[str],
-        strict_mode: bool,
-    ) -> None:
-        """
-        Synchronize product types for a provider based on strict or permissive mode.
-
-        In strict mode, removes product types not in available_product_types.
-        In permissive mode, adds empty product type configs for missing types.
-
-        :param provider: The provider name whose product types should be synchronized.
-        :param available_product_types: The set of available product type IDs.
-        :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
-        :returns: None
-        """
-        provider_products = self.providers.get_products(provider)
-        products_to_remove: list[str] = []
-        products_to_add: list[str] = []
-
-        for product_id in provider_products:
-            if product_id == GENERIC_PRODUCT_TYPE:
-                continue
-
-            if product_id not in available_product_types:
-                if strict_mode:
-                    products_to_remove.append(product_id)
-                    continue
-
-                empty_product = {
-                    "title": product_id,
-                    "abstract": NOT_AVAILABLE,
-                }
-                self.product_types_config.source[product_id] = (
-                    empty_product  # will update available_product_types
-                )
-                products_to_add.append(product_id)
-
-        if products_to_add:
-            logger.debug(
-                "Product types permissive mode, %s added (provider %s)",
-                ", ".join(products_to_add),
-                provider,
-            )
-
-        if products_to_remove:
-            logger.debug(
-                "Product types strict mode, ignoring %s (provider %s)",
-                ", ".join(products_to_remove),
-                provider,
-            )
-            for id in products_to_remove:
-                self.providers.delete_product(provider, id)
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -343,28 +248,11 @@ class EODataAccessGateway:
                     "%s: provider restored from the pruned configurations",
                     provider,
                 )
-                # self.providers_config[provider] = self._pruned_providers_config.pop(
-                #     provider
-                # )
-                p = Provider(provider, config)
-                self.providers[provider] = p
+                self.providers[provider] = Provider(provider, config)
                 self._pruned_providers_config.pop(provider)
-                # self.providers[provider] = self._pruned_providers_config.pop(provider)
 
-        self.providers.override_configs_from_mapping(conf_update)
+        self.providers.update_config(conf_update, load_stac_provider_config())
 
-        # share credentials between updated plugins confs
-        self.providers.share_credentials()
-
-        for provider in conf_update.keys():
-            # self.providers.set_config(provider, load_stac_provider_config())
-            provider_config_init(
-                self.providers.get_config(name=provider),
-                load_stac_provider_config(),
-            )
-
-            setattr(self.providers[provider].config, "product_types_fetched", False)
-            # setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
 
@@ -516,7 +404,7 @@ class EODataAccessGateway:
             # rebuild _plugins_manager with updated providers list
             self._plugins_manager.rebuild(self.providers)
 
-    def set_locations_conf(self, locations_conf_path: str) -> None:
+    def set_locations_conf(self, locations_conf_path: str | None) -> None:
         """Set locations configuration.
         This configuration (YML format) will contain a shapefile list associated
         to a name and attribute parameters needed to identify the needed geometry.
@@ -539,6 +427,34 @@ class EODataAccessGateway:
 
         :param locations_conf_path: Path to the locations configuration file
         """
+        if locations_conf_path is None:
+            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
+            if locations_conf_path is None:
+                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
+                if not os.path.isfile(locations_conf_path):
+                    # copy locations conf file and replace path example
+                    locations_conf_template = str(
+                        res_files("eodag") / "resources" / "locations_conf_template.yml"
+                    )
+                    with (
+                        open(locations_conf_template) as infile,
+                        open(locations_conf_path, "w") as outfile,
+                    ):
+                        # The template contains paths in the form of:
+                        # /path/to/locations/file.shp
+                        path_template = "/path/to/locations/"
+                        for line in infile:
+                            line = line.replace(
+                                path_template,
+                                os.path.join(self.conf_dir, "shp") + os.path.sep,
+                            )
+                            outfile.write(line)
+                    # copy sample shapefile dir
+                    shutil.copytree(
+                        str(res_files("eodag") / "resources" / "shp"),
+                        os.path.join(self.conf_dir, "shp"),
+                    )
+
         if os.path.isfile(locations_conf_path):
             locations_config = load_yml_config(locations_conf_path)
 
@@ -614,9 +530,9 @@ class EODataAccessGateway:
         already_fetched = True
         for provider_to_fetch in providers_to_fetch.values():
             if provider_to_fetch.fetchable:
-                providers_discovery_configs_fetchable[provider_to_fetch] = (
-                    provider_to_fetch.search_config.discover_product_types
-                )
+                providers_discovery_configs_fetchable[
+                    provider_to_fetch
+                ] = provider_to_fetch.search_config.discover_product_types
                 if not getattr(
                     provider_to_fetch.config, "product_types_fetched", False
                 ):
@@ -836,9 +752,9 @@ class EODataAccessGateway:
                         else:
                             # new_product_type_conf does not already exist, append it
                             # to provider_products_config
-                            provider_products_config[new_product_type] = (
-                                new_product_type_conf
-                            )
+                            provider_products_config[
+                                new_product_type
+                            ] = new_product_type_conf
                             # to self.product_types_config
                             self.product_types_config.source.update(
                                 {
@@ -1331,14 +1247,14 @@ class EODataAccessGateway:
                 if next_page_url:
                     search_plugin.next_page_url = None
                     if prev_next_page_url_tpl:
-                        search_plugin.config.pagination["next_page_url_tpl"] = (
-                            prev_next_page_url_tpl
-                        )
+                        search_plugin.config.pagination[
+                            "next_page_url_tpl"
+                        ] = prev_next_page_url_tpl
                 if next_page_query_obj:
                     if prev_next_page_query_obj:
-                        search_plugin.config.pagination["next_page_query_obj"] = (
-                            prev_next_page_query_obj
-                        )
+                        search_plugin.config.pagination[
+                            "next_page_query_obj"
+                        ] = prev_next_page_query_obj
                     # Update next_page_query_obj for next page req
                     if next_page_merge:
                         search_plugin.next_page_query_obj = dict(
