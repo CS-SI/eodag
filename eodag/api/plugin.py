@@ -1,12 +1,30 @@
-from typing import TypedDict, Union, Literal, Annotated, Any, Optional, Self
+# -*- coding: utf-8 -*-
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from typing import Annotated, Any, Literal, Optional, Self, TypedDict, Union
 
 import yaml
-from jsonpath_ng import JSONPath
 from annotated_types import Gt
+from jsonpath_ng import JSONPath
 
 from eodag.utils import merge_mappings, sort_dict
-from eodag.utils.exceptions import ValidationError        
-     
+from eodag.utils.exceptions import ValidationError
+
+
 class Pagination(TypedDict):
     """Search pagination configuration"""
 
@@ -32,6 +50,7 @@ class Pagination(TypedDict):
     #: Index of the starting page
     start_page: int
 
+
 class Sort(TypedDict):
     """Configuration for sort during search"""
 
@@ -47,6 +66,7 @@ class Sort(TypedDict):
     #: Maximum number of allowed sort parameters per request
     max_sort_params: Annotated[int, Gt(0)]
 
+
 class DiscoverMetadata(TypedDict):
     """Configuration for metadata discovery (search result properties)"""
 
@@ -60,6 +80,7 @@ class DiscoverMetadata(TypedDict):
     metadata_path: str
     #: Whether an error must be raised when using a search parameter which is not queryable or not
     raise_mtd_discovery_error: bool
+
 
 class DiscoverProductTypes(TypedDict, total=False):
     """Configuration for product types discovery"""
@@ -97,6 +118,7 @@ class DiscoverProductTypes(TypedDict, total=False):
     #: is redefined in this mapping, it will replace ``generic_product_type_id`` value
     single_product_type_parsable_metadata: dict[str, str]
 
+
 class DiscoverQueryables(TypedDict, total=False):
     """Configuration for queryables discovery"""
 
@@ -113,11 +135,13 @@ class DiscoverQueryables(TypedDict, total=False):
     #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
     constraints_entry: str
 
+
 class OrderOnResponse(TypedDict):
     """Configuration for order on-response during download"""
 
     #: Parameters metadata-mapping to apply to the order response
     metadata_mapping: dict[str, Union[str, list[str]]]
+
 
 class OrderStatusSuccess(TypedDict):
     """
@@ -134,6 +158,7 @@ class OrderStatusSuccess(TypedDict):
     #: Success value for status response HTTP code
     http_code: int
 
+
 class OrderStatusOrdered(TypedDict, total=False):
     """
     Configuration to identify order status ordered during download
@@ -141,6 +166,7 @@ class OrderStatusOrdered(TypedDict, total=False):
 
     #: HTTP code of the order status response
     http_code: int
+
 
 class OrderStatusRequest(TypedDict, total=False):
     """
@@ -151,6 +177,7 @@ class OrderStatusRequest(TypedDict, total=False):
     method: str
     #: Request hearders
     headers: dict[str, Any]
+
 
 class OrderStatusOnSuccess(TypedDict, total=False):
     """Configuration for order status on-success during download"""
@@ -163,6 +190,7 @@ class OrderStatusOnSuccess(TypedDict, total=False):
     results_entry: str
     #: Metadata-mapping to apply to the success status result
     metadata_mapping: dict[str, Union[str, list[str]]]
+
 
 class OrderStatus(TypedDict, total=False):
     """Configuration for order status during download"""
@@ -180,6 +208,7 @@ class OrderStatus(TypedDict, total=False):
     #: Configuration for order status on-success during download
     on_success: OrderStatusOnSuccess
 
+
 class MetadataPreMapping(TypedDict, total=False):
     """Configuration which can be used to simplify further metadata extraction"""
 
@@ -190,12 +219,14 @@ class MetadataPreMapping(TypedDict, total=False):
     #: Key to get the metadata value
     metadata_path_value: str
 
+
 class PluginConfig(yaml.YAMLObject):
     """Representation of a plugin config.
 
     This class variables describe available plugins configuration parameters.
     """
-#: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
+
+    #: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
     name: str
     #: :class:`~eodag.plugins.base.PluginTopic` Plugin type
     type: str
@@ -490,17 +521,23 @@ class PluginConfig(yaml.YAMLObject):
 
     def matches_target_auth(self, target_config: Self):
         """Check if the target auth configuration matches this one"""
-        target_matching_conf = target_config.matching_conf
-        target_matching_url = target_config.matching_url
+        target_matching_conf = getattr(target_config, "matching_conf", {})
+        target_matching_url = getattr(target_config, "matching_url", None)
 
-        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(self.matching_conf):
+        matching_conf = getattr(self, "matching_conf", {})
+        matching_url = getattr(self, "matching_url", None)
+
+        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(
+            matching_conf
+        ):
             return True
 
-        if target_matching_url and target_matching_url == self.matching_url:
+        if target_matching_url and target_matching_url == matching_url:
             return True
 
         return False
-    
+
+
 def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     """Checks if credentials are set for this Authentication plugin configuration
 
