@@ -110,11 +110,10 @@ EODAG is available under the open source `Apache License`__.
 
 __ https://www.apache.org/licenses/LICENSE-2.0.html
 
-Site contents
--------------
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: For Users
 
    getting_started_guide/index
@@ -126,6 +125,7 @@ Site contents
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: For Developers/Contributors
 
    add_provider
