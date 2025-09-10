@@ -42,6 +42,7 @@ from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
+from eodag.api.provider import ProvidersDict
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
     PluginImplementationError,
@@ -76,8 +77,8 @@ from tests.context import (
 class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
-        providers_config = load_default_config()
-        self.plugins_manager = PluginManager(providers_config)
+        providers = load_default_config()
+        self.plugins_manager = PluginManager(providers)
         self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
         geometry = get_geometry_from_various([], geometry=geom)
@@ -125,12 +126,12 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         super(TestSearchPluginQueryStringSearchXml, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        providers_config = self.plugins_manager.providers_config
+        providers_config = self.plugins_manager.providers.configs
         mundi_config = cached_yaml_load_all(
             Path(TEST_RESOURCES_PATH) / "mundi_conf.yml"
         )[0]
         merge_configs(providers_config, {"mundi": mundi_config})
-        self.plugins_manager = PluginManager(providers_config)
+        self.plugins_manager = PluginManager(ProvidersDict(providers_config))
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         provider = "mundi"
@@ -473,12 +474,12 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
 
         with responses.RequestsMock(
@@ -558,16 +559,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
-        search_plugin.config.discover_collections[
-            "single_collection_fetch_qs"
-        ] = "foo=bar"
+        search_plugin.config.discover_collections["single_collection_fetch_qs"] = (
+            "foo=bar"
+        )
 
         with responses.RequestsMock(
             assert_all_requests_are_fired=True
@@ -627,9 +628,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, provider)
         discover_collections_conf = search_plugin.config.discover_collections
         search_plugin.config.discover_collections.pop("fetch_url")
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
         result = search_plugin.discover_collections_per_page()
         assert result is None
@@ -1492,12 +1493,12 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         super(TestSearchPluginODataV4Search, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        providers_config = self.plugins_manager.providers_config
+        providers_config = self.plugins_manager.providers.configs
         onda_config = cached_yaml_load_all(Path(TEST_RESOURCES_PATH) / "onda_conf.yml")[
             0
         ]
         merge_configs(providers_config, {"onda": onda_config})
-        self.plugins_manager = PluginManager(providers_config)
+        self.plugins_manager = PluginManager(ProvidersDict(providers_config))
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
@@ -2394,13 +2395,11 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         self.assertEqual(
             products.data[0].properties["eodag:order_link"],
             f"{endpoint}?"
-            + json.dumps(
-                {
-                    "geometry": default_geom,
-                    "runOnJobQueue": True,
-                    **custom_query,
-                }
-            ),
+            + json.dumps({
+                "geometry": default_geom,
+                "runOnJobQueue": True,
+                **custom_query,
+            }),
         )
 
 
@@ -2526,8 +2525,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestSearchPluginECMWFSearch, cls).setUpClass()
-        providers_config = load_default_config()
-        cls.plugins_manager = PluginManager(providers_config)
+        providers = load_default_config()
+        cls.plugins_manager = PluginManager(providers)
 
     def setUp(self):
         self.provider = "cop_ads"
@@ -2916,20 +2915,18 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # no error was raised, as expected
         self.assertIsNotNone(queryables)
 
-        mock__fetch_data.assert_has_calls(
-            [
-                call(
-                    mock.ANY,
-                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                    "cams-europe-air-quality-reanalyses/constraints.json",
-                ),
-                call(
-                    mock.ANY,
-                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                    "cams-europe-air-quality-reanalyses/form.json",
-                ),
-            ]
-        )
+        mock__fetch_data.assert_has_calls([
+            call(
+                mock.ANY,
+                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                "cams-europe-air-quality-reanalyses/constraints.json",
+            ),
+            call(
+                mock.ANY,
+                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                "cams-europe-air-quality-reanalyses/form.json",
+            ),
+        ])
 
         # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
         for provider_queryable in provider_queryables_from_constraints_file:
@@ -2987,20 +2984,18 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIsNotNone(queryables)
 
         # cached values are not used to make the set of unit tests work then the mock is called again
-        mock__fetch_data.assert_has_calls(
-            [
-                call(
-                    mock.ANY,
-                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                    "cams-europe-air-quality-reanalyses/constraints.json",
-                ),
-                call(
-                    mock.ANY,
-                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                    "cams-europe-air-quality-reanalyses/form.json",
-                ),
-            ]
-        )
+        mock__fetch_data.assert_has_calls([
+            call(
+                mock.ANY,
+                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                "cams-europe-air-quality-reanalyses/constraints.json",
+            ),
+            call(
+                mock.ANY,
+                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                "cams-europe-air-quality-reanalyses/form.json",
+            ),
+        ])
 
         self.assertEqual(12, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
@@ -3312,9 +3307,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.dataset2_data = deepcopy(self.dataset1_data)
         self.dataset2_data["id"] = "dataset-number-two"
         self.dataset2_data["properties"]["title"] = "dataset-number-two"
-        self.dataset2_data["assets"]["native"][
-            "href"
-        ] = "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
+        self.dataset2_data["assets"]["native"]["href"] = (
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
+        )
 
         self.list_objects_response1 = {
             "Contents": [
@@ -3747,8 +3742,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
     def test_plugins_search_wekeosearch_init_wekeomain(self):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
-        default_providers_config = load_default_config()
-        default_config = default_providers_config["wekeo_main"]
+        default_config = load_default_config()["wekeo_main"].config
         # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
         self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
         self.assertIn(
