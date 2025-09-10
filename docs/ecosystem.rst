@@ -1,7 +1,7 @@
 .. ecosystem:
 
 EODAG-related projects
-=========
+========================
 
 EODAG-cube
 ----------

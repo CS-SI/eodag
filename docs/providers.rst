@@ -158,8 +158,7 @@ Products from the following providers are made available through ``eodag``:
              :icon: lock
              :color: muted
 
-              Create an account `here
-                <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`__
+              Create an account `here <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`
 
       * - `cop_ewds <https://ewds.climate.copernicus.eu>`_
         - CEMS Early Warning Data Store
