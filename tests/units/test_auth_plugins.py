@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from unittest import mock
 
 import responses
+from mypy_boto3_s3.service_resource import BucketObjectsCollection
 from pystac.utils import now_in_utc
 from requests import Request, Response, Timeout
 from requests.auth import AuthBase
@@ -643,6 +644,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             aws_secret_access_key=self.aws_secret_access_key,
         )
         plugin_auth_keys = self.get_auth_plugin("provider_with_auth_keys")
+        plugin_auth_keys.authenticate()
         mock_create_session.assert_called_once_with(
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
@@ -663,6 +665,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         plugin_auth_keys_session = self.get_auth_plugin(
             "provider_with_auth_keys_session"
         )
+        plugin_auth_keys_session.authenticate()
         mock_create_session.assert_called_once_with(
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
@@ -678,11 +681,12 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         mock_create_session.reset_mock()
 
         mock_create_session.return_value = MockSession(profile_name=self.profile_name)
-        plugin_auth_keys_session = self.get_auth_plugin("provider_with_auth_profile")
+        plugin_auth_profile = self.get_auth_plugin("provider_with_auth_profile")
+        plugin_auth_profile.authenticate()
         mock_create_session.assert_called_once_with(profile_name=self.profile_name)
 
         keys_dict = {"aws_profile": self.profile_name}
-        self.assertDictEqual(keys_dict, plugin_auth_keys_session.credentials)
+        self.assertDictEqual(keys_dict, plugin_auth_profile.credentials)
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
@@ -706,22 +710,23 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         with self.assertRaises(AuthenticationError):
             plugin.authenticate_objects(buckets_prefixes)
 
+        auth_objects_a = mock.Mock(spec=BucketObjectsCollection)
+        auth_objects_b = mock.Mock(spec=BucketObjectsCollection)
         # one authenticated
         plugin = self.get_auth_plugin("provider_with_auth_keys_session")
         buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
         mock_get_authenticated_objects.side_effect = [
             AuthenticationError("problem"),
-            ["c/y.json"],
+            auth_objects_b,
         ]
         auth_objects = plugin.authenticate_objects(buckets_prefixes)
-        self.assertDictEqual({"b": ["c/y.json"]}, auth_objects)
-
+        self.assertDictEqual({"b": auth_objects_b}, auth_objects)
         # both buckets authenticated
         plugin = self.get_auth_plugin("provider_with_auth_profile")
         buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
-        mock_get_authenticated_objects.side_effect = [["b/c/x.json"], ["c/y.json"]]
+        mock_get_authenticated_objects.side_effect = [auth_objects_a, auth_objects_b]
         auth_objects = plugin.authenticate_objects(buckets_prefixes)
-        self.assertDictEqual({"a": ["b/c/x.json"], "b": ["c/y.json"]}, auth_objects)
+        self.assertDictEqual({"a": auth_objects_a, "b": auth_objects_b}, auth_objects)
 
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):

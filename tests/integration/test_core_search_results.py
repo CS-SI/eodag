@@ -466,16 +466,12 @@ class TestCoreSearchResults(EODagTestCase):
         )
         self.assertIsInstance(results[1].downloader, Download)
 
-    @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
-        autospec=True,
-    )
     @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_known_provider(
-        self, mock_fetch_stac_items, mock_aws_auth_init
+        self,
+        mock_fetch_stac_items,
     ):
         """The core api must import STAC items from a knwown provider"""
-        mock_aws_auth_init.return_value = None
         earth_search_resp_search_file = os.path.join(
             TEST_RESOURCES_PATH, "provider_responses", "earth_search_search.json"
         )

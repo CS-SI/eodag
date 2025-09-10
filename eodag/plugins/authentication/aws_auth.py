@@ -90,27 +90,9 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.endpoint_url = getattr(self.config, "s3_endpoint", None)
         self.credentials = getattr(self.config, "credentials", {}) or {}
-        # auth using aws_profile
-        if "aws_profile" in self.credentials:
-            self.s3_session = create_s3_session(
-                profile_name=self.credentials["aws_profile"]
-            )
-        # auth using aws keys
-        elif self.credentials:
-            s3_session_kwargs: S3SessionKwargs = {
-                "aws_access_key_id": self.credentials["aws_access_key_id"],
-                "aws_secret_access_key": self.credentials["aws_secret_access_key"],
-            }
-            if self.credentials.get("aws_session_token"):
-                s3_session_kwargs["aws_session_token"] = self.credentials[
-                    "aws_session_token"
-                ]
-            self.s3_session = create_s3_session(**s3_session_kwargs)
-        else:
-            # auth using env variables or ~/.aws
-            self.s3_session = create_s3_session()
-        self.s3_resource = self._create_s3_resource()
-        self.s3_client = self.get_s3_client()
+        self.s3_session = None
+        self.s3_resource = None
+        self.s3_client = None
 
     def _create_s3_resource(self) -> S3ServiceResource:
         """create s3 resource based on s3 session"""
@@ -138,7 +120,28 @@ class AwsAuth(Authentication):
 
         :returns: S3AuthContextPool with possible auth contexts
         """
-
+        if not self.s3_session:
+            # auth using aws_profile
+            if "aws_profile" in self.credentials:
+                self.s3_session = create_s3_session(
+                    profile_name=self.credentials["aws_profile"]
+                )
+            # auth using aws keys
+            elif self.credentials:
+                s3_session_kwargs: S3SessionKwargs = {
+                    "aws_access_key_id": self.credentials["aws_access_key_id"],
+                    "aws_secret_access_key": self.credentials["aws_secret_access_key"],
+                }
+                if self.credentials.get("aws_session_token"):
+                    s3_session_kwargs["aws_session_token"] = self.credentials[
+                        "aws_session_token"
+                    ]
+                self.s3_session = create_s3_session(**s3_session_kwargs)
+            else:
+                # auth using env variables or ~/.aws
+                self.s3_session = create_s3_session()
+        self.s3_resource = self._create_s3_resource()
+        self.s3_client = self.get_s3_client()
         return self.s3_resource
 
     def _get_authenticated_objects(
@@ -184,7 +187,7 @@ class AwsAuth(Authentication):
     def authenticate_objects(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-    ) -> dict[str, Any]:
+    ) -> dict[str, BucketObjectsCollection]:
         """
         Authenticates with s3 and retrieves the available objects
 
