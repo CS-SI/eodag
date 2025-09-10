@@ -19,17 +19,9 @@ from __future__ import annotations
 
 import logging
 import os
-import tempfile
 from importlib.resources import files as res_files
 from inspect import isclass
-from typing import (
-    Any,
-    ItemsView,
-    Iterator,
-    Optional,
-    ValuesView,
-    get_type_hints,
-)
+from typing import Any, ItemsView, Iterator, Optional, ValuesView, get_type_hints
 
 import orjson
 import requests
@@ -37,11 +29,15 @@ import yaml
 import yaml.parser
 
 from eodag.api.plugin import PluginConfig
-from eodag.api.provider import Provider, ProvidersDict, ProviderConfig
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.provider import (
+    Provider,
+    ProviderConfig,
+    ProvidersDict,
+    provider_config_init,
+)
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
-    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
@@ -49,7 +45,6 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_apply,
     string_to_jsonpath,
-    update_nested_dict,
     uri_to_path,
 )
 
@@ -786,42 +781,6 @@ def load_config(config_path: str) -> ProvidersDict:
         providers.add(Provider(provider_config.name, provider_config))
 
     return providers
-
-
-def provider_config_init(
-    provider_config: ProviderConfig,
-    stac_search_default_conf: Optional[dict[str, Any]] = None,
-) -> None:
-    """Applies some default values to provider config
-
-    :param provider_config: An eodag provider configuration
-    :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
-    """
-    # For the provider, set the default output_dir of its download plugin
-    # as tempdir in a portable way
-    for download_topic_key in ("download", "api"):
-        if download_topic_key in vars(provider_config):
-            download_conf = getattr(provider_config, download_topic_key)
-            if not getattr(download_conf, "output_dir", None):
-                download_conf.output_dir = tempfile.gettempdir()
-            if not getattr(download_conf, "delete_archive", None):
-                download_conf.delete_archive = True
-
-    try:
-        if (
-            stac_search_default_conf is not None
-            and provider_config.search
-            and provider_config.search.type in STAC_SEARCH_PLUGINS
-        ):
-            # search config set to stac defaults overriden with provider config
-            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
-            provider_config.search.__dict__ = update_nested_dict(
-                per_provider_stac_provider_config["search"],
-                provider_config.search.__dict__,
-                allow_empty_values=True,
-            )
-    except AttributeError:
-        pass
 
 
 def override_config_from_file(

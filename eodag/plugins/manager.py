@@ -25,11 +25,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 import importlib_metadata
 
 from eodag.api.provider import ProvidersDict
-from eodag.config import (
-    AUTH_TOPIC_KEYS,
-    PLUGINS_TOPICS_KEYS,
-    load_config,
-)
+from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, load_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -42,7 +38,6 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     UnsupportedProvider,
 )
-
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -454,7 +449,7 @@ class PluginManager:
         plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
             provider, plugin_conf
         )
-        self._built_plugins_cache[(provider, topic_class.__name__, auth_match_md5)] = (
-            plugin
-        )
+        self._built_plugins_cache[
+            (provider, topic_class.__name__, auth_match_md5)
+        ] = plugin
         return plugin
