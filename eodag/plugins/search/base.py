@@ -25,7 +25,6 @@ from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
-    DEFAULT_METADATA_MAPPING,
     NOT_AVAILABLE,
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
@@ -75,7 +74,7 @@ class Search(PluginTopic):
         super(Search, self).__init__(provider, config)
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas: dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
+        metas: dict[str, Any] = {}
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata
         if self.config.metadata_mapping:

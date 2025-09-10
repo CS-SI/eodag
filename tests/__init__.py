@@ -34,7 +34,6 @@ from shapely import wkt
 
 from eodag import config
 from eodag.api.product import EOProduct
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.plugins.download.http import HTTPDownload
 
 jp = os.path.join
@@ -111,15 +110,6 @@ class EODagTestCase(unittest.TestCase):
             "title": self.local_filename,
             "downloadLink": self.download_url,
         }
-        # Put an empty string as value of properties which are not relevant for the
-        # tests
-        self.eoproduct_props.update(
-            {
-                key: ""
-                for key in DEFAULT_METADATA_MAPPING
-                if key not in self.eoproduct_props
-            }
-        )
 
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
         self.requests_request_patcher = mock.patch(
