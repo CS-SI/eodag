@@ -27,6 +27,7 @@ from requests import Request, Response, Timeout
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
+from eodag.api.provider import ProvidersDict
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
@@ -44,9 +45,9 @@ from tests.context import (
 class BaseAuthPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super(BaseAuthPluginTest, cls).setUpClass()
+        super().setUpClass()
         cls.providers_config = {}
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def tearDown(self):
         super(BaseAuthPluginTest, self).tearDown()
@@ -163,7 +164,8 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def test_plugins_auth_tokenauth_validate_credentials_empty(self):
         """TokenAuth.validate_credentials must raise an error on empty credentials"""
@@ -565,7 +567,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 class TestAuthPluginAwsAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
-        super(TestAuthPluginAwsAuth, cls).setUpClass()
+        super().setUpClass()
         cls.aws_access_key_id = "my_access_key"
         cls.aws_secret_access_key = "my_secret_key"
         cls.aws_session_token = "my_session_token"
@@ -605,7 +607,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def test_plugins_auth_aws_authenticate(self):
         """AwsAuth.authenticate must return credentials in a dict"""
@@ -654,7 +656,7 @@ class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def test_plugins_auth_header_validate_credentials_empty(self):
         """HTTPHeaderAuth.validate_credentials must raise an error on empty credentials"""
@@ -713,7 +715,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def test_plugins_auth_qsauth_validate_credentials_empty(self):
         """HttpQueryStringAuth.validate_credentials must raise an error on empty credentials"""
@@ -798,7 +800,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def test_plugins_auth_sasauth_validate_credentials_ok(self):
         """SASAuth.validate_credentials must be ok on empty or non-empty credentials"""
@@ -918,7 +920,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
         oidc_config = {
             "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
@@ -1302,7 +1304,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 },
             },
         )
-        cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.plugins_manager = PluginManager(ProvidersDict(cls.providers_config))
 
     def get_auth_plugin(self, provider):
         with mock.patch(

@@ -163,14 +163,13 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
-        available_product_types = set(self.product_types_config.source.keys())
 
         for provider in self.providers.values():
             provider_config_init(
                 provider.config,
                 load_stac_provider_config(),
             )
-            provider.sync_product_types(available_product_types, strict_mode)
+            provider.sync_product_types(self.product_types_config.source, strict_mode)
 
         # init product types configuration
         self._product_types_config_init()
@@ -220,10 +219,7 @@ class EODataAccessGateway:
 
         :returns: The provider with the maximum priority and its priority
         """
-        providers_with_priority = self.providers.priorities
-        preferred, priority = max(providers_with_priority, key=itemgetter(1))
-
-        return preferred, priority
+        return max(self.providers.priorities.items(), key=itemgetter(1))
 
     def update_providers_config(
         self,
@@ -536,9 +532,7 @@ class EODataAccessGateway:
                 providers_discovery_configs_fetchable[
                     provider_to_fetch
                 ] = provider_to_fetch.search_config.discover_product_types
-                if not getattr(
-                    provider_to_fetch.config, "product_types_fetched", False
-                ):
+                if not provider_to_fetch.product_types_fetched:
                     already_fetched = False
 
         if not already_fetched:
@@ -648,33 +642,23 @@ class EODataAccessGateway:
         :returns: external product types configuration
         """
 
-        grouped_providers = self.providers.filter_by_group(provider)
+        providers_to_discover = self.providers.filter_by_name(provider)
 
-        if provider and provider not in self.providers and grouped_providers:
-            logger.info(
-                f"Discover product types for {provider} group: {', '.join(grouped_providers)}"
-            )
-
-        elif provider and provider not in self.providers:
+        if provider and not providers_to_discover:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
         ext_product_types_conf: dict[str, Any] = {}
-        providers_to_fetch = (
-            self.providers.filter_by_name(provider)
-            if provider
-            else self.available_providers()
-        )
 
         kwargs: dict[str, Any] = {}
-        for p in providers_to_fetch.values():
+        for p in providers_to_discover.values():
             if not p.search_config:
                 return None
 
             if p.fetchable:
                 search_plugin: Union[Search, Api] = next(
-                    self._plugins_manager.get_search_plugins(provider=provider)
+                    self._plugins_manager.get_search_plugins(provider=p)
                 )
 
                 # check after plugin init if still fetchable
@@ -693,12 +677,12 @@ class EODataAccessGateway:
                         kwargs["auth"] = auth
                     else:
                         logger.debug(
-                            f"Could not authenticate on {provider} for product types discovery"
+                            f"Could not authenticate on {p} for product types discovery"
                         )
-                        ext_product_types_conf[provider] = None
+                        ext_product_types_conf[p] = None
                         continue
 
-                ext_product_types_conf[provider] = search_plugin.discover_product_types(
+                ext_product_types_conf[p] = search_plugin.discover_product_types(
                     **kwargs
                 )
 
@@ -778,7 +762,7 @@ class EODataAccessGateway:
                 # unknown provider
                 continue
 
-            self.providers[provider].config.product_types_fetched = True
+            self.providers[provider].product_types_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()

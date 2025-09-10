@@ -281,10 +281,8 @@ class StacItem(StacCommon):
 
             # add additional item props
             for p in set(product.properties) - set(ignored_props):
-                prefix = getattr(
-                    self.eodag_api.providers_config[product.provider],
-                    "group",
-                    product.provider,
+                prefix = (
+                    self.eodag_api.providers[product.provider].group or product.provider
                 )
                 key = p if ":" in p else f"{prefix}:{p}"
                 product_item["properties"][key] = product.properties[p]
@@ -302,8 +300,8 @@ class StacItem(StacCommon):
                 else f"{url_parts.netloc}{url_parts.path}"
             )
             # add provider to query-args
-            p_config = self.eodag_api.providers_config[product.provider]
-            query_dict.update(provider=[getattr(p_config, "group", p_config.name)])
+            provider_obj = self.eodag_api.providers[product.provider]
+            query_dict.update(provider=[provider_obj.group or provider_obj.name])
             # add datacube query-string to query-args
             if _dc_qs:
                 query_dict.update(_dc_qs=[_dc_qs])

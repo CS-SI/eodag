@@ -68,10 +68,10 @@ class RequestTestCase(unittest.TestCase):
 
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        cls.expanduser_mock = mock.patch(
+        cls.expanduser_patcher = mock.patch(
             "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
-        cls.expanduser_mock.start()
+        cls.expanduser_patcher.start()
 
         # mock os.environ to empty env
         cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
@@ -101,7 +101,7 @@ class RequestTestCase(unittest.TestCase):
         cls.mock_os_environ.stop()
 
         # stop Mock and remove tmp config dir
-        cls.expanduser_mock.stop()
+        cls.expanduser_patcher.stop()
         cls.tmp_home_dir.cleanup()
 
     def setUp(self):

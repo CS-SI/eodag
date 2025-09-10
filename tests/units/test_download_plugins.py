@@ -32,6 +32,7 @@ import responses
 import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
+from eodag.api.provider import ProvidersDict
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import DownloadError, NoMatchingProductType, ValidationError
 from tests import TEST_RESOURCES_PATH
@@ -57,9 +58,9 @@ from tests.context import (
 class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super(BaseDownloadPluginTest, cls).setUpClass()
-        providers_config = load_default_config()
-        cls.plugins_manager = PluginManager(providers_config)
+        super().setUpClass()
+        providers = load_default_config()
+        cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         expanduser_mock_side_effect = (
@@ -74,7 +75,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(BaseDownloadPluginTest, cls).tearDownClass()
+        super().tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
@@ -2095,7 +2096,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         super(TestDownloadPluginS3Rest, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        providers_config = self.plugins_manager.providers_config
+        providers = self.plugins_manager.providers
         mundi_config_yaml = """
             mundi:
                 products:
@@ -2134,8 +2135,9 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
                         storageStatus: 'DIAS:onlineStatus/text()'
         """
         mundi_config_dict = yaml.safe_load(mundi_config_yaml)
-        override_config_from_mapping(providers_config, mundi_config_dict)
-        self.plugins_manager = PluginManager(providers_config)
+        override_config_from_mapping(providers.configs, mundi_config_dict)
+        pass
+        self.plugins_manager = PluginManager(ProvidersDict(providers.configs))
 
         self.product = EOProduct(
             "mundi",
