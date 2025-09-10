@@ -117,11 +117,13 @@ __ https://www.apache.org/licenses/LICENSE-2.0.html
    :caption: For Users
 
    getting_started_guide/index
+   providers
    api_user_guide
    api_reference/index
    cli_user_guide
    breaking_changes
    tutos
+   ecosystem
 
 .. toctree::
    :maxdepth: 2
