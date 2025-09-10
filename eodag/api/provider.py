@@ -77,7 +77,6 @@ class ProviderConfig(yaml.YAMLObject):
     auth: PluginConfig
     search_auth: PluginConfig
     download_auth: PluginConfig
-    product_types_fetched: bool  # set in core.update_product_types_list
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
@@ -197,10 +196,15 @@ def provider_config_init(
 class Provider:
     """
     Represents a data provider with its configuration and utility methods.
+
+    :param name: Name of the provider.
+    :param product_types_fetched: Flag indicating whether product types have been fetched.
     """
 
     name: str
     _config: ProviderConfig
+
+    product_types_fetched: bool = False  # set in core.update_product_types_list
 
     def __str__(self) -> str:
         """Return the provider's name as string."""
@@ -258,7 +262,7 @@ class Provider:
     @property
     def products(self) -> dict[str, Any]:
         """Return the products dictionary for this provider."""
-        return self.config.products
+        return getattr(self.config, "products", {})
 
     @property
     def priority(self) -> int:
@@ -278,16 +282,9 @@ class Provider:
     @property
     def fetchable(self) -> bool:
         """Return True if the provider can fetch product types."""
-        if self.search_config is None:
-            return False
-
-        if not hasattr(self.search_config, "discover_product_types"):
-            return False
-
-        if not hasattr(self.search_config.discover_product_types, "fetch_url"):
-            return False
-
-        return True
+        return bool(
+            getattr(self.search_config, "discover_product_types", {}).get("fetch_url")
+        )
 
     @property
     def unparsable_properties(self) -> Optional[set[str]]:
@@ -373,7 +370,7 @@ class Provider:
 
     def sync_product_types(
         self,
-        available_product_types: set[str],
+        product_types_config: dict[str, Any],
         strict_mode: bool,
     ) -> None:
         """
@@ -394,7 +391,7 @@ class Provider:
             if product_id == GENERIC_PRODUCT_TYPE:
                 continue
 
-            if product_id not in available_product_types:
+            if product_id not in product_types_config:
                 if strict_mode:
                     products_to_remove.append(product_id)
                     continue
@@ -403,7 +400,7 @@ class Provider:
                     "title": product_id,
                     "abstract": NOT_AVAILABLE,
                 }
-                self.product_types_config.source[
+                product_types_config[
                     product_id
                 ] = empty_product  # will update available_product_types
                 products_to_add.append(product_id)
@@ -541,7 +538,7 @@ class ProvidersDict(UserDict[str, Provider]):
         if provider in self.data:
             self.data[provider].config = cfg
         else:
-            raise KeyError(f"Provider '{provider}' not found.")
+            self.data[provider] = Provider(provider, cfg)
 
     def get_products(self, provider: str | Provider) -> Optional[dict[str, Any]]:
         """Get the products dictionary for a provider by name or Provider instance."""
@@ -579,7 +576,7 @@ class ProvidersDict(UserDict[str, Provider]):
         else:
             raise KeyError(f"Provider '{name}' not found.")
 
-    def filter_by_name(self, name: Optional[str]) -> Self:
+    def filter_by_name(self, name: Optional[str] = None) -> Self:
         """Return a ProvidersDict filtered by provider name or group.
 
         Args:
@@ -592,7 +589,7 @@ class ProvidersDict(UserDict[str, Provider]):
             return self
 
         filtered_providers = [
-            p for p in self.data.values() if p.name in [name, p.group]
+            p for p in self.data.values() if name in [p.name, p.group]
         ]
 
         return ProvidersDict(filtered_providers)
@@ -844,8 +841,6 @@ class ProvidersDict(UserDict[str, Provider]):
         self.share_credentials()
 
         for provider in conf_update.keys():
-            provider_config_init(
-                self.providers.get_config(name=provider), stac_provider_config
-            )
+            provider_config_init(self.get_config(provider), stac_provider_config)
 
-        setattr(self.data[provider].config, "product_types_fetched", False)
+        self.data[provider].product_types_fetched = False
