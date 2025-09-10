@@ -1275,7 +1275,11 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a collection of EO products
                   matching the criteria
         """
-
+        logger.info(
+            "The 'page' parameter is deprecated and no longer supported. "
+            "Pagination is now handled via 'next_page_token'. "
+            "To fetch the next page of results, please use `SearchResult.next_page()`."
+        )
         search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
@@ -1977,6 +1981,9 @@ class EODataAccessGateway:
         search_result: SearchResult, filename: str = "search_results.geojson"
     ) -> str:
         """Registers results of a search into a geojson file.
+        The output is a FeatureCollection containing the EO products as features,
+        with additional metadata such as ``number_matched``, ``next_page_token``,
+        and ``search_params`` stored in the properties.
 
         :param search_result: A collection of EO products resulting from a search
         :param filename: (optional) The name of the file to generate
