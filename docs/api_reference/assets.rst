@@ -4,7 +4,7 @@
 Assets
 ======
 
-The `Assets` module provides classes and methods to manage and interact with assets associated with Earth Observation products.
+The `Assets` module provides classes and methods to manage and interact with assets associated with :class:`~eodag.api.product._product.EOProduct`.
 These assets can include files, metadata, or other resources that are part of a product's data package.
 The module offers functionality for accessing, manipulating, and extending asset-related operations.
 
