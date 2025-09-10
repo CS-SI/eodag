@@ -30,7 +30,6 @@ from unittest import mock
 
 import responses
 
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
@@ -345,11 +344,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "title": local_filename,
             "downloadLink": download_url,
         }
-
-        # Put an empty string as value of properties which are not relevant for the test
-        eoproduct_props.update(
-            {key: "" for key in DEFAULT_METADATA_MAPPING if key not in eoproduct_props}
-        )
 
         product = self._dummy_downloadable_product(
             mock_requests_session,
