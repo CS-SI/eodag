@@ -1139,13 +1139,19 @@ class QueryStringSearch(Search):
             RawSearchResult: An object containing the raw results, search parameters,
                             and the next page token if available.
         """
+        # Create the RawSearchResult object and populate basic fields
         raw_search_results = RawSearchResult(results)
         raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
         raw_search_results.query_params = prep.query_params
         raw_search_results.product_type_def_params = prep.product_type_def_params
+
+        # If no JSON response is available, return the result as is
         if resp_as_json is None:
             return raw_search_results
+
+        # Handle pagination
         if self.config.pagination.get("next_page_query_obj_key_path") is not None:
+            # Use next_page_query_obj_key_path to find the next page token in the response
             jsonpath_expr = string_to_jsonpath(
                 self.config.pagination["next_page_query_obj_key_path"]
             )
@@ -1155,17 +1161,18 @@ class QueryStringSearch(Search):
                 )
             href = jsonpath_expr.find(resp_as_json)
             if href:
+                # Determine the key to extract the token from the URL or object
+                href_value = href[0].value
                 next_page_token_key = (
                     unquote(self.config.pagination["parse_url_key"])
                     if "parse_url_key" in self.config.pagination
                     else self.config.pagination.get("next_page_token_key")
                 )
-                href_value = href[0].value
+                # Try to extract the token from the found value
                 if next_page_token_key in href_value:
                     raw_search_results.next_page_token = href_value[next_page_token_key]
-                elif next_page_token_key in unquote(
-                    href_value
-                ):  # if next_page_token_key = $skip
+                elif next_page_token_key in unquote(href_value):
+                    # If the token is in the URL query string
                     from urllib.parse import parse_qs, urlparse
 
                     query = urlparse(href_value).query
@@ -1173,10 +1180,13 @@ class QueryStringSearch(Search):
                     if page_param:
                         raw_search_results.next_page_token = page_param[0]
                 else:
+                    # Use the whole value as the token
                     raw_search_results.next_page_token = href_value
             else:
+                # No token found: set to empty string
                 raw_search_results.next_page_token = ""
         elif self.config.pagination.get("next_page_url_key_path") is not None:
+            # Use next_page_url_key_path to find the next page token in the response
             jsonpath_expr = string_to_jsonpath(
                 self.config.pagination["next_page_query_obj_key_path"]
             )
@@ -1190,6 +1200,7 @@ class QueryStringSearch(Search):
             else:
                 raw_search_results.next_page_token = None
         else:
+            # Default pagination
             next_page_token_key = str(
                 self.config.pagination.get("next_page_token_key", "page")
             )
