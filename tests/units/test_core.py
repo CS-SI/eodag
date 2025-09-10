@@ -877,26 +877,28 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
-        self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].products)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].products)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
         self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertIn("foo", self.dag.providers_config["earth_search"].products)
-        self.assertIn("bar", self.dag.providers_config["earth_search"].products)
+        self.assertIn("foo", self.dag.providers["earth_search"].products)
+        self.assertIn("bar", self.dag.providers["earth_search"].products)
         self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
-        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
+        self.assertEqual(
+            self.dag.collections_config["bar"].title, "Bar collection"
+        )
 
     def test_update_collections_list_unknown_provider(self):
         """Core api.update_collections_list on unkwnown provider must not crash and not update conf"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
-        self.dag.providers_config.pop("earth_search")
+        self.dag.providers.pop("earth_search")
 
         self.dag.update_collections_list(ext_collections_conf)
-        self.assertNotIn("earth_search", self.dag.providers_config)
+        self.assertNotIn("earth_search", self.dag.providers)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
@@ -912,8 +914,8 @@ class TestCore(TestCoreBase):
         # we keep the existing ext-conf to use it for a provider with an api plugin
         ext_collections_conf["ecmwf"] = ext_collections_conf.pop("earth_search")
 
-        self.assertNotIn("foo", self.dag.providers_config["ecmwf"].products)
-        self.assertNotIn("bar", self.dag.providers_config["ecmwf"].products)
+        self.assertNotIn("foo", self.dag.providers["ecmwf"].products)
+        self.assertNotIn("bar", self.dag.providers["ecmwf"].products)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
@@ -930,27 +932,29 @@ class TestCore(TestCoreBase):
 
         self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertIn("foo", self.dag.providers_config["ecmwf"].products)
-        self.assertIn("bar", self.dag.providers_config["ecmwf"].products)
-        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
-        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
+        self.assertIn("foo", self.dag.providers["ecmwf"].products)
+        self.assertIn("bar", self.dag.providers["ecmwf"].products)
+        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
+        self.assertEqual(
+            self.dag.collections_config["bar"]["title"], "Bar collection"
+        )
 
     def test_update_collections_list_without_plugin(self):
         """Core api.update_collections_list without search and api plugin do nothing"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
-        self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].products)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].products)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
-        delattr(self.dag.providers_config["earth_search"], "search")
+        delattr(self.dag.providers["earth_search"].config, "search")
 
         self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
-        self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].products)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].products)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
@@ -1000,7 +1004,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has been added to the config
-            self.assertIn("foo", self.dag.providers_config["earth_search"].products)
+            self.assertIn("foo", self.dag.providers["earth_search"].products)
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"]["foo"]
@@ -1040,7 +1044,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has not been added to the config
-            self.assertNotIn(100, self.dag.providers_config["earth_search"].products)
+            self.assertNotIn(100, self.dag.providers["earth_search"].products)
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"][100]
@@ -1105,8 +1109,10 @@ class TestCore(TestCoreBase):
 
     def test_discover_collections_without_plugin(self):
         """Core api must not fetch providers without search and api plugins"""
-        delattr(self.dag.providers_config["earth_search"], "search")
-        ext_collections_conf = self.dag.discover_collections(provider="earth_search")
+        delattr(self.dag.providers["earth_search"].config, "search")
+        ext_collections_conf = self.dag.discover_collections(
+            provider="earth_search"
+        )
         self.assertEqual(
             ext_collections_conf,
             None,
@@ -1121,16 +1127,16 @@ class TestCore(TestCoreBase):
     ):
         """Core api must fetch collections list and update if needed"""
         # check that no provider has already been fetched
-        for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "collections_fetched", False))
+        for provider in self.dag.providers.values():
+            self.assertFalse(provider.collections_fetched)
 
         # check that by default get_ext_collections_conf() is called without args
         self.dag.fetch_collections_list()
         mock_get_ext_collections_conf.assert_called_with()
 
         # check that with an empty/mocked ext-conf, no provider has been fetched
-        for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "collections_fetched", False))
+        for provider in self.dag.providers.values():
+            self.assertFalse(provider.collections_fetched)
 
         # check that EODAG_EXT_COLLECTIONS_CFG_FILE env var will be used as get_ext_collections_conf() arg
         os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = "some/file"
@@ -1146,21 +1152,14 @@ class TestCore(TestCoreBase):
             }
         }
         # add an empty ext-conf for other providers to prevent them to be fetched
-        for provider, provider_config in self.dag.providers_config.items():
-            if provider != "earth_search" and hasattr(provider_config, "search"):
-                provider_search_config = provider_config.search
-            elif provider != "earth_search" and hasattr(provider_config, "api"):
-                provider_search_config = provider_config.api
-            else:
-                continue
-            if hasattr(
-                provider_search_config, "discover_collections"
-            ) and provider_search_config.discover_collections.get("fetch_url"):
+        for provider in self.dag.providers.values():
+            if provider != "earth_search" and provider.fetchable:
                 mock_get_ext_collections_conf.return_value[provider] = {}
+
         self.dag.fetch_collections_list()
-        self.assertTrue(self.dag.providers_config["earth_search"].collections_fetched)
+        self.assertTrue(self.dag.providers["earth_search"].collections_fetched)
         self.assertEqual(
-            self.dag.providers_config["earth_search"].products["foo"],
+            self.dag.providers["earth_search"].products["foo"],
             {"_collection": "foo"},
         )
         self.assertEqual(
@@ -1218,8 +1217,8 @@ class TestCore(TestCoreBase):
     ):
         """Core api must not fetch collections list and must discover collections without ext-conf"""
         # check that no provider has already been fetched
-        for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "collections_fetched", False))
+        for provider in self.dag.providers.values():
+            self.assertFalse(provider.collections_fetched)
 
         # check that without an ext-conf, discover_collections() is launched for it
         mock_get_ext_collections_conf.return_value = {}
@@ -1227,8 +1226,8 @@ class TestCore(TestCoreBase):
         self.assertEqual(mock_discover_collections.call_count, 1)
 
         # check that without an ext-conf, no provider has been fetched
-        for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "collections_fetched", False))
+        for provider in self.dag.providers.values():
+            self.assertFalse(provider.collections_fetched)
 
     @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
@@ -1258,16 +1257,8 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
 
             # add an empty ext-conf for other providers to prevent them to be fetched
-            for provider, provider_config in self.dag.providers_config.items():
-                if provider != "new_provider" and hasattr(provider_config, "search"):
-                    provider_search_config = provider_config.search
-                elif provider != "new_provider" and hasattr(provider_config, "api"):
-                    provider_search_config = provider_config.api
-                else:
-                    continue
-                if hasattr(
-                    provider_search_config, "discover_collections"
-                ) and provider_search_config.discover_collections.get("fetch_url"):
+            for provider in self.dag.providers.values():
+                if provider != "new_provider" and provider.fetchable:
                     mock_get_ext_collections_conf.return_value[provider] = {}
 
             self.dag.fetch_collections_list()
@@ -1331,7 +1322,7 @@ class TestCore(TestCoreBase):
         try:
             # Default conf: no auth needed for search
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert not getattr(dag.providers_config["peps"].search, "need_auth", False)
+            assert not getattr(dag.providers["peps"].search_config, "need_auth", False)
 
             # auth needed for search without credentials
             os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
@@ -1343,7 +1334,7 @@ class TestCore(TestCoreBase):
             os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
             assert "peps" in dag.available_providers()
-            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
+            assert getattr(dag.providers["peps"].search_config, "need_auth", False)
 
         # Teardown
         finally:
@@ -1381,14 +1372,14 @@ class TestCore(TestCoreBase):
             os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
             os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            delattr(dag.providers_config["peps"], "auth")
+            delattr(dag.providers["peps"].config, "auth")
             assert "peps" in dag.available_providers()
-            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
-            assert not hasattr(dag.providers_config["peps"], "auth")
+            assert getattr(dag.providers["peps"].search_config, "need_auth", False)
+            assert not hasattr(dag.providers["peps"].config, "auth")
 
             with self.assertLogs(level="INFO") as cm:
                 dag._prune_providers_list()
-                self.assertNotIn("peps", dag.providers_config.keys())
+                self.assertNotIn("peps", dag.providers)
                 self.assertIn(
                     "peps: provider needing auth for search has been pruned because no auth plugin could be found",
                     str(cm.output),
@@ -1405,16 +1396,16 @@ class TestCore(TestCoreBase):
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        delattr(dag.providers_config["peps"], "search")
+        delattr(dag.providers["peps"].config, "search")
         assert "peps" in dag.available_providers()
-        assert not hasattr(dag.providers_config["peps"], "api")
-        assert not hasattr(dag.providers_config["peps"], "search")
+        assert not hasattr(dag.providers["peps"].config, "api")
+        assert not hasattr(dag.providers["peps"].config, "search")
 
         assert "peps" in dag.available_providers()
 
         with self.assertLogs(level="INFO") as cm:
             dag._prune_providers_list()
-            self.assertNotIn("peps", dag.providers_config.keys())
+            self.assertNotIn("peps", dag.providers)
             self.assertIn(
                 "peps: provider has been pruned because no api or search plugin could be found",
                 str(cm.output),
@@ -1458,10 +1449,10 @@ class TestCore(TestCoreBase):
         # add new provider
         self.dag.update_providers_config(new_config)
         self.assertIsInstance(
-            self.dag.providers_config["my_new_provider"], ProviderConfig
+            self.dag.providers["my_new_provider"].config, ProviderConfig
         )
 
-        self.assertEqual(self.dag.providers_config["my_new_provider"].priority, 0)
+        self.assertEqual(self.dag.providers["my_new_provider"].config.priority, 0)
 
         # run a 2nd time: check that it does not raise an error
         self.dag.update_providers_config(new_config)
@@ -1638,7 +1629,7 @@ class TestCore(TestCoreBase):
         """additional_properties in queryables must be adapted to provider's configuration"""
         # Check if discover_metadata.auto_discovery is False
         self.assertFalse(
-            self.dag.providers_config["cop_marine"].search.discover_metadata[
+            self.dag.providers["cop_marine"].search_config.discover_metadata[
                 "auto_discovery"
             ]
         )
@@ -1652,7 +1643,7 @@ class TestCore(TestCoreBase):
 
         # Check if discover_metadata.auto_discovery is True
         self.assertTrue(
-            self.dag.providers_config["peps"].search.discover_metadata["auto_discovery"]
+            self.dag.providers["peps"].search_config.discover_metadata["auto_discovery"]
         )
         peps_queryables = self.dag.list_queryables(provider="peps")
         self.assertTrue(peps_queryables.additional_properties)
@@ -2052,14 +2043,14 @@ class TestCore(TestCoreBase):
                 )
 
         # check if sortables are set to None when the provider does not support the sorting feature
-        self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
+        self.assertFalse(hasattr(self.dag.providers["peps"].search_config, "sort"))
         self.assertIsNone(sortables["peps"])
 
         # check if sortable parameter(s) and its (their) maximum number of a provider are set
         # to their value when the provider supports the sorting feature and has a maximum number of sortables
-        self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
+        self.assertTrue(hasattr(self.dag.providers["creodias"].search_config, "sort"))
         self.assertTrue(
-            self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
+            self.dag.providers["creodias"].search_config.sort.get("max_sort_params")
         )
         if sortables["creodias"]:
             self.assertIsNotNone(sortables["creodias"]["max_sort_params"])
@@ -2067,10 +2058,10 @@ class TestCore(TestCoreBase):
         # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
         # to None when the provider supports the sorting feature and does not have a maximum number of sortables
         self.assertTrue(
-            hasattr(self.dag.providers_config["planetary_computer"].search, "sort")
+            hasattr(self.dag.providers["planetary_computer"].search_config, "sort")
         )
         self.assertFalse(
-            self.dag.providers_config["planetary_computer"].search.sort.get(
+            self.dag.providers["planetary_computer"].search_config.sort.get(
                 "max_sort_params"
             )
         )
@@ -2179,7 +2170,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 5))
             # peps outputs prefix is set to /data
             self.assertEqual(
-                self.dag.providers_config["peps"].download.output_dir, "/data"
+                self.dag.providers["peps"].config.download.output_dir, "/data"
             )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
@@ -2194,7 +2185,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             # only foo_provider in conf
             self.assertEqual(self.dag.available_providers(), ["foo_provider"])
             self.assertEqual(
-                self.dag.providers_config["foo_provider"].search.api_endpoint,
+                self.dag.providers["foo_provider"].search_config.api_endpoint,
                 "https://foo.bar/search",
             )
         finally:
@@ -4087,7 +4078,7 @@ class TestCoreProviderGroup(TestCoreBase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.dag = EODataAccessGateway()
-        providers_configs = cls.dag.providers_config
+        providers_configs = cls.dag.providers.configs
 
         setattr(providers_configs[cls.group[0]], "group", cls.group_name)
         setattr(providers_configs[cls.group[1]], "group", cls.group_name)
@@ -4100,8 +4091,8 @@ class TestCoreProviderGroup(TestCoreBase):
 
         # check that setting "by_group" argument to True removes names of grouped providers and add names of their group
         groups = []
-        for provider, provider_config in self.dag.providers_config.items():
-            provider_group = getattr(provider_config, "group", None)
+        for provider in self.dag.providers.values():
+            provider_group = getattr(provider.config, "group", None)
             if provider_group and provider_group not in groups:
                 groups.append(provider_group)
                 providers.append(provider_group)
@@ -4137,12 +4128,12 @@ class TestCoreProviderGroup(TestCoreBase):
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
         """Core api must fetch collections list and update if needed"""
-        # store providers config
-        tmp_providers_config = copy.deepcopy(self.dag.providers_config)
+        # store providers
+        tmp_providers = copy.deepcopy(self.dag.providers)
 
         # check that no provider has already been fetched
-        for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "collections_fetched", False))
+        for provider in self.dag.providers.values():
+            self.assertFalse(provider.collections_fetched)
 
         mock_get_ext_collections_conf.return_value = {
             provider: {
@@ -4151,26 +4142,16 @@ class TestCoreProviderGroup(TestCoreBase):
             }
             for provider in self.group
         }
-        # add an empty ext-conf for other providers to prevent them to be fetched
-        for provider, provider_config in self.dag.providers_config.items():
-            if hasattr(provider_config, "search"):
-                provider_search_config = provider_config.search
-            elif hasattr(provider_config, "api"):
-                provider_search_config = provider_config.api
-            elif provider not in self.group:
-                continue
-            if (
-                provider not in self.group
-                and hasattr(provider_search_config, "discover_collections")
-                and provider_search_config.discover_collections.get("fetch_url")
-            ):
+
+        for provider in self.dag.providers.values():
+            # add an empty ext-conf for other providers to prevent them to be fetched
+            if provider not in self.group and provider.fetchable:
                 mock_get_ext_collections_conf.return_value[provider] = {}
+
             # update grouped providers conf and check that discover_collections() is launched for them
-            if provider in self.group and getattr(
-                provider_search_config, "discover_collections", {}
-            ).get("fetch_url"):
+            if provider in self.group and provider.fetchable:
                 provider_search_config_key = (
-                    "search" if hasattr(provider_config, "search") else "api"
+                    "search" if hasattr(provider.config, "search") else "api"
                 )
                 self.dag.update_providers_config(
                     f"""
@@ -4181,45 +4162,21 @@ class TestCoreProviderGroup(TestCoreBase):
                             """
                 )
 
-        # now check that if provider is specified, only this one is fetched
-        with self.assertLogs(level="INFO") as cm:
-            self.dag.fetch_collections_list(provider=self.group_name)
-            self.assertIn(
-                f"Fetch collections for {self.group_name} group: {', '.join(self.group)}",
-                str(cm.output),
-            )
+        self.dag.fetch_collections_list(provider=self.group_name)
 
         # discover_collections() should have been called one time per each provider of the group
         # which has collection discovery mechanism. dag configuration of these providers should have been updated
-        for provider in self.group:
-            if getattr(
-                self.dag.providers_config[provider].search, "discover_collections", {}
-            ).get("fetch_url", False):
-                self.assertTrue(
-                    getattr(
-                        self.dag.providers_config[provider],
-                        "collections_fetched",
-                        False,
-                    )
-                )
+        for name in self.group:
+            if self.dag.providers[name].fetchable:
+                self.assertTrue(self.dag.providers[name].collections_fetched)
                 self.assertEqual(
-                    self.dag.providers_config[provider].products["foo"],
-                    {"collection": "foo"},
+                    self.dag.providers[name].products["foo"],
+                    {"_collection": "foo"},
                 )
-                mock_discover_collections.assert_called_with(
-                    self.dag, provider=provider
-                )
+                mock_discover_collections.assert_called_with(self.dag, provider=name)
             else:
-                self.assertFalse(
-                    getattr(
-                        self.dag.providers_config[provider],
-                        "collections_fetched",
-                        False,
-                    )
-                )
-                self.assertNotIn(
-                    "foo", list(self.dag.providers_config[provider].products.keys())
-                )
+                self.assertFalse(self.dag.providers[name].collections_fetched)
+                self.assertNotIn("foo", list(self.dag.providers[name].products.keys()))
 
         self.assertEqual(
             self.dag.collections_config.data["foo"],
@@ -4227,7 +4184,7 @@ class TestCoreProviderGroup(TestCoreBase):
         )
 
         # restore providers config
-        self.dag.providers_config = tmp_providers_config
+        self.dag.providers = tmp_providers
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
@@ -4241,14 +4198,9 @@ class TestCoreProviderGroup(TestCoreBase):
         self, mock_plugin_discover_collections
     ):
         """Core api must fetch grouped providers for collections"""
-        with self.assertLogs(level="INFO") as cm:
-            ext_collections_conf = self.dag.discover_collections(
-                provider=self.group_name
-            )
-            self.assertIn(
-                f"Discover collections for {self.group_name} group: {', '.join(self.group)}",
-                str(cm.output),
-            )
+        ext_collections_conf = self.dag.discover_collections(
+            provider=self.group_name
+        )
 
         self.assertIsNotNone(ext_collections_conf)
 
@@ -4263,9 +4215,7 @@ class TestCoreProviderGroup(TestCoreBase):
             provider_search_plugin = next(
                 self.dag._plugins_manager.get_search_plugins(provider=provider)
             )
-            if getattr(
-                self.dag.providers_config[provider].search, "discover_collections", {}
-            ).get("fetch_url", False):
+            if self.dag.providers[provider].fetchable:
                 self.assertIn(provider_search_plugin, mock_call_args_list)
                 self.assertEqual(
                     ext_collections_conf[provider]["providers_config"]["foo"][

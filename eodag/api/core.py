@@ -169,14 +169,13 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        available_collections = set(self.collections_config.keys())
 
         for provider in self.providers.values():
             provider_config_init(
                 provider.config,
                 load_stac_provider_config(),
             )
-            provider.sync_product_types(available_collections, strict_mode)
+            provider.sync_product_types(self, strict_mode)
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers)
@@ -232,10 +231,7 @@ class EODataAccessGateway:
 
         :returns: The provider with the maximum priority and its priority
         """
-        providers_with_priority = self.providers.priorities
-        preferred, priority = max(providers_with_priority, key=itemgetter(1))
-
-        return preferred, priority
+        return max(self.providers.priorities.items(), key=itemgetter(1))
 
     def update_providers_config(
         self,
@@ -544,12 +540,10 @@ class EODataAccessGateway:
         already_fetched = True
         for provider_to_fetch in providers_to_fetch.values():
             if provider_to_fetch.fetchable:
-                providers_discovery_configs_fetchable[provider_to_fetch] = (
-                    provider_to_fetch.search_config.discover_collections
-                )
-                if not getattr(
-                    provider_to_fetch.config, "collections_fetched", False
-                ):
+                providers_discovery_configs_fetchable[
+                    provider_to_fetch
+                ] = provider_to_fetch.search_config.discover_collections
+                if not provider_to_fetch.collections_fetched:
                     already_fetched = False
 
         if not already_fetched:
@@ -659,33 +653,23 @@ class EODataAccessGateway:
         :returns: external collections configuration
         """
 
-        grouped_providers = self.providers.filter_by_group(provider)
+        providers_to_discover = self.providers.filter_by_name(provider)
 
-        if provider and provider not in self.providers and grouped_providers:
-            logger.info(
-                f"Discover collections for {provider} group: {', '.join(grouped_providers)}"
-            )
-
-        elif provider and provider not in self.providers:
+        if provider and not providers_to_discover:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
         ext_collections_conf: dict[str, Any] = {}
-        providers_to_fetch = (
-            self.providers.filter_by_name(provider)
-            if provider
-            else self.available_providers()
-        )
 
         kwargs: dict[str, Any] = {}
-        for p in providers_to_fetch.values():
+        for p in providers_to_discover.values():
             if not p.search_config:
                 return None
 
             if p.fetchable:
                 search_plugin: Union[Search, Api] = next(
-                    self._plugins_manager.get_search_plugins(provider=provider)
+                    self._plugins_manager.get_search_plugins(provider=p)
                 )
 
                 # check after plugin init if still fetchable
@@ -704,12 +688,12 @@ class EODataAccessGateway:
                         kwargs["auth"] = auth
                     else:
                         logger.debug(
-                            f"Could not authenticate on {provider} for collections discovery"
+                            f"Could not authenticate on {p} for product types discovery"
                         )
-                        ext_collections_conf[provider] = None
+                        ext_collections_conf[p] = None
                         continue
 
-                ext_collections_conf[provider] = search_plugin.discover_collections(
+                ext_collections_conf[p] = search_plugin.discover_collections(
                     **kwargs
                 )
 
@@ -819,7 +803,7 @@ class EODataAccessGateway:
                 # unknown provider
                 continue
 
-            self.providers[provider].config.collections_fetched = True
+            self.providers[provider].collections_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_collection_to_provider_config_map()

@@ -131,7 +131,7 @@ class PluginManager:
     def build_collection_to_provider_config_map(self) -> None:
         """Build mapping conf between collections and providers"""
         self.collection_to_provider_config_map = {}
-        for provider in self.providers.values():
+        for provider in list(self.providers.values()):
             if not provider.products:
                 logger.info(
                     "%s: provider has no product configured and will be skipped",
@@ -309,7 +309,7 @@ class PluginManager:
             return False
 
         # providers configs with given provider at first
-        sorted_providers_config = deepcopy(self.providers_config)
+        sorted_providers_config = deepcopy(self.providers.configs)
         sorted_providers_config = {
             provider: sorted_providers_config.pop(provider),
             **sorted_providers_config,
