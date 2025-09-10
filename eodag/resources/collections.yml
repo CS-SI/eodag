@@ -6869,6 +6869,26 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   title: Global Ocean Colour Plankton MY L4 monthly observations
   extent: {"temporal": {"interval": [["1997-09-01T00:00:00Z", "2024-04-01T00:00:00Z"]]}}
 
+# Copernicus Global Human Settlement
+GHS_BUILT_S:
+  abstract: |
+    The GHS-BUILT-S spatial raster dataset depicts the distribution of the built-up (BU) surfaces estimates between
+    1975 and 2030 in 5 year intervals and two functional use components a) the total BU surface and b) the non-
+    residential (NRES) BU surface. The data is made by spatial-temporal interpolation of five observed collections
+    of multiple-sensor, multiple-platform satellite imageries: Landsat (MSS, TM, ETM sensor) data supports the
+    1975, 1990, 2000, and 2014 epochs, while a Sentinel-2 (S2) image composite (GHS-composite-S2 R2020A)
+    supports the 2018 epoch.
+  instrument:
+  platform: Sentinel-2, LANDSAT
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: GHS,Settlement,Built-up,Surface,GHS-BUILT-S,Landsat,Sentinel-2
+  sensorType: multi
+  license: other
+  title: GHS built-up surface spatial raster dataset, derived from Sentinel-2 composite and Landsat, multi-temporal (1975-2030)
+  missionStartDate: "1975-01-01T00:00:00Z"
+  missionEndDate: "2030-12-31T00:00:00Z"
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
   description:
