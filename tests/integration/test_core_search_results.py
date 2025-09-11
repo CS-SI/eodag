@@ -54,7 +54,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "resolution": None,
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
-                        "productType": "OCN",
+                        "collection": "OCN",
                         "downloadLink": (
                             "https://peps.cnes.fr/resto/collections/S1/"
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"

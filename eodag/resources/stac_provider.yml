@@ -37,7 +37,7 @@ search:
       - filter
       - query
     metadata_path: '$.properties.*'
-  discover_product_types:
+  discover_collections:
     fetch_url: '{api_endpoint}/../collections'
     result_type: json
     results_entry: '$.collections[*]'

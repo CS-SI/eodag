@@ -103,7 +103,7 @@ class EODagTestCase(unittest.TestCase):
                     ]
                 ],
             },
-            "productType": self.collection,
+            "collection": self.collection,
             "platform": "Sentinel-2",
             "platformSerialIdentifier": self.platform,
             "instrument": self.instrument,
@@ -275,13 +275,11 @@ class EODagTestCase(unittest.TestCase):
         )
         return mock.DEFAULT
 
-    def _dummy_product(
-        self, provider=None, properties=None, productType=None, **kwargs
-    ):
+    def _dummy_product(self, provider=None, properties=None, collection=None, **kwargs):
         return EOProduct(
             self.provider if provider is None else provider,
             self.eoproduct_props if properties is None else properties,
-            productType=self.collection if productType is None else productType,
+            collection=self.collection if collection is None else collection,
             **kwargs,
         )
 
