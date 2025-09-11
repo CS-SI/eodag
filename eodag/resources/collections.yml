@@ -25,7 +25,7 @@ CBERS4_MUX_L2:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
-  keywords: MUX,CBERS,CBERS-4,L2
+  keywords: ["MUX", "CBERS", "CBERS-4", "L2"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -39,7 +39,7 @@ CBERS4_AWFI_L2:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
-  keywords: AWFI,CBERS,CBERS-4,L2
+  keywords: ["AWFI", "CBERS", "CBERS-4", "L2"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -53,7 +53,7 @@ CBERS4_PAN5M_L2:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
-  keywords: PAN5M,CBERS,CBERS-4,L2
+  keywords: ["PAN5M", "CBERS", "CBERS-4", "L2"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -67,7 +67,7 @@ CBERS4_PAN10M_L2:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L2
-  keywords: PAN10M,CBERS,CBERS-4,L2
+  keywords: ["PAN10M", "CBERS", "CBERS-4", "L2"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -81,7 +81,7 @@ CBERS4_MUX_L4:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
-  keywords: MUX,CBERS,CBERS-4,L4
+  keywords: ["MUX", "CBERS", "CBERS-4", "L4"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -95,7 +95,7 @@ CBERS4_AWFI_L4:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
-  keywords: AWFI,CBERS,CBERS-4,L4
+  keywords: ["AWFI", "CBERS", "CBERS-4", "L4"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -109,7 +109,7 @@ CBERS4_PAN5M_L4:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
-  keywords: PAN5M,CBERS,CBERS-4,L4
+  keywords: ["PAN5M", "CBERS", "CBERS-4", "L4"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -123,7 +123,7 @@ CBERS4_PAN10M_L4:
   platform: CBERS
   platformSerialIdentifier: CBERS-4
   processingLevel: L4
-  keywords: PAN10M,CBERS,CBERS-4,L4
+  keywords: ["PAN10M", "CBERS", "CBERS-4", "L4"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2014-12-07T00:00:00Z"
@@ -139,7 +139,7 @@ L8_OLI_TIRS_C1L1:
   platform: LANDSAT8
   platformSerialIdentifier: L8
   processingLevel: L1
-  keywords: OLI,TIRS,LANDSAT,LANDSAT8,L8,L1,C1,COLLECTION1
+  keywords: ["OLI", "TIRS", "LANDSAT", "LANDSAT8", "L8", "L1", "C1", "COLLECTION1"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2013-02-11T00:00:00Z"
@@ -152,7 +152,7 @@ LANDSAT_C2L1:
   platform: LANDSAT
   platformSerialIdentifier: L1,L2,L3,L4,L5,L6,L7,L8
   processingLevel: L1
-  keywords: OLI,TIRS,LANDSAT,L1,L2,L3,L4,L5,L6,L7,L8,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-1 Product
@@ -166,7 +166,7 @@ LANDSAT_C2L2:
   platform: LANDSAT
   platformSerialIdentifier: L8,L9
   processingLevel: L1
-  keywords: OLI,TIRS,LANDSAT,L8,L9,L2,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L8", "L9", "L2", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat OLI and TIRS Collection 2 Level-2 Science Products 30-meter multispectral data.
@@ -180,7 +180,7 @@ LANDSAT_C2L2_SR:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5,L7,L8
   processingLevel: L2
-  keywords: OLI,TIRS,LANDSAT,L4,L5,L7,L8,L2,SR,surface,reflectance,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "SR", "surface", "reflectance", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 UTM Surface Reflectance (SR) Product
@@ -193,7 +193,7 @@ LANDSAT_C2L2_ST:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5,L7,L8
   processingLevel: L2
-  keywords: OLI,TIRS,LANDSAT,L4,L5,L7,L8,L2,ST,surface,temperature,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "ST", "surface", "temperature", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 UTM Surface Temperature (ST) Product
@@ -207,7 +207,7 @@ LANDSAT_C2L2ALB_BT:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5,L7,L8
   processingLevel: L2
-  keywords: OLI,TIRS,LANDSAT,L4,L5,L7,L8,L2,BT,Brightness,Temperature,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "BT", "Brightness", "Temperature", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Top of Atmosphere Brightness Temperature (BT) Product
@@ -221,7 +221,7 @@ LANDSAT_C2L2ALB_SR:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5,L7,L8
   processingLevel: L2
-  keywords: OLI,TIRS,LANDSAT,L4,L5,L7,L8,L2,L2ALB,SR,Surface,Reflectance,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "L2ALB", "SR", "Surface", "Reflectance", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Surface Reflectance (SR) Product
@@ -234,7 +234,7 @@ LANDSAT_C2L2ALB_ST:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5,L7,L8
   processingLevel: L2
-  keywords: OLI,TIRS,LANDSAT,L4,L5,L7,L8,L2,L2ALB,Surface,Temperature,ST,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "L2ALB", "Surface", "Temperature", "ST", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Surface Temperature (ST) Product
@@ -248,7 +248,7 @@ LANDSAT_C2L2ALB_TA:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5,L7,L8
   processingLevel: L2
-  keywords: OLI,TIRS,LANDSAT,L4,L5,L7,L8,L2,L2ALB,TA,Top,Atmosphere,Reflectance,C2,COLLECTION2
+  keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "L2ALB", "TA", "Top", "Atmosphere", "Reflectance", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Top of Atmosphere (TA) Reflectance Product
@@ -264,7 +264,7 @@ LANDSAT_TM_C1:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5
   processingLevel: L1
-  keywords: TM,LANDSAT,L4,L5,L1,C1,COLLECTION1
+  keywords: ["TM", "LANDSAT", "L4", "L5", "L1", "C1", "COLLECTION1"]
   sensorType: OPTICAL
   license: other
   title: Landsat 4-5 Thematic Mapper (TM) Collection-1 Level-1 Data Products
@@ -281,7 +281,7 @@ LANDSAT_TM_C2L1:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5
   processingLevel: L1
-  keywords: TM,LANDSAT,L4,L5,L1,C2,COLLECTION2
+  keywords: ["TM", "LANDSAT", "L4", "L5", "L1", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat 4-5 Thematic Mapper (TM) Collection-2 Level-1 Data Products
@@ -296,7 +296,7 @@ LANDSAT_TM_C2L2:
   platform: LANDSAT
   platformSerialIdentifier: L4,L5
   processingLevel: L2
-  keywords: TM,LANDSAT,L4,L5,L2,C2,COLLECTION2
+  keywords: ["TM", "LANDSAT", "L4", "L5", "L2", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Landsat 4-5 Thematic Mapper (TM) Collection-2 Level-2 Data Products
@@ -313,7 +313,7 @@ LANDSAT_ETM_C1:
   platform: LANDSAT
   platformSerialIdentifier: L7
   processingLevel: L1
-  keywords: ETM,ETM+,LANDSAT,L7,L1,C1,COLLECTION1
+  keywords: ["ETM", "ETM+", "LANDSAT", "L7", "L1", "C1", "COLLECTION1"]
   sensorType: OPTICAL
   license: other
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-1 Level-1 data from Landsat 7
@@ -329,7 +329,7 @@ LANDSAT_ETM_C2L1:
   platform: LANDSAT
   platformSerialIdentifier: L7
   processingLevel: L1
-  keywords: ETM,ETM+,LANDSAT,L7,L1,C2,COLLECTION2
+  keywords: ["ETM", "ETM+", "LANDSAT", "L7", "L1", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-1 data from Landsat 7
@@ -343,7 +343,7 @@ LANDSAT_ETM_C2L2:
   platform: LANDSAT
   platformSerialIdentifier: L7
   processingLevel: L2
-  keywords: ETM,ETM+,LANDSAT,L7,L2,C2,COLLECTION2
+  keywords: ["ETM", "ETM+", "LANDSAT", "L7", "L2", "C2", "COLLECTION2"]
   sensorType: OPTICAL
   license: other
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-2 data from Landsat 7
@@ -362,7 +362,7 @@ MODIS_MCD43A4:
   platform: Terra+Aqua
   platformSerialIdentifier: EOS AM-1+PM-1
   processingLevel: L3
-  keywords: MODIS,Terra,Aqua,EOS,AM-1+PM-1,L3,MCD43A4
+  keywords: ["MODIS", "Terra", "Aqua", "EOS", "AM-1+PM-1", "L3", "MCD43A4"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2000-03-05T00:00:00Z"
@@ -382,7 +382,7 @@ NAIP:
   platform: National Agriculture Imagery Program
   platformSerialIdentifier: NAIP
   processingLevel: N/A
-  keywords: film,digital,cameras,Agriculture,NAIP
+  keywords: ["film", "digital", "cameras", "Agriculture", "NAIP"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2003-01-01T00:00:00Z"
@@ -549,7 +549,7 @@ S1_SAR_OCN:
   platform: SENTINEL1
   platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L2
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L2,OCN,SAFE
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L2", "OCN", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-2 OCN
@@ -573,7 +573,7 @@ S1_SAR_GRD:
   platform: SENTINEL1
   platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,SAFE
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "GRD", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -597,7 +597,7 @@ S1_SAR_GRD_JP2:
   platform: SENTINEL1
   platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,JP2
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "GRD", "JP2"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -621,7 +621,7 @@ S1_SAR_GRD_COG:
   platform: SENTINEL1
   platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,COG
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "GRD", "COG"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -639,7 +639,7 @@ S1_SAR_SLC:
   platform: SENTINEL1
   platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,SLC,SAFE
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "SLC", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Single Look Complex
@@ -656,7 +656,7 @@ S1_SAR_RAW:
   platform: SENTINEL1
   platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L0
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L0,RAW,SAFE
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L0", "RAW", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 SAR Level-0
@@ -677,7 +677,7 @@ S2_MSI_L1C:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L1
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L1,L1C,SAFE
+  keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L1", "L1C", "SAFE"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -697,7 +697,7 @@ S2_MSI_L1C_JP2:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L1
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L1C,JP2
+  keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L1C", "JP2"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -712,7 +712,7 @@ S2_MSI_L2A:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,SAFE
+  keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "SAFE"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -727,7 +727,7 @@ S2_MSI_L2A_JP2:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,JP2
+  keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "JP2"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -742,7 +742,7 @@ S2_MSI_L2A_COG:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,COG
+  keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "COG"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -758,7 +758,7 @@ S2_MSI_L2A_MAJA:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,MAJA
+  keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "MAJA"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -774,7 +774,7 @@ S2_MSI_L2B_MAJA_SNOW:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,S2C,L2,L2B,SNOW
+  keywords: ["MSI", "MAJA", "SENTINEL", "sentinel2", "S2", "S2A", "S2B", "S2C", "L2", "L2B", "SNOW"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -788,7 +788,7 @@ S2_MSI_L2B_MAJA_WATER:
   platform: SENTINEL2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,S2C,L2,L2B,WATER
+  keywords: ["MSI", "MAJA", "SENTINEL", "sentinel2", "S2", "S2A", "S2B", "S2C", "L2", "L2B", "WATER"]
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -813,7 +813,7 @@ S3_EFR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,EFR
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "EFR"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 EFR
@@ -836,7 +836,7 @@ S3_EFR_BC002:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,EFR,BC002
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "EFR", "BC002"]
   sensorType: OPTICAL
   license: other
   title: OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
@@ -860,7 +860,7 @@ S3_ERR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,ERR
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "ERR"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 ERR
@@ -882,7 +882,7 @@ S3_ERR_BC002:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,ERR,BC002
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "ERR", "BC002"]
   sensorType: OPTICAL
   license: other
   title: OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
@@ -896,7 +896,7 @@ S3_RAC:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L2,RAC
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L2", "RAC"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 RAC
@@ -914,7 +914,7 @@ S3_OLCI_L2LRR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LRR,LRR
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2LRR", "LRR"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Land Reduced Resolution
@@ -931,7 +931,7 @@ S3_OLCI_L2LFR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LFR,LFR
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2LFR", "LFR"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Land Full Resolution
@@ -948,7 +948,7 @@ S3_OLCI_L2WRR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WRR", "WRR"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution
@@ -966,7 +966,7 @@ S3_OLCI_L2WRR_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WRR,WRR,REPROCESSED,BC003
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WRR", "WRR", "REPROCESSED", "BC003"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution Reprocessed from BC003
@@ -983,7 +983,7 @@ S3_OLCI_L2WFR:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WFR", "WFR"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Full Resolution
@@ -1002,7 +1002,7 @@ S3_OLCI_L2WFR_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WFR,WFR,REPROCESSED,BC003
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WFR", "WFR", "REPROCESSED", "BC003"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Full Resolution Reprocessed from BC003
@@ -1020,7 +1020,7 @@ S3_OLCI_L4BALTIC:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L4
-  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L4,BGC,CHL,BALTIC
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L4", "BGC", "CHL", "BALTIC"]
   sensorType: OPTICAL
   license: other
   title: SENTINEL3 OLCI Baltic Sea Surface Ocean Colour Plankton
@@ -1039,7 +1039,7 @@ S3_SLSTR_L1RBT:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1RBT", "RBT"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-1
@@ -1059,7 +1059,7 @@ S3_SLSTR_L1RBT_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT,VIS,NIR,SWIR,BT,TIR,FIR,Reprocessed,BC003
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1RBT", "RBT", "VIS", "NIR", "SWIR", "BT", "TIR", "FIR", "Reprocessed", "BC003"]
   sensorType: ATMOSPHERIC
   license: other
   title: SLSTR Level 1B Radiances and Brightness Temperatures (version BC003) - Sentinel-3 - Reprocessed
@@ -1080,7 +1080,7 @@ S3_SLSTR_L1RBT_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT,VIS,NIR,SWIR,BT,TIR,FIR,Reprocessed,BC004
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1RBT", "RBT", "VIS", "NIR", "SWIR", "BT", "TIR", "FIR", "Reprocessed", "BC004"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-1 RBT - Reprocessed from BC004
@@ -1095,7 +1095,7 @@ S3_SLSTR_L2LST:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2LST,LST
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2LST", "LST"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 LST
@@ -1110,7 +1110,7 @@ S3_SLSTR_L2WST:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WST", "WST"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 WST
@@ -1126,7 +1126,7 @@ S3_SLSTR_L2WST_BC003:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2WST,WST,REPROCESSED,BC003
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WST", "WST", "REPROCESSED", "BC003"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 WST Reprocessed from BC003
@@ -1143,7 +1143,7 @@ S3_SLSTR_L2AOD:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2AOD,AOD
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2AOD", "AOD"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 AOD
@@ -1159,7 +1159,7 @@ S3_SLSTR_L2FRP:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2FRP", "FRP"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 FRP
@@ -1184,7 +1184,7 @@ S3_SLSTR_L2:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,L2FRP,FRP,L2WCT,WCT,L2WST,WST,L2AOD,AOD
+  keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2FRP", "FRP", "L2WCT", "WCT", "L2WST", "WST", "L2AOD", "AOD"]
   sensorType: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2
@@ -1203,7 +1203,7 @@ S3_SRA:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1
@@ -1218,7 +1218,7 @@ S3_SRA_A:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1 SRA_A
@@ -1235,7 +1235,7 @@ S3_SRA_BS:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1 SRA_BS
@@ -1253,7 +1253,7 @@ S3_SRA_1A_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1A
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1A,REPROCESSED,BC004
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1A", "REPROCESSED", "BC004"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed from BC004
@@ -1270,7 +1270,7 @@ S3_SRA_1A_BC005:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1A
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1A,REPROCESSED,BC005
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1A", "REPROCESSED", "BC005"]
   sensorType: RADAR
   license: other
   title: SRAL Level 1A Unpacked L0 Complex Echoes (version BC005) - Sentinel-3 - Reprocessed
@@ -1289,7 +1289,7 @@ S3_SRA_1B_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1B
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,BC004
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "BC004"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1B - Reprocessed from BC004
@@ -1307,7 +1307,7 @@ S3_SRA_1B_BC005:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1B
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,BC005
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "BC005"]
   sensorType: RADAR
   license: other
   title: SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
@@ -1329,7 +1329,7 @@ S3_SRA_BS_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1B
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES,BC004
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "STACK", "ECHOES", "BC004"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1B Stack Echoes - Reprocessed from BC004
@@ -1350,7 +1350,7 @@ S3_SRA_BS_BC005:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L1B
-  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES,BC005
+  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "STACK", "ECHOES", "BC005"]
   sensorType: RADAR
   license: other
   title: SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
@@ -1375,7 +1375,7 @@ S3_WAT:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 WAT
@@ -1396,7 +1396,7 @@ S3_WAT_BC004:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT,REPROCESSED,BC004
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT", "REPROCESSED", "BC004"]
   sensorType: RADAR
   license: other
   title: SRAL Level 2 Altimetry Global - Reprocessed from BC004
@@ -1418,7 +1418,7 @@ S3_WAT_BC005:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT,REPROCESSED,BC005
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT", "REPROCESSED", "BC005"]
   sensorType: RADAR
   license: other
   title: SRAL Level 2 Altimetry Global (version BC005) - Sentinel-3 - Reprocessed
@@ -1431,7 +1431,7 @@ S3_LAN:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN
@@ -1455,7 +1455,7 @@ S3_LAN_HY:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN,HYDROLOGY
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN", "HYDROLOGY"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN HYDRO
@@ -1479,7 +1479,7 @@ S3_LAN_SI:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN,SEA,ICE
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN", "SEA", "ICE"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN SEA ICE
@@ -1503,7 +1503,7 @@ S3_LAN_LI:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN,LAND,ICE
+  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN", "LAND", "ICE"]
   sensorType: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
@@ -1523,7 +1523,7 @@ MFG_GSA_57:
   platform: MFG
   platformSerialIdentifier: MFG
   processingLevel: L2
-  keywords: MVIRI,L2,MFG,Climate,Thematic
+  keywords: ["MVIRI", "L2", "MFG", "Climate", "Thematic"]
   sensorType: OPTICAL
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 57 degree
@@ -1543,7 +1543,7 @@ MFG_GSA_63:
   platform: MFG
   platformSerialIdentifier: MFG
   processingLevel: L2
-  keywords: MVIRI,L2,MFG,Climate,Thematic
+  keywords: ["MVIRI", "L2", "MFG", "Climate", "Thematic"]
   sensorType: OPTICAL
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
@@ -1569,7 +1569,7 @@ HIRS_FDR_1_MULTI:
   platform: Metop,TIROS,NOAA
   platformSerialIdentifier: Metop,TIROS,NOAA
   processingLevel: L1C
-  keywords: HIRS,L1C,HIRS,TIROS,Metop,NOAA,Sounder,FDR
+  keywords: ["HIRS", "L1C", "HIRS", "TIROS", "Metop", "NOAA", "Sounder", "FDR"]
   sensorType: Sounder
   license: other
   title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
@@ -1585,7 +1585,7 @@ S6_RADIO_OCCULTATION:
   platform: Sentinel-6
   platformSerialIdentifier: Sentinel-6
   processingLevel: L1B
-  keywords: Sentinel-6,L1B,GNSS-RO,Radio,Occultation
+  keywords: ["Sentinel-6", "L1B", "GNSS-RO", "Radio", "Occultation"]
   sensorType: Radio Occultation
   license: other
   title: Radio Occultation Level 1B Products - Sentinel-6
@@ -1609,7 +1609,7 @@ MTG_LI_AF:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,AF,Lightning,Weather,Flashes
+  keywords: ["MTG", "L2", "LI", "AF", "Lightning", "Weather", "Flashes"]
   sensorType: Lightning Imager
   license: other
   title:  LI Accumulated Flashes - MTG - 0 degree
@@ -1631,7 +1631,7 @@ MTG_LI_LFL:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LFL,Lightning,Weather,Flashes
+  keywords: ["MTG", "L2", "LI", "LFL", "Lightning", "Weather", "Flashes"]
   sensorType: Lightning Imager
   license: other
   title:  LI Lightning Flashes - MTG - 0 degree
@@ -1659,7 +1659,7 @@ MTG_LI_LGR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LGR,Lightning,Weather,groups
+  keywords: ["MTG", "L2", "LI", "LGR", "Lightning", "Weather", "groups"]
   sensorType: Lightning Imager
   license: other
   title:  LI Lightning Groups - MTG - 0 degree
@@ -1683,7 +1683,7 @@ MTG_LI_AFA:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,AFA,Lightning,Weather,Flashes,Accumulated
+  keywords: ["MTG", "L2", "LI", "AFA", "Lightning", "Weather", "Flashes", "Accumulated"]
   sensorType: Lightning Imager
   license: other
   title: LI Accumulated Flash Area - MTG - 0 degree
@@ -1701,7 +1701,7 @@ MTG_LI_AFR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,AFR,Lightning,Weather,Flashes,Accumulated,Radiance
+  keywords: ["MTG", "L2", "LI", "AFR", "Lightning", "Weather", "Flashes", "Accumulated", "Radiance"]
   sensorType: Lightning Imager
   license: other
   title:  LI Accumulated Flash Radiance - MTG - 0 degree
@@ -1723,7 +1723,7 @@ MTG_LI_LEF:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LEF,Lightning,Weather,Flashes,Filtered
+  keywords: ["MTG", "L2", "LI", "LEF", "Lightning", "Weather", "Flashes", "Filtered"]
   sensorType: Lightning Imager
   license: other
   title:  LI Lightning Events Filtered - MTG - 0 degree
@@ -1751,7 +1751,7 @@ MTG_FCI_FDHSI:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L1
-  keywords: MTG,L1,FCI,FDHSI,Atmosphere,Ocean,Land
+  keywords: ["MTG", "L1", "FCI", "FDHSI", "Atmosphere", "Ocean", "Land"]
   sensorType: Imager
   license: other
   title: FCI Level 1c Normal Resolution Image Data - MTG - 0 degree
@@ -1781,7 +1781,7 @@ MTG_FCI_HRFI:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L1
-  keywords: MTG,L1,FCI,HRFI,Atmosphere,Ocean,Land
+  keywords: ["MTG", "L1", "FCI", "HRFI", "Atmosphere", "Ocean", "Land"]
   sensorType: Imager
   license: other
   title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
@@ -1802,7 +1802,7 @@ MTG_FCI_ASR_BUFR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,ASR,Radiance,BUFR
+  keywords: ["MTG", "L2", "FCI", "ASR", "Radiance", "BUFR"]
   sensorType: Imager
   license: other
   title: All Sky Radiance (BUFR) - MTG - 0 degree
@@ -1823,7 +1823,7 @@ MTG_FCI_ASR_NETCDF:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,ASR,Radiance,netCDF
+  keywords: ["MTG", "L2", "FCI", "ASR", "Radiance", "netCDF"]
   sensorType: Imager
   license: other
   title: All Sky Radiance (netCDF) - MTG - 0 degree
@@ -1844,7 +1844,7 @@ MTG_FCI_AMV_BUFR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,AMV,Clouds,BUFR
+  keywords: ["MTG", "L2", "FCI", "AMV", "Clouds", "BUFR"]
   sensorType: Imager
   license: other
   title: Atmospheric Motion Vectors (BUFR) - MTG - 0 degree
@@ -1865,7 +1865,7 @@ MTG_FCI_AMV_NETCDF:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,AMV,Clouds,netCDF
+  keywords: ["MTG", "L2", "FCI", "AMV", "Clouds", "netCDF"]
   sensorType: Imager
   license: other
   title: Atmospheric Motion Vectors (netCDF) - MTG - 0 degree
@@ -1887,7 +1887,7 @@ MTG_FCI_CLM:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,CLM,Clouds
+  keywords: ["MTG", "L2", "FCI", "CLM", "Clouds"]
   sensorType: Imager
   license: other
   title: Cloud Mask - MTG - 0 degree
@@ -1910,7 +1910,7 @@ MTG_FCI_GII:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,GII,atmosphere
+  keywords: ["MTG", "L2", "FCI", "GII", "atmosphere"]
   sensorType: Imager
   license: other
   title: Global Instability Indices - MTG - 0 degree
@@ -1932,7 +1932,7 @@ MTG_FCI_OCA:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,OCA,Clouds
+  keywords: ["MTG", "L2", "FCI", "OCA", "Clouds"]
   sensorType: Imager
   license: other
   title: Optimal Cloud Analysis - MTG - 0 degree
@@ -1954,7 +1954,7 @@ MTG_FCI_OLR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,FCI,OLR,Radiation,LW
+  keywords: ["MTG", "L2", "FCI", "OLR", "Radiation", "LW"]
   sensorType: Imager
   license: other
   title: Outgoing LW radiation at TOA - MTG - 0 degree
@@ -1973,7 +1973,7 @@ S3_SY_SYN:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,SYN
+  keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "SYN"]
   sensorType: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 SYN
@@ -1989,7 +1989,7 @@ S3_SY_AOD:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: L2
-  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,AOD
+  keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "AOD"]
   sensorType: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 AOD
@@ -2005,7 +2005,7 @@ S3_SY_V10:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: LEVEL-2W
-  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,V10
+  keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "V10"]
   sensorType: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 V10
@@ -2021,7 +2021,7 @@ S3_SY_VG1:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: LEVEL-2
-  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,VG1
+  keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "VG1"]
   sensorType: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 VG1
@@ -2037,7 +2037,7 @@ S3_SY_VGP:
   platform: SENTINEL3
   platformSerialIdentifier: S3A,S3B
   processingLevel: LEVEL-2
-  keywords: SYNERGY,SY,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,VGP
+  keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "VGP"]
   sensorType: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 VGP
@@ -2057,7 +2057,7 @@ S5P_L1B2_IR_ALL:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B, L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances,UVN
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "SIR", "SWIR", "Irradiances", "UVN"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B and Level 2 Irradiances for the SWIR and UNV bands
@@ -2076,7 +2076,7 @@ S5P_L1B_IR_ALL:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances,UVN
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "SIR", "SWIR", "Irradiances", "UVN"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Irradiances for the SWIR and UNV bands
@@ -2096,7 +2096,7 @@ S5P_L2_IR_ALL:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Data
@@ -2117,7 +2117,7 @@ S5P_L1B_IR_SIR:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "SIR", "SWIR", "Irradiances"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Irradiances for the SWIR bands
@@ -2138,7 +2138,7 @@ S5P_L1B_IR_UVN:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,UVN,Irradiances
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "UVN", "Irradiances"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Irradiances for the UVN bands
@@ -2159,7 +2159,7 @@ S5P_L1B_RA_BD1:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD1,BAND1,B01
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD1", "BAND1", "B01"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 1
@@ -2180,7 +2180,7 @@ S5P_L1B_RA_BD2:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD2,BAND2,B02
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD2", "BAND2", "B02"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 2
@@ -2201,7 +2201,7 @@ S5P_L1B_RA_BD3:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD3,BAND3,B03
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD3", "BAND3", "B03"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 3
@@ -2222,7 +2222,7 @@ S5P_L1B_RA_BD4:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD4,BAND4,B04
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD4", "BAND4", "B04"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 4
@@ -2243,7 +2243,7 @@ S5P_L1B_RA_BD5:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD5,BAND5,B05
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD5", "BAND5", "B05"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 5
@@ -2264,7 +2264,7 @@ S5P_L1B_RA_BD6:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD6,BAND6,B06
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD6", "BAND6", "B06"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 6
@@ -2285,7 +2285,7 @@ S5P_L1B_RA_BD7:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD7,BAND7,B07
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD7", "BAND7", "B07"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 7
@@ -2306,7 +2306,7 @@ S5P_L1B_RA_BD8:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,RA,Radiances,BD8,BAND8,B08
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD8", "BAND8", "B08"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 8
@@ -2323,7 +2323,7 @@ S5P_L2_NO2:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NO2,Nitrogen,Dioxide
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NO2", "Nitrogen", "Dioxide"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Nitrogen Dioxide
@@ -2340,7 +2340,7 @@ S5P_L2_CLOUD:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,CLOUD
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "CLOUD"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Cloud
@@ -2358,7 +2358,7 @@ S5P_L2_O3:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,O3,Ozone
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "O3", "Ozone"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Ozone
@@ -2375,7 +2375,7 @@ S5P_L2_CO:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,CO,Carbon,Monoxide
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "CO", "Carbon", "Monoxide"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Carbon Monoxide
@@ -2392,7 +2392,7 @@ S5P_L2_AER_AI:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,AER,AI,Ultraviolet,Aerosol,Index
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "AER", "AI", "Ultraviolet", "Aerosol", "Index"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Ultraviolet Aerosol Index
@@ -2411,7 +2411,7 @@ S5P_L2_O3_PR:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,O3,PR,Ozone,Profile
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "O3", "PR", "Ozone", "Profile"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Ozone Profile
@@ -2432,7 +2432,7 @@ S5P_L2_O3_TCL:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,O3,TCL,Tropospheric,Ozone
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "O3", "TCL", "Tropospheric", "Ozone"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Tropospheric Ozone
@@ -2450,7 +2450,7 @@ S5P_L2_AER_LH:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,AER,LH,Aerosol,Layer,Height
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "AER", "LH", "Aerosol", "Layer", "Height"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Aerosol Layer Height
@@ -2469,7 +2469,7 @@ S5P_L2_HCHO:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,HCHO,Formaldehyde
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "HCHO", "Formaldehyde"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Formaldehyde
@@ -2496,7 +2496,7 @@ S5P_L2_CH4:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,CH4,Methane
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "CH4", "Methane"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Methane
@@ -2520,7 +2520,7 @@ S5P_L2_NP_BD3:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NP,NPP,Cloud,BD3,B03,BAND3
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NP", "NPP", "Cloud", "BD3", "B03", "BAND3"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 NPP Cloud for band 3
@@ -2544,7 +2544,7 @@ S5P_L2_NP_BD6:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NP,NPP,Cloud,BD6,B06,BAND6
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NP", "NPP", "Cloud", "BD6", "B06", "BAND6"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 NPP Cloud for band 6
@@ -2568,7 +2568,7 @@ S5P_L2_NP_BD7:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,NP,NPP,Cloud,BD7,B07,BAND7
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NP", "NPP", "Cloud", "BD7", "B07", "BAND7"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 NPP Cloud for band 7
@@ -2586,7 +2586,7 @@ S5P_L2_SO2:
   platform: SENTINEL5P
   platformSerialIdentifier: S5P
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI,SO2,Sulphur,Dioxide
+  keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "SO2", "Sulphur", "Dioxide"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Sulphur Dioxide
@@ -2607,7 +2607,7 @@ S6_P4_L1AHR_F06:
   platform: SENTINEL6-A
   platformSerialIdentifier: S6A
   processingLevel: L1A
-  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L1A,ALTIMETRIC,HR,POSEIDON4,P4,F06
+  keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L1A", "ALTIMETRIC", "HR", "POSEIDON4", "P4", "F06"]
   sensorType: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 1A High Resolution Reprocessed at F06
@@ -2627,7 +2627,7 @@ S6_P4_L1BLR_F06:
   platform: SENTINEL6-A
   platformSerialIdentifier: S6A
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L1B,ALTIMETRIC,LR,POSEIDON4,P4,F06
+  keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L1B", "ALTIMETRIC", "LR", "POSEIDON4", "P4", "F06"]
   sensorType: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 1B Low Resolution Reprocessed at F06
@@ -2647,7 +2647,7 @@ S6_P4_L1BAHR_F06:
   platform: SENTINEL6-A
   platformSerialIdentifier: S6A
   processingLevel: L1B
-  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L1B,ALTIMETRIC,HR,POSEIDON4,P4,F06
+  keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L1B", "ALTIMETRIC", "HR", "POSEIDON4", "P4", "F06"]
   sensorType: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 1B High Resolution Reprocessed at F06
@@ -2670,7 +2670,7 @@ S6_P4_L2LR_F06:
   platform: SENTINEL6-A
   platformSerialIdentifier: S6A
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L2,ALTIMETRIC,LR,POSEIDON4,P4,F06
+  keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L2", "ALTIMETRIC", "LR", "POSEIDON4", "P4", "F06"]
   sensorType: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 2 Low Resolution Reprocessed at F06
@@ -2695,7 +2695,7 @@ S6_P4_L2HR_F06:
   platform: SENTINEL6-A
   platformSerialIdentifier: S6A
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L2,ALTIMETRIC,HR,POSEIDON4,P4,F06
+  keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L2", "ALTIMETRIC", "HR", "POSEIDON4", "P4", "F06"]
   sensorType: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 2 High Resolution Reprocessed at F06
@@ -2713,7 +2713,7 @@ S6_AMR_L2_F06:
   platform: SENTINEL6-A
   platformSerialIdentifier: S6A
   processingLevel: L2
-  keywords: SENTINEL,SENTINEL6,S6,S6A,LEO,L2,AMR-C,RADIOMETER,MICROWAVE,F06
+  keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L2", "AMR-C", "RADIOMETER", "MICROWAVE", "F06"]
   sensorType: RADIOMETER
   license: other
   title: Sentinel 6 - Climate-quality Advanced Microwave Radiometer Level 2 Products Reprocessed at F06
@@ -2727,7 +2727,7 @@ VENUS_L1C:
   platform: VENUS
   platformSerialIdentifier: VENUS
   processingLevel: L1C
-  keywords: VENUS,L1,L1C
+  keywords: ["VENUS", "L1", "L1C"]
   sensorType: OPTICAL
   license: other
   title: Venus Level1-C
@@ -2741,7 +2741,7 @@ VENUS_L2A_MAJA:
   platform: VENUS
   platformSerialIdentifier: VENUS
   processingLevel: L2A
-  keywords: VENUS,L2,L2A
+  keywords: ["VENUS", "L2", "L2A"]
   sensorType: OPTICAL
   license: other
   title: Venus Level2-A
@@ -2753,7 +2753,7 @@ VENUS_L3A_MAJA:
   platform: VENUS
   platformSerialIdentifier: VENUS
   processingLevel: L3A
-  keywords: VENUS,L3,L3A
+  keywords: ["VENUS", "L3", "L3A"]
   sensorType: OPTICAL
   license: other
   title: Venus Level3-A
@@ -2769,7 +2769,7 @@ TIGGE_CF_SFC:
   platform: TIGGE
   platformSerialIdentifier: TIGGE
   processingLevel:
-  keywords: THORPEX,TIGGE,CF,SFC,ECMWF
+  keywords: ["THORPEX", "TIGGE", "CF", "SFC", "ECMWF"]
   sensorType: ATMOSPHERIC
   license: other
   title: TIGGE ECMWF Surface Control forecast
@@ -2794,7 +2794,7 @@ CAMS_GAC_FORECAST:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,Forecast,GAC
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Forecast", "GAC"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global atmospheric composition forecasts
@@ -2815,7 +2815,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,Air,Forecast,EEA
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Air", "Forecast", "EEA"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS European air quality forecasts
@@ -2833,7 +2833,7 @@ CAMS_GFE_GFAS:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,Fire,FRP,DM,MODIS,NASA,EOS,ECMWF,GFAS
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Fire", "FRP", "DM", "MODIS", "NASA", "EOS", "ECMWF", "GFAS"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global biomass burning emissions based on fire radiative power (GFAS)
@@ -2853,7 +2853,7 @@ CAMS_SOLAR_RADIATION:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Solar,Radiation
+  keywords: ["Copernicus", "ADS", "CAMS", "Solar", "Radiation"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS solar radiation time-series
@@ -2874,7 +2874,7 @@ CAMS_GREENHOUSE_INVERSION:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,IPCC,CO2,CH4,N2O
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "IPCC", "CO2", "CH4", "N2O"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global inversion-optimised greenhouse gas fluxes and concentrations
@@ -2898,7 +2898,7 @@ CAMS_EAC4_MONTHLY:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "EWMCF", "EAC4"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global reanalysis (EAC4) monthly averaged fields
@@ -2919,7 +2919,7 @@ CAMS_EU_AIR_QUALITY_RE:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,Air,EEA
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Air", "EEA"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS European air quality reanalyses
@@ -2941,7 +2941,7 @@ CAMS_EAC4:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "EWMCF", "EAC4"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global reanalysis (EAC4)
@@ -2959,7 +2959,7 @@ CAMS_GRF_AUX:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmospheric,Atmosphere,RF,CO2,CH4,O3,Aerosol
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "RF", "CO2", "CH4", "O3", "Aerosol"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global radiative forcing - auxilliary variables
@@ -2985,7 +2985,7 @@ CAMS_GRF:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmospheric,Atmosphere,RF,CO2,CH4,O3,Aerosol
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "RF", "CO2", "CH4", "O3", "Aerosol"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global radiative forcings
@@ -3010,7 +3010,7 @@ CAMS_GREENHOUSE_EGG4_MONTHLY:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmospheric,Atmosphere,CO2,CH4,Greenhouse,ECMWF,EGG4
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "CO2", "CH4", "Greenhouse", "ECMWF", "EGG4"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global greenhouse gas reanalysis (EGG4) monthly averaged fields
@@ -3035,7 +3035,7 @@ CAMS_GREENHOUSE_EGG4:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmospheric,Atmosphere,CO2,CH4,GHG,ECMWF,EGG4
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "CO2", "CH4", "GHG", "ECMWF", "EGG4"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global greenhouse gas reanalysis (EGG4)
@@ -3055,7 +3055,7 @@ CAMS_GLOBAL_EMISSIONS:
   platform: CAMS
   platformSerialIdentifier: CAMS
   processingLevel:
-  keywords: Copernicus,ADS,CAMS,Atmosphere,Atmospheric,Emissions,Pollutants,GHG
+  keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Emissions", "Pollutants", "GHG"]
   sensorType: ATMOSPHERIC
   license: other
   title: CAMS global emission inventories
@@ -3080,7 +3080,7 @@ AG_ERA5:
   instruments: []
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,climate,land,agriculture,AgERA5,surface
+  keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "climate", "land", "agriculture", "AgERA5", "surface"]
   sensorType: ATMOSPHERIC
   license: other
   title: Agrometeorological indicators from 1979 to present derived from reanalysis
@@ -3118,7 +3118,7 @@ ERA5_SL:
   platform: ERA5
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels
+  keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "hourly", "single", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: ERA5 hourly data on single levels from 1940 to present
@@ -3156,7 +3156,7 @@ ERA5_SL_MONTHLY:
   platform: ERA5
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: Climate,ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,monthly,single,levels
+  keywords: ["Climate", "ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "monthly", "single", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: ERA5 monthly averaged data on single levels from 1940 to present
@@ -3199,7 +3199,7 @@ ERA5_PL:
   platform: ERA5
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,pressure,levels
+  keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "hourly", "pressure", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: ERA5 hourly data on pressure levels from 1940 to present
@@ -3242,7 +3242,7 @@ ERA5_PL_MONTHLY:
   platform: ERA5
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: Climate,ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,monthly,pressure,levels
+  keywords: ["Climate", "ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "monthly", "pressure", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: ERA5 monthly averaged data on pressure levels from 1940 to present
@@ -3285,7 +3285,7 @@ ERA5_LAND:
   instruments: []
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,hourly,evolution
+  keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "hourly", "evolution"]
   sensorType: ATMOSPHERIC
   license: other
   title: ERA5-Land hourly data from 1950 to present
@@ -3320,7 +3320,7 @@ ERA5_LAND_MONTHLY:
   instruments: []
   platformSerialIdentifier: ERA5
   processingLevel:
-  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,monthly,evolution
+  keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "monthly", "evolution"]
   sensorType: ATMOSPHERIC
   license: other
   title: ERA5-Land monthly averaged data from 1950 to present
@@ -3354,7 +3354,7 @@ UERRA_EUROPE_SL:
   instruments: []
   platformSerialIdentifier: SURFEX
   processingLevel:
-  keywords: Climate,ECMWF,Reanalysis,Regional,Europe,UERRA,UERRA-HARMONIE,SURFEX,MESCAN-SURFEX,CDS,Atmospheric,single,levels
+  keywords: ["Climate", "ECMWF", "Reanalysis", "Regional", "Europe", "UERRA", "UERRA-HARMONIE", "SURFEX", "MESCAN-SURFEX", "CDS", "Atmospheric", "single", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: UERRA regional reanalysis for Europe on single levels from 1961 to 2019
@@ -3372,7 +3372,7 @@ GLACIERS_ELEVATION_AND_MASS_CHANGE:
   instruments: []
   platformSerialIdentifier: INSITU
   processingLevel:
-  keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,elevation,mass,change
+  keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "elevation", "mass", "change"]
   sensorType: ATMOSPHERIC
   license: other
   title: Glaciers elevation and mass change data from 1850 to present from the Fluctuations of Glaciers Database
@@ -3392,7 +3392,7 @@ GLACIERS_DIST_RANDOLPH:
   instruments: []
   platformSerialIdentifier: INSITU
   processingLevel:
-  keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,randolph,distribution,inventory
+  keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "distribution", "inventory"]
   sensorType: ATMOSPHERIC
   license: other
   title: Glaciers distribution data from the Randolph Glacier Inventory for year 2000
@@ -3431,7 +3431,7 @@ GRIDDED_GLACIERS_MASS_CHANGE:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,randolph,mass,gridded
+  keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "mass", "gridded"]
   sensorType: ATMOSPHERIC
   license: other
   title: Glacier mass change gridded data from 1976 to present derived from the Fluctuations of Glaciers Database
@@ -3471,7 +3471,7 @@ SATELLITE_CARBON_DIOXIDE:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,carbon-dioxide
+  keywords: ["ECMWF", "CDS", "C3S", "carbon-dioxide"]
   sensorType: ATMOSPHERIC
   license: other
   title: Carbon dioxide data from 2002 to present derived from satellite observations
@@ -3505,7 +3505,7 @@ SATELLITE_FIRE_BURNED_AREA:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,burned
+  keywords: ["ECMWF", "CDS", "C3S", "burned"]
   sensorType: ATMOSPHERIC
   license: other
   title: Fire burned area from 2001 to present derived from satellite observations
@@ -3543,7 +3543,7 @@ SATELLITE_METHANE:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,methane
+  keywords: ["ECMWF", "CDS", "C3S", "methane"]
   sensorType: ATMOSPHERIC
   license: other
   title: Methane data from 2003 to present derived from satellite observations
@@ -3585,7 +3585,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
   platform:
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,sea,ice
+  keywords: ["ECMWF", "CDS", "C3S", "sea", "ice"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sea ice edge and type daily gridded data from 1978 to present derived from satellite observations
@@ -3631,7 +3631,7 @@ SATELLITE_SEA_ICE_THICKNESS:
   platform:
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,sea,ice
+  keywords: ["ECMWF", "CDS", "C3S", "sea", "ice"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sea ice thickness monthly gridded data for the Arctic from 2002 to present derived from satellite observations
@@ -3660,7 +3660,7 @@ SATELLITE_SEA_ICE_CONCENTRATION:
   platform:
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,sea,ice
+  keywords: ["ECMWF", "CDS", "C3S", "sea", "ice"]
   sensorType: ATMOSPHERIC
   license: other
   title: Sea ice concentration daily gridded data from 1978 to present derived from satellite observations
@@ -3698,7 +3698,7 @@ SEASONAL_POSTPROCESSED_PL:
     variables available in this data set are listed in the table below. The data includes forecasts created in
     real-time since 2017.\n\nVariables in the dataset/application are:\nGeopotential anomaly, Specific humidity
     anomaly, Temperature anomaly, U-component of wind anomaly, V-component of wind anomaly
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,pressure,levels
+  keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "pressure", "levels"]
   platform:
   instruments: []
   platformSerialIdentifier:
@@ -3744,7 +3744,7 @@ SATELLITE_SEA_LEVEL_GLOBAL:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: Climate,ECMWF,CDS,C3S,sea,level,global
+  keywords: ["Climate", "ECMWF", "CDS", "C3S", "sea", "level", "global"]
   sensorType: HYDROLOGICAL
   license: other
   title: Sea level gridded data from satellite observations for the global ocean
@@ -3799,7 +3799,7 @@ SEASONAL_POSTPROCESSED_SL:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,anomalies,single,levels
+  keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "single", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecast anomalies on single levels
@@ -3849,7 +3849,7 @@ SEASONAL_ORIGINAL_SL:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,daily,single,levels
+  keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "daily", "single", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecast daily and subdaily data on single levels
@@ -3893,7 +3893,7 @@ SEASONAL_ORIGINAL_PL:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,subdaily,pressure,levels
+  keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "subdaily", "pressure", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecast subdaily data on pressure levels
@@ -3936,7 +3936,7 @@ SEASONAL_MONTHLY_PL:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,monthly,pressure,levels
+  keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "pressure", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecast monthly statistics on pressure levels
@@ -3987,7 +3987,7 @@ SEASONAL_MONTHLY_SL:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,seasonal,forecast,monthly,single,levels
+  keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "single", "levels"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecast monthly statistics on single levels
@@ -4024,7 +4024,7 @@ SIS_HYDRO_MET_PROJ:
   instruments: []
   platformSerialIdentifier:
   processingLevel:
-  keywords: ECMWF,CDS,C3S,hydrology,meterology,water,precipitation,temperature
+  keywords: ["ECMWF", "CDS", "C3S", "hydrology", "meterology", "water", "precipitation", "temperature"]
   sensorType: ATMOSPHERIC
   license: other
   title: Temperature and precipitation climate impact indicators from 1970 to 2100 derived from European climate projections
@@ -4082,7 +4082,7 @@ FIRE_HISTORICAL:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,EFFIS,fire,historical,ERA5,european,sustainability,CEMS,system
+  keywords: ["ECMWF", "EFFIS", "fire", "historical", "ERA5", "european", "sustainability", "CEMS", "system"]
   sensorType: ATMOSPHERIC
   license: other
   title: Fire danger indices historical data from the Copernicus Emergency Management Service
@@ -4115,7 +4115,7 @@ FIRE_SEASONAL:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,EFFIS,GWIS,fire,danger,seasonal,GEFF
+  keywords: ["ECMWF", "CEMS", "EFFIS", "GWIS", "fire", "danger", "seasonal", "GEFF"]
   sensorType:
   license: other
   title: Seasonal forecast of fire danger indices from the Copernicus Emergency Management Service
@@ -4135,7 +4135,7 @@ GLOFAS_FORECAST:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,GloFAS,forecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "GloFAS", "forecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: River discharge and related forecasted data by the Global Flood Awareness System
@@ -4153,7 +4153,7 @@ GLOFAS_HISTORICAL:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,GloFAS,historical,river,discharge
+  keywords: ["ECMWF", "CEMS", "GloFAS", "historical", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: River discharge and related historical data from the Global Flood Awareness System
@@ -4184,7 +4184,7 @@ GLOFAS_REFORECAST:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,GloFAS,reforecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "GloFAS", "reforecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: Reforecasts of river discharge and related data by the Global Flood Awareness System
@@ -4215,7 +4215,7 @@ GLOFAS_SEASONAL:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,GloFAS,seasonal,forecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "GloFAS", "seasonal", "forecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecasts of river discharge and related data by the Global Flood Awareness System
@@ -4249,7 +4249,7 @@ GLOFAS_SEASONAL_REFORECAST:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,GloFAS,seasonal,forecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "GloFAS", "seasonal", "forecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
@@ -4287,7 +4287,7 @@ EFAS_FORECAST:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,EFAS,forecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "EFAS", "forecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: River discharge and related forecasted data by the European Flood Awareness System
@@ -4320,7 +4320,7 @@ EFAS_HISTORICAL:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,EFAS,historical,river,discharge
+  keywords: ["ECMWF", "CEMS", "EFAS", "historical", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: River discharge and related historical data from the European Flood Awareness System
@@ -4356,7 +4356,7 @@ EFAS_REFORECAST:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,EFAS,reforecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "EFAS", "reforecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: Reforecasts of river discharge and related data by the European Flood Awareness System
@@ -4392,7 +4392,7 @@ EFAS_SEASONAL:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,EFAS,seasonal,forecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "EFAS", "seasonal", "forecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal forecasts of river discharge and related data by the European Flood Awareness System
@@ -4427,7 +4427,7 @@ EFAS_SEASONAL_REFORECAST:
   platform: CEMS
   platformSerialIdentifier: CEMS
   processingLevel:
-  keywords: ECMWF,CEMS,EFAS,seasonal,reforecast,river,discharge
+  keywords: ["ECMWF", "CEMS", "EFAS", "seasonal", "reforecast", "river", "discharge"]
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal reforecasts of river discharge and related data by the European Flood Awareness System
@@ -4446,7 +4446,7 @@ COP_DEM_GLO30_DGED:
   platform: TerraSAR
   platformSerialIdentifier:
   processingLevel:
-  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-30,DSM,GDGED
+  keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-30", "DSM", "GDGED"]
   sensorType: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-30 DGED
@@ -4462,7 +4462,7 @@ COP_DEM_GLO30_DTED:
   platform: TerraSAR
   platformSerialIdentifier:
   processingLevel:
-  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-30,DSM,DTED
+  keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-30", "DSM", "DTED"]
   sensorType: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-30 DTED
@@ -4478,7 +4478,7 @@ COP_DEM_GLO90_DGED:
   platform: TerraSAR
   platformSerialIdentifier:
   processingLevel:
-  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-90,DSM,GDGED
+  keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-90", "DSM", "GDGED"]
   sensorType: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-90 DGED
@@ -4494,7 +4494,7 @@ COP_DEM_GLO90_DTED:
   platform: TerraSAR
   platformSerialIdentifier:
   processingLevel:
-  keywords: TerraSAR,TanDEM-X,DEM,surface,GLO-90,DSM,DTED
+  keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-90", "DSM", "DTED"]
   sensorType: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-90 DTED
@@ -4514,7 +4514,7 @@ CLMS_CORINE:
   platform: Sentinel-2, LANDSAT, SPOT-4/5, IRS P6 LISS III
   platformSerialIdentifier: S2, L5, L7, L8, SPOT4, SPOT5
   processingLevel:
-  keywords: Land-cover,LCL,CORINE,CLMS
+  keywords: ["Land-cover", "LCL", "CORINE", "CLMS"]
   sensorType:
   license: other
   title: CORINE Land Cover
@@ -4531,7 +4531,7 @@ CLMS_GLO_FCOVER_333M:
   platform: Sentinel-3
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,Fraction-of-vegetation-cover,OLCI,PROBA-V,Sentinel-3
+  keywords: ["Land", "Fraction-of-vegetation-cover", "OLCI", "PROBA-V", "Sentinel-3"]
   sensorType:
   license: other
   title: Global 10-daily Fraction of Vegetation Cover 333m
@@ -4546,7 +4546,7 @@ CLMS_GLO_NDVI_333M:
   platform:
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,NDVI,PROBA-V
+  keywords: ["Land", "NDVI", "PROBA-V"]
   sensorType:
   license: other
   title: Global 10-daily Normalized Difference Vegetation Index 333M
@@ -4566,7 +4566,7 @@ CLMS_GLO_NDVI_1KM_LTS:
   platform: SPOT
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,NDVI,LTS,SPOT,VEGETATION,PROBA-V
+  keywords: ["Land", "NDVI", "LTS", "SPOT", "VEGETATION", "PROBA-V"]
   sensorType:
   license: other
   title: "Normalized Difference Vegetation Index: global Long Term Statistics (raster 1km) - version 2, Apr 2019"
@@ -4584,7 +4584,7 @@ CLMS_GLO_DMP_333M:
   platform: Sentinel-3
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,Dry-matter-productivity,DMP,OLCI,PROBA-V,Sentinel-3
+  keywords: ["Land", "Dry-matter-productivity", "DMP", "OLCI", "PROBA-V", "Sentinel-3"]
   sensorType:
   license: other
   title: 10-daily Dry Matter Productivity 333M
@@ -4602,7 +4602,7 @@ CLMS_GLO_GDMP_333M:
   platform: Sentinel-3
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,Gross-dry-matter-productivity,GDMP,GPP,OLCI,PROBA-V,Sentinel-3
+  keywords: ["Land", "Gross-dry-matter-productivity", "GDMP", "GPP", "OLCI", "PROBA-V", "Sentinel-3"]
   sensorType:
   license: other
   title: 10-daily Gross Dry Matter Productivity 333M
@@ -4622,7 +4622,7 @@ CLMS_GLO_LAI_333M:
   platform: Sentinel-3
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,Leaf-area-index,LAI,OLCI,PROBA-V,Sentinel-3
+  keywords: ["Land", "Leaf-area-index", "LAI", "OLCI", "PROBA-V", "Sentinel-3"]
   sensorType:
   license: other
   title: Global 10-daily Leaf Area Index 333m
@@ -4640,7 +4640,7 @@ CLMS_GLO_FAPAR_333M:
   platform: Sentinel-3
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,Fraction-of-absorbed-PAR,FAPAR,OLCI,PROBA-V,Sentinel-3
+  keywords: ["Land", "Fraction-of-absorbed-PAR", "FAPAR", "OLCI", "PROBA-V", "Sentinel-3"]
   sensorType:
   license: other
   title: Global 10-daily Fraction of Absorbed PAR 333m
@@ -4660,7 +4660,7 @@ EEA_DAILY_SWI_1KM:
   platform: Sentinel-1
   platformSerialIdentifier:
   processingLevel:
-  keywords: SWI,QFLAG,SSF,C-SAR,Metop-ASCAT,Sentinel-1
+  keywords: ["SWI", "QFLAG", "SSF", "C-SAR", "Metop-ASCAT", "Sentinel-1"]
   sensorType: RADAR
   license: other
   title: "Soil Water Index: continental Europe daily (raster 1km) - version 1, Apr 2019"
@@ -4681,7 +4681,7 @@ EEA_DAILY_SSM_1KM:
   platform: Sentinel-1
   platformSerialIdentifier:
   processingLevel:
-  keywords: SSM,C-SAR,Metop-ASCAT,Sentinel-1
+  keywords: ["SSM", "C-SAR", "Metop-ASCAT", "Sentinel-1"]
   sensorType: RADAR
   license: other
   title: "Surface Soil Moisture: continental Europe daily (raster 1km) - version 1, Apr 2019"
@@ -4703,7 +4703,7 @@ EEA_DAILY_VI:
   platform: Sentinel-2
   platformSerialIdentifier: S2A,S2B,S2C
   processingLevel:
-  keywords: Land,Plant-phenology-index,Phenology,Vegetation,Sentinel-2,S2A,S2B,S2C
+  keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
   sensorType: RADAR
   license: other
   title: Vegetation Indices, daily, UTM projection
@@ -4736,7 +4736,7 @@ AERIS_IAGOS:
   platform:
   platformSerialIdentifier:
   processingLevel: L2
-  keywords: AERIS, AIRCRAFT, ATMOSPHERIC, IAGOS, L2
+  keywords: ["AERIS", "AIRCRAFT", "ATMOSPHERIC", "IAGOS", "L2"]
   sensorType: ATMOSPHERIC
   license: other
   title: In-service Aircraft for a Global Observing System
@@ -4752,7 +4752,7 @@ GSW_CHANGE:
   platform: GSW
   platformSerialIdentifier: GSW
   processingLevel:
-  keywords: PEKEL, Global Surface Water, Change, Landsat
+  keywords: ["PEKEL", "Global-Surface-Water", "Change", "Landsat"]
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Occurrence Change Intensity 1984-2020
@@ -4767,7 +4767,7 @@ GSW_EXTENT:
   platform: GSW
   platformSerialIdentifier: GSW
   processingLevel:
-  keywords: PEKEL, Global Surface Water, Extent, Landsat
+  keywords: ["PEKEL", "Global-Surface-Water", "Extent", "Landsat"]
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Maximum Water Extent 1984-2021
@@ -4783,7 +4783,7 @@ GSW_OCCURRENCE:
   platform: GSW
   platformSerialIdentifier: GSW
   processingLevel:
-  keywords: PEKEL, Global Surface Water, Occurrence, Landsat
+  keywords: ["PEKEL", "Global-Surface-Water", "Occurrence", "Landsat"]
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Occurrence 1984-2021
@@ -4799,7 +4799,7 @@ GSW_RECURRENCE:
   platform: GSW
   platformSerialIdentifier: GSW
   processingLevel:
-  keywords: PEKEL, Global Surface Water, Recurrence, Landsat
+  keywords: ["PEKEL", "Global-Surface-Water", "Recurrence", "Landsat"]
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Recurrence 1984-2021
@@ -4815,7 +4815,7 @@ GSW_SEASONALITY:
   platform: GSW
   platformSerialIdentifier: GSW
   processingLevel:
-  keywords: PEKEL, Global Surface Water, Seasonality, Landsat
+  keywords: ["PEKEL", "Global-Surface-Water", "Seasonality", "Landsat"]
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Seasonality 2014-2020
@@ -4831,7 +4831,7 @@ GSW_TRANSITIONS:
   platform: GSW
   platformSerialIdentifier: GSW
   processingLevel:
-  keywords: PEKEL, Global Surface Water, Transitions, Landsat
+  keywords: ["PEKEL", "Global-Surface-Water", "Transitions", "Landsat"]
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Transitions 1984-2021
@@ -4849,7 +4849,7 @@ EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Agriculture, Greenhouse gas, CO2, Emission, Air pollutants
+  keywords: ["Eurostat", "Agriculture", "Greenhouse-gas", "CO2", "Emission", "Air-pollutants"]
   sensorType:
   license: proprietary
   title: Eurostat - Greenhouse gas emissions from agriculture
@@ -4866,7 +4866,7 @@ EUSTAT_POP_AGE_SEX_NUTS2:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Population, Age, Sex, NUTS 2, Unidemo, Demographic
+  keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-2", "Unidemo", "Demographic"]
   sensorType:
   license: proprietary
   title: Population on 1 January by age, sex and NUTS 2 region
@@ -4883,7 +4883,7 @@ EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Population, Age, Sex, NUTS 3, Unidemo, Demographic
+  keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-3", "Unidemo", "Demographic"]
   sensorType:
   license: proprietary
   title: Population on 1 January by age, sex and NUTS 3 region
@@ -4901,7 +4901,7 @@ EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Population, Age, Sex, NUTS 3, Unidemo, Demographic
+  keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-3", "Unidemo", "Demographic"]
   sensorType:
   license: proprietary
   title: Population change - Demographic balance and crude rates at regional level (NUTS 3)
@@ -4929,7 +4929,7 @@ EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Energy, Renewable, Transport, Heating, Cooling, Electricity
+  keywords: ["Eurostat", "Energy", "Renewable", "Transport", "Heating", "Cooling", "Electricity"]
   sensorType:
   license: proprietary
   title: Share of energy from renewable sources
@@ -4943,7 +4943,7 @@ EUSTAT_AVAILABLE_BEDS_HOSPITALS_NUTS2:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Health care, Hospital, Bed, Health
+  keywords: ["Eurostat", "Health-care", "Hospital", "Bed", "Health"]
   sensorType:
   license: proprietary
   title: Available beds in hospitals by NUTS 2 region
@@ -4957,7 +4957,7 @@ EUSTAT_BATHING_SITES_WATER_QUALITY:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Bath, Water, Water quality
+  keywords: ["Eurostat", "Bath", "Water", "Water-quality"]
   sensorType:
   license: proprietary
   title: Bathing sites with excellent water quality by location
@@ -4971,7 +4971,7 @@ EUSTAT_POP_DENSITY_NUTS3:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, Population, Density, NUTS 3
+  keywords: ["Eurostat", "Population", "Density", "NUTS-3"]
   sensorType:
   license: proprietary
   title: Population density by NUTS 3 region
@@ -4985,7 +4985,7 @@ EUSTAT_SOIL_SEALING_INDEX:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, soil, soil sealing, SDG, EU Sustainable Development Goals
+  keywords: ["Eurostat", "soil", "soil-sealing", "SDG", "EU-Sustainable-Development-Goals"]
   sensorType:
   license: proprietary
   title: Soil sealing index
@@ -4999,7 +4999,7 @@ EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS:
   platform: Eurostat
   platformSerialIdentifier: Eurostat
   processingLevel:
-  keywords: Eurostat, CO2, terrestrial, protected areas
+  keywords: ["Eurostat", "CO2", "terrestrial", "protected-areas"]
   sensorType:
   license: proprietary
   title: Surface of the terrestrial protected areas
@@ -5025,7 +5025,7 @@ ISIMIP_CLIMATE_FORCING_ISIMIP3B:
   platform: ISIMIP
   platformSerialIdentifier: ISIMIP
   processingLevel:
-  keywords: ISIMIP, CLIMATE-FORCING, ISIMIP3b, atmospheric, climate, HRMC
+  keywords: ["ISIMIP", "CLIMATE-FORCING", "ISIMIP3b", "atmospheric", "climate", "HRMC"]
   sensorType:
   license: other
   title: ISIMIP3b climate input data
@@ -5050,7 +5050,7 @@ ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
   platform: ISIMIP
   platformSerialIdentifier: ISIMIP
   processingLevel:
-  keywords: ISIMIP, SOCIO-ECONOMIC-FORCING, ISIMIP3b, socioeconomic
+  keywords: ["ISIMIP", "SOCIO-ECONOMIC-FORCING", "ISIMIP3b", "socioeconomic"]
   sensorType:
   license: other
   title: ISIMIP3b socio-economic input data
@@ -5067,7 +5067,7 @@ NEMSGLOBAL_TCDC:
   platform: NEMSGLOBAL
   platformSerialIdentifier: NEMSGLOBAL
   processingLevel:
-  keywords: meteoblue,NEMS,NEMSGLOBAL,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  keywords: ["meteoblue", "NEMS", "NEMSGLOBAL", "CLOUD", "COVER", "TOTAL", "TCDC", "DAILY", "MEAN"]
   sensorType: ATMOSPHERIC
   license: other
   title: NEMSGLOBAL Total Cloud Cover daily mean
@@ -5087,7 +5087,7 @@ NEMSAUTO_TCDC:
   platform: NEMSAUTO
   platformSerialIdentifier: NEMSAUTO
   processingLevel:
-  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  keywords: ["meteoblue", "NEMS", "NEMSAUTO", "CLOUD", "COVER", "TOTAL", "TCDC", "DAILY", "MEAN"]
   sensorType: ATMOSPHERIC
   license: other
   title: NEMSAUTO Total Cloud Cover daily mean
@@ -5103,7 +5103,7 @@ DT_EXTREMES:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Weather,Geophysical,Extremes
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Weather", "Geophysical", "Extremes"]
   sensorType: ATMOSPHERIC
   license: other
   title: Weather and Geophysical Extremes Digital Twin (DT)
@@ -5119,7 +5119,7 @@ DT_CLIMATE_ADAPTATION:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate,Change,Adaptation
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate", "Change", "Adaptation"]
   sensorType: ATMOSPHERIC
   license: other
   title: Climate Change Adaptation Digital Twin (DT)
@@ -5138,7 +5138,7 @@ METOP_AMSU_L1:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,AMSU-A,SOUNDER,L1,L1B,WATER,ATHMOSPHERE,TEMPERATURE,AMSxxx1B,AMSUL1
+  keywords: ["METOP", "AMSU-A", "SOUNDER", "L1", "L1B", "WATER", "ATHMOSPHERE", "TEMPERATURE", "AMSxxx1B", "AMSUL1"]
   sensorType: SOUNDER
   license: other
   title: AMSU-A Level 1B - Metop - Global
@@ -5156,7 +5156,7 @@ METOP_OSI_104:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,ASCAT,SCATTEROMETER,L2,WEATHER,OCEAN-SURFACE-WIND,OCEAN,RADAR-BACKSCATTER-NRCS,OSI-104,ASCAT12+,OSI-104-C,OSI-104-B,OASWC12
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "WEATHER", "OCEAN-SURFACE-WIND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "OSI-104", "ASCAT12+", "OSI-104-C", "OSI-104-B", "OASWC12"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Coastal Winds at 12.5 km Swath Grid - Metop
@@ -5171,7 +5171,7 @@ METOP_OSI_150A:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,ASCAT,SCATTEROMETER,L2,WEATHER,OCEAN-SURFACE-WIND,OCEAN,RADAR-BACKSCATTER-NRCS,OSI-150-A,OR1ASW025,REPASC25
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "WEATHER", "OCEAN-SURFACE-WIND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "OSI-150-A", "OR1ASW025", "REPASC25"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT L2 25 km Winds Data Record Release 1 - Metop
@@ -5187,7 +5187,7 @@ METOP_OSI_150B:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,ASCAT,SCATTEROMETER,L2,WEATHER,OCEAN-SURFACE-WIND,OCEAN,RADAR-BACKSCATTER-NRCS,OSI-150-B,OR1ASWC12,REPASC12+
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "WEATHER", "OCEAN-SURFACE-WIND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "OSI-150-B", "OR1ASWC12", "REPASC12+"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT L2 12.5 km Winds Data Record Release 1 - Metop
@@ -5212,7 +5212,7 @@ METOP_ASCSZF1B:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,ASCAT,SCATTEROMETER,L1,OCEAN,RADAR-BACKSCATTER-NRCS,ASCSZF1B
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "OCEAN", "RADAR-BACKSCATTER-NRCS", "ASCSZF1B"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Level 1 Sigma0 Full Resolution - Metop - Global
@@ -5234,7 +5234,7 @@ METOP_ASCSZR1B:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,ASCAT,SCATTEROMETER,L1,LAND,OCEAN,RADAR-BACKSCATTER-NRCS,ASCSZR1B
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "LAND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "ASCSZR1B"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Level 1 Sigma0 resampled at 12.5 km Swath Grid - Metop - Global
@@ -5256,7 +5256,7 @@ METOP_ASCSZO1B:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,ASCAT,SCATTEROMETER,L1,LAND,OCEAN,RADAR-BACKSCATTER-NRCS,ASCSZO1B
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "LAND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "ASCSZO1B"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Level 1 Sigma0 resampled at 25 km Swath Grid - Metop - Global
@@ -5278,7 +5278,7 @@ METOP_ASCSZFR02:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,ASCAT,SCATTEROMETER,L1,CLIMATE,FUNDAMENTAL-CLIMATE-DATA-RECORD,ASCSZF1B0200,ASCSZFR02
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "CLIMATE", "FUNDAMENTAL-CLIMATE-DATA-RECORD", "ASCSZF1B0200", "ASCSZFR02"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Level 1 SZF Climate Data Record Release 2 - Metop
@@ -5301,7 +5301,7 @@ METOP_ASCSZOR02:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,ASCAT,SCATTEROMETER,L1,CLIMATE,FUNDAMENTAL-CLIMATE-DATA-RECORD,ASCSZOR02,ASCSZO1B0200
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "CLIMATE", "FUNDAMENTAL-CLIMATE-DATA-RECORD", "ASCSZOR02", "ASCSZO1B0200"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Level 1 SZO Climate Data Record Release 2 - Metop
@@ -5324,7 +5324,7 @@ METOP_ASCSZRR02:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,ASCAT,SCATTEROMETER,L1,CLIMATE,FUNDAMENTAL-CLIMATE-DATA-RECORD,ASCSZR1B0200,ASCSZRR02
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "CLIMATE", "FUNDAMENTAL-CLIMATE-DATA-RECORD", "ASCSZR1B0200", "ASCSZRR02"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Level 1 SZR Climate Data Record Release 2 - Metop
@@ -5348,7 +5348,7 @@ METOP_SOMO12:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,ASCAT,SCATTEROMETER,L2,LAND,SOIL-MOISTURE,SOMO12,ASCSMR02,SSM-ASCAT-C-NRT-O12.5,H101,H16,H104
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "LAND", "SOIL-MOISTURE", "SOMO12", "ASCSMR02", "SSM-ASCAT-C-NRT-O12.5", "H101", "H16", "H104"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Soil Moisture at 12.5 km Swath Grid in NRT - Metop
@@ -5371,7 +5371,7 @@ METOP_SOMO25:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,ASCAT,SCATTEROMETER,L2,LAND,SOIL-MOISTURE,ASCSMO02,H102,H103,SOMO25,H105,SSM-ASCAT-C-NRT-O25
+  keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "LAND", "SOIL-MOISTURE", "ASCSMO02", "H102", "H103", "SOMO25", "H105", "SSM-ASCAT-C-NRT-O25"]
   sensorType: SCATTEROMETER
   license: other
   title: ASCAT Soil Moisture at 25 km Swath Grid in NRT - Metop
@@ -5394,7 +5394,7 @@ METOP_AVHRRGACR02:
   platform: METOP,TIROS,NOAA
   platformSerialIdentifier: METOP,TIROS,NOAA
   processingLevel: L2
-  keywords: METOP,AVHRR,RADIOMETER,L2,WIND,CLIMATE,ATMOSPHERE,THEMATIC-CLIMATE-DATA-RECORD,AVHGAC020200
+  keywords: ["METOP", "AVHRR", "RADIOMETER", "L2", "WIND", "CLIMATE", "ATMOSPHERE", "THEMATIC-CLIMATE-DATA-RECORD", "AVHGAC020200"]
   sensorType: RADIOMETER
   license: other
   title: AVHRR GAC Atmospheric Motion Vectors Climate Data Record Release 2 - Multimission - Polar
@@ -5412,7 +5412,7 @@ METOP_AVHRRL1:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,AVHRR,RADIOMETER,L1,ATMOSPHERE,OCEAN,AVHXXX1B,AVHRRL1
+  keywords: ["METOP", "AVHRR", "RADIOMETER", "L1", "ATMOSPHERE", "OCEAN", "AVHXXX1B", "AVHRRL1"]
   sensorType: RADIOMETER
   license: other
   title: AVHRR Level 1B - Metop - Global
@@ -5426,7 +5426,7 @@ METOP_LSA_002:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L3
-  keywords: METOP,AVHRR,RADIOMETER,L3,LAND-SURFACE-TEMPERATURE,SURFACE-RADIATION-BUDGET,LAND,EDLST,LSA-002
+  keywords: ["METOP", "AVHRR", "RADIOMETER", "L3", "LAND-SURFACE-TEMPERATURE", "SURFACE-RADIATION-BUDGET", "LAND", "EDLST", "LSA-002"]
   sensorType: RADIOMETER
   license: other
   title: Daily Land Surface Temperature - Metop
@@ -5440,7 +5440,7 @@ METOP_GLB_SST_NC:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L3
-  keywords: METOP,AVHRR,RADIOMETER,L3,OCEAN,SEA-SURFACE-TEMPERATURE,OSSTGLBN,OSI-201-B,GLB-SST,OSSTGLB
+  keywords: ["METOP", "AVHRR", "RADIOMETER", "L3", "OCEAN", "SEA-SURFACE-TEMPERATURE", "OSSTGLBN", "OSI-201-B", "GLB-SST", "OSSTGLB"]
   sensorType: RADIOMETER
   license: other
   title: Global L3C AVHRR Sea Surface Temperature (GHRSST) - Metop
@@ -5454,7 +5454,7 @@ METOP_GOMEL1:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,GOME-2,SPECTROMETER,L1,ATMOSPHERE,GOMEL1,GOMXXX1B
+  keywords: ["METOP", "GOME-2", "SPECTROMETER", "L1", "ATMOSPHERE", "GOMEL1", "GOMXXX1B"]
   sensorType: SPECTROMETER
   license: other
   title: GOME-2 Level 1B - Metop - Global
@@ -5471,7 +5471,7 @@ METOP_GOMEL1R03:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,GOME-2,SPECTROMETER,L1,CLIMATE,FUNDAMENTAL-DATA-RECORD,FDR,CLOUDS,ATMOSPHERE,RADIATION,GOMXXX1B0300
+  keywords: ["METOP", "GOME-2", "SPECTROMETER", "L1", "CLIMATE", "FUNDAMENTAL-DATA-RECORD", "FDR", "CLOUDS", "ATMOSPHERE", "RADIATION", "GOMXXX1B0300"]
   sensorType: SPECTROMETER
   license: other
   title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
@@ -5489,7 +5489,7 @@ METOP_IASTHR011:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,IASI,INTERFEROMETER,L2,CLIMATE,TEMPERATURE,ATMOSPHERE,HUMIDITY,LAND-SURFACE-TEMPERATURE,THEMATIC-CLIMATE-DATA-RECORD,SEA-SURFACE-TEMPERATURE,IASTHPW30101
+  keywords: ["METOP", "IASI", "INTERFEROMETER", "L2", "CLIMATE", "TEMPERATURE", "ATMOSPHERE", "HUMIDITY", "LAND-SURFACE-TEMPERATURE", "THEMATIC-CLIMATE-DATA-RECORD", "SEA-SURFACE-TEMPERATURE", "IASTHPW30101"]
   sensorType: INTERFEROMETER
   license: other
   title: IASI All Sky Temperature and Humidity Profiles - Climate Data Record Release 1.1 - Metop-A and -B
@@ -5509,7 +5509,7 @@ METOP_IASSND02:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L2
-  keywords: METOP,IASI,INTERFEROMETER,L2,CLIMATE,TEMPERATURE,ATMOSPHERE,HUMIDITY,IASSND02
+  keywords: ["METOP", "IASI", "INTERFEROMETER", "L2", "CLIMATE", "TEMPERATURE", "ATMOSPHERE", "HUMIDITY", "IASSND02"]
   sensorType: INTERFEROMETER
   license: other
   title: IASI Combined Sounding Products - Metop
@@ -5526,7 +5526,7 @@ METOP_IASIL1C_ALL:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,IASI,INTERFEROMETER,L1,L1C,ATMOSPHERE,IASIL1C-ALL,IASxxx1C
+  keywords: ["METOP", "IASI", "INTERFEROMETER", "L1", "L1C", "ATMOSPHERE", "IASIL1C-ALL", "IASxxx1C"]
   sensorType: INTERFEROMETER
   license: other
   title: IASI Level 1C - All Spectral Samples - Metop - Global
@@ -5540,7 +5540,7 @@ METOP_MHSL1:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,MHS,SOUNDER,L1,L1B,ATMOSPHERE,MHSxxx1B,MHSL1
+  keywords: ["METOP", "MHS", "SOUNDER", "L1", "L1B", "ATMOSPHERE", "MHSxxx1B", "MHSL1"]
   sensorType: SOUNDER
   license: other
   title: MHS Level 1B - Metop - Global
@@ -5554,7 +5554,7 @@ METOP_HIRSL1:
   platform: METOP
   platformSerialIdentifier: METOP
   processingLevel: L1
-  keywords: METOP,HIRS,SOUNDER,L1,L1B,ATMOSPHERE,HIRxxx1B,HIRSL1
+  keywords: ["METOP", "HIRS", "SOUNDER", "L1", "L1B", "ATMOSPHERE", "HIRxxx1B", "HIRSL1"]
   sensorType: SOUNDER
   license: other
   title: HIRS Level 1B - Metop - Global
@@ -5575,7 +5575,7 @@ MSG_MFG_GSA_0:
   platform: MFG,MSG
   platformSerialIdentifier: MFG,MSG
   processingLevel: L2
-  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
+  keywords: ["MVIRI", "SEVIRI", "L2", "MFG", "MSG", "Climate", "Thematic", "Meteosat", "TCDR"]
   sensorType: OPTICAL
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
@@ -5600,7 +5600,7 @@ MSG_OCA_CDR:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
+  keywords: ["MSG", "L2", "SEVIRI", "Climate", "Clouds", "Atmosphere", "Observation", "Thematic", "TCDR", "OCA"]
   sensorType: MSG
   license: other
   title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
@@ -5617,7 +5617,7 @@ MSG_CLM:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLMK,CLM
+  keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "VISUALISATION", "L2", "MSGCLMK", "CLM"]
   sensorType: OPTICAL
   license: other
   title: Cloud Mask - MSG - 0 degree
@@ -5634,7 +5634,7 @@ MSG_CLM_IODC:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,ATMOSPHERIC,COMPOSITION,VISUALISATION,L2,MSGCLMK,CLM
+  keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "ATMOSPHERIC", "COMPOSITION", "VISUALISATION", "L2", "MSGCLMK", "CLM"]
   sensorType: OPTICAL
   license: other
   title: Cloud Mask - MSG - Indian Ocean
@@ -5651,7 +5651,7 @@ MSG_GSAL2R02:
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
   processingLevel: L2
-  keywords: MSG,MFG,SEVIRI,MVIRI,OPTICAL,CLIMATE,L2,MxGGSA000200
+  keywords: ["MSG", "MFG", "SEVIRI", "MVIRI", "OPTICAL", "CLIMATE", "L2", "MxGGSA000200"]
   sensorType: OPTICAL
   license: other
   title:  GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
@@ -5672,7 +5672,7 @@ MSG_HRSEVIRI:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L1
-  keywords: MSG,SEVIRI,OPTICAL,OCEAN,ATMOSPHERE,VISUALISATION,L1,MSG15,HRSEVIRI
+  keywords: ["MSG", "SEVIRI", "OPTICAL", "OCEAN", "ATMOSPHERE", "VISUALISATION", "L1", "MSG15", "HRSEVIRI"]
   sensorType: OPTICAL
   license: other
   title: High Rate SEVIRI Level 1.5 Image Data - MSG - 0 degree
@@ -5694,7 +5694,7 @@ MSG_HRSEVIRI_IODC:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L1
-  keywords: MSG,SEVIRI,OPTICAL,OCEAN,ATMOSPHERE,VISUALISATION,L1,MSG15,HRSEVIRI,IODC
+  keywords: ["MSG", "SEVIRI", "OPTICAL", "OCEAN", "ATMOSPHERE", "VISUALISATION", "L1", "MSG15", "HRSEVIRI", "IODC"]
   sensorType: OPTICAL
   license: other
   title:  High Rate SEVIRI Level 1.5 Image Data - MSG - Indian Ocean
@@ -5710,7 +5710,7 @@ MSG_RSS_CLM:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: RSS-CLM,MSGCLMK,MSG,SEVIRI,OPTICAL,CLOUDS,ATMOSPHERE,L2
+  keywords: ["RSS-CLM", "MSGCLMK", "MSG", "SEVIRI", "OPTICAL", "CLOUDS", "ATMOSPHERE", "L2"]
   sensorType: OPTICAL
   license: other
   title: Rapid Scan Cloud Mask - MSG
@@ -5729,7 +5729,7 @@ MSG_MSG15_RSS:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L1
-  keywords: MSG15-RSS,MSG15,MSG,SEVIRI,OPTICAL,OCEAN,ATMOSPHERE,LAND,L1
+  keywords: ["MSG15-RSS", "MSG15", "MSG", "SEVIRI", "OPTICAL", "OCEAN", "ATMOSPHERE", "LAND", "L1"]
   sensorType: OPTICAL
   license: other
   title: Rapid Scan High Rate SEVIRI Level 1.5 Image Data - MSG
@@ -5744,7 +5744,7 @@ MSG_LSA_FRM:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: LSA-504.2,FRMV2,FIRE,VEGETATION,LAND,MSG,SEVIRI,OPTICAL,LAND,L2
+  keywords: ["LSA-504.2", "FRMV2", "FIRE", "VEGETATION", "LAND", "MSG", "SEVIRI", "OPTICAL", "LAND", "L2"]
   sensorType: OPTICAL
   license: other
   title: Fire Risk Map - Released Energy Based - MSG
@@ -5764,7 +5764,7 @@ MSG_LSA_LST_CDR:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L3
-  keywords: LSA-050,MLST-R,FIRE,VEGETATION,LAND,MSG,SEVIRI,OPTICAL,LAND,L3
+  keywords: ["LSA-050", "MLST-R", "FIRE", "VEGETATION", "LAND", "MSG", "SEVIRI", "OPTICAL", "LAND", "L3"]
   sensorType: OPTICAL
   license: other
   title: Land Surface Temperature Climate Data Record - MSG
@@ -5785,7 +5785,7 @@ MSG_LSA_LSTDE:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: LSA-004,LSA-001,MLST_DIR,FIRE,VEGETATION,LAND,MSG,SEVIRI,OPTICAL,LAND,L2
+  keywords: ["LSA-004", "LSA-001", "MLST_DIR", "FIRE", "VEGETATION", "LAND", "MSG", "SEVIRI", "OPTICAL", "LAND", "L2"]
   sensorType: OPTICAL
   license: other
   title: Land Surface Temperature with Directional Effects - MSG
@@ -5805,7 +5805,7 @@ MSG_AMVR02:
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
   processingLevel: L2
-  keywords: WIND,CLIMATE,ATMOSPHERE,OBSERVATION,THEMATIC,OPTICAL,MXGAMV000200,AMVR20000,L2
+  keywords: ["WIND", "CLIMATE", "ATMOSPHERE", "OBSERVATION", "THEMATIC", "OPTICAL", "MXGAMV000200", "AMVR20000", "L2"]
   sensorType: OPTICAL
   license: other
   title: Atmospheric Motion Vectors Climate Data Record Release 2 - MFG and MSG - 0 degree
@@ -5819,7 +5819,7 @@ MSG_CTH:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLTH,CTH
+  keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "VISUALISATION", "L2", "MSGCLTH", "CTH"]
   sensorType: OPTICAL
   license: other
   title: Cloud Top Height - MSG - 0 degree
@@ -5834,7 +5834,7 @@ MSG_CTH_IODC:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLTH,CTH
+  keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "VISUALISATION", "L2", "MSGCLTH", "CTH"]
   sensorType: OPTICAL
   license: other
   title: Cloud Top Height - MSG - Indian Ocean
@@ -5856,7 +5856,7 @@ MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,analysis,forecast,marine,physics
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "analysis", "forecast", "marine", "physics"]
   sensorType:
   license: other
   title: Global Ocean Physics Analysis and Forecast
@@ -5880,7 +5880,7 @@ MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,analysis,forecast,marine,biogeochemical,biogeochemistry
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "analysis", "forecast", "marine", "biogeochemical", "biogeochemistry"]
   sensorType:
   license: other
   title: Global Ocean Biogeochemistry Analysis and Forecast
@@ -5907,7 +5907,7 @@ MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,analysis,forecast,marine,waves,surface
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "analysis", "forecast", "marine", "waves", "surface"]
   sensorType:
   license: other
   title: Global Ocean Waves Analysis and Forecast
@@ -5930,7 +5930,7 @@ MO_GLOBAL_MULTIYEAR_BGC_001_033:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,hindcast,marine,biomass,LMTL
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "hindcast", "marine", "biomass", "LMTL"]
   sensorType:
   license: other
   title: Global ocean low and mid trophic levels biomass content hindcast
@@ -5952,7 +5952,7 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,reanalysis,forecast,marine,waves,WAVERYS
+  keywords: ["CMEMS", "Mercator", "ocean", "reanalysis", "forecast", "marine", "waves", "WAVERYS"]
   sensorType:
   license: other
   title: Global Ocean Waves Reanalysis
@@ -5977,7 +5977,7 @@ MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,ensemble,multiyear,reanalysis,temperature,currents,salinity,ice,physics
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "ensemble", "multiyear", "reanalysis", "temperature", "currents", "salinity", "ice", "physics"]
   sensorType:
   license: other
   title: Global Ocean Ensemble Physics Reanalysis
@@ -5998,7 +5998,7 @@ MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 2
-  keywords: CMEMS,Mercator,ocean,insitu,NRT,currents,global,L2
+  keywords: ["CMEMS", "Mercator", "ocean", "insitu", "NRT", "currents", "global", "L2"]
   sensorType:
   license: other
   title: Global Ocean- in-situ Near real time observations of ocean currents
@@ -6015,7 +6015,7 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,insitu,NRT,gridded,monthly,global,L4,analysis
+  keywords: ["CMEMS", "Mercator", "ocean", "insitu", "NRT", "gridded", "monthly", "global", "L4", "analysis"]
   sensorType:
   license: other
   title: Global Ocean- Real time in-situ observations objective analysis
@@ -6032,7 +6032,7 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,insitu,delayed,gridded,global,L4,analysis,temperature,salinity,CORA
+  keywords: ["CMEMS", "Mercator", "ocean", "insitu", "delayed", "gridded", "global", "L4", "analysis", "temperature", "salinity", "CORA"]
   sensorType:
   license: other
   title: Global Ocean- Delayed Mode gridded CORA- In-situ Observations objective analysis in Delayed Mode
@@ -6052,7 +6052,7 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,marine,POC,organic,carbon,particulate,chlorophyll,backscattering,bbp,Chla
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "marine", "POC", "organic", "carbon", "particulate", "chlorophyll", "backscattering", "bbp", "Chla"]
   sensorType:
   license: other
   title: Global Ocean 3D Chlorophyll-a concentration, Particulate Backscattering coefficient and Particulate Organic Carbon
@@ -6077,7 +6077,7 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,surface,carbon,L4,REP
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "carbon", "L4", "REP"]
   sensorType:
   license: other
   title: Global Ocean Surface Carbon
@@ -6104,7 +6104,7 @@ MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,vertical,nutrients,carbon,carbonate,L3
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "vertical", "nutrients", "carbon", "carbonate", "L3"]
   sensorType:
   license: other
   title: Nutrient and carbon profiles vertical distribution
@@ -6128,7 +6128,7 @@ MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,REP,NRT,geostrophic,currents,GLOBCURRENT,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "REP", "NRT", "geostrophic", "currents", "GLOBCURRENT", "L4"]
   sensorType:
   license: other
   title: Global Total (COPERNICUS-GLOBCURRENT), Ekman and Geostrophic currents at the Surface and 15m
@@ -6158,7 +6158,7 @@ MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,surface,salinity,density,NRT,daily,REP,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "salinity", "density", "NRT", "daily", "REP", "L4"]
   sensorType:
   license: other
   title: Multi Observation Global Ocean Sea Surface Salinity and Sea Surface Density
@@ -6181,7 +6181,7 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,REP,NRT,ARMOR3D,temperature,salinity,heights,Geostrophic,currents,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "REP", "NRT", "ARMOR3D", "temperature", "salinity", "heights", "Geostrophic", "currents", "L4"]
   sensorType:
   license: other
   title: Multi Observation Global Ocean 3D Temperature Salinity Height Geostrophic Current and MLD
@@ -6206,7 +6206,7 @@ MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,ARMOR3D,weekly,ERA-Interim,quasi-geostrophic,currents,L4,OMEGA3D
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "ARMOR3D", "weekly", "ERA-Interim", "quasi-geostrophic", "currents", "L4", "OMEGA3D"]
   sensorType:
   license: other
   title: Global Observed Ocean Physics 3D Quasi-Geostrophic Currents (OMEGA3D)
@@ -6225,7 +6225,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,ice,arctic,antarctic,concentration,edge,type,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "ice", "arctic", "antarctic", "concentration", "edge", "type", "L4"]
   sensorType:
   license: other
   title: Global Ocean - Arctic and Antarctic - Sea Ice Concentration, Edge, Type and Drift (OSI-SAF)
@@ -6240,7 +6240,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,NRT,gridded,MCC,DTU,displacement,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "gridded", "MCC", "DTU", "displacement", "L4"]
   sensorType:
   license: other
   title: Global Ocean - High Resolution SAR Sea Ice Drift
@@ -6259,7 +6259,7 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,ice,concentration,CDR,ICDR,REP,reprocessed,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "ice", "concentration", "CDR", "ICDR", "REP", "reprocessed", "L4"]
   sensorType:
   license: other
   title: Global Ocean Sea Ice Concentration Time Series REPROCESSED (OSI-SAF)
@@ -6277,7 +6277,7 @@ MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,gridded,surface,heights,SLA,NRT,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "gridded", "surface", "heights", "SLA", "NRT", "L4"]
   sensorType:
   license: other
   title: GLOBAL OCEAN GRIDDED L4 SEA SURFACE HEIGHTS AND DERIVED VARIABLES NRT
@@ -6292,7 +6292,7 @@ MO_SEALEVEL_GLO_PHY_MDT_008_063:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,sealevel,topography,surface,height,L4
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "sealevel", "topography", "surface", "height", "L4"]
   sensorType:
   license: other
   title: GLOBAL OCEAN MEAN DYNAMIC TOPOGRAPHY
@@ -6311,7 +6311,7 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,surface,temperature,L3,PIR,PMW,GIR
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "L3", "PIR", "PMW", "GIR"]
   sensorType:
   license: other
   title: ODYSSEA Global Ocean - Sea Surface Temperature Multi-sensor L3 Observations
@@ -6336,7 +6336,7 @@ MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,surface,temperature,L4,OSTIA
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "L4", "OSTIA"]
   sensorType:
   license: other
   title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Analysis
@@ -6355,7 +6355,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,surface,temperature,concentration,L4,OSTIA,reprocessed,REP
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "concentration", "L4", "OSTIA", "reprocessed", "REP"]
   sensorType:
   license: other
   title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Reprocessed
@@ -6383,7 +6383,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,surface,temperature,ESA,SST,CCI,C3S,L4,reprocessed,REP
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "ESA", "SST", "CCI", "C3S", "L4", "reprocessed", "REP"]
   sensorType:
   license: other
   title: ESA SST CCI and C3S reprocessed sea surface temperature analyses
@@ -6409,7 +6409,7 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,NRT,wave,L3,WAVE-TAC,SAR,spectral,mono-mission
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "L3", "WAVE-TAC", "SAR", "spectral", "mono-mission"]
   sensorType:
   license: other
   title: Global Ocean L 3 Spectral Parameters From Nrt Satellite Measurements
@@ -6435,7 +6435,7 @@ MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,NRT,wave,height,L3,wind,speed,WAVE-TAC,mono-mission
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "height", "L3", "wind", "speed", "WAVE-TAC", "mono-mission"]
   sensorType:
   license: other
   title: GLOBAL OCEAN L3 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
@@ -6455,7 +6455,7 @@ MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,NRT,wave,height,L4,gridded,WAVE-TAC,multi-mission
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "height", "L4", "gridded", "WAVE-TAC", "multi-mission"]
   sensorType:
   license: other
   title: GLOBAL OCEAN L4 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
@@ -6473,7 +6473,7 @@ MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,L4,surface,wind,stress,monthly,Scatterometer
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "L4", "surface", "wind", "stress", "monthly", "Scatterometer"]
   sensorType:
   license: other
   title: Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model
@@ -6495,7 +6495,7 @@ MO_WIND_GLO_PHY_L3_NRT_012_002:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,L3,surface,wind,daily,gridded,NRT,Scatterometer
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "surface", "wind", "daily", "gridded", "NRT", "Scatterometer"]
   sensorType:
   license: other
   title: Global Ocean Daily Gridded Sea Surface Winds from Scatterometer
@@ -6516,7 +6516,7 @@ MO_WIND_GLO_PHY_L3_MY_012_005:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,L3,surface,wind,daily,gridded,reprocessed,REP,Scatterometer
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "surface", "wind", "daily", "gridded", "reprocessed", "REP", "Scatterometer"]
   sensorType:
   license: other
   title: Global Ocean Daily Gridded Reprocessed L3 Sea Surface Winds from Scatterometer
@@ -6536,7 +6536,7 @@ MO_WIND_GLO_PHY_L4_NRT_012_004:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,L4,surface,wind,stress,hourly,NRT,Scatterometer,Metop
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "L4", "surface", "wind", "stress", "hourly", "NRT", "Scatterometer", "Metop"]
   sensorType:
   license: other
   title: Global Ocean Hourly Sea Surface Wind and Stress from Scatterometer and Model
@@ -6556,7 +6556,7 @@ MO_WIND_GLO_PHY_L4_MY_012_006:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,L4,surface,wind,stress,hourly,REP,reprocessed,Scatterometer,Metop,QuikSCAT,ERS
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "L4", "surface", "wind", "stress", "hourly", "REP", "reprocessed", "Scatterometer", "Metop", "QuikSCAT", "ERS"]
   sensorType:
   license: other
   title: Global Ocean Hourly Reprocessed Sea Surface Wind and Stress from Scatterometer and Model
@@ -6576,7 +6576,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,L3,bio-geo-chemical,BGC,chlorophyll,phytoplankton,reflectance
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "bio-geo-chemical", "BGC", "chlorophyll", "phytoplankton", "reflectance"]
   sensorType: multi
   license: other
   title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations
@@ -6598,7 +6598,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,colour,L3,bio-geo-chemical,BGC,Copernicus-GlobColour,NRT
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L3", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "NRT"]
   sensorType:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (Near Real Time)
@@ -6618,7 +6618,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
   platform:
   platformSerialIdentifier:
   processingLevel: Level 3
-  keywords: CMEMS,Mercator,ocean,global,colour,L3,bio-geo-chemical,BGC,Copernicus-GlobColour,MY,multi-years
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L3", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "MY", "multi-years"]
   sensorType:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing)
@@ -6640,7 +6640,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,Copernicus-GlobColour,NRT,monthly,interpolated
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L4", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "NRT", "monthly", "interpolated"]
   sensorType:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time)
@@ -6662,7 +6662,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,Copernicus-GlobColour,MY,multi-years,monthly,interpolated
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L4", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "MY", "multi-years", "monthly", "interpolated"]
   sensorType:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)
@@ -6680,7 +6680,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,chlorophyll,MY,multi-years,monthly
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L4", "bio-geo-chemical", "BGC", "chlorophyll", "MY", "multi-years", "monthly"]
   sensorType: multi
   license: other
   title: Global Ocean Colour Plankton MY L4 monthly observations
