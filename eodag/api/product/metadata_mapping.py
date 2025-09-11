@@ -1124,7 +1124,7 @@ def properties_from_json(
             if isinstance(discovery_jsonpath, JSONPath)
             else []
         )
-        mtd_prefix = discovery_config["metadata_prefix"]
+        mtd_prefix = discovery_config.get("metadata_prefix", "provider")
         for found_jsonpath in discovered_properties:
             if "metadata_path_id" in discovery_config.keys():
                 found_key_paths = string_to_jsonpath(

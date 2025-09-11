@@ -203,9 +203,9 @@ class EOProduct:
             "id": self.properties["id"],
             "assets": self.assets.as_dict(),
             "properties": {
-                "eodag_collection": self.collection,
-                "eodag_provider": self.provider,
-                "eodag_search_intersection": search_intersection,
+                "eodag:collection": self.collection,
+                "eodag:provider": self.provider,
+                "eodag:search_intersection": search_intersection,
                 **{
                     key: value
                     for key, value in self.properties.items()
@@ -228,11 +228,11 @@ class EOProduct:
         properties = feature["properties"]
         properties["geometry"] = feature["geometry"]
         properties["id"] = feature["id"]
-        provider = feature["properties"]["eodag_provider"]
-        collection = feature["properties"]["eodag_collection"]
+        provider = feature["properties"]["eodag:provider"]
+        collection = feature["properties"]["eodag:collection"]
         obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(
-            feature["properties"]["eodag_search_intersection"]
+            feature["properties"]["eodag:search_intersection"]
         )
         obj.assets = AssetsDict(obj, feature.get("assets", {}))
         return obj
