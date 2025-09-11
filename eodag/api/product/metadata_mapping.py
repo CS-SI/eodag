@@ -1115,6 +1115,7 @@ def properties_from_json(
             if isinstance(discovery_jsonpath, JSONPath)
             else []
         )
+        mtd_prefix = discovery_config["metadata_prefix"]
         for found_jsonpath in discovered_properties:
             if "metadata_path_id" in discovery_config.keys():
                 found_key_paths = string_to_jsonpath(
@@ -1136,8 +1137,13 @@ def properties_from_json(
             if (
                 re.compile(discovery_pattern).match(found_key)
                 and found_key not in properties.keys()
+                and f"{mtd_prefix}:{found_key}" not in properties.keys()
                 and used_jsonpath not in used_jsonpaths
             ):
+                # prepend with default STAC prefix if none is already used
+                if ":" not in found_key:
+                    found_key = f"{mtd_prefix}:{found_key}"
+
                 if "metadata_path_value" in discovery_config.keys():
                     found_value_path = string_to_jsonpath(
                         discovery_config["metadata_path_value"], force=True
