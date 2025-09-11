@@ -662,17 +662,17 @@
       product:type: OCN
       _collection: S1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties.cloudCover#not_available}'
     S1_SAR_GRD:
       product:type: GRD
       _collection: S1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties.cloudCover#not_available}'
     S1_SAR_SLC:
       product:type: SLC
       _collection: S1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties.cloudCover#not_available}'
     S2_MSI_L1C:
       _collection: S2ST
       product:type: S2MSI1C
@@ -901,32 +901,32 @@
       product:type: RAW
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_GRD:
       product:type: GRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_SLC:
       product:type: SLC
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_OCN:
       product:type: OCN
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_L3_IW_MCM:
       productType: S1SAR_L3_IW_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_L3_DH_MCM:
       productType: S1SAR_L3_DH_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     # S2
     S2_MSI_L1C:
       _collection: SENTINEL-2
@@ -939,42 +939,42 @@
       product:type: SR_1_SRA___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_SRA_A:
       product:type: SR_1_SRA_A_
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_SRA_BS:
       product:type: SR_1_SRA_BS
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN:
       product:type: SR_2_LAN___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_HY:
       productType: SR_2_LAN_HY
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_SI:
       productType: SR_2_LAN_SI
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_LI:
       productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_WAT:
       product:type: SR_2_WAT___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     # S3 OLCI
     S3_EFR:
       product:type: OL_1_EFR___
@@ -1105,25 +1105,25 @@
       product:type: DGE_30
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     COP_DEM_GLO30_DTED:
       product:type: DTE_30
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     COP_DEM_GLO90_DGED:
       product:type: DGE_90
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     COP_DEM_GLO90_DTED:
       product:type: DTE_90
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     GENERIC_PRODUCT_TYPE:
       _collection: '{collection}'
@@ -2611,78 +2611,78 @@
       product:type: RAW
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_GRD:
       product:type: GRD
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_GRD_COG:
       product:type: GRD-COG
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_SLC:
       product:type: SLC
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_OCN:
       product:type: OCN
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_L3_IW_MCM:
       productType: S1SAR_L3_IW_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_L3_DH_MCM:
       productType: S1SAR_L3_DH_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     # S3 SRAL
     S3_SRA:
       product:type: SR_1_SRA___
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_SRA_A:
       product:type: SR_1_SRA_A_
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_SRA_BS:
       product:type: SR_1_SRA_BS
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN:
       product:type: SR_2_LAN___
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_HY:
       productType: SR_2_LAN_HY
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_SI:
       productType: SR_2_LAN_SI
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_LI:
       productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_WAT:
       product:type: SR_2_WAT___
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     # S3 OLCI
     S3_EFR:
       product:type: OL_1_EFR___
@@ -4107,32 +4107,32 @@
       product:type: RAW
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_GRD:
       product:type: GRD
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_SLC:
       product:type: SLC
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_OCN:
       product:type: OCN
       collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_L3_IW_MCM:
       productType: S1SAR_L3_IW_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S1_SAR_L3_DH_MCM:
       productType: S1SAR_L3_DH_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     # S2
     S2_MSI_L1C:
       collection: SENTINEL-2
@@ -4145,42 +4145,42 @@
       product:type: SR_1_SRA___
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_SRA_A:
       product:type: SR_1_SRA_A_
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_SRA_BS:
       product:type: SR_1_SRA_BS
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN:
       product:type: SR_2_LAN___
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_HY:
       productType: SR_2_LAN_HY
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_SI:
       productType: SR_2_LAN_SI
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_LAN_LI:
       productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     S3_WAT:
       product:type: SR_2_WAT___
       collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     # S3 OLCI
     S3_EFR:
       product:type: OL_1_EFR___
@@ -4311,22 +4311,22 @@
       product:type: DGE_30
       collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     COP_DEM_GLO30_DTED:
       product:type: DTE_30
       collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     COP_DEM_GLO90_DGED:
       product:type: DGE_90
       collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     COP_DEM_GLO90_DTED:
       product:type: DTE_90
       collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     GENERIC_PRODUCT_TYPE:
       _collection: '{collection}'
 ---
@@ -5697,17 +5697,17 @@
       providerCollection: OCN
       _collection: PEPS_S1_L2
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_GRD:
       providerCollection: GRD
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_SLC:
       providerCollection: SLC
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S2_MSI_L1C:
       _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
@@ -5822,17 +5822,17 @@
       providerCollection: OCN
       _collection: PEPS_S1_L2
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_GRD:
       providerCollection: GRD
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_SLC:
       providerCollection: SLC
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S2_MSI_L1C:
       _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:

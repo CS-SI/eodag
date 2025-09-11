@@ -184,6 +184,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``not_available``: replace value with "Not Available"
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -567,6 +568,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
             old, new = ast.literal_eval(args)
             return re.sub(old, new, value)
+
+        @staticmethod
+        def convert_not_available(value: Any) -> str:
+            """Convert any value to "Not Available".
+
+            This is more useful than "$.null" to keep original jsonpath while parsing in metadata_mapping.
+            """
+            return NOT_AVAILABLE
 
         @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
