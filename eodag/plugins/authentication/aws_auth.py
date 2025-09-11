@@ -23,14 +23,13 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
-from mypy_boto3_s3 import S3Client
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.types import S3SessionKwargs
 from eodag.utils.exceptions import AuthenticationError
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource
+    from mypy_boto3_s3 import S3Client, S3ServiceResource
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.config import PluginConfig

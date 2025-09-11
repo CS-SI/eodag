@@ -1886,8 +1886,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # no SAFE build and flatten_top_dirs
         plugin.config.products[self.product.product_type]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
+        auth = auth_plugin.authenticate()
 
-        path = plugin.download(self.product, output_dir=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir, auth=auth)
 
         self.assertEqual(mock_open_s3_zipped_object.call_count, 2)
         mock_open_s3_zipped_object.assert_called_with(
@@ -2129,6 +2130,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.authenticate()
 
         # nothing needed
         rio_env_dict = plugin.get_rio_env("some-bucket", "some/prefix", auth_plugin)

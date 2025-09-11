@@ -502,18 +502,22 @@ def update_assets_from_s3(
     try:
 
         logger.debug("Listing assets in %s", prefix)
+        if auth.s3_client:
+            s3_client = auth.s3_client
+        else:
+            s3_client = auth.get_s3_client()
 
         if prefix.endswith(".zip"):
             # List prefix zip content
             assets_urls = [
                 f"zip+s3://{bucket}/{prefix}!{f.filename}"
-                for f in list_files_in_s3_zipped_object(bucket, prefix, auth.s3_client)
+                for f in list_files_in_s3_zipped_object(bucket, prefix, s3_client)
             ]
         else:
             # List files in prefix
             assets_urls = [
                 f"s3://{bucket}/{obj['Key']}"
-                for obj in auth.s3_client.list_objects(
+                for obj in s3_client.list_objects(
                     Bucket=bucket, Prefix=prefix, MaxKeys=300
                 ).get("Contents", [])
             ]
