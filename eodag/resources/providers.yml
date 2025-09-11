@@ -763,7 +763,7 @@
               and:
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
-    discover_product_types:
+    discover_collections:
       fetch_url: null
     per_product_metadata_query: false
     metadata_pre_mapping:
@@ -1334,7 +1334,7 @@
     api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
     ssl_verify: true
-    discover_product_types:
+    discover_collections:
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
     discover_queryables:
       fetch_url: null
@@ -1435,7 +1435,7 @@
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
     ssl_verify: true
-    discover_product_types:
+    discover_collections:
       fetch_url: null
     discover_queryables:
       fetch_url: null
@@ -3017,7 +3017,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
       max_items_per_page: 200
-    discover_product_types:
+    discover_collections:
       fetch_url: null
     discover_queryables:
       fetch_url: null
@@ -3432,7 +3432,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
       max_items_per_page: 200
-    discover_product_types:
+    discover_collections:
       fetch_url: null
     available_values_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
     metadata_mapping:
@@ -3680,7 +3680,7 @@
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
-    discover_product_types:
+    discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
       single_collection_fetch_qs: q={_collection}
       single_collection_fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/{_collection}
@@ -3840,7 +3840,7 @@
               and:
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
-    discover_product_types:
+    discover_collections:
       fetch_url: null
     per_product_metadata_query: false
     metadata_pre_mapping:
@@ -4428,7 +4428,7 @@
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       downloadLink: '$.assets.downloadLink.href'
       assets: '$.null'
-    discover_product_types:
+    discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
       result_type: json
       results_entry: '$.collections[*]'
@@ -5001,7 +5001,7 @@
       metadata_pattern: '^[a-zA-Z0-9_]+$'
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
-    discover_product_types:
+    discover_collections:
       fetch_url: https://api.eumetsat.int/data/browse/1.0.0/collections?format=json
       result_type: json
       results_entry: '$.links[*]'
@@ -5429,7 +5429,7 @@
     asset_key_from_href: false
     timeout: 20
     results_entry: links
-    discover_product_types:
+    discover_collections:
       fetch_url: 'https://stac.marine.copernicus.eu/metadata/catalog.stac.json'
       result_type: json
       results_entry: '$.collections[*]'
@@ -5598,7 +5598,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    discover_product_types:
+    discover_collections:
       fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
       fetch_method: POST
       fetch_body:
@@ -5723,7 +5723,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    discover_product_types:
+    discover_collections:
       fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
       fetch_method: POST
       fetch_body:
@@ -6018,7 +6018,7 @@
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
     timeout: 20
-    discover_product_types:
+    discover_collections:
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
       result_type: json
       results_entry: '$.links[?(@.rel=="child")]'

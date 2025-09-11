@@ -163,7 +163,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             "https://Sentinel2.browse.catalog.mundiwebservices.com/opensearch?timeStart=2020-08-08T00:00:00.000Z&"
             "timeEnd=2020-08-16T00:00:00.000Z&geometry="
             "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&"
-            "productType=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
+            "collection=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
         )
         mundi_products_count = 47
         number_of_products = 2
@@ -205,7 +205,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             "https://Sentinel2.browse.catalog.mundiwebservices.com/opensearch?timeStart=2020-08-08T00:00:00.000Z&"
             "timeEnd=2020-08-16T00:00:00.000Z&geometry="
             "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&"
-            "productType=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
+            "collection=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
         )
         number_of_products = 2
 
@@ -1407,7 +1407,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.onda_url_count = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?$search="footprint:"'
             "Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, "
-            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            '137.7729 13.1342)))" AND collection:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
             'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"'
         )
         self.onda_products_count = 47
@@ -1489,7 +1489,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         onda_url_search = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
             'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
-            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            '137.7729 13.1342)))" AND collection:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
             "AND endPosition:[* TO 2020-08-16T00:00:00.000Z] "
             'AND foo:bar"&$orderby=beginPosition asc&$top=2&$skip=0&$expand=Metadata'
         )
@@ -1612,7 +1612,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         onda_url_search = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
             'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
-            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            '137.7729 13.1342)))" AND collection:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
             "AND endPosition:[* TO 2020-08-16T00:00:00.000Z] "
             'AND foo:bar"&$orderby=beginPosition asc&$top=2&$skip=0&$expand=Metadata'
         )
@@ -2054,7 +2054,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9]+$",
                 },
-                "productType": {
+                "collection": {
                     "title": "Collection",
                     "type": "string",
                     "oneOf": [
