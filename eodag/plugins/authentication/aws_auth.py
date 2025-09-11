@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
+from mypy_boto3_s3 import S3Client
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.types import S3SessionKwargs
@@ -90,12 +91,32 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.endpoint_url = getattr(self.config, "s3_endpoint", None)
         self.credentials = getattr(self.config, "credentials", {}) or {}
-        self.s3_session = None
-        self.s3_resource = None
-        self.s3_client = None
+        self.s3_session: Optional[boto3.Session] = None
+        self.s3_resource: Optional[S3ServiceResource] = None
+        self.s3_client: Optional[S3Client] = None
+
+    def _create_s3_session_from_credentials(self) -> boto3.Session:
+        if "aws_profile" in self.credentials:
+            return create_s3_session(profile_name=self.credentials["aws_profile"])
+        # auth using aws keys
+        elif self.credentials:
+            s3_session_kwargs: S3SessionKwargs = {
+                "aws_access_key_id": self.credentials["aws_access_key_id"],
+                "aws_secret_access_key": self.credentials["aws_secret_access_key"],
+            }
+            if self.credentials.get("aws_session_token"):
+                s3_session_kwargs["aws_session_token"] = self.credentials[
+                    "aws_session_token"
+                ]
+            return create_s3_session(**s3_session_kwargs)
+        else:
+            # auth using env variables or ~/.aws
+            return create_s3_session()
 
     def _create_s3_resource(self) -> S3ServiceResource:
         """create s3 resource based on s3 session"""
+        if not self.s3_session:
+            self.s3_session = self._create_s3_session_from_credentials()
         if self.s3_session.get_credentials():
             return self.s3_session.resource(
                 service_name="s3",
@@ -108,11 +129,13 @@ class AwsAuth(Authentication):
         )
         return s3_resource
 
-    def get_s3_client(self):
+    def get_s3_client(self) -> S3Client:
         """Get S3 client from S3 resource
 
         :returns: boto3 client
         """
+        if not self.s3_resource:
+            self.s3_resource = self._create_s3_resource()
         return self.s3_resource.meta.client
 
     def authenticate(self) -> S3ServiceResource:
@@ -120,26 +143,6 @@ class AwsAuth(Authentication):
 
         :returns: S3AuthContextPool with possible auth contexts
         """
-        if not self.s3_session:
-            # auth using aws_profile
-            if "aws_profile" in self.credentials:
-                self.s3_session = create_s3_session(
-                    profile_name=self.credentials["aws_profile"]
-                )
-            # auth using aws keys
-            elif self.credentials:
-                s3_session_kwargs: S3SessionKwargs = {
-                    "aws_access_key_id": self.credentials["aws_access_key_id"],
-                    "aws_secret_access_key": self.credentials["aws_secret_access_key"],
-                }
-                if self.credentials.get("aws_session_token"):
-                    s3_session_kwargs["aws_session_token"] = self.credentials[
-                        "aws_session_token"
-                    ]
-                self.s3_session = create_s3_session(**s3_session_kwargs)
-            else:
-                # auth using env variables or ~/.aws
-                self.s3_session = create_s3_session()
         self.s3_resource = self._create_s3_resource()
         self.s3_client = self.get_s3_client()
         return self.s3_resource
@@ -153,6 +156,8 @@ class AwsAuth(Authentication):
         :param prefix: Prefix used to filter objects
         :returns: The boto3 authenticated objects
         """
+        if not self.s3_resource:
+            self.s3_resource = self._create_s3_resource()
         try:
             if getattr(self.config, "requester_pays", False):
                 objects = self.s3_resource.Bucket(bucket_name).objects.filter(
