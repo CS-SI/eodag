@@ -274,6 +274,8 @@ class PluginConfig(yaml.YAMLObject):
         metadata_path: str
         #: list search parameters to send as is to the provider
         search_param_unparsed: list[str]
+        #: Use as STAC extension prefix if it does not have one already
+        metadata_prefix: str
         #: Whether an error must be raised when using a search parameter which is not queryable or not
         raise_mtd_discovery_error: bool
 
