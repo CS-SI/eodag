@@ -333,7 +333,7 @@
       product:type: GRD
       _collection: sentinel1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.cloudCoverage#not_available}'
         # OpenSearch Parameters for Collection Search (Table 3)
         platform:
           - '{{"search":{{"missionId":"{platform}" }} }}'
@@ -662,17 +662,17 @@
       product:type: OCN
       _collection: S1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties.cloudCover#not_available}'
     S1_SAR_GRD:
       product:type: GRD
       _collection: S1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties.cloudCover#not_available}'
     S1_SAR_SLC:
       product:type: SLC
       _collection: S1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties.cloudCover#not_available}'
     S2_MSI_L1C:
       _collection: S2ST
       product:type: S2MSI1C
@@ -872,7 +872,7 @@
       product:type: AUX_GNSSRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -880,7 +880,7 @@
       product:type: AUX_MOEORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -888,7 +888,7 @@
       product:type: AUX_POEORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -896,7 +896,7 @@
       product:type: AUX_PREORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -904,7 +904,7 @@
       product:type: AUX_PROQUA
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -912,7 +912,7 @@
       product:type: AUX_RESORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -920,7 +920,7 @@
       product:type: RAW
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -928,7 +928,7 @@
       product:type: GRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -936,7 +936,7 @@
       product:type: SLC
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -944,7 +944,7 @@
       product:type: OCN
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -952,7 +952,7 @@
       product:type: S1SAR_L3_IW_MCM
       _collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -960,7 +960,7 @@
       product:type: S1SAR_L3_DH_MCM
       _collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -984,7 +984,7 @@
       product:type: SR_1_SRA___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -992,7 +992,7 @@
       product:type: SR_1_SRA_A_
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1000,7 +1000,7 @@
       product:type: SR_1_SRA_BS
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1008,7 +1008,7 @@
       product:type: SR_2_LAN___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1016,7 +1016,7 @@
       product:type: SR_2_LAN_HY
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1024,7 +1024,7 @@
       product:type: SR_2_LAN_SI
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1032,7 +1032,7 @@
       product:type: SR_2_LAN_LI
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1040,7 +1040,7 @@
       product:type: SR_2_WAT___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -1238,25 +1238,25 @@
       product:type: DGE_30
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     COP_DEM_GLO30_DTED:
       product:type: DTE_30
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     COP_DEM_GLO90_DGED:
       product:type: DGE_90
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     COP_DEM_GLO90_DTED:
       product:type: DTE_90
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
     GENERIC_PRODUCT_TYPE:
       _collection: '{collection}'
@@ -2499,7 +2499,7 @@
       product:type: AUX_GNSSRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2507,7 +2507,7 @@
       product:type: AUX_MOEORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2515,7 +2515,7 @@
       product:type: AUX_POEORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2523,7 +2523,7 @@
       product:type: AUX_PREORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2531,7 +2531,7 @@
       product:type: AUX_PROQUA
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2539,7 +2539,7 @@
       product:type: AUX_RESORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2547,7 +2547,7 @@
       product:type: RAW
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2555,7 +2555,7 @@
       product:type: GRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2563,7 +2563,7 @@
       product:type: GRD-COG
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2571,7 +2571,7 @@
       product:type: SLC
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2579,7 +2579,7 @@
       product:type: OCN
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2587,7 +2587,7 @@
       product:type: S1SAR_L3_IW_MCM
       _collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2595,7 +2595,7 @@
       product:type: S1SAR_L3_DH_MCM
       _collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -2604,7 +2604,7 @@
       product:type: SR_1_SRA___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2612,7 +2612,7 @@
       product:type: SR_1_SRA_A_
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2620,7 +2620,7 @@
       product:type: SR_1_SRA_BS
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2628,7 +2628,7 @@
       product:type: SR_2_LAN___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2636,7 +2636,7 @@
       product:type: SR_2_LAN_HY
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2644,7 +2644,7 @@
       product:type: SR_2_LAN_SI
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2652,7 +2652,7 @@
       product:type: SR_2_LAN_LI
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -2660,7 +2660,7 @@
       product:type: SR_2_WAT___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -3941,7 +3941,7 @@
       product:type: AUX_GNSSRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3949,7 +3949,7 @@
       product:type: AUX_MOEORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3957,7 +3957,7 @@
       product:type: AUX_POEORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3965,7 +3965,7 @@
       product:type: AUX_PREORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3973,7 +3973,7 @@
       product:type: AUX_PROQUA
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3981,7 +3981,7 @@
       product:type: AUX_RESORB
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3989,7 +3989,7 @@
       product:type: RAW
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -3997,7 +3997,7 @@
       product:type: GRD
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -4005,7 +4005,7 @@
       product:type: SLC
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -4013,7 +4013,7 @@
       product:type: OCN
       _collection: SENTINEL-1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -4021,7 +4021,7 @@
       product:type: S1SAR_L3_IW_MCM
       _collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -4029,7 +4029,7 @@
       product:type: S1SAR_L3_DH_MCM
       _collection: GLOBAL-MOSAICS
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
@@ -4053,7 +4053,7 @@
       product:type: SR_1_SRA___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4061,7 +4061,7 @@
       product:type: SR_1_SRA_A_
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4069,7 +4069,7 @@
       product:type: SR_1_SRA_BS
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4077,7 +4077,7 @@
       product:type: SR_2_LAN___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4085,7 +4085,7 @@
       product:type: SR_2_LAN_HY
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4093,7 +4093,7 @@
       product:type: SR_2_LAN_SI
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4101,7 +4101,7 @@
       product:type: SR_2_LAN_LI
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4109,7 +4109,7 @@
       product:type: SR_2_WAT___
       _collection: SENTINEL-3
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         platform:
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
@@ -4307,22 +4307,22 @@
       product:type: DGE_30
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     COP_DEM_GLO30_DTED:
       product:type: DTE_30
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     COP_DEM_GLO90_DGED:
       product:type: DGE_90
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     COP_DEM_GLO90_DTED:
       product:type: DTE_90
       _collection: COP-DEM
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
     GENERIC_PRODUCT_TYPE:
       _collection: '{collection}'
 ---
@@ -5672,17 +5672,17 @@
       providerCollection: OCN
       _collection: PEPS_S1_L2
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_GRD:
       providerCollection: GRD
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_SLC:
       providerCollection: SLC
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S2_MSI_L1C:
       _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
@@ -5797,17 +5797,17 @@
       providerCollection: OCN
       _collection: PEPS_S1_L2
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_GRD:
       providerCollection: GRD
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_SLC:
       providerCollection: SLC
       _collection: PEPS_S1_L1
       metadata_mapping:
-        eo:cloud_cover: '$.null'
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S2_MSI_L1C:
       _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
