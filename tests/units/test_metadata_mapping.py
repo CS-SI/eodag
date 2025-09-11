@@ -947,3 +947,13 @@ class TestMetadataMappingFunctions(unittest.TestCase):
             ),
             "replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore",
         )
+
+    def test_convert_not_available(self):
+        to_format = "{value#not_available}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                value="any value",
+            ),
+            NOT_AVAILABLE,
+        )

@@ -160,6 +160,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``get_group_name``: get the matching regex group name
+        - ``not_available``: replace value with "Not Available"
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
           splitting the string on dots
@@ -594,6 +595,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 value = re.sub(old, new, value)
 
             return value
+
+        @staticmethod
+        def convert_not_available(value: Any) -> str:
+            """Convert any value to "Not Available".
+
+            This is more useful than "$.null" to keep original jsonpath while parsing in metadata_mapping.
+            """
+            return NOT_AVAILABLE
 
         @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
