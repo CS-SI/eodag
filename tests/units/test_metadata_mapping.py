@@ -480,10 +480,10 @@ class TestMetadataFormatter(unittest.TestCase):
             properties,
             {
                 "fooProperty": "foo-val",
-                "bar": "bar-val",
-                "baz": {"baaz": "baz-val"},
                 "missingProperty": NOT_AVAILABLE,
-                "qux": [
+                "provider:bar": "bar-val",
+                "provider:baz": {"baaz": "baz-val"},
+                "provider:qux": [
                     {"somekey": "a", "someval": "a-val"},
                     {"somekey": "b", "someval": "b-val", "some": "thing"},
                     {"somekey": "c"},
@@ -507,9 +507,9 @@ class TestMetadataFormatter(unittest.TestCase):
             {
                 "fooProperty": "foo-val",
                 "missingProperty": NOT_AVAILABLE,
-                "a": "a-val",
-                "b": "b-val",
-                "c": NOT_AVAILABLE,
+                "provider:a": "a-val",
+                "provider:b": "b-val",
+                "provider:c": NOT_AVAILABLE,
             },
         )
 
