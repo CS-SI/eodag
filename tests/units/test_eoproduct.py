@@ -125,12 +125,12 @@ class TestEOProduct(EODagTestCase):
             self._tuples_to_lists(geometry.mapping(self.geometry)),
         )
         properties = geo_interface["properties"]
-        self.assertEqual(properties["eodag_provider"], self.provider)
+        self.assertEqual(properties["eodag:provider"], self.provider)
         self.assertEqual(
-            properties["eodag_search_intersection"],
+            properties["eodag:search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag_collection"], self.collection)
+        self.assertEqual(properties["eodag:collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
