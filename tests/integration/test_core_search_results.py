@@ -59,8 +59,8 @@ class TestCoreSearchResults(EODagTestCase):
                             "https://peps.cnes.fr/resto/collections/S1/"
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                         ),
-                        "eodag_provider": "peps",
-                        "eodag_collection": "S1_SAR_OCN",
+                        "eodag:provider": "peps",
+                        "eodag:collection": "S1_SAR_OCN",
                         "platformSerialIdentifier": "S1A",
                         "cloudCover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_"
@@ -68,7 +68,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "orbitNumber": 20624,
                         "instrument": "SAR-C SAR",
                         "abstract": None,
-                        "eodag_search_intersection": {
+                        "eodag:search_intersection": {
                             "coordinates": [
                                 [
                                     [89.590721, 2.614019],
@@ -178,9 +178,9 @@ class TestCoreSearchResults(EODagTestCase):
     def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
         return {
             "properties": {
-                "eodag_provider": "peps",
-                "eodag_collection": "S1_SAR_OCN",
-                "eodag_search_intersection": {
+                "eodag:provider": "peps",
+                "eodag:collection": "S1_SAR_OCN",
+                "eodag:search_intersection": {
                     "coordinates": geom_coords,
                     "type": geom_type,
                 },

@@ -37,8 +37,8 @@
         "abstract": null,
         "sensorMode": null,
         "cloudCover": 0,
-        "eodag_provider": "peps",
-        "eodag_product_type": "S1_SAR_OCN",
+        "eodag:provider": "peps",
+        "eodag:product_type": "S1_SAR_OCN",
         "platform": null,
         "topicCategory": null,
         "snowCover": null,
@@ -46,7 +46,7 @@
         "instrument": "SAR-C SAR",
         "orbitType": null,
         "orbitDirection": null,
-        "eodag_search_intersection": {
+        "eodag:search_intersection": {
           "type": "Polygon",
           "coordinates": [
             [
