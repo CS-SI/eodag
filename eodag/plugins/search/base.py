@@ -84,6 +84,9 @@ class Search(PluginTopic):
             self.config.metadata_mapping,
             result_type=getattr(self.config, "result_type", "json"),
         )
+        # set default metadata prefix for discover_metadata if not already set
+        if hasattr(self.config, "discover_metadata"):
+            self.config.discover_metadata.setdefault("metadata_prefix", provider)
 
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
