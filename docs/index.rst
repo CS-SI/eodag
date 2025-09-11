@@ -70,7 +70,7 @@ EODAG has the following primary features:
 Example
 -------
 
-`Register <getting_started_guide/register.rst>`_ to one or more providers,
+`Register <providers.rst>`_ to one or more providers,
 `configure your credentials <getting_started_guide/configure.rst>`_ , and then
 downloading *Sentinel 2 Level-1C* products from any provider's catalog is as simple as:
 

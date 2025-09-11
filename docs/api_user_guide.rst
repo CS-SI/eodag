@@ -24,7 +24,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 .. grid:: 1 2 2 3
    :gutter: 4
 
-   .. grid-item-card:: Providers & Products types
+   .. grid-item-card:: :octicon:`database;1.5em`  Providers & Products types
       :link: notebooks/api_user_guide/1_providers_products_available
       :link-type: doc
       :text-align: center
@@ -32,66 +32,66 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 
       Discover available data providers and explore the different product types accessible through the API.
 
-   .. grid-item-card:: Configuration
-      :link: notebooks/api_user_guide/2_configuration
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`gear;1.5em`  Configuration
+         :link: notebooks/api_user_guide/2_configuration
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Learn how to configure your data providers, set their priorities, and configure logging to optimize your workflow.
+         Learn how to configure your data providers, set their priorities, and configure logging to optimize your workflow.
 
-   .. grid-item-card:: Search
-      :link: notebooks/api_user_guide/3_search
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`search;1.5em`  Search
+         :link: notebooks/api_user_guide/3_search
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Master advanced search techniques: pagination, filters, custom parameters, and error handling for efficient data discovery.
+         Master advanced search techniques: pagination, filters, custom parameters, and error handling for efficient data discovery.
 
-   .. grid-item-card:: Queryables
-      :link: notebooks/api_user_guide/4_queryables
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`list-unordered;1.5em`  Queryables
+         :link: notebooks/api_user_guide/4_queryables
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Explore available query parameters to refine your searches and discover new filtering criteria for better results.
+         Explore available query parameters to refine your searches and discover new filtering criteria for better results.
 
-   .. grid-item-card:: Serialize / Deserialize
-      :link: notebooks/api_user_guide/5_serialize_deserialize
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`file-code;1.5em`  Serialize / Deserialize
+         :link: notebooks/api_user_guide/5_serialize_deserialize
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Efficiently manage serialization and deserialization of your search results to save and reuse them across sessions.
+         Efficiently manage serialization and deserialization of your search results to save and reuse them across sessions.
 
-   .. grid-item-card:: Crunch
-      :link: notebooks/api_user_guide/6_crunch
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`graph;1.5em`  Crunch
+         :link: notebooks/api_user_guide/6_crunch
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Post-search filter your products using various criteria: temporal, geographical, properties, and online availability.
+         Post-search filter your products using various criteria: temporal, geographical, properties, and online availability.
 
-   .. grid-item-card:: Download
-      :link: notebooks/api_user_guide/7_download
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`download;1.5em`  Download
+         :link: notebooks/api_user_guide/7_download
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Download your products with progress bars, quicklooks management, and efficient asset handling.
+         Download your products with progress bars, quicklooks management, and efficient assets handling.
 
-   .. grid-item-card:: Post-processing
-      :link: notebooks/api_user_guide/8_post_process
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`pencil;1.5em`  Post-processing
+         :link: notebooks/api_user_guide/8_post_process
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Post-process your data: downloaded file path management, Sentinel formats, and xarray conversion with eodag-cube.
+         Post-process your data: downloaded file path management, Sentinel formats, and xarray conversion with eodag-cube.
 
-   .. grid-item-card:: STAC Client Tutorial
-      :link: notebooks/tutos/tuto_stac_client
-      :link-type: doc
-      :text-align: center
-      :shadow: md
+   .. grid-item-card:: :octicon:`book;1.5em`  STAC Client Tutorial
+         :link: notebooks/tutos/tuto_stac_client
+         :link-type: doc
+         :text-align: center
+         :shadow: md
 
-      Learn how to use eodag as a STAC client to access data catalogs through STAC APIs and static catalogs.
+         Learn how to use EODAG as a STAC client to access data through STAC APIs and static catalogs.

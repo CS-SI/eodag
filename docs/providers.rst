@@ -3,516 +3,471 @@
 Featured providers
 ===================
 
-`eodag` connects you to a variety of Earth Observation (EO) data providers.
-This section introduces the **featured providers** that are already integrated, so you can
+``eodag`` connects you to a variety of Earth Observation (EO) data providers.
+This section introduces the featured providers that are already integrated, so you can
 easily start searching, accessing, and downloading products.
 
 Some providers are completely open, while others require an account to access their data.
-If credentials are needed, check the :doc:`registration guide <getting_started_guide/register>` for details.
+If credentials are needed, check the :doc:`registration guide <providers>` for details.
 
-Note that ``eodag`` is **not limited** to the providers listed here.
+Note that ``eodag`` is not limited to the providers listed here.
 If a desired provider is missing, you can add it yourself by configuring a new plugin.
-See the :doc:`provider configuration guide <add_provider>` for more details.
+See :doc:`how to add a new provider <add_provider>` for more details.
 
 Description
 ^^^^^^^^^^^
 
 Products from the following providers are made available through ``eodag``:
 
-.. _aws-gcs-eo-catalogs-anchor:
+====================
+Available Providers
+====================
 
-.. dropdown:: **AWS / GCS EO catalogs** (3 providers)
-   :color: secondary
-   :icon: server
+This section lists all supported data providers, grouped by organization or hosting entity.
 
-   Catalogs of Earth observation datasets hosted on Amazon Web Services (AWS) and Google Cloud Storage (GCS).
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: none
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
 
-      * - Provider
-        - Description
-      * - `aws_eos <https://eos.com/>`_
-        - EOS Data Analytics search for Amazon public datasets
+AWS / GCS EO catalogs
+---------------------
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+**Earth Search**
 
-             You need credentials for both EOS Data Analytics (search) and AWS (download):
+  * `earth_search <https://www.element84.com/earth-search/>`_ — Element84 STAC API on AWS
 
-             * Create an account on `EOS <https://auth.eos.com>`__
-             * Get your EOS api key from `here <https://api-connect.eos.com/user-dashboard/statistics>`__
-             * Create an account on `AWS <https://aws.amazon.com/>`__
-             * Once the account is activated go to the `identity access management console <https://console.aws.amazon.com/iam/home#/home>`__
-             * Click on user, then on your user name and then on security credentials.
-             * In access keys, click on create access key.
-             * Add these credentials to the user configuration file:
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-               * ``search_auth.credentials.api_key``
-               * ``download_auth.credentials.aws_access_key_id`` and ``download_auth.credentials.aws_secret_access_key`` or ``download_auth.credentials.aws_profile``
+      * Create an account on `AWS <https://aws.amazon.com/>`__
+      * Once the account is activated go to the `identity access management console <https://console.aws.amazon.com/iam/home#/home>`__
+      * Click on user, then on your user name and then on security credentials.
+      * In access keys, click on create access key.
+      * Add these credentials to the user configuration file.
 
-             .. note::
+      .. warning::
 
-                EOS free trial account is limited to 1000 requests, see also their `subscription plans <https://doc.eos.com/subscription/>`__.
+          A credit card number must be provided when creating an AWS account because fees apply
+          after a given amount of downloaded data.
 
-      * - `earth_search <https://www.element84.com/earth-search/>`_
-        - Element84 Earth Search (STAC API)
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+  * `earth_search_cog <https://www.element84.com/earth-search/>`_ — Element84 STAC API on AWS (COG access)
 
-             You need AWS credentials for download:
+      :octicon:`unlock;1em;sd-text-success` No account is required
 
-            * Create an account on `AWS <https://aws.amazon.com/>`__
-            * Once the account is activated go to the `identity access management console <https://console.aws.amazon.com/iam/home#/home>`__
-            * Click on user, then on your user name and then on security credentials.
-            * In access keys, click on create access key.
-            * Add these credentials to the user configuration file.
 
-            .. warning::
+  * `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_ — Element84 Earth Search on Google Cloud Storage
 
-                A credit card number must be provided when creating an AWS account because fees apply
-                after a given amount of downloaded data.
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-      * - `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_
-        - Element84 Earth Search on Google Cloud Storage
+      You need HMAC keys for Google Cloud Storage:
 
-          .. dropdown:: Registration info
-                :icon: lock
-                :color: muted
+      * Sign in using a `google account <https://accounts.google.com/signin/v2/identifier>`__.
+      * Get or create `HMAC keys <https://cloud.google.com/storage/docs/authentication/hmackeys>`__ for your user account
+        on a project for interoperability API access from this
+        `page <https://console.cloud.google.com/storage/settings;tab=interoperability>`__ (create a default project if
+        none exists).
+      * Add these credentials to the user configuration file.
 
-                You need HMAC keys for Google Cloud Storage:
 
-                * Sign in using a `google account <https://accounts.google.com/signin/v2/identifier>`__.
-                * Get or create `HMAC keys <https://cloud.google.com/storage/docs/authentication/hmackeys>`__ for your user account
-                  on a project for interoperability API access from this
-                  `page <https://console.cloud.google.com/storage/settings;tab=interoperability>`__ (create a default project if
-                  none exists).
-                * Add these credentials to the user configuration file.
+**EOS**
 
-.. _copernicus-anchor:
+  * `aws_eos <https://eos.com/>`_ — EOS Data Analytics search for Amazon public datasets
 
-.. dropdown:: **Copernicus** (5 providers)
-   :color: primary
-   :icon: cloud
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-   European Union’s comprehensive Earth observation program providing climate, atmosphere, and marine data.
+        You need credentials for both EOS Data Analytics (search) and AWS (download):
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+        * Create an account on `EOS <https://auth.eos.com>`__
+        * Get your EOS api key from `here <https://api-connect.eos.com/user-dashboard/statistics>`__
+        * Create an account on `AWS <https://aws.amazon.com/>`__
+        * Once the account is activated go to the `identity access management console <https://console.aws.amazon.com/iam/home#/home>`__
+        * Click on user, then on your user name and then on security credentials.
+        * In access keys, click on create access key.
+        * Add these credentials to the user configuration file:
 
-      * - Provider
-        - Description
-      * - `cop_ads <https://ads.atmosphere.copernicus.eu>`_
-        - Copernicus Atmosphere Data Store
+          * ``search_auth.credentials.api_key``
+          * ``download_auth.credentials.aws_access_key_id`` and ``download_auth.credentials.aws_secret_access_key`` or ``download_auth.credentials.aws_profile``
 
-          .. dropdown:: Registration info
-            :icon: lock
-            :color: muted
+        .. note::
 
-              Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
+            EOS free trial account is limited to 1000 requests, see also their `subscription plans <https://doc.eos.com/subscription/>`__.
 
-              Then log in and go to your user profile on `Atmosphere Data Store <https://ads.atmosphere.copernicus.eu/>`__ and
-              use your *Personal Access Token* as ``apikey`` in eodag credentials.
 
-              To download data you have to accept the `Licence to use Copernicus Products`. To accept the licence:
 
-              * Go to `Datasets <https://ads.atmosphere.copernicus.eu/datasets>`__ while being logged in.
-              * Open the details of a dataset and go to the download tab.
-              * Scroll down and accept the licence in the section `Terms of use`.
-              * You can check which licences you have accepted in your user profile.
+Copernicus
+-----------
 
-      * - `cop_cds <https://cds.climate.copernicus.eu>`_
-        - Copernicus Climate Data Store
+**Copernicus Data Stores**
 
-          .. dropdown:: Registration info
-            :icon: lock
-            :color: muted
+  * `cop_ads <https://ads.atmosphere.copernicus.eu>`_ — Copernicus Atmosphere Data Store
 
-              Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
-              Then log in and go to your user profile on `Climate Data Store <https://cds.climate.copernicus.eu/>`__ and use your
-              *Personal Access Token* as ``apikey`` in eodag credentials.
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-              To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence
-              whereas other licences are valid for a group of datasets.
-              For example after accepting the `Licence to use Copernicus Products` you can use all `ERA5` datasets, to use the seasonal data from C3S you
-              also have to accept the `Additional licence to use non European contributions`.
+        Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
 
-              To accept a licence:
+        Then log in and go to your user profile on `Atmosphere Data Store <https://ads.atmosphere.copernicus.eu/>`__ and
+        use your *Personal Access Token* as ``apikey`` in eodag credentials.
 
-              * Search for the dataset you want to download `here <https://cds.climate.copernicus.eu/datasets>`__ while being
-                logged in.
-              * Open the dataset details and go to the download tab.
-              * Scroll down and accept the licence in the section `Terms of use`.
-              * You can check which licences you have accepted in your user profile.
+        To download data you have to accept the `Licence to use Copernicus Products`. To accept the licence:
 
+        * Go to `Datasets <https://ads.atmosphere.copernicus.eu/datasets>`__ while being logged in.
+        * Open the details of a dataset and go to the download tab.
+        * Scroll down and accept the licence in the section `Terms of use`.
+        * You can check which licences you have accepted in your user profile.
 
-      * - `cop_dataspace <https://dataspace.copernicus.eu/>`_
-        - Copernicus Data Space Ecosystem
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+  * `cop_cds <https://cds.climate.copernicus.eu>`_ — Copernicus Climate Data Store
 
-              Create an account `here <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-      * - `cop_ewds <https://ewds.climate.copernicus.eu>`_
-        - CEMS Early Warning Data Store
+        Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
+        Then log in and go to your user profile on `Climate Data Store <https://cds.climate.copernicus.eu/>`__ and use your
+        *Personal Access Token* as ``apikey`` in eodag credentials.
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+        To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence
+        whereas other licences are valid for a group of datasets.
+        For example after accepting the `Licence to use Copernicus Products` you can use all `ERA5` datasets, to use the seasonal data from C3S you
+        also have to accept the `Additional licence to use non European contributions`.
 
-                Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
-                Then log in and go to your user profile on `CEMS Early Warning Data Store <https://ewds.climate.copernicus.eu>`__ and use your
-                *Personal Access Token* as ``apikey`` in eodag credentials.
+        To accept a licence:
 
-                To download data, you also have to accept certain terms depending on the dataset. There are two different licences that have to be accepted
-                to use the CEMS EWDS datasets. Accepting the `CEMS-FLOODS datasets licence` is necessary to use the `GLOFAS` and `EFAS` datasets,
-                the `Licence to use Copernicus Products` is valid for the Fire danger datasets.
+        * Search for the dataset you want to download `here <https://cds.climate.copernicus.eu/datasets>`__ while being
+          logged in.
+        * Open the dataset details and go to the download tab.
+        * Scroll down and accept the licence in the section `Terms of use`.
+        * You can check which licences you have accepted in your user profile.
 
-                To accept a licence:
 
-                * Search for the dataset you want to download `here <https://ewds.climate.copernicus.eu/datasets>`__ while being
-                  logged in.
-                * Open the dataset details and go to the download tab.
-                * Scroll down and accept the licence in the section `Terms of use`.
-                * You can check which licences you have accepted in your user profile.
+  * `cop_dataspace <https://dataspace.copernicus.eu/>`_ — Copernicus Data Space Ecosystem
 
-      * - `cop_marine <https://marine.copernicus.eu>`_
-        - Copernicus Marine Service
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-          .. dropdown:: Registration info
-            :icon: lock
-            :color: muted
+        Create an account `here
+        <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`__
 
-              No account is required
 
-.. _cnes-anchor:
+  * `cop_ewds <https://ewds.climate.copernicus.eu>`_ — CEMS Early Warning Data Store
 
-.. dropdown:: **CNES** (4 providers)
-   :color: info
-   :icon: location
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-   French National Space Agency (CNES) data portals and thematic hubs.
+        Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
+        Then log in and go to your user profile on `CEMS Early Warning Data Store <https://ewds.climate.copernicus.eu>`__ and use your
+        *Personal Access Token* as ``apikey`` in eodag credentials.
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+        To download data, you also have to accept certain terms depending on the dataset. There are two different licences that have to be accepted
+        to use the CEMS EWDS datasets. Accepting the `CEMS-FLOODS datasets licence` is necessary to use the `GLOFAS` and `EFAS` datasets,
+        the `Licence to use Copernicus Products` is valid for the Fire danger datasets.
 
-      * - Provider
-        - Description
-      * - `geodes <https://geodes.cnes.fr>`_
-        - CNES Earth Observation portal
+        To accept a licence:
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+        * Search for the dataset you want to download `here <https://ewds.climate.copernicus.eu/datasets>`__ while being
+          logged in.
+        * Open the dataset details and go to the download tab.
+        * Scroll down and accept the licence in the section `Terms of use`.
+        * You can check which licences you have accepted in your user profile.
 
-              Go to `https://geodes-portal.cnes.fr <https://geodes-portal.cnes.fr>`_, then login or create an account by
-              clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
-              as ``apikey`` in EODAG provider auth credentials.
 
-      * - `geodes_s3 <https://geodes.cnes.fr>`_
-        - CNES Earth Observation portal with S3 Datalake
+  * `cop_marine <https://marine.copernicus.eu>`_ — Copernicus Marine Service
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+      :octicon:`unlock;1em;sd-text-success` No account is required
 
-              This provider is only available for CNES users. You need to be connected to the CNES network to access the data.
-              Get credentials for internal Datalake and use them as ``aws_access_key_id``, ``aws_secret_access_key`` and
-              ``aws_session_token`` EODAG credentials.
+**WEkEO**
 
-      * - `hydroweb_next <https://hydroweb.next.theia-land.fr>`_
-        - Hydroweb.next thematic hub for hydrology
+  * `wekeo_cmems <https://www.wekeo.eu>`_ — Copernicus Marine (CMEMS) data from WEkEO
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-              Go to `https://hydroweb.next.theia-land.fr <https://hydroweb.next.theia-land.fr>`_, then login or create an account by
-              clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
-              as ``apikey`` in EODAG provider auth credentials.
+        The registration procedure is the same as for ``wekeo_main``.
+        The licence that has to be accepted to access the Copernicus Marine data is:
 
-      * - `peps <https://peps.cnes.fr/rocket/#/home>`_
-        - CNES catalog for Sentinel products
+        * ``Copernicus_Marine_Service_Product_License``
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
 
-              create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag
-              credentials.
+  * `wekeo_ecmwf <https://www.wekeo.eu/>`_ — WEkEO ECMWF data
 
-.. _destination-earth-anchor:
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-.. dropdown:: **Destination Earth** (2 providers)
-   :color: success
-   :icon: organization
+        The registration procedure is the same as for ``wekeo_main``.
 
-   European Destination Earth initiative (DestinE) for Digital Twins of the Earth.
+  * `wekeo_main <https://www.wekeo.eu/>`_ — WEkEO Copernicus Sentinel, DEM, and CLMS data
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-      * - Provider
-        - Description
-      * - `dedl <https://hda.data.destination-earth.eu/ui>`_
-        - Destination Earth Data Lake (DEDL)
+        You need an access token to authenticate and to accept terms and conditions with it:
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+        * Create an account on `WEkEO <https://www.wekeo.eu/register>`__
+        * Add your WEkEO credentials (``username``, ``password``) to the user configuration file.
+        * Depending on which data you want to retrieve, you will then need to accept terms and conditions (for once).
+          To do this, follow the
+          `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
+          or run the following commands in your terminal.
 
-              You need a `DESP OpenID` account in order to authenticate.
+        * First, get a token from your base64-encoded credentials (replace USERNAME and PASSWORD with your credentials):
 
-              To create one go `here
-              <https://hda.data.destination-earth.eu/ui>`__, then click on `Sign In`, select the identity provider `DESP OpenID` and
-              then click `Authenticate`. Finally click on `Register` to create a new account.
+          .. code-block:: bash
 
+              curl -X POST --data '{"username": "USERNAME", "password": "PASSWORD"}' \
+              -H "Content-Type: application/json" \
+              "https://gateway.prod.wekeo2.eu/hda-broker/gettoken"
 
-      * - `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_
-        - DestinE Digital Twin output on Lumi supercomputer
+          The WEkEO API will respond with a token:
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+          .. code-block:: bash
 
-              Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
-              credentials.
+              { "access_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy",
+                "refresh_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy",
+                "scope":"openid",
+                "id_token":"token",
+                "token_type":"Bearer",
+                "expires_in":3600
+              }
 
-.. _ecmwf-anchor:
+        * Accept terms and conditions by running this command and replacing <access_token> and <licence_name>:
 
-.. dropdown:: **ECMWF** (1 provider)
-   :color: success
-   :icon: organization
+          .. code-block:: bash
 
-   European Centre for Medium-Range Weather Forecasts.
+              curl --request PUT \
+                  --header 'accept: application/json' \
+                  --header 'Authorization: Bearer <access_token>' \
+                  https://gateway.prod.wekeo2.eu/hda-broker/api/v1/termsaccepted/<licence_name>
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+        The licence name depends on which data you want to retrieve.
+        To use all datasets available in WEkEO, the following licences have to be accepted:
 
-      * - Provider
-        - Description
-      * - `ecmwf <https://www.ecmwf.int/>`_
-        - Numerical weather prediction and climate reanalysis datasets
+        * EUMETSAT_Copernicus_Data_Licence
+        * Copernicus_Land_Monitoring_Service_Data_Policy
+        * Copernicus_Sentinel_License
+        * Copernicus_ECMWF_License
+        * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
+        * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+**CREODIAS**
 
-              Create an account `here <https://www.ecmwf.int/user/login>`__.
+  * `creodias <https://creodias.eu/>`_ — CloudFerro DIAS
 
-              Then use *email* as ``username`` and *key* as ``password`` from `here <https://api.ecmwf.int/v1/key/>`__ in eodag credentials.
-              EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you
-              might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets/data/tigge/licence/>`__)
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
+        Create an account `here <https://portal.creodias.eu/register.php>`__, then use your ``username``, ``password`` in eodag
+        credentials. You will also need `totp` in credentials, a temporary 6-digits OTP (One Time Password, see
+        `Creodias documentation
+        <https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`__)
+        to be able to authenticate and download. Check
+        `Authenticate using an OTP
+        <https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication>`__
+        to see how to proceed.
 
-.. _esa-anchor:
 
-.. dropdown:: **ESA** (2 providers)
-   :color: success
-   :icon: organization
+  * `creodias_s3 <https://creodias.eu/>`_ — CloudFerro DIAS data through S3 protocol
 
-   European Space Agency (ESA) climate and federated EO missions.
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+        Create an account on `creodias <https://creodias.eu/>`__, then go to
+        `keymanager <https://eodata-keymanager.creodias.eu/>`__ and click `Add credential` to generate the s3 access key and
+        secret key. Add those credentials to the user configuration file (variables `aws_access_key_id` and
+        `aws_secret_access_key`).
 
-      * - Provider
-        - Description
-      * - `fedeo_ceda <https://climate.esa.int/en/>`_
-        - FedEO CEDA through CEOS Federated EO missions
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+CNES
+----
 
-              No account is required
+  * `geodes <https://geodes.cnes.fr>`_ — French National Space Agency (CNES) Earth Observation portal
 
-      * - `wekeo_main <https://www.wekeo.eu/>`_
-        - WEkEO Copernicus Sentinel, DEM, and CLMS data
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+        Go to `https://geodes-portal.cnes.fr <https://geodes-portal.cnes.fr>`_, then login or create an account by
+        clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
+        as ``apikey`` in EODAG provider auth credentials.
 
-              You need an access token to authenticate and to accept terms and conditions with it:
+  * `geodes_s3 <https://geodes.cnes.fr>`_ — French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
 
-              * Create an account on `WEkEO <https://www.wekeo.eu/register>`__
-              * Add your WEkEO credentials (``username``, ``password``) to the user configuration file.
-              * Depending on which data you want to retrieve, you will then need to accept terms and conditions (for once). To do this, follow the
-                `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
-                or run the following commands in your terminal.
-              * First, get a token from your base64-encoded credentials (replace USERNAME and PASSWORD with your credentials):
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-                .. code-block:: bash
+        This provider is only available for CNES users. You need to be connected to the CNES network to access the data.
+        Get credentials for internal Datalake and use them as ``aws_access_key_id``, ``aws_secret_access_key`` and
+        ``aws_session_token`` EODAG credentials.
 
-                  curl -X POST --data '{"username": "USERNAME", "password": "PASSWORD"}' -H "Content-Type: application/json" "https://gateway.prod.wekeo2.eu/hda-broker/gettoken"
+  * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_ — hydroweb.next thematic hub for hydrology data access
 
-                The WEkEO API will respond with a token:
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-                .. code-block:: bash
+        Go to `https://hydroweb.next.theia-land.fr <https://hydroweb.next.theia-land.fr>`_, then login or create an account by
+        clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
+        as ``apikey`` in EODAG provider auth credentials.
 
-                  { "access_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy",
-                    "refresh_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy",
-                    "scope":"openid",
-                    "id_token":"token",
-                    "token_type":"Bearer",
-                    "expires_in":3600
-                  }
+  * `peps <https://peps.cnes.fr/rocket/#/home>`_ — French National Space Agency (CNES) catalog for Sentinel products
 
-              * Accept terms and conditions by running this command and replacing <access_token> and <licence_name>:
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-                .. code-block:: bash
+        create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag
+        credentials.
 
-                  curl --request PUT --header 'accept: application/json' --header 'Authorization: Bearer <access_token>' https://gateway.prod.wekeo2.eu/hda-broker/api/v1/termsaccepted/<licence_name>
 
-                The licence name depends on which data you want to retrieve. To use all datasets available in wekeo, the following licences have to be accepted:
+Destination Earth
+-----------------
 
-                * EUMETSAT_Copernicus_Data_Licence
-                * Copernicus_Land_Monitoring_Service_Data_Policy
-                * Copernicus_Sentinel_License
-                * Copernicus_ECMWF_License
-                * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
-                * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
+  * `dedl <https://hda.data.destination-earth.eu/ui>`_ — Destination Earth Data Lake (DEDL)
 
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-.. _eumetsat-anchor:
+        You need a `DESP OpenID` account in order to authenticate.
 
-.. dropdown:: **EUMETSAT** (1 provider)
-   :color: success
-   :icon: organization
+        To create one go `here
+        <https://hda.data.destination-earth.eu/ui>`__, then click on `Sign In`, select the identity provider `DESP OpenID` and
+        then click `Authenticate`. Finally click on `Register` to create a new account.
 
-   European Organisation for the Exploitation of Meteorological Satellites.
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
 
-      * - Provider
-        - Description
-      * - `eumetsat_ds <https://data.eumetsat.int>`_
-        - EUMETSAT Data Store
+  * `lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_ — DestinE Digital Twin output on Lumi
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-              Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
+        Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
+        credentials.
 
-              Then use the consumer key as ``username`` and the consumer secret as ``password`` from `here
-              <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
 
-.. _meteoblue-anchor:
+ECMWF
+-----
 
-.. dropdown:: **Meteoblue** (1 provider)
-   :color: dark
-   :icon: globe
+  * `ecmwf <https://www.ecmwf.int/>`_ — European Centre for Medium-Range Weather Forecasts
 
-   Meteoblue weather forecast services.
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+        Create an account `here <https://www.ecmwf.int/user/login>`__.
 
-      * - Provider
-        - Description
-      * - `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
-        - Meteoblue forecast datasets
+        Then use *email* as ``username`` and *key* as ``password`` from `here <https://api.ecmwf.int/v1/key/>`__ in eodag credentials.
+        EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you
+        might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets/data/tigge/licence/>`__)
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
 
-              EODAG uses `dataset API <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
-              which requires the access level
-              `Access Gold <https://content.meteoblue.com/en/business-solutions/weather-apis/pricing>`_.
+ESA
+----
 
-              Contact `support@meteoblue.com <mailto:support@meteoblue.com>`_ to apply for a free API key trial.
+  * `fedeo_ceda <https://climate.esa.int/en/>`_ — FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access. The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue of all CCI datasets.
 
+    :octicon:`unlock;1em;sd-text-success` No account is required
 
-.. _planetary-computer-anchor:
 
-.. dropdown:: **Planetary Computer** (1 provider)
-   :color: secondary
-   :icon: server
+EUMETSAT
+---------
 
-   Microsoft Planetary Computer cloud-based access to EO datasets.
+  * `eumetsat_ds <https://data.eumetsat.int>`_ — EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-      * - Provider
-        - Description
-      * - `planetary_computer <https://planetarycomputer.microsoft.com/>`_
-        - Microsoft Planetary Computer STAC catalog
+        Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+        Then use the consumer key as ``username`` and the consumer secret as ``password`` from `here
+        <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
 
-              Most datasets are anonymously accessible, but a subscription key may be needed to increase `rate limits and access
-              private datasets <https://planetarycomputer.microsoft.com/docs/concepts/sas/#rate-limits-and-access-restrictions>`_.
+Meteoblue
+---------
 
-              Create an account `here <https://planetarycomputer.microsoft.com/account/request>`__, then view your keys by signing in
-              with your Microsoft account `here <https://planetarycomputer.developer.azure-api.net/>`__.
+  * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_ — Meteoblue forecast
 
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-.. _usgs-landsat-anchor:
+        EODAG uses `dataset API <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
+        which requires the access level
+        `Access Gold <https://content.meteoblue.com/en/business-solutions/weather-apis/pricing>`_.
 
-.. dropdown:: **USGS / Landsat** (2 providers)
-   :color: warning
-   :icon: location
+        Contact `support@meteoblue.com <mailto:support@meteoblue.com>`_ to apply for a free API key trial.
 
-   United States Geological Survey (USGS) catalogs for Landsat missions.
 
-   .. list-table::
-      :widths: 30 70
-      :header-rows: 1
 
-      * - Provider
-        - Description
-      * - `usgs <https://earthexplorer.usgs.gov/>`_
-        - U.S. Geological Survey catalog for Landsat products
+Planetary Computer
+------------------
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
+  * `planetary_computer <https://planetarycomputer.microsoft.com/>`_ — Microsoft Planetary Computer
 
-              Create an account  `here <https://ers.cr.usgs.gov/register/>`__, and
-              `request an access <https://ers.cr.usgs.gov/profile/access>`_ to the
-              `Machine-to-Machine (M2M) API <https://m2m.cr.usgs.gov/>`_.
-              Then you will need to `generate an application token <https://ers.cr.usgs.gov/password/appgenerate>`_. Use it as
-              ``password`` in eodag credentials, associated to your ``username``.
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-              Product requests can be performed once access to the M2M API has been granted to you.
+        Most datasets are anonymously accessible, but a subscription key may be needed to increase `rate limits and access
+        private datasets <https://planetarycomputer.microsoft.com/docs/concepts/sas/#rate-limits-and-access-restrictions>`_.
 
-      * - `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_
-        - USGS LandsatLook SAT API
+        Create an account `here <https://planetarycomputer.microsoft.com/account/request>`__, then view your keys by signing in
+        with your Microsoft account `here <https://planetarycomputer.developer.azure-api.net/>`__.
 
-          .. dropdown:: Registration info
-             :icon: lock
-             :color: muted
 
-              You need AWS credentials for download:
+USGS / Landsat
+---------------
 
-              * Create an account on `AWS <https://aws.amazon.com/>`__
-              * Once the account is activated go to the `identity access management console <https://console.aws.amazon.com/iam/home#/home>`__
-              * Click on user, then on your user name and then on security credentials.
-              * In access keys, click on create access key.
-              * Add these credentials to the user configuration file.
+  * `usgs <https://earthexplorer.usgs.gov/>`_ — U.S geological survey catalog for Landsat products
 
-              .. warning::
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
 
-                  A credit card number must be provided when creating an AWS account because fees apply
-                  after a given amount of downloaded data.
+        Create an account  `here <https://ers.cr.usgs.gov/register/>`__, and
+        `request an access <https://ers.cr.usgs.gov/profile/access>`_ to the
+        `Machine-to-Machine (M2M) API <https://m2m.cr.usgs.gov/>`_.
+        Then you will need to `generate an application token <https://ers.cr.usgs.gov/password/appgenerate>`_. Use it as
+        ``password`` in eodag credentials, associated to your ``username``.
+
+        Product requests can be performed once access to the M2M API has been granted to you.
+
+
+
+  * `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_ — USGS Landsatlook SAT API
+
+    .. dropdown:: Registration info
+      :icon: lock
+      :color: muted
+
+        You need AWS credentials for download:
+
+        * Create an account on `AWS <https://aws.amazon.com/>`__
+        * Once the account is activated go to the `identity access management console <https://console.aws.amazon.com/iam/home#/home>`__
+        * Click on user, then on your user name and then on security credentials.
+        * In access keys, click on create access key.
+        * Add these credentials to the user configuration file.
+
+        .. warning::
+
+            A credit card number must be provided when creating an AWS account because fees apply
+            after a givn amount of downloaded data.
