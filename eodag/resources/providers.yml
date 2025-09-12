@@ -1995,7 +1995,7 @@
     GENERIC_COLLECTION:
       dataset: '{collection}'
 ---
-!provider # MARK: sara
+!provider # MARK: search_iter_page_plugin
   name: sara
   priority: 0
   description: Sentinel Australasia Regional Access

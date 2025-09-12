@@ -23,6 +23,7 @@ import os
 import re
 import shutil
 import tempfile
+import warnings
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import itemgetter
@@ -1184,6 +1185,15 @@ class EODataAccessGateway:
             return a list as a result of their processing. This requirement is
             enforced here.
         """
+        if page != DEFAULT_PAGE:
+            warnings.warn(
+                "Usage of deprecated search parameter 'page' "
+                "(Please use 'SearchResult.next_page()' instead)"
+                " -- Deprecated since v3.9.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         search_plugins, search_kwargs = self._prepare_search(
             start=start,
             end=end,
@@ -1234,6 +1244,10 @@ class EODataAccessGateway:
             logger.error("No result could be obtained from any available provider")
         return SearchResult([], 0, errors) if count else SearchResult([], errors=errors)
 
+    @_deprecated(
+        reason="Please use 'SearchResult.next_page()' instead",
+        version="v3.9.0",
+    )
     def search_iter_page(
         self,
         items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
@@ -1271,11 +1285,6 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-        logger.info(
-            "The 'page' parameter is deprecated and no longer supported. "
-            "Pagination is now handled via 'next_page_token'. "
-            "To fetch the next page of results, please use `SearchResult.next_page()`."
-        )
         search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
@@ -1300,6 +1309,10 @@ class EODataAccessGateway:
                     raise
         raise RequestError("No result could be obtained from any available provider")
 
+    @_deprecated(
+        reason="Please use 'SearchResult.next_page()' instead",
+        version="v3.9.0",
+    )
     def search_iter_page_plugin(
         self,
         search_plugin: Union[Search, Api],
@@ -1335,8 +1348,6 @@ class EODataAccessGateway:
 
         if len(search_result) == 0:
             return
-
-        yield search_result
         # remove unwanted kwargs for next_page
         if kwargs.get("count") is True:
             kwargs["count"] = False
@@ -1344,6 +1355,9 @@ class EODataAccessGateway:
         search_result.search_params = kwargs
         if search_result._dag is None:
             search_result._dag = self
+
+        yield search_result
+
         for next_result in search_result.next_page():
             if len(next_result) == 0:
                 break
@@ -1441,19 +1455,42 @@ class EODataAccessGateway:
             )
             all_results = SearchResult([])
             try:
-                for page_results in self.search_iter_page_plugin(
-                    items_per_page=itp,
-                    search_plugin=search_plugin,
-                    count=False,
-                    **search_kwargs,
-                ):
-                    all_results.data.extend(page_results.data)
+                items_per_page = itp if itp is not None else DEFAULT_ITEMS_PER_PAGE
+                search_kwargs.update(
+                    page=1,
+                    items_per_page=items_per_page,
+                )
+                search_kwargs.pop("raise_errors", None)
+                # First search
+                search_result = self._do_search(
+                    search_plugin, raise_errors=True, **search_kwargs
+                )
+                search_result.raise_errors = True
+                if len(search_result) == 0:
+                    break
+                all_results.data.extend(search_result.data)
+                if search_kwargs.get("count") is True:
+                    search_kwargs["count"] = False
+                search_kwargs.pop("page", None)
+                search_result.search_params = search_kwargs
+                if search_result._dag is None:
+                    search_result._dag = self
+                for next_result in search_result.next_page():
+                    all_results.data.extend(next_result.data)
+
                 logger.info(
                     "Found %s result(s) on provider '%s'",
                     len(all_results),
                     search_plugin.provider,
                 )
                 return all_results
+            except Exception:
+                logger.warning(
+                    "error at retrieval of data from %s, for params: %s",
+                    search_plugin.provider,
+                    str(kwargs),
+                )
+                raise
             except RequestError:
                 if len(all_results) == 0 and i < len(search_plugins) - 1:
                     logger.warning(
@@ -1776,11 +1813,6 @@ class EODataAccessGateway:
                          before sending the query to the provider
         :returns: A collection of EO products matching the criteria
         """
-        logger.info(
-            "The 'page' parameter is deprecated and no longer supported. "
-            "Pagination is now handled via 'next_page_token'. "
-            "To fetch the next page of results, please use `SearchResult.next_page()`."
-        )
         logger.info("Searching on provider %s", search_plugin.provider)
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
@@ -2024,7 +2056,7 @@ class EODataAccessGateway:
         :returns: The name of the created file
         """
         with open(filename, "w") as fh:
-            geojson.dump(search_result.to_geojson(), fh)
+            geojson.dump(search_result.as_geojson_object(), fh)
         return filename
 
     @staticmethod

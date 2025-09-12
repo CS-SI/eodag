@@ -3470,9 +3470,11 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(len(all_results), 3)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
-    def test_search_all_use_max_items_per_page(self, mocked_search_iter_page):
+    def test_search_all_use_max_items_per_page(self, mock__do_search):
         """search_all must use the configured parameter max_items_per_page if available"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
@@ -3488,16 +3490,25 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        first_page = SearchResult([self.search_results.data[0]], 1)
+        first_page.next_page_token = "token_for_page_2"
+        second_page = SearchResult([self.search_results.data[1]], 1)
+        mock__do_search.side_effect = [first_page, second_page]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C")
-        self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
+
+        first_call_kwargs = mock__do_search.call_args_list[0][1]
+        self.assertEqual(first_call_kwargs["items_per_page"], 2)
+        second_call_kwargs = mock__do_search.call_args_list[1][1]
+        self.assertEqual(second_call_kwargs["items_per_page"], 2)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
-    def test_search_all_use_default_value(self, mocked_search_iter_page):
+    def test_search_all_use_default_value(self, mock__do_search):
         """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
@@ -3511,19 +3522,28 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        first_page = SearchResult([self.search_results.data[0]], 1)
+        first_page.next_page_token = "token_for_page_2"
+        second_page = SearchResult([self.search_results.data[1]], 1)
+        mock__do_search.side_effect = [first_page, second_page]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C")
+
+        first_call_kwargs = mock__do_search.call_args_list[0][1]
         self.assertEqual(
-            mocked_search_iter_page.call_args[1]["items_per_page"],
-            DEFAULT_MAX_ITEMS_PER_PAGE,
+            first_call_kwargs["items_per_page"], DEFAULT_MAX_ITEMS_PER_PAGE
+        )
+        second_call_kwargs = mock__do_search.call_args_list[1][1]
+        self.assertEqual(
+            second_call_kwargs["items_per_page"], DEFAULT_MAX_ITEMS_PER_PAGE
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
     )
-    def test_search_all_user_items_per_page(self, mocked_search_iter_page):
+    def test_search_all_user_items_per_page(self, mock__do_search):
         """search_all must use the value of items_per_page provided by the user"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
@@ -3537,11 +3557,18 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        first_page = SearchResult([self.search_results.data[0]], 1)
+        first_page.next_page_token = "token_for_page_2"
+        second_page = SearchResult([self.search_results.data[1]], 1)
+        mock__do_search.side_effect = [first_page, second_page]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C", items_per_page=7)
-        self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
+
+        first_call_kwargs = mock__do_search.call_args_list[0][1]
+        self.assertEqual(first_call_kwargs["items_per_page"], 7)
+        second_call_kwargs = mock__do_search.call_args_list[1][1]
+        self.assertEqual(second_call_kwargs["items_per_page"], 7)
 
     @unittest.skip("Disable until fixed")
     def test_search_all_request_error(self):
@@ -3557,18 +3584,20 @@ class TestCoreSearch(TestCoreBase):
         dag.search_all(collection="S2_MSI_L1C")
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_search_all_unknown_collection(
-        self, mock_fetch_collections_list, mock_search_iter_page_plugin
+        self, mock_fetch_collections_list, mock__do_search
     ):
-        """search_all must fetch collections if collection is unknown"""
+        """search_all must fetch product types if product_type is unknown"""
         self.dag.search_all(collection="foo")
         mock_fetch_collections_list.assert_called_with(self.dag)
-        mock_search_iter_page_plugin.assert_called_once()
+        mock__do_search.assert_called_once()
 
     def test_fetch_external_collection_with_auth(self):
         """test _fetch_external_collection when the plugin needs authentication"""

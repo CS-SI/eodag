@@ -823,9 +823,10 @@ class QueryStringSearch(Search):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
+        if not count and "number_matched" in kwargs:
+            total_items = kwargs["number_matched"]
 
         eo_products = self.normalize_results(provider_results, **kwargs)
-
         formated_result = SearchResult(
             eo_products,
             total_items,
@@ -1129,14 +1130,13 @@ class QueryStringSearch(Search):
         based on the pagination configuration.
 
         Args:
-            results: Raw results returned by the search.
-            resp_as_json: The search response parsed as JSON.
-            kwargs: Search parameters used for the query.
-            items_per_page: Number of items per page.
-            prep: Request preparation object containing query parameters.
+            :param results: Raw results returned by the search.
+            :param resp_as_json: The search response parsed as JSON.
+            :param kwargs: Search parameters used for the query.
+            :param items_per_page: Number of items per page.
+            :param prep: Request preparation object containing query parameters.
 
-        Returns:
-            RawSearchResult: An object containing the raw results, search parameters,
+        :returns: An object containing the raw results, search parameters,
                             and the next page token if available.
         """
         # Create the RawSearchResult object and populate basic fields
@@ -1606,6 +1606,7 @@ class PostJsonSearch(QueryStringSearch):
         collection = kwargs.get("collection", "")
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
+        number_matched = kwargs.pop("number_matched", None)
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("collection", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
@@ -1728,8 +1729,8 @@ class PostJsonSearch(QueryStringSearch):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
-        if "number_matched" in kwargs:
-            total_items = kwargs["number_matched"]
+        if not count and "number_matched" in kwargs and number_matched:
+            total_items = number_matched
 
         eo_products_normalize = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
