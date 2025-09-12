@@ -53,7 +53,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 logger = logging.getLogger("eodag.search.data_request_search")
 

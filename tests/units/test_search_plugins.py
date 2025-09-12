@@ -33,7 +33,6 @@ import botocore
 import dateutil
 import requests
 import responses
-import yaml
 from botocore.stub import Stubber
 from pydantic_core import PydanticUndefined
 from requests import RequestException
@@ -42,7 +41,7 @@ from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
-from eodag.api.provider import ProvidersDict
+from eodag.api.provider import Provider, ProvidersDict
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import UnsupportedProductType, ValidationError
 from tests.context import (
@@ -66,15 +65,13 @@ from tests.context import (
     ecmwf_temporal_to_eodag,
     get_geometry_from_various,
     load_default_config,
-    merge_configs,
-    override_config_from_mapping,
 )
 
 
 class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
-        providers = load_default_config()
+        providers = ProvidersDict.from_configs(load_default_config())
         self.plugins_manager = PluginManager(providers)
         self.product_type = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
@@ -120,18 +117,18 @@ class BaseSearchPluginTest(unittest.TestCase):
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
-        super(TestSearchPluginQueryStringSearchXml, self).setUp()
+        super().setUp()
+
+        provider = "mundi"
 
         # manually add conf as this provider is not supported any more
-        providers_config = self.plugins_manager.providers.configs
         mundi_config = cached_yaml_load_all(
             Path(TEST_RESOURCES_PATH) / "mundi_conf.yml"
         )[0]
-        merge_configs(providers_config, {"mundi": mundi_config})
-        self.plugins_manager = PluginManager(ProvidersDict(providers_config))
+        self.plugins_manager.providers[provider] = Provider(mundi_config)
+        self.plugins_manager.rebuild()
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
-        provider = "mundi"
         self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
         self.mundi_auth_plugin = self.get_auth_plugin(self.mundi_search_plugin)
 
@@ -1182,12 +1179,11 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         super(TestSearchPluginODataV4Search, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        providers_config = self.plugins_manager.providers.configs
         onda_config = cached_yaml_load_all(Path(TEST_RESOURCES_PATH) / "onda_conf.yml")[
             0
         ]
-        merge_configs(providers_config, {"onda": onda_config})
-        self.plugins_manager = PluginManager(ProvidersDict(providers_config))
+        self.plugins_manager.providers["onda"] = Provider(onda_config)
+        self.plugins_manager.rebuild()
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
@@ -2096,14 +2092,11 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
     )
     def setUp(self, mock_requests_get):
         super(TestSearchPluginDataRequestSearch, self).setUp()
-        providers_config = self.plugins_manager.providers.configs
         wekeo_old_config_file = os.path.join(
             TEST_RESOURCES_PATH, "wekeo_old_config.yml"
         )
-        with open(wekeo_old_config_file, "r") as file:
-            wekeo_old_config_dict = yaml.safe_load(file)
-        override_config_from_mapping(providers_config, wekeo_old_config_dict)
-        self.plugins_manager = PluginManager(ProvidersDict(providers_config))
+        self.plugins_manager.providers.update_from_config_file(wekeo_old_config_file)
+        self.plugins_manager.rebuild()
         provider = "wekeo_old"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
         self.auth_plugin = self.get_auth_plugin(self.search_plugin)
@@ -2416,7 +2409,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestSearchPluginECMWFSearch, cls).setUpClass()
-        providers = load_default_config()
+        providers = ProvidersDict.from_configs(load_default_config())
         cls.plugins_manager = PluginManager(providers)
 
     def setUp(self):
@@ -3639,7 +3632,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearchwithstacqueryables_init_wekeomain(self):
         """Check that the PostJsonSearchWithStacQueryables plugin is initialized correctly for wekeo_main provider"""
 
-        default_config = load_default_config()["wekeo_main"].config
+        default_config = load_default_config()["wekeo_main"]
         # "orderLink" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
         self.assertNotIn("orderLink", default_config.search.metadata_mapping)
         self.assertIn(

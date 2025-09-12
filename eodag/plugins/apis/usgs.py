@@ -59,8 +59,8 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from requests.auth import AuthBase
 
+    from eodag.api.plugin import PluginConfig
     from eodag.api.search_result import SearchResult
-    from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
@@ -313,7 +313,8 @@ class UsgsApi(Api):
         output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+                product.product_type,
+                self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
             ).get("output_extension", ".tar.gz"),
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)

@@ -32,7 +32,6 @@ import responses
 import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
-from eodag.api.provider import ProvidersDict
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import DownloadError, NoMatchingProductType, ValidationError
 from tests import TEST_RESOURCES_PATH
@@ -46,10 +45,10 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     NotAvailableError,
+    PluginConfig,
     PluginManager,
-    config,
+    ProvidersDict,
     load_default_config,
-    override_config_from_mapping,
     path_to_uri,
     uri_to_path,
 )
@@ -58,8 +57,8 @@ from tests.context import (
 class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        providers = load_default_config()
+        super(BaseDownloadPluginTest, cls).setUpClass()
+        providers = ProvidersDict.from_configs(load_default_config())
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
@@ -75,7 +74,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
+        super(BaseDownloadPluginTest, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
@@ -288,7 +287,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self._set_download_simulation(
             mock_requests_session, local_product_as_archive_path
         )
-        dl_config = config.PluginConfig.from_mapping(
+        dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
                 "base_uri": "fake_base_uri",
@@ -712,7 +711,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = iter(
-            [b"some ", b"content"]
+            [
+                b"some ",
+                b"content",
+            ]
         )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": '; filename = "somethingelse"'
@@ -2096,7 +2098,6 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         super(TestDownloadPluginS3Rest, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        providers = self.plugins_manager.providers
         mundi_config_yaml = """
             mundi:
                 products:
@@ -2134,10 +2135,10 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
                         downloadLink: 'ns:link[@rel="enclosure"]/@href'
                         storageStatus: 'DIAS:onlineStatus/text()'
         """
-        mundi_config_dict = yaml.safe_load(mundi_config_yaml)
-        override_config_from_mapping(providers.configs, mundi_config_dict)
-        pass
-        self.plugins_manager = PluginManager(ProvidersDict(providers.configs))
+        self.plugins_manager.providers.update_from_configs(
+            yaml.safe_load(mundi_config_yaml)
+        )
+        self.plugins_manager.rebuild()
 
         self.product = EOProduct(
             "mundi",

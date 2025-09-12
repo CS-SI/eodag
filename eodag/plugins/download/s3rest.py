@@ -52,8 +52,8 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from eodag.api.plugin import PluginConfig
     from eodag.api.product import EOProduct
-    from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack

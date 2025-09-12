@@ -29,12 +29,12 @@ from unittest.mock import Mock, call
 from urllib.parse import quote_plus
 
 import geojson
-import httpx
+import requests
 import responses
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
-from eodag.config import PluginConfig
+from eodag.api.plugin import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
@@ -334,7 +334,7 @@ class RequestTestCase(unittest.TestCase):
         search_call_count: Optional[int] = None,
         search_result: Optional[SearchResult] = None,
         expected_status_code: int = 200,
-    ) -> httpx.Response:
+    ) -> requests.Response:
         if search_result:
             mock_search.return_value = search_result
         else:

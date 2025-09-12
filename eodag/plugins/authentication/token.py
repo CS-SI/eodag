@@ -43,7 +43,7 @@ from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, Time
 if TYPE_CHECKING:
     from requests import PreparedRequest
 
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 
 logger = logging.getLogger("eodag.authentication.token")
@@ -226,7 +226,6 @@ class TokenAuth(Authentication):
         self,
         session: requests.Session,
     ) -> requests.Response:
-
         retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
         retry_backoff_factor = getattr(
             self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
