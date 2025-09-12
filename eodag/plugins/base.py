@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 from eodag.utils.exceptions import PluginNotFoundError
 
 if TYPE_CHECKING:
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 
 class EODAGPluginMount(type):

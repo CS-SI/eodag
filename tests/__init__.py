@@ -32,7 +32,7 @@ from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
 
-from eodag import config
+from eodag.api.plugin import PluginConfig
 from eodag.api.product import EOProduct
 from eodag.plugins.download.http import HTTPDownload
 
@@ -295,7 +295,7 @@ class EODagTestCase(unittest.TestCase):
         self.tmp_download_dir = tempfile.TemporaryDirectory()
         if output_dir is None:
             output_dir = str(Path(self.tmp_download_dir.name))
-        dl_config = config.PluginConfig.from_mapping(
+        dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
                 "base_uri": "fake_base_uri" if base_uri is None else base_uri,

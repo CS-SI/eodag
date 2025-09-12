@@ -43,9 +43,7 @@ from eodag.config import (
     SimpleYamlProxyConfig,
     get_ext_collections_conf,
     load_default_config,
-    load_stac_provider_config,
     load_yml_config,
-    provider_config_init,
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
@@ -118,7 +116,7 @@ class EODataAccessGateway:
         collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
         self.collections_config = self._collections_config_init(collections_config_dict)
 
-        self.providers: ProvidersDict = load_default_config()
+        self.providers = ProvidersDict.from_configs(load_default_config())
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
         self.conf_dir = os.getenv(
@@ -159,22 +157,15 @@ class EODataAccessGateway:
                         ),
                         standard_configuration_path,
                     )
-        self.providers.override_configs_from_file(user_conf_file_path)
+        self.providers.update_from_config_file(user_conf_file_path)
 
         # Second level override: From environment variables
-        self.providers.override_configs_from_env()
-
-        # share credentials between updated plugins confs
-        self.providers.share_credentials()
+        self.providers.update_from_env()
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
 
         for provider in self.providers.values():
-            provider_config_init(
-                provider.config,
-                load_stac_provider_config(),
-            )
             provider.sync_product_types(self, strict_mode)
 
         # re-build _plugins_manager using up-to-date providers_config
@@ -262,7 +253,7 @@ class EODataAccessGateway:
                 self.providers[provider] = Provider(provider, config)
                 self._pruned_providers_config.pop(provider)
 
-        self.providers.update_config(conf_update, load_stac_provider_config())
+        self.providers.update_from_configs(conf_update)
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_collection_to_provider_config_map()
@@ -298,6 +289,7 @@ class EODataAccessGateway:
         """
         conf_dict: dict[str, Any] = {
             name: {
+                "name": name,
                 "url": url,
                 "search": {"type": "StacSearch", **search},
                 "products": {
@@ -348,7 +340,7 @@ class EODataAccessGateway:
                 if isinstance(v, PluginConfig)
                 and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
             ]:
-                self.providers.delete(provider.name)
+                del self.providers[provider.name]
                 logger.debug(
                     f"{provider}: provider needing unavailable plugin has been removed"
                 )
@@ -360,7 +352,7 @@ class EODataAccessGateway:
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider.name] = conf
-                    self.providers.delete(provider.name)
+                    del self.providers[provider.name]
 
                     update_needed = True
                     logger.info(
@@ -372,7 +364,7 @@ class EODataAccessGateway:
                 if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
                     self._pruned_providers_config[provider] = conf
-                    self.providers.delete(provider.name)
+                    del self.providers[provider.name]
 
                     update_needed = True
                     logger.info(
@@ -392,7 +384,7 @@ class EODataAccessGateway:
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider] = conf
-                    self.providers.delete(provider.name)
+                    del self.providers[provider.name]
 
                     update_needed = True
                     logger.info(
@@ -403,7 +395,7 @@ class EODataAccessGateway:
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
                 self._pruned_providers_config[provider] = conf
-                self.providers.delete(provider.name)
+                del self.providers[provider.name]
 
                 update_needed = True
                 logger.info(
@@ -569,7 +561,7 @@ class EODataAccessGateway:
         # and collections list would need to be fetched
 
         # get ext_collections conf for user modified providers
-        default_providers = load_default_config()
+        default_providers = ProvidersDict.from_configs(load_default_config())
         for (
             provider,
             user_discovery_conf,
@@ -714,7 +706,9 @@ class EODataAccessGateway:
                         # conf has been updated and provider collections are no more discoverable
                         continue
 
-                    provider_products_config = self.providers[provider].products or {}
+                    provider_products_config = (
+                        self.providers[provider].product_types or {}
+                    )
                 except UnsupportedProvider:
                     logger.debug(
                         "Ignoring external collections for unknown provider %s",

@@ -66,7 +66,7 @@ from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationE
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 logger = logging.getLogger("eodag.search.build_search_result")
 
@@ -395,7 +395,7 @@ def parse_year_month_day(
 
 
 def ecmwf_temporal_to_eodag(
-    params: dict[str, Any]
+    params: dict[str, Any],
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Converts ECMWF temporal parameters to EODAG temporal parameters.

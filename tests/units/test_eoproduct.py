@@ -31,6 +31,7 @@ import requests
 from lxml import html
 from shapely import geometry
 
+from eodag.api.plugin import PluginConfig
 from tests import EODagTestCase
 from tests.context import (
     DEFAULT_SHAPELY_GEOMETRY,
@@ -42,7 +43,6 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     ProgressCallback,
-    config,
 )
 from tests.utils import mock
 
@@ -64,8 +64,11 @@ class TestEOProduct(EODagTestCase):
         mock_downloader = mock.MagicMock(
             spec_set=Download(provider=self.provider, config=None)
         )
-        mock_downloader.config = config.PluginConfig.from_mapping(
-            {"type": "Foo", "output_dir": tempfile.gettempdir()}
+        mock_downloader.config = PluginConfig.from_mapping(
+            {
+                "type": "Foo",
+                "output_dir": tempfile.gettempdir(),
+            }
         )
         return mock_downloader
 
@@ -413,7 +416,7 @@ class TestEOProduct(EODagTestCase):
         # Setup
         product = self._dummy_product()
         self._set_download_simulation()
-        dl_config = config.PluginConfig.from_mapping(
+        dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
                 "base_uri": "fake_base_uri",
@@ -530,7 +533,6 @@ class TestEOProduct(EODagTestCase):
 
         logger = logging.getLogger("eodag.product")
         with mock.patch.object(logger, "debug") as mock_debug:
-
             downloadable_product = self._dummy_downloadable_product(
                 product=self._dummy_product(
                     properties=dict(

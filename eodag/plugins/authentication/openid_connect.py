@@ -47,7 +47,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
 
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 
 logger = logging.getLogger("eodag.auth.openid_connect")

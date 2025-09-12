@@ -43,8 +43,8 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
+    from eodag.api.plugin import PluginConfig, ProviderConfig
     from eodag.api.product import EOProduct
-    from eodag.config import PluginConfig, ProviderConfig
     from eodag.plugins.base import PluginTopic
 
 
@@ -115,9 +115,8 @@ class PluginManager:
                         str(x) for x in dist.locate_file(name).rglob("providers.yml")
                     ]
                     if plugin_providers_config_path:
-                        plugin_providers = load_config(plugin_providers_config_path[0])
-
-                        self.providers.merge(plugin_providers)
+                        plugin_configs = load_config(plugin_providers_config_path[0])
+                        self.providers |= ProvidersDict.from_configs(plugin_configs)
         self.rebuild()
 
     def rebuild(self, providers: Optional[ProvidersDict] = None) -> None:
@@ -132,15 +131,15 @@ class PluginManager:
         """Build mapping conf between collections and providers"""
         self.collection_to_provider_config_map = {}
         for provider in list(self.providers.values()):
-            if not provider.products:
+            if not provider.product_types:
                 logger.info(
                     "%s: provider has no product configured and will be skipped",
                     provider,
                 )
-                self.providers.delete(provider.name)
+                del self.providers[provider.name]
                 continue
 
-            for collection in provider.products:
+            for collection in provider.product_types:
                 collection_providers = (
                     self.collection_to_provider_config_map.setdefault(  # noqa
                         collection, []

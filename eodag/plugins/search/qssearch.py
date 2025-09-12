@@ -105,7 +105,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 logger = logging.getLogger("eodag.search.qssearch")
 
@@ -387,7 +387,6 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: collection specific metadata-mapping
         for collection in self.config.products.keys():
-
             collection_metadata_mapping = {}
             # collection specific metadata-mapping
             if any(

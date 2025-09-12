@@ -41,6 +41,7 @@ from eodag.api.product.metadata_mapping import (
     STAGING_STATUS,
     properties_from_json,
     NOT_AVAILABLE,
+    DEFAULT_METADATA_MAPPING,
 )
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
@@ -50,9 +51,9 @@ from eodag.config import (
     load_stac_provider_config,
     get_ext_collections_conf,
     EXT_COLLECTIONS_CONF_URI,
-    PluginConfig,
-    ProviderConfig,
 )
+from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
+from eodag.api.plugin import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.aws_auth import AwsAuth
@@ -102,6 +103,7 @@ from eodag.utils import (
     get_ssl_context,
     cached_yaml_load_all,
     StreamResponse,
+    MockResponse,
 )
 from eodag.utils.dates import get_timestamp
 from eodag.utils.env import is_env_var_true

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client, S3ServiceResource
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 
 logger = logging.getLogger("eodag.download.aws_auth")

@@ -135,6 +135,29 @@ class DiscoverQueryables(TypedDict, total=False):
     #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
     constraints_entry: str
 
+class CollectionSelector(TypedDict, total=False):
+    """Define the criteria to select a collection in :class:`~eodag.config.DynamicDiscoverQueryables`.
+
+    The selector matches if the field value starts with the given prefix,
+    i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
+
+    #: Field in the search parameters to match
+    field: str
+    #: Prefix to match in the field
+    prefix: str
+
+class DynamicDiscoverQueryables(TypedDict, total=False):
+    """Configuration for queryables dynamic discovery.
+
+    The given configuration for queryables discovery is used if any collection selector
+    matches the search parameters.
+    """
+
+    #: List of collection selection criterias
+    collection_selector: list[CollectionSelector]
+
+    #: Configuration for queryables discovery to use
+    discover_queryables: DiscoverQueryables
 
 class OrderOnResponse(TypedDict):
     """Configuration for order on-response during download"""
@@ -319,6 +342,12 @@ class PluginConfig(yaml.YAMLObject):
     version: str
     #: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` url of the authentication endpoint
     auth_endpoint: str
+    #: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
+    #: Configurations for the queryables dynamic auto-discovery.
+    #: A configuration is used based on the given selection criterias. The first match is used.
+    #: If no match is found, it falls back to standard behaviors (e.g. discovery using
+    #: :attr:`~eodag.config.PluginConfig.discover_queryables`).
+    dynamic_discover_queryables: list[DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
@@ -481,6 +510,21 @@ class PluginConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = "!plugin"
 
+    def __or__(self, other: Self | dict[str, Any]) -> Self:
+        """Return a new PluginConfig with merged values."""
+        new_config = self.__class__.from_mapping(self.__dict__)
+        new_config.update(other)
+        return new_config
+
+    def __ior__(self, other: Self | dict[str, Any]) -> Self:
+        """In-place update of the PluginConfig."""
+        self.update(other)
+        return self
+
+    def __contains__(self, item: str) -> bool:
+        """Check if a key is in the PluginConfig."""
+        return item in self.__dict__
+
     @classmethod
     def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
@@ -488,7 +532,7 @@ class PluginConfig(yaml.YAMLObject):
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: dict[str, Any]) -> Self:
+    def from_mapping(cls, mapping: Self | dict[str, Any]) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         cls.validate(tuple(mapping.keys()))
         c = cls()
@@ -503,15 +547,16 @@ class PluginConfig(yaml.YAMLObject):
                 "A Plugin config must specify the type of Plugin it configures"
             )
 
-    def update(self, mapping: Optional[dict[Any, Any]]) -> None:
+    def update(self, config: Optional[Self | dict[Any, Any]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
         """
-        if mapping is None:
-            mapping = {}
+        if config is None:
+            return
+        source = config if isinstance(config, dict) else config.__dict__
         merge_mappings(
-            self.__dict__, {k: v for k, v in mapping.items() if v is not None}
+            self.__dict__, {k: v for k, v in source.items() if v is not None}
         )
 
     def matches_target_auth(self, target_config: Self):
