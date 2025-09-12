@@ -151,9 +151,9 @@ Some EODAG core settings can be overriden using environment variables:
   configuration file in place of `~/.config/eodag/locations.yml`.
 * ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
   `<python-site-packages>/eodag/resources/providers.yml`.
-* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the collections configuration file in place of
+* ``EODAG_COLLECTIONS_CFG_FILE`` for defining the desired path to the collections configuration file in place of
   `<python-site-packages>/eodag/resources/product_types.yml`.
-* ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external collections configuration file\
+* ``EODAG_EXT_COLLECTIONS_CFG_FILE`` for defining the desired path to the `external collections configuration file\
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
   If the file is not readable, only user-modified providers will be fetched.
@@ -163,7 +163,7 @@ Some EODAG core settings can be overriden using environment variables:
   All other providers will be ignored, regardless of their presence in configuration files.
 
   This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
-* ``EODAG_STRICT_PRODUCT_TYPES`` to control how collections are listed.
+* ``EODAG_STRICT_COLLECTIONS`` to control how collections are listed.
 
   If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list collections that are present in the main collections configuration file.
   Collections defined only in provider configurations (but not in the main collections configuration) will be ignored.
@@ -176,7 +176,7 @@ Example usage:
 .. code-block:: bash
 
    export EODAG_PROVIDERS_WHITELIST=peps,creodias,cop_dataspace
-   export EODAG_STRICT_PRODUCT_TYPES=true
+   export EODAG_STRICT_COLLECTIONS=true
 
 CLI configuration
 ^^^^^^^^^^^^^^^^^

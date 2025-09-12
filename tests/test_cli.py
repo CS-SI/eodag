@@ -634,7 +634,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag list without provider should return all supported collections"""
         all_supported_collections = [
             pt
-            for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
+            for pt, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
             if len(provs) != 0 and pt != GENERIC_COLLECTION
         ]
         result = self.runner.invoke(eodag, ["list", "--no-fetch"])
@@ -647,7 +647,7 @@ class TestEodagCli(unittest.TestCase):
         for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
             provider_supported_collections = [
                 pt
-                for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
+                for pt, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
                 if provider in provs
                 if pt != GENERIC_COLLECTION
             ]
