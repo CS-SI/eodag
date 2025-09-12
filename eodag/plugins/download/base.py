@@ -619,7 +619,7 @@ class Download(PluginTopic):
                             not_available_info = str(e)
                         else:
                             if (
-                                product.properties.get("storageStatus", ONLINE_STATUS)
+                                product.properties.get("order:status", ONLINE_STATUS)
                                 == ONLINE_STATUS
                             ) or timeout <= 0:
                                 return download
@@ -675,11 +675,11 @@ class Download(PluginTopic):
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:
-                        if "storageStatus" not in product.properties:
-                            product.properties["storageStatus"] = "N/A status"
+                        if "order:status" not in product.properties:
+                            product.properties["order:status"] = "N/A status"
                         logger.info(not_available_info)
                         raise NotAvailableError(
-                            f"{product.properties['title']} is not available ({product.properties['storageStatus']})"
+                            f"{product.properties['title']} is not available ({product.properties['order:status']})"
                             f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:

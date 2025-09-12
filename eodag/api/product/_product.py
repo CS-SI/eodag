@@ -263,7 +263,7 @@ class EOProduct:
         download_plugin = plugins_manager.get_download_plugin(self)
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("storageStatus") != ONLINE_STATUS:
+        elif self.properties.get("order:status") != ONLINE_STATUS:
             matching_url = self.properties.get("orderLink") or self.properties.get(
                 "downloadLink"
             )

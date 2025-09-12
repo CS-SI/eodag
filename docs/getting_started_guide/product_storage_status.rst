@@ -7,7 +7,7 @@ Providers make available a huge number of EO products. This results in the need 
 storage. In order to cope with this growing need, some providers make the most recent products
 available immediately, and the oldest ones available after being ordered.
 
-The storage status has been standardized for all providers in the parameter ``storageStatus``, and
+The storage status has been standardized for all providers in the parameter ``order:status``, and
 its different values mapped to these 3 unique status:
 
 * `ONLINE`: the product is available for download (immediately);

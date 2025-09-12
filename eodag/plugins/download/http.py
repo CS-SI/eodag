@@ -179,7 +179,7 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :returns: the returned json status response
         """
-        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["order:status"] = STAGING_STATUS
 
         order_method = getattr(self.config, "order_method", "GET").upper()
         ssl_verify = getattr(self.config, "ssl_verify", True)
@@ -222,7 +222,7 @@ class HTTPDownload(Download):
                     response.raise_for_status()
                     ordered_message = response.text
                     logger.debug(ordered_message)
-                    product.properties["storageStatus"] = STAGING_STATUS
+                    product.properties["order:status"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
                     msg = f"{product.properties['title']} could not be ordered"
@@ -463,7 +463,7 @@ class HTTPDownload(Download):
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
-        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["order:status"] = STAGING_STATUS
 
         success_status: dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
@@ -472,7 +472,7 @@ class HTTPDownload(Download):
         ):
             return None
 
-        product.properties["storageStatus"] = ONLINE_STATUS
+        product.properties["order:status"] = ONLINE_STATUS
 
         if not config_on_success:
             # Nothing left to do
@@ -674,7 +674,7 @@ class HTTPDownload(Download):
                     raise DownloadError(f"product {product.properties['id']} is empty")
                 else:
                     # make sure storage status is online
-                    product.properties["storageStatus"] = ONLINE_STATUS
+                    product.properties["order:status"] = ONLINE_STATUS
 
                 return path
             else:
@@ -717,14 +717,14 @@ class HTTPDownload(Download):
         stream_size = int(self.stream.headers.get("content-length", 0))
         if (
             stream_size == 0
-            and "storageStatus" in product.properties
-            and product.properties["storageStatus"] != ONLINE_STATUS
+            and "order:status" in product.properties
+            and product.properties["order:status"] != ONLINE_STATUS
         ):
             raise NotAvailableError(
                 "%s(initially %s) ordered, got: %s"
                 % (
                     product.properties["title"],
-                    product.properties["storageStatus"],
+                    product.properties["order:status"],
                     self.stream.reason,
                 )
             )
@@ -879,7 +879,7 @@ class HTTPDownload(Download):
             e.response.text.strip() if e is not None and e.response is not None else ""
         )
         # product not available
-        if product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
+        if product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not response_text
@@ -890,7 +890,7 @@ class HTTPDownload(Download):
                 "%s(initially %s) requested, returned: %s"
                 % (
                     product.properties["title"],
-                    product.properties["storageStatus"],
+                    product.properties["order:status"],
                     msg,
                 )
             )
@@ -913,14 +913,14 @@ class HTTPDownload(Download):
     ) -> None:
         if (
             "orderLink" in product.properties
-            and product.properties.get("storageStatus") == OFFLINE_STATUS
+            and product.properties.get("order:status") == OFFLINE_STATUS
             and not product.properties.get("orderStatus")
         ):
             self._order(product=product, auth=auth)
 
         if (
             product.properties.get("orderStatusLink")
-            and product.properties.get("storageStatus") != ONLINE_STATUS
+            and product.properties.get("order:status") != ONLINE_STATUS
         ):
             self._order_status(product=product, auth=auth)
 
@@ -1038,7 +1038,7 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                product.properties["storageStatus"] = "ORDERED"
+                product.properties["order:status"] = "ORDERED"
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 

@@ -263,7 +263,7 @@ class EndToEndBase(unittest.TestCase):
             results = [
                 prod
                 for prod in results
-                if prod.properties.get("storageStatus", "") != ONLINE_STATUS
+                if prod.properties.get("order:status", "") != ONLINE_STATUS
             ]
         if check_product:
             self.assertGreater(len(results), 0)
@@ -802,7 +802,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
             sorted(search_results, key=lambda p: p.properties["resourceSize"])
         )
         prods_online = [
-            p for p in prods_sorted_by_size if p.properties["storageStatus"] == "ONLINE"
+            p for p in prods_sorted_by_size if p.properties["order:status"] == "ONLINE"
         ]
         if len(prods_online) < 2:
             unittest.skip(
