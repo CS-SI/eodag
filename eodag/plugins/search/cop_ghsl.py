@@ -1,13 +1,21 @@
 import datetime
+import math
+import re
 from typing import Any, Optional
 
 import requests
+from pyproj import CRS, Transformer
 
 from eodag.api.product._product import EOProduct
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.utils import HTTP_REQ_TIMEOUT
-from eodag.utils.exceptions import RequestError, TimeOutError, ValidationError
+from eodag.utils.exceptions import (
+    MisconfiguredError,
+    RequestError,
+    TimeOutError,
+    ValidationError,
+)
 
 available_values = {
     "GHS_BUILT_S": {
@@ -37,7 +45,8 @@ available_values = {
             "coord_system": ["54009", "4326"],
         },
         "additional_filters": {"classification": ["TOTAL", "NRES"]},
-    }
+    },
+    "GHS_ESM_2015": {"filters": {"resolution": ["2m", "10m"]}},
 }
 
 
@@ -47,7 +56,7 @@ def _check_input_parameters_valid(product_type: str, **kwargs: Any):
     raises a ValidationError if this is not the case
     """
     all_filters = available_values[product_type]["filters"]
-    all_filters.update(available_values[product_type]["additional_filters"])
+    all_filters.update(available_values[product_type].get("additional_filters", {}))
     required_params = set(all_filters.keys())
     given_params = set(kwargs.keys())
     missing_params = required_params - given_params
@@ -57,9 +66,10 @@ def _check_input_parameters_valid(product_type: str, **kwargs: Any):
         )
     for param in given_params:
         if param not in required_params:
-            raise ValidationError(
-                f"Parameter {param} does not exist; available parameters: {required_params}"
-            )
+            if param != "geometry":
+                raise ValidationError(
+                    f"Parameter {param} does not exist; available parameters: {required_params}"
+                )
         elif kwargs[param] not in all_filters[param]:
             raise ValidationError(
                 f"Parameter {param} does not have value {kwargs[param]} for product type {product_type}; \
@@ -67,33 +77,107 @@ def _check_input_parameters_valid(product_type: str, **kwargs: Any):
             )
 
 
-def _create_products_from_tiles(
-    tiles: list[dict[str, Any]], unit: str, product_type: str, params: dict[str, Any]
-) -> list[EOProduct]:
-    products = []
-    properties = params
-    properties["startTimeFromAscendingNode"] = datetime.datetime(
-        year=int(params["year"]), month=1, day=1
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
-    properties["completionTimeFromAscendingNode"] = datetime.datetime(
-        year=int(params["year"]), month=12, day=31
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
-    for tile in tiles:
-        if not tile:  # empty grid position
-            continue
-        if unit == "lat/lon":  # bbox is given as latitude/longitude
-            properties["geometry"] = tile["BBox"]
-            product = EOProduct(
-                provider="cop_ghsl", properties=properties, productType=product_type
-            )
-            products.append(product)
-    return products
+def _convert_bbox_to_lonlat_mollweide(bbox: list[str]) -> list[float]:
+    """
+    convert a bbox from Mollweide coordinate system (metres)
+    to WGS84 coordinate system (longitude and latitude)
+    """
+    bbox_int = [int(x.replace(" ", "")) for x in bbox]
+    crs_mollweide = CRS("ESRI:54009")
+    crs_wgs84 = CRS("WGS84")
+    transformer = Transformer.from_crs(crs_from=crs_mollweide, crs_to=crs_wgs84)
+    x1, y1 = bbox_int[:2]
+    lat1, lon1 = transformer.transform(x1, y1)
+    if math.isinf(lat1):
+        # one corner is outside of the surface -> find latitude and take max longitude value
+        lat1, _ = transformer.transform(0, y1)
+        lon1 = -180 if x1 < 0 else 180
+    x2, y2 = bbox_int[2:]
+    lat2, lon2 = transformer.transform(x2, y2)
+    if math.isinf(lat2):
+        lat2, _ = transformer.transform(0, y2)
+        lon2 = -180 if x1 < 0 else 180
+    return [lon1, lat1, lon2, lat2]
+
+
+def _convert_bbox_to_lonlat_EPSG3035(bbox: list[str]) -> list[float]:
+    """
+    convert a bbox from ETRS89/LAEA Europe (EPSG:3035) coordinate system (metres)
+    to WGS84 coordinate system (longitude and latitude)
+    """
+    bbox_int = [int(x.replace(",", "")) for x in bbox]
+    crs_3035 = CRS("3035")
+    crs_wgs84 = CRS("WGS84")
+    transformer = Transformer.from_crs(
+        crs_from=crs_3035, crs_to=crs_wgs84, always_xy=True
+    )
+    x1, y1 = bbox_int[:2]
+    lat1, lon1 = transformer.transform(x1, y1)
+    x2, y2 = bbox_int[2:]
+    lat2, lon2 = transformer.transform(x2, y2)
+    return [lon1, lat1, lon2, lat2]
 
 
 class CopGhslSearch(Search):
     """
     Search plugin to fetch items from Copernicus Global Human Settlement Layer
     """
+
+    def _create_products_from_tiles(
+        self,
+        tiles: list[dict[str, Any]],
+        unit: str,
+        product_type: str,
+        params: dict[str, Any],
+    ) -> list[EOProduct]:
+        """
+        create EOProduct objects from the input parameters and the tiles containing bboxes
+        if the bbox is given in metres, it is transformed to longitude and latitude
+        """
+        products = []
+        properties = params
+        properties["startTimeFromAscendingNode"] = datetime.datetime(
+            year=int(params["year"]), month=1, day=1
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        properties["completionTimeFromAscendingNode"] = datetime.datetime(
+            year=int(params["year"]), month=12, day=31
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        filter_geometry = params.pop("geometry", None)
+
+        # information for id and download path
+        product_type_config = self.config.products.get(product_type, {})
+        dataset = product_type_config.get("metadata_mapping", {}).get("dataset", None)
+        if not dataset:
+            raise MisconfiguredError(
+                f"dataset mapping not available for {product_type}"
+            )
+        resolution = re.sub("[a-z]", "", params["resolution"])
+        format_params = params
+        format_params.update({"resolution": resolution})
+        dataset = dataset.format(**format_params)
+        # create items from tiles
+        for tile in tiles:
+            if not tile:  # empty grid position
+                continue
+            # get geometry from tile
+            if unit == "lat/lon":  # bbox is given as latitude/longitude
+                properties["geometry"] = tile["BBox"]
+            elif unit == "metres" and "BBox" in tile:  # bbox is given in metres
+                bbox_lon_lat = _convert_bbox_to_lonlat_mollweide(tile["BBox"])
+                properties["geometry"] = bbox_lon_lat
+            else:
+                bbox_lon_lat = _convert_bbox_to_lonlat_EPSG3035(tile["BBox_3035"])
+                properties["geometry"] = bbox_lon_lat
+            # create id
+            product_id = f"{dataset}_{tile['tileID']}"
+            properties["id"] = product_id
+            product = EOProduct(
+                provider="cop_ghsl", properties=properties, productType=product_type
+            )
+            if not filter_geometry or filter_geometry.intersects(product.geometry):
+                products.append(product)
+
+        return products
 
     def query(
         self,
@@ -111,8 +195,7 @@ class CopGhslSearch(Search):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         product_type = kwargs.pop("productType", prep.product_type)
-        geometry = kwargs.pop("geometry")
-        print(page, items_per_page, geometry)
+        print(page, items_per_page)
 
         start_time = kwargs.pop("startTimeFromAscendingNode", None)
         end_time = kwargs.pop("completionTimeFromAscendingNode", None)
@@ -123,20 +206,32 @@ class CopGhslSearch(Search):
                 kwargs["year"] = end_time[:4]
         _check_input_parameters_valid(product_type, **kwargs)
 
-        provider_product_type = self.config.products.get(product_type, {}).get(
-            "productType", None
+        product_type_config = self.config.products.get(product_type, {})
+        provider_product_type = product_type_config.get("productType", None)
+        if not provider_product_type:
+            raise MisconfiguredError(
+                f"provider productType mapping not available for {product_type}"
+            )
+        filter_params = kwargs
+        filter_params.update(product_type_config)
+        filter_str = (
+            f"{provider_product_type}_{filter_params['year']}_"
+            f"{filter_params['resolution']}_{filter_params['coord_system']}"
         )
-        filter_str = f"{provider_product_type}_{kwargs['year']}_{kwargs['resolution']}_{kwargs['coord_system']}"
         tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
         try:
             res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
             tiles = res.json()["grid"]
+            if filter_params["coord_system"] == 3035:
+                tiles = []
+                for t_id, bbox in res.json()["BBoxes"].items():
+                    tiles.append({"tileID": t_id, "BBox_3035": bbox})
             unit = res.json()["unit"]
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
         except requests.exceptions.RequestException as exc:
             raise RequestError.from_error(exc, f"Unable to fetch {tiles_url}") from exc
 
-        products = _create_products_from_tiles(tiles, unit, product_type, kwargs)
+        products = self._create_products_from_tiles(tiles, unit, product_type, kwargs)
 
         return products, None
