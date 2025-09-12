@@ -93,7 +93,7 @@ class TestCoreBase(unittest.TestCase):
 
 
 class TestCore(TestCoreBase):
-    SUPPORTED_PRODUCT_TYPES = {
+    SUPPORTED_COLLECTIONS = {
         "AERIS_IAGOS": ["dedl"],
         "AG_ERA5": ["cop_cds", "wekeo_ecmwf"],
         "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
@@ -657,11 +657,11 @@ class TestCore(TestCoreBase):
             self.assertIn(provider, self.SUPPORTED_PROVIDERS)
 
     def test_supported_collections_in_unit_test(self):
-        """Every collection must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
+        """Every collection must be referenced in the core unit test SUPPORTED_COLLECTIONS class attribute"""
         for collection in self.dag.list_collections(fetch_providers=False):
             assert (
-                collection["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-                or collection["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                collection["ID"] in self.SUPPORTED_COLLECTIONS.keys()
+                or collection["_id"] in self.SUPPORTED_COLLECTIONS.keys()
             )
 
     def test_list_collections_ok(self):
@@ -692,16 +692,16 @@ class TestCore(TestCoreBase):
             self.assertIsInstance(collections, list)
             for collection in collections:
                 self.assertListCollectionsRightStructure(collection)
-                if collection["ID"] in self.SUPPORTED_PRODUCT_TYPES:
+                if collection["ID"] in self.SUPPORTED_COLLECTIONS:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_PRODUCT_TYPES[collection["ID"]],
+                        self.SUPPORTED_COLLECTIONS[collection["ID"]],
                         f"missing in supported providers for {collection['ID']}",
                     )
                 else:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_PRODUCT_TYPES[collection["_id"]],
+                        self.SUPPORTED_COLLECTIONS[collection["_id"]],
                         f"missing in supported providers for {collection['_id']}",
                     )
 
@@ -982,11 +982,11 @@ class TestCore(TestCoreBase):
         for provider_config in self.dag.providers_config.values():
             self.assertFalse(getattr(provider_config, "collections_fetched", False))
 
-        # check that EODAG_EXT_PRODUCT_TYPES_CFG_FILE env var will be used as get_ext_collections_conf() arg
-        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = "some/file"
+        # check that EODAG_EXT_COLLECTIONS_CFG_FILE env var will be used as get_ext_collections_conf() arg
+        os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = "some/file"
         self.dag.fetch_collections_list()
         mock_get_ext_collections_conf.assert_called_with("some/file")
-        os.environ.pop("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+        os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
 
         # check that with a non-empty ext-conf, a provider will be marked as fetched, and eodag conf updated
         mock_get_ext_collections_conf.return_value = {
@@ -1102,10 +1102,10 @@ class TestCore(TestCoreBase):
             mock_get_ext_collections_conf.return_value = {}
 
             # disabled collections discovery
-            os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+            os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = ""
             self.dag.fetch_collections_list()
             mock_discover_collections.assert_not_called()
-            os.environ.pop("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+            os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
 
             # add an empty ext-conf for other providers to prevent them to be fetched
             for provider, provider_config in self.dag.providers_config.items():
@@ -1132,7 +1132,7 @@ class TestCore(TestCoreBase):
         """fetch_collections_list must not launch collections discovery if disabled"""
 
         # disable collections discovery
-        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+        os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = ""
 
         # default settings
         self.dag.fetch_collections_list()
@@ -1170,8 +1170,8 @@ class TestCore(TestCoreBase):
         self.assertIn("processingLevel", structure)
         self.assertIn("sensorType", structure)
         self.assertTrue(
-            structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
-            or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
+            structure["ID"] in self.SUPPORTED_COLLECTIONS
+            or structure["_id"] in self.SUPPORTED_COLLECTIONS
         )
 
     def test_core_object_set_default_locations_config(self):
@@ -1986,7 +1986,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
             self.tmp_home_dir.name, "file_providers_override2.yml"
         )
-        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+        os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_collections_override.yml"
         )
 
@@ -2000,7 +2000,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         finally:
             # remove env variables
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
-            os.environ.pop("EODAG_PRODUCT_TYPES_CFG_FILE", None)
+            os.environ.pop("EODAG_COLLECTIONS_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
@@ -3885,7 +3885,7 @@ class TestCoreStrictMode(TestCoreBase):
         self.mock_os_environ.start()
 
         # This file removes TEST_PRODUCT_2 from the main config, in order to test strict and permissive behavior
-        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+        os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_collections_modes.yml"
         )
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
@@ -3899,7 +3899,7 @@ class TestCoreStrictMode(TestCoreBase):
     def test_list_collections_strict_mode(self):
         """list_collections must only return collections from the main config in strict mode"""
         try:
-            os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
+            os.environ["EODAG_STRICT_COLLECTIONS"] = "true"
             dag = EODataAccessGateway()
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
@@ -3908,12 +3908,12 @@ class TestCoreStrictMode(TestCoreBase):
             self.assertNotIn("TEST_PRODUCT_2", ids)
 
         finally:
-            os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
+            os.environ.pop("EODAG_STRICT_COLLECTIONS", None)
 
     def test_list_collections_permissive_mode(self):
         """list_collections must include provider-only collections in permissive mode"""
-        if "EODAG_STRICT_PRODUCT_TYPES" in os.environ:
-            del os.environ["EODAG_STRICT_PRODUCT_TYPES"]
+        if "EODAG_STRICT_COLLECTIONS" in os.environ:
+            del os.environ["EODAG_STRICT_COLLECTIONS"]
 
         dag = EODataAccessGateway()
 

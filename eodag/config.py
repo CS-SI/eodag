@@ -64,7 +64,7 @@ from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.config")
 
-EXT_PRODUCT_TYPES_CONF_URI = (
+EXT_COLLECTIONS_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_collections.json"
 )
 AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
@@ -1065,7 +1065,7 @@ def load_stac_provider_config() -> dict[str, Any]:
 
 
 def get_ext_collections_conf(
-    conf_uri: str = EXT_PRODUCT_TYPES_CONF_URI,
+    conf_uri: str = EXT_COLLECTIONS_CONF_URI,
 ) -> dict[str, Any]:
     """Read external collections conf
 

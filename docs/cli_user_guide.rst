@@ -151,7 +151,7 @@ Examples:
         eodag discover -p planetary_computer
         eodag discover -p planetary_computer --storage my_product_types_conf.json
 
-This file can then be used in EODAG using the environment variable ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE``.
+This file can then be used in EODAG using the environment variable ``EODAG_EXT_COLLECTIONS_CFG_FILE``.
 
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
 For more information on the collections discovery mechanism, please see

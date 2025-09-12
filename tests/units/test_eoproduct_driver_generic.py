@@ -26,7 +26,7 @@ class TestEOProductDriverGeneric(EODagTestCase):
     def setUp(self):
         super(TestEOProductDriverGeneric, self).setUp()
         self.product = EOProduct(
-            self.provider, self.eoproduct_props, collection="FAKE_PRODUCT_TYPE"
+            self.provider, self.eoproduct_props, collection="FAKE_COLLECTION"
         )
         self.product.properties["title"] = os.path.join(
             TEST_RESOURCES_PATH,
