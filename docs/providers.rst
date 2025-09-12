@@ -40,7 +40,7 @@ This section lists all supported data providers, grouped by organization or host
 -------------------------
 
 .. admonition::  **Cloud-Native Earth Observation Data**
-   :class: tip
+   :class: note
 
    These providers offer scalable access to satellite imagery through cloud infrastructure with global distribution.
 
@@ -499,7 +499,7 @@ This section lists all supported data providers, grouped by organization or host
 ---------------------
 
 .. admonition:: **Digital Twin of Earth**
-   :class: tip
+   :class: note
 
    Destination Earth initiative creates digital replicas of Earth systems for climate adaptation and environmental policy.
 
@@ -641,7 +641,7 @@ This section lists all supported data providers, grouped by organization or host
 ----------------------
 
 .. admonition:: **Microsoft Azure Platform**
-   :class: tip
+   :class: note
 
    Microsoft's planetary-scale geospatial data platform with cloud computing and analysis capabilities.
 
