@@ -265,5 +265,5 @@ Plugin configuration
    :members:
    :member-order: bysource
    :undoc-members:
-   :exclude-members: priority, product_type_config, yaml_loader, from_mapping, from_yaml, update, validate, yaml_dumper,
+   :exclude-members: priority, collection_config, yaml_loader, from_mapping, from_yaml, update, validate, yaml_dumper,
                      yaml_tag

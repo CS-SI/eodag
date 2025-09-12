@@ -1,4 +1,4 @@
-.. _add_product_type:
+.. _add_collection:
 
 Add a collection
 ================
@@ -9,7 +9,7 @@ By following the steps outlined below, you can extend EODAG's capabilities to su
 Add collection definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To add a new collection to EODAG, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an
+To add a new collection to EODAG, you must add an entry to the file ``eodag/resources/collections.yml``. Here is an
 example:
 
 .. code-block:: yaml

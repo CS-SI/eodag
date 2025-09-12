@@ -101,7 +101,7 @@ __ https://www.apache.org/licenses/LICENSE-2.0.html
    :caption: For Developers/Contributors
 
    add_provider
-   add_product_type
+   add_collection
    plugins
    drivers
    params_mapping

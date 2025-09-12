@@ -139,7 +139,7 @@ Collections
         eodag list --no-fetch
 
 * EODAG can fetch providers (all or only a given one) to discover available collections, using the following command.
-  It will store result in a JSON file (defaults to `ext_product_types.json`):
+  It will store result in a JSON file (defaults to `ext_collections.json`):
 
 .. command-output:: eodag discover --help
 
@@ -149,7 +149,7 @@ Examples:
 
         eodag discover
         eodag discover -p planetary_computer
-        eodag discover -p planetary_computer --storage my_product_types_conf.json
+        eodag discover -p planetary_computer --storage my_collections_conf.json
 
 This file can then be used in EODAG using the environment variable ``EODAG_EXT_COLLECTIONS_CFG_FILE``.
 
