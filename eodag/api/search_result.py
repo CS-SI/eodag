@@ -140,7 +140,7 @@ class SearchResult(UserList[EOProduct]):
         Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
         filter for online products.
         """
-        return self.filter_property(storageStatus="ONLINE")
+        return self.filter_property(**{"order:status": "succeeded"})
 
     @staticmethod
     def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:

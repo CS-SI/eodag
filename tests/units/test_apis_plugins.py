@@ -574,7 +574,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 mock_api_scene_search.return_value["data"]["results"][0]["cloudCover"]
             ),
         )
-        self.assertEqual(search_results[0].properties["storageStatus"], ONLINE_STATUS)
+        self.assertEqual(search_results[0].properties["order:status"], ONLINE_STATUS)
         self.assertEqual(
             total_count, mock_api_scene_search.return_value["data"]["totalHits"]
         )

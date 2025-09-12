@@ -1240,7 +1240,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
         self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
-        self.product.properties["storageStatus"] = "OFFLINE"
+        self.product.properties["order:status"] = "orderable"
         self.product.location = self.product.remote_location = (
             NOT_AVAILABLE + '?{"foo": "bar"}'
         )
@@ -1323,7 +1323,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["storageStatus"] = OFFLINE_STATUS
+        self.product.properties["order:status"] = OFFLINE_STATUS
 
         # customized timeout
         timeout_backup = getattr(plugin.config, "timeout", None)
@@ -1415,7 +1415,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["storageStatus"] = OFFLINE_STATUS
+        self.product.properties["order:status"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1682,7 +1682,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         self.plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.properties["storageStatus"] = OFFLINE_STATUS
+        self.product.properties["order:status"] = OFFLINE_STATUS
 
     def test_plugins_download_http_retry_error_timeout(self):
         """HTTPDownload.download() must retry on error until timeout"""
