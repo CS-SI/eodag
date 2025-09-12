@@ -1275,7 +1275,7 @@
     ssl_verify: true
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
     pagination:
       # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
@@ -1338,7 +1338,7 @@
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1439,7 +1439,7 @@
       fetch_url: null
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1591,7 +1591,7 @@
       - dataset
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
       form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
@@ -1764,7 +1764,7 @@
       - date
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
       form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
@@ -2921,7 +2921,7 @@
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
     pagination:
       max_items_per_page: 10_000
     sort:
@@ -3015,7 +3015,7 @@
       fetch_url: null
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{provider_collection}'
+      collection_fetch_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{provider_collection}'
       result_type: json
       results_entry: '$.properties[*]'
     metadata_mapping:
@@ -3689,7 +3689,7 @@
         instruments: '$.null'
         constellation: '$.null'
         platform: '$.null'
-      single_product_type_parsable_metadata:
+      single_collection_parsable_metadata:
         title: '$.metadata._source.datasetTitle'
         missionStartDate: '$.metadata._source.tempextent_begin'
         missionEndDate: '$.metadata._source.tempextent_end'
@@ -3697,7 +3697,7 @@
         keywords: '$.metadata._source.keywords'
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
       constraints_entry: constraints
     metadata_mapping:
@@ -4334,7 +4334,7 @@
     dates_required: True
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
     metadata_mapping:
       geometry:
@@ -5591,7 +5591,7 @@
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
     discover_collections:
       fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
       fetch_method: POST
@@ -5716,7 +5716,7 @@
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
     discover_collections:
       fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
       fetch_method: POST
@@ -5933,7 +5933,7 @@
       - date
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
       form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
@@ -6021,7 +6021,7 @@
         collection: '{$.href#replace_str(r".*/", "")}'
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
-      single_product_type_parsable_metadata:
+      single_collection_parsable_metadata:
         ID: '{$.assets.enclosure.href#ceda_collection_name}'
         abstract: '$.description'
         instrument: '{$.summaries.instruments#csv_list}'

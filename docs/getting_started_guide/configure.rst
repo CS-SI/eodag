@@ -152,10 +152,10 @@ Some EODAG core settings can be overriden using environment variables:
 * ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
   `<python-site-packages>/eodag/resources/providers.yml`.
 * ``EODAG_COLLECTIONS_CFG_FILE`` for defining the desired path to the collections configuration file in place of
-  `<python-site-packages>/eodag/resources/product_types.yml`.
+  `<python-site-packages>/eodag/resources/collections.yml`.
 * ``EODAG_EXT_COLLECTIONS_CFG_FILE`` for defining the desired path to the `external collections configuration file\
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
-  in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
+  in place of https://cs-si.github.io/eodag/eodag/resources/ext_collections.json.
   If the file is not readable, only user-modified providers will be fetched.
 * ``EODAG_PROVIDERS_WHITELIST`` to restrict EODAG to only use a specific list of providers.
 

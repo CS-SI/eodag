@@ -14,7 +14,7 @@
         }
       }
     },
-    "product_types_config": {
+    "collections_config": {
       "foo": {
         "abstract": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.",
         "instrument": "Not Available",

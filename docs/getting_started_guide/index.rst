@@ -66,7 +66,7 @@ Each section below gives you a focused entry point with explanations and example
    overview
    features_overview
    install
-   product_types
+   collections
    product_storage_status
    configure
 
