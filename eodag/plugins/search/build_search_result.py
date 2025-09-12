@@ -454,7 +454,7 @@ class ECMWFSearch(PostJsonSearch):
             **{
                 "id": "$.id",
                 "title": "$.id",
-                "storageStatus": OFFLINE_STATUS,
+                "order:status": OFFLINE_STATUS,
                 "downloadLink": "$.null",
                 "geometry": ["feature", "$.geometry"],
                 "defaultGeometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
@@ -1264,7 +1264,7 @@ def _check_id(product: EOProduct) -> EOProduct:
         product.downloader._order_status(product=product, auth=auth)  # type: ignore
     # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
     except NotAvailableError:
-        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["order:status"] = STAGING_STATUS
     except Exception as e:
         if (
             isinstance(e, DownloadError) or isinstance(e, ValidationError)
