@@ -1240,7 +1240,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
         self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
-        self.product.properties["order:status"] = "OFFLINE"
+        self.product.properties["order:status"] = "orderable"
         self.product.location = self.product.remote_location = (
             NOT_AVAILABLE + '?{"foo": "bar"}'
         )

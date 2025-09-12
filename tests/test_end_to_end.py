@@ -787,7 +787,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
 
     def test_end_to_end_complete_peps(self):
         """Complete end-to-end test with PEPS for download and download_all"""
-        # Search for products that are ONLINE and as small as possible
+        # Search for products that are succeeded and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
         search_results = self.eodag.search(
@@ -802,11 +802,13 @@ class TestEODagEndToEndComplete(EndToEndBase):
             sorted(search_results, key=lambda p: p.properties["resourceSize"])
         )
         prods_online = [
-            p for p in prods_sorted_by_size if p.properties["order:status"] == "ONLINE"
+            p
+            for p in prods_sorted_by_size
+            if p.properties["order:status"] == "succeeded"
         ]
         if len(prods_online) < 2:
             unittest.skip(
-                "Not enough ONLINE products found, update the search criteria."
+                "Not enough succeeded products found, update the search criteria."
             )
 
         # Retrieve one product to work with

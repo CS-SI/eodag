@@ -156,7 +156,7 @@ class HTTPDownload(Download):
     ) -> Optional[dict[str, Any]]:
         """Send product order request.
 
-        It will be executed once before the download retry loop, if the product is OFFLINE
+        It will be executed once before the download retry loop, if the product is orderable
         and has `orderLink` in its properties.
         Product ordering can be configured using the following download plugin parameters:
 

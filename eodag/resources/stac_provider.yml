@@ -105,7 +105,7 @@ search:
     downloadLink: '$.links[?(@.rel="self")].href'
     quicklook: '$.assets.quicklook.href'
     thumbnail: '$.assets.thumbnail.href'
-    # order:status set to ONLINE for consistency between providers
-    order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+    # order:status set to succeeded for consistency between providers
+    order:status: '{$.null#replace_str("Not Available","succeeded")}'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'

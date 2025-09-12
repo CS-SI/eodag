@@ -42,7 +42,7 @@ DEFAULT_EXTRA_CSV_FILE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "../docs/_static/params_mapping_extra.csv",
 )
-OFFLINE_OPENSEARCH_JSON = os.path.join(
+orderable_OPENSEARCH_JSON = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "../docs/_static/params_mapping_offline_infos.json",
 )
@@ -150,16 +150,16 @@ def params_mapping_to_csv(
                             )[0]
                             break
                 # save infos for offline mode
-                with open(OFFLINE_OPENSEARCH_JSON, "w+") as f:
+                with open(orderable_OPENSEARCH_JSON, "w+") as f:
                     json.dump(params_rows, f)
                     f.write("\n")
 
             except requests.RequestException:
                 # page unreachable, read infos from previously saved json
-                with open(OFFLINE_OPENSEARCH_JSON, "r") as f:
+                with open(orderable_OPENSEARCH_JSON, "r") as f:
                     params_rows = json.load(f)
 
-                logging_additional_infos = "(OFFLINE mode)"
+                logging_additional_infos = "(orderable mode)"
 
             # write metadata mapping
             for param in global_keys:
