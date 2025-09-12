@@ -46,7 +46,7 @@ from tests.utils import mock
 
 
 class TestEOProduct(EODagTestCase):
-    NOT_ASSOCIATED_PRODUCT_TYPE = "EODAG_DOES_NOT_SUPPORT_THIS_PRODUCT_TYPE"
+    NOT_ASSOCIATED_COLLECTION = "EODAG_DOES_NOT_SUPPORT_THIS_COLLECTION"
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
@@ -112,7 +112,7 @@ class TestEOProduct(EODagTestCase):
 
     def test_eoproduct_default_driver_unsupported_collection(self):
         """EOProduct driver attr must be set even if its collection is not supported"""
-        product = self._dummy_product(collection=self.NOT_ASSOCIATED_PRODUCT_TYPE)
+        product = self._dummy_product(collection=self.NOT_ASSOCIATED_COLLECTION)
         self.assertIsInstance(product.driver, DatasetDriver)
 
     def test_eoproduct_geointerface(self):

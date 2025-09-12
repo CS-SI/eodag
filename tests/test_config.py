@@ -26,7 +26,7 @@ from tempfile import TemporaryDirectory
 import yaml.parser
 
 from tests.context import (
-    EXT_PRODUCT_TYPES_CONF_URI,
+    EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     USER_AGENT,
@@ -52,7 +52,7 @@ class TestProviderConfig(unittest.TestCase):
             api: !plugin
                 type: MyPluginClass
             products:
-                EODAG_PRODUCT_TYPE: provider_collection
+                EODAG_COLLECTION: provider_collection
             """.format(
                 unslugified_provider_name
             )
@@ -483,7 +483,7 @@ class TestConfigFunctions(unittest.TestCase):
 
         ext_collections_conf = get_ext_collections_conf()
         mock_get.assert_called_once_with(
-            EXT_PRODUCT_TYPES_CONF_URI, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            EXT_COLLECTIONS_CONF_URI, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
         )
         self.assertEqual(ext_collections_conf, {"some_parameter": "a_value"})
 

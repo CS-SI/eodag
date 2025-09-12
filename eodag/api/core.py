@@ -111,7 +111,7 @@ class EODataAccessGateway:
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
     ) -> None:
-        collections_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
+        collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
         self.collections_config = SimpleYamlProxyConfig(collections_config_path)
@@ -166,7 +166,7 @@ class EODataAccessGateway:
         share_credentials(self.providers_config)
 
         # init updated providers conf
-        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
         available_collections = set(self.collections_config.source.keys())
 
         for provider in self.providers_config.keys():
@@ -590,13 +590,13 @@ class EODataAccessGateway:
     def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch collections list and update if needed.
 
-        If strict mode is enabled (by setting the ``EODAG_STRICT_PRODUCT_TYPES`` environment variable
+        If strict mode is enabled (by setting the ``EODAG_STRICT_COLLECTIONS`` environment variable
         to a truthy value), this method will not fetch or update collections and will return immediately.
 
         :param provider: The name of a provider or provider-group for which collections
                          list should be updated. Defaults to all providers (None value).
         """
-        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
         if strict_mode:
             return
 
@@ -640,7 +640,7 @@ class EODataAccessGateway:
 
         if not already_fetched:
             # get ext_collections conf
-            ext_collections_cfg_file = os.getenv("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+            ext_collections_cfg_file = os.getenv("EODAG_EXT_COLLECTIONS_CFG_FILE")
             if ext_collections_cfg_file is not None:
                 ext_collections_conf = get_ext_collections_conf(
                     ext_collections_cfg_file

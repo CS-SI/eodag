@@ -25,14 +25,14 @@ from typing import Any
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_default_config
 
-DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH = os.path.join(
+DEFAULT_COLLECTIONS_CSV_FILE_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "../docs/_static/collections_information.csv",
 )
 
 
 def collections_info_to_csv(
-    collections_csv_file_path: str = DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH,
+    collections_csv_file_path: str = DEFAULT_COLLECTIONS_CSV_FILE_PATH,
 ) -> None:
     """Get collections metadata and their availability for providers, and writes it to a csv file
 
