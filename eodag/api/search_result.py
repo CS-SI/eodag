@@ -166,37 +166,23 @@ class SearchResult(UserList[EOProduct]):
 
         return SearchResult(
             products=products,
-            number_matched=props.get("number_matched"),
-            next_page_token=props.get("next_page_token"),
-            search_params=props.get("search_params"),
-            raise_errors=props.get("raise_errors"),
+            number_matched=props.get("eodag_number_matched"),
+            next_page_token=props.get("eodag_next_page_token"),
+            search_params=props.get("eodag_search_params"),
+            raise_errors=props.get("eodag_raise_errors"),
         )
-
-    def to_geojson(self) -> dict:
-        """Builds a GeoJSON representation of the current :class:`~eodag.api.search_result.SearchResult` object.
-
-        The returned FeatureCollection includes the serialized EO products
-        as features, along with metadata such as ``number_matched``,
-        ``next_page_token`` and ``search_params`` in the properties.
-
-        :returns: A GeoJSON FeatureCollection representing this search result.
-        """
-        return {
-            "type": "FeatureCollection",
-            "features": [p.as_dict() for p in self.data],
-            "properties": {
-                "number_matched": self.number_matched,
-                "next_page_token": self.next_page_token,
-                "search_params": self.search_params,
-                "raise_errors": self.raise_errors,
-            },
-        }
 
     def as_geojson_object(self) -> dict[str, Any]:
         """GeoJSON representation of SearchResult"""
         return {
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
+            "metadata": {
+                "eodag_number_matched": self.number_matched,
+                "eodag_next_page_token": self.next_page_token,
+                "eodag_search_params": self.search_params,
+                "eodag_raise_errors": self.raise_errors,
+            },
         }
 
     def as_shapely_geometry_object(self) -> GeometryCollection:
@@ -257,12 +243,14 @@ class SearchResult(UserList[EOProduct]):
     def next_page(self, update: bool = True) -> Iterator[SearchResult]:
         """Get the next page of results based on the current search parameters."""
         if self.next_page_token is None:
-            return iter([])  # type: ignore[return-value]
+            return
 
         def get_next_page(current):
             if current.search_params is None:
                 current.search_params = {}
+            # Update the next_page_token in the search params
             current.search_params["next_page_token"] = current.next_page_token
+            # Ensure the provider is in the search params
             if hasattr(current.search_params, "provider"):
                 current.search_params["provider"] = current.search_params.get(
                     "provider", None
@@ -272,6 +260,7 @@ class SearchResult(UserList[EOProduct]):
             search_plugins, search_kwargs = current._dag._prepare_search(
                 **current.search_params
             )
+            # If number_matched was provided, ensure it is passed to the next search
             if current.number_matched:
                 search_kwargs["number_matched"] = current.number_matched
             for i, search_plugin in enumerate(search_plugins):
@@ -290,12 +279,16 @@ class SearchResult(UserList[EOProduct]):
                 self.search_params = new_results.search_params
                 self.next_page_token = new_results.next_page_token
             yield new_results
+            # Stop iterating if there is no next page token
             if new_results.next_page_token is None:
                 break
             old_results = new_results
             new_results = get_next_page(new_results)
             if not new_results:
                 break
+            # The products between two iterations are compared. If they
+            # are actually the same product, it means the iteration failed at
+            # progressing for some reason.
             if (
                 old_results.data[0].properties["id"]
                 == new_results.data[0].properties["id"]
@@ -307,7 +300,7 @@ class SearchResult(UserList[EOProduct]):
                     "This provider may not implement pagination.",
                 )
                 break
-        return iter([])  # type: ignore[return-value]
+        return
 
     @classmethod
     def _from_stac_item(

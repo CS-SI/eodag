@@ -161,6 +161,8 @@ class CSWSearch(Search):
                 results.extend(partial_results)
         logger.info("Found %s overall results", len(results))
         total_results = len(results) if prep.count else None
+        if not prep.count and "number_matched" in kwargs:
+            total_results = kwargs["number_matched"]
         formated_result = SearchResult(
             results,
             total_results,
