@@ -29,7 +29,7 @@ import requests
 from lxml import html
 from shapely import geometry
 
-from eodag.api.plugin import PluginConfig
+from eodag.config import PluginConfig
 from tests import EODagTestCase
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,

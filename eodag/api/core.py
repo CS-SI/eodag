@@ -26,18 +26,20 @@ import tempfile
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import geojson
 import yaml
 
-from eodag.api.plugin import PluginConfig, credentials_in_auth
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
+    DiscoverProductTypes,
+    PluginConfig,
     SimpleYamlProxyConfig,
+    credentials_in_auth,
     get_ext_product_types_conf,
     load_default_config,
     load_yml_config,
@@ -185,7 +187,7 @@ class EODataAccessGateway:
         """Get eodag package version"""
         return version("eodag")
 
-    def set_preferred_provider(self, provider: str | Provider) -> None:
+    def set_preferred_provider(self, provider: str) -> None:
         """Set max priority for the given provider.
 
         :param provider: The name of the provider that should be considered as the
@@ -201,7 +203,7 @@ class EODataAccessGateway:
             new_priority = max_priority + 1
             self._plugins_manager.set_priority(provider, new_priority)
 
-    def get_preferred_provider(self) -> tuple[Provider, int]:
+    def get_preferred_provider(self) -> tuple[str, int]:
         """Get the provider currently set as the preferred one for searching
         products, along with its priority.
 
@@ -229,14 +231,14 @@ class EODataAccessGateway:
             return None
 
         # restore the pruned configuration
-        for provider, config in self._pruned_providers_config.items():
-            if provider in conf_update:
+        for name in list(self._pruned_providers_config):
+            config = self._pruned_providers_config[name]
+            if name in conf_update:
                 logger.info(
-                    "%s: provider restored from the pruned configurations",
-                    provider,
+                    "%s: provider restored from the pruned configurations", name
                 )
-                self.providers[provider] = Provider(provider, config)
-                self._pruned_providers_config.pop(provider)
+                self.providers[name] = Provider(config, name)
+                self._pruned_providers_config.pop(name)
 
         self.providers.update_from_configs(conf_update)
 
@@ -348,7 +350,7 @@ class EODataAccessGateway:
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
                 if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
-                    self._pruned_providers_config[provider] = conf
+                    self._pruned_providers_config[provider.name] = conf
                     del self.providers[provider.name]
 
                     update_needed = True
@@ -368,7 +370,7 @@ class EODataAccessGateway:
                 )
                 if not credentials_exist:
                     # credentials needed but not found
-                    self._pruned_providers_config[provider] = conf
+                    self._pruned_providers_config[provider.name] = conf
                     del self.providers[provider.name]
 
                     update_needed = True
@@ -379,7 +381,7 @@ class EODataAccessGateway:
 
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
-                self._pruned_providers_config[provider] = conf
+                self._pruned_providers_config[provider.name] = conf
                 del self.providers[provider.name]
 
                 update_needed = True
@@ -513,13 +515,13 @@ class EODataAccessGateway:
         providers_to_fetch = self.providers.filter_by_name(provider)
 
         # providers discovery confs that are fetchable
-        providers_discovery_configs_fetchable: dict[str, Any] = {}
+        providers_discovery_configs_fetchable: dict[str, DiscoverProductTypes] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
         for provider_to_fetch in providers_to_fetch.values():
-            if provider_to_fetch.fetchable:
+            if provider_to_fetch.fetchable and provider_to_fetch.search_config:
                 providers_discovery_configs_fetchable[
-                    provider_to_fetch
+                    provider_to_fetch.name
                 ] = provider_to_fetch.search_config.discover_product_types
                 if not provider_to_fetch.product_types_fetched:
                     already_fetched = False
@@ -566,33 +568,36 @@ class EODataAccessGateway:
                 if default_discovery_conf["result_type"] == "json" and isinstance(
                     default_discovery_conf["results_entry"], str
                 ):
-                    default_discovery_conf_parsed = dict(
-                        default_discovery_conf,
-                        **{
-                            "results_entry": string_to_jsonpath(
-                                default_discovery_conf["results_entry"], force=True
-                            )
-                        },
-                        **mtd_cfg_as_conversion_and_querypath(
-                            dict(
-                                generic_product_type_id=default_discovery_conf[
-                                    "generic_product_type_id"
-                                ]
-                            )
-                        ),
-                        **dict(
-                            generic_product_type_parsable_properties=mtd_cfg_as_conversion_and_querypath(
-                                default_discovery_conf[
-                                    "generic_product_type_parsable_properties"
-                                ]
-                            )
-                        ),
-                        **dict(
-                            generic_product_type_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
-                                default_discovery_conf[
-                                    "generic_product_type_parsable_metadata"
-                                ]
-                            )
+                    default_discovery_conf_parsed = cast(
+                        DiscoverProductTypes,
+                        dict(
+                            default_discovery_conf,
+                            **{
+                                "results_entry": string_to_jsonpath(
+                                    default_discovery_conf["results_entry"], force=True
+                                )
+                            },
+                            **mtd_cfg_as_conversion_and_querypath(
+                                dict(
+                                    generic_product_type_id=default_discovery_conf[
+                                        "generic_product_type_id"
+                                    ]
+                                )
+                            ),
+                            **dict(
+                                generic_product_type_parsable_properties=mtd_cfg_as_conversion_and_querypath(
+                                    default_discovery_conf[
+                                        "generic_product_type_parsable_properties"
+                                    ]
+                                )
+                            ),
+                            **dict(
+                                generic_product_type_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
+                                    default_discovery_conf[
+                                        "generic_product_type_parsable_metadata"
+                                    ]
+                                )
+                            ),
                         ),
                     )
                 else:
@@ -647,7 +652,7 @@ class EODataAccessGateway:
 
             if p.fetchable:
                 search_plugin: Union[Search, Api] = next(
-                    self._plugins_manager.get_search_plugins(provider=p)
+                    self._plugins_manager.get_search_plugins(provider=p.name)
                 )
 
                 # check after plugin init if still fetchable
@@ -668,10 +673,10 @@ class EODataAccessGateway:
                         logger.debug(
                             f"Could not authenticate on {p} for product types discovery"
                         )
-                        ext_product_types_conf[p] = None
+                        ext_product_types_conf[p.name] = None
                         continue
 
-                ext_product_types_conf[p] = search_plugin.discover_product_types(
+                ext_product_types_conf[p.name] = search_plugin.discover_product_types(
                     **kwargs
                 )
 
@@ -760,7 +765,7 @@ class EODataAccessGateway:
 
     def available_providers(
         self, product_type: Optional[str] = None, by_group: bool = False
-    ) -> ProvidersDict:
+    ) -> list[str]:
         """Gives the sorted list of the available providers or groups
 
         The providers or groups are sorted first by their priority level in descending order,
@@ -772,32 +777,28 @@ class EODataAccessGateway:
                          of providers, mixed with other providers
         :returns: the sorted list of the available providers or groups
         """
+        candidates = []
 
-        if product_type:
-            providers = [
-                (v.group if by_group and hasattr(v.config, "group") else k, v.priority)
-                for k, v in self.providers.items()
-                if product_type in v.products
-            ]
-        else:
-            providers = [
-                (v.group if by_group and hasattr(v.config, "group") else k, v.priority)
-                for k, v in self.providers.items()
-            ]
+        for key, provider in self.providers.items():
+            if product_type and product_type not in provider.product_types:
+                continue
 
-        # If by_group is True, keep only the highest priority for each group
+            group = getattr(provider.config, "group", None)
+            name = group if by_group and group else key
+            candidates.append((name, provider.priority))
+
         if by_group:
-            group_priority: dict[str, int] = {}
-            for name, priority in providers:
-                if name not in group_priority or priority > group_priority[name]:
-                    group_priority[name] = priority
-            providers = list(group_priority.items())
+            # Keep only the highest-priority entry per group
+            grouped: dict[str, int] = {}
+            for name, priority in candidates:
+                if name not in grouped or priority > grouped[name]:
+                    grouped[name] = priority
+            candidates = list(grouped.items())
 
-        # Sort by priority (descending) and then by name (ascending)
-        providers.sort(key=lambda x: (-x[1], x[0]))
+        # Sort: priority descending, then name ascending
+        candidates.sort(key=lambda item: (-item[1], item[0]))
 
-        # Return only the names of the providers or groups
-        return [name for name, _ in providers]
+        return [name for name, _ in candidates]
 
     def get_product_type_from_alias(self, alias_or_id: str) -> str:
         """Return the ID of a product type by either its ID or alias

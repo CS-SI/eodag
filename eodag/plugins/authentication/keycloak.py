@@ -32,7 +32,7 @@ from eodag.utils.exceptions import MisconfiguredError, TimeOutError
 if TYPE_CHECKING:
     from requests.auth import AuthBase
 
-    from eodag.api.plugin import PluginConfig
+    from eodag.config import PluginConfig
 
 
 logger = logging.getLogger("eodag.auth.keycloak")

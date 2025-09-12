@@ -43,7 +43,7 @@ from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, Time
 if TYPE_CHECKING:
     from requests import PreparedRequest
 
-    from eodag.api.plugin import PluginConfig
+    from eodag.config import PluginConfig
 
 
 logger = logging.getLogger("eodag.authentication.token")

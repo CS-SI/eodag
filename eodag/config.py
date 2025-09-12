@@ -20,12 +20,14 @@ from __future__ import annotations
 import logging
 import os
 from importlib.resources import files as res_files
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, TypedDict, Union
 
 import orjson
 import requests
 import yaml
 import yaml.parser
+from annotated_types import Gt
+from jsonpath_ng import JSONPath
 
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
@@ -33,12 +35,17 @@ from eodag.utils import (
     cached_yaml_load,
     cached_yaml_load_all,
     dict_items_recursive_apply,
+    merge_mappings,
+    sort_dict,
     string_to_jsonpath,
     uri_to_path,
 )
+from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from typing import Any, ItemsView, Iterator, ValuesView
+    from typing import ItemsView, Iterator, ValuesView
+
+    from typing_extensions import Self
 
     from eodag.api.provider import ProviderConfig
 
@@ -84,6 +91,546 @@ class SimpleYamlProxyConfig:
         if not isinstance(other, self.__class__):
             raise ValueError("'{}' must be of type {}".format(other, self.__class__))
         self.source.update(other.source)
+
+
+class Pagination(TypedDict):
+    """Search pagination configuration"""
+
+    #: The maximum number of items per page that the provider can handle
+    max_items_per_page: int
+    #: Key path for the number of total items in the provider result
+    total_items_nb_key_path: Union[str, JSONPath]
+    #: Key path for the next page URL
+    next_page_url_key_path: Union[str, JSONPath]
+    #: Key path for the next page POST request query-object (body)
+    next_page_query_obj_key_path: Union[str, JSONPath]
+    # TODO: change this typing to bool and adapt code to it
+    next_page_merge_key_path: Union[str, JSONPath]
+    #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
+    #: search request
+    count_tpl: str
+    #: The f-string template for pagination requests.
+    next_page_url_tpl: str
+    #: The query-object for POST pagination requests.
+    next_page_query_obj: str
+    #: The endpoint for counting the number of items satisfying a request
+    count_endpoint: str
+    #: Index of the starting page
+    start_page: int
+
+
+class Sort(TypedDict):
+    """Configuration for sort during search"""
+
+    #: Default sort settings
+    sort_by_default: list[tuple[str, str]]
+    #: F-string template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to sort search
+    #: results
+    sort_by_tpl: str
+    #: Mapping between eodag and provider query parameters used for sort
+    sort_param_mapping: dict[str, str]
+    #: Mapping between eodag and provider sort-order parameters
+    sort_order_mapping: dict[Literal["ascending", "descending"], str]
+    #: Maximum number of allowed sort parameters per request
+    max_sort_params: Annotated[int, Gt(0)]
+
+
+class DiscoverMetadata(TypedDict):
+    """Configuration for metadata discovery (search result properties)"""
+
+    #: Whether metadata discovery is enabled or not
+    auto_discovery: bool
+    #: Metadata regex pattern used for discovery in search result properties
+    metadata_pattern: str
+    #: Configuration/template that will be used to query for a discovered parameter
+    search_param: Union[str, dict[str, Any]]
+    #: Path to the metadata in search result
+    metadata_path: str
+    #: Whether an error must be raised when using a search parameter which is not queryable or not
+    raise_mtd_discovery_error: bool
+
+
+class DiscoverProductTypes(TypedDict, total=False):
+    """Configuration for product types discovery"""
+
+    #: URL from which the product types can be fetched
+    fetch_url: Optional[str]
+    #: HTTP method used to fetch product types
+    fetch_method: str
+    #: Request body to fetch product types using POST method
+    fetch_body: dict[str, Any]
+    #: Maximum number of connections for concurrent HTTP requests
+    max_connections: int
+    #: The f-string template for pagination requests.
+    next_page_url_tpl: str
+    #: Index of the starting page for pagination requests.
+    start_page: int
+    #: Type of the provider result
+    result_type: str
+    #: JsonPath to the list of product types
+    results_entry: Union[str, JSONPath]
+    #: Mapping for the product type id
+    generic_product_type_id: str
+    #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+    #: result
+    generic_product_type_parsable_metadata: dict[str, str]
+    #: Mapping for product type properties which can be parsed from the result and are not product type metadata
+    generic_product_type_parsable_properties: dict[str, str]
+    #: Mapping for product type properties which cannot be parsed from the result and are not product type metadata
+    generic_product_type_unparsable_properties: dict[str, str]
+    #: URL to fetch data for a single collection
+    single_collection_fetch_url: str
+    #: Query string to be added to the fetch_url to filter for a collection
+    single_collection_fetch_qs: str
+    #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+    #: is redefined in this mapping, it will replace ``generic_product_type_id`` value
+    single_product_type_parsable_metadata: dict[str, str]
+
+
+class DiscoverQueryables(TypedDict, total=False):
+    """Configuration for queryables discovery"""
+
+    #: URL to fetch the queryables valid for all product types
+    fetch_url: Optional[str]
+    #: URL to fetch the queryables for a specific product type
+    product_type_fetch_url: Optional[str]
+    #: Type of the result
+    result_type: str
+    #: JsonPath to retrieve the queryables from the provider result
+    results_entry: str
+    #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
+    constraints_url: str
+    #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
+    constraints_entry: str
+
+
+class OrderOnResponse(TypedDict):
+    """Configuration for order on-response during download"""
+
+    #: Parameters metadata-mapping to apply to the order response
+    metadata_mapping: dict[str, Union[str, list[str]]]
+
+
+class OrderStatusSuccess(TypedDict):
+    """
+    Configuration to identify order status success during download
+
+    Order status response matching the following parameters are considered success
+    At least one is required
+    """
+
+    #: Success value for ``status``
+    status: str
+    #: Success value for ``message``
+    message: str
+    #: Success value for status response HTTP code
+    http_code: int
+
+
+class OrderStatusOrdered(TypedDict, total=False):
+    """
+    Configuration to identify order status ordered during download
+    """
+
+    #: HTTP code of the order status response
+    http_code: int
+
+
+class OrderStatusRequest(TypedDict, total=False):
+    """
+    Order status request configuration
+    """
+
+    #: Request HTTP method
+    method: str
+    #: Request hearders
+    headers: dict[str, Any]
+
+
+class OrderStatusOnSuccess(TypedDict, total=False):
+    """Configuration for order status on-success during download"""
+
+    #: Whether a new search is needed on success or not
+    need_search: bool
+    #: Return type of the success result
+    result_type: str
+    #: Key in the success response that gives access to the result
+    results_entry: str
+    #: Metadata-mapping to apply to the success status result
+    metadata_mapping: dict[str, Union[str, list[str]]]
+
+
+class OrderStatus(TypedDict, total=False):
+    """Configuration for order status during download"""
+
+    #: Order status request configuration
+    request: OrderStatusRequest
+    #: Metadata-mapping used to parse order status response
+    metadata_mapping: dict[str, Union[str, list[str]]]
+    #: Configuration to identify order status success during download
+    success: OrderStatusSuccess
+    #: Part of the order status response that tells there is an error
+    error: dict[str, Any]
+    #: Configuration to identify order status ordered during download
+    ordered: OrderStatusOrdered
+    #: Configuration for order status on-success during download
+    on_success: OrderStatusOnSuccess
+
+
+class MetadataPreMapping(TypedDict, total=False):
+    """Configuration which can be used to simplify further metadata extraction"""
+
+    #: JsonPath of the metadata entry
+    metadata_path: str
+    #: Key to get the metadata id
+    metadata_path_id: str
+    #: Key to get the metadata value
+    metadata_path_value: str
+
+
+class PluginConfig(yaml.YAMLObject):
+    """Representation of a plugin config.
+
+    This class variables describe available plugins configuration parameters.
+    """
+
+    #: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
+    name: str
+    #: :class:`~eodag.plugins.base.PluginTopic` Plugin type
+    type: str
+    #: :class:`~eodag.plugins.base.PluginTopic` Whether the ssl certificates should be verified in the request or not
+    ssl_verify: bool
+    #: :class:`~eodag.plugins.base.PluginTopic` Default s3 bucket
+    s3_bucket: str
+    #: :class:`~eodag.plugins.base.PluginTopic` Authentication error codes
+    auth_error_code: Union[int, list[int]]
+    #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
+    timeout: float
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``total`` parameter,
+    #: total number of retries to allow
+    retry_total: int
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``backoff_factor`` parameter,
+    #: backoff factor to apply between attempts after the second try
+    retry_backoff_factor: int
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
+    #: list of integer HTTP status codes that we should force a retry on
+    retry_status_forcelist: list[int]
+
+    # search & api -----------------------------------------------------------------------------------------------------
+    # copied from ProviderConfig in PluginManager.get_search_plugins()
+    priority: int
+    # per product type metadata-mapping, set in core._prepare_search
+    product_type_config: dict[str, Any]
+
+    #: :class:`~eodag.plugins.search.base.Search` Plugin API endpoint
+    api_endpoint: str
+    #: :class:`~eodag.plugins.search.base.Search` Whether Search plugin needs authentification or not
+    need_auth: bool
+    #: :class:`~eodag.plugins.search.base.Search` Return type of the provider result
+    result_type: str
+    #: :class:`~eodag.plugins.search.base.Search`
+    #: Key in the provider search result that gives access to the result entries
+    results_entry: str
+    #: :class:`~eodag.plugins.search.base.Search` Dict containing parameters for pagination
+    pagination: Pagination
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for sorting the results
+    sort: Sort
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
+    discover_metadata: DiscoverMetadata
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
+    discover_product_types: DiscoverProductTypes
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
+    discover_queryables: DiscoverQueryables
+    #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
+    metadata_mapping: dict[str, Union[str, list[str]]]
+    #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
+    #: product type
+    metadata_mapping_from_product: str
+    #: :class:`~eodag.plugins.search.base.Search` A mapping for the metadata of individual assets
+    assets_mapping: dict[str, dict[str, Any]]
+    #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
+    remove_from_queryables: list[str]
+    #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string
+    literal_search_params: dict[str, str]
+    #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Characters that should not be quoted in the url params
+    dont_quote: list[str]
+    #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Guess assets keys using their ``href``.
+    #: Use their original key if ``False``
+    asset_key_from_href: bool
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
+    free_text_search_operations: dict[str, Any]
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Set to ``True`` if the metadata is not given in the search
+    #: result and a two step search has to be performed
+    per_product_metadata_query: bool
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
+    metadata_pre_mapping: MetadataPreMapping
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
+    data_request_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
+    status_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
+    #: URL to fetch the search result when the data request is done
+    result_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
+    #: if date parameters are mandatory in the request
+    dates_required: bool
+    #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
+    search_definition: dict[str, Any]
+    #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
+    merge_responses: bool
+    #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
+    collection: list[str]
+    #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+    #: Maximum number of connections for concurrent HTTP requests
+    max_connections: int
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
+    #: Whether end date should be excluded from search request or not
+    end_date_excluded: bool
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
+    #: List of parameters used to parse metadata but that must not be included to the query
+    remove_from_query: list[str]
+    #: :class:`~eodag.plugins.search.csw.CSWSearch`
+    #: OGC Catalogue Service version
+    version: str
+    #: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` url of the authentication endpoint
+    auth_endpoint: str
+
+    # download ---------------------------------------------------------------------------------------------------------
+    #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
+    base_uri: str
+    #: :class:`~eodag.plugins.download.base.Download` Where to store downloaded products, as an absolute file path
+    output_dir: str
+    #: :class:`~eodag.plugins.download.base.Download`
+    #: Whether the content of the downloaded file should be extracted or not
+    extract: bool
+    #: :class:`~eodag.plugins.download.base.Download` Which extension should be used for the downloaded file
+    output_extension: str
+    #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not
+    flatten_top_dirs: bool
+    #: :class:`~eodag.plugins.download.base.Download` Level in extracted path tree where to find data
+    archive_depth: int
+    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
+    ignore_assets: bool
+    #: :class:`~eodag.plugins.download.base.Download` Product type specific configuration
+    products: dict[str, dict[str, Any]]
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
+    order_enabled: bool
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
+    order_method: str
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Headers to be added to the order request
+    order_headers: dict[str, str]
+    #: :class:`~eodag.plugins.download.http.HTTPDownload`
+    #: Dictionary containing the key :attr:`~eodag.config.PluginConfig.metadata_mapping` which can be used to add new
+    #: product properties based on the data in response to the order request
+    order_on_response: OrderOnResponse
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Order status handling
+    order_status: OrderStatus
+    #: :class:`~eodag.plugins.download.http.HTTPDownload`
+    #: Do not authenticate the download request but only the order and order status ones
+    no_auth_download: bool
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
+    dl_url_params: dict[str, str]
+    #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
+    #: At which level of the path part of the url the bucket can be found
+    bucket_path_level: int
+    #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
+    requester_pays: bool
+    #: :class:`~eodag.plugins.download.aws.AwsDownload` S3 endpoint
+    s3_endpoint: str
+
+    # auth -------------------------------------------------------------------------------------------------------------
+    #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication credentials dictionary
+    credentials: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication URL
+    auth_uri: str
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: Dictionary containing all keys/value pairs that should be added to the headers
+    headers: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: Dictionary containing all keys/value pairs that should be added to the headers for token retrieve only
+    retrieve_headers: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: The key pointing to the token in the response from the token server
+    token_key: str
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: Key to get the refresh token in the response from the token server
+    refresh_token_key: str
+    #: :class:`~eodag.plugins.authentication.base.Authentication` URL pattern to match with search plugin endpoint or
+    #: download link
+    matching_url: str
+    #: :class:`~eodag.plugins.authentication.base.Authentication` Part of the search or download plugin configuration
+    #: that needs authentication
+    matching_conf: dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
+    #: How the token should be used in the request
+    token_provision: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC provider's client ID
+    client_id: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC provider's client secret
+    client_secret: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
+    #: The OIDC provider's ``.well-known/openid-configuration`` url.
+    oidc_config_url: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiences
+    allowed_audiences: list[str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Whether a user consent is needed during the authentication or not
+    user_consent_needed: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Where to look for the :attr:`~eodag.config.PluginConfig.authorization_uri`
+    authentication_uri_source: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The callback url that will handle the code given by the OIDC provider
+    authentication_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The URL of the authentication backend of the OIDC provider
+    redirect_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The authorization url of the server (where to query for grants)
+    authorization_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The xpath to the HTML form element representing the user login form
+    login_form_xpath: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The xpath to the user consent form
+    user_consent_form_xpath: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The data that will be passed with the POST request on the form 'action' URL
+    user_consent_form_data: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Additional data to be passed to the login POST request
+    additional_login_form_data: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Key/value pairs of patterns/messages used for Authentication errors
+    exchange_url_error_pattern: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: A mapping between OIDC url query string and token handler query string params
+    token_exchange_params: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Refers to the name of the query param to be used in the query request
+    token_qs_key: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Way to pass the data to the POST request that is made to the token server
+    token_exchange_post_data_method: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The url to query to get the authorized token
+    token_uri: str
+    #: :class:`~eodag.plugins.authentication.sas_auth.SASAuth` Key to get the signed url
+    signed_url_key: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: Credentials json structure if they should be sent as POST data
+    req_data: dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: URL used to fetch the access token with a refresh token
+    refresh_uri: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: type of the token
+    token_type: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: key to get the expiration time of the token
+    token_expiration_key: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: HTTP method to use
+    request_method: str
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin configuration
+    #: used to retrieve subject token
+    subject: dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: Identifies the issuer of the `subject_token`
+    subject_issuer: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
+    #: Safety buffer to prevent token rejection from unexpected expiry between validity check and request.
+    token_expiration_margin: int
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: Audience that the token ID is intended for. :attr:`~eodag.config.PluginConfig.client_id` of the Relying Party
+    audience: str
+    #: :class:`~eodag.plugins.authentication.generic.GenericAuth`
+    #: which authentication method should be used
+    method: str
+
+    yaml_loader = yaml.Loader
+    yaml_dumper = yaml.SafeDumper
+    yaml_tag = "!plugin"
+
+    def __or__(self, other: Self | dict[str, Any]) -> Self:
+        """Return a new PluginConfig with merged values."""
+        new_config = self.__class__.from_mapping(self.__dict__)
+        new_config.update(other)
+        return new_config
+
+    def __ior__(self, other: Self | dict[str, Any]) -> Self:
+        """In-place update of the PluginConfig."""
+        self.update(other)
+        return self
+
+    def __contains__(self, item: str) -> bool:
+        """Check if a key is in the PluginConfig."""
+        return item in self.__dict__
+
+    @classmethod
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+        """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
+        cls.validate(tuple(node_key.value for node_key, _ in node.value))
+        return loader.construct_yaml_object(node, cls)
+
+    @classmethod
+    def from_mapping(cls, mapping: dict[str, Any]) -> Self:
+        """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
+        cls.validate(tuple(mapping.keys()))
+        c = cls()
+        c.__dict__.update(mapping)
+        return c
+
+    @staticmethod
+    def validate(config_keys: tuple[Any, ...]) -> None:
+        """Validate a :class:`~eodag.config.PluginConfig`"""
+        if "type" not in config_keys:
+            raise ValidationError(
+                "A Plugin config must specify the type of Plugin it configures"
+            )
+
+    def update(self, config: Optional[Self | dict[Any, Any]]) -> None:
+        """Update the configuration parameters with values from `mapping`
+
+        :param mapping: The mapping from which to override configuration parameters
+        """
+        if config is None:
+            return
+        source = config if isinstance(config, dict) else config.__dict__
+        merge_mappings(
+            self.__dict__, {k: v for k, v in source.items() if v is not None}
+        )
+
+    def matches_target_auth(self, target_config: Self):
+        """Check if the target auth configuration matches this one"""
+        target_matching_conf = getattr(target_config, "matching_conf", {})
+        target_matching_url = getattr(target_config, "matching_url", None)
+
+        matching_conf = getattr(self, "matching_conf", {})
+        matching_url = getattr(self, "matching_url", None)
+
+        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(
+            matching_conf
+        ):
+            return True
+
+        if target_matching_url and target_matching_url == matching_url:
+            return True
+
+        return False
+
+
+def credentials_in_auth(auth_conf: PluginConfig) -> bool:
+    """Checks if credentials are set for this Authentication plugin configuration
+
+    :param auth_conf: Authentication plugin configuration
+    :returns: True if credentials are set, else False
+    """
+    return any(
+        c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
+    )
 
 
 def load_default_config() -> dict[str, ProviderConfig]:

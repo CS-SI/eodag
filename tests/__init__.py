@@ -32,9 +32,9 @@ from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
 
-from eodag.api.plugin import PluginConfig
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
+from eodag.config import PluginConfig
 from eodag.plugins.download.http import HTTPDownload
 
 jp = os.path.join
