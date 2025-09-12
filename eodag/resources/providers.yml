@@ -3680,10 +3680,10 @@
       single_collection_fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/{_collection}
       result_type: json
       results_entry: 'features'
-      generic_product_type_id: '$.dataset_id'
-      generic_product_type_parsable_properties:
+      generic_collection_id: '$.dataset_id'
+      generic_collection_parsable_properties:
         collection: '$.dataset_id'
-      generic_product_type_parsable_metadata:
+      generic_collection_parsable_metadata:
         description: '$.metadata.description'
         license: '$.terms'
         instruments: '$.null'
@@ -4426,10 +4426,10 @@
       fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
       result_type: json
       results_entry: '$.collections[*]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
+      generic_collection_id: '$.id'
+      generic_collection_parsable_properties:
         collection: '$.id'
-      generic_product_type_parsable_metadata:
+      generic_collection_parsable_metadata:
         description: '$.description'
         keywords: '{$.keywords#csv_list}'
         license: '$.license'
@@ -4999,10 +4999,10 @@
       fetch_url: https://api.eumetsat.int/data/browse/1.0.0/collections?format=json
       result_type: json
       results_entry: '$.links[*]'
-      generic_product_type_id: '$.title'
-      generic_product_type_parsable_properties:
+      generic_collection_id: '$.title'
+      generic_collection_parsable_properties:
         parentIdentifier: '$.title'
-      generic_product_type_parsable_metadata:
+      generic_collection_parsable_metadata:
         description: '$.null'
         instruments: '$.null'
         constellation: '$.null'
@@ -5427,10 +5427,10 @@
       fetch_url: 'https://stac.marine.copernicus.eu/metadata/catalog.stac.json'
       result_type: json
       results_entry: '$.collections[*]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
+      generic_collection_id: '$.id'
+      generic_collection_parsable_properties:
         collection: '$.id'
-      generic_product_type_parsable_metadata:
+      generic_collection_parsable_metadata:
         instruments: '$.null'
         constellation:  '$.null'
         platform: '$.null'
@@ -6016,8 +6016,8 @@
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
       result_type: json
       results_entry: '$.links[?(@.rel=="child")]'
-      generic_product_type_id: '{$.href#replace_str(r".*/", "")}'
-      generic_product_type_parsable_properties:
+      generic_collection_id: '{$.href#replace_str(r".*/", "")}'
+      generic_collection_parsable_properties:
         collection: '{$.href#replace_str(r".*/", "")}'
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
