@@ -64,9 +64,9 @@ if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
-    from eodag.api.plugin import PluginConfig
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack

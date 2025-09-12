@@ -34,7 +34,7 @@ import responses
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
-from eodag.api.plugin import PluginConfig
+from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings

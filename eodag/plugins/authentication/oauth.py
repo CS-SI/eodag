@@ -23,7 +23,7 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.utils import _deprecated
 
 if TYPE_CHECKING:
-    from eodag.api.plugin import PluginConfig
+    from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
 
 

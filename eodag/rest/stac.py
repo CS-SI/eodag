@@ -58,6 +58,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
     TimeOutError,
+    UnsupportedProvider,
     ValidationError,
 )
 from eodag.utils.requests import fetch_json
@@ -194,6 +195,9 @@ class StacCommon:
     def get_provider_dict(self, provider: str) -> dict[str, Any]:
         """Generate STAC provider dict"""
         provider_config = self.eodag_api.providers.get_config(provider)
+
+        if provider_config is None:
+            raise UnsupportedProvider(f"Provider {provider} not found")
 
         return {
             "name": getattr(provider_config, "group", provider_config.name),

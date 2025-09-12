@@ -25,7 +25,7 @@ from eodag.types import S3SessionKwargs
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
 
-    from eodag.api.plugin import PluginConfig
+    from eodag.config import PluginConfig
 
 
 class AwsAuth(Authentication):

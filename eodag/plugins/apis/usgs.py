@@ -59,8 +59,8 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from requests.auth import AuthBase
 
-    from eodag.api.plugin import PluginConfig
     from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack

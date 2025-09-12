@@ -88,9 +88,9 @@ if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
     from requests import Response
 
-    from eodag.api.plugin import PluginConfig
     from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
+    from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
