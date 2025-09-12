@@ -41,10 +41,10 @@ search:
     fetch_url: '{api_endpoint}/../collections'
     result_type: json
     results_entry: '$.collections[*]'
-    generic_product_type_id: '$.id'
-    generic_product_type_parsable_properties:
+    generic_collection_id: '$.id'
+    generic_collection_parsable_properties:
       collection: '$.id'
-    generic_product_type_parsable_metadata:
+    generic_collection_parsable_metadata:
       description: '$.description'
       instruments: '{$.summaries.instruments#csv_list}'
       constellation: '{$.summaries.constellation#csv_list}'
