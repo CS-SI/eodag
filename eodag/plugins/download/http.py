@@ -89,9 +89,9 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests import Response
 
+    from eodag.api.plugin import PluginConfig
     from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
-    from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -154,7 +154,6 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[dict[str, Any]]:
-
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is OFFLINE
@@ -262,9 +261,9 @@ class HTTPDownload(Download):
             {"json": json_response, "headers": {**response.headers}},
             on_response_mm_jsonpath,
         )
-        product.properties.update(
-            {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
-        )
+        product.properties.update({
+            k: v for k, v in properties_update.items() if v != NOT_AVAILABLE
+        })
         # the job id becomes the product id for EcmwfSearch products
         if "ORDERABLE" in product.properties.get("id", ""):
             product.properties["id"] = product.properties.get(
@@ -450,9 +449,9 @@ class HTTPDownload(Download):
                     f"{product.properties['title']} order status: {status_percent}"
                 )
 
-            product.properties.update(
-                {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
-            )
+            product.properties.update({
+                k: v for k, v in status_dict.items() if v != NOT_AVAILABLE
+            })
 
             product.properties["orderStatus"] = status_dict.get("status")
 
@@ -1035,11 +1034,7 @@ class HTTPDownload(Download):
                 self.stream, "status_code", None
             ) is not None and self.stream.status_code == getattr(
                 self.config, "order_status", {}
-            ).get(
-                "ordered", {}
-            ).get(
-                "http_code"
-            ):
+            ).get("ordered", {}).get("http_code"):
                 product.properties["storageStatus"] = "ORDERED"
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None

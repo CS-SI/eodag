@@ -22,7 +22,7 @@ import logging
 import requests
 from requests import RequestException
 
-from eodag.config import PluginConfig
+from eodag.api.plugin import PluginConfig
 from eodag.plugins.authentication import Authentication
 from eodag.plugins.authentication.openid_connect import (
     CodeAuthorizedAuth,

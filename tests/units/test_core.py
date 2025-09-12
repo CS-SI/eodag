@@ -62,7 +62,7 @@ from tests.utils import mock, write_eodag_conf_with_fake_credentials
 class TestCoreBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super(TestCoreBase, cls).setUpClass()
+        super().setUpClass()
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         cls.expanduser_mock = mock.patch(
@@ -638,7 +638,7 @@ class TestCore(TestCoreBase):
     ]
 
     def setUp(self):
-        super(TestCore, self).setUp()
+        super().setUp()
         self.dag = EODataAccessGateway()
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
         # mock os.environ to empty env
@@ -646,7 +646,7 @@ class TestCore(TestCoreBase):
         self.mock_os_environ.start()
 
     def tearDown(self):
-        super(TestCore, self).tearDown()
+        super().tearDown()
         # stop os.environ
         self.mock_os_environ.stop()
 
@@ -822,15 +822,15 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
             ext_product_types_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers["earth_search"].products)
-        self.assertNotIn("bar", self.dag.providers["earth_search"].products)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].product_types)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].product_types)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        self.assertIn("foo", self.dag.providers["earth_search"].products)
-        self.assertIn("bar", self.dag.providers["earth_search"].products)
+        self.assertIn("foo", self.dag.providers["earth_search"].product_types)
+        self.assertIn("bar", self.dag.providers["earth_search"].product_types)
         self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
         self.assertEqual(
             self.dag.product_types_config["bar"]["title"], "Bar collection"
@@ -859,8 +859,8 @@ class TestCore(TestCoreBase):
         # we keep the existing ext-conf to use it for a provider with an api plugin
         ext_product_types_conf["ecmwf"] = ext_product_types_conf.pop("earth_search")
 
-        self.assertNotIn("foo", self.dag.providers["ecmwf"].products)
-        self.assertNotIn("bar", self.dag.providers["ecmwf"].products)
+        self.assertNotIn("foo", self.dag.providers["ecmwf"].product_types)
+        self.assertNotIn("bar", self.dag.providers["ecmwf"].product_types)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
@@ -877,8 +877,8 @@ class TestCore(TestCoreBase):
 
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        self.assertIn("foo", self.dag.providers["ecmwf"].products)
-        self.assertIn("bar", self.dag.providers["ecmwf"].products)
+        self.assertIn("foo", self.dag.providers["ecmwf"].product_types)
+        self.assertIn("bar", self.dag.providers["ecmwf"].product_types)
         self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
         self.assertEqual(
             self.dag.product_types_config["bar"]["title"], "Bar collection"
@@ -889,8 +889,8 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
             ext_product_types_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers["earth_search"].products)
-        self.assertNotIn("bar", self.dag.providers["earth_search"].products)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].product_types)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].product_types)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
@@ -898,8 +898,8 @@ class TestCore(TestCoreBase):
 
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        self.assertNotIn("foo", self.dag.providers["earth_search"].products)
-        self.assertNotIn("bar", self.dag.providers["earth_search"].products)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].product_types)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].product_types)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
@@ -1012,7 +1012,7 @@ class TestCore(TestCoreBase):
         self.dag.fetch_product_types_list()
         self.assertTrue(self.dag.providers["earth_search"].product_types_fetched)
         self.assertEqual(
-            self.dag.providers["earth_search"].products["foo"],
+            self.dag.providers["earth_search"].product_types["foo"],
             {"productType": "foo"},
         )
         self.assertEqual(
@@ -1943,7 +1943,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 class TestCoreInvolvingConfDir(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super(TestCoreInvolvingConfDir, cls).setUpClass()
+        super().setUpClass()
         cls.dag = EODataAccessGateway()
         # mock os.environ to empty env
         cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
@@ -1951,16 +1951,16 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestCoreInvolvingConfDir, cls).tearDownClass()
+        super().tearDownClass()
         # stop os.environ
         cls.mock_os_environ.stop()
 
     def setUp(self):
-        super(TestCoreInvolvingConfDir, self).setUp()
+        super().setUp()
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
-        super(TestCoreInvolvingConfDir, self).tearDown()
+        super().tearDown()
         for old in glob.glob1(self.dag.conf_dir, "*.old") + glob.glob1(
             self.dag.conf_dir, ".*.old"
         ):
@@ -2055,7 +2055,7 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
 class TestCoreGeometry(TestCoreBase):
     @classmethod
     def setUpClass(cls):
-        super(TestCoreGeometry, cls).setUpClass()
+        super().setUpClass()
         cls.dag = EODataAccessGateway()
 
     def test_get_geometry_from_various_no_locations(self):
@@ -2188,7 +2188,7 @@ class TestCoreGeometry(TestCoreBase):
 class TestCoreSearch(TestCoreBase):
     @classmethod
     def setUpClass(cls):
-        super(TestCoreSearch, cls).setUpClass()
+        super().setUpClass()
         cls.dag = EODataAccessGateway()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
@@ -3531,7 +3531,7 @@ class TestCoreSearch(TestCoreBase):
 class TestCoreDownload(TestCoreBase):
     @classmethod
     def setUpClass(cls):
-        super(TestCoreDownload, cls).setUpClass()
+        super().setUpClass()
         cls.dag = EODataAccessGateway()
 
     def test_download_local_product(self):
@@ -3562,7 +3562,7 @@ class TestCoreDownload(TestCoreBase):
 class TestCoreProductAlias(TestCoreBase):
     @classmethod
     def setUpClass(cls):
-        super(TestCoreProductAlias, cls).setUpClass()
+        super().setUpClass()
         cls.dag = EODataAccessGateway()
         products = cls.dag.product_types_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
@@ -3696,13 +3696,15 @@ class TestCoreProviderGroup(TestCoreBase):
             if self.dag.providers[name].fetchable:
                 self.assertTrue(self.dag.providers[name].product_types_fetched)
                 self.assertEqual(
-                    self.dag.providers[name].products["foo"],
+                    self.dag.providers[name].product_types["foo"],
                     {"productType": "foo"},
                 )
                 mock_discover_product_types.assert_called_with(self.dag, provider=name)
             else:
                 self.assertFalse(self.dag.providers[name].product_types_fetched)
-                self.assertNotIn("foo", list(self.dag.providers[name].products.keys()))
+                self.assertNotIn(
+                    "foo", list(self.dag.providers[name].product_types.keys())
+                )
 
         self.assertEqual(
             self.dag.product_types_config.source["foo"],

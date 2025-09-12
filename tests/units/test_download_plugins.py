@@ -31,7 +31,6 @@ from unittest import mock
 import responses
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
-from eodag.api.provider import ProvidersDict
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
@@ -49,8 +48,9 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     NotAvailableError,
+    PluginConfig,
     PluginManager,
-    config,
+    ProvidersDict,
     load_default_config,
     path_to_uri,
     uri_to_path,
@@ -60,8 +60,8 @@ from tests.context import (
 class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        providers = load_default_config()
+        super(BaseDownloadPluginTest, cls).setUpClass()
+        providers = ProvidersDict.from_configs(load_default_config())
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
@@ -77,7 +77,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
+        super(BaseDownloadPluginTest, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
@@ -290,12 +290,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self._set_download_simulation(
             mock_requests_session, local_product_as_archive_path
         )
-        dl_config = config.PluginConfig.from_mapping({
-            "type": "HTTPDownload",
-            "base_uri": "fake_base_uri",
-            "output_dir": self.output_dir,
-            "extract": False,
-            "delete_archive": False,
+        dl_config = PluginConfig.from_mapping({
+                "type": "HTTPDownload",
+                "base_uri": "fake_base_uri",
+                "output_dir": self.output_dir,
+                "extract": False,
+                "delete_archive": False,
         })
         downloader = HTTPDownload(provider=provider, config=dl_config)
         product = self._dummy_product(provider, properties, productType)

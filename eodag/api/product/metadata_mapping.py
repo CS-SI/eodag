@@ -59,7 +59,7 @@ from eodag.utils.exceptions import ValidationError
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
 
