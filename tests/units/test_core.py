@@ -1659,12 +1659,12 @@ class TestCore(TestCoreBase):
         queryables_repr = html.fromstring(queryables._repr_html_())
         self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
-        collection_present = False
+        id_present = False
         for i, span in enumerate(spans):
-            if "collection" in span.text:
-                collection_present = True
+            if "id" in span.text:
+                id_present = True
                 self.assertIn("str", spans[i + 1].text)
-        self.assertTrue(collection_present)
+        self.assertTrue(id_present)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
