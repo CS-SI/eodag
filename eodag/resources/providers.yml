@@ -6486,11 +6486,21 @@
     need_auth: false
     ssl_verify: true
     metadata_mapping:
-      downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/{dataset}/{filter}/V1-0/tiles/{item_id}.zip'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
   products:
     GHS_BUILT_S:
       productType: BUILT
-      dataset: GHS_BUILT_S_GLOBE_R2023A
+      metadata_mapping:
+        dataset: GHS_BUILT_S_E{year}_GLOBE_R2023A_{coord_system}_{resolution}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_ESM_2015:
+      productType: ESM
+      year: 2015
+      coord_system: 3035
+      metadata_mapping:
+        dataset: ESM_BUILT_VHR2015CLASS_EUROPE_R2019_3035_{resolution}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
+      version:
   download: !plugin
     type: HTTPDownload
     ssl_verify: true

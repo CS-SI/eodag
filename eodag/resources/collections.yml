@@ -6893,6 +6893,23 @@ GHS_BUILT_S:
   missionStartDate: "1975-01-01T00:00:00Z"
   missionEndDate: "2030-12-31T00:00:00Z"
 
+GHS_ESM_2015:
+  abstract: |
+     The European Settlement Map is a spatial raster dataset that is mapping human settlements in Europe based on
+     Copernicus Very High Resolution optical coverage for reference year 2015 (VHR_IMAGE_2015).The ESM_2015 product
+     exploits the Copernicus VHR_IMAGE_2015 dataset made of satellite images Pleiades, Deimos-02, WorldView-2,
+     WorldView-3, GeoEye-01 and Spot 6/7 ranging from 2014 to 2016.
+  instrument:
+  platform: Pleiades, Deimos-02, WorldView-2, WorldView-3, GeoEye-01, Spot 6/7
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: GHS,Settlement,ESM,Europe,VHR_IMAGE_2015
+  sensorType: multi
+  license: other
+  title: European Settlement Map from Copernicus Very High Resolution data for reference year 2015
+  missionStartDate: "2015-01-01T00:00:00Z"
+  missionEndDate: "2015-12-31T00:00:00Z"
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
   description:
