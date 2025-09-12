@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import tempfile
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import requests
@@ -119,6 +120,8 @@ class EOProduct:
     filename: str
     #: Product search keyword arguments, stored during search
     search_kwargs: Any
+    #: Datetime for download next try
+    next_try: datetime
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
@@ -428,7 +431,6 @@ class EOProduct:
         ssl_verify: Optional[bool] = None,
         auth: Optional[AuthBase] = None,
     ):
-
         """Download the quicklook image from the EOProduct's quicklook URL.
 
         This method performs an HTTP GET request to retrieve the quicklook image and saves it
@@ -528,7 +530,6 @@ class EOProduct:
         )
 
         if not os.path.isfile(quicklook_file):
-
             # progress bar init
             if progress_callback is None:
                 progress_callback = ProgressCallback()
@@ -571,7 +572,6 @@ class EOProduct:
                     quicklook_file, progress_callback, ssl_verify, auth
                 )
             except RequestException as e:
-
                 logger.debug(
                     f"Error while getting resource with authentication. {e} \nTrying without authentication..."
                 )
@@ -620,24 +620,34 @@ class EOProduct:
 
                 <tr style='background-color: transparent;'>
                     <td style='text-align: left; vertical-align: top;'>
-                        {dict_to_html_table({
-                         "provider": self.provider,
-                         "collection": self.collection,
-                         "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;start_datetime&quot;]": self.properties.get(
-                             'start_datetime'
-                         ),
-                         "properties[&quot;end_datetime&quot;]": self.properties.get(
-                             'end_datetime'
-                         ),
-                         }, brackets=False)}
-                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
-                             self.properties)})</summary>{
-                                 dict_to_html_table(self.properties, depth=1)}</details>
-                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
-                                     self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
+                        {
+            dict_to_html_table(
+                {
+                    "provider": self.provider,
+                    "collection": self.collection,
+                    "properties[&quot;id&quot;]": self.properties.get("id"),
+                    "properties[&quot;start_datetime&quot;]": self.properties.get(
+                        "start_datetime"
+                    ),
+                    "properties[&quot;end_datetime&quot;]": self.properties.get(
+                        "end_datetime"
+                    ),
+                },
+                brackets=False,
+            )
+        }
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
+            len(self.properties)
+        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
+            len(self.assets)
+        })</summary>{self.assets._repr_html_(embeded=True)}</details>
                     </td>
-                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
-                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
+                    <td {geom_style} title='geometry'>geometry<br />{
+            self.geometry._repr_svg_()
+        }</td>
+                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{
+            thumbnail_html
+        }</td>
                 </tr>
             </table>"""

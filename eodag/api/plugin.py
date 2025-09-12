@@ -537,7 +537,7 @@ class PluginConfig(yaml.YAMLObject):
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: Self | dict[str, Any]) -> Self:
+    def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         cls.validate(tuple(mapping.keys()))
         c = cls()

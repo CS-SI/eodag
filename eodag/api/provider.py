@@ -24,17 +24,25 @@ import traceback
 from collections import UserDict
 from dataclasses import dataclass, field
 from inspect import isclass
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterator,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+    get_type_hints,
+)
 
 import yaml
 
 from eodag.api.collection import Collection
-from eodag.api.plugin import PluginConfig, credentials_in_auth
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.config import load_stac_provider_config
+from eodag.config import PluginConfig, credentials_in_auth, load_stac_provider_config
 from eodag.utils import (
     GENERIC_COLLECTION,
     STAC_SEARCH_PLUGINS,
@@ -235,8 +243,8 @@ class Provider:
     :param collections_fetched: Flag indicating whether product types have been fetched.
     """
 
-    _config: ProviderConfig
-    name: Optional[str] = field(default=None)
+    _config: ProviderConfig | dict[str, Any]
+    _name: Optional[str] = field(default=None)
     collections_fetched: bool = False  # set in core.update_collections_list
 
     def __post_init__(self):
@@ -252,12 +260,10 @@ class Provider:
             )
             raise ValidationError(msg)
 
-        self.name = self.name or self._config.name
+        self._name = self._name or self._config.name
 
-        if self.name is None:
-            raise ValidationError(
-                "Provider name could not be determined from the config."
-            )
+        if self._name is None:
+            raise ValidationError("Provider name could not be determined.")
 
     def __str__(self) -> str:
         """Return the provider's name as string."""
@@ -267,7 +273,7 @@ class Provider:
         """Return a string representation of the Provider."""
         return f"Provider('{self.name}')"
 
-    def __eq__(self, other: str | Self):
+    def __eq__(self, other: object):
         """Compare providers by name or with a string."""
         if isinstance(other, Provider):
             return self.name == other.name
@@ -292,7 +298,7 @@ class Provider:
             "name": self.name,
             "group": self.group,
             "priority": self.priority,
-            "products": list(self.products.keys()) if self.products else [],
+            "products": list(self.product_types.keys()) if self.product_types else [],
         }
 
         return (
@@ -303,8 +309,15 @@ class Provider:
         )
 
     @property
+    def name(self) -> str:
+        """The name of the provider."""
+        assert self._name is not None
+        return self._name
+
+    @property
     def config(self) -> ProviderConfig:
         """Get the provider's configuration."""
+        assert isinstance(self._config, ProviderConfig)
         return self._config
 
     @config.setter
@@ -340,16 +353,17 @@ class Provider:
         )
 
     @property
-    def unparsable_properties(self) -> Optional[set[str]]:
+    def unparsable_properties(self) -> set[str]:
         """Return set of unparsable properties for generic product types, if any."""
-        if self.fetchable:
-            return getattr(
-                self.search_config.discover_product_types,
-                "generic_product_type_unparsable_properties",
-                {},
-            ).keys()
+        if not self.fetchable or self.search_config is None:
+            return set()
 
-        return None
+        props = getattr(
+            getattr(self.search_config, "discover_product_types", None),
+            "generic_product_type_unparsable_properties",
+            {},
+        )
+        return set(props.keys()) if isinstance(props, dict) else set()
 
     @property
     def api_config(self) -> Optional[PluginConfig]:
@@ -494,6 +508,10 @@ class Provider:
         self.config |= config
 
 
+K = TypeVar("K")
+V = TypeVar("V")
+
+
 class ProvidersDict(UserDict[str, Provider]):
     """
     A dictionary-like collection of Provider objects, keyed by provider name.
@@ -501,7 +519,7 @@ class ProvidersDict(UserDict[str, Provider]):
     :param providers: Initial providers to populate the dictionary.
     """
 
-    def __contains__(self, item: str | Provider) -> bool:
+    def __contains__(self, item: object) -> bool:
         """
         Check if a provider is in the dictionary by name or Provider instance.
 
@@ -536,27 +554,6 @@ class ProvidersDict(UserDict[str, Provider]):
             msg = f"Provider '{key}' not found."
             raise UnsupportedProvider(msg)
         super().__delitem__(key)
-
-    def __or__(self, other: Self) -> Self:
-        """
-        Merge two ProvidersDict using the | operator.
-
-        :param other: Another ProvidersDict to merge.
-        :return: A new ProvidersDict containing merged providers.
-        """
-        new_providers = deepcopy(self.data)
-        new_providers.update_from_configs(other.configs)
-        return new_providers
-
-    def __ior__(self, other: Self) -> Self:
-        """
-        In-place merge of two ProvidersDict using the |= operator.
-
-        :param other: Another ProvidersDict to merge.
-        :return: The updated ProvidersDict (self).
-        """
-        self.update_from_configs(deepcopy(other.configs))
-        return self
 
     def __repr__(self) -> str:
         """
@@ -638,9 +635,9 @@ class ProvidersDict(UserDict[str, Provider]):
             name = provider
 
         provider_obj = self.data.get(name)
-        return provider_obj.products if provider_obj else None
+        return provider_obj.product_types if provider_obj else None
 
-    def filter_by_name(self, name: Optional[str] = None) -> Self:
+    def filter_by_name(self, name: Optional[str] = None) -> ProvidersDict:
         """
         Return a ProvidersDict filtered by provider name or group.
 
@@ -689,8 +686,8 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @staticmethod
     def _get_whitelisted_configs(
-        configs: dict[str, ProviderConfig | dict[str, Any]],
-    ) -> dict[str, ProviderConfig | dict[str, Any]]:
+        configs: Mapping[str, ProviderConfig | dict[str, Any]],
+    ) -> Mapping[str, ProviderConfig | dict[str, Any]]:
         """
         Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
 
@@ -704,7 +701,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def update_from_configs(
         self,
-        configs: dict[str, ProviderConfig | dict[str, Any]],
+        configs: Mapping[str, ProviderConfig | dict[str, Any]],
     ) -> None:
         """
         Update providers from a dictionary of configurations.
@@ -811,14 +808,15 @@ class ProvidersDict(UserDict[str, Provider]):
         self.update_from_configs(mapping_from_env)
 
     @classmethod
-    def from_configs(cls, configs: dict[ProviderConfig | dict[str, Any]]) -> Self:
+    def from_configs(
+        cls, configs: Mapping[str, ProviderConfig | dict[str, Any]]
+    ) -> Self:
         """
         Build a ProvidersDict from a configuration mapping.
 
         :param configs: A dictionary mapping provider names to configuration dicts or ProviderConfig instances.
         :return: An instance of ProvidersDict populated with the given configurations.
         """
-        configs = cls._get_whitelisted_configs(configs)
         providers = cls()
         providers.update_from_configs(configs)
         return providers
