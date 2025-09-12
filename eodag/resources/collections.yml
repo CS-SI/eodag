@@ -6613,7 +6613,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   extent: {"temporal": {"interval": ["1997-09-01T00:00:00Z", "2024-04-01T00:00:00Z"]}}
 
 # MARK: GENERIC ------------------------------------------------------------------------
-GENERIC_PRODUCT_TYPE:
+GENERIC_COLLECTION:
   description:
   instruments: []
   constellation:

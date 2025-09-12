@@ -41,7 +41,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     USER_AGENT,
     ProgressCallback,
     format_dict_items,
@@ -158,7 +158,7 @@ class UsgsApi(Api):
 
         collection_def_params = self.config.products.get(  # type: ignore
             collection,
-            self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
+            self.config.products[GENERIC_COLLECTION],  # type: ignore
         )
         usgs_collection = format_dict_items(collection_def_params, **kwargs)[
             "_collection"
@@ -316,7 +316,7 @@ class UsgsApi(Api):
         output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.collection, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+                product.collection, self.config.products[GENERIC_COLLECTION]  # type: ignore
             ).get("output_extension", ".tar.gz"),
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
@@ -338,7 +338,7 @@ class UsgsApi(Api):
                 f"No USGS products found for {product.properties['id']}"
             )
         usgs_dataset = self.config.products.get(product.collection, {}).get(
-            "_collection", GENERIC_PRODUCT_TYPE
+            "_collection", GENERIC_COLLECTION
         )
         download_request_results = api.download_request(
             usgs_dataset,

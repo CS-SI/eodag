@@ -35,7 +35,7 @@ from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     copy_deepcopy,
     deepcopy,
     format_dict_items,
@@ -149,7 +149,7 @@ class Search(PluginTopic):
             return None
         logger.debug("Mapping eodag collection to provider collection")
         return self.config.products.get(collection, {}).get(
-            "_collection", GENERIC_PRODUCT_TYPE
+            "_collection", GENERIC_COLLECTION
         )
 
     def get_collection_def_params(
@@ -162,7 +162,7 @@ class Search(PluginTopic):
         """
         if collection in self.config.products.keys():
             return self.config.products[collection]
-        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
+        elif GENERIC_COLLECTION in self.config.products.keys():
             logger.debug(
                 "Getting generic provider collection definition parameters for %s",
                 collection,
@@ -170,7 +170,7 @@ class Search(PluginTopic):
             return {
                 k: v
                 for k, v in format_dict_items(
-                    self.config.products[GENERIC_PRODUCT_TYPE],
+                    self.config.products[GENERIC_COLLECTION],
                     **(format_variables or {}),
                 ).items()
                 if v

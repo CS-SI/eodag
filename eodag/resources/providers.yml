@@ -70,7 +70,7 @@
       _collection: landsat_etm_c2_l2
     S2_MSI_L1C:
       _collection: SENTINEL_2A
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
 
 ---
@@ -676,7 +676,7 @@
     S2_MSI_L1C:
       _collection: S2ST
       product:type: S2MSI1C
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -1258,7 +1258,7 @@
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
         _provider: '$.Attributes.authority'
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
 ---
 !provider # MARK: usgs_satapi_aws
@@ -1311,7 +1311,7 @@
       _collection: landsat-c2l2alb-st
     LANDSAT_C2L2ALB_TA:
       _collection: landsat-c2l2alb-ta
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: AwsDownload
@@ -1405,7 +1405,7 @@
       _collection: cop-dem-glo-30
     COP_DEM_GLO90_DGED:
       _collection: cop-dem-glo-90
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: AwsDownload
@@ -1478,7 +1478,7 @@
         wrsPath: '$.properties."landsat:wrs_path"'
         wrsRow: '$.properties."landsat:wrs_row"'
         downloadLink: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: AwsDownload
@@ -1526,7 +1526,7 @@
     # See available Public Datasets in https://apps.ecmwf.int/datasets/
     TIGGE_CF_SFC:
       dataset: tigge
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       dataset: '{collection}'
 ---
 !provider # MARK: cop_ads
@@ -1660,7 +1660,7 @@
       dataset: cams-global-reanalysis-eac4-monthly
       metadata_mapping:
         <<: *month_year
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       dataset: '{collection}'
 ---
 !provider # MARK: cop_cds
@@ -1881,12 +1881,6 @@
       data_format: zip
     CMIP6_CLIMATE_PROJECTIONS:
       dataset: projections-cmip6
-      experiment: historical
-      variable: air_temperature
-      model: access_cm2
-      level: ["1"]
-      year: ["1850"]
-      month: ["01"]
       metadata_mapping:
         <<: *month_year
     GENERIC_PRODUCT_TYPE:
@@ -2172,7 +2166,7 @@
       collection: S3
       instruments: SYNERGY
       processing:level: LEVEL-2
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -2251,7 +2245,7 @@
       units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
       timeIntervalsAlignment:
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
   download: !plugin
@@ -2853,7 +2847,7 @@
     S5P_L2_SO2:
       product:type: L2__SO2___
       _collection: SENTINEL-5P
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
 ---
 !provider # MARK: planetary_computer
@@ -2896,7 +2890,7 @@
       _collection: modis-43A4-061
     NAIP:
       _collection: naip
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -2947,7 +2941,7 @@
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
   products:
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -3730,7 +3724,7 @@
       order:status: 'orderable'
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   auth: !plugin
     type: TokenAuth
@@ -4323,7 +4317,7 @@
       _collection: COP-DEM
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
 ---
 !provider # MARK: dedt_lumi
@@ -4949,7 +4943,7 @@
       _collection: EO.ISIMIP.DAT.CLIMATE-FORCING_ISIMIP3b
     ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
       _collection: EO.ISIMIP.DAT.SOCIO-ECONOMIC-FORCING_ISIMIP3b
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
 ---
 !provider # MARK: eumetsat_ds
@@ -5393,7 +5387,7 @@
       parentIdentifier: EO:EUM:DAT:0684
     MTG_FCI_OLR:
       parentIdentifier: EO:EUM:DAT:0685
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
       parentIdentifier: '{parentIdentifier}'
   download: !plugin
@@ -5569,7 +5563,7 @@
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
       _collection: OCEANCOLOUR_GLO_BGC_L4_MY_009_108
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: AwsDownload
@@ -5691,7 +5685,7 @@
       _collection: MUSCATE_Snow_SENTINEL2_L2B-SNOW
     S2_MSI_L2B_MAJA_WATER:
       _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -5816,7 +5810,7 @@
      _collection: MUSCATE_Snow_SENTINEL2_L2B-SNOW
     S2_MSI_L2B_MAJA_WATER:
       _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: AwsDownload
@@ -6003,7 +5997,7 @@
       dataset: cems-fire-seasonal
       metadata_mapping:
         <<: *day_month_year
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       dataset: '{collection}'
 ---
 !provider # MARK: fedeo_ceda
@@ -6040,7 +6034,7 @@
       geometry: '$.geometry'
       assets: '{$.assets#dict_filter($[?(@.href =~ ".*\/thredds\/fileServer\/.*")])}'
   products:
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload

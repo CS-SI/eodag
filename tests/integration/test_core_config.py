@@ -82,7 +82,7 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
                 download:
                     type: HTTPDownload
@@ -149,7 +149,7 @@ class TestCoreProvidersConfig(TestCase):
                 auth:
                     type: GenericAuth
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
             """
         )
@@ -200,7 +200,7 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
                 auth:
                     type: GenericAuth
@@ -215,7 +215,7 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
                 auth:
                     type: GenericAuth
@@ -411,7 +411,7 @@ class TestCoreCollectionsConfig(TestCase):
                         fetch_url: https://foo.bar/collections
                     need_auth: true
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
             """
         )

@@ -296,7 +296,7 @@ class TestConfigFunctions(unittest.TestCase):
                 products:
                     S2_MSI_L1C:
                         _collection: sentinel2_l1c
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
                 download:
                     type: AwsDownload
@@ -357,7 +357,7 @@ class TestConfigFunctions(unittest.TestCase):
             products:
                 S2_MSI_L1C:
                   _collection: sentinel2_l1c
-                GENERIC_PRODUCT_TYPE:
+                GENERIC_COLLECTION:
                   _collection: '{collection}'
             download:
                 type: AwsDownload
@@ -408,7 +408,7 @@ class TestConfigFunctions(unittest.TestCase):
             my_new_provider_conf.products["S2_MSI_L1C"]["_collection"], "sentinel2_l1c"
         )
         self.assertEqual(
-            my_new_provider_conf.products["GENERIC_PRODUCT_TYPE"]["_collection"],
+            my_new_provider_conf.products["GENERIC_COLLECTION"]["_collection"],
             "{collection}",
         )
         self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
@@ -565,7 +565,7 @@ class TestStacProviderConfig(unittest.TestCase):
                     metadata_mapping:
                         title: '$.properties."foo:bar_baz"'
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
                 download:
                     type: HTTPDownload

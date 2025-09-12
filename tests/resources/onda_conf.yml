@@ -288,7 +288,7 @@
     # Landsat
     L8_OLI_TIRS_C1L1:
       platform: 'Landsat-*'
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       productType: '{productType}'
       platform: '{platform}'
   download: !plugin

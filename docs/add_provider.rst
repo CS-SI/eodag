@@ -33,7 +33,7 @@ provide the new provider's configuration in a ``YAML`` format. The following exa
       products:
          S2_MSI_L1C:
             productType: sentinel-2-l1c
-         GENERIC_PRODUCT_TYPE:
+         GENERIC_COLLECTION:
             productType: '{productType}'
       download:
          type: AwsDownload

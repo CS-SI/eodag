@@ -63,7 +63,7 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MAX_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
     get_geometry_from_various,
     makedirs,
@@ -249,7 +249,7 @@ class EODataAccessGateway:
         products_to_add: list[str] = []
 
         for product_id in provider_products:
-            if product_id == GENERIC_PRODUCT_TYPE:
+            if product_id == GENERIC_COLLECTION:
                 continue
 
             if product_id not in available_collections:
@@ -365,7 +365,7 @@ class EODataAccessGateway:
         priority: Optional[int] = None,
         search: dict[str, Any] = {"type": "StacSearch"},
         products: dict[str, Any] = {
-            GENERIC_PRODUCT_TYPE: {"_collection": "{collection}"}
+            GENERIC_COLLECTION: {"_collection": "{collection}"}
         },
         download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
         **kwargs: dict[str, Any],
@@ -376,7 +376,7 @@ class EODataAccessGateway:
         updated (not replaced), with user provided ones:
 
             * ``search`` : ``{"type": "StacSearch"}``
-            * ``products`` : ``{"GENERIC_PRODUCT_TYPE": {"_collection": "{collection}"}}``
+            * ``products`` : ``{"GENERIC_COLLECTION": {"_collection": "{collection}"}}``
             * ``download`` : ``{"type": "HTTPDownload", "auth_error_code": 401}``
 
         :param name: Name of provider
@@ -392,7 +392,7 @@ class EODataAccessGateway:
                 "url": url,
                 "search": {"type": "StacSearch", **search},
                 "products": {
-                    GENERIC_PRODUCT_TYPE: {"_collection": "{collection}"},
+                    GENERIC_COLLECTION: {"_collection": "{collection}"},
                     **products,
                 },
                 "download": {
@@ -573,7 +573,7 @@ class EODataAccessGateway:
 
         for p in providers_configs:
             for collection_id in p.products:  # type: ignore
-                if collection_id == GENERIC_PRODUCT_TYPE:
+                if collection_id == GENERIC_COLLECTION:
                     continue
 
                 config = self.collections_config[collection_id]
@@ -1046,7 +1046,7 @@ class EODataAccessGateway:
 
         for pt_id, pt_dict in self.collections_config.source.items():
             if (
-                pt_id == GENERIC_PRODUCT_TYPE
+                pt_id == GENERIC_COLLECTION
                 or pt_id not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
@@ -1479,7 +1479,7 @@ class EODataAccessGateway:
                 self.guess_collection(**kwargs)[0]
             )
         except NoMatchingCollection:
-            collection = GENERIC_PRODUCT_TYPE
+            collection = GENERIC_COLLECTION
         else:
             # fetch collections list if collection is unknown
             if (
@@ -2332,10 +2332,10 @@ class EODataAccessGateway:
             )
             # If the product isn't in the catalog, it's a generic collection.
         except IndexError:
-            # Construct the GENERIC_PRODUCT_TYPE metadata
+            # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                ID=GENERIC_PRODUCT_TYPE,
-                **self.collections_config[GENERIC_PRODUCT_TYPE],
+                ID=GENERIC_COLLECTION,
+                **self.collections_config[GENERIC_COLLECTION],
                 collection=collection,
             )
         # Remove the ID since this is equal to collection.
