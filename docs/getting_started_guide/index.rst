@@ -14,6 +14,7 @@ it efficiently as quickly as possible.
    providers
    register
    product_types
-   product_storage_status
+
+   eo_products_properties
    configure
    ecosystem
