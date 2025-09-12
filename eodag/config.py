@@ -20,19 +20,13 @@ from __future__ import annotations
 import logging
 import os
 from importlib.resources import files as res_files
-from typing import Any, ItemsView, Iterator, ValuesView
+from typing import TYPE_CHECKING
 
 import orjson
 import requests
 import yaml
 import yaml.parser
 
-from eodag.api.provider import (
-    Provider,
-    ProviderConfig,
-    ProvidersDict,
-    provider_config_init,
-)
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -42,6 +36,11 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
+
+if TYPE_CHECKING:
+    from typing import Any, ItemsView, Iterator, ValuesView
+
+    from eodag.api.provider import ProviderConfig
 
 logger = logging.getLogger("eodag.config")
 
@@ -87,7 +86,7 @@ class SimpleYamlProxyConfig:
         self.source.update(other.source)
 
 
-def load_default_config() -> ProvidersDict:
+def load_default_config() -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
@@ -102,7 +101,7 @@ def load_default_config() -> ProvidersDict:
     return load_config(eodag_providers_cfg_file)
 
 
-def load_config(config_path: str) -> ProvidersDict:
+def load_config(config_path: str) -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary from a given file
 
     If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
@@ -111,7 +110,6 @@ def load_config(config_path: str) -> ProvidersDict:
     :returns: The default provider's configuration
     """
     logger.debug("Loading configuration from %s", config_path)
-    providers = ProvidersDict(providers=None)
 
     try:
         # Providers configs are stored in this file as separated yaml documents
@@ -121,23 +119,7 @@ def load_config(config_path: str) -> ProvidersDict:
         logger.error("Unable to load configuration")
         raise e
 
-    stac_provider_config = load_stac_provider_config()
-
-    whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
-    whitelist = None
-    if whitelist_env:
-        whitelist = {provider for provider in whitelist_env.split(",")}
-        logger.info("Using providers whitelist: %s", ", ".join(whitelist))
-
-    for provider_config in providers_configs:
-        provider_whitelisted = provider_config.name in whitelist if whitelist else True
-        if provider_config is None or not provider_whitelisted:
-            continue
-
-        provider_config_init(provider_config, stac_provider_config)
-        providers.add(Provider(provider_config.name, provider_config))
-
-    return providers
+    return {p.name: p for p in providers_configs if p is not None}
 
 
 def load_yml_config(yml_path: str) -> dict[Any, Any]:

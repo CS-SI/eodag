@@ -33,9 +33,9 @@ from dateutil.tz import tzutc
 from dateutil.utils import today
 
 from eodag import EOProduct
+from eodag.api.plugin import PluginConfig
 from eodag.api.product import AssetsDict
 from eodag.api.search_result import SearchResult
-from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various
@@ -70,7 +70,7 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
 
 
 def _get_dates_from_dataset_data(
-    dataset_item: dict[str, Any]
+    dataset_item: dict[str, Any],
 ) -> Optional[dict[str, str]]:
     dates = {}
     if "start_datetime" in dataset_item["properties"]:
@@ -213,7 +213,6 @@ class CopMarineSearch(StaticStacSearch):
         collection_dict: dict[str, Any],
         use_dataset_dates: bool = False,
     ) -> Optional[EOProduct]:
-
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
         download_url = s3_url + "/" + item_key
         geometry = (

@@ -25,6 +25,8 @@ from tempfile import TemporaryDirectory
 
 import yaml.parser
 
+from eodag.api.plugin import PluginConfig
+from eodag.api.provider import ProvidersDict
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
@@ -35,7 +37,6 @@ from tests.context import (
     config,
     get_ext_collections_conf,
     load_stac_provider_config,
-    merge_configs,
 )
 from tests.utils import mock
 
@@ -176,21 +177,26 @@ class TestProviderConfig(unittest.TestCase):
         provider_config1 = yaml.load(config_stream1, Loader=yaml.Loader)
         provider_config2 = yaml.load(config_stream2, Loader=yaml.Loader)
 
-        providers_config = {
-            "provider1": provider_config1,
-            "provider2": provider_config1,
-        }
-
-        merge_configs(
-            providers_config,
-            {"provider1": provider_config2, "provider3": provider_config1},
+        providers = ProvidersDict.from_configs(
+            {
+                "provider1": provider_config1,
+                "provider2": provider_config1,
+            }
         )
-        self.assertEqual(len(providers_config), 3)
-        self.assertEqual(providers_config["provider1"].provider_param, "val1")
-        self.assertEqual(providers_config["provider1"].provider_param2, "val2")
-        self.assertEqual(providers_config["provider1"].provider_param3, "val3")
-        self.assertEqual(providers_config["provider1"].api.plugin_param1, "value1")
-        self.assertEqual(providers_config["provider1"].api.pluginParam2, "value3")
+
+        providers |= ProvidersDict.from_configs(
+            {
+                "provider1": provider_config2,
+                "provider3": provider_config2,
+            }
+        )
+
+        self.assertEqual(len(providers.configs), 3)
+        self.assertEqual(providers["provider1"].config.provider_param, "val1")
+        self.assertEqual(providers["provider1"].config.provider_param2, "val2")
+        self.assertEqual(providers["provider1"].config.provider_param3, "val3")
+        self.assertEqual(providers["provider1"].config.api.plugin_param1, "value1")
+        self.assertEqual(providers["provider1"].config.api.pluginParam2, "value3")
 
 
 class TestPluginConfig(unittest.TestCase):
@@ -212,9 +218,7 @@ class TestPluginConfig(unittest.TestCase):
                     param1: value
         """
         )
-        self.assertIsInstance(
-            yaml.load(valid_stream, Loader=yaml.Loader), config.PluginConfig
-        )
+        self.assertIsInstance(yaml.load(valid_stream, Loader=yaml.Loader), PluginConfig)
 
     def test_plugin_config_update(self):
         """A plugin config must be update-able by a dict"""
@@ -276,43 +280,44 @@ class TestConfigFunctions(unittest.TestCase):
         """Config must be loaded with only the selected whitelist of providers"""
         try:
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
-            conf = config.load_default_config()
+            providers = ProvidersDict.from_configs(config.load_default_config())
 
-            self.assertIsInstance(conf, dict)
-            self.assertEqual({"creodias"}, set(conf.keys()))
+            self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
             os.environ.pop("EODAG_PROVIDERS_WHITELIST", None)
 
     def test_override_config_from_str(self):
         """Default configuration must be overridden from a yaml conf str"""
-        default_config = config.load_default_config()
-        conf_update = yaml.safe_load(
-            """
-            my_new_provider:
-                priority: 4
-                search:
-                    type: StacSearch
-                    api_endpoint: https://api.my_new_provider/search
-                products:
-                    S2_MSI_L1C:
-                        _collection: sentinel2_l1c
-                    GENERIC_COLLECTION:
-                        _collection: '{collection}'
-                download:
-                    type: AwsDownload
-                    s3_endpoint: https://api.my_new_provider
-                auth:
-                    type: AwsAuth
-                    credentials:
-                        aws_access_key_id: access-key-id
-                        aws_secret_access_key: secret-access-key
-            """
-        )
-        config.override_config_from_mapping(default_config, conf_update)
 
-        my_new_provider_conf = default_config["my_new_provider"]
+        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers.update_from_configs(
+            yaml.safe_load(
+                """
+                my_new_provider:
+                    priority: 4
+                    search:
+                        type: StacSearch
+                        api_endpoint: https://api.my_new_provider/search
+                    products:
+                        S2_MSI_L1C:
+                            productType: sentinel2_l1c
+                        GENERIC_PRODUCT_TYPE:
+                            productType: '{productType}'
+                    download:
+                        type: AwsDownload
+                        s3_endpoint: https://api.my_new_provider
+                    auth:
+                        type: AwsAuth
+                        credentials:
+                            aws_access_key_id: access-key-id
+                            aws_secret_access_key: secret-access-key
+                """
+            )
+        )
+
+        my_new_provider_conf = providers["my_new_provider"].config
         self.assertEqual(my_new_provider_conf.priority, 4)
-        self.assertIsInstance(my_new_provider_conf.search, config.PluginConfig)
+        self.assertIsInstance(my_new_provider_conf.search, PluginConfig)
         self.assertEqual(
             my_new_provider_conf.products["S2_MSI_L1C"]["_collection"], "sentinel2_l1c"
         )
@@ -369,19 +374,19 @@ class TestConfigFunctions(unittest.TestCase):
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
         """
-        default_config = config.load_default_config()
+        providers = ProvidersDict.from_configs(config.load_default_config())
         file_path_override = os.path.join(
             os.path.dirname(__file__), "resources", "file_config_override.yml"
         )
+        providers.update_from_config_file(file_path_override)
 
-        config.override_config_from_file(default_config, file_path_override)
-        usgs_conf = default_config["usgs"]
+        usgs_conf = providers["usgs"].config
         self.assertEqual(usgs_conf.priority, 5)
         self.assertEqual(usgs_conf.api.extract, False)
         self.assertEqual(usgs_conf.api.credentials["username"], "usr")
         self.assertEqual(usgs_conf.api.credentials["password"], "pwd")
 
-        aws_conf = default_config["aws_eos"]
+        aws_conf = providers["aws_eos"].config
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
         self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
@@ -392,12 +397,12 @@ class TestConfigFunctions(unittest.TestCase):
             "secret-access-key",
         )
 
-        peps_conf = default_config["peps"]
+        peps_conf = providers["peps"].config
         self.assertEqual(peps_conf.download.output_dir, "/data")
 
-        my_new_provider_conf = default_config["my_new_provider"]
+        my_new_provider_conf = providers["my_new_provider"].config
         self.assertEqual(my_new_provider_conf.priority, 4)
-        self.assertIsInstance(my_new_provider_conf.search, config.PluginConfig)
+        self.assertIsInstance(my_new_provider_conf.search, PluginConfig)
         self.assertEqual(my_new_provider_conf.search.type, "StacSearch")
         self.assertEqual(
             my_new_provider_conf.search.api_endpoint,
@@ -411,13 +416,13 @@ class TestConfigFunctions(unittest.TestCase):
             my_new_provider_conf.products["GENERIC_COLLECTION"]["_collection"],
             "{collection}",
         )
-        self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
+        self.assertIsInstance(my_new_provider_conf.download, PluginConfig)
         self.assertEqual(my_new_provider_conf.download.type, "AwsDownload")
         self.assertEqual(
             my_new_provider_conf.download.s3_endpoint, "https://api.my_new_provider"
         )
         self.assertFalse(my_new_provider_conf.download.flatten_top_dirs)
-        self.assertIsInstance(my_new_provider_conf.auth, config.PluginConfig)
+        self.assertIsInstance(my_new_provider_conf.auth, PluginConfig)
         self.assertEqual(my_new_provider_conf.auth.type, "AwsAuth")
         self.assertEqual(
             my_new_provider_conf.auth.credentials["aws_access_key_id"], "access-key-id"
@@ -429,7 +434,7 @@ class TestConfigFunctions(unittest.TestCase):
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""
-        default_config = config.load_default_config()
+        providers = ProvidersDict.from_configs(config.load_default_config())
         os.environ["EODAG__USGS__PRIORITY"] = "5"
         os.environ["EODAG__USGS__API__EXTRACT"] = "false"
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
@@ -444,19 +449,19 @@ class TestConfigFunctions(unittest.TestCase):
         ] = "secret-access-key"
         os.environ["EODAG__PEPS__DOWNLOAD__OUTPUT_DIR"] = "/data"
         # check a parameter that has not been set yet
-        self.assertFalse(hasattr(default_config["peps"].search, "timeout"))
-        self.assertNotIn("start_page", default_config["peps"].search.pagination)
+        self.assertFalse(hasattr(providers["peps"].search_config, "timeout"))
+        self.assertNotIn("start_page", providers["peps"].search_config.pagination)
         os.environ["EODAG__PEPS__SEARCH__TIMEOUT"] = "3.1"
         os.environ["EODAG__PEPS__SEARCH__PAGINATION__START_PAGE"] = "2"
 
-        config.override_config_from_env(default_config)
-        usgs_conf = default_config["usgs"]
+        providers.update_from_env()
+        usgs_conf = providers["usgs"].config
         self.assertEqual(usgs_conf.priority, 5)
         self.assertEqual(usgs_conf.api.extract, False)
         self.assertEqual(usgs_conf.api.credentials["username"], "usr")
         self.assertEqual(usgs_conf.api.credentials["password"], "pwd")
 
-        aws_conf = default_config["aws_eos"]
+        aws_conf = providers["aws_eos"].config
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
         self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
@@ -467,7 +472,7 @@ class TestConfigFunctions(unittest.TestCase):
             "secret-access-key",
         )
 
-        peps_conf = default_config["peps"]
+        peps_conf = providers["peps"].config
         self.assertEqual(peps_conf.download.output_dir, "/data")
         self.assertEqual(peps_conf.search.timeout, 3.1)
         self.assertEqual(peps_conf.search.pagination["start_page"], 2)
@@ -495,7 +500,7 @@ class TestConfigFunctions(unittest.TestCase):
 
 class TestStacProviderConfig(unittest.TestCase):
     def setUp(self):
-        super(TestStacProviderConfig, self).setUp()
+        super().setUp()
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -506,23 +511,29 @@ class TestStacProviderConfig(unittest.TestCase):
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
-        super(TestStacProviderConfig, self).tearDown()
+        super().tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
     def test_existing_stac_provider_conf(self):
         """Existing / pre-configured STAC providers conf should mix providers.yml and  stac_provider.yml infos."""
-        with open(str(res_files("eodag") / "resources" / "providers.yml"), "r") as fh:
-            providers_configs = {
-                p.name: p for p in yaml.load_all(fh, Loader=yaml.Loader)
-            }
+        with mock.patch(
+            "eodag.api.provider.ProviderConfig.__setstate__",
+            lambda self, state: self.__dict__.update(state),
+        ):
+            with open(
+                str(res_files("eodag") / "resources" / "providers.yml"), "r"
+            ) as fh:
+                providers_configs = {
+                    p.name: p for p in yaml.load_all(fh, Loader=yaml.Loader)
+                }
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag.providers_config[
+        provider_search_conf = self.dag.providers[
             "usgs_satapi_aws"
-        ].search.__dict__
+        ].search_config.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
         self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])
@@ -575,7 +586,7 @@ class TestStacProviderConfig(unittest.TestCase):
         ]["search"]
 
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag.providers_config["foo"].search.__dict__
+        provider_search_conf = self.dag.providers["foo"].search_config.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
         self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])

@@ -44,7 +44,7 @@ from eodag.utils.import_system import patch_owslib_requests
 if TYPE_CHECKING:
     from owslib.fes import OgcExpression
 
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
 
 
 logger = logging.getLogger("eodag.search.csw")

@@ -28,7 +28,8 @@ import importlib_metadata
 from packaging.requirements import Requirement
 from stdlib_list import stdlib_list
 
-from eodag.config import PluginConfig, load_default_config
+from eodag.api.plugin import PluginConfig
+from eodag.config import load_default_config
 from tests.context import MisconfiguredError
 
 project_path = "./eodag"

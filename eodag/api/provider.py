@@ -15,13 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import logging
 import os
 import tempfile
+import traceback
 from collections import UserDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from inspect import isclass
-from typing import TYPE_CHECKING, Any, Optional, Self, Union, get_type_hints
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Union, get_type_hints
 
 import yaml
 
@@ -31,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.config import load_stac_provider_config
 from eodag.utils import (
     GENERIC_COLLECTION,
     STAC_SEARCH_PLUGINS,
@@ -58,6 +62,9 @@ class ProviderConfig(yaml.YAMLObject):
     :param name: The name of the provider
     :param priority: (optional) The priority of the provider while searching a product.
                      Lower value means lower priority. (Default: 0)
+    :param roles: The roles of the provider (e.g. "host", "producer", "licensor", "processor")
+    :param description: (optional) A short description of the provider
+    :param url: URL to the webpage representing the provider
     :param api: (optional) The configuration of a plugin of type Api
     :param search: (optional) The configuration of a plugin of type Search
     :param products: (optional) The products types supported by the provider
@@ -86,8 +93,28 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = "!provider"
 
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        """Apply defaults when building from yaml."""
+        self.__dict__.update(state)
+        self._apply_defaults()
+
+    def __or__(self, other: Self | dict[str, Any]) -> Self:
+        """Merge ProviderConfig with another ProviderConfig or a dict using | operator"""
+        new_conf = deepcopy(self)
+        new_conf.update(other)
+        return new_conf
+
+    def __ior__(self, other: Self | dict[str, Any]) -> Self:
+        """In-place merge of ProviderConfig with another ProviderConfig or a dict using |= operator"""
+        self.update(other)
+        return self
+
+    def __contains__(self, key):
+        """Check if a key is in the ProviderConfig."""
+        return key in self.__dict__
+
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[Self]:
         """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
@@ -101,10 +128,11 @@ class ProviderConfig(yaml.YAMLObject):
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
         for key in PLUGINS_TOPICS_KEYS:
-            if key in mapping:
-                mapping[key] = PluginConfig.from_mapping(mapping[key])
+            if _mapping := mapping.get(key):
+                mapping[key] = PluginConfig.from_mapping(_mapping)
         c = cls()
         c.__dict__.update(mapping)
+        c._apply_defaults()
         return c
 
     @staticmethod
@@ -124,29 +152,31 @@ class ProviderConfig(yaml.YAMLObject):
                 "type of plugin"
             )
 
-    def update(self, mapping: Optional[dict[str, Any]]) -> None:
+    def update(self, config: Self | dict[str, Any]) -> None:
         """Update the configuration parameters with values from `mapping`
 
-        :param mapping: The mapping from which to override configuration parameters
+        :param config: The config from which to override configuration parameters
         """
-        if mapping is None:
-            mapping = {}
+        source = config if isinstance(config, dict) else config.__dict__
+
         merge_mappings(
             self.__dict__,
             {
                 key: value
-                for key, value in mapping.items()
+                for key, value in source.items()
                 if key not in PLUGINS_TOPICS_KEYS and value is not None
             },
         )
         for key in PLUGINS_TOPICS_KEYS:
             current_value: Optional[PluginConfig] = getattr(self, key, None)
-            mapping_value = mapping.get(key, {})
+            config_value = source.get(key, {})
             if current_value is not None:
-                current_value.update(mapping_value)
-            elif mapping_value:
+                current_value |= config_value
+            elif isinstance(config_value, PluginConfig):
+                setattr(self, key, config_value)
+            elif config_value:
                 try:
-                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                    setattr(self, key, PluginConfig.from_mapping(config_value))
                 except ValidationError as e:
                     logger.warning(
                         (
@@ -158,42 +188,37 @@ class ProviderConfig(yaml.YAMLObject):
                         str(e),
                         ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
                     )
+        self._apply_defaults()
 
+    def _apply_defaults(self: Self) -> None:
+        """Applies some default values to provider config."""
+        stac_search_default_conf = load_stac_provider_config()
 
-def provider_config_init(
-    provider_config: ProviderConfig,
-    stac_search_default_conf: Optional[dict[str, Any]] = None,
-) -> None:
-    """Applies some default values to provider config
+        # For the provider, set the default output_dir of its download plugin
+        # as tempdir in a portable way
+        for download_topic_key in ("download", "api"):
+            if download_topic_key in vars(self):
+                download_conf = getattr(self, download_topic_key)
+                if not getattr(download_conf, "output_dir", None):
+                    download_conf.output_dir = tempfile.gettempdir()
+                if not getattr(download_conf, "delete_archive", None):
+                    download_conf.delete_archive = True
 
-    :param provider_config: An eodag provider configuration
-    :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
-    """
-    # For the provider, set the default output_dir of its download plugin
-    # as tempdir in a portable way
-    for download_topic_key in ("download", "api"):
-        if download_topic_key in vars(provider_config):
-            download_conf = getattr(provider_config, download_topic_key)
-            if not getattr(download_conf, "output_dir", None):
-                download_conf.output_dir = tempfile.gettempdir()
-            if not getattr(download_conf, "delete_archive", None):
-                download_conf.delete_archive = True
-
-    try:
-        if (
-            stac_search_default_conf is not None
-            and provider_config.search
-            and provider_config.search.type in STAC_SEARCH_PLUGINS
-        ):
-            # search config set to stac defaults overriden with provider config
-            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
-            provider_config.search.__dict__ = update_nested_dict(
-                per_provider_stac_provider_config["search"],
-                provider_config.search.__dict__,
-                allow_empty_values=True,
-            )
-    except AttributeError:
-        pass
+        try:
+            if (
+                stac_search_default_conf is not None
+                and self.search
+                and self.search.type in STAC_SEARCH_PLUGINS
+            ):
+                # search config set to stac defaults overriden with provider config
+                per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
+                self.search.__dict__ = update_nested_dict(
+                    per_provider_stac_provider_config["search"],
+                    self.search.__dict__,
+                    allow_empty_values=True,
+                )
+        except AttributeError:
+            pass
 
 
 @dataclass
@@ -205,10 +230,26 @@ class Provider:
     :param collections_fetched: Flag indicating whether product types have been fetched.
     """
 
-    name: str
     _config: ProviderConfig
-
+    name: Optional[str] = field(default=None)
     collections_fetched: bool = False  # set in core.update_collections_list
+
+    def __post_init__(self):
+        """Post-initialization to set the provider name if not provided."""
+        if isinstance(self._config, dict):
+            self._config.setdefault("name", self.name)
+            self._config = ProviderConfig.from_mapping(self._config)
+
+        elif not isinstance(self._config, ProviderConfig):
+            raise TypeError(
+                f"Unsupported config type: {type(self._config)}. "
+                "Expected ProviderConfig or dict."
+            )
+
+        self.name = self.name or self._config.name
+
+        if self.name is None:
+            raise ValueError("Provider name could not be determined from the config.")
 
     def __str__(self) -> str:
         """Return the provider's name as string."""
@@ -261,11 +302,11 @@ class Provider:
     @config.setter
     def config(self, value: ProviderConfig) -> None:
         """Set the provider's configuration."""
-        self.config = value
+        self._config = value
 
     @property
-    def products(self) -> dict[str, Any]:
-        """Return the products dictionary for this provider."""
+    def product_types(self) -> dict[str, Any]:
+        """Return the product types dictionary for this provider."""
         return getattr(self.config, "products", {})
 
     @property
@@ -312,39 +353,11 @@ class Provider:
         """Return the download plugin config, if any."""
         return getattr(self.config, "download", None)
 
-    def product(self, product_type: str) -> Optional[Any]:
-        """Return a product type if available from this provider.
-
-        Args:
-            product_type (str): The product type name.
-
-        Returns:
-            Optional[Any]: The product type config or None if not found.
-        """
-        return self.products.get(product_type)
-
-    def delete_product(self, product_type: str) -> None:
-        """Remove a product type from this provider.
-
-        Args:
-            product_type (str): The product type name.
-
-        Raises:
-            KeyError: If the product type is not found.
-        """
-        if self.product(product_type):
-            del self.products[product_type]
-        else:
-            raise KeyError(
-                f"Product type '{product_type}' not found in provider '{self.name}'."
-            )
-
     def _get_auth_confs_with_credentials(self) -> list[PluginConfig]:
         """
         Collect all auth configs from the provider that have credentials.
 
-        Returns:
-            list[PluginConfig]: List of auth plugin configs with credentials.
+        :return: List of auth plugin configs with credentials.
         """
         return [
             getattr(self.config, auth_key)
@@ -360,8 +373,7 @@ class Provider:
         """
         Copy credentials from matching auth configs to the target auth config.
 
-        Args:
-            auth_confs_with_creds (list[PluginConfig]): Auth configs with credentials.
+        :param auth_confs_with_creds: Auth configs with credentials.
         """
         for key in AUTH_TOPIC_KEYS:
             provider_auth_config = getattr(self.config, key, None)
@@ -372,6 +384,20 @@ class Provider:
                             self.config, key
                         ).credentials = conf_with_creds.credentials
 
+    def delete_product_type(self, name: str) -> None:
+        """Remove a product type from this provider.
+
+        :param name: The product type name.
+
+        :raises KeyError: If the product type is not found.
+        """
+        try:
+            del self.product_types[name]
+        except KeyError:
+            raise KeyError(
+                f"Product type '{name}' not found in provider '{self.name}'."
+            )
+
     def sync_product_types(
         self,
         dag: EODataAccessGateway,
@@ -380,19 +406,16 @@ class Provider:
         """
         Synchronize product types for a provider based on strict or permissive mode.
 
-        In strict mode, removes product types not in available_product_types.
+        In strict mode, removes product types not in "dag.collections_config".
         In permissive mode, adds empty product type configs for missing types.
 
         :param dag: The gateway instance to use to list existing collections and to create new collection instances.
-        :param provider: The provider name whose product types should be synchronized.
-        :param available_product_types: The set of available product type IDs.
         :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
-        :returns: None
         """
         products_to_remove: list[str] = []
         products_to_add: list[str] = []
 
-        for product_id in self.products:
+        for product_id in self.product_types:
             if product_id == GENERIC_COLLECTION:
                 continue
 
@@ -423,63 +446,123 @@ class Provider:
                 self,
             )
             for id in products_to_remove:
-                self.delete_product(id)
+                self.delete_product_type(id)
+
+    def _mm_already_built(self) -> bool:
+        """Check if metadata mapping is already built (converted to querypaths/conversion)."""
+        mm = getattr(self.search_config, "metadata_mapping", None)
+        if not mm:
+            return False
+
+        try:
+            first = next(iter(mm.values()))
+        except StopIteration:
+            return False
+
+        # Consider it built if it's a tuple, or a list with second element as tuple
+        if isinstance(first, tuple):
+            return True
+        if isinstance(first, list) and len(first) > 1 and isinstance(first[1], tuple):
+            return True
+
+        return False
+
+    def update_from_config(self, config: ProviderConfig | dict[str, Any]) -> None:
+        """Update the provider's configuration from a given config.
+
+        :param config: The new configuration to update from.
+        """
+        # check if metadata mapping is already built for that provider
+        # this happens when the provider search plugin has already been used
+        source = config if isinstance(config, dict) else config.__dict__
+        search_key = "search" if "search" in self.config else "api"
+        new_conf_search = source.get(search_key, {}) or {}
+
+        if "metadata_mapping" in new_conf_search and self._mm_already_built():
+            mtd_cfg_as_conversion_and_querypath(
+                deepcopy(new_conf_search["metadata_mapping"]),
+                new_conf_search["metadata_mapping"],
+            )
+
+        self.config |= config
 
 
-@dataclass
 class ProvidersDict(UserDict[str, Provider]):
     """
     A dictionary-like collection of Provider objects, keyed by provider name.
 
-    Args:
-        providers (list[Provider] | dict[str, PluginConfig] | None): Initial providers.
+    :param providers: Initial providers to populate the dictionary.
     """
 
-    def __init__(
-        self,
-        providers: list[Provider] | dict[str, PluginConfig] | None,
-    ):
-        """
-        Initialize the ProvidersDict.
-
-        Args:
-            providers (list[Provider] | dict[str, PluginConfig] | None): Initial providers.
-        """
-
-        super().__init__()
-
-        if providers is None:
-            self.data = {}
-
-        elif isinstance(providers, dict):
-            self.data = {name: Provider(name, conf) for name, conf in providers.items()}
-        else:
-            self.data = {
-                p.name
-                if isinstance(p, Provider)
-                else p: p
-                if isinstance(p, Provider)
-                else Provider(p, {})
-                for p in providers
-            }
-
     def __contains__(self, item: str | Provider) -> bool:
-        """Check if a provider is in the dictionary by name or Provider instance."""
+        """
+        Check if a provider is in the dictionary by name or Provider instance.
+
+        :param item: Provider name or Provider instance to check.
+        :return: True if the provider is in the dictionary, False otherwise.
+        """
         if isinstance(item, Provider):
             return item.name in self.data
-
         return item in self.data
 
-    def __getitem__(self, key: str) -> Provider:
-        """Get a Provider by name."""
-        return self.data[key]
+    def __setitem__(self, key: str, value: Provider) -> None:
+        """
+        Add a Provider to the dictionary.
+
+        :param key: The name of the provider.
+        :param value: The Provider instance to add.
+        :raises ValueError: If the provider key already exists.
+        """
+        if key in self.data:
+            raise ValueError(f"Provider '{key}' already exists.")
+        super().__setitem__(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        """
+        Delete a provider by name.
+
+        :param key: The name of the provider to delete.
+        :raises KeyError: If the provider key is not found.
+        """
+        if key not in self.data:
+            raise KeyError(f"Provider '{key}' not found.")
+        super().__delitem__(key)
+
+    def __or__(self, other: Self) -> Self:
+        """
+        Merge two ProvidersDict using the | operator.
+
+        :param other: Another ProvidersDict to merge.
+        :return: A new ProvidersDict containing merged providers.
+        """
+        new_providers = deepcopy(self.data)
+        new_providers.update_from_configs(other.configs)
+        return new_providers
+
+    def __ior__(self, other: Self) -> Self:
+        """
+        In-place merge of two ProvidersDict using the |= operator.
+
+        :param other: Another ProvidersDict to merge.
+        :return: The updated ProvidersDict (self).
+        """
+        self.update_from_configs(deepcopy(other.configs))
+        return self
 
     def __repr__(self) -> str:
-        """String representation of ProvidersDict."""
+        """
+        String representation of ProvidersDict.
+
+        :return: String listing provider names.
+        """
         return f"ProvidersDict({list(self.data.keys())})"
 
     def _repr_html_(self) -> str:
-        """HTML representation for Jupyter/IPython display."""
+        """
+        HTML representation for Jupyter/IPython display.
+
+        :return: HTML string representation of the ProvidersDict.
+        """
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
                 ProvidersDict ({len(self.data)})
                 </td></tr></thead>"""
@@ -494,151 +577,96 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @property
     def names(self) -> list[str]:
-        """List of provider names."""
+        """
+        List of provider names.
+
+        :return: List of provider names.
+        """
         return [provider.name for provider in self.data.values()]
 
     @property
     def configs(self) -> dict[str, ProviderConfig]:
-        """Dictionary of provider configs keyed by provider name."""
+        """
+        Dictionary of provider configs keyed by provider name.
+
+        :return: Dictionary mapping provider name to ProviderConfig.
+        """
         return {provider.name: provider.config for provider in self.data.values()}
 
     @property
     def priorities(self) -> dict[str, int]:
-        """Dictionary of provider priorities keyed by provider name."""
+        """
+        Dictionary of provider priorities keyed by provider name.
+
+        :return: Dictionary mapping provider name to priority integer.
+        """
         return {
             provider.name: provider.config.priority for provider in self.data.values()
         }
 
-    def get(self, provider: str) -> Optional[Provider]:
-        """Get a Provider by name, or by group if not found by name."""
-        # Try by name first
-        result = self.data.get(provider)
-        if result is not None:
-            return result
-
-        # Try by group attribute
-        for prov in self.data.values():
-            if getattr(prov, "group", None) == provider:
-                return prov
-
-        return None
-
     def get_config(self, provider: str) -> Optional[ProviderConfig]:
-        """Get a ProviderConfig by provider name, or by group if not found by name."""
+        """
+        Get a ProviderConfig by provider name.
+
+        If the provider is not found by name, attempts to get by group.
+
+        :param provider: The provider name or group.
+        :return: The ProviderConfig if found, otherwise None.
+        """
         prov = self.get(provider)
         return prov.config if prov else None
 
-    def set_config(self, provider: str, cfg: ProviderConfig) -> None:
-        """
-        Update the ProviderConfig for a given provider name in place.
-
-        Args:
-            name (str): The name of the provider to update.
-            cfg (ProviderConfig): The new ProviderConfig to set.
-
-        Raises:
-            KeyError: If the provider is not found.
-        """
-        if provider in self.data:
-            self.data[provider].config = cfg
-        else:
-            self.data[provider] = Provider(provider, cfg)
-
     def get_products(self, provider: str | Provider) -> Optional[dict[str, Any]]:
-        """Get the products dictionary for a provider by name or Provider instance."""
+        """
+        Get the products dictionary for a provider by name or Provider instance.
+
+        :param provider: Provider name or Provider instance.
+        :return: The dictionary of product types or None if provider not found.
+        """
         if isinstance(provider, Provider):
             name = provider.name
-
-        provider = self.data.get(name)
-        return provider.products if provider else None
-
-    def add(self, provider: Provider) -> None:
-        """Add a Provider to the dictionary.
-
-        Args:
-            provider (Provider): The provider to add.
-
-        Raises:
-            ValueError: If the provider already exists.
-        """
-        if provider.name in self.data:
-            raise ValueError(f"Provider '{provider.name}' already exists.")
-
-        self.data[provider.name] = provider
-
-    def delete(self, name: str) -> None:
-        """Delete a provider by name.
-
-        Args:
-            name (str): The name of the provider to delete.
-
-        Raises:
-            KeyError: If the provider is not found.
-        """
-        if name in self.data:
-            del self.data[name]
         else:
-            raise KeyError(f"Provider '{name}' not found.")
+            name = provider
+
+        provider_obj = self.data.get(name)
+        return provider_obj.products if provider_obj else None
 
     def filter_by_name(self, name: Optional[str] = None) -> Self:
-        """Return a ProvidersDict filtered by provider name or group.
+        """
+        Return a ProvidersDict filtered by provider name or group.
 
-        Args:
-            name (Optional[str]): The name or group to filter by.
-
-        Returns:
-            ProvidersDict: The filtered ProvidersDict.
+        :param name: The name or group to filter by.
+        :return: The filtered ProvidersDict.
         """
         if not name:
             return self
 
-        filtered_providers = [
-            p for p in self.data.values() if name in [p.name, p.group]
-        ]
+        return ProvidersDict(
+            {n: p for n, p in self.data.items() if name in [p.name, p.group]}
+        )
 
-        return ProvidersDict(filtered_providers)
-
-    def filter_by_group(self, name: Optional[str]) -> Self:
-        """Return a ProvidersDict filtered by group name.
-
-        Args:
-            name (Optional[str]): The group name to filter by.
-
-        Returns:
-            ProvidersDict: The filtered ProvidersDict.
+    def delete_product_type(self, provider: str, product_ID: str) -> None:
         """
-        if not name:
-            return self
+        Delete a product type from a provider.
 
-        filtered_providers = [p for p in self.data.values() if p.name == p.group]
-
-        return ProvidersDict(filtered_providers)
-
-    def delete_product(self, provider: str, product_ID: str) -> None:
-        """Delete a product from a provider.
-
-        Args:
-            provider (str): The provider's name.
-            product_ID (str): The product type to delete.
-
-        Raises:
-            KeyError: If the provider or product is not found.
+        :param provider: The provider's name.
+        :param product_ID: The product type to delete.
+        :raises KeyError: If the provider or product is not found.
         """
         if provider_obj := self.get(provider):
             if product_ID in provider_obj.products:
-                provider_obj.delete_product(product_ID)
+                provider_obj.delete_product_type(product_ID)
             else:
                 raise KeyError(
                     f"Product '{product_ID}' not found for Provider '{provider}'."
                 )
-
         else:
             raise KeyError(f"Provider '{provider}' not found.")
 
-    def share_credentials(self) -> None:
+    def _share_credentials(self) -> None:
         """
-        Share credentials between plugins having the same matching criteria
-        across all providers in this list.
+        Share credentials between plugins with matching criteria
+        across all providers in this dictionary.
         """
         auth_confs_with_creds: list[PluginConfig] = []
         for provider in self.values():
@@ -650,111 +678,55 @@ class ProvidersDict(UserDict[str, Provider]):
         for provider in self.values():
             provider._copy_matching_credentials(auth_confs_with_creds)
 
-    def merge(self, other: Self) -> None:
+    @staticmethod
+    def _get_whitelisted_configs(
+        configs: dict[str, ProviderConfig | dict[str, Any]],
+    ) -> dict[str, ProviderConfig | dict[str, Any]]:
         """
-        Override the current providers' configuration with the values of another ProvidersDict.
+        Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
 
-        :param other: Another ProvidersDict instance whose configs will override the current ones.
+        :param configs: The dictionary of provider configurations.
+        :return: Filtered configurations.
         """
-        for name, other_provider in other.items():
-            if name in self:
-                current_provider = self[name]
-                old_conf = current_provider.config
-                new_conf = other_provider.config
+        whitelist = set(os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(","))
+        if not whitelist or whitelist == {""}:
+            return configs
+        return {name: conf for name, conf in configs.items() if name in whitelist}
 
-                merged_dict = dict(old_conf.__dict__)
-                merged_dict.update(new_conf.__dict__)
-
-                for key, value in merged_dict.items():
-                    old_val = getattr(old_conf, key, None)
-                    if isinstance(value, PluginConfig) and isinstance(
-                        old_val, PluginConfig
-                    ):
-                        old_val.update(value.__dict__)
-                        merged_dict[key] = old_val
-                    elif isinstance(old_val, PluginConfig):
-                        merged_dict[key] = old_val
-
-                    setattr(old_conf, key, merged_dict[key])
-            else:
-                self.data[name] = other_provider
-
-    def _override_configs_from_mapping(self, mapping: dict[str, Any]) -> None:
-        """Override a configuration with the values in a mapping.
-
-        If the environment variable ``EODAG_PROVIDERS_WHITELIST`` is set (as a comma-separated list of provider names),
-        only the listed providers will be used from the mapping. All other providers in the mapping will be ignored.
-
-        :param config: An eodag providers configuration dictionary
-        :param mapping: The mapping containing the values to be overriden
+    def update_from_configs(
+        self,
+        configs: dict[str, ProviderConfig | dict[str, Any]],
+    ) -> None:
         """
-        whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
-        whitelist = None
-        if whitelist_env:
-            whitelist = {provider for provider in whitelist_env.split(",")}
+        Update providers from a dictionary of configurations.
 
-        for name, conf in mapping.items():
-            # check if metada-mapping as already been built as jsonpath in providers_config
-            # or provider not in whitelist
-            if not isinstance(conf, dict) or (whitelist and name not in whitelist):
-                continue
+        :param configs: A dictionary mapping provider names to configurations.
+        """
+        configs = self._get_whitelisted_configs(configs)
+        for name, conf in configs.items():
+            try:
+                if name in self.data:
+                    self.data[name].update_from_config(conf)
+                    logger.debug("%s: configuration updated", name)
+                else:
+                    logger.info("%s: loading provider from configuration", name)
+                    self.data[name] = Provider(conf, name)
 
-            conf_search = conf.get("search", {}) or {}
-            conf_api = conf.get("api", {}) or {}
+                self.data[name].collections_fetched = False
 
-            if name in self.keys() and "metadata_mapping" in {
-                **conf_search,
-                **conf_api,
-            }:
-                search_plugin_key = (
-                    "search" if "metadata_mapping" in conf_search else "api"
-                )
+            except Exception:
+                operation = "updating" if name in self.data else "creating"
+                logger.warning("%s: skipped %s due to invalid config", name, operation)
+                logger.debug("Traceback:\n%s", traceback.format_exc())
 
-                # get some already configured value
-                configured_metadata_mapping = getattr(
-                    self.get_config(name), search_plugin_key
-                ).metadata_mapping
-                some_configured_value = next(iter(configured_metadata_mapping.values()))
+        self._share_credentials()
 
-                # check if the configured value has already been built as jsonpath
-                if (
-                    isinstance(some_configured_value, list)
-                    and isinstance(some_configured_value[1], tuple)
-                    or isinstance(some_configured_value, tuple)
-                ):
-                    # also build as jsonpath the incoming conf
-                    mtd_cfg_as_conversion_and_querypath(
-                        deepcopy(mapping[name][search_plugin_key]["metadata_mapping"]),
-                        mapping[name][search_plugin_key]["metadata_mapping"],
-                    )
+    def update_from_config_file(self, file_path: str) -> None:
+        """
+        Override provider configurations with values loaded from a YAML file.
 
-            # try overriding conf
-            old_conf: Optional[ProviderConfig] = self.get_config(name)
-            if old_conf is not None:
-                old_conf.update(conf)
-            else:
-                logger.info(
-                    "%s: unknown provider found in user conf, trying to use provided configuration",
-                    name,
-                )
-                try:
-                    conf["name"] = conf.get("name", name)
-                    conf = ProviderConfig.from_mapping(conf)
-                    self.set_config(name, conf)
-                except Exception:
-                    logger.warning(
-                        "%s skipped: could not be loaded from user configuration", name
-                    )
-
-                    import traceback as tb
-
-                    logger.debug(tb.format_exc())
-
-    def override_configs_from_file(self, file_path: str) -> None:
-        """Override a configuration with the values in a file
-
-        :param config: An eodag providers configuration dictionary
-        :param file_path: The path to the file from where the new values will be read
+        :param file_path: The path to the configuration file.
+        :raises yaml.parser.ParserError: If the YAML file cannot be parsed.
         """
         logger.info("Loading user configuration from: %s", os.path.abspath(file_path))
         with open(os.path.abspath(os.path.realpath(file_path)), "r") as fh:
@@ -763,36 +735,31 @@ class ProvidersDict(UserDict[str, Provider]):
                 if config_in_file is None:
                     return
             except yaml.parser.ParserError as e:
-                logger.error("Unable to load user configuration file")
+                logger.error("Unable to load configuration file %s", file_path)
                 raise e
 
-        self._override_configs_from_mapping(config_in_file)
+        self.update_from_configs(config_in_file)
 
-    def override_configs_from_env(self) -> None:
-        """Override a configuration with environment variables values
+    def update_from_env(self) -> None:
+        """
+        Override provider configurations with environment variables values.
 
-        :param config: An eodag providers configuration dictionary
+        Environment variables must start with 'EODAG__' and follow a nested key
+        pattern separated by double underscores '__'.
         """
 
         def build_mapping_from_env(
             env_var: str, env_value: str, mapping: dict[str, Any]
         ) -> None:
-            """Recursively build a dictionary from an environment variable.
+            """
+            Recursively build a dictionary from an environment variable.
 
             The environment variable must respect the pattern: KEY1__KEY2__[...]__KEYN.
-            It will be transformed to::
+            It will be transformed into a nested dictionary.
 
-                {
-                    "key1": {
-                        "key2": {
-                            {...}
-                        }
-                    }
-                }
-
-            :param env_var: The environment variable to be transformed into a dictionary
-            :param env_value: The value from environment variable
-            :param mapping: The mapping in which the value will be created
+            :param env_var: The environment variable key (nested keys separated by '__').
+            :param env_value: The value from environment variable.
+            :param mapping: The dictionary where the nested mapping is built.
             """
             parts = env_var.split("__")
             iter_parts = iter(parts)
@@ -803,8 +770,6 @@ class ProvidersDict(UserDict[str, Provider]):
                 else None
             )
             if len(parts) == 2 and child_env_type:
-                # for nested config (pagination, ...)
-                # try converting env_value type from type hints
                 try:
                     env_value = cast_scalar_value(env_value, child_env_type)
                 except TypeError:
@@ -814,7 +779,6 @@ class ProvidersDict(UserDict[str, Provider]):
                 mapping.setdefault(parts[0], {})
                 mapping[parts[0]][parts[1]] = env_value
             elif len(parts) == 1:
-                # try converting env_value type from type hints
                 try:
                     env_value = cast_scalar_value(env_value, env_type)
                 except TypeError:
@@ -826,7 +790,7 @@ class ProvidersDict(UserDict[str, Provider]):
                 new_map = mapping.setdefault(parts[0], {})
                 build_mapping_from_env("__".join(parts[1:]), env_value, new_map)
 
-        mapping_from_env: dict[str, Any] = {}
+        mapping_from_env: dict[str, dict[str, Any]] = {}
         for env_var in os.environ:
             if env_var.startswith("EODAG__"):
                 build_mapping_from_env(
@@ -835,16 +799,17 @@ class ProvidersDict(UserDict[str, Provider]):
                     mapping_from_env,
                 )
 
-        self._override_configs_from_mapping(mapping_from_env)
+        self.update_from_configs(mapping_from_env)
 
-    def update_config(
-        self, conf_update: dict[str, Any], stac_provider_config: dict[str, Any] | None
-    ) -> None:
-        """Update the configuration from environment variables and user configuration file."""
-        self._override_configs_from_mapping(conf_update)
-        self.share_credentials()
+    @classmethod
+    def from_configs(cls, configs: dict[ProviderConfig | dict[str, Any]]) -> Self:
+        """
+        Build a ProvidersDict from a configuration mapping.
 
-        for provider in conf_update.keys():
-            provider_config_init(self.get_config(provider), stac_provider_config)
-
-        self.data[provider].collections_fetched = False
+        :param configs: A dictionary mapping provider names to configuration dicts or ProviderConfig instances.
+        :return: An instance of ProvidersDict populated with the given configurations.
+        """
+        configs = cls._get_whitelisted_configs(configs)
+        providers = cls()
+        providers.update_from_configs(configs)
+        return providers

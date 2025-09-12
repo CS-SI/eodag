@@ -36,7 +36,8 @@ from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
 if TYPE_CHECKING:
-    from eodag.config import PluginConfig
+    from eodag.api.plugin import PluginConfig
+    from eodag.api.product import EOProduct
 
 
 logger = logging.getLogger("eodag.search.static_stac_search")
@@ -228,7 +229,10 @@ class StaticStacSearch(StacSearch):
         if "eo:cloud_cover" in kwargs.keys():
             search_result = search_result.crunch(
                 FilterProperty(
-                    {"eo:cloud_cover": kwargs.pop("eo:cloud_cover"), "operator": "lt"}
+                    {
+                        "eo:cloud_cover": kwargs.pop("eo:cloud_cover"),
+                        "operator": "lt",
+                    }
                 )
             )
         # Filter by other properties

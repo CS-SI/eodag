@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from eodag.config import PluginConfig
+from eodag.api.plugin import PluginConfig
 from eodag.plugins.base import PluginTopic
 
 if TYPE_CHECKING:
