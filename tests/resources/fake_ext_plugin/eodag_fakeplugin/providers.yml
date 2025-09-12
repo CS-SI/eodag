@@ -6,5 +6,5 @@
     type: FakePluginAPI
     endpoint: 'https://fakeplugin-endpoint'
   products:
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       productType: '{productType}'

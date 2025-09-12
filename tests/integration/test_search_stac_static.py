@@ -67,7 +67,7 @@ class TestSearchStacStatic(unittest.TestCase):
                     type: StaticStacSearch
                     api_endpoint: {self.root_cat}
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{{collection}}'
                 download:
                     type: HTTPDownload

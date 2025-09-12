@@ -32,7 +32,7 @@ import pytest
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     AuthenticationError,
     EODataAccessGateway,
     SearchResult,
@@ -627,7 +627,7 @@ class TestEODagEndToEnd(EndToEndBase):
         provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
+            if k != GENERIC_COLLECTION
         ]
         for provider_collection in provider_collections:
             self.assertIn(
@@ -661,7 +661,7 @@ class TestEODagEndToEnd(EndToEndBase):
         provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
+            if k != GENERIC_COLLECTION
         ]
         for provider_collection in provider_collections:
             self.assertIn(
@@ -695,7 +695,7 @@ class TestEODagEndToEnd(EndToEndBase):
         provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
+            if k != GENERIC_COLLECTION
         ]
         for provider_collection in provider_collections:
             self.assertIn(
