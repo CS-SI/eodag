@@ -92,7 +92,7 @@ from eodag.utils import (
     DownloadedCallback,
     uri_to_path,
     urlsplit,
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
     flatten_top_directories,
     deepcopy,

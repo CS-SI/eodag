@@ -31,7 +31,7 @@ from faker import Faker
 from packaging import version
 
 from eodag.api.search_result import SearchResult
-from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils import GENERIC_COLLECTION
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -635,7 +635,7 @@ class TestEodagCli(unittest.TestCase):
         all_supported_collections = [
             pt
             for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
-            if len(provs) != 0 and pt != GENERIC_PRODUCT_TYPE
+            if len(provs) != 0 and pt != GENERIC_COLLECTION
         ]
         result = self.runner.invoke(eodag, ["list", "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
@@ -649,7 +649,7 @@ class TestEodagCli(unittest.TestCase):
                 pt
                 for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
                 if provider in provs
-                if pt != GENERIC_PRODUCT_TYPE
+                if pt != GENERIC_COLLECTION
             ]
             result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
             self.assertEqual(result.exit_code, 0)

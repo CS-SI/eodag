@@ -36,7 +36,7 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, dict_md5sum
+from eodag.utils import GENERIC_COLLECTION, deepcopy, dict_md5sum
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -201,7 +201,7 @@ class PluginManager:
                 logger.info(
                     "UnsupportedCollection: %s, using generic settings", collection
                 )
-                configs = self.collection_to_provider_config_map[GENERIC_PRODUCT_TYPE]
+                configs = self.collection_to_provider_config_map[GENERIC_COLLECTION]
         else:
             configs = list(self.providers_config.values())
 

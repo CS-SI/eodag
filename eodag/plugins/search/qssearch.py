@@ -76,7 +76,7 @@ from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     HTTP_REQ_TIMEOUT,
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
@@ -754,9 +754,9 @@ class QueryStringSearch(Search):
         """
         count = prep.count
         collection = cast(str, kwargs.get("collection", prep.collection))
-        if collection == GENERIC_PRODUCT_TYPE:
+        if collection == GENERIC_COLLECTION:
             logger.warning(
-                "GENERIC_PRODUCT_TYPE is not a real collection and should only be used internally as a template"
+                "GENERIC_COLLECTION is not a real collection and should only be used internally as a template"
             )
             return ([], 0) if prep.count else ([], None)
 
@@ -769,7 +769,7 @@ class QueryStringSearch(Search):
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["collection"] = (
             provider_collection
-            if (provider_collection and provider_collection != GENERIC_PRODUCT_TYPE)
+            if (provider_collection and provider_collection != GENERIC_COLLECTION)
             else collection
         )
 
@@ -1172,7 +1172,7 @@ class QueryStringSearch(Search):
             if provider_collection is None:
                 try:
                     for collection, product_config in self.config.products.items():
-                        if collection != GENERIC_PRODUCT_TYPE:
+                        if collection != GENERIC_COLLECTION:
                             collections.add(product_config["_collection"])
                         else:
                             collections.add(
@@ -1485,7 +1485,7 @@ class PostJsonSearch(QueryStringSearch):
                 k: v for k, v in kwargs.items() if k != "auth" and v is not None
             }
 
-            if provider_collection and provider_collection != GENERIC_PRODUCT_TYPE:
+            if provider_collection and provider_collection != GENERIC_COLLECTION:
                 keywords["collection"] = provider_collection
             elif collection:
                 keywords["collection"] = collection

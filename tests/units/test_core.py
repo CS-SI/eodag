@@ -35,7 +35,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
+from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -590,7 +590,7 @@ class TestCore(TestCoreBase):
         "CMIP6_CLIMATE_PROJECTIONS": ["cop_cds"],
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        GENERIC_PRODUCT_TYPE: [
+        GENERIC_COLLECTION: [
             "peps",
             "usgs",
             "creodias",
@@ -1042,7 +1042,7 @@ class TestCore(TestCoreBase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
             """
         )
@@ -1150,7 +1150,7 @@ class TestCore(TestCoreBase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
             """
         )
@@ -1319,7 +1319,7 @@ class TestCore(TestCoreBase):
                     type: StacSearch
                     api_endpoint: https://api.my_new_provider/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
+                    GENERIC_COLLECTION:
                         _collection: '{collection}'
             """
         # add new provider

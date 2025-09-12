@@ -56,7 +56,7 @@
         productType: IMAGE
         processingLevel: L1C
         collection: Sentinel2
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
         productType: '{productType}'
         collection: '{collection}'
         instrument: '{instrument}'
