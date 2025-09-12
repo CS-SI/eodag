@@ -38,7 +38,7 @@
         }
       }
     },
-    "product_types_config": {
+    "collections_config": {
       "foo": {
         "abstract": "abstractFOO - This is FOO. FooAndBar",
         "instrument": "Not Available",

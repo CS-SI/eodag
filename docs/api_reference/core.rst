@@ -24,7 +24,7 @@ Configuration
    EODataAccessGateway.set_preferred_provider
    EODataAccessGateway.get_preferred_provider
    EODataAccessGateway.update_providers_config
-   EODataAccessGateway.update_product_types_list
+   EODataAccessGateway.update_collections_list
 
 Catalog
 -------
@@ -32,9 +32,9 @@ Catalog
 .. autosummary::
 
    EODataAccessGateway.available_providers
-   EODataAccessGateway.list_product_types
-   EODataAccessGateway.guess_product_type
-   EODataAccessGateway.fetch_product_types_list
+   EODataAccessGateway.list_collections
+   EODataAccessGateway.guess_collection
+   EODataAccessGateway.fetch_collections_list
    EODataAccessGateway.discover_collections
 
 Search
@@ -78,14 +78,14 @@ Misc
 .. autosummary::
 
    EODataAccessGateway.group_by_extent
-   EODataAccessGateway.guess_product_type
+   EODataAccessGateway.guess_collection
    EODataAccessGateway.list_queryables
    EODataAccessGateway.available_sortables
    EODataAccessGateway.import_stac_items
 
 .. autoclass:: eodag.api.core.EODataAccessGateway
-   :members: add_provider, set_preferred_provider, get_preferred_provider, update_providers_config, list_product_types,
+   :members: add_provider, set_preferred_provider, get_preferred_provider, update_providers_config, list_collections,
              available_providers, search, search_all, search_iter_page, crunch, download, download_all, serialize,
-             deserialize, deserialize_and_register, group_by_extent, guess_product_type, get_cruncher,
-             update_product_types_list, fetch_product_types_list, discover_collections, list_queryables,
+             deserialize, deserialize_and_register, group_by_extent, guess_collection, get_cruncher,
+             update_collections_list, fetch_collections_list, discover_collections, list_queryables,
              available_sortables, import_stac_items

@@ -57,7 +57,7 @@ search:
     metadata_path: '$.properties.*'
   discover_queryables:
     fetch_url: '{api_endpoint}/../queryables'
-    product_type_fetch_url: '{api_endpoint}/../collections/{provider_collection}/queryables'
+    collection_fetch_url: '{api_endpoint}/../collections/{provider_collection}/queryables'
     result_type: json
     results_entry: '$.properties[*]'
     queryable_parsable_metadata:

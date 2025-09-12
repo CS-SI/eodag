@@ -1,4 +1,4 @@
-.. _product_types:
+.. collections:
 
 Collections
 ===========
@@ -7,7 +7,7 @@ Collections
 given an identifier (e.g. ``S2_MSI_L2A``) that should then be used by users to search for this kind
 of product.
 
-This catalog is saved as a YAML file that can be viewed `here <https://github.com/CS-SI/eodag/blob/develop/eodag/resources/product_types.yml>`_.
+This catalog is saved as a YAML file that can be viewed `here <https://github.com/CS-SI/eodag/blob/develop/eodag/resources/collections.yml>`_.
 The example below shows the catalog entry for the collection *Sentinel 2 Level-2A*.
 
 .. code-block:: yaml
@@ -31,7 +31,7 @@ This collection catalog can be obtained from the API:
 
    from eodag import EODataAccessGateway
    dag = EODataAccessGateway()
-   dag.list_product_types()
+   dag.list_collections()
 
 Or from the CLI:
 
@@ -74,9 +74,9 @@ Click on the link below to display its full content.
 .. raw:: html
 
    <details>
-   <summary><a>product_types.yml</a></summary>
+   <summary><a>collections.yml</a></summary>
 
-.. include:: ../../eodag/resources/product_types.yml
+.. include:: ../../eodag/resources/collections.yml
    :start-line: 19
    :code: yaml
 
@@ -88,7 +88,7 @@ Click on the link below to display its full content.
 The following table lists the metadata parameters of the collections, and shows whether these collections are
 available for providers or not.
 
-Collections information (`CSV <../_static/product_types_information.csv>`__)
+Collections information (`CSV <../_static/collections_information.csv>`__)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. raw:: html
@@ -97,7 +97,7 @@ Collections information (`CSV <../_static/product_types_information.csv>`__)
    <span id="table_0_span">
 
 .. csv-table::
-   :file: ../_static/product_types_information.csv
+   :file: ../_static/collections_information.csv
    :header-rows: 1
    :stub-columns: 1
    :class: datatable

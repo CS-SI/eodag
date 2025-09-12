@@ -104,9 +104,9 @@ docs/notebooks/tutos/*workspace*
 examples/eodag_workspace
 tests/resources/user_conf.yml
 search_results.geojson
-ext_product_types.json
-!eodag/resources/ext_product_types.json
-!tests/resources/ext_product_types.json
+ext_collections.json
+!eodag/resources/ext_collections.json
+!tests/resources/ext_collections.json
 
 # IDE
 # Pycharm
