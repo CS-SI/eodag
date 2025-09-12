@@ -25,8 +25,8 @@ from tempfile import TemporaryDirectory
 
 import yaml.parser
 
-from eodag.api.plugin import PluginConfig
 from eodag.api.provider import ProvidersDict
+from eodag.config import PluginConfig
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
@@ -184,7 +184,7 @@ class TestProviderConfig(unittest.TestCase):
             }
         )
 
-        providers |= ProvidersDict.from_configs(
+        providers.update_from_configs(
             {
                 "provider1": provider_config2,
                 "provider3": provider_config2,

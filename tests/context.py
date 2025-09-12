@@ -53,7 +53,7 @@ from eodag.config import (
     EXT_COLLECTIONS_CONF_URI,
 )
 from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
-from eodag.api.plugin import PluginConfig
+from eodag.config import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.aws_auth import AwsAuth

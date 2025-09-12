@@ -33,9 +33,9 @@ from dateutil.tz import tzutc
 from dateutil.utils import today
 
 from eodag import EOProduct
-from eodag.api.plugin import PluginConfig
 from eodag.api.product import AssetsDict
 from eodag.api.search_result import SearchResult
+from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various

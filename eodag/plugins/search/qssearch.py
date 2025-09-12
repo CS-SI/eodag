@@ -105,7 +105,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from eodag.api.plugin import PluginConfig
+    from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.qssearch")
 

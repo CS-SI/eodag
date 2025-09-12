@@ -64,7 +64,7 @@ from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationE
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
-    from eodag.api.plugin import PluginConfig
+    from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.build_search_result")
 

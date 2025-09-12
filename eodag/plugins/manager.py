@@ -43,8 +43,9 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.plugin import PluginConfig, ProviderConfig
     from eodag.api.product import EOProduct
+    from eodag.api.provider import ProviderConfig
+    from eodag.config import PluginConfig
     from eodag.plugins.base import PluginTopic
 
 
@@ -116,7 +117,7 @@ class PluginManager:
                     ]
                     if plugin_providers_config_path:
                         plugin_configs = load_config(plugin_providers_config_path[0])
-                        self.providers |= ProvidersDict.from_configs(plugin_configs)
+                        self.providers.update_from_configs(plugin_configs)
         self.rebuild()
 
     def rebuild(self, providers: Optional[ProvidersDict] = None) -> None:
@@ -214,6 +215,9 @@ class PluginManager:
         :returns: The download plugin capable of downloading the product
         """
         plugin_conf = self.providers.get_config(product.provider)
+        if plugin_conf is None:
+            msg = f"Provider {product.provider} not found"
+            raise UnsupportedProvider(msg)
         if download := getattr(plugin_conf, "download", None):
             plugin_conf.download.priority = plugin_conf.priority
             plugin = cast(
