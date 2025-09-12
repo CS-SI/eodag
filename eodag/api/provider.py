@@ -24,7 +24,7 @@ import traceback
 from collections import UserDict
 from dataclasses import dataclass, field
 from inspect import isclass
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Union, get_type_hints
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, get_type_hints
 
 import yaml
 
@@ -44,11 +44,16 @@ from eodag.utils import (
     slugify,
     update_nested_dict,
 )
-from eodag.utils.exceptions import ValidationError
+from eodag.utils.exceptions import (
+    UnsupportedProductType,
+    UnsupportedProvider,
+    ValidationError,
+)
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from eodag.api.core import EODataAccessGateway
+    from typing_extensions import Self
 
 logger = logging.getLogger("eodag.provider")
 
@@ -241,15 +246,18 @@ class Provider:
             self._config = ProviderConfig.from_mapping(self._config)
 
         elif not isinstance(self._config, ProviderConfig):
-            raise TypeError(
+            msg = (
                 f"Unsupported config type: {type(self._config)}. "
                 "Expected ProviderConfig or dict."
             )
+            raise ValidationError(msg)
 
         self.name = self.name or self._config.name
 
         if self.name is None:
-            raise ValueError("Provider name could not be determined from the config.")
+            raise ValidationError(
+                "Provider name could not be determined from the config."
+            )
 
     def __str__(self) -> str:
         """Return the provider's name as string."""
@@ -389,14 +397,13 @@ class Provider:
 
         :param name: The product type name.
 
-        :raises KeyError: If the product type is not found.
+        :raises UnsupportedProductType: If the product type is not found.
         """
         try:
             del self.product_types[name]
         except KeyError:
-            raise KeyError(
-                f"Product type '{name}' not found in provider '{self.name}'."
-            )
+            msg = f"Product type '{name}' not found in provider '{self.name}'."
+            raise UnsupportedProductType(msg)
 
     def sync_product_types(
         self,
@@ -514,7 +521,8 @@ class ProvidersDict(UserDict[str, Provider]):
         :raises ValueError: If the provider key already exists.
         """
         if key in self.data:
-            raise ValueError(f"Provider '{key}' already exists.")
+            msg = f"Provider '{key}' already exists."
+            raise ValueError(msg)
         super().__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
@@ -522,10 +530,11 @@ class ProvidersDict(UserDict[str, Provider]):
         Delete a provider by name.
 
         :param key: The name of the provider to delete.
-        :raises KeyError: If the provider key is not found.
+        :raises UnsupportedProvider: If the provider key is not found.
         """
         if key not in self.data:
-            raise KeyError(f"Provider '{key}' not found.")
+            msg = f"Provider '{key}' not found."
+            raise UnsupportedProvider(msg)
         super().__delitem__(key)
 
     def __or__(self, other: Self) -> Self:
@@ -645,23 +654,23 @@ class ProvidersDict(UserDict[str, Provider]):
             {n: p for n, p in self.data.items() if name in [p.name, p.group]}
         )
 
-    def delete_product_type(self, provider: str, product_ID: str) -> None:
+    def delete_product_type(self, provider: str, product_type: str) -> None:
         """
         Delete a product type from a provider.
 
         :param provider: The provider's name.
         :param product_ID: The product type to delete.
-        :raises KeyError: If the provider or product is not found.
+        :raises UnsupportedProvider: If the provider or product is not found.
         """
         if provider_obj := self.get(provider):
-            if product_ID in provider_obj.products:
-                provider_obj.delete_product_type(product_ID)
+            if product_type in provider_obj.product_types:
+                provider_obj.delete_product_type(product_type)
             else:
-                raise KeyError(
-                    f"Product '{product_ID}' not found for Provider '{provider}'."
-                )
+                msg = f"Product type '{product_type}' not found for provider '{provider}'."
+                raise UnsupportedProductType(msg)
         else:
-            raise KeyError(f"Provider '{provider}' not found.")
+            msg = f"Provider '{provider}' not found."
+            raise UnsupportedProvider(msg)
 
     def _share_credentials(self) -> None:
         """
