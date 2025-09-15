@@ -2320,12 +2320,16 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self.provider = "creodias_s3"
 
     @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_creodias_s3_links(self, mock_request):
+    def test_plugins_search_creodias_s3_links(self, mock_request, mock_s3_client):
         # s3 links should be added to products with register_downloader
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        mock_s3_client.return_value = client
         stubber = Stubber(client)
         s3_response_file = (
             Path(TEST_RESOURCES_PATH) / "provider_responses/creodias_s3_objects.json"
@@ -2345,9 +2349,8 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
             stubber.add_response("list_objects", list_objects_response)
             stubber.activate()
-            setattr(auth_plugin, "s3_client", client)
             # fails if credentials are missing
-            auth_plugin.credentials = {
+            auth_plugin.config.credentials = {
                 "aws_access_key_id": "",
                 "aws_secret_access_key": "",
             }
@@ -2356,7 +2359,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 r"^Incomplete credentials .* \['aws_access_key_id', 'aws_secret_access_key'\]$",
             ):
                 product.register_downloader(download_plugin, auth_plugin)
-            auth_plugin.credentials = {
+            auth_plugin.config.credentials = {
                 "aws_access_key_id": "foo",
                 "aws_secret_access_key": "bar",
             }
@@ -2379,12 +2382,18 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self.assertEqual(0, len(res[0][0].assets))
 
     @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_creodias_s3_client_error(self, mock_request):
+    def test_plugins_search_creodias_s3_client_error(
+        self, mock_request, mock_s3_client
+    ):
         # request error should be raised when there is an error when fetching data from the s3
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        mock_s3_client.return_value = client
         stubber = Stubber(client)
 
         creodias_search_result_file = (
@@ -2401,13 +2410,12 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 auth_plugin = self.plugins_manager.get_auth_plugin(
                     download_plugin, product
                 )
-                auth_plugin.credentials = {
+                auth_plugin.config.credentials = {
                     "aws_access_key_id": "foo",
                     "aws_secret_access_key": "bar",
                 }
                 stubber.add_client_error("list_objects")
                 stubber.activate()
-                setattr(auth_plugin, "s3_client", client)
                 product.register_downloader(download_plugin, auth_plugin)
 
 
