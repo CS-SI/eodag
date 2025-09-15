@@ -586,7 +586,8 @@ class PluginConfig(yaml.YAMLObject):
     @staticmethod
     def validate(config_keys: tuple[Any, ...]) -> None:
         """Validate a :class:`~eodag.config.PluginConfig`"""
-        if "type" not in config_keys:
+        # credentials may be set without type when the provider uses search_auth plugin.
+        if "type" not in config_keys and "credentials" not in config_keys:
             raise ValidationError(
                 "A Plugin config must specify the type of Plugin it configures"
             )
