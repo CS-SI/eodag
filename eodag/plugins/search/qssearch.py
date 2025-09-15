@@ -385,6 +385,7 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: product type specific metadata-mapping
         for product_type in self.config.products.keys():
+
             product_type_metadata_mapping = {}
             # product-type specific metadata-mapping
             if any(
