@@ -70,7 +70,7 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
 
 
 def _get_dates_from_dataset_data(
-    dataset_item: dict[str, Any],
+    dataset_item: dict[str, Any]
 ) -> Optional[dict[str, str]]:
     dates = {}
     if "start_datetime" in dataset_item["properties"]:
@@ -214,6 +214,7 @@ class CopMarineSearch(StaticStacSearch):
         use_dataset_dates: bool = False,
         product_id: Optional[str] = None,
     ) -> Optional[EOProduct]:
+
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
         if product_id and product_id != item_id:
             return None
