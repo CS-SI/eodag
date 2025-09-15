@@ -513,7 +513,7 @@ class TestMetadataFormatter(unittest.TestCase):
                 to_format,
                 fieldname="S2A_MSIL2A_20201201T100401_N0214_R122_T32SNA_20201201T114520",
             ),
-            "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/32/S/NA/2020/12/1/0/{collection}.json",
+            "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/32/S/NA/2020/12/1/0/{_collection}.json",
         )
 
     def test_convert_s2msil2a_title_to_aws_productinfo_not_available(self):
