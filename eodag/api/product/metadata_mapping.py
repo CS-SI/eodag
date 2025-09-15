@@ -749,7 +749,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             if id_match:
                 id_dict = id_match.groupdict()
                 return (
-                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json"
+                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{_collection}.json"
                     % (
                         id_dict["tile1"],
                         id_dict["tile2"],

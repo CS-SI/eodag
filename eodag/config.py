@@ -483,7 +483,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
     merge_responses: bool
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
-    collection: list[str]
+    _collection: list[str]
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int

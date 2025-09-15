@@ -1534,9 +1534,9 @@ class PostJsonSearch(QueryStringSearch):
                 self.config.results_entry = self.config.products[collection][
                     "specific_qssearch"
                 ]["results_entry"]
-                self.config.collection = self.config.products[collection][
+                self.config._collection = self.config.products[collection][
                     "specific_qssearch"
-                ].get("collection")
+                ].get("_collection")
                 self.config.merge_responses = self.config.products[collection][
                     "specific_qssearch"
                 ].get("merge_responses")
