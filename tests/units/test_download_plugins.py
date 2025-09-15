@@ -1892,7 +1892,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         self.assertEqual(mock_open_s3_zipped_object.call_count, 2)
         mock_open_s3_zipped_object.assert_called_with(
-            "example", "path/to/foo.zip", auth_plugin.s3_client, partial=False
+            "example", "path/to/foo.zip", auth_plugin.get_s3_client(), partial=False
         )
         self.assertTrue(
             os.path.isfile(

@@ -61,7 +61,13 @@ def create_s3_session(**kwargs) -> boto3.Session:
     :param kwargs: keyword arguments containing credentials
     :returns: boto3 Session
     """
-    return boto3.Session(**kwargs)
+    try:
+        s3_session = boto3.Session(**kwargs)
+    except ProfileNotFound:
+        raise AuthenticationError(
+            f"AWS profile {kwargs['profile_name']} not found, please check your credentials configuration"
+        )
+    return s3_session
 
 
 class AwsAuth(Authentication):
@@ -88,23 +94,21 @@ class AwsAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsAuth, self).__init__(provider, config)
-        self.endpoint_url = getattr(self.config, "s3_endpoint", None)
-        self.credentials = getattr(self.config, "credentials", {}) or {}
         self.s3_session: Optional[boto3.Session] = None
         self.s3_resource: Optional[S3ServiceResource] = None
-        self.s3_client: Optional[S3Client] = None
 
     def _create_s3_session_from_credentials(self) -> boto3.Session:
-        if "aws_profile" in self.credentials:
-            return create_s3_session(profile_name=self.credentials["aws_profile"])
+        credentials = getattr(self.config, "credentials", {}) or {}
+        if "aws_profile" in credentials:
+            return create_s3_session(profile_name=credentials["aws_profile"])
         # auth using aws keys
-        elif self.credentials:
+        elif credentials:
             s3_session_kwargs: S3SessionKwargs = {
-                "aws_access_key_id": self.credentials["aws_access_key_id"],
-                "aws_secret_access_key": self.credentials["aws_secret_access_key"],
+                "aws_access_key_id": credentials["aws_access_key_id"],
+                "aws_secret_access_key": credentials["aws_secret_access_key"],
             }
-            if self.credentials.get("aws_session_token"):
-                s3_session_kwargs["aws_session_token"] = self.credentials[
+            if credentials.get("aws_session_token"):
+                s3_session_kwargs["aws_session_token"] = credentials[
                     "aws_session_token"
                 ]
             return create_s3_session(**s3_session_kwargs)
@@ -116,13 +120,14 @@ class AwsAuth(Authentication):
         """create s3 resource based on s3 session"""
         if not self.s3_session:
             self.s3_session = self._create_s3_session_from_credentials()
+        endpoint_url = getattr(self.config, "s3_endpoint", None)
         if self.s3_session.get_credentials():
             return self.s3_session.resource(
                 service_name="s3",
-                endpoint_url=self.endpoint_url,
+                endpoint_url=endpoint_url,
             )
         # could not auth using credentials: use no-sign-request strategy
-        s3_resource = boto3.resource(service_name="s3", endpoint_url=self.endpoint_url)
+        s3_resource = boto3.resource(service_name="s3", endpoint_url=endpoint_url)
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )
@@ -143,7 +148,6 @@ class AwsAuth(Authentication):
         :returns: S3AuthContextPool with possible auth contexts
         """
         self.s3_resource = self._create_s3_resource()
-        self.s3_client = self.get_s3_client()
         return self.s3_resource
 
     def _get_authenticated_objects(
@@ -176,8 +180,6 @@ class AwsAuth(Authentication):
                 pass
             else:
                 raise e
-        except ProfileNotFound:
-            pass
         logger.debug(
             "Authentication for bucket %s failed, please check the credentials",
             bucket_name,
@@ -203,45 +205,46 @@ class AwsAuth(Authentication):
         authenticated_objects: dict[str, Any] = {}
         auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
-            try:
-                bucket_name, prefix = pack
-                if not prefix:
-                    continue
-                if bucket_name not in authenticated_objects:
-                    # get Prefixes longest common base path
-                    common_prefix = ""
-                    prefix_split = prefix.split("/")
-                    prefixes_in_bucket = len(
-                        [p for b, p in bucket_names_and_prefixes if b == bucket_name]
-                    )
-                    for i in range(1, len(prefix_split)):
-                        common_prefix = "/".join(prefix_split[0:i])
-                        if (
-                            len(
-                                [
-                                    p
-                                    for b, p in bucket_names_and_prefixes
-                                    if p and b == bucket_name and common_prefix in p
-                                ]
-                            )
-                            < prefixes_in_bucket
-                        ):
-                            common_prefix = "/".join(prefix_split[0 : i - 1])
-                            break
+
+            bucket_name, prefix = pack
+            if not prefix:
+                continue
+            if bucket_name not in authenticated_objects:
+                # get Prefixes longest common base path
+                common_prefix = ""
+                prefix_split = prefix.split("/")
+                prefixes_in_bucket = len(
+                    [p for b, p in bucket_names_and_prefixes if b == bucket_name]
+                )
+                for i in range(1, len(prefix_split)):
+                    common_prefix = "/".join(prefix_split[0:i])
+                    if (
+                        len(
+                            [
+                                p
+                                for b, p in bucket_names_and_prefixes
+                                if p and b == bucket_name and common_prefix in p
+                            ]
+                        )
+                        < prefixes_in_bucket
+                    ):
+                        common_prefix = "/".join(prefix_split[0 : i - 1])
+                        break
+                try:
                     # connect to aws s3 and get bucket auhenticated objects
                     authenticated_objects[
                         bucket_name
                     ] = self._get_authenticated_objects(bucket_name, common_prefix)
 
-            except AuthenticationError as e:
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                auth_error_messages.add(str(e))
-            except ClientError as e:
-                raise_if_auth_error(e, self.provider)
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                auth_error_messages.add(str(e))
+                except AuthenticationError as e:
+                    logger.warning("Unexpected error: %s" % e)
+                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+                    auth_error_messages.add(str(e))
+                except ClientError as e:
+                    raise_if_auth_error(e, self.provider)
+                    logger.warning("Unexpected error: %s" % e)
+                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
+                    auth_error_messages.add(str(e))
 
         # could not auth on any bucket
         if not authenticated_objects:

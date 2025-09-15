@@ -403,7 +403,7 @@ class AwsDownload(Download):
             logger.debug("Cannot check files in s3 zip without s3 resource")
             return bucket_names_and_prefixes
 
-        s3_client = product.downloader_auth.s3_client
+        s3_client = product.downloader_auth.get_s3_client()
 
         downloaded = []
         for i, pack in enumerate(bucket_names_and_prefixes):

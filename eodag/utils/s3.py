@@ -502,10 +502,7 @@ def update_assets_from_s3(
     try:
 
         logger.debug("Listing assets in %s", prefix)
-        if auth.s3_client:
-            s3_client = auth.s3_client
-        else:
-            s3_client = auth.get_s3_client()
+        s3_client = auth.get_s3_client()
 
         if prefix.endswith(".zip"):
             # List prefix zip content

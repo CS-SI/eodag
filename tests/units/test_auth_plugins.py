@@ -654,7 +654,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             "aws_access_key_id": self.aws_access_key_id,
             "aws_secret_access_key": self.aws_secret_access_key,
         }
-        self.assertDictEqual(keys_dict, plugin_auth_keys.credentials)
+        self.assertDictEqual(keys_dict, plugin_auth_keys.config.credentials)
         mock_create_session.reset_mock()
 
         mock_create_session.return_value = MockSession(
@@ -677,7 +677,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             "aws_secret_access_key": self.aws_secret_access_key,
             "aws_session_token": self.aws_session_token,
         }
-        self.assertDictEqual(keys_dict, plugin_auth_keys_session.credentials)
+        self.assertDictEqual(keys_dict, plugin_auth_keys_session.config.credentials)
         mock_create_session.reset_mock()
 
         mock_create_session.return_value = MockSession(profile_name=self.profile_name)
@@ -686,7 +686,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         mock_create_session.assert_called_once_with(profile_name=self.profile_name)
 
         keys_dict = {"aws_profile": self.profile_name}
-        self.assertDictEqual(keys_dict, plugin_auth_profile.credentials)
+        self.assertDictEqual(keys_dict, plugin_auth_profile.config.credentials)
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True

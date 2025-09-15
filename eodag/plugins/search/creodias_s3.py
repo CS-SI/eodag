@@ -42,13 +42,11 @@ def patched_register_downloader(self, downloader, authenticator):
     """
     # verify credentials
     required_creds = ["aws_access_key_id", "aws_secret_access_key"]
-    if not all(
-        x in authenticator.credentials and authenticator.credentials[x]
-        for x in required_creds
-    ):
+    credentials = getattr(authenticator.config, "credentials", {}) or {}
+    if not all(x in credentials and credentials[x] for x in required_creds):
         raise MisconfiguredError(
             f"Incomplete credentials for {self.provider}, missing "
-            f"{[x for x in required_creds if x not in authenticator.credentials or not authenticator.credentials[x]]}"
+            f"{[x for x in required_creds if x not in credentials or not credentials[x]]}"
         )
     # register downloader
     self.register_downloader_only(downloader, authenticator)
