@@ -31,7 +31,6 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
-    TypeVar,
     Union,
     get_type_hints,
 )
@@ -509,10 +508,6 @@ class Provider:
         self.config |= config
 
 
-K = TypeVar("K")
-V = TypeVar("V")
-
-
 class ProvidersDict(UserDict[str, Provider]):
     """
     A dictionary-like collection of Provider objects, keyed by provider name.
@@ -622,21 +617,6 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         prov = self.get(provider)
         return prov.config if prov else None
-
-    def get_products(self, provider: str | Provider) -> Optional[dict[str, Any]]:
-        """
-        Get the products dictionary for a provider by name or Provider instance.
-
-        :param provider: Provider name or Provider instance.
-        :return: The dictionary of product types or None if provider not found.
-        """
-        if isinstance(provider, Provider):
-            name = provider.name
-        else:
-            name = provider
-
-        provider_obj = self.data.get(name)
-        return provider_obj.product_types if provider_obj else None
 
     def filter(self, pattern: Optional[str] = None) -> Iterator[Provider]:
         """
