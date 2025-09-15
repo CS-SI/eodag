@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import tempfile
 import traceback
 from collections import UserDict
@@ -427,8 +428,8 @@ class Provider:
         """
         Synchronize product types for a provider based on strict or permissive mode.
 
-        In strict mode, removes product types not in "dag.collections_config".
-        In permissive mode, adds empty product type configs for missing types.
+        In strict mode, removes collections not in "dag.collections_config".
+        In permissive mode, adds empty collection to config for missing types.
 
         :param dag: The gateway instance to use to list existing collections and to create new collection instances.
         :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
@@ -637,19 +638,21 @@ class ProvidersDict(UserDict[str, Provider]):
         provider_obj = self.data.get(name)
         return provider_obj.product_types if provider_obj else None
 
-    def filter_by_name(self, name: Optional[str] = None) -> ProvidersDict:
+    def filter(self, pattern: Optional[str] = None) -> Iterator[Provider]:
         """
-        Return a ProvidersDict filtered by provider name or group.
+        Yield providers whose name or group matches the regex pattern.
 
-        :param name: The name or group to filter by.
-        :return: The filtered ProvidersDict.
+        :param pattern: Regex pattern to filter provider name or group.
+        :return: Iterator of matching Provider objects.
         """
-        if not name:
-            return self
+        if not pattern:
+            yield from self.data.values()
+            return
 
-        return ProvidersDict(
-            {n: p for n, p in self.data.items() if name in [p.name, p.group]}
-        )
+        regex = re.compile(pattern)
+        for p in self.data.values():
+            if regex.search(p.name) or (p.group and regex.search(p.group)):
+                yield p
 
     def delete_product_type(self, provider: str, product_type: str) -> None:
         """
