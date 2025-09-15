@@ -392,7 +392,7 @@ def parse_year_month_day(
 
 
 def ecmwf_temporal_to_eodag(
-    params: dict[str, Any],
+    params: dict[str, Any]
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Converts ECMWF temporal parameters to EODAG temporal parameters.

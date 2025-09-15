@@ -229,10 +229,7 @@ class StaticStacSearch(StacSearch):
         if "eo:cloud_cover" in kwargs.keys():
             search_result = search_result.crunch(
                 FilterProperty(
-                    {
-                        "eo:cloud_cover": kwargs.pop("eo:cloud_cover"),
-                        "operator": "lt",
-                    }
+                    {"eo:cloud_cover": kwargs.pop("eo:cloud_cover"), "operator": "lt"}
                 )
             )
         # Filter by other properties
