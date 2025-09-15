@@ -642,10 +642,10 @@ class QueryStringSearch(Search):
 
                         # update keywords
                         keywords_fields = [
-                            "instrument",
+                            "instruments",
+                            "constellation",
                             "platform",
-                            "platformSerialIdentifier",
-                            "processingLevel",
+                            "processing:level",
                             "keywords",
                         ]
                         keywords_values_str = ",".join(
