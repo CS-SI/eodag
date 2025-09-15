@@ -1467,8 +1467,6 @@ class PostJsonSearch(QueryStringSearch):
         """Perform a search on an OpenSearch-like interface"""
         collection = kwargs.get("collection", "")
         count = prep.count
-        # remove "collection" from search args if exists for compatibility with QueryStringSearch methods
-        kwargs.pop("collection", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         _, sort_by_qp = (
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
