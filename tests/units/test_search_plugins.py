@@ -2576,7 +2576,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["end_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
-        self.assertEqual("THE.ALIAS", eoproduct.properties["alias"])
+        self.assertEqual("THE.ALIAS", eoproduct.properties["eodag:alias"])
 
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
