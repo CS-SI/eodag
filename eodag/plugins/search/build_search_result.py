@@ -144,7 +144,6 @@ ECMWF_KEYWORDS = {
 COP_DS_KEYWORDS = {
     "aerosol_type",
     "altitude",
-    "collection",
     "band",
     "cdr_type",
     "data_format",
@@ -176,6 +175,7 @@ COP_DS_KEYWORDS = {
     "pressure_level",
     "processing_level",
     "processing_type",
+    "product_type",
     "product_version",
     "quantity",
     "rcm",

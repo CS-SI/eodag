@@ -2781,7 +2781,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "ecmwf:variable",
             "ecmwf:leadtime_hour",
             "ecmwf:type",
-            "ecmwf:collection",
+            "ecmwf:product_type",
         ]
         default_values = deepcopy(
             getattr(self.search_plugin.config, "products", {}).get(
@@ -2980,7 +2980,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "ecmwf:variable",
             "ecmwf:leadtime_hour",
             "ecmwf:type",
-            "ecmwf:collection",
+            "ecmwf:product_type",
         ]
 
         queryables = search_plugin._get_collection_queryables(
