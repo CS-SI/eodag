@@ -43,7 +43,7 @@ search:
     results_entry: '$.collections[*]'
     generic_collection_id: '$.id'
     generic_collection_parsable_properties:
-      collection: '$.id'
+      _collection: '$.id'
     generic_collection_parsable_metadata:
       description: '$.description'
       instruments: '{$.summaries.instruments#csv_list}'
