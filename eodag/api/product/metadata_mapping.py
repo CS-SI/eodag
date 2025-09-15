@@ -1375,6 +1375,12 @@ def format_query_params(
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = query_dict[eodag_search_key]
 
+        if provider_search_key == user_input:
+            # means the mapping is to be passed as is, in which case we
+            # readily register it
+            query_params[eodag_search_key] = user_input
+            continue
+
         if COMPLEX_QS_REGEX.match(provider_search_key):
             parts = provider_search_key.split("=")
             if len(parts) == 1:
@@ -1537,7 +1543,15 @@ def _get_queryables(
                     config.discover_metadata.get("metadata_pattern", "")
                 )
                 search_param_cfg = config.discover_metadata.get("search_param", "")
-                if pattern.match(eodag_search_key) and isinstance(
+                search_param_unparsed_cfg = config.discover_metadata.get(
+                    "search_param_unparsed", []
+                )
+                if (
+                    search_param_unparsed_cfg
+                    and eodag_search_key in search_param_unparsed_cfg
+                ):
+                    queryables[eodag_search_key] = user_input
+                elif pattern.match(eodag_search_key) and isinstance(
                     search_param_cfg, str
                 ):
                     search_param = search_param_cfg.format(metadata=eodag_search_key)

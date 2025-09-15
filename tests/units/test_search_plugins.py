@@ -2111,6 +2111,22 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)
 
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_unparsed_query_parameters(self, mock__request):
+        """search_param_unparsed should pass query params as-is to the provider"""
+        result = {"features": []}
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [result]
+        search_plugin = self.get_search_plugin(provider="earth_search")
+        search_plugin.query(query={"foo": "bar", "baz": "qux"})
+
+        self.assertTrue(mock__request.called)
+        called_args, _ = mock__request.call_args
+        prepared_search = called_args[1]
+        self.assertEqual(
+            prepared_search.query_params["query"], {"foo": "bar", "baz": "qux"}
+        )
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )

@@ -33,6 +33,9 @@ search:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'
     search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
+    search_param_unparsed:
+      - filter
+      - query
     metadata_path: '$.properties.*'
   discover_product_types:
     fetch_url: '{api_endpoint}/../collections'
