@@ -65,24 +65,19 @@ def params_mapping_to_csv(
     # update stac providers metadata_mapping
     stac_mapping = load_stac_provider_config()["search"]["metadata_mapping"]
     for p in dag.providers.keys():
-        if (
-            hasattr(dag.providers[p], "search")
-            and getattr(dag.providers[p].search, "type", None) == "StacSearch"
-        ):
-            dag.providers[p].search.metadata_mapping = dict(
+        if getattr(dag.providers[p].search_config, "type", None) == "StacSearch":
+            dag.providers[p].search_config.metadata_mapping = dict(
                 stac_mapping,
-                **dag.providers[p].search.__dict__.get("metadata_mapping", {}),
+                **dag.providers[p].search_config.__dict__.get("metadata_mapping", {}),
             )
 
     # list of lists of all parameters per provider
     params_list_of_lists: list[list[str]] = []
     for p in dag.providers.keys():
-        if hasattr(dag.providers[p], "search") and hasattr(
-            dag.providers[p].search, "metadata_mapping"
+        if mapping_dict := getattr(
+            dag.providers[p].search_config, "metadata_mapping", None
         ):
-            params_list_of_lists.append(
-                list(dag.providers[p].search.__dict__["metadata_mapping"].keys())
-            )
+            params_list_of_lists.append(list(mapping_dict.keys()))
 
     # union of params_list_of_lists
     global_keys: list[str] = sorted(list(set().union(*(params_list_of_lists))))
@@ -163,12 +158,9 @@ def params_mapping_to_csv(
             # write metadata mapping
             for param in global_keys:
                 for provider in dag.providers.keys():
-                    if hasattr(dag.providers[provider], "search") and hasattr(
-                        dag.providers[provider].search, "metadata_mapping"
+                    if mapping_dict := getattr(
+                        dag.providers[provider].search_config, "metadata_mapping", None
                     ):
-                        mapping_dict = dag.providers[provider].search.__dict__[
-                            "metadata_mapping"
-                        ]
                         if param in mapping_dict.keys():
                             if isinstance(mapping_dict[param], list):
                                 params_rows[param][
