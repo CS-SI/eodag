@@ -3,7 +3,7 @@
 
 
 Featured providers
-===================
+##################
 
 ``eodag`` connects you to a variety of Earth Observation (EO) data providers.
 This section introduces the featured providers that are already integrated, so you can
@@ -19,7 +19,7 @@ See :doc:`how to add a new provider <add_provider>` for more details.
 ----
 
 **AWS / GCS EO catalogs**
--------------------------
+==========================
 
 .. admonition::  **Cloud-Native Earth Observation Data**
    :class: note
@@ -27,12 +27,30 @@ See :doc:`how to add a new provider <add_provider>` for more details.
    These providers offer scalable access to satellite imagery through cloud infrastructure with global distribution.
 
 **Earth Search**
-~~~~~~~~~~~~~~~~
+----------------
 
-`earth_search <https://www.element84.com/earth-search/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**earth_search**
+^^^^^^^^^^^^^^^^^
 
-**Element84 STAC API on AWS**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Element84 STAC API on AWS
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.element84.com/earth-search/
+         :color: primary
+         :outline:
+         :tooltip: Earth Search website
+
+         :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -53,19 +71,55 @@ See :doc:`how to add a new provider <add_provider>` for more details.
 
 ----
 
-`earth_search_cog <https://www.element84.com/earth-search/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**earth_search_cog**
+^^^^^^^^^^^^^^^^^^^^^
 
-**Element84 STAC API on AWS (COG access)**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Element84 STAC API on AWS (COG access)
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.element84.com/earth-search/
+         :color: primary
+         :outline:
+         :tooltip: Earth Search website
+
+         :fas:`external-link-alt`
 
 No account is required
 
 ----
 
-`earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**earth_search_gcs**
+^^^^^^^^^^^^^^^^^^^^^
 
-**Element84 Earth Search on Google Cloud Storage**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Element84 Earth Search on Google Cloud Storage
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://cloud.google.com/storage/docs/public-datasets
+         :color: primary
+         :outline:
+         :tooltip: Earth Search website
+
+         :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -82,13 +136,29 @@ No account is required
 
 ----
 
-**EOS**
-~~~~~~~
 
-`aws_eos <https://eos.com/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**aws_eos**
+-----------
 
-**EOS Data Analytics search for Amazon public datasets**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      EOS Data Analytics search for Amazon public datasets
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://eos.com/
+         :color: primary
+         :outline:
+         :tooltip: EOS Data Analytics website
+
+         :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -114,7 +184,7 @@ No account is required
 ----
 
 **Copernicus**
---------------
+==============
 
 .. admonition:: **European Space Programme**
    :class: note
@@ -122,12 +192,30 @@ No account is required
    The Copernicus programme provides free and open access to Earth observation data from the Sentinel satellite constellation and climate services.
 
 **Copernicus Data Stores**
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
-`cop_ads <https://ads.atmosphere.copernicus.eu>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**cop_ads**
+^^^^^^^^^^^^
 
-**Copernicus Atmosphere Data Store**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Atmosphere Data Store
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://ads.atmosphere.copernicus.eu
+        :color: primary
+        :outline:
+        :tooltip: Atmosphere Data Store website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -147,10 +235,28 @@ No account is required
 
 ----
 
-`cop_cds <https://cds.climate.copernicus.eu>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**cop_cds**
+^^^^^^^^^^^^
 
-**Copernicus Climate Data Store**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Climate Data Store
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://cds.climate.copernicus.eu
+        :color: primary
+        :outline:
+        :tooltip: Climate Data Store website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -175,10 +281,28 @@ No account is required
 
 ----
 
-`cop_dataspace <https://dataspace.copernicus.eu/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**cop_dataspace**
+^^^^^^^^^^^^^^^^^^
 
-**Copernicus Data Space Ecosystem**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Data Space Ecosystem
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://dataspace.copernicus.eu/
+        :color: primary
+        :outline:
+        :tooltip: Data Space Ecosystem website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -189,10 +313,28 @@ No account is required
 
 ----
 
-`cop_ewds <https://ewds.climate.copernicus.eu>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**cop_ewds**
+^^^^^^^^^^^^
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-**CEMS Early Warning Data Store**
+   .. grid-item::
+      :columns: 10
+
+      CEMS Early Warning Data Store
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://ewds.climate.copernicus.eu
+        :color: primary
+        :outline:
+        :tooltip: CEMS Early Warning Data Store website
+
+        :fas:`external-link-alt`
+
 
 .. dropdown:: Registration info
   :color: muted
@@ -216,22 +358,55 @@ No account is required
 
 ----
 
-`cop_marine <https://marine.copernicus.eu>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**cop_marine**
+^^^^^^^^^^^^^^^^
 
-**Copernicus Marine Service**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Marine Service
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://marine.copernicus.eu
+        :color: primary
+        :outline:
+        :tooltip: Copernicus Marine Service website
+
+        :fas:`external-link-alt`
 
 No account is required
 
 ----
 
-**Sara**
-~~~~~~~~~
+**sara**
+--------
 
-`sara <https://copernicus.nci.org.au>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-**Sentinel Australasia Regional Access**
+   .. grid-item::
+      :columns: 10
+
+      Sentinel Australasia Regional Access
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://copernicus.nci.org.au
+        :color: primary
+        :outline:
+        :tooltip: SARA website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -243,12 +418,31 @@ No account is required
 ----
 
 **WEkEO**
-~~~~~~~~~
+----------
 
-`wekeo_cmems <https://www.wekeo.eu>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**wekeo_cmems**
+^^^^^^^^^^^^^^^
 
-**Copernicus Marine (CMEMS) data from WEkEO**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Marine (CMEMS) data from WEkEO
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.wekeo.eu/
+        :color: primary
+        :outline:
+        :tooltip: WEkEO website
+
+        :fas:`external-link-alt`
+
 
 .. dropdown:: Registration info
   :color: muted
@@ -261,10 +455,29 @@ No account is required
 
 ----
 
-`wekeo_ecmwf <https://www.wekeo.eu/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**wekeo_ecmwf**
+^^^^^^^^^^^^^^^^
 
-**WEkEO ECMWF data**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      WEkEO ECMWF data
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.wekeo.eu/
+        :color: primary
+        :outline:
+        :tooltip: WEkEO website
+
+        :fas:`external-link-alt`
+
 
 .. dropdown:: Registration info
   :color: muted
@@ -274,10 +487,28 @@ No account is required
 
 ----
 
-`wekeo_main <https://www.wekeo.eu/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**wekeo_main**
+^^^^^^^^^^^^^^
 
-**WEkEO Copernicus Sentinel, DEM, and CLMS data**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      WEkEO Copernicus Sentinel, DEM, and CLMS data
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.wekeo.eu/
+        :color: primary
+        :outline:
+        :tooltip: WEkEO website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -334,12 +565,30 @@ No account is required
 ----
 
 **CREODIAS**
-~~~~~~~~~~~~
+-------------
 
-`creodias <https://creodias.eu/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**creodias**
+^^^^^^^^^^^^^
 
-**CloudFerro DIAS**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      CloudFerro DIAS
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://creodias.eu/
+        :color: primary
+        :outline:
+        :tooltip: Creodias website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -356,10 +605,28 @@ No account is required
 
 ----
 
-`creodias_s3 <https://creodias.eu/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**creodias_s3**
+^^^^^^^^^^^^^^^^
 
-**CloudFerro DIAS data through S3 protocol**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      CloudFerro DIAS data through S3 protocol
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://creodias.eu/
+        :color: primary
+        :outline:
+        :tooltip: Creodias website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -373,7 +640,7 @@ No account is required
 ----
 
 **CNES**
---------
+========
 
 .. admonition:: **French National Space Agency**
    :class: note
@@ -381,12 +648,30 @@ No account is required
    CNES provides access to French satellite missions including SPOT, Pléiades, and specialized thematic data hubs.
 
 **GEODES**
-~~~~~~~~~~
+-----------
 
-`geodes <https://geodes.cnes.fr>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**geodes**
+^^^^^^^^^^^
 
-**French National Space Agency (CNES) Earth Observation portal**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      French National Space Agency (CNES) Earth Observation portal
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://geodes-portal.cnes.fr
+        :color: primary
+        :outline:
+        :tooltip: GEODES website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -398,10 +683,28 @@ No account is required
 
 ----
 
-`geodes_s3 <https://geodes.cnes.fr>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**geodes_s3**
+^^^^^^^^^^^^^^
 
-**French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://geodes-portal.cnes.fr
+        :color: primary
+        :outline:
+        :tooltip: GEODES website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -413,13 +716,28 @@ No account is required
 
 ----
 
-**HYDROWEB.NEXT**
-~~~~~~~~~~~~~~~~~~
+**hydroweb_next**
+-----------------
 
-`hydroweb_next <https://hydroweb.next.theia-land.fr>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-**hydroweb.next thematic hub for hydrology data access**
+   .. grid-item::
+      :columns: 10
+
+      hydroweb.next thematic hub for hydrology data access
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://hydroweb.next.theia-land.fr
+        :color: primary
+        :outline:
+        :tooltip: hydroweb.next website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -431,13 +749,29 @@ No account is required
 
 ----
 
-**PEPS**
-~~~~~~~~~
 
-`peps <https://peps.cnes.fr/rocket/#/home>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**peps**
+--------
 
-**French National Space Agency (CNES) catalog for Sentinel products**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      French National Space Agency (CNES) catalog for Sentinel products
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://peps.cnes.fr/rocket/#/home
+        :color: primary
+        :outline:
+        :tooltip: PEPS website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -449,20 +783,37 @@ No account is required
 ----
 
 **Destination Earth**
----------------------
+======================
 
 .. admonition:: **Digital Twin of Earth**
    :class: note
 
    Destination Earth initiative creates digital replicas of Earth systems for climate adaptation and environmental policy.
 
-**DEDL & Lumi**
-~~~~~~~~~~~~~~~~
 
-`dedl <https://hda.data.destination-earth.eu/ui>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**DEDL**
+--------
 
-**Destination Earth Data Lake (DEDL)**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Destination Earth Data Lake (DEDL)
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://hda.data.destination-earth.eu/ui
+        :color: primary
+        :outline:
+        :tooltip: DEDL website
+
+        :fas:`external-link-alt`
+
 
 .. dropdown:: Registration info
   :color: muted
@@ -476,10 +827,28 @@ No account is required
 
 ----
 
-`lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**DEDT Lumi**
+-------------
 
-**DestinE Digital Twin output on Lumi**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Destination Earth Digital Twin output on Lumi
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
+        :color: primary
+        :outline:
+        :tooltip: DEDT Lumi website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -491,20 +860,35 @@ No account is required
 ----
 
 **ECMWF**
----------
+==========
 
 .. admonition:: **Weather and Climate Data**
    :class: note
 
    European Centre for Medium-Range Weather Forecasts providing operational and research meteorological data.
 
-**ECMWF**
-~~~~~~~~~~
+**ecmwf**
+---------
 
-`ecmwf <https://www.ecmwf.int/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-**European Centre for Medium-Range Weather Forecasts**
+   .. grid-item::
+      :columns: 10
+
+      European Centre for Medium-Range Weather Forecasts
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.ecmwf.int/
+        :color: primary
+        :outline:
+        :tooltip: ECMWF website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -519,40 +903,63 @@ No account is required
 ----
 
 **ESA**
--------
+=======
 
 .. admonition:: **European Space Agency**
    :class: note
 
    European Space Agency providing access to climate monitoring and Earth observation missions.
 
-**FEDEO CEDA**
-~~~~~~~~~~~~~~~
 
-`fedeo_ceda <https://climate.esa.int/en/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**fedeo_ceda**
+---------------
 
-**FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access. The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue of all CCI datasets.**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access. The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue of all CCI datasets.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://climate.esa.int/en/
+        :color: primary
+        :outline:
+        :tooltip: FedEO CEDA website
+
+        :fas:`external-link-alt`
 
 No account is required
 
 ----
 
 **EUMETSAT**
-------------
+============
 
-.. admonition:: **Meteorological Satellites**
-   :class: note
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-   European Organisation for the Exploitation of Meteorological Satellites providing weather and climate data.
+   .. grid-item::
+      :columns: 10
 
-**EUMETSAT Data Store**
-~~~~~~~~~~~~~~~~~~~~~~~
+      EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
 
-`eumetsat_ds <https://data.eumetsat.int>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
 
-**EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)**
+      .. button-link:: https://data.eumetsat.int
+        :color: primary
+        :outline:
+        :tooltip: EUMETSAT Data Store website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -566,20 +973,27 @@ No account is required
 ----
 
 **Meteoblue**
--------------
+=============
 
-.. admonition:: **Weather Forecast Data**
-   :class: note
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-   Professional weather forecast and historical weather data services with high-resolution models.
+   .. grid-item::
+      :columns: 10
 
-**Meteoblue**
-~~~~~~~~~~~~~
+      Meteoblue forecast
 
-`meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
 
-**Meteoblue forecast**
+      .. button-link:: https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api
+        :color: primary
+        :outline:
+        :tooltip: Meteoblue website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -594,20 +1008,27 @@ No account is required
 ----
 
 **Planetary Computer**
-----------------------
+=======================
 
-.. admonition:: **Microsoft Azure Platform**
-   :class: note
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
 
-   Microsoft's planetary-scale geospatial data platform with cloud computing and analysis capabilities.
+   .. grid-item::
+      :columns: 10
 
-**Planetary Computer**
-~~~~~~~~~~~~~~~~~~~~~~
+      Microsoft Planetary Computer
 
-`planetary_computer <https://planetarycomputer.microsoft.com/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
 
-**Microsoft Planetary Computer**
+      .. button-link:: https://planetarycomputer.microsoft.com/
+        :color: primary
+        :outline:
+        :tooltip: Planetary Computer website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -622,7 +1043,7 @@ No account is required
 ----
 
 **USGS / Landsat**
-------------------
+===================
 
 .. admonition:: **U.S. Geological Survey**
    :class: note
@@ -630,12 +1051,30 @@ No account is required
    United States Geological Survey providing access to Landsat archive and other Earth observation programs.
 
 **USGS**
-~~~~~~~~
+---------
 
-`usgs <https://earthexplorer.usgs.gov/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**usgs**
+^^^^^^^^^
 
-**U.S geological survey catalog for Landsat products**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      U.S geological survey catalog for Landsat products
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://earthexplorer.usgs.gov/
+        :color: primary
+        :outline:
+        :tooltip: USGS website
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
@@ -651,10 +1090,28 @@ No account is required
 
 ----
 
-`usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**usgs_satapi_aws**
+^^^^^^^^^^^^^^^^^^^^
 
-**USGS Landsatlook SAT API**
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      USGS Landsatlook SAT API
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://landsatlook.usgs.gov/sat-api/
+        :color: primary
+        :outline:
+        :tooltip: USGS Landsatlook SAT API
+
+        :fas:`external-link-alt`
 
 .. dropdown:: Registration info
   :color: muted
