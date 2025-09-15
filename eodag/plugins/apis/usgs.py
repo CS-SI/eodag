@@ -313,8 +313,7 @@ class UsgsApi(Api):
         output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.product_type,
-                self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
+                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
             ).get("output_extension", ".tar.gz"),
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
