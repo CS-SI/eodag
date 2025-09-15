@@ -1508,10 +1508,10 @@
     auth_endpoint: https://api.ecmwf.int/v1
     metadata_mapping:
       product:type: $.productType
-      start_datetime: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - 'date={start_datetime#to_iso_date}/to/{end_datetime#to_iso_date(-1,)}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
@@ -1543,7 +1543,7 @@
           "year": {_date#interval_to_datetime_dict}["year"],
           "month": {_date#interval_to_datetime_dict}["month"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
     ssl_verify: true
@@ -1596,10 +1596,10 @@
       form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
       product:type: $.productType
-      start_datetime: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - 'date={start_datetime#to_iso_date}/{end_datetime#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
@@ -1653,7 +1653,7 @@
             {{
               "year": {_date#interval_to_datetime_dict}["year"]
             }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+          - '{$.end_datetime#to_iso_date}'
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
     CAMS_EAC4_MONTHLY:
@@ -1679,7 +1679,7 @@
           "month": {_date#interval_to_datetime_dict}["month"],
           "nominal_day": {_date#interval_to_datetime_dict}["day"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_day_month_year: &day_month_year
     end_datetime:
       - |
@@ -1688,7 +1688,7 @@
           "month": {_date#interval_to_datetime_dict}["month"],
           "day": {_date#interval_to_datetime_dict}["day"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_time_day_month_year: &time_day_month_year
     end_datetime:
       - |
@@ -1698,7 +1698,7 @@
           "day": {_date#interval_to_datetime_dict}["day"],
           "time": {start_datetime#get_ecmwf_time}
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_month_year: &month_year
     end_datetime:
     - |
@@ -1706,7 +1706,7 @@
         "year": {_date#interval_to_datetime_dict}["year"],
         "month": {_date#interval_to_datetime_dict}["month"]
       }}
-    - '{$.completionTimeFromAscendingNode#to_iso_date}'
+    - '{$.end_datetime#to_iso_date}'
   anchor_time_month_year: &time_month_year
     end_datetime:
       - |
@@ -1715,7 +1715,7 @@
           "month": {_date#interval_to_datetime_dict}["month"],
           "time": {start_datetime#get_ecmwf_time}
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
     ssl_verify: true
@@ -1769,10 +1769,10 @@
       form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
       product:type: $.productType
-      start_datetime: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - date={start_datetime#to_iso_date}/{end_datetime#to_iso_date}
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
@@ -1823,7 +1823,7 @@
             {{
               "hydrological_year": {end_datetime#get_hydrological_year}
             }}
-          - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
+          - '{$.end_datetime#get_hydrological_year}'
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
       metadata_mapping:
@@ -2200,10 +2200,10 @@
       search_param: '{{{{"{metadata}":{{{metadata}#to_geojson}} }}}}'
       metadata_path: '$.*'
     metadata_mapping:
-      start_datetime: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - '{{"timeIntervals": [ "{start_datetime#to_iso_date}/{end_datetime#to_iso_date(-1,)}" ] }}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
       geometry:
         - '{{"geometry": {geometry#to_geojson} }}'
         - '$.geometry'
@@ -4340,10 +4340,10 @@
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
         - "$.geometry"
-      start_datetime: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
-        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '{{"date": "{start_datetime#to_non_separated_date}/to/{end_datetime#to_non_separated_date}"}}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
       product:type:
         - dataset
         - $.dataset
@@ -5840,7 +5840,7 @@
           "day": {_date#interval_to_datetime_dict}["day"],
           "time": {start_datetime#get_ecmwf_time}
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_day_month_year: &day_month_year
     end_datetime:
       - |
@@ -5849,7 +5849,7 @@
           "month": {_date#interval_to_datetime_dict}["month"],
           "day": {_date#interval_to_datetime_dict}["day"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_month_year: &month_year
     end_datetime:
       - |
@@ -5857,7 +5857,7 @@
           "year": {_date#interval_to_datetime_dict}["year"],
           "month": {_date#interval_to_datetime_dict}["month"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_time_hday_hmonth_hyear: &time_hday_hmonth_hyear
     end_datetime:
       - |
@@ -5867,7 +5867,7 @@
           "hday": {_date#interval_to_datetime_dict}["day"],
           "time": {start_datetime#get_ecmwf_time}
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_hday_hmonth_hyear: &hday_hmonth_hyear
     end_datetime:
       - |
@@ -5876,7 +5876,7 @@
           "hmonth": {_date#interval_to_datetime_dict}["month"],
           "hday": {_date#interval_to_datetime_dict}["day"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   anchor_hmonth_hyear: &hmonth_hyear
     end_datetime:
       - |
@@ -5884,7 +5884,7 @@
           "hyear": {_date#interval_to_datetime_dict}["year"],
           "hmonth": {_date#interval_to_datetime_dict}["month"]
         }}
-      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      - '{$.end_datetime#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
     ssl_verify: true
@@ -5938,10 +5938,10 @@
       form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
       product:type: $.productType
-      start_datetime: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - date={start_datetime#to_iso_date}/{end_datetime#to_iso_date}
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
