@@ -476,14 +476,14 @@ class EODataAccessGateway:
             self.fetch_product_types_list(provider=provider)
 
         product_types: list[dict[str, Any]] = []
-        providers = self.providers.filter_by_name(provider)
+        providers = list(self.providers.filter(f"^{provider}$" if provider else None))
 
         if provider and not providers:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for p in providers.values():
+        for p in providers:
             for product_type_id in p.product_types:  # type: ignore
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
@@ -512,13 +512,13 @@ class EODataAccessGateway:
         if strict_mode:
             return
 
-        providers_to_fetch = self.providers.filter_by_name(provider)
-
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: dict[str, DiscoverProductTypes] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
-        for provider_to_fetch in providers_to_fetch.values():
+        for provider_to_fetch in self.providers.filter(
+            f"^{provider}$" if provider else None
+        ):
             if provider_to_fetch.fetchable and provider_to_fetch.search_config:
                 providers_discovery_configs_fetchable[
                     provider_to_fetch.name
@@ -636,7 +636,9 @@ class EODataAccessGateway:
         :returns: external product types configuration
         """
 
-        providers_to_discover = self.providers.filter_by_name(provider)
+        providers_to_discover = list(
+            self.providers.filter(f"^{provider}$" if provider else None)
+        )
 
         if provider and not providers_to_discover:
             raise UnsupportedProvider(
@@ -646,7 +648,7 @@ class EODataAccessGateway:
         ext_product_types_conf: dict[str, Any] = {}
 
         kwargs: dict[str, Any] = {}
-        for p in providers_to_discover.values():
+        for p in providers_to_discover:
             if not p.search_config:
                 return None
 
