@@ -159,6 +159,7 @@ def version() -> None:
     help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml",
     type=click.Path(exists=True),
 )
+@click.option("-p", "--provider", help="Search on this provider")
 @click.option(
     "-b",
     "--box",
@@ -188,25 +189,26 @@ def version() -> None:
     type=click.DateTime(),
     help="End sensing time in ISO8601 format (e.g. '1990-11-26', '1990-11-26T14:30:10'). UTC is assumed",
 )
+@click.option("-c", "--collection", help="The collection to search")
 @click.option(
-    "-c",
-    "--cloudCover",
-    type=click.IntRange(0, 100),
-    help="Maximum cloud cover percentage needed for the product",
+    "-i", "--instruments", help="Search for products matching these instruments"
 )
-@click.option("-p", "--collection", help="The collection to search")
-@click.option("-i", "--instrument", help="Search for products matching this instrument")
 @click.option("-P", "--platform", help="Search for products matching this platform")
 @click.option(
-    "-t",
-    "--platformSerialIdentifier",
-    help="Search for products originating from the satellite identified by this keyword",
+    "-C", "--constellation", help="Search for products matching this constellation"
 )
 @click.option(
-    "-L", "--processingLevel", help="Search for products matching this processing level"
+    "-L",
+    "--processing-level",
+    help="Search for products matching this processing level",
 )
 @click.option(
     "-S", "--sensorType", help="Search for products matching this type of sensor"
+)
+@click.option(
+    "--cloud-cover",
+    type=click.IntRange(0, 100),
+    help="Maximum cloud cover percentage needed for the product",
 )
 @click.option("--id", help="Search for the product identified by this id")
 @click.option(
@@ -279,11 +281,12 @@ def version() -> None:
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
     """Search collections and optionnaly apply crunchers to search results"""
     # Process inputs for search
+    provider = kwargs.pop("provider")
     collection = kwargs.pop("collection")
-    instrument = kwargs.pop("instruments")
-    platform = kwargs.pop("constellation")
-    platform_identifier = kwargs.pop("platformserialidentifier")
-    processing_level = kwargs.pop("processinglevel")
+    instruments = kwargs.pop("instruments")
+    platform = kwargs.pop("platform")
+    constellation = kwargs.pop("constellation")
+    processing_level = kwargs.pop("processing_level")
     sensor_type = kwargs.pop("sensortype")
     id_ = kwargs.pop("id")
     locations_qs = kwargs.pop("locations")
@@ -291,9 +294,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     if not any(
         [
             collection,
-            instrument,
+            instruments,
             platform,
-            platform_identifier,
+            constellation,
             processing_level,
             sensor_type,
             id_,
@@ -320,14 +323,15 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     start_date = kwargs.pop("start")
     stop_date = kwargs.pop("end")
     criteria = {
+        "provider": provider,
         "geometry": footprint,
         "start_datetime": None,
         "end_datetime": None,
-        "eo:cloud_cover": kwargs.pop("cloudcover"),
+        "eo:cloud_cover": kwargs.pop("cloud_cover"),
         "collection": collection,
-        "instruments": instrument,
-        "constellation": platform,
-        "platform": platform_identifier,
+        "instruments": instruments,
+        "constellation": constellation,
+        "platform": platform,
         "processing:level": processing_level,
         "sensorType": sensor_type,
         "id": id_,
@@ -412,17 +416,17 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 @eodag.command(name="list", help="List supported collections")
 @click.option("-p", "--provider", help="List collections supported by this provider")
 @click.option(
-    "-i", "--instrument", help="List collections originating from this instrument"
+    "-i", "--instruments", help="List collections originating from these instruments"
 )
 @click.option(
     "-P", "--platform", help="List collections originating from this platform"
 )
 @click.option(
-    "-t",
-    "--platformSerialIdentifier",
-    help="List collections originating from the satellite identified by this keyword",
+    "-C",
+    "--constellation",
+    help="List collections originating from this constellation",
 )
-@click.option("-L", "--processingLevel", help="List collections of processing level")
+@click.option("-L", "--processing-level", help="List collections of processing level")
 @click.option(
     "-S", "--sensorType", help="List collections originating from this type of sensor"
 )
@@ -440,9 +444,6 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
     guessed_collections = []
     try:
         guessed_collections = dag.guess_collection(
-            platformSerialIdentifier=kwargs.get("platformserialidentifier"),
-            processingLevel=kwargs.get("processinglevel"),
-            sensorType=kwargs.get("sensortype"),
             **kwargs,
         )
     except NoMatchingCollection:
@@ -451,8 +452,8 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             for arg in [
                 "instruments",
                 "constellation",
-                "platformserialidentifier",
-                "processinglevel",
+                "platform",
+                "processing_level",
                 "sensortype",
             ]
         ):

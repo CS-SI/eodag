@@ -981,16 +981,16 @@ class EODataAccessGateway:
         self,
         free_text: Optional[str] = None,
         intersect: bool = False,
-        instrument: Optional[str] = None,
+        instruments: Optional[str] = None,
         platform: Optional[str] = None,
-        platformSerialIdentifier: Optional[str] = None,
-        processingLevel: Optional[str] = None,
+        constellation: Optional[str] = None,
+        processing_level: Optional[str] = None,
         sensorType: Optional[str] = None,
         keywords: Optional[str] = None,
-        abstract: Optional[str] = None,
+        description: Optional[str] = None,
         title: Optional[str] = None,
-        missionStartDate: Optional[str] = None,
-        missionEndDate: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
         **kwargs: Any,
     ) -> list[str]:
         """
@@ -1004,14 +1004,14 @@ class EODataAccessGateway:
         :param intersect: Join results for each parameter using INTERSECT instead of UNION.
         :param instrument: Instrument parameter.
         :param platform: Platform parameter.
-        :param platformSerialIdentifier: Platform serial identifier parameter.
-        :param processingLevel: Processing level parameter.
+        :param constellation: Constellation parameter.
+        :param processing_level: Processing level parameter.
         :param sensorType: Sensor type parameter.
         :param keywords: Keywords parameter.
-        :param abstract: Abstract parameter.
+        :param description: description parameter.
         :param title: Title parameter.
-        :param missionStartDate: start date for datetime filtering. Not used by free_text
-        :param missionEndDate: end date for datetime filtering. Not used by free_text
+        :param start_date: start date for datetime filtering. Not used by free_text
+        :param end_date: end date for datetime filtering. Not used by free_text
         :returns: The best match for the given parameters.
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
@@ -1021,13 +1021,13 @@ class EODataAccessGateway:
         filters: dict[str, str] = {
             k: v
             for k, v in {
-                "instruments": instrument,
-                "constellation": platform,
-                "platform": platformSerialIdentifier,
-                "processing:level": processingLevel,
+                "instruments": instruments,
+                "constellation": constellation,
+                "platform": platform,
+                "processing:level": processing_level,
                 "sensorType": sensorType,
                 "keywords": keywords,
-                "description": abstract,
+                "description": description,
                 "title": title,
             }.items()
             if v is not None
@@ -1035,7 +1035,7 @@ class EODataAccessGateway:
 
         only_dates = (
             True
-            if (not free_text and not filters and (missionStartDate or missionEndDate))
+            if (not free_text and not filters and (start_date or end_date))
             else False
         )
 
@@ -1087,22 +1087,18 @@ class EODataAccessGateway:
                 continue
 
             # datetime filtering
-            if missionStartDate or missionEndDate:
+            if start_date or end_date:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
                 col_start, col_end = get_collection_dates(pt_dict)
 
                 max_start = max(
-                    rfc3339_str_to_datetime(missionStartDate)
-                    if missionStartDate
-                    else min_aware,
+                    rfc3339_str_to_datetime(start_date) if start_date else min_aware,
                     rfc3339_str_to_datetime(col_start) if col_start else min_aware,
                 )
                 min_end = min(
-                    rfc3339_str_to_datetime(missionEndDate)
-                    if missionEndDate
-                    else max_aware,
+                    rfc3339_str_to_datetime(end_date) if end_date else max_aware,
                     rfc3339_str_to_datetime(col_end) if col_end else max_aware,
                 )
                 if not (max_start <= min_end):
