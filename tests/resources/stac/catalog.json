@@ -57,10 +57,10 @@
         "intruments": [
             "MSI"
         ],
-        "platform": [
+        "constellation": [
             "SENTINEL2"
         ],
-        "platformSerialIdentifier": [
+        "platform": [
             "S2A,S2B"
         ]
     },

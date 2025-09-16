@@ -61,13 +61,13 @@ class TestCoreSearchResults(EODagTestCase):
                         ),
                         "eodag:provider": "peps",
                         "eodag:collection": "S1_SAR_OCN",
-                        "platformSerialIdentifier": "S1A",
-                        "cloudCover": 0,
+                        "platform": "S1A",
+                        "eo:cloud_cover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_"
                         "20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
-                        "instrument": "SAR-C SAR",
-                        "abstract": None,
+                        "instruments": "SAR-C SAR",
+                        "description": None,
                         "eodag:search_intersection": {
                             "coordinates": [
                                 [
@@ -82,9 +82,9 @@ class TestCoreSearchResults(EODagTestCase):
                         },
                         "organisationName": None,
                         "start_datetime": "2018-02-15T23:53:22.871Z",
-                        "platform": None,
+                        "constellation": None,
                         "sensorType": None,
-                        "processingLevel": None,
+                        "processing:level": None,
                         "orbitType": None,
                         "topicCategory": None,
                         "orbitDirection": None,

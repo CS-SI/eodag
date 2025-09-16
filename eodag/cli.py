@@ -280,8 +280,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     """Search collections and optionnaly apply crunchers to search results"""
     # Process inputs for search
     collection = kwargs.pop("collection")
-    instrument = kwargs.pop("instrument")
-    platform = kwargs.pop("platform")
+    instrument = kwargs.pop("instruments")
+    platform = kwargs.pop("constellation")
     platform_identifier = kwargs.pop("platformserialidentifier")
     processing_level = kwargs.pop("processinglevel")
     sensor_type = kwargs.pop("sensortype")
@@ -323,12 +323,12 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         "geometry": footprint,
         "start_datetime": None,
         "end_datetime": None,
-        "cloudCover": kwargs.pop("cloudcover"),
+        "eo:cloud_cover": kwargs.pop("cloudcover"),
         "collection": collection,
-        "instrument": instrument,
-        "platform": platform,
-        "platformSerialIdentifier": platform_identifier,
-        "processingLevel": processing_level,
+        "instruments": instrument,
+        "constellation": platform,
+        "platform": platform_identifier,
+        "processing:level": processing_level,
         "sensorType": sensor_type,
         "id": id_,
     }
@@ -449,8 +449,8 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
         if any(
             kwargs[arg]
             for arg in [
-                "instrument",
-                "platform",
+                "instruments",
+                "constellation",
                 "platformserialidentifier",
                 "processinglevel",
                 "sensortype",

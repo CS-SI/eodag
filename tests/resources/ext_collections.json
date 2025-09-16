@@ -4,34 +4,34 @@
       "foo": {
         "productType": "foo",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       },
       "bar": {
         "productType": "bar",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       }
     },
     "collections_config": {
       "foo": {
-        "abstract": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.",
-        "instrument": "Not Available",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.",
+        "instruments": "Not Available",
+        "constellation": "Not Available",
         "platform": "Not Available",
-        "platformSerialIdentifier": "Not Available",
-        "processingLevel": "Not Available",
+        "processing:level": "Not Available",
         "keywords": "Not Available",
         "license": "WTFPL",
         "title": "Foo collection",
         "missionStartDate": "2001-01-01T00:00:00.000Z"
       },
       "bar": {
-        "abstract": "Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.",
-        "instrument": "Not Available",
+        "description": "Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.",
+        "instruments": "Not Available",
+        "constellation": "Not Available",
         "platform": "Not Available",
-        "platformSerialIdentifier": "Not Available",
-        "processingLevel": "Not Available",
+        "processing:level": "Not Available",
         "keywords": "Not Available",
         "license": "WTFPL",
         "title": "Bar collection",

@@ -356,12 +356,12 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         self.peps_search_plugin.query(collection="S2_MSI_L1C", cloudCover=50)
         mock__request.assert_called()
-        self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
+        self.assertIn("eo:cloud_cover", mock__request.call_args_list[-1][0][1].url)
         mock__request.reset_mock()
 
         self.peps_search_plugin.query(collection="S1_SAR_GRD", cloudCover=50)
         mock__request.assert_called()
-        self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
+        self.assertNotIn("eo:cloud_cover", mock__request.call_args_list[-1][0][1].url)
 
     def test_plugins_search_querystringsearch_search_peps_ko(self):
         """A query with a parameter which is not queryable must
@@ -3364,7 +3364,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         search_plugin.config.products = {
             "PRODUCT_A": {
                 "_collection": "PRODUCT_A",
-                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+                "code_mapping": {"param": "platform", "index": 1},
             }
         }
 
@@ -3429,7 +3429,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
             self.assertEqual(
                 "15325642",
-                products_dataset2[0].properties["platformSerialIdentifier"],
+                products_dataset2[0].properties["platform"],
             )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
@@ -3511,7 +3511,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         search_plugin.config.products = {
             "PRODUCT_A": {
                 "_collection": "PRODUCT_A",
-                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+                "code_mapping": {"param": "platform", "index": 1},
             }
         }
 
@@ -3752,7 +3752,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
                 "startDate": "2020-08-08",
                 "completionDate": "2020-08-16",
                 "bbox": [137.772897, 13.134202, 153.749135, 23.885986],
-                "processingLevel": "S2MSI1C",
+                "processing:level": "S2MSI1C",
             },
             mock.ANY,
         )

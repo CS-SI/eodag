@@ -1163,11 +1163,11 @@ class TestCore(TestCoreBase):
         """
         self.assertIsInstance(structure, dict)
         self.assertIn("ID", structure)
-        self.assertIn("abstract", structure)
-        self.assertIn("instrument", structure)
+        self.assertIn("description", structure)
+        self.assertIn("instruments", structure)
+        self.assertIn("constellation", structure)
         self.assertIn("platform", structure)
-        self.assertIn("platformSerialIdentifier", structure)
-        self.assertIn("processingLevel", structure)
+        self.assertIn("processing:level", structure)
         self.assertIn("sensorType", structure)
         self.assertTrue(
             structure["ID"] in self.SUPPORTED_COLLECTIONS
@@ -1725,9 +1725,9 @@ class TestCore(TestCoreBase):
                     "start_datetime",
                     "creationDate",
                     "modificationDate",
-                    "platformSerialIdentifier",
+                    "platform",
                     "resolution",
-                    "cloudCover",
+                    "eo:cloud_cover",
                 ],
             },
             "dedt_lumi": None,
@@ -1737,9 +1737,9 @@ class TestCore(TestCoreBase):
                     "start_datetime",
                     "creationDate",
                     "modificationDate",
-                    "platformSerialIdentifier",
+                    "platform",
                     "resolution",
-                    "cloudCover",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
@@ -1749,9 +1749,9 @@ class TestCore(TestCoreBase):
                     "start_datetime",
                     "creationDate",
                     "modificationDate",
-                    "platformSerialIdentifier",
+                    "platform",
                     "resolution",
-                    "cloudCover",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
@@ -1761,10 +1761,10 @@ class TestCore(TestCoreBase):
                     "start_datetime",
                     "creationDate",
                     "modificationDate",
+                    "constellation",
                     "platform",
-                    "platformSerialIdentifier",
                     "resolution",
-                    "cloudCover",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
@@ -1784,8 +1784,8 @@ class TestCore(TestCoreBase):
                     "id",
                     "start_datetime",
                     "end_datetime",
-                    "platformSerialIdentifier",
-                    "cloudCover",
+                    "platform",
+                    "eo:cloud_cover",
                 ],
             },
             "geodes_s3": {
@@ -1794,8 +1794,8 @@ class TestCore(TestCoreBase):
                     "id",
                     "start_datetime",
                     "end_datetime",
-                    "platformSerialIdentifier",
-                    "cloudCover",
+                    "platform",
+                    "eo:cloud_cover",
                 ],
             },
             "hydroweb_next": {
@@ -1804,7 +1804,7 @@ class TestCore(TestCoreBase):
                     "start_datetime",
                     "end_datetime",
                     "productVersion",
-                    "processingLevel",
+                    "processing:level",
                 ],
                 "max_sort_params": None,
             },
@@ -1813,7 +1813,7 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "id",
                     "start_datetime",
-                    "platformSerialIdentifier",
+                    "platform",
                 ],
                 "max_sort_params": None,
             },
@@ -1832,10 +1832,10 @@ class TestCore(TestCoreBase):
                     "start_datetime",
                     "creationDate",
                     "modificationDate",
-                    "platformSerialIdentifier",
+                    "platform",
                     "illuminationElevationAngle",
                     "illuminationAzimuthAngle",
-                    "cloudCover",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
@@ -2411,11 +2411,11 @@ class TestCoreSearch(TestCoreBase):
         """_prepare_search must preserve additional kwargs"""
         base = {
             "collection": "S2_MSI_L1C",
-            "cloudCover": 10,
+            "eo:cloud_cover": 10,
         }
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["collection"], base["collection"])
-        self.assertEqual(prepared_search["cloudCover"], base["cloudCover"])
+        self.assertEqual(prepared_search["eo:cloud_cover"], base["eo:cloud_cover"])
 
     def test__prepare_search_search_plugin_has_known_product_properties(self):
         """_prepare_search must attach the product properties to the search plugin"""
