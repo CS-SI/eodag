@@ -1,12 +1,16 @@
 import datetime
 import math
-import re
 from typing import Any, Optional
 
 import requests
 from pyproj import CRS, Transformer
 
+from eodag.api.product._assets import Asset, AssetsDict
 from eodag.api.product._product import EOProduct
+from eodag.api.product.metadata_mapping import (
+    mtd_cfg_as_conversion_and_querypath,
+    properties_from_json,
+)
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.utils import HTTP_REQ_TIMEOUT
@@ -129,6 +133,7 @@ class CopGhslSearch(Search):
         unit: str,
         product_type: str,
         params: dict[str, Any],
+        additional_filter: Optional[str] = None,
     ) -> list[EOProduct]:
         """
         create EOProduct objects from the input parameters and the tiles containing bboxes
@@ -145,16 +150,27 @@ class CopGhslSearch(Search):
         filter_geometry = params.pop("geometry", None)
 
         # information for id and download path
-        product_type_config = self.config.products.get(product_type, {})
-        dataset = product_type_config.get("metadata_mapping", {}).get("dataset", None)
+        metadata_mapping = params.pop("metadata_mapping", {})
+        dataset = metadata_mapping.get("dataset", None)
         if not dataset:
             raise MisconfiguredError(
                 f"dataset mapping not available for {product_type}"
             )
-        resolution = re.sub("[a-z]", "", params["resolution"])
         format_params = params
+        # format resolution
+        parsed_metadata_mapping = mtd_cfg_as_conversion_and_querypath(metadata_mapping)
+        resolution = properties_from_json(
+            {"resolution": params["resolution"]}, parsed_metadata_mapping
+        )["resolution"]
         format_params.update({"resolution": resolution})
+        # additional filter
+        if additional_filter:
+            add_filter_value = format_params.pop(additional_filter)
+            if add_filter_value == "TOTAL":
+                add_filter_value = ""
+            format_params.update({"add_filter": add_filter_value})
         dataset = dataset.format(**format_params)
+        dataset = dataset.replace("__", "_")  # in case additional filter value is empty
         # create items from tiles
         for tile in tiles:
             if not tile:  # empty grid position
@@ -170,10 +186,19 @@ class CopGhslSearch(Search):
                 properties["geometry"] = bbox_lon_lat
             # create id
             product_id = f"{dataset}_{tile['tileID']}"
-            properties["id"] = product_id
+            properties["id"] = properties["title"] = product_id
+            downloadLink = metadata_mapping.get("downloadLink").format(
+                dataset=dataset, tile_id=tile["tileID"]
+            )
+            properties["downloadLink"] = downloadLink
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, productType=product_type
             )
+            assets = AssetsDict(product=product)
+            assets[tile["tileID"]] = Asset(
+                product=product, key=tile["tileID"], href=downloadLink
+            )
+            product.assets = assets
             if not filter_geometry or filter_geometry.intersects(product.geometry):
                 products.append(product)
 
@@ -226,12 +251,26 @@ class CopGhslSearch(Search):
                 tiles = []
                 for t_id, bbox in res.json()["BBoxes"].items():
                     tiles.append({"tileID": t_id, "BBox_3035": bbox})
-            unit = res.json()["unit"]
+            unit = res.json().get("unit", "")
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
         except requests.exceptions.RequestException as exc:
             raise RequestError.from_error(exc, f"Unable to fetch {tiles_url}") from exc
 
-        products = self._create_products_from_tiles(tiles, unit, product_type, kwargs)
+        additional_filters = list(
+            available_values[product_type].get("additional_filters", {}).keys()
+        )
+        if len(additional_filters) > 0:
+            products = self._create_products_from_tiles(
+                tiles,
+                unit,
+                product_type,
+                kwargs,
+                additional_filter=additional_filters[0],
+            )
+        else:
+            products = self._create_products_from_tiles(
+                tiles, unit, product_type, kwargs
+            )
 
         return products, None
