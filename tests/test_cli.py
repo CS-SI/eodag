@@ -194,25 +194,25 @@ class TestEodagCli(unittest.TestCase):
             collection = "whatever"
             self.runner.invoke(
                 eodag,
-                ["search", "--conf", conf_file, "-p", collection, "-b", 1, 43, 2, 44],
+                ["search", "--conf", conf_file, "-c", collection, "-b", 1, 43, 2, 44],
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
+                provider=None,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 page=1,
                 start_datetime=None,
                 end_datetime=None,
-                cloudCover=None,
                 geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
                 count=False,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     def test_eodag_search_geom_wkt_invalid(self):
@@ -220,7 +220,7 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             result = self.runner.invoke(
                 eodag,
-                ["search", "--conf", conf_file, "-p", "whatever", "-g", "not a wkt"],
+                ["search", "--conf", conf_file, "-c", "whatever", "-g", "not a wkt"],
             )
             # GEOSException for shapely >= 2.0
             assert "WKTReadingError" in str(result) or "GEOSException" in str(result)
@@ -237,7 +237,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "-g",
                     "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
@@ -245,21 +245,21 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
+                provider=None,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 page=1,
                 start_datetime=None,
                 end_datetime=None,
-                cloudCover=None,
                 geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
                 count=False,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     def test_eodag_search_bbox_geom_mutually_exclusive(self):
@@ -297,7 +297,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     "whatever",
                     "--storage",
                     "results",
@@ -317,22 +317,22 @@ class TestEodagCli(unittest.TestCase):
             collection = "whatever"
             cruncher = "FilterLatestIntersect"
             criteria = dict(
+                provider=None,
                 start_datetime=None,
                 end_datetime=None,
                 geometry=None,
-                cloudCover=None,
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
             self.runner.invoke(
                 eodag,
-                ["search", "-f", conf_file, "-p", collection, "--cruncher", cruncher],
+                ["search", "-f", conf_file, "-c", collection, "--cruncher", cruncher],
             )
 
             search_results = api_obj.search.return_value
@@ -360,7 +360,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "-f",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "--cruncher",
                     cruncher,
@@ -387,22 +387,22 @@ class TestEodagCli(unittest.TestCase):
 
             collection = "whatever"
             criteria = dict(
+                provider=None,
                 start_datetime=None,
                 end_datetime=None,
                 geometry=None,
-                cloudCover=None,
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
             self.runner.invoke(
                 eodag,
-                ["search", "-f", conf_file, "-p", collection, "download"],
+                ["search", "-f", conf_file, "-c", collection, "download"],
             )
 
             # Assertions
@@ -426,7 +426,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "-g",
                     "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
@@ -435,19 +435,19 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search_all.assert_called_once_with(
+                provider=None,
                 items_per_page=None,
                 start_datetime=None,
                 end_datetime=None,
-                cloudCover=None,
                 geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -461,7 +461,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "--query",
                     "foo=1&bar=2&bar=3",
@@ -469,23 +469,23 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
+                provider=None,
                 page=1,
                 items_per_page=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=None,
-                cloudCover=None,
                 collection=collection,
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 id=None,
                 foo="1",
                 bar=["2", "3"],
                 locations=None,
                 count=False,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -499,7 +499,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "--locations",
                     "country=FRA&continent=Africa",
@@ -507,21 +507,21 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
+                provider=None,
                 page=1,
                 items_per_page=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=None,
-                cloudCover=None,
                 collection=collection,
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 id=None,
                 locations={"country": "FRA", "continent": "Africa"},
                 count=False,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -539,7 +539,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "--start",
                     start_date_str,
@@ -547,21 +547,21 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
+                provider=None,
                 page=1,
                 items_per_page=20,
                 geometry=None,
                 start_datetime=start_date_datetime,
                 end_datetime=None,
-                cloudCover=None,
                 collection=collection,
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 id=None,
                 locations=None,
                 count=False,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -579,7 +579,7 @@ class TestEodagCli(unittest.TestCase):
                     "search",
                     "--conf",
                     conf_file,
-                    "-p",
+                    "-c",
                     collection,
                     "--end",
                     stop_date_str,
@@ -588,21 +588,21 @@ class TestEodagCli(unittest.TestCase):
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
+                provider=None,
                 page=1,
                 items_per_page=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=stop_date_datetime,
-                cloudCover=None,
                 collection=collection,
-                instrument=None,
+                instruments=None,
                 platform=None,
-                platformSerialIdentifier=None,
-                processingLevel=None,
+                constellation=None,
                 sensorType=None,
                 id=None,
                 locations=None,
                 count=True,
+                **{"eo:cloud_cover": None, "processing:level": None},
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -620,7 +620,7 @@ class TestEodagCli(unittest.TestCase):
                     conf_file,
                     "--locs",
                     locs_file,
-                    "-p",
+                    "-c",
                     collection,
                 ],
             )
@@ -706,7 +706,7 @@ class TestEodagCli(unittest.TestCase):
 
         result = self.runner.invoke(
             eodag,
-            ["list", "-p", provider, "--platformSerialIdentifier", "S2A", "--no-fetch"],
+            ["list", "-p", provider, "--platform", "S2A", "--no-fetch"],
         )
         self.assertEqual(result.exit_code, 0)
 
@@ -729,7 +729,7 @@ class TestEodagCli(unittest.TestCase):
         """
         result = self.runner.invoke(
             eodag,
-            ["list", "--platformSerialIdentifier", "fake_identifier", "--no-fetch"],
+            ["list", "--platform", "fake_identifier", "--no-fetch"],
         )
         self.assertIn(
             "No collection match the following criteria you provided:\n",
