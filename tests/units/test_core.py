@@ -2295,7 +2295,9 @@ class TestCoreSearch(TestCoreBase):
 
         # with dates
         self.assertEqual(
-            self.dag.collections_config.source["S2_MSI_L1C"]["missionStartDate"],
+            self.dag.collections_config.source["S2_MSI_L1C"]["extent"]["temporal"][
+                "interval"
+            ][0][0],
             "2015-06-23T00:00:00Z",
         )
         self.assertNotIn(

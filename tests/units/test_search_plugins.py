@@ -2579,8 +2579,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # missing start & stop and plugin.collection_config set (set in core._prepare_search)
         self.search_plugin.config.collection_config = {
             "_collection": self.collection,
-            "missionStartDate": "1985-10-26",
-            "missionEndDate": "2015-10-21",
+            "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
             "alias": "THE.ALIAS",
         }
         results, _ = self.search_plugin.query(
@@ -2775,7 +2774,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         with open(form_path) as f:
             form = json.load(f)
         mock__fetch_data.side_effect = [constraints, form]
-        collection_config = {"missionStartDate": "2001-01-01T00:00:00Z"}
+        collection_config = {
+            "extent": {"temporal": {"interval": [["2001-01-01T00:00:00Z", None]]}}
+        }
         setattr(self.search_plugin.config, "collection_config", collection_config)
 
         provider_queryables_from_constraints_file = [
