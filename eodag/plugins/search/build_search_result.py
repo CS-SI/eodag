@@ -632,9 +632,8 @@ class ECMWFSearch(PostJsonSearch):
             keywords[END] = (
                 keywords[START]
                 if END in collection_conf
-                else self.get_collection_cfg_value(
-                    "missionEndDate", today().isoformat()
-                )
+                # else self.get_collection_cfg_value(
+                else self.get_collection_cfg_dates(None, today().isoformat())[1]
             )
             return
 
