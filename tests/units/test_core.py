@@ -2272,9 +2272,9 @@ class TestCoreSearch(TestCoreBase):
     def test_guess_collection_with_kwargs(self):
         """guess_collection must return the products matching the given kwargs"""
         kwargs = dict(
-            instrument="MSI",
-            platform="SENTINEL2",
-            platformSerialIdentifier="S2A",
+            instruments="MSI",
+            constellation="SENTINEL2",
+            platform="S2A",
         )
         actual = self.dag.guess_collection(**kwargs)
         expected = [
@@ -2430,9 +2430,9 @@ class TestCoreSearch(TestCoreBase):
         # Uses guess_collection to find the product matching
         # the best the given params.
         base = dict(
-            instrument="MSI",
-            platform="SENTINEL2",
-            platformSerialIdentifier="S2A",
+            instruments="MSI",
+            constellation="SENTINEL2",
+            platform="S2A",
         )
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["collection"], "S2_MSI_L1C")
@@ -2442,9 +2442,9 @@ class TestCoreSearch(TestCoreBase):
         # Uses guess_collection to find the product matching
         # the best the given params.
         base = dict(
-            instrument="MSI",
-            platform="SENTINEL2",
-            platformSerialIdentifier="S2A",
+            instruments="MSI",
+            constellation="SENTINEL2",
+            platform="S2A",
         )
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(len(base.keys() & prepared_search.keys()), 0)
