@@ -1618,12 +1618,12 @@ def get_collection_dates(
 
     Example:
     >>> get_collection_dates({
-    ...     "extent": {"temporal": {"interval": ["2017-10-13T00:00:00Z", "2023-12-31T23:59:59Z"]}}
+    ...     "extent": {"temporal": {"interval": [["2017-10-13T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
     ... })
     ('2017-10-13T00:00:00Z', '2023-12-31T23:59:59Z')
 
     >>> get_collection_dates({
-    ...     "extent": {"temporal": {"interval": ["2017-10-13T00:00:00Z", None]}}
+    ...     "extent": {"temporal": {"interval": [["2017-10-13T00:00:00Z", None]]}}
     ... })
     ('2017-10-13T00:00:00Z', None)
 
@@ -1633,13 +1633,21 @@ def get_collection_dates(
     extent_interval = (
         collection_dict.get("extent", {})
         .get("temporal", {})
-        .get("interval", [None, None])
+        .get("interval", [[None, None]])
     )
 
     if not extent_interval or len(extent_interval) == 0:
         return None, None
 
-    mission_start = extent_interval[0] if len(extent_interval) > 0 else None
-    mission_end = extent_interval[1] if len(extent_interval) > 1 else None
+    mission_start = (
+        extent_interval[0][0]
+        if len(extent_interval) > 0 and len(extent_interval[0]) > 0
+        else None
+    )
+    mission_end = (
+        extent_interval[0][1]
+        if len(extent_interval) > 0 and len(extent_interval[0]) > 1
+        else None
+    )
 
     return mission_start, mission_end
