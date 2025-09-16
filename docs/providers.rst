@@ -14,7 +14,7 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
 
 Note that ``eodag`` is not limited to the providers listed here.
 If a desired provider is missing, you can add it yourself.
-See :doc:`how to add a new provider <notebooks/api_user_guide/2_configuration.html#Add-or-update-a-provider>` for more details.
+See `how to add a new provider <notebooks/api_user_guide/2_configuration.ipynb#Add-or-update-a-provider>`_ for more details.
 
 ----
 
