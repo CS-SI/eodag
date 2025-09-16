@@ -40,6 +40,7 @@ from eodag.utils import (
     deepcopy,
     format_dict_items,
     format_pydantic_error,
+    get_collection_dates,
     string_to_jsonpath,
     update_nested_dict,
 )
@@ -198,6 +199,24 @@ class Search(PluginTopic):
         non_none_cfg = {k: v for k, v in collection_cfg.items() if v}
 
         return non_none_cfg.get(key, default)
+
+    def get_collection_cfg_dates(
+        self, start_default: Optional[str] = None, end_default: Optional[str] = None
+    ) -> tuple[Optional[str], Optional[str]]:
+        """
+        Get start and end dates from the collection configuration.
+
+        Extracts dates from the extent.temporal.interval structure in the collection
+        configuration, falling back to provided defaults if dates are not available.
+
+        :param start_default: Default value to return for start date if not found in config
+        :param end_default: Default value to return for end date if not found in config
+        :returns: Tuple of (mission_start_date, mission_end_date) as ISO strings or defaults
+        """
+        collection_cfg = getattr(self.config, "collection_config", {})
+        col_start, col_end = get_collection_dates(collection_cfg)
+
+        return col_start or start_default, col_end or end_default
 
     def get_metadata_mapping(
         self, collection: Optional[str] = None

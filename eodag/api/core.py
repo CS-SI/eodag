@@ -65,6 +65,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
+    get_collection_dates,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -1090,21 +1091,19 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
+                col_start, col_end = get_collection_dates(pt_dict)
+
                 max_start = max(
                     rfc3339_str_to_datetime(missionStartDate)
                     if missionStartDate
                     else min_aware,
-                    rfc3339_str_to_datetime(pt_dict["missionStartDate"])
-                    if pt_dict.get("missionStartDate")
-                    else min_aware,
+                    rfc3339_str_to_datetime(col_start) if col_start else min_aware,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(missionEndDate)
                     if missionEndDate
                     else max_aware,
-                    rfc3339_str_to_datetime(pt_dict["missionEndDate"])
-                    if pt_dict.get("missionEndDate")
-                    else max_aware,
+                    rfc3339_str_to_datetime(col_end) if col_end else max_aware,
                 )
                 if not (max_start <= min_end):
                     continue

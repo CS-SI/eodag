@@ -630,7 +630,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(
             "landsat-c2l1",
             ext_collections_conf[provider]["providers_config"]["landsat-c2l1"][
-                "collection"
+                "_collection"
             ],
         )
         self.assertEqual(
@@ -642,12 +642,12 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(
             "1972-07-25T00:00:00.000Z",
             ext_collections_conf[provider]["collections_config"]["landsat-c2l1"][
-                "missionStartDate"
-            ],
+                "extent"
+            ]["temporal"]["interval"][0][0],
         )
         # check that all pre-configured collections are listed by provider
         provider_collections = [
-            v["collection"]
+            v["_collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_COLLECTION
         ]

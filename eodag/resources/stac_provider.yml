@@ -46,14 +46,14 @@ search:
       _collection: '$.id'
     generic_collection_parsable_metadata:
       description: '$.description'
-      instruments: '{$.summaries.instruments#csv_list}'
+      instruments: '$.summaries.instruments'
       constellation: '{$.summaries.constellation#csv_list}'
       platform: '{$.summaries.platform#csv_list}'
       processing:level: '{$.summaries."processing:level"#csv_list}'
       keywords: '{$.keywords#csv_list}'
       license: '$.license'
       title: '$.title'
-      missionStartDate: '$.extent.temporal.interval[0][0]'
+      extent: '$.extent'
     metadata_path: '$.properties.*'
   discover_queryables:
     fetch_url: '{api_endpoint}/../queryables'
