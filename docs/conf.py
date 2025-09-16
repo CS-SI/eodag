@@ -49,6 +49,7 @@ extensions = [
     "sphinxcontrib.programoutput",
     "sphinxemoji.sphinxemoji",
     "sphinx_design",
+    "sphinx_new_tab_link",
 ]
 
 # Notebook integration parameters

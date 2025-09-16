@@ -13,8 +13,8 @@ Some providers are completely open, while others require an account to access th
 If credentials are needed, check the :doc:`registration guide <providers>` for details.
 
 Note that ``eodag`` is not limited to the providers listed here.
-If a desired provider is missing, you can add it yourself by configuring a new plugin.
-See :doc:`how to add a new provider <add_provider>` for more details.
+If a desired provider is missing, you can add it yourself.
+See :doc:`how to add a new provider <notebooks/api_user_guide/2_configuration.html#Add-or-update-a-provider>` for more details.
 
 ----
 
@@ -861,14 +861,6 @@ No account is required
 
 **ECMWF**
 ==========
-
-.. admonition:: **Weather and Climate Data**
-   :class: note
-
-   European Centre for Medium-Range Weather Forecasts providing operational and research meteorological data.
-
-**ecmwf**
----------
 
 .. grid:: 2
    :gutter: 2

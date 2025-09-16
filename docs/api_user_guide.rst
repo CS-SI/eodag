@@ -64,7 +64,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 
          Efficiently manage serialization and deserialization of your search results to save and reuse them across sessions.
 
-   .. grid-item-card:: :octicon:`graph;1.5em`  Crunch
+   .. grid-item-card:: :octicon:`filter;1.5em`  Crunch
          :link: notebooks/api_user_guide/6_crunch
          :link-type: doc
          :text-align: center
@@ -80,7 +80,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 
          Download your products with progress bars, quicklooks management, and efficient assets handling.
 
-   .. grid-item-card:: :octicon:`pencil;1.5em`  Post-processing
+   .. grid-item-card:: :octicon:`table;1.5em`  Post-processing
          :link: notebooks/api_user_guide/8_post_process
          :link-type: doc
          :text-align: center
