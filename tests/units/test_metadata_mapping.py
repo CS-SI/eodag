@@ -265,6 +265,31 @@ class TestMetadataFormatter(unittest.TestCase):
         with self.assertRaises(TypeError):
             format_metadata(to_format, fieldname=123)
 
+    def test_convert_replace_strings(self):
+        """should replace several positions in a string based on a list of replacements"""
+        # uneven number of replacement strings -> error should be raised
+        to_format = r"{fieldname#replace_strings('a', 'b', 'cc')}"
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname="abccbc")
+
+        # Test 2 strings to be replaced by 2 other strings
+        to_format = r"{fieldname#replace_strings('a', 'b', 'cc', 'dd')}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="abccbc"),
+            "bbddbc",
+        )
+
+        # Regex used to identify one string to be replaced
+        to_format = r"{fieldname#replace_strings('[a-z]', '000', ',', '')}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="2k"),
+            "2000",
+        )
+        self.assertEqual(
+            format_metadata(to_format, fieldname="2,000"),
+            "2000",
+        )
+
     def test_convert_ceda_collection_name(self):
         to_format = r"{fieldname#ceda_collection_name}"
         self.assertEqual(

@@ -169,6 +169,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
           part of the list obtained by splitting the string on dots
         - ``get_group_name``: get the matching regex group name
         - ``replace_str``: execute "string".replace(old, new)
+        - ``replace_strings``: several parts in a string are replaced - "string".replace(strings[i], strings[i+1])
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
           values matching a regex
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
@@ -528,6 +529,23 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
             old, new = ast.literal_eval(args)
             return re.sub(old, new, value)
+
+        @staticmethod
+        def convert_replace_strings(value: Any, args: str) -> str:
+            if not isinstance(value, str):
+                raise TypeError(
+                    f"convert_replace_strings expects a string. Got {type(value)}: {value}"
+                )
+
+            str_list = ast.literal_eval(args)
+            if len(str_list) % 2 != 0:
+                raise TypeError(
+                    f"convert_replace_strings expects a an even number of strings. Got: {value}"
+                )
+            new_str = value
+            for i in range(0, len(str_list) - 1, 2):
+                new_str = re.sub(str_list[i], str_list[i + 1], new_str)
+            return new_str
 
         @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
