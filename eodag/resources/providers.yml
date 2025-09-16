@@ -6473,7 +6473,7 @@
   download: !plugin
     type: HTTPDownload
 ---
-!provider # MARK: cop_ghs
+!provider # MARK: cop_ghsl
   name: cop_ghsl
   priority: 0
   description: Copernicus Global Human Settlement Layer
@@ -6491,14 +6491,16 @@
     GHS_BUILT_S:
       productType: BUILT
       metadata_mapping:
-        dataset: GHS_BUILT_S_E{year}_GLOBE_R2023A_{coord_system}_{resolution}
+        resolution: '{$.resolution#replace_str_tuple((("m", ""), ("k", "000")))}'
+        dataset: GHS_BUILT_S_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{resolution}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_ESM_2015:
       productType: ESM
       year: 2015
       coord_system: 3035
       metadata_mapping:
-        dataset: ESM_BUILT_VHR2015CLASS_EUROPE_R2019_3035_{resolution}
+        resolution: '{$.resolution#replace_str("2m", "02")}'
+        dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{resolution}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
       version:
   download: !plugin
