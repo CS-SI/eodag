@@ -3142,7 +3142,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             },
             "properties": {
                 "altId": "450bf368-2407-4c2c-8535-f215a4cda963",
-                "creationDate": "2021-04-23",
+                "created": "2021-04-23",
                 "modifiedDate": "2021-04-23",
                 "contacts": [
                     {
