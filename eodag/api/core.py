@@ -260,7 +260,7 @@ class EODataAccessGateway:
 
                 empty_product = {
                     "title": product_id,
-                    "abstract": NOT_AVAILABLE,
+                    "description": NOT_AVAILABLE,
                 }
                 self.collections_config.source[
                     product_id
@@ -1021,13 +1021,13 @@ class EODataAccessGateway:
         filters: dict[str, str] = {
             k: v
             for k, v in {
-                "instrument": instrument,
-                "platform": platform,
-                "platformSerialIdentifier": platformSerialIdentifier,
-                "processingLevel": processingLevel,
+                "instruments": instrument,
+                "constellation": platform,
+                "platform": platformSerialIdentifier,
+                "processing:level": processingLevel,
                 "sensorType": sensorType,
                 "keywords": keywords,
-                "abstract": abstract,
+                "description": abstract,
                 "title": title,
             }.items()
             if v is not None
@@ -1714,10 +1714,10 @@ class EODataAccessGateway:
                 # is found. Here, the supported search params are removed from the
                 # kwargs if present, not to propagate them to the query itself.
                 for param in (
-                    "instrument",
+                    "instruments",
+                    "constellation",
                     "platform",
-                    "platformSerialIdentifier",
-                    "processingLevel",
+                    "processing:level",
                     "sensorType",
                 ):
                     kwargs.pop(param, None)
@@ -1908,10 +1908,10 @@ class EODataAccessGateway:
                                 for k, v in eo_product.properties.items()
                                 if k
                                 in [
-                                    "instrument",
+                                    "instruments",
+                                    "constellation",
                                     "platform",
-                                    "platformSerialIdentifier",
-                                    "processingLevel",
+                                    "processing:level",
                                     "sensorType",
                                     "keywords",
                                 ]

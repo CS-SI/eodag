@@ -223,10 +223,10 @@ class StaticStacSearch(StacSearch):
                 FilterOverlap({"intersects": True}), geometry=geometry
             )
         # Filter by cloudCover
-        if "cloudCover" in kwargs.keys():
+        if "eo:cloud_cover" in kwargs.keys():
             search_result = search_result.crunch(
                 FilterProperty(
-                    {"cloudCover": kwargs.pop("cloudCover"), "operator": "lt"}
+                    {"eo:cloud_cover": kwargs.pop("eo:cloud_cover"), "operator": "lt"}
                 )
             )
         # Filter by other properties

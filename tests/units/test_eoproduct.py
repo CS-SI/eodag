@@ -141,25 +141,25 @@ class TestEOProduct(EODagTestCase):
                 product.provider,
                 product.location,
                 product.properties["title"],
-                product.properties["instrument"],
+                product.properties["instruments"],
                 self._tuples_to_lists(geometry.mapping(product.geometry)),
                 self._tuples_to_lists(geometry.mapping(product.search_intersection)),
                 product.collection,
                 product.properties["collection"],
-                product.properties["platformSerialIdentifier"],
+                product.properties["platform"],
             ],
             [
                 same_product.provider,
                 same_product.location,
                 same_product.properties["title"],
-                same_product.properties["instrument"],
+                same_product.properties["instruments"],
                 self._tuples_to_lists(geometry.mapping(same_product.geometry)),
                 self._tuples_to_lists(
                     geometry.mapping(same_product.search_intersection)
                 ),
                 same_product.collection,
                 same_product.properties["collection"],
-                same_product.properties["platformSerialIdentifier"],
+                same_product.properties["platform"],
             ],
         )
 
