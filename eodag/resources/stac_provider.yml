@@ -99,7 +99,7 @@ search:
       - '$.properties."sat:relative_orbit"'
     orbitDirection:
       - '{{"query":{{"sat:orbit_state":{{"eq":"{orbitDirection}"}}}}}}'
-      - '$.properties."sat:orbit_state"'
+      - '{$.properties."sat:orbit_state"#to_lower}'
     cloudCover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}'
       - '$.properties."eo:cloud_cover"'
