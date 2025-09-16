@@ -35,6 +35,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
+    get_collection_dates,
     get_geometry_from_various,
     path_to_uri,
     sanitize,
@@ -53,12 +54,7 @@ if TYPE_CHECKING:
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import (
-        DownloadedCallback,
-        ProgressCallback,
-        Unpack,
-        get_collection_dates,
-    )
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 
 logger = logging.getLogger("eodag.apis.ecmwf")
