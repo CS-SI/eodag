@@ -338,9 +338,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 ],
             },
             "collection": collection,
-            "platform": "Sentinel-2",
-            "platformSerialIdentifier": platform,
-            "instrument": instrument,
+            "constellation": "Sentinel-2",
+            "platform": platform,
+            "instruments": instrument,
             "title": local_filename,
             "downloadLink": download_url,
         }

@@ -710,7 +710,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(
             "MERIS",
             ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
-                "instrument"
+                "instruments"
             ],
         )
         self.assertEqual(

@@ -1052,7 +1052,7 @@ class AwsDownload(Download):
             found_dict = matched.groupdict()
             product_path = "annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml" % (
                 found_dict["file_prefix"],
-                product.properties["platformSerialIdentifier"].lower(),
+                product.properties["platform"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
@@ -1063,7 +1063,7 @@ class AwsDownload(Download):
         elif matched := S1_ANNOT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
             product_path = "annotation/%s-%s-grd-%s-%s-%03d.xml" % (
-                product.properties["platformSerialIdentifier"].lower(),
+                product.properties["platform"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
@@ -1074,7 +1074,7 @@ class AwsDownload(Download):
         elif matched := S1_MEAS_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
             product_path = "measurement/%s-%s-grd-%s-%s-%03d.%s" % (
-                product.properties["platformSerialIdentifier"].lower(),
+                product.properties["platform"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,

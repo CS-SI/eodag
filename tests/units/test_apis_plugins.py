@@ -405,7 +405,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                         {},
                         {},
                     ],
-                    "cloudCover": "77.46",
+                    "eo:cloud_cover": "77.46",
                     "entityId": "LC81780382020041LGN00",
                     "displayId": "LC08_L1GT_178038_20200210_20200224_01_T2",
                     "spatialBounds": {
@@ -568,9 +568,11 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             mock_api_scene_search.return_value["data"]["results"][0]["displayId"],
         )
         self.assertEqual(
-            search_results[0].properties["cloudCover"],
+            search_results[0].properties["eo:cloud_cover"],
             float(
-                mock_api_scene_search.return_value["data"]["results"][0]["cloudCover"]
+                mock_api_scene_search.return_value["data"]["results"][0][
+                    "eo:cloud_cover"
+                ]
             ),
         )
         self.assertEqual(search_results[0].properties["order:status"], ONLINE_STATUS)
