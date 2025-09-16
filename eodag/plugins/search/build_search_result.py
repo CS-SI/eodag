@@ -647,15 +647,12 @@ class ECMWFSearch(PostJsonSearch):
                 # no default date is required
                 start, end = ecmwf_temporal_to_eodag(keywords)
                 if start is None:
-                    keywords[START] = self.get_collection_cfg_value(
-                        "missionStartDate", DEFAULT_MISSION_START_DATE
+                    col_start, col_end = self.get_collection_cfg_dates(
+                        DEFAULT_MISSION_START_DATE, today().isoformat()
                     )
+                    keywords[START] = col_start
                     keywords[END] = (
-                        keywords[START]
-                        if END in collection_conf
-                        else self.get_collection_cfg_value(
-                            "missionEndDate", today().isoformat()
-                        )
+                        keywords[START] if END in collection_conf else col_end
                     )
                 else:
                     keywords[START] = start

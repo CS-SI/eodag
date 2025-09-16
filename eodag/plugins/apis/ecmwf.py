@@ -53,7 +53,12 @@ if TYPE_CHECKING:
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
+    from eodag.utils import (
+        DownloadedCallback,
+        ProgressCallback,
+        Unpack,
+        get_collection_dates,
+    )
 
 
 logger = logging.getLogger("eodag.apis.ecmwf")
@@ -121,17 +126,18 @@ class EcmwfApi(Api, ECMWFSearch):
                 kwargs.get("ecmwf:type", ""),
                 kwargs.get("ecmwf:levtype", ""),
             )
+
+        col_start, col_end = get_collection_dates(
+            getattr(self.config, "collection_config", {})
+        )
         # start date
         if "start_datetime" not in kwargs:
-            kwargs["start_datetime"] = (
-                getattr(self.config, "collection_config", {}).get("missionStartDate")
-                or DEFAULT_MISSION_START_DATE
-            )
+            kwargs["start_datetime"] = col_start or DEFAULT_MISSION_START_DATE
         # end date
         if "end_datetime" not in kwargs:
-            kwargs["end_datetime"] = getattr(self.config, "collection_config", {}).get(
-                "missionEndDate"
-            ) or datetime.now(timezone.utc).isoformat(timespec="seconds")
+            kwargs["end_datetime"] = col_end or datetime.now(timezone.utc).isoformat(
+                timespec="seconds"
+            )
 
         # geometry
         if "geometry" in kwargs:
