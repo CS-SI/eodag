@@ -362,7 +362,7 @@
           - '$.date'
         polarizationMode:
           - '{{"search":{{"polarization":"{polarizationMode}" }} }}'
-          - '$.polarization'
+          - '{$.polarization#normalize_polarization}'
         # Custom parameters (not defined in the base document referenced above)
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
@@ -632,7 +632,7 @@
         - '$.properties.completionDate'
       polarizationMode:
         - 'polarisation'
-        - '$.properties.polarisation'
+        - '{$.properties.polarisation#normalize_polarization}'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
@@ -824,7 +824,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '$.Attributes.polarisationChannels'
+        - '{$.Attributes.polarisationChannels#normalize_polarization}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -2107,7 +2107,7 @@
         - '$.properties.completionDate'
       polarizationMode:
         - 'polarisation'
-        - '$.properties.polarisation'
+        - '{$.properties.polarisation#normalize_polarization}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier={id#remove_extension}'
@@ -2534,7 +2534,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '$.Attributes.polarisationChannels'
+        - '{$.Attributes.polarisationChannels#normalize_polarization}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -4046,7 +4046,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '$.Attributes.polarisationChannels'
+        - '{$.Attributes.polarisationChannels#normalize_polarization}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
