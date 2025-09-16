@@ -31,7 +31,7 @@
       },
       "type": "Feature",
       "properties": {
-        "startTimeFromAscendingNode": "2018-02-15T23:53:22.871Z",
+        "start_datetime": "2018-02-15T23:53:22.871Z",
         "organisationName": null,
         "parentIdentifier": null,
         "description": null,
@@ -80,7 +80,7 @@
         "downloadLink": "https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931cc7b/download",
         "productType": "OCN",
         "orbitNumber": 20624,
-        "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
+        "end_datetime": "2018-02-16T00:12:14.035Z",
         "resolution": null,
         "quicklook": null
       },
