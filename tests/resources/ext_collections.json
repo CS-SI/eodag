@@ -24,7 +24,7 @@
         "keywords": "Not Available",
         "license": "WTFPL",
         "title": "Foo collection",
-        "missionStartDate": "2001-01-01T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2001-01-01T00:00:00.000Z", null]]}}
       },
       "bar": {
         "description": "Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.",
@@ -35,7 +35,7 @@
         "keywords": "Not Available",
         "license": "WTFPL",
         "title": "Bar collection",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       }
     }
   }

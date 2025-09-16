@@ -48,7 +48,7 @@
         "keywords": "suspendisse",
         "license": "WTFPL",
         "title": "titleFOO - Lorem FOO collection",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "bar": {
         "description": "abstractBAR - This is BAR",
@@ -59,7 +59,7 @@
         "keywords": "lectus,lectus_bar_key",
         "license": "WTFPL",
         "title": "titleBAR - Lorem BAR collection (FooAndBar)",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "foobar": {
         "description": "abstract FOOBAR - This is FOOBAR",
@@ -71,20 +71,19 @@
         "keywords": "tortor",
         "license": "WTFPL",
         "title": "titleFOOBAR - Lorem FOOBAR collection",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "interval_start": {
         "title": "TEST DATES [start; end)",
-        "missionStartDate": "2013-02-10T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2013-02-10T00:00:00.000Z", null]]}}
       },
       "interval_end": {
         "title": "TEST DATES (start; end]",
-        "missionEndDate": "2013-02-20T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [[null, "2013-02-20T00:00:00.000Z"]]}}
       },
       "interval_start_end": {
         "title": "TEST DATES [start; end]",
-        "missionStartDate": "2013-02-10T00:00:00.000Z",
-        "missionEndDate": "2013-02-20T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2013-02-10T00:00:00.000Z", "2013-02-20T00:00:00.000Z"]]}}
       }
     }
   }
