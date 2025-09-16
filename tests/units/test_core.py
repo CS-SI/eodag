@@ -1694,8 +1694,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "start_datetime",
                     "end_datetime",
-                    "publicationDate",
-                    "modificationDate",
+                    "published",
+                    "updated",
                 ],
                 "max_sort_params": 1,
             },
@@ -1704,8 +1704,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "start_datetime",
                     "end_datetime",
-                    "publicationDate",
-                    "modificationDate",
+                    "published",
+                    "updated",
                 ],
                 "max_sort_params": 1,
             },
@@ -1713,8 +1713,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "start_datetime",
                     "end_datetime",
-                    "publicationDate",
-                    "modificationDate",
+                    "published",
+                    "updated",
                 ],
                 "max_sort_params": 1,
             },
@@ -1723,8 +1723,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "id",
                     "start_datetime",
-                    "creationDate",
-                    "modificationDate",
+                    "created",
+                    "updated",
                     "platform",
                     "resolution",
                     "eo:cloud_cover",
@@ -1735,8 +1735,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "id",
                     "start_datetime",
-                    "creationDate",
-                    "modificationDate",
+                    "created",
+                    "updated",
                     "platform",
                     "resolution",
                     "eo:cloud_cover",
@@ -1747,8 +1747,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "id",
                     "start_datetime",
-                    "creationDate",
-                    "modificationDate",
+                    "created",
+                    "updated",
                     "platform",
                     "resolution",
                     "eo:cloud_cover",
@@ -1759,8 +1759,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "id",
                     "start_datetime",
-                    "creationDate",
-                    "modificationDate",
+                    "created",
+                    "updated",
                     "constellation",
                     "platform",
                     "resolution",
@@ -1772,7 +1772,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds": {
                 "sortables": [
                     "start_datetime",
-                    "publicationDate",
+                    "published",
                 ],
                 "max_sort_params": 1,
             },
@@ -1830,8 +1830,8 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "id",
                     "start_datetime",
-                    "creationDate",
-                    "modificationDate",
+                    "created",
+                    "updated",
                     "platform",
                     "illuminationElevationAngle",
                     "illuminationAzimuthAngle",

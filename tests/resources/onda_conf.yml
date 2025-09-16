@@ -129,7 +129,7 @@
       productQualityStatus:
         - null
         - '$.Metadata.generalQualityFlag'
-      creationDate: '$.Metadata.creationDate'
+      created: '$.Metadata.created'
       processingDate: '$.Metadata.processingDate'
       sensorMode:
         - null
