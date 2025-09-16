@@ -1604,3 +1604,42 @@ def format_pydantic_error(e: PydanticValidationError) -> str:
         for err in e.errors()
     ]
     return error_header + "; ".join(set(error_messages))
+
+
+def get_collection_dates(
+    collection_dict: dict[str, Any]
+) -> tuple[Optional[str], Optional[str]]:
+    """Extract mission start and end dates from collection configuration.
+
+    Extracts dates from the extent.temporal.interval structure.
+
+    :param collection_dict: Collection configuration dictionary
+    :returns: Tuple of (mission_start_date, mission_end_date) as ISO strings or None
+
+    Example:
+    >>> get_collection_dates({
+    ...     "extent": {"temporal": {"interval": ["2017-10-13T00:00:00Z", "2023-12-31T23:59:59Z"]}}
+    ... })
+    ('2017-10-13T00:00:00Z', '2023-12-31T23:59:59Z')
+
+    >>> get_collection_dates({
+    ...     "extent": {"temporal": {"interval": ["2017-10-13T00:00:00Z", None]}}
+    ... })
+    ('2017-10-13T00:00:00Z', None)
+
+    >>> get_collection_dates({})
+    (None, None)
+    """
+    extent_interval = (
+        collection_dict.get("extent", {})
+        .get("temporal", {})
+        .get("interval", [None, None])
+    )
+
+    if not extent_interval or len(extent_interval) == 0:
+        return None, None
+
+    mission_start = extent_interval[0] if len(extent_interval) > 0 else None
+    mission_end = extent_interval[1] if len(extent_interval) > 1 else None
+
+    return mission_start, mission_end
