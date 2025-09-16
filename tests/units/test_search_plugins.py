@@ -1239,7 +1239,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "sensorType": "ATMOSPHERIC",
             "license": "other",
             "title": "ERA5 hourly data on single levels from 1940 to present",
-            "extent": {"temporal": {"interval": ["1940-01-01T00:00:00Z", None]}},
+            "extent": {"temporal": {"interval": [["1940-01-01T00:00:00Z", None]]}},
             "_id": "ERA5_SL",
         }
         search_plugin.config.collection_config = dict(
@@ -1282,7 +1282,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "sensorType": "ATMOSPHERIC",
             "license": "other",
             "title": "CAMS global reanalysis (EAC4)",
-            "extent": {"temporal": {"interval": ["2003-01-01T00:00:00Z", None]}},
+            "extent": {"temporal": {"interval": [["2003-01-01T00:00:00Z", None]]}},
             "_id": "CAMS_EAC4",
         }
         search_plugin.config.collection_config = dict(
