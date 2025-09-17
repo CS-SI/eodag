@@ -400,13 +400,17 @@ class Search(PluginTopic):
                 **all_queryables,
             )
 
-    def validate(self, filter: dict[str, Any]) -> None:
+    def validate(self, filter: dict[str, Any], auth: Optional[AuthBase]) -> None:
         """Validate a search request.
 
         :param filter: Arguments of the search request
+        :param auth: Authentication object
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         logger.debug("Validate request")
+        # attach authentication if required
+        if getattr(self.config, "need_auth", False) and auth:
+            self.auth = auth
         try:
             product_type: str = filter["productType"]
             self.list_queryables(

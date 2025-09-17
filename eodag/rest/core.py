@@ -338,7 +338,7 @@ def _order_and_update(
         # first order
         logger.debug("Order product")
         if query_args.get("validate", True):
-            validate_order_request(product)
+            validate_order_request(product, auth)
         order_status_dict = product.downloader._order(product=product, auth=auth)
         query_args.update(order_status_dict or {})
 
@@ -360,10 +360,11 @@ def _order_and_update(
         raise NotAvailableError("Product is not available yet")
 
 
-def validate_order_request(product: EOProduct) -> None:
+def validate_order_request(product: EOProduct, auth: Optional[AuthBase]) -> None:
     """Validate a product order request.
 
     :param product: The product to validate
+    :param auth: Authentication object
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     """
     download_plugin: Union[
@@ -390,7 +391,7 @@ def validate_order_request(product: EOProduct) -> None:
     search_plugin: Union[Search, Api] = next(
         eodag_api._plugins_manager.get_search_plugins(product, product.provider)
     )
-    search_plugin.validate(order_kwargs)
+    search_plugin.validate(order_kwargs, auth)
 
 
 @lru_cache(maxsize=1)
