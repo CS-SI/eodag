@@ -591,6 +591,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_lower(string: str) -> str:
             """Convert a string to lowercase."""
+            if string == NOT_AVAILABLE:
+                return string
             return string.lower()
 
         @staticmethod
