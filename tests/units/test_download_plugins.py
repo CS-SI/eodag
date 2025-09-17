@@ -2140,7 +2140,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         # with endpoint url
         plugin.config.s3_endpoint = "some.endpoint"
-        self.assertEqual(plugin.config.requester_pays, True)
+        self.assertEqual(auth_plugin.config.requester_pays, True)
         rio_env_dict = plugin.get_rio_env("some-bucket", "some/prefix", auth_plugin)
         self.assertIsNotNone(rio_env_dict.pop("session", None))
         self.assertDictEqual(
