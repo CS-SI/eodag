@@ -349,7 +349,7 @@
           - '$.absoluteOrbitNumber'
         orbitDirection:
           - '{{"search":{{"passDirection":"{orbitDirection}" }} }}'
-          - '$.passDirection'
+          - '{$.passDirection#to_lower}'
         sensorMode:
           - '{{"search":{{"mode":"{sensorMode}" }} }}'
           - '$.mode'
@@ -603,7 +603,7 @@
         - '$.properties.orbitNumber'
       orbitDirection:
         - 'orbitDirection'
-        - '$.properties.orbitDirection'
+        - '{$.properties.orbitDirection#to_lower}'
       swathIdentifier:
         - 'swath'
         - '$.properties.swath'
@@ -807,7 +807,7 @@
         - '$.Attributes.orbitNumber'
       orbitDirection:
         - null
-        - '$.Attributes.orbitDirection'
+        - '{$.Attributes.orbitDirection#to_lower}'
       cloudCover:
         - null
         - '$.Attributes.cloudCover'
@@ -2016,7 +2016,7 @@
         - '$.properties.orbitNumber'
       orbitDirection:
         - 'orbitDirection'
-        - '$.properties.orbitDirection'
+        - '{$.properties.orbitDirection#to_lower}'
       swathIdentifier:
         - 'swath'
         - '$.properties.swath'
@@ -2443,7 +2443,7 @@
         - '$.Attributes.orbitNumber'
       orbitDirection:
         - null
-        - '$.Attributes.orbitDirection'
+        - '{$.Attributes.orbitDirection#to_lower}'
       cloudCover:
         - null
         - '$.Attributes.cloudCover'
@@ -3900,7 +3900,7 @@
         - '$.Attributes.orbitNumber'
       orbitDirection:
         - null
-        - '$.Attributes.orbitDirection'
+        - '{$.Attributes.orbitDirection#to_lower}'
       cloudCover:
         - null
         - '$.Attributes.cloudCover'
@@ -4809,7 +4809,7 @@
     - host
   url: https://data.eumetsat.int
   anchor_sentinel: &sentinel_params
-    orbitDirection: '$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection'
+    orbitDirection: '{$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection#to_lower}'
     relativeOrbitNumber: '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
     timeliness: '$.properties.productInformation.timeliness'
     cycleNumber: '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'

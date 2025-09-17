@@ -313,6 +313,12 @@ class TestMetadataFormatter(unittest.TestCase):
         to_format = r"{fieldname#to_lower}"
         self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "foo.bar")
 
+    def test_convert_to_lower_not_available(self):
+        to_format = r"{fieldname#to_lower}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="Not Available"), "Not Available"
+        )
+
     def test_convert_to_upper(self):
         to_format = r"{fieldname#to_upper}"
         self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "FOO.BAR")
