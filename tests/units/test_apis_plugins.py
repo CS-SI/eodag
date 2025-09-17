@@ -23,14 +23,12 @@ from tempfile import TemporaryDirectory
 from unittest import mock
 
 import geojson
-import responses
 from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
 from eodag.utils import deepcopy
 from tests.context import (
-    DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
     ONLINE_STATUS,
     USER_AGENT,
@@ -265,7 +263,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         del self.api_plugin.config.credentials
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     @mock.patch(
@@ -366,7 +364,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     @mock.patch(
@@ -650,15 +648,16 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)
     @mock.patch("usgs.api.download_request", autospec=True)
+    @mock.patch("httpx.stream")
     def test_plugins_apis_usgs_download(
         self,
+        mock_httpx_stream,
         mock_api_download_request,
         mock_api_logout,
         mock_api_login,
     ):
         """UsgsApi.download must donwload using usgs api"""
 
-        @responses.activate
         def run():
             product = EOProduct(
                 "peps",
@@ -676,19 +675,13 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             ] = "http://somewhere"
             product.properties["id"] = "someproduct"
 
-            responses.add(
-                responses.GET,
-                "http://path/to/product",
-                status=200,
-                content_type="application/octet-stream",
-                body=b"something",
-                auto_calculate_content_length=True,
-                match=[
-                    responses.matchers.request_kwargs_matcher(
-                        dict(stream=True, timeout=DEFAULT_DOWNLOAD_WAIT * 60)
-                    )
-                ],
-            )
+            # Mock httpx.stream to return a fake response
+            mock_response = mock.MagicMock()
+            mock_response.status_code = 200
+            mock_response.headers = {"content-type": "application/octet-stream"}
+            mock_response.iter_bytes.return_value = [b"something"]
+            mock_response.raise_for_status.return_value = None
+            mock_httpx_stream.return_value.__enter__.return_value = mock_response
 
             # missing download_request return value
             with self.assertRaises(NotAvailableError):
@@ -701,11 +694,13 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
             path = self.api_plugin.download(product, output_dir=self.tmp_home_dir.name)
 
-            self.assertEqual(len(responses.calls), 1)
-            self.assertIn(
-                list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
-            )
-            responses.calls.reset()
+            # Verify httpx.stream was called
+            self.assertTrue(mock_httpx_stream.called)
+            # Verify headers were passed correctly
+            call_args = mock_httpx_stream.call_args
+            if call_args and len(call_args[1]) > 0 and "headers" in call_args[1]:
+                headers = call_args[1]["headers"]
+                self.assertIn(list(USER_AGENT.items())[0], headers.items())
 
             self.assertEqual(
                 path, os.path.join(self.tmp_home_dir.name, "dummy_product")

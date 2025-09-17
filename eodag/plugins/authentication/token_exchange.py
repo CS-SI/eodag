@@ -19,8 +19,7 @@ from __future__ import annotations
 
 import logging
 
-import requests
-from requests import RequestException
+import httpx
 
 from eodag.config import PluginConfig
 from eodag.plugins.authentication import Authentication
@@ -99,19 +98,17 @@ class OIDCTokenExchangeAuth(Authentication):
             "audience": self.config.audience,
         }
         logger.debug("Getting target auth token")
-        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             auth_response = self.subject.session.post(
                 self.config.token_uri,
                 data=auth_data,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
-                verify=ssl_verify,
             )
             auth_response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except RequestException as exc:
+        except httpx.RequestError as exc:
             raise AuthenticationError("Could no get authentication token") from exc
         finally:
             self.subject.session.close()

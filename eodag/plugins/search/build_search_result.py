@@ -31,9 +31,9 @@ import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
+from httpx import Auth
 from pydantic import Field
 from pydantic.fields import FieldInfo
-from requests.auth import AuthBase
 from shapely.geometry.base import BaseGeometry
 from typing_extensions import get_args  # noqa: F401
 
@@ -1116,9 +1116,7 @@ class ECMWFSearch(PostJsonSearch):
             return []
 
         auth = (
-            self.auth
-            if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
-            else None
+            self.auth if hasattr(self, "auth") and isinstance(self.auth, Auth) else None
         )
         timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
         return fetch_json(url, auth=auth, timeout=timeout)

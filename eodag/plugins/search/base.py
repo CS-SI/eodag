@@ -47,7 +47,7 @@ from eodag.utils.exceptions import ValidationError
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
-    from requests.auth import AuthBase
+    from httpx import Auth
 
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
@@ -63,7 +63,7 @@ class Search(PluginTopic):
     :param config: An EODAG plugin configuration
     """
 
-    auth: Union[AuthBase, S3SessionKwargs]
+    auth: Union[Auth, S3SessionKwargs]
     next_page_url: Optional[str]
     next_page_query_obj: Optional[dict[str, Any]]
     total_items_nb: int

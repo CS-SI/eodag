@@ -26,10 +26,10 @@ from unittest.mock import Mock
 from urllib.parse import urlencode
 
 import dateutil
+import httpx
 from cachetools.func import lru_cache
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
-from requests.models import Response as RequestsResponse
 
 import eodag
 from eodag import EOProduct
@@ -79,7 +79,7 @@ if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
     from fastapi import Request
-    from requests.auth import AuthBase
+    from httpx import Auth as AuthBase
     from starlette.responses import Response
 
 
@@ -313,7 +313,7 @@ def _order_and_update(
     ):
         # update product (including orderStatusLink) if product was previously ordered
         logger.debug("Use given download query arguments to parse order link")
-        response = Mock(spec=RequestsResponse)
+        response = Mock(spec=httpx.Response)
         response.status_code = 200
         response.json.return_value = query_args
         response.headers = {}

@@ -23,11 +23,8 @@ from threading import Lock
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-import requests
-from requests import RequestException
-from requests.adapters import HTTPAdapter
-from requests.auth import AuthBase
-from urllib3 import Retry
+import httpx
+from httpx import Auth
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import (
@@ -41,7 +38,9 @@ from eodag.utils import (
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
-    from requests import PreparedRequest
+    from typing import Iterator
+
+    from httpx import Request
 
     from eodag.config import PluginConfig
 
@@ -84,13 +83,11 @@ class TokenAuth(Authentication):
           returned in case of an authentication error
         * :attr:`~eodag.config.PluginConfig.req_data` (``dict[str, Any]``): if the credentials
           should be sent as data in the post request, the json structure can be given in this parameter
-        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
-          total number of retries to allow; default: ``3``
-        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
-          ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
-        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): :class:`urllib3.util.Retry`
-          ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
-          ``[401, 429, 500, 502, 503, 504]``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): total number of retries to allow; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): backoff factor to apply between
+          attempts after the second try; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): list of integer HTTP status
+          codes that we should force a retry on; default: ``[401, 429, 500, 502, 503, 504]``
         * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds) before
           a token is considered expired. Default: 60 seconds.
     """
@@ -150,7 +147,7 @@ class TokenAuth(Authentication):
                 f"Missing credentials inputs for provider {self.provider}: {e}"
             )
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> Auth:
         """Authenticate"""
 
         # Use a thread lock to avoid several threads requesting the token at the same time
@@ -171,21 +168,27 @@ class TokenAuth(Authentication):
                 return RequestsTokenAuth(
                     self.token, "header", headers=getattr(self.config, "headers", {})
                 )
-            s = requests.Session()
+            ssl_verify = getattr(self.config, "ssl_verify", True)
+            s = httpx.Client(verify=ssl_verify)
             try:
                 # First get the token
                 response = self._token_request(session=s)
                 response.raise_for_status()
-            except requests.exceptions.Timeout as exc:
+            except httpx.TimeoutException as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-            except RequestException as e:
-                response_text = getattr(e.response, "text", "").strip()
+            except httpx.HTTPError as e:
+                response_text = getattr(e, "response", None)
+                if response_text:
+                    response_text = getattr(response_text, "text", "").strip()
+                else:
+                    response_text = str(e)
                 # check if error is identified as auth_error in provider conf
                 auth_errors = getattr(self.config, "auth_error_code", [None])
                 if not isinstance(auth_errors, list):
                     auth_errors = [auth_errors]
                 if (
-                    e.response is not None
+                    hasattr(e, "response")
+                    and e.response is not None
                     and getattr(e.response, "status_code", None)
                     and e.response.status_code in auth_errors
                 ):
@@ -224,9 +227,8 @@ class TokenAuth(Authentication):
 
     def _token_request(
         self,
-        session: requests.Session,
-    ) -> requests.Response:
-
+        session: httpx.Client,
+    ) -> httpx.Response:
         retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
         retry_backoff_factor = getattr(
             self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
@@ -235,11 +237,8 @@ class TokenAuth(Authentication):
             self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
         )
 
-        retries = Retry(
-            total=retry_total,
-            backoff_factor=retry_backoff_factor,
-            status_forcelist=retry_status_forcelist,
-        )
+        # httpx handles retries differently - we'll implement a simple retry loop
+        max_retries = retry_total
 
         # Use the headers for retrieval if defined, else the headers for authentication
         try:
@@ -249,7 +248,6 @@ class TokenAuth(Authentication):
 
         # append headers to req if some are specified in config
         req_kwargs: dict[str, Any] = {"headers": dict(headers, **USER_AGENT)}
-        ssl_verify = getattr(self.config, "ssl_verify", True)
         method = getattr(self.config, "request_method", "POST")
 
         def set_request_data(call_refresh: bool) -> None:
@@ -273,26 +271,48 @@ class TokenAuth(Authentication):
 
             req_kwargs["data"] = data
 
+        def _make_request_with_retry(url: str) -> httpx.Response:
+            """Make HTTP request with simple retry logic"""
+            for attempt in range(max_retries + 1):
+                try:
+                    response = session.request(
+                        method=method,
+                        url=url,
+                        timeout=HTTP_REQ_TIMEOUT,
+                        **req_kwargs,
+                    )
+                    response.raise_for_status()
+                    return response
+                except httpx.HTTPStatusError as e:
+                    if (
+                        e.response.status_code in retry_status_forcelist
+                        and attempt < max_retries
+                    ):
+                        import time
+
+                        time.sleep(retry_backoff_factor * (2**attempt))
+                        continue
+                    raise
+                except httpx.TimeoutException:
+                    if attempt < max_retries:
+                        import time
+
+                        time.sleep(retry_backoff_factor * (2**attempt))
+                        continue
+                    raise
+            # This should not be reached
+            raise httpx.RequestError("Max retries exceeded")
+
         if self.refresh_token:
             logger.debug("fetching access token with refresh token")
-            session.mount(self.config.refresh_uri, HTTPAdapter(max_retries=retries))
             set_request_data(call_refresh=True)
             try:
-                response = session.post(
-                    self.config.refresh_uri,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    verify=ssl_verify,
-                    **req_kwargs,
-                )
-                response.raise_for_status()
+                response = _make_request_with_retry(self.config.refresh_uri)
                 return response
-            except requests.exceptions.HTTPError as e:
+            except httpx.HTTPStatusError as e:
                 logger.debug(getattr(e.response, "text", "").strip())
 
         logger.debug("fetching access token from %s", self.config.auth_uri)
-        # append headers to req if some are specified in config
-        session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
-
         set_request_data(call_refresh=False)
 
         # credentials as auth tuple if possible
@@ -307,16 +327,10 @@ class TokenAuth(Authentication):
             else None
         )
 
-        return session.request(
-            method=method,
-            url=self.config.auth_uri,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=ssl_verify,
-            **req_kwargs,
-        )
+        return _make_request_with_retry(self.config.auth_uri)
 
 
-class RequestsTokenAuth(AuthBase):
+class RequestsTokenAuth(Auth):
     """A custom authentication class to be used with requests module"""
 
     def __init__(
@@ -331,7 +345,7 @@ class RequestsTokenAuth(AuthBase):
         self.qs_key = qs_key
         self.headers = headers
 
-    def __call__(self, request: PreparedRequest) -> PreparedRequest:
+    def auth_flow(self, request: Request) -> Iterator[Request]:
         """Perform the actual authentication"""
         if self.headers and isinstance(self.headers, dict):
             for k, v in self.headers.items():
@@ -341,13 +355,19 @@ class RequestsTokenAuth(AuthBase):
             qs = parse_qs(parts.query)
             if self.qs_key is not None:
                 qs[self.qs_key] = [self.token]
+
+            # Flatten query_dict values from lists to strings for urlencode
+            flattened_qs = {
+                k: v[0] if isinstance(v, list) and v else v for k, v in qs.items()
+            }
+
             request.url = urlunparse(
                 (
                     parts.scheme,
                     parts.netloc,
                     parts.path,
                     parts.params,
-                    urlencode(qs),
+                    urlencode(flattened_qs),
                     parts.fragment,
                 )
             )
@@ -355,4 +375,4 @@ class RequestsTokenAuth(AuthBase):
             request.headers["Authorization"] = request.headers.get(
                 "Authorization", "Bearer {token}"
             ).format(token=self.token)
-        return request
+        yield request

@@ -19,13 +19,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from requests.auth import HTTPBasicAuth, HTTPDigestAuth
+from httpx import BasicAuth, DigestAuth
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
+    from httpx import Auth
 
 
 class GenericAuth(Authentication):
@@ -42,7 +42,7 @@ class GenericAuth(Authentication):
 
     """
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> Auth:
         """Authenticate"""
         self.validate_config_credentials()
         method = getattr(self.config, "method", "basic")
@@ -52,12 +52,12 @@ class GenericAuth(Authentication):
                 "You must provide 'username' and 'password' in the configuration.",
             )
         if method == "digest":
-            return HTTPDigestAuth(
+            return DigestAuth(
                 self.config.credentials["username"],
                 self.config.credentials["password"],
             )
         elif method == "basic":
-            return HTTPBasicAuth(
+            return BasicAuth(
                 self.config.credentials["username"],
                 self.config.credentials["password"],
             )

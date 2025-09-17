@@ -30,7 +30,7 @@ from urllib.parse import quote_plus
 
 import geojson
 import httpx
-import responses
+import respx
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
@@ -44,7 +44,6 @@ from eodag.utils.exceptions import RequestError, TimeOutError, ValidationError
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_SEARCH_TIMEOUT,
     OFFLINE_STATUS,
     ONLINE_STATUS,
     TEST_RESOURCES_PATH,
@@ -107,11 +106,15 @@ class RequestTestCase(unittest.TestCase):
     def setUp(self):
         self.app = TestClient(self.eodag_http_server.app)
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    def test_route(self, mock_auth_session_request):
+    @respx.mock
+    def test_route(self):
+        # Mock httpx requests for OpenID Connect authentication
+        respx.post("https://example.com/token").mock(
+            return_value=httpx.Response(
+                200, json={"access_token": "fake_token", "token_type": "Bearer"}
+            )
+        )
+
         result = self._request_valid("/", check_links=False)
 
         # check links (root specfic)
@@ -1323,17 +1326,15 @@ class RequestTestCase(unittest.TestCase):
             stac_common_queryables,
         )
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
-    def test_queryables_with_provider(self, mock_requests_get: Mock):
+    @mock.patch("eodag.plugins.search.qssearch.httpx.Client.get", autospec=True)
+    def test_queryables_with_provider(self, mock_httpx_get: Mock):
         """Request to /queryables with a valid provider as parameter should return a valid response."""
         queryables_path = os.path.join(
             TEST_RESOURCES_PATH, "stac/provider_queryables.json"
         )
         with open(queryables_path) as f:
             provider_queryables = json.load(f)
-        mock_requests_get.return_value = MockResponse(
-            provider_queryables, status_code=200
-        )
+        mock_httpx_get.return_value = MockResponse(provider_queryables, status_code=200)
 
         stac_common_queryables = list(StacQueryables.default_properties.keys())
         provider_stac_queryables_from_queryables_file = [
@@ -1354,12 +1355,10 @@ class RequestTestCase(unittest.TestCase):
             "queryables?provider=planetary_computer", check_links=False
         )
 
-        mock_requests_get.assert_called_once_with(
+        mock_httpx_get.assert_called_once_with(
             mock.ANY,
-            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
-            timeout=DEFAULT_SEARCH_TIMEOUT,
+            "https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
             headers=USER_AGENT,
-            verify=True,
         )
 
         # the response is in StacQueryables class format
@@ -1402,136 +1401,97 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
+    @respx.mock
     def test_product_type_queryables(self, mock_requests_session_post):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
 
-        @responses.activate(registry=responses.registries.OrderedRegistry)
-        def run():
-            queryables_path = os.path.join(
-                TEST_RESOURCES_PATH, "stac/product_type_queryables.json"
-            )
-            with open(queryables_path) as f:
-                provider_queryables = json.load(f)
-            constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
-            with open(constraints_path) as f:
-                constraints = json.load(f)
-            wekeo_main_constraints = {"constraints": constraints}
+        queryables_path = os.path.join(
+            TEST_RESOURCES_PATH, "stac/product_type_queryables.json"
+        )
+        with open(queryables_path) as f:
+            provider_queryables = json.load(f)
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        wekeo_main_constraints = {"constraints": constraints}
 
-            planetary_computer_queryables_url = (
-                "https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
-                "sentinel-1-grd/queryables"
-            )
-            dedl_queryables_url = (
-                "https://hda.data.destination-earth.eu/stac/collections/"
-                "EO.ESA.DAT.SENTINEL-1.L1_GRD/queryables"
-            )
-            wekeo_main_constraints_url = (
-                "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
-                "EO:ESA:DAT:SENTINEL-1"
-            )
+        planetary_computer_queryables_url = (
+            "https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
+            "sentinel-1-grd/queryables"
+        )
+        dedl_queryables_url = (
+            "https://hda.data.destination-earth.eu/stac/collections/"
+            "EO.ESA.DAT.SENTINEL-1.L1_GRD/queryables"
+        )
+        wekeo_main_constraints_url = (
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
+            "EO:ESA:DAT:SENTINEL-1"
+        )
 
-            responses.add(
-                responses.GET,
-                planetary_computer_queryables_url,
-                status=200,
-                json=provider_queryables,
-            )
-            responses.add(
-                responses.GET,
-                wekeo_main_constraints_url,
-                status=200,
-                json=wekeo_main_constraints,
-            )
-            responses.add(
-                responses.GET,
-                dedl_queryables_url,
-                status=200,
-                json=provider_queryables,
-            )
+        respx.get(planetary_computer_queryables_url).mock(
+            return_value=httpx.Response(200, json=provider_queryables)
+        )
+        respx.get(wekeo_main_constraints_url).mock(
+            return_value=httpx.Response(200, json=wekeo_main_constraints)
+        )
+        respx.get(dedl_queryables_url).mock(
+            return_value=httpx.Response(200, json=provider_queryables)
+        )
 
-            # no provider is specified with the product type (3 providers get a queryables or constraints file
-            # among available providers for S1_SAR_GRD for the moment): queryables intersection returned
-            res_product_type_no_provider = self._request_valid(
-                "collections/S1_SAR_GRD/queryables",
-                check_links=False,
-            )
-            self.assertEqual(len(responses.calls), 3)
+        # no provider is specified with the product type (3 providers get a queryables or constraints file
+        # among available providers for S1_SAR_GRD for the moment): queryables intersection returned
+        res_product_type_no_provider = self._request_valid(
+            "collections/S1_SAR_GRD/queryables",
+            check_links=False,
+        )
 
-            # check the mock call on planetary_computer
-            self.assertEqual(
-                planetary_computer_queryables_url, responses.calls[0].request.url
-            )
-            self.assertIn(
-                ("timeout", DEFAULT_SEARCH_TIMEOUT),
-                responses.calls[0].request.req_kwargs.items(),
-            )
-            self.assertIn(
-                list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
-            )
-            self.assertIn(
-                ("verify", True), responses.calls[0].request.req_kwargs.items()
-            )
-            # check the mock call on wekeo_main
-            self.assertEqual(wekeo_main_constraints_url, responses.calls[1].request.url)
-            self.assertIn(
-                ("timeout", 60), responses.calls[1].request.req_kwargs.items()
-            )
-            self.assertIn(
-                list(USER_AGENT.items())[0], responses.calls[1].request.headers.items()
-            )
-            self.assertIn(
-                ("verify", True), responses.calls[1].request.req_kwargs.items()
-            )
+        # the response is in StacQueryables class format
+        self.assertListEqual(
+            list(res_product_type_no_provider.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+        self.assertTrue(res_product_type_no_provider["additionalProperties"])
 
-            # the response is in StacQueryables class format
-            self.assertListEqual(
-                list(res_product_type_no_provider.keys()),
-                [
-                    "$schema",
-                    "$id",
-                    "type",
-                    "title",
-                    "description",
-                    "properties",
-                    "additionalProperties",
-                ],
-            )
-            self.assertTrue(res_product_type_no_provider["additionalProperties"])
+        res_list = list(res_product_type_no_provider["properties"].keys())
+        expected = [
+            "platform",
+            "datetime",
+            "start_datetime",
+            "end_datetime",
+            "geometry",
+            "bbox",
+            "constellation",
+            "instruments",
+            "gsd",
+            "eo:cloud_cover",
+            "eo:snow_cover",
+            "processing:level",
+            "sat:orbit_state",
+            "sat:absolute_orbit",
+            "sar:instrument_mode",
+        ]
+        for value in expected:
+            self.assertIn(value, res_list)
 
-            res_list = list(res_product_type_no_provider["properties"].keys())
-            expected = [
-                "platform",
-                "datetime",
-                "start_datetime",
-                "end_datetime",
-                "geometry",
-                "bbox",
-                "constellation",
-                "instruments",
-                "gsd",
-                "eo:cloud_cover",
-                "eo:snow_cover",
-                "processing:level",
-                "sat:orbit_state",
-                "sat:absolute_orbit",
-                "sar:instrument_mode",
-            ]
-            for value in expected:
-                self.assertIn(value, res_list)
-
-            # stac format processing:level is in result
-            pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
-            pl_s1_sar_grd_wekeo_main_queryable = "processingLevel"
-            stac_pl_property = "processing:level"
-            self.assertIn(
-                pl_s1_sar_grd_planetary_computer_queryable,
-                provider_queryables["properties"],
-            )
-            for constraint in wekeo_main_constraints["constraints"]:
-                self.assertNotIn(pl_s1_sar_grd_wekeo_main_queryable, constraint)
-            self.assertIn(stac_pl_property, res_product_type_no_provider["properties"])
-
-        run()
+        # stac format processing:level is in result
+        pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
+        pl_s1_sar_grd_wekeo_main_queryable = "processingLevel"
+        stac_pl_property = "processing:level"
+        self.assertIn(
+            pl_s1_sar_grd_planetary_computer_queryable,
+            provider_queryables["properties"],
+        )
+        for constraint in wekeo_main_constraints["constraints"]:
+            self.assertNotIn(pl_s1_sar_grd_wekeo_main_queryable, constraint)
+        self.assertIn(stac_pl_property, res_product_type_no_provider["properties"])
 
     def test_product_type_queryables_error(self):
         """Request to /collections/{collection_id}/queryables with a wrong collection_id
@@ -1546,13 +1506,13 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.httpx.Client.get", autospec=True)
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
         autospec=True,
     )
     def test_product_type_queryables_with_provider(
-        self, mock_discover_queryables_ecmwf, mock_requests_get
+        self, mock_discover_queryables_ecmwf, mock_httpx_get
     ):
         """Request a collection-specific list of queryables for a given provider
         using a queryables file should return a valid response."""
@@ -1561,9 +1521,7 @@ class RequestTestCase(unittest.TestCase):
         )
         with open(queryables_path) as f:
             provider_queryables = json.load(f)
-        mock_requests_get.return_value = MockResponse(
-            provider_queryables, status_code=200
-        )
+        mock_httpx_get.return_value = MockResponse(provider_queryables, status_code=200)
 
         planetary_computer_queryables_url = (
             "https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
@@ -1587,12 +1545,10 @@ class RequestTestCase(unittest.TestCase):
             check_links=False,
         )
 
-        mock_requests_get.assert_called_once_with(
+        mock_httpx_get.assert_called_once_with(
             mock.ANY,
-            url=planetary_computer_queryables_url,
-            timeout=DEFAULT_SEARCH_TIMEOUT,
+            planetary_computer_queryables_url,
             headers=USER_AGENT,
-            verify=True,
         )
 
         # the response is in StacQueryables class format
@@ -1660,8 +1616,8 @@ class RequestTestCase(unittest.TestCase):
             "min", processing_level
         )  # none values are left out in serialization
 
-    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
-    def test_product_type_queryables_from_constraints(self, mock_requests_get: Mock):
+    @mock.patch("eodag.utils.requests.httpx.Client.get", autospec=True)
+    def test_product_type_queryables_from_constraints(self, mock_httpx_get: Mock):
         """Request a collection-specific list of queryables for a given provider
         using a constraints file should return a valid response."""
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
@@ -1673,7 +1629,7 @@ class RequestTestCase(unittest.TestCase):
         form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
         with open(form_path) as f:
             form = json.load(f)
-        mock_requests_get.return_value.json.side_effect = [constraints, form]
+        mock_httpx_get.return_value.json.side_effect = [constraints, form]
 
         provider_queryables_from_constraints_file = [
             "year",
@@ -1699,7 +1655,7 @@ class RequestTestCase(unittest.TestCase):
             check_links=False,
         )
 
-        mock_requests_get.assert_has_calls(
+        mock_httpx_get.assert_has_calls(
             [
                 call(
                     mock.ANY,

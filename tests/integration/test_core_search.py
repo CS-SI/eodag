@@ -20,7 +20,7 @@ import os
 import tempfile
 import unittest
 
-from requests.exceptions import RequestException
+from httpx import RequestError as RequestException
 
 from eodag.utils import MockResponse
 from tests import TEST_RESOURCES_PATH

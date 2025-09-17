@@ -22,13 +22,13 @@ import re
 import string
 from datetime import datetime, timedelta, timezone
 from random import SystemRandom
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlparse
 
+import httpx
 import jwt
-import requests
+from httpx import Auth
 from lxml import etree
-from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import (
@@ -45,7 +45,9 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from requests import PreparedRequest, Response
+    from typing import Any, Iterator, Optional
+
+    from httpx import Request, Response
 
     from eodag.config import PluginConfig
 
@@ -76,7 +78,8 @@ class OIDCRefreshTokenBase(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
-        self.session = requests.Session()
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+        self.session = httpx.Client(verify=ssl_verify)
 
         self.access_token = ""
         self.access_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
@@ -85,10 +88,10 @@ class OIDCRefreshTokenBase(Authentication):
         self.refresh_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
 
         try:
-            response = requests.get(self.config.oidc_config_url)
+            response = httpx.get(self.config.oidc_config_url)
             response.raise_for_status()
             auth_config = response.json()
-        except requests.HTTPError as e:
+        except httpx.HTTPStatusError as e:
             raise MisconfiguredError(
                 f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}"
                 f"Request returned {e.response.text}."
@@ -170,7 +173,7 @@ class OIDCRefreshTokenBase(Authentication):
             "Incomplete OIDC refresh token retrieval mechanism implementation"
         )
 
-    def _request_new_token_error(self, e: requests.RequestException) -> dict[str, str]:
+    def _request_new_token_error(self, e: httpx.RequestError) -> dict[str, str]:
         """Handle RequestException raised by `self._request_new_token()`"""
         if self.access_token:
             # try using already retrieved token if authenticate() fails (OTP use-case)
@@ -178,13 +181,18 @@ class OIDCRefreshTokenBase(Authentication):
                 "access_token": self.access_token,
                 "expires_in": self.access_token_expiration.isoformat(),
             }
-        response_text = getattr(e.response, "text", "").strip()
+        response_text = ""
+        if hasattr(e, "response") and e.response is not None:
+            response_text = getattr(e.response, "text", "").strip()
+        else:
+            response_text = str(e)
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
             auth_errors = [auth_errors]
         if (
-            e.response
+            hasattr(e, "response")
+            and e.response
             and hasattr(e.response, "status_code")
             and e.response.status_code in auth_errors
         ):
@@ -197,8 +205,9 @@ class OIDCRefreshTokenBase(Authentication):
         else:
             import traceback as tb
 
+            status_code = getattr(getattr(e, "response", None), "status_code", "")
             logger.error(
-                f"Provider {self.provider} returned {getattr(e.response, 'status_code', '')}: {response_text}"
+                f"Provider {self.provider} returned {status_code}: {response_text}"
             )
             raise AuthenticationError(
                 "Something went wrong while trying to get access token:\n{}".format(
@@ -347,9 +356,9 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         try:
             token_response = self.exchange_code_for_token(exchange_url, state)
             token_response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
             return self._request_new_token_error(e)
         return token_response.json()
 
@@ -366,21 +375,19 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_data
         }
-        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             token_response = self.session.post(
                 self.token_endpoint,
                 timeout=HTTP_REQ_TIMEOUT,
-                verify=ssl_verify,
                 **post_request_kwargs,
             )
             token_response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except requests.RequestException as exc:
+        except (httpx.RequestError, httpx.HTTPStatusError) as exc:
             logger.error(
                 "Could not fetch access token with refresh token, executing new token request, error: %s",
-                getattr(exc.response, "text", ""),
+                getattr(getattr(exc, "response", None), "text", str(exc)),
             )
             return self._request_new_token()
         return token_response.json()
@@ -395,18 +402,16 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             "state": state,
             "redirect_uri": self.config.redirect_uri,
         }
-        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             authorization_response = self.session.get(
                 self.authorization_endpoint,
                 params=params,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
-                verify=ssl_verify,
             )
-        except requests.exceptions.Timeout as exc:
-            raise TimeoutError(exc, "The authentication request timed out.") from exc
-        except requests.RequestException as exc:
+        except httpx.TimeoutException as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except httpx.RequestError as exc:
             raise RequestError.from_error(
                 exc, "An error occurred while authenticating the user."
             ) from exc
@@ -453,11 +458,10 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 data=login_data,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
-                verify=ssl_verify,
             )
-        except requests.exceptions.Timeout as exc:
-            raise TimeoutError(exc, "The authentication request timed out.") from exc
-        except requests.RequestException as exc:
+        except httpx.TimeoutException as exc:
+            raise TimeOutError(exc, "The authentication request timed out.") from exc
+        except httpx.RequestError as exc:
             raise RequestError.from_error(
                 exc, "An error occurred while authenticating the user."
             ) from exc
@@ -473,18 +477,16 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             key: self._constant_or_xpath_extracted(value, user_consent_form)
             for key, value in self.config.user_consent_form_data.items()
         }
-        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             return self.session.post(
                 self.authorization_endpoint,
                 data=user_consent_data,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
-                verify=ssl_verify,
             )
-        except requests.exceptions.Timeout as exc:
-            raise TimeoutError(exc, "The authentication request timed out.") from exc
-        except requests.RequestException as exc:
+        except httpx.TimeoutException as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except httpx.RequestError as exc:
             raise RequestError.from_error(
                 exc, "An error occurred while authenticating the user."
             ) from exc
@@ -534,19 +536,17 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
-        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             r = self.session.post(
                 self.token_endpoint,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
-                verify=ssl_verify,
                 **post_request_kwargs,
             )
             return r
-        except requests.exceptions.Timeout as exc:
-            raise TimeoutError(exc, "The authentication request timed out.") from exc
-        except requests.RequestException as exc:
+        except httpx.TimeoutException as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except httpx.RequestError as exc:
             raise RequestError.from_error(
                 exc, "An error occurred while authenticating the user."
             ) from exc
@@ -577,32 +577,28 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         )
 
 
-class CodeAuthorizedAuth(AuthBase):
-    """CodeAuthorizedAuth custom authentication class to be used with requests module"""
+class CodeAuthorizedAuth(Auth):
+    """CodeAuthorizedAuth custom authentication class to be used with httpx module"""
 
     def __init__(self, token: str, where: str, key: Optional[str] = None) -> None:
         self.token = token
         self.where = where
         self.key = key
 
-    def __call__(self, request: PreparedRequest) -> PreparedRequest:
+    def auth_flow(self, request: Request) -> Iterator[Request]:
         """Perform the actual authentication"""
         if self.where == "qs":
-            parts = urlparse(str(request.url))
-            query_dict = parse_qs(parts.query)
+            # Use httpx.URL built-in method to add query parameter
             if self.key is not None:
-                query_dict.update({self.key: [self.token]})
-            url_without_args = parts._replace(query="").geturl()
-
-            request.prepare_url(url_without_args, query_dict)
-
+                request.url = request.url.copy_add_param(self.key, self.token)
         elif self.where == "header":
             request.headers["Authorization"] = "Bearer {}".format(self.token)
+
         logger.debug(
             re.sub(
                 r"'Bearer [^']+'",
                 r"'Bearer ***'",
-                f"PreparedRequest: {request.__dict__}",
+                f"Request: {request.__dict__}",
             )
         )
-        return request
+        yield request

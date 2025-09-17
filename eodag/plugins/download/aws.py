@@ -24,11 +24,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 import boto3
-import requests
+import httpx
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
-from requests.auth import AuthBase
 
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -238,7 +237,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -267,7 +266,7 @@ class AwsDownload(Download):
         """
         if auth is None:
             auth = {}
-        if isinstance(auth, AuthBase):
+        if isinstance(auth, httpx.Auth):
             raise MisconfiguredError("Please use AwsAuth plugin with AwsDownload")
 
         if progress_callback is None:
@@ -496,13 +495,13 @@ class AwsDownload(Download):
             )
             logger.info("Fetching extra metadata from %s" % fetch_url)
             try:
-                resp = requests.get(
+                resp = httpx.get(
                     fetch_url,
                     headers=USER_AGENT,
                     timeout=timeout,
                     verify=ssl_verify,
                 )
-            except requests.exceptions.Timeout as exc:
+            except httpx.TimeoutException as exc:
                 raise TimeOutError(exc, timeout=timeout) from exc
             update_metadata = mtd_cfg_as_conversion_and_querypath(update_metadata)
             if fetch_format == "json":
@@ -580,7 +579,7 @@ class AwsDownload(Download):
     def _do_authentication(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
     ) -> tuple[dict[str, Any], BucketObjectsCollection]:
         """
         Authenticates with s3 and retrieves the available objects
@@ -709,7 +708,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -1353,7 +1352,7 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

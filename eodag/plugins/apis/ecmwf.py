@@ -46,7 +46,7 @@ from eodag.utils.logging import get_logging_verbose
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
-    from requests.auth import AuthBase
+    from httpx import Auth
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -171,7 +171,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -260,7 +260,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

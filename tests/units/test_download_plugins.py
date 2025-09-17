@@ -226,7 +226,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def _download_response_archive(self, local_product_as_archive_path: str):
         class Response(object):
-            """Emulation of a response to eodag.plugins.download.http.requests.get method for a zipped product"""
+            """Emulation of a response to eodag.plugins.download.http.httpx.get method for a zipped product"""
 
             def __init__(self):
                 # Using a zipped product file
@@ -301,7 +301,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         product.register_downloader(downloader, None)
         return product
 
-    @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.Session.request", autospec=True)
     def test_plugins_download_http_zip_file_ok(self, mock_requests_session):
         """HTTPDownload.download() must keep the output as it is when it is a zip file"""
 
@@ -488,12 +488,24 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
     @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.stream", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_ignore_assets(
-        self, mock_requests_get, mock_requests_head, mock_stream, mock_stream_download
+        self,
+        mock_requests_get,
+        mock_requests_head,
+        mock_httpx_stream,
+        mock_stream,
+        mock_stream_download,
     ):
         """HTTPDownload.download() must ignore assets if configured to"""
+
+        # Mock httpx.stream to prevent real network calls
+        mock_stream_response = mock_httpx_stream.return_value.__enter__.return_value
+        mock_stream_response.headers = {"content-length": "100"}
+        mock_stream_response.iter_content.return_value = [b"some content"]
+        mock_stream_response.raise_for_status.return_value = None
 
         plugin = self.get_download_plugin(self.product)
         self.product.location = (
@@ -512,9 +524,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # download asset if ignore_assets = False
         plugin.config.ignore_assets = False
         path = plugin.download(self.product, output_dir=self.output_dir)
-        mock_requests_get.assert_called_once_with(
+        mock_httpx_stream.assert_called_with(
+            "GET",
             self.product.assets["foo"]["href"],
-            stream=True,
             auth=None,
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
@@ -525,26 +537,26 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # re-enable product download
         self.product.location = self.product.remote_location
         shutil.rmtree(path)
-        mock_requests_get.reset_mock()
+        mock_httpx_stream.reset_mock()
         mock_stream_download.reset_mock()
 
         # download using remote_location if ignore_assets = True
         plugin.config.ignore_assets = True
         path = plugin.download(self.product, output_dir=self.output_dir)
-        mock_requests_get.assert_not_called()
+        mock_httpx_stream.assert_not_called()
         mock_stream_download.assert_called_once()
         # re-enable product download
         self.product.location = self.product.remote_location
         shutil.rmtree(path)
-        mock_requests_get.reset_mock()
+        mock_httpx_stream.reset_mock()
         mock_stream_download.reset_mock()
 
         # download asset if ignore_assets unset
         del plugin.config.ignore_assets
         plugin.download(self.product, output_dir=self.output_dir)
-        mock_requests_get.assert_called_once_with(
+        mock_httpx_stream.assert_called_with(
+            "GET",
             self.product.assets["foo"]["href"],
-            stream=True,
             auth=None,
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
@@ -553,8 +565,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         mock_stream_download.assert_not_called()
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_ignore_assets_without_ssl(
         self, mock_requests_get, mock_requests_head
     ):
@@ -593,8 +605,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         del plugin.config.ssl_verify
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_href(
         self, mock_requests_get, mock_requests_head
     ):
@@ -644,8 +656,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_get(
         self, mock_requests_get, mock_requests_head
     ):
@@ -675,8 +687,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_error(
         self, mock_requests_get, mock_requests_head, mock_asset_size
     ):
@@ -698,8 +710,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         "eodag.plugins.download.http.ProgressCallback.__call__",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_interrupt(
         self, mock_requests_get, mock_requests_head, mock_progress_callback
     ):
@@ -748,8 +760,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         "eodag.plugins.download.http.ProgressCallback.__call__",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_stream_zip_interrupt(
         self, mock_requests_get, mock_requests_head, mock_progress_callback
     ):
@@ -776,8 +788,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(self.product.location, "http://somewhere")
         self.assertEqual(self.product.remote_location, "http://somewhere")
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_resume(
         self, mock_requests_get, mock_requests_head
     ):
@@ -819,12 +831,22 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
         )
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.stream", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_asset_filter(
-        self, mock_requests_get, mock_requests_head
+        self, mock_requests_get, mock_requests_head, mock_httpx_stream
     ):
         """HTTPDownload.download() must create an outputfile"""
+
+        # Mock httpx.stream to prevent real network calls
+        mock_stream_response = mock_httpx_stream.return_value.__enter__.return_value
+        mock_stream_response.headers = {
+            "content-disposition": '; filename = "somethingelse"',
+            "content-length": "100",
+        }
+        mock_stream_response.iter_content.return_value = [b"some content"]
+        mock_stream_response.raise_for_status.return_value = None
 
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
@@ -853,13 +875,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 os.path.join(self.output_dir, "dummy_product", "somethingelse")
             )
         )
-        self.assertEqual(2, mock_requests_get.call_count)
+        # Check httpx.stream calls instead of mock_requests_get
+        # Should be called twice: once for size check, once for download
+        self.assertEqual(2, mock_httpx_stream.call_count)
         self.product.location = self.product.remote_location = "http://elsewhere"
         plugin.download(self.product, output_dir=self.output_dir)
-        self.assertEqual(6, mock_requests_get.call_count)
+        # After second download, should have been called 4 more times (2 assets * 2 calls each)
+        self.assertEqual(6, mock_httpx_stream.call_count)
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_head(
         self, mock_requests_get, mock_requests_head
     ):
@@ -891,8 +916,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     @mock.patch("eodag.utils.ProgressCallback.reset", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.get", autospec=True)
     def test_plugins_download_http_assets_size(
         self, mock_requests_get, mock_requests_head, mock_progress_callback_reset
     ):
@@ -1156,7 +1181,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.request", autospec=True)
     def test_plugins_download_http_order_get(self, mock_request):
         """HTTPDownload._order() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
@@ -1188,7 +1213,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             else:
                 del plugin.config.timeout
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.request", autospec=True)
     def test_plugins_download_http_order_get_raises_if_request_500(self, mock_request):
         """HTTPDownload._order() must raise an error if request to backend
         provider failed"""
@@ -1218,7 +1243,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.request", autospec=True)
     def test_plugins_download_http_order_get_raises_if_request_400(self, mock_request):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
@@ -1249,7 +1274,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
         """HTTPDownload._order() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
@@ -1342,7 +1367,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.request", autospec=True)
     def test_plugins_download_http_order_status_get_raises_if_request_500(
         self, mock_request
     ):
@@ -1376,7 +1401,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             json=None,
         )
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.httpx.request", autospec=True)
     def test_plugins_download_http_order_status_get_raises_if_request_400(
         self, mock_request
     ):
@@ -1723,7 +1748,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.aws.httpx.get", autospec=True)
     def test_plugins_download_aws_no_safe_build_no_flatten_top_dirs(
         self,
         mock_requests_get: mock.Mock,
@@ -1770,7 +1795,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.aws.httpx.get", autospec=True)
     def test_plugins_download_aws_no_safe_build_flatten_top_dirs(
         self,
         mock_requests_get: mock.Mock,
@@ -1879,7 +1904,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.aws.httpx.get", autospec=True)
     def test_plugins_download_aws_safe_build(
         self,
         mock_requests_get,
@@ -1952,7 +1977,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.aws.httpx.get", autospec=True)
     def test_plugins_download_aws_safe_build_assets(
         self,
         mock_requests_get,
@@ -2334,7 +2359,7 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         "eodag.plugins.download.creodias_s3.CreodiasS3Download._get_authenticated_objects_from_auth_keys",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.aws.httpx.get", autospec=True)
     def test_plugins_download_creodias_s3(
         self,
         mock_requests_get,
@@ -2393,7 +2418,7 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         "eodag.plugins.download.creodias_s3.CreodiasS3Download._get_authenticated_objects_from_auth_keys",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.download.aws.httpx.get", autospec=True)
     def test_plugins_download_creodias_s3_without_assets(
         self,
         mock_requests_get,

@@ -35,8 +35,8 @@ from typing import (
     get_type_hints,
 )
 
+import httpx
 import orjson
-import requests
 import yaml
 import yaml.constructor
 import yaml.parser
@@ -416,14 +416,11 @@ class PluginConfig(yaml.YAMLObject):
     auth_error_code: Union[int, list[int]]
     #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
     timeout: float
-    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``total`` parameter,
-    #: total number of retries to allow
+    #: :class:`~eodag.plugins.base.PluginTopic` total number of retries to allow
     retry_total: int
-    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``backoff_factor`` parameter,
-    #: backoff factor to apply between attempts after the second try
+    #: :class:`~eodag.plugins.base.PluginTopic` backoff factor to apply between attempts after the second try
     retry_backoff_factor: int
-    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
-    #: list of integer HTTP status codes that we should force a retry on
+    #: :class:`~eodag.plugins.base.PluginTopic` list of integer HTTP status codes that we should force a retry on
     retry_status_forcelist: list[int]
 
     # search & api -----------------------------------------------------------------------------------------------------
@@ -1078,12 +1075,10 @@ def get_ext_product_types_conf(
     if conf_uri.lower().startswith("http"):
         # read from remote
         try:
-            response = requests.get(
-                conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-            )
+            response = httpx.get(conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
             logger.debug(e)
             logger.warning(
                 "Could not read remote external product types conf from %s", conf_uri

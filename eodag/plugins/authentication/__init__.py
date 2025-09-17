@@ -18,7 +18,7 @@
 """EODAG authentication package"""
 from __future__ import annotations
 
-from requests.auth import AuthBase
+from httpx import Auth
 
 from eodag.plugins.authentication.base import Authentication
 
@@ -26,6 +26,6 @@ from eodag.plugins.authentication.base import Authentication
 class DummyAuth(Authentication):
     """Dummy authentication"""
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> Auth:
         """authenticate"""
-        return AuthBase()
+        return Auth()

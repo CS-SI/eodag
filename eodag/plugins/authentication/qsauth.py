@@ -17,19 +17,19 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-from urllib.parse import parse_qs, urlparse
+from typing import TYPE_CHECKING
 
-import requests
-from requests.auth import AuthBase
-from requests.exceptions import RequestException
+import httpx
+from httpx import Auth, RequestError
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, TimeOutError
 
 if TYPE_CHECKING:
-    from requests import PreparedRequest
+    from typing import Any, Iterator
+
+    from httpx import Request
 
 
 class HttpQueryStringAuth(Authentication):
@@ -68,7 +68,7 @@ class HttpQueryStringAuth(Authentication):
     :meth:`~eodag.plugins.authentication.query_string.HttpQueryStringAuth.authenticate`
     """
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> Auth:
         """Authenticate"""
         self.validate_config_credentials()
 
@@ -79,34 +79,29 @@ class HttpQueryStringAuth(Authentication):
 
         if auth_uri:
             try:
-                response = requests.get(
-                    auth_uri,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    headers=USER_AGENT,
-                    auth=auth,
-                    verify=ssl_verify,
-                )
-                response.raise_for_status()
-            except requests.exceptions.Timeout as exc:
+                with httpx.Client(verify=ssl_verify) as client:
+                    response = client.get(
+                        auth_uri,
+                        timeout=HTTP_REQ_TIMEOUT,
+                        headers=USER_AGENT,
+                        auth=auth,
+                    )
+                    response.raise_for_status()
+            except httpx.TimeoutException as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-            except RequestException as e:
+            except RequestError as e:
                 raise AuthenticationError("Could no authenticate", str(e)) from e
 
         return auth
 
 
-class QueryStringAuth(AuthBase):
+class QueryStringAuth(Auth):
     """ "QueryStringAuth custom authentication class to be used with requests module"""
 
     def __init__(self, **parse_args: Any) -> None:
         self.parse_args = parse_args
 
-    def __call__(self, request: PreparedRequest) -> PreparedRequest:
+    def auth_flow(self, request: Request) -> Iterator[Request]:
         """Perform the actual authentication"""
-        parts = urlparse(str(request.url))
-        query_dict = parse_qs(parts.query)
-        query_dict.update(self.parse_args)
-        url_without_args = parts._replace(query="").geturl()
-
-        request.prepare_url(url_without_args, query_dict)
-        return request
+        request.url = request.url.copy_merge_params(self.parse_args)
+        yield request

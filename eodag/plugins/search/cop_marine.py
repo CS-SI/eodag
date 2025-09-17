@@ -27,7 +27,7 @@ from urllib.parse import urlsplit
 
 import boto3
 import botocore
-import requests
+import httpx
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
@@ -152,11 +152,16 @@ class CopMarineSearch(StaticStacSearch):
             + "/product.stac.json"
         )
         try:
-            collection_data = requests.get(collection_url).json()
-        except requests.RequestException as exc:
-            if exc.errno == 404:
+            collection_data = httpx.get(collection_url).json()
+        except httpx.HTTPError as exc:
+            # Special handling for 404 errors
+            if (
+                isinstance(exc, httpx.HTTPStatusError)
+                and exc.response.status_code == 404
+            ):
                 logger.error("product %s not found", product_type)
                 raise UnsupportedProductType(product_type)
+            # General error handling for all other HTTPError types
             logger.error("data for product %s could not be fetched", product_type)
             raise RequestError.from_error(
                 exc, f"data for product {product_type} could not be fetched"
@@ -170,9 +175,9 @@ class CopMarineSearch(StaticStacSearch):
                 + link["href"]
             )
             try:
-                dataset_item = requests.get(dataset_url).json()
+                dataset_item = httpx.get(dataset_url).json()
                 datasets.append(dataset_item)
-            except requests.RequestException:
+            except httpx.RequestError:
                 logger.error("data for dataset %s could not be fetched", link["title"])
 
         return collection_data, datasets
@@ -212,7 +217,6 @@ class CopMarineSearch(StaticStacSearch):
         collection_dict: dict[str, Any],
         use_dataset_dates: bool = False,
     ) -> Optional[EOProduct]:
-
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
         download_url = s3_url + "/" + item_key
         geometry = (

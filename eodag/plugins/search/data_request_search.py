@@ -22,7 +22,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-import requests
+import httpx
 
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -381,7 +381,7 @@ class DataRequestSearch(Search):
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
             )
-            request_job = requests.post(
+            request_job = httpx.post(
                 url,
                 json=request_body,
                 headers=headers,
@@ -389,9 +389,9 @@ class DataRequestSearch(Search):
                 verify=ssl_verify,
             )
             request_job.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
             raise RequestError.from_error(
                 e, f"search job for product_type {product_type} could not be created"
             ) from e
@@ -404,13 +404,13 @@ class DataRequestSearch(Search):
         delete_url = f"{self.config.data_request_url}/{data_request_id}"
         headers = getattr(self.auth, "headers", USER_AGENT)
         try:
-            delete_resp = requests.delete(
+            delete_resp = httpx.delete(
                 delete_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
             delete_resp.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
             raise RequestError.from_error(e, "_cancel_request failed") from e
 
     def _check_request_status(self, data_request_id: str) -> bool:
@@ -420,16 +420,16 @@ class DataRequestSearch(Search):
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         try:
-            status_resp = requests.get(
+            status_resp = httpx.get(
                 status_url,
                 headers=headers,
                 timeout=HTTP_REQ_TIMEOUT,
                 verify=ssl_verify,
             )
             status_resp.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except requests.RequestException as e:
+        except httpx.RequestError as e:
             raise RequestError.from_error(e, "_check_request_status failed") from e
         else:
             status_data = status_resp.json()
@@ -458,12 +458,12 @@ class DataRequestSearch(Search):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         headers = getattr(self.auth, "headers", USER_AGENT)
         try:
-            return requests.get(
+            return httpx.get(
                 url, headers=headers, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
             ).json()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except requests.RequestException:
+        except httpx.HTTPError:
             logger.error(f"Result could not be retrieved for {url}")
         return {}
 

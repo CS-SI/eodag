@@ -44,7 +44,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
+    from httpx import Auth
 
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig, ProviderConfig
@@ -361,7 +361,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
-    ) -> Optional[Union[AuthBase, S3SessionKwargs]]:
+    ) -> Optional[Union[Auth, S3SessionKwargs]]:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 

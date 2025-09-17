@@ -121,16 +121,14 @@ class EODagTestCase(unittest.TestCase):
             }
         )
 
-        self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
-        self.requests_request_patcher = mock.patch(
-            "requests.Session.request", autospec=True
-        )
-        self.requests_http_get = self.requests_http_get_patcher.start()
-        self.requests_request = self.requests_request_patcher.start()
+        self.httpx_get_patcher = mock.patch("httpx.get", autospec=True)
+        self.httpx_request_patcher = mock.patch("httpx.Client.request", autospec=True)
+        self.httpx_get = self.httpx_get_patcher.start()
+        self.httpx_request = self.httpx_request_patcher.start()
 
     def tearDown(self):
-        self.requests_http_get_patcher.stop()
-        self.requests_request_patcher.stop()
+        self.httpx_get_patcher.stop()
+        self.httpx_request_patcher.stop()
         unwanted_product_dir = jp(
             dirn(self.local_product_as_archive_path), self.local_filename
         )
@@ -148,12 +146,12 @@ class EODagTestCase(unittest.TestCase):
         )
 
     def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
-        """Helper method for doing assertions on requests http get method mock"""
-        self.assertEqual(self.requests_http_get.call_count, 1)
-        actual_url = self.requests_http_get.call_args[0][0]
+        """Helper method for doing assertions on httpx get method mock"""
+        self.assertEqual(self.httpx_get.call_count, 1)
+        actual_url = self.httpx_get.call_args[0][0]
         self.assertEqual(actual_url, expected_url)
         if expected_params:
-            actual_params = self.requests_http_get.call_args[1]["params"]
+            actual_params = self.httpx_get.call_args[1]["params"]
             self.assertDictEqual(actual_params, expected_params)
 
     @staticmethod
@@ -180,7 +178,6 @@ class EODagTestCase(unittest.TestCase):
             shapely_mapping["coordinates"][i] = list(coords)
             coords = shapely_mapping["coordinates"][i]
             for j, pair in enumerate(coords):
-
                 # Coordinates rounded to 6 decimals by geojson lib
                 # So rounding coordinates in order to be able to compare
                 # coordinates after a `geojson.loads`
@@ -332,7 +329,7 @@ class EODagTestCase(unittest.TestCase):
 
     def _download_response_archive(self):
         class Response:
-            """Emulation of a response to requests.get method for a zipped product"""
+            """Emulation of a response to httpx.get method for a zipped product"""
 
             def __init__(response):
                 # Using a zipped product file

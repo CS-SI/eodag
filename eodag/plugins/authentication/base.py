@@ -23,7 +23,7 @@ from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
+    from httpx import Auth
 
     from eodag.types import S3SessionKwargs
 
@@ -40,7 +40,7 @@ class Authentication(PluginTopic):
           configuration that needs authentication and helps identifying it
     """
 
-    def authenticate(self) -> Union[AuthBase, S3SessionKwargs]:
+    def authenticate(self) -> Union[Auth, S3SessionKwargs]:
         """Authenticate"""
         raise NotImplementedError
 

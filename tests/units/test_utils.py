@@ -29,7 +29,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from requests.exceptions import RequestException
+from httpx import RequestError as HttpxRequestError
 
 from tests.context import (
     HTTP_REQ_TIMEOUT,
@@ -363,7 +363,7 @@ class TestUtils(unittest.TestCase):
         # distant
         file_url = "https://foo.bar"
         with unittest.mock.patch(
-            "eodag.utils.requests.requests.sessions.Session.get",
+            "eodag.utils.requests.httpx.Client.get",
             autospec=True,
         ) as mock_get:
             mock_get.return_value = unittest.mock.Mock()
@@ -380,8 +380,8 @@ class TestUtils(unittest.TestCase):
 
         # distant error
         with unittest.mock.patch(
-            "eodag.utils.requests.requests.get",
+            "eodag.utils.requests.httpx.get",
             autospec=True,
-            side_effect=RequestException,
+            side_effect=HttpxRequestError,
         ) as mock_get:
             self.assertRaises(RequestError, fetch_json, file_url)

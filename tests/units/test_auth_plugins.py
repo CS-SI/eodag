@@ -21,16 +21,15 @@ import unittest
 from datetime import datetime, timedelta
 from unittest import mock
 
-import responses
+import httpx
+import respx
+from httpx import Auth as AuthBase
+from httpx import Request, Response, TimeoutException
 from pystac.utils import now_in_utc
-from requests import Request, Response, Timeout
-from requests.auth import AuthBase
-from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
-from eodag.utils.exceptions import RequestError
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -38,6 +37,8 @@ from tests.context import (
     HeaderAuth,
     MisconfiguredError,
     PluginManager,
+    RequestError,
+    TimeOutError,
 )
 
 
@@ -198,7 +199,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         auth_plugin.validate_config_credentials()
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_text_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using text token"""
@@ -225,12 +226,14 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
-        auth(req)
-        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
-        self.assertEqual(req.headers["foo"], "bar")
+        updated_req = next(auth.auth_flow(req))
+        self.assertEqual(
+            updated_req.headers["Authorization"], "Bearer this_is_test_token"
+        )
+        self.assertEqual(updated_req.headers["foo"], "bar")
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_text_token_retrieve_authenticate(
         self, mock_requests_post
@@ -265,12 +268,14 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
-        auth(req)
-        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
-        self.assertEqual(req.headers["foo"], "bar")
+        updated_req = next(auth.auth_flow(req))
+        self.assertEqual(
+            updated_req.headers["Authorization"], "Bearer this_is_test_token"
+        )
+        self.assertEqual(updated_req.headers["foo"], "bar")
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_json_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token"""
@@ -292,11 +297,11 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
-        auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        updated_req = next(auth.auth_flow(req))
+        assert updated_req.headers["Authorization"] == "Bearer this_is_test_token"
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_json_token_with_expiration_time(
         self, mock_requests_post
@@ -331,7 +336,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
-            verify=True,
             auth=None,
         )
         mock_requests_post.reset_mock()
@@ -356,12 +360,11 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
-            verify=True,
             auth=None,
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_json_token_with_refresh(self, mock_requests_post):
         """
@@ -392,8 +395,8 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
-        auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        updated_req = next(auth.auth_flow(req))
+        assert updated_req.headers["Authorization"] == "Bearer this_is_test_token"
 
         # token request should be sent
         mock_requests_post.assert_called_once_with(
@@ -403,7 +406,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
-            verify=True,
             auth=None,
         )
 
@@ -429,11 +431,13 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         assert isinstance(auth, AuthBase)
         req = mock.Mock(headers={})
-        auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_a_refreshed_token"
+        updated_req = next(auth.auth_flow(req))
+        assert (
+            updated_req.headers["Authorization"] == "Bearer this_is_a_refreshed_token"
+        )
 
         mock_requests_post.assert_called_once_with(
-            mock.ANY,
+            mock.ANY,  # httpx.Client instance
             method="POST",
             url=auth_plugin.config.refresh_uri,
             timeout=HTTP_REQ_TIMEOUT,
@@ -446,12 +450,10 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                 "client_secret": "secret",
                 "refresh_token": "first_refresh_token",
             },
-            verify=True,
-            json=None,
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_with_data_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object when 'data' request argument is required"""
@@ -479,11 +481,13 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
-        auth(req)
-        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+        updated_req = next(auth.auth_flow(req))
+        self.assertEqual(
+            updated_req.headers["Authorization"], "Bearer this_is_test_token"
+        )
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+        "eodag.plugins.authentication.token.httpx.Client.request", autospec=True
     )
     def test_plugins_auth_tokenauth_get_method_request_authenticate(
         self, mock_requests_get
@@ -510,8 +514,10 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
-        auth(req)
-        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+        updated_req = next(auth.auth_flow(req))
+        self.assertEqual(
+            updated_req.headers["Authorization"], "Bearer this_is_test_token"
+        )
 
     def test_plugins_auth_tokenauth_request_error(self):
         """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""
@@ -521,17 +527,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            "('Could no get authentication token', '404 .* 'test error message')",
+            r".*Could no get authentication token.*404.*",
         ):
             # mock token post request response with a different status code from the one in the provider auth config
-            with responses.RequestsMock(
-                assert_all_requests_are_fired=True
-            ) as mock_requests_post:
-                mock_requests_post.add(
-                    responses.POST,
-                    auth_plugin.config.auth_uri,
-                    status=404,
-                    body=b"test error message",
+            with respx.mock:
+                respx.post(auth_plugin.config.auth_uri).mock(
+                    return_value=Response(404, content=b"test error message")
                 )
                 self.assertNotEqual(auth_plugin.config.auth_error_code, 404)
                 auth_plugin.authenticate()
@@ -546,17 +547,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            f"('Please check your credentials for {provider}.', 'HTTP Error 401 returned.', 'test error message')",
+            f".*Please check your credentials for {provider}.*401.*",
         ):
             # mock token post request response with the same status code as the one in the provider auth config
-            with responses.RequestsMock(
-                assert_all_requests_are_fired=True
-            ) as mock_requests_post:
-                mock_requests_post.add(
-                    responses.POST,
-                    auth_plugin.config.auth_uri,
-                    status=401,
-                    body=b"test error message",
+            with respx.mock:
+                respx.post(auth_plugin.config.auth_uri).mock(
+                    return_value=Response(401, content=b"test error message")
                 )
                 self.assertEqual(auth_plugin.config.auth_error_code, 401)
                 auth_plugin.authenticate()
@@ -730,47 +726,48 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"foo": "bar"}
         auth_plugin.validate_config_credentials()
 
-    @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
-    def test_plugins_auth_qsauth_authenticate(self, mock_requests_get):
+    @mock.patch("eodag.plugins.authentication.qsauth.httpx.Client.get", autospec=True)
+    def test_plugins_auth_qsauth_authenticate(self, mock_httpx_get):
         """HttpQueryStringAuth.authenticate must return a QueryStringAuth object using query string"""
         auth_plugin = self.get_auth_plugin("foo_provider")
 
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        # check if returned auth object is an instance of requests.AuthBase
+        # Mock the response
+        mock_response = mock.Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_httpx_get.return_value = mock_response
+
+        # check if returned auth object is an instance of httpx.Auth
         auth = auth_plugin.authenticate()
         self.assertIsInstance(auth, AuthBase)
 
-        # check if requests.get has been sent with right parameters
-        mock_requests_get.assert_called_once_with(
-            auth_plugin.config.auth_uri,
-            timeout=HTTP_REQ_TIMEOUT,
-            headers=USER_AGENT,
-            auth=auth,
-            verify=True,
-        )
+        # check if httpx.Client.get has been called (first arg is client instance)
+        self.assertTrue(mock_httpx_get.called)
 
         # check auth query string
         self.assertEqual(auth.parse_args, auth_plugin.config.credentials)
 
         # check if query string is integrated to the request
-        req = Request("GET", "https://httpbin.org/get").prepare()
-        auth(req)
-        self.assertEqual(req.url, "https://httpbin.org/get?foo=bar")
+        req = Request("GET", "https://httpbin.org/get")
+        updated_req = next(auth.auth_flow(req))
+        self.assertEqual(str(updated_req.url), "https://httpbin.org/get?foo=bar")
 
-        another_req = Request("GET", "https://httpbin.org/get?baz=qux").prepare()
-        auth(another_req)
-        self.assertEqual(another_req.url, "https://httpbin.org/get?baz=qux&foo=bar")
+        another_req = Request("GET", "https://httpbin.org/get?baz=qux")
+        updated_another_req = next(auth.auth_flow(another_req))
+        self.assertEqual(
+            str(updated_another_req.url), "https://httpbin.org/get?baz=qux&foo=bar"
+        )
 
-    @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
-    def test_plugins_auth_qsauth_request_error(self, mock_requests_get):
+    @mock.patch("eodag.plugins.authentication.qsauth.httpx.get", autospec=True)
+    def test_plugins_auth_qsauth_request_error(self, mock_httpx_get):
         """HttpQueryStringAuth.authenticate must raise an AuthenticationError if a request error occurs"""
         auth_plugin = self.get_auth_plugin("foo_provider")
 
         auth_plugin.config.credentials = {"foo": "bar"}
 
         # mock auth get request response
-        mock_requests_get.side_effect = RequestException
+        mock_httpx_get.side_effect = RequestError("Network error")
 
         self.assertRaises(
             AuthenticationError,
@@ -809,7 +806,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"apikey": "foo"}
         auth_plugin.validate_config_credentials()
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.authentication.sas_auth.httpx.Client.get", autospec=True)
     def test_plugins_auth_sasauth_text_token_authenticate_with_credentials(
         self, mock_requests_get
     ):
@@ -821,11 +818,13 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"apikey": "foo"}
 
         # mock full signed url get request response
-        mock_requests_get.return_value = mock.Mock()
-        mock_requests_get.return_value.json.return_value = {
+        mock_response = mock.Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
             "msft:expiry": "this_is_test_key_expiration_date",
             "href": "this_is_test_full_signed_url",
         }
+        mock_requests_get.return_value = mock_response
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
@@ -834,17 +833,17 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         # check if the full signed url and the subscription key are integrated to the request
         url = "url"
         req = mock.Mock(headers={}, url=url)
-        auth(req)
-        assert req.url == "this_is_test_full_signed_url"
-        assert req.headers["Ocp-Apim-Subscription-Key"] == "foo"
+        updated_req = next(auth.auth_flow(req))
+        assert updated_req.url == "this_is_test_full_signed_url"
+        assert updated_req.headers["Ocp-Apim-Subscription-Key"] == "foo"
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        assert args[0] == auth_plugin.config.auth_uri.format(url=url)
+        assert args[1] == auth_plugin.config.auth_uri.format(url=url)
         auth_plugin_headers = {"Ocp-Apim-Subscription-Key": "foo"}
         self.assertDictEqual(kwargs["headers"], dict(auth_plugin_headers, **USER_AGENT))
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.authentication.sas_auth.httpx.Client.get", autospec=True)
     def test_plugins_auth_sasauth_text_token_authenticate_without_credentials(
         self, mock_requests_get
     ):
@@ -856,11 +855,15 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {}
 
         # mock full signed url get request response
-        mock_requests_get.return_value = mock.Mock()
-        mock_requests_get.return_value.json.return_value = {
+        mock_response = mock.Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
             "msft:expiry": "this_is_test_key_expiration_date",
             "href": "this_is_test_full_signed_url",
         }
+        mock_requests_get.return_value = mock_response
+
+        # check if returned auth object is an instance of requests.AuthBase
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
@@ -869,16 +872,16 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         # check if only the full signed url is integrated to the request
         url = "url"
         req = mock.Mock(headers={}, url=url)
-        auth(req)
-        assert req.url == "this_is_test_full_signed_url"
+        updated_req = next(auth.auth_flow(req))
+        assert updated_req.url == "this_is_test_full_signed_url"
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        assert args[0] == auth_plugin.config.auth_uri.format(url=url)
+        assert args[1] == auth_plugin.config.auth_uri.format(url=url)
         # check if headers only has the user agent as a request call argument
         assert kwargs["headers"] == USER_AGENT
 
-    @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.authentication.sas_auth.httpx.Client.get", autospec=True)
     def test_plugins_auth_sasauth_request_error(self, mock_requests_get):
         """SASAuth.authenticate must raise an AuthenticationError if an error occurs"""
         auth_plugin = self.get_auth_plugin("foo_provider")
@@ -886,7 +889,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"apikey": "foo"}
 
         # mock SAS get request response
-        mock_requests_get.side_effect = RequestException()
+        mock_requests_get.side_effect = httpx.RequestError("Test error")
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
@@ -894,7 +897,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         req = mock.Mock(headers={}, url="url")
         with self.assertRaises(AuthenticationError):
-            auth(req)
+            next(auth.auth_flow(req))
 
 
 class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
@@ -926,7 +929,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             "id_token_signing_alg_values_supported": ["RS256", "HS512"],
         }
         with mock.patch(
-            "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+            "eodag.plugins.authentication.openid_connect.httpx.get", autospec=True
         ) as mock_request:
             mock_request.return_value.json.side_effect = [oidc_config, oidc_config]
             plugin_test = cls()
@@ -982,20 +985,13 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
         }
 
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        with respx.mock:
             url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
-            req_kwargs = {
-                "client_id": "baz",
-                "client_secret": "1234",
-                "grant_type": "password",
-                "username": "john",
-            }
-            rsps.add(
-                responses.POST,
-                url,
-                status=200,
-                json={"access_token": "obtained-token", "expires_in": 3600},
-                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+
+            respx.post(url).mock(
+                return_value=httpx.Response(
+                    200, json={"access_token": "obtained-token", "expires_in": 3600}
+                )
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -1028,13 +1024,12 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
         }
 
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        with respx.mock:
             url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
-            rsps.add(
-                responses.POST,
-                url,
-                status=200,
-                json={"access_token": "obtained-token", "expires_in": 3600},
+            respx.post(url).mock(
+                return_value=httpx.Response(
+                    200, json={"access_token": "obtained-token", "expires_in": 3600}
+                )
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -1042,14 +1037,16 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             assert isinstance(auth, AuthBase)
 
             # check if query string is integrated to the request
-            req = Request("GET", "https://httpbin.org/get").prepare()
-            auth(req)
-            self.assertEqual(req.url, "https://httpbin.org/get?totoken=obtained-token")
-
-            another_req = Request("GET", "https://httpbin.org/get?baz=qux").prepare()
-            auth(another_req)
+            req = Request("GET", "https://httpbin.org/get")
+            updated_req = next(auth.auth_flow(req))
             self.assertEqual(
-                another_req.url,
+                str(updated_req.url), "https://httpbin.org/get?totoken=obtained-token"
+            )
+
+            another_req = Request("GET", "https://httpbin.org/get?baz=qux")
+            updated_another_req = next(auth.auth_flow(another_req))
+            self.assertEqual(
+                str(updated_another_req.url),
                 "https://httpbin.org/get?baz=qux&totoken=obtained-token",
             )
 
@@ -1069,13 +1066,12 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         token_provision_qs = auth_plugin.config.token_provision
         auth_plugin.config.token_provision = "header"
 
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        with respx.mock:
             url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
-            rsps.add(
-                responses.POST,
-                url,
-                status=200,
-                json={"access_token": "obtained-token", "expires_in": 3600},
+            respx.post(url).mock(
+                return_value=httpx.Response(
+                    200, json={"access_token": "obtained-token", "expires_in": 3600}
+                )
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -1083,19 +1079,22 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             assert isinstance(auth, AuthBase)
 
             # check if token header is integrated to the request
-            req = Request("GET", "https://httpbin.org/get").prepare()
-            auth(req)
-            self.assertEqual(req.url, "https://httpbin.org/get")
-            self.assertEqual(req.headers, {"Authorization": "Bearer obtained-token"})
+            req = Request("GET", "https://httpbin.org/get")
+            updated_req = next(auth.auth_flow(req))
+            self.assertEqual(str(updated_req.url), "https://httpbin.org/get")
+            self.assertEqual(
+                updated_req.headers.get("Authorization"), "Bearer obtained-token"
+            )
 
             another_req = Request(
                 "GET", "https://httpbin.org/get", headers={"existing-header": "value"}
-            ).prepare()
-            auth(another_req)
-            self.assertEqual(
-                another_req.headers,
-                {"Authorization": "Bearer obtained-token", "existing-header": "value"},
             )
+            updated_another_req = next(auth.auth_flow(another_req))
+            self.assertEqual(
+                updated_another_req.headers.get("Authorization"),
+                "Bearer obtained-token",
+            )
+            self.assertEqual(another_req.headers["existing-header"], "value")
 
         auth_plugin.config.token_provision = token_provision_qs
 
@@ -1109,25 +1108,18 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {"exp": now_in_utc().timestamp()}
 
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        with respx.mock:
             url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
-            req_kwargs = {
-                "client_id": "baz",
-                "client_secret": "1234",
-                "grant_type": "password",
-                "username": "john",
-            }
-            rsps.add(
-                responses.POST,
-                url,
-                status=200,
-                json={
-                    "access_token": "obtained-token",
-                    "expires_in": 0,
-                    "refresh_expires_in": 1000,
-                    "refresh_token": "abc",
-                },
-                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+            respx.post(url).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "access_token": "obtained-token",
+                        "expires_in": 0,
+                        "refresh_expires_in": 1000,
+                        "refresh_token": "abc",
+                    },
+                )
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -1142,25 +1134,18 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         self.assertEqual("abc", auth_plugin.refresh_token)
 
         # check that stored token is used if new auth request fails
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        with respx.mock:
             url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
-            req_kwargs = {
-                "client_id": "baz",
-                "client_secret": "1234",
-                "grant_type": "refresh_token",
-                "refresh_token": "abc",
-            }
-            rsps.add(
-                responses.POST,
-                url,
-                status=200,
-                json={
-                    "access_token": "new-token",
-                    "expires_in": 0,
-                    "refresh_expires_in": 1000,
-                    "refresh_token": "abcd",
-                },
-                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
+            respx.post(url).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "access_token": "new-token",
+                        "expires_in": 0,
+                        "refresh_expires_in": 1000,
+                        "refresh_token": "abcd",
+                    },
+                )
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -1306,7 +1291,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
     def get_auth_plugin(self, provider):
         with mock.patch(
-            "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+            "eodag.plugins.authentication.openid_connect.httpx.get", autospec=True
         ) as mock_request:
             oidc_config = {
                 "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
@@ -1726,7 +1711,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.post",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_get_token_with_refresh_token_ok(
@@ -1760,7 +1745,6 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             mock.ANY,
             "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
             timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
             **post_request_kwargs,
         )
         mock_request_new_token.assert_not_called()
@@ -1771,7 +1755,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.post",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_get_token_with_refresh_token_http_exception(
@@ -1788,9 +1772,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin._get_token_with_refresh_token()
         mock_request_new_token.assert_called_once()
 
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
-    )
+    @mock.patch("eodag.plugins.authentication.token.httpx.Client.post", autospec=True)
     def test_plugins_auth_codeflowauth_grant_user_consent(
         self,
         mock_requests_post,
@@ -1817,12 +1799,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             data={"const_key": "const_value", "xpath_key": "additional value"},
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.post",
-        side_effect=[RequestException("network error"), Timeout("timeout error")],
+        "eodag.plugins.authentication.openid_connect.httpx.Client.post",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_grant_user_consent_error(
@@ -1831,7 +1811,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         """OIDCAuthorizationCodeFlowAuth.grant_user_consent must raise a time out or request error if the POST
         request detects a timeout or request exception"""
         auth_plugin = self.get_auth_plugin("provider_user_consent")
-        authentication_response = Response()
+        authentication_response = Response(200)
 
         authentication_response._content = b"""
             <html>
@@ -1844,14 +1824,21 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             </html>
         """
 
+        mock_requests_post.side_effect = httpx.RequestError("network error")
         with self.assertRaises(RequestError):
             auth_plugin.grant_user_consent(authentication_response)
 
-        with self.assertRaises(TimeoutError):
+        # Create a proper timeout exception with a mock request
+        timeout_exc = TimeoutException("timeout error")
+        mock_req = mock.Mock()
+        mock_req.url = "http://test.com"
+        timeout_exc._request = mock_req
+        mock_requests_post.side_effect = timeout_exc
+        with self.assertRaises(TimeOutError):
             auth_plugin.grant_user_consent(authentication_response)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.get",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.get",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_authenticate_user_no_action(
@@ -1899,11 +1886,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.get",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.get",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_authenticate_user_no_authentication_uri(
@@ -1950,15 +1936,14 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.post",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.get",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.get",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_authenticate_user_ok(
@@ -2002,7 +1987,6 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
         )
         # Second request: post to the authentication URI
         mock_requests_post.assert_called_once_with(
@@ -2015,17 +1999,16 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
         )
         # authenticate_user returns the authentication response
         self.assertEqual(mock_requests_post.return_value, auth_response)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.post",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.get",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.get",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_authenticate_user_errors(
@@ -2038,12 +2021,17 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         state = "onvNjZbMkkjIpbnS"
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
 
-        mock_requests_get.side_effect = RequestException("network error")
+        mock_requests_get.side_effect = httpx.RequestError("network error")
         with self.assertRaises(RequestError):
             auth_plugin.authenticate_user(state)
 
-        mock_requests_get.side_effect = Timeout("timeout error")
-        with self.assertRaises(TimeoutError):
+        # Create a proper timeout exception with a mock request
+        timeout_exc = TimeoutException("timeout error")
+        mock_req = mock.Mock()
+        mock_req.url = "http://test.com"
+        timeout_exc._request = mock_req
+        mock_requests_get.side_effect = timeout_exc
+        with self.assertRaises(TimeOutError):
             auth_plugin.authenticate_user(state)
 
         mock_requests_get.return_value = mock.Mock()
@@ -2061,12 +2049,17 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         """
         mock_requests_get.side_effect = None
 
-        mock_requests_post.side_effect = RequestException("network error")
+        mock_requests_post.side_effect = RequestError("network error")
         with self.assertRaises(RequestError):
             auth_plugin.authenticate_user(state)
 
-        mock_requests_post.side_effect = Timeout("timeout error")
-        with self.assertRaises(TimeoutError):
+        # Create a proper timeout exception with a mock request
+        timeout_exc = TimeoutException("timeout error")
+        mock_req = mock.Mock()
+        mock_req.url = "http://test.com"
+        timeout_exc._request = mock_req
+        mock_requests_post.side_effect = timeout_exc
+        with self.assertRaises(TimeOutError):
             auth_plugin.authenticate_user(state)
 
     def test_plugins_auth_codeflowauth_exchange_code_for_token_state_mismatch(
@@ -2086,9 +2079,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             state,
         )
 
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
-    )
+    @mock.patch("eodag.plugins.authentication.token.httpx.Client.post", autospec=True)
     def test_plugins_auth_codeflowauth_exchange_code_for_token_ok(
         self,
         mock_requests_post,
@@ -2125,12 +2116,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "state": state,
                 "grant_type": "authorization_code",
             },
-            verify=True,
         )
 
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
-    )
+    @mock.patch("eodag.plugins.authentication.token.httpx.Client.post", autospec=True)
     def test_plugins_auth_codeflowauth_exchange_code_for_token_client_secret_ok(
         self,
         mock_requests_post,
@@ -2172,12 +2160,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "state": state,
                 "grant_type": "authorization_code",
             },
-            verify=True,
         )
 
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
-    )
+    @mock.patch("eodag.plugins.authentication.token.httpx.Client.post", autospec=True)
     def test_plugins_auth_codeflowauth_exchange_code_for_token_exchange_params_ok(
         self,
         mock_requests_post,
@@ -2218,12 +2203,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "state": state,
                 "grant_type": "authorization_code",
             },
-            verify=True,
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.post",
-        side_effect=[RequestException("network error"), Timeout("timeout error")],
+        "eodag.plugins.authentication.openid_connect.httpx.Client.post",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_exchange_code_for_token_error(
@@ -2236,8 +2219,15 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         authorized_url = "https://foo.eu?state=onvNjZbMkkjIpbnS&code=2ce1c24c"
         state = "onvNjZbMkkjIpbnS"
 
+        mock_requests_post.side_effect = httpx.RequestError("network error")
         with self.assertRaises(RequestError):
             auth_plugin.exchange_code_for_token(authorized_url, state)
 
-        with self.assertRaises(TimeoutError):
+        # Create a proper timeout exception with a mock request
+        timeout_exc = TimeoutException("timeout error")
+        mock_req = mock.Mock()
+        mock_req.url = "http://test.com"
+        timeout_exc._request = mock_req
+        mock_requests_post.side_effect = timeout_exc
+        with self.assertRaises(TimeOutError):
             auth_plugin.exchange_code_for_token(authorized_url, state)

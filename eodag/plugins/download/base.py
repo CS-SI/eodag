@@ -47,7 +47,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.notebook import NotebookWidgets
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
+    from httpx import Auth
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -103,7 +103,7 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -133,7 +133,7 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -444,7 +444,7 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

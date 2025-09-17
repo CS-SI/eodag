@@ -24,9 +24,9 @@ import re
 import tempfile
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-import requests
-from requests import RequestException
-from requests.auth import AuthBase
+import httpx
+from httpx import Auth as AuthBase
+from httpx import RequestError as RequestException
 from shapely import geometry
 from shapely.errors import ShapelyError
 
@@ -407,7 +407,6 @@ class EOProduct:
         ssl_verify: Optional[bool] = None,
         auth: Optional[AuthBase] = None,
     ):
-
         """Download the quicklook image from the EOProduct's quicklook URL.
 
         This method performs an HTTP GET request to retrieve the quicklook image and saves it
@@ -423,9 +422,9 @@ class EOProduct:
                         HTTP request if the resource requires authentication.
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
-        with requests.get(
+        with httpx.stream(
+            "GET",
             self.properties["quicklook"],
-            stream=True,
             auth=auth,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -505,7 +504,6 @@ class EOProduct:
         )
 
         if not os.path.isfile(quicklook_file):
-
             # progress bar init
             if progress_callback is None:
                 progress_callback = ProgressCallback()
@@ -548,7 +546,6 @@ class EOProduct:
                     quicklook_file, progress_callback, ssl_verify, auth
                 )
             except RequestException as e:
-
                 logger.debug(
                     f"Error while getting resource with authentication. {e} \nTrying without authentication..."
                 )
@@ -606,24 +603,34 @@ class EOProduct:
 
                 <tr style='background-color: transparent;'>
                     <td style='text-align: left; vertical-align: top;'>
-                        {dict_to_html_table({
-                         "provider": self.provider,
-                         "product_type": self.product_type,
-                         "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
-                             'startTimeFromAscendingNode'
-                         ),
-                         "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
-                             'completionTimeFromAscendingNode'
-                         ),
-                         }, brackets=False)}
-                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
-                             self.properties)})</summary>{
-                                 dict_to_html_table(self.properties, depth=1)}</details>
-                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
-                                     self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
+                        {
+            dict_to_html_table(
+                {
+                    "provider": self.provider,
+                    "product_type": self.product_type,
+                    "properties[&quot;id&quot;]": self.properties.get("id"),
+                    "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
+                        "startTimeFromAscendingNode"
+                    ),
+                    "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
+                        "completionTimeFromAscendingNode"
+                    ),
+                },
+                brackets=False,
+            )
+        }
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
+            len(self.properties)
+        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
+            len(self.assets)
+        })</summary>{self.assets._repr_html_(embeded=True)}</details>
                     </td>
-                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
-                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
+                    <td {geom_style} title='geometry'>geometry<br />{
+            self.geometry._repr_svg_()
+        }</td>
+                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{
+            thumbnail_html
+        }</td>
                 </tr>
             </table>"""

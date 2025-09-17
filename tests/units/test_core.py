@@ -1681,7 +1681,7 @@ class TestCore(TestCoreBase):
         self.assertTrue(product_type_present)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     def test_available_sortables(self, mock_auth_session_request):
@@ -2279,7 +2279,7 @@ class TestCoreSearch(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     def test__prepare_search_no_parameters(
@@ -2298,7 +2298,7 @@ class TestCoreSearch(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     def test__prepare_search_dates(
@@ -2319,7 +2319,7 @@ class TestCoreSearch(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     def test__prepare_search_geom(
@@ -2354,7 +2354,7 @@ class TestCoreSearch(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.httpx.Client.request",
         autospec=True,
     )
     def test__prepare_search_locations(

@@ -25,9 +25,7 @@ from urllib.parse import unquote, urljoin
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
-import requests
-from requests import RequestException
-from requests.auth import AuthBase
+import httpx
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import Download
@@ -98,7 +96,7 @@ class S3RestDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -119,7 +117,7 @@ class S3RestDownload(Download):
                         file or with environment variables.
         :returns: The absolute path to the downloaded product in the local filesystem
         """
-        if auth is not None and not isinstance(auth, AuthBase):
+        if auth is not None and not isinstance(auth, httpx.Auth):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         if progress_callback is None:
@@ -140,7 +138,7 @@ class S3RestDownload(Download):
         @self._order_download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
-            auth: AuthBase,
+            auth: httpx.Auth,
             progress_callback: ProgressCallback,
             ordered_message: str,
             **kwargs: Unpack[DownloadConf],
@@ -181,7 +179,7 @@ class S3RestDownload(Download):
             ssl_verify = getattr(self.config, "ssl_verify", True)
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
-            bucket_contents = requests.get(
+            bucket_contents = httpx.get(
                 nodes_list_url,
                 auth=auth,
                 headers=USER_AGENT,
@@ -190,7 +188,7 @@ class S3RestDownload(Download):
             )
             try:
                 bucket_contents.raise_for_status()
-            except requests.RequestException as err:
+            except httpx.RequestError as err:
                 # check if error is identified as auth_error in provider conf
                 auth_errors = getattr(self.config, "auth_error_code", [None])
                 if not isinstance(auth_errors, list):
@@ -310,9 +308,9 @@ class S3RestDownload(Download):
                 if not os.path.isdir(local_filename_dir):
                     os.makedirs(local_filename_dir)
 
-                with requests.get(
+                with httpx.stream(
+                    "GET",
                     node_url,
-                    stream=True,
                     auth=auth,
                     headers=USER_AGENT,
                     timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -320,7 +318,7 @@ class S3RestDownload(Download):
                 ) as stream:
                     try:
                         stream.raise_for_status()
-                    except RequestException:
+                    except httpx.RequestError:
                         import traceback as tb
 
                         logger.error(

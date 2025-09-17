@@ -40,11 +40,9 @@ from typing import (
 from urllib.parse import parse_qs, urlparse
 
 import geojson
-import requests
+import httpx
+from httpx import Headers
 from lxml import etree
-from requests import RequestException
-from requests.auth import AuthBase
-from requests.structures import CaseInsensitiveDict
 from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
@@ -85,8 +83,8 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from httpx import Response
     from jsonpath_ng import JSONPath
-    from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
@@ -151,7 +149,7 @@ class HTTPDownload(Download):
     def _order(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
+        auth: Optional[httpx.Auth] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[dict[str, Any]]:
         """Send product order request.
@@ -208,7 +206,7 @@ class HTTPDownload(Download):
 
         headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
         try:
-            with requests.request(
+            with httpx.stream(
                 method=order_method,
                 url=order_url,
                 auth=auth,
@@ -223,7 +221,7 @@ class HTTPDownload(Download):
                     ordered_message = response.text
                     logger.debug(ordered_message)
                     product.properties["storageStatus"] = STAGING_STATUS
-                except RequestException as e:
+                except httpx.RequestError as e:
                     self._check_auth_exception(e)
                     msg = f"{product.properties['title']} could not be ordered"
                     if e.response is not None and e.response.status_code == 400:
@@ -232,7 +230,7 @@ class HTTPDownload(Download):
                         raise DownloadError.from_error(e, msg) from e
 
                 return self.order_response_process(response, product)
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
 
     def order_response_process(
@@ -285,7 +283,7 @@ class HTTPDownload(Download):
     def _order_status(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
+        auth: Optional[httpx.Auth] = None,
     ) -> None:
         """Send product order status request.
 
@@ -319,13 +317,13 @@ class HTTPDownload(Download):
 
             logger.debug(f"{method} {url} {headers} {json}")
             try:
-                response = requests.request(
+                response = httpx.request(
                     method=method,
                     url=url,
                     auth=auth,
                     timeout=timeout,
                     headers={**(headers or {}), **USER_AGENT},
-                    allow_redirects=False,  # Redirection is manually handled
+                    follow_redirects=False,  # Redirection is manually handled
                     json=json,
                 )
                 logger.debug(
@@ -344,7 +342,7 @@ class HTTPDownload(Download):
                     if new_url := response.headers.get("Location"):
                         return _request(new_url, method, headers, json, timeout)
                 return response
-            except requests.exceptions.Timeout as exc:
+            except httpx.TimeoutException as exc:
                 raise TimeOutError(exc, timeout=timeout) from exc
 
         status_request: dict[str, Any] = status_config.get("request", {})
@@ -389,7 +387,7 @@ class HTTPDownload(Download):
                 ):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
-            except RequestException as e:
+            except httpx.RequestError as e:
                 logger.debug(e)
 
         if not skip_parsing_status_response:
@@ -408,7 +406,7 @@ class HTTPDownload(Download):
                 ):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
-            except RequestException as e:
+            except httpx.RequestError as e:
                 msg = (
                     f"{product.properties.get('title') or product.properties.get('id') or product} "
                     "order status could not be checked"
@@ -422,7 +420,7 @@ class HTTPDownload(Download):
             # status request
             json_response = response.json()
             if not isinstance(json_response, dict):
-                raise RequestException("response content is not a dict")
+                raise httpx.RequestError("response content is not a dict")
             status_dict = json_response
 
             status_mm = status_config.get("metadata_mapping", {})
@@ -483,7 +481,7 @@ class HTTPDownload(Download):
             logger.debug(f"Search for new location: {product.properties['searchLink']}")
             try:
                 response = _request(product.properties["searchLink"], timeout=timeout)
-            except RequestException as e:
+            except httpx.RequestError as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
                     product.properties["title"],
@@ -588,7 +586,7 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -600,7 +598,7 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
-        if auth is not None and not isinstance(auth, AuthBase):
+        if auth is not None and not isinstance(auth, httpx.Auth):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         if progress_callback is None:
@@ -647,7 +645,7 @@ class HTTPDownload(Download):
         @self._order_download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
-            auth: AuthBase,
+            auth: httpx.Auth,
             progress_callback: ProgressCallback,
             wait: float,
             timeout: float,
@@ -725,7 +723,7 @@ class HTTPDownload(Download):
                 % (
                     product.properties["title"],
                     product.properties["storageStatus"],
-                    self.stream.reason,
+                    self.stream.reason_phrase,
                 )
             )
         return stream_size
@@ -740,7 +738,7 @@ class HTTPDownload(Download):
             )
         if not filename:
             # default filename extracted from path
-            filename = str(os.path.basename(self.stream.url))
+            filename = str(os.path.basename(str(self.stream.url)))
             filename_extension = os.path.splitext(filename)[1]
             if not filename_extension:
                 if content_type := getattr(product, "headers", {}).get("Content-Type"):
@@ -752,7 +750,7 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -775,7 +773,7 @@ class HTTPDownload(Download):
                         file or with environment variables.
         :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
-        if auth is not None and not isinstance(auth, AuthBase):
+        if auth is not None and not isinstance(auth, httpx.Auth):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         # download assets if exist instead of remote_location
@@ -852,7 +850,7 @@ class HTTPDownload(Download):
             size=getattr(product, "size", None),
         )
 
-    def _check_auth_exception(self, e: Optional[RequestException]) -> None:
+    def _check_auth_exception(self, e: Optional[httpx.RequestError]) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
@@ -872,7 +870,7 @@ class HTTPDownload(Download):
             )
 
     def _process_exception(
-        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
+        self, e: Optional[httpx.RequestError], product: EOProduct, ordered_message: str
     ) -> None:
         self._check_auth_exception(e)
         response_text = (
@@ -909,7 +907,7 @@ class HTTPDownload(Download):
     def _order_request(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase],
+        auth: Optional[httpx.Auth],
     ) -> None:
         if (
             "orderLink" in product.properties
@@ -927,7 +925,7 @@ class HTTPDownload(Download):
     def order(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> None:
@@ -947,7 +945,7 @@ class HTTPDownload(Download):
     def _stream_download(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
+        auth: Optional[httpx.Auth] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
@@ -1001,12 +999,10 @@ class HTTPDownload(Download):
         if getattr(self.config, "no_auth_download", False):
             auth = None
 
-        s = requests.Session()
         try:
-            self.stream = s.request(
+            self.stream = httpx.request(
                 req_method,
                 req_url,
-                stream=True,
                 auth=auth,
                 params=params,
                 headers=USER_AGENT,
@@ -1014,14 +1010,14 @@ class HTTPDownload(Download):
                 verify=ssl_verify,
                 **req_kwargs,
             )
-        except requests.exceptions.MissingSchema:
+        except (httpx.InvalidURL, ValueError):
             # location is not a valid url -> product is not available yet
             raise NotAvailableError("Product is not available yet")
         try:
             self.stream.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
-        except RequestException as e:
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
             self._process_exception(e, product, ordered_message)
             raise DownloadError(
                 f"download of {product.properties['id']} is empty"
@@ -1055,12 +1051,20 @@ class HTTPDownload(Download):
             product.size = stream_size
 
             product.filename = filename
-            return self.stream.iter_content(chunk_size=64 * 1024)
+
+            # Create a simple iterator for the content
+            def chunk_iterator():
+                content = self.stream.content
+                chunk_size = 64 * 1024
+                for i in range(0, len(content), chunk_size):
+                    yield content[i : i + chunk_size]
+
+            return chunk_iterator()
 
     def _stream_download_assets(
         self,
         product: EOProduct,
-        auth: Optional[AuthBase] = None,
+        auth: Optional[httpx.Auth] = None,
         progress_callback: Optional[ProgressCallback] = None,
         assets_values: list[Asset] = [],
         **kwargs: Unpack[DownloadConf],
@@ -1128,9 +1132,9 @@ class HTTPDownload(Download):
 
             # Make the request inside the generator
             try:
-                with requests.get(
-                    asset_href,
-                    stream=True,
+                with httpx.stream(
+                    "GET",
+                    asset["href"],
                     auth=auth_object,
                     params=params,
                     headers=USER_AGENT,
@@ -1173,11 +1177,11 @@ class HTTPDownload(Download):
                             progress_callback(len(chunk))
                             yield chunk
 
-            except requests.exceptions.Timeout as exc:
+            except httpx.TimeoutException as exc:
                 raise TimeOutError(
                     exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
                 ) from exc
-            except RequestException as e:
+            except httpx.RequestError as e:
                 self._handle_asset_exception(e, asset)
 
         assets_stream_list = []
@@ -1214,7 +1218,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         fs_dir_path: str,
         record_filename: str,
-        auth: Optional[AuthBase] = None,
+        auth: Optional[httpx.Auth] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
@@ -1314,7 +1318,7 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(self, e: RequestException, asset: Asset) -> None:
+    def _handle_asset_exception(self, e: httpx.RequestError, asset: Asset) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
@@ -1334,7 +1338,7 @@ class HTTPDownload(Download):
     def _get_asset_sizes(
         self,
         assets_values: list[Asset],
-        auth: Optional[AuthBase],
+        auth: Optional[httpx.Auth],
         params: Optional[dict[str, str]],
         zipped: bool = False,
     ) -> int:
@@ -1347,7 +1351,7 @@ class HTTPDownload(Download):
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 try:
-                    asset_headers_resp = requests.head(
+                    asset_headers_resp = httpx.head(
                         asset["href"],
                         auth=auth,
                         params=params,
@@ -1357,9 +1361,9 @@ class HTTPDownload(Download):
                     )
                     asset_headers_resp.raise_for_status()
                     asset_headers = asset_headers_resp.headers
-                except RequestException as e:
+                except httpx.RequestError as e:
                     logger.debug(f"HEAD request failed: {str(e)}")
-                    asset_headers = CaseInsensitiveDict()
+                    asset_headers = Headers()
 
                 if not getattr(asset, "size", 0):
                     # size from HEAD header / Content-length
@@ -1384,9 +1388,9 @@ class HTTPDownload(Download):
 
                 if not getattr(asset, "size", 0):
                     # GET request for size
-                    with requests.get(
+                    with httpx.stream(
+                        "GET",
                         asset["href"],
-                        stream=True,
                         auth=auth,
                         params=params,
                         headers=USER_AGENT,
@@ -1410,7 +1414,7 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[httpx.Auth, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

@@ -19,13 +19,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from requests.auth import AuthBase
+from httpx import Auth
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
-    from requests import PreparedRequest
+    from typing import Iterator
+
+    from httpx import Request
 
 
 class HTTPHeaderAuth(Authentication):
@@ -103,13 +105,13 @@ class HTTPHeaderAuth(Authentication):
             )
 
 
-class HeaderAuth(AuthBase):
+class HeaderAuth(Auth):
     """HeaderAuth custom authentication class to be used with requests module"""
 
     def __init__(self, authentication_headers: dict[str, str]) -> None:
         self.auth_headers = authentication_headers
 
-    def __call__(self, request: PreparedRequest) -> PreparedRequest:
+    def auth_flow(self, request: Request) -> Iterator[Request]:
         """Perform the actual authentication"""
         request.headers.update(self.auth_headers)
-        return request
+        yield request

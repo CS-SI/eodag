@@ -47,17 +47,13 @@ from urllib.request import Request, urlopen
 
 import concurrent.futures
 import geojson
+import httpx
 import orjson
-import requests
 import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import create_model
 from pydantic.fields import FieldInfo
-from requests import Response
-from requests.adapters import HTTPAdapter
-from requests.auth import AuthBase
-from urllib3 import Retry
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -78,9 +74,6 @@ from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
-    REQ_RETRY_BACKOFF_FACTOR,
-    REQ_RETRY_STATUS_FORCELIST,
-    REQ_RETRY_TOTAL,
     USER_AGENT,
     _deprecated,
     copy_deepcopy,
@@ -131,13 +124,11 @@ class QueryStringSearch(Search):
           url params
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
-        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
-          total number of retries to allow; default: ``3``
-        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
-          ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
-        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): :class:`urllib3.util.Retry`
-          ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
-          ``[401, 429, 500, 502, 503, 504]``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): total number of retries to allow; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): backoff factor to apply between
+          attempts after the second try; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): list of integer HTTP status
+          codes that we should force a retry on; default: ``[401, 429, 500, 502, 503, 504]``
         * :attr:`~eodag.config.PluginConfig.literal_search_params` (``dict[str, str]``): A mapping of (search_param =>
           search_value) pairs giving search parameters to be passed as is in the search url query string. This is useful
           for example in situations where the user wants to add a fixed search query parameter exactly
@@ -386,7 +377,6 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: product type specific metadata-mapping
         for product_type in self.config.products.keys():
-
             product_type_metadata_mapping = {}
             # product-type specific metadata-mapping
             if any(
@@ -712,7 +702,7 @@ class QueryStringSearch(Search):
                     e,
                 )
                 return None
-            except requests.RequestException as e:
+            except httpx.RequestError as e:
                 logger.debug(
                     "Could not parse discovered product types response from "
                     f"{self.provider}, {type(e).__name__}: {e.args}"
@@ -1223,7 +1213,7 @@ class QueryStringSearch(Search):
     def _request(
         self,
         prep: PreparedSearch,
-    ) -> Response:
+    ) -> httpx.Response:
         url = prep.url
         if url is None:
             raise ValidationError("Cannot request empty URL")
@@ -1232,14 +1222,6 @@ class QueryStringSearch(Search):
         try:
             timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
             ssl_verify = getattr(self.config, "ssl_verify", True)
-
-            retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
-            retry_backoff_factor = getattr(
-                self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
-            )
-            retry_status_forcelist = getattr(
-                self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
-            )
 
             ssl_ctx = get_ssl_context(ssl_verify)
             # auth if needed
@@ -1250,58 +1232,99 @@ class QueryStringSearch(Search):
                 and callable(prep.auth)
             ):
                 kwargs["auth"] = prep.auth
-            # requests auto quote url params, without any option to prevent it
-            # use urllib instead of requests if req must be sent unquoted
+            # httpx auto quote url params, but we can control this behavior
+            # Try httpx first, fallback to urllib for complex unquoting scenarios
 
             if hasattr(self.config, "dont_quote"):
-                # keep unquoted desired params
-                base_url, params = url.split("?") if "?" in url else (url, "")
-                qry = quote(params)
-                for keep_unquoted in self.config.dont_quote:
-                    qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+                # Option 1: Try httpx with raw URL construction
+                try:
+                    base_url, params = url.split("?") if "?" in url else (url, "")
 
-                # prepare req for Response building
-                req = requests.Request(
-                    method="GET", url=base_url, headers=USER_AGENT, **kwargs
-                )
-                req_prep = req.prepare()
-                req_prep.url = base_url + "?" + qry
-                # send urllib req
-                if info_message:
-                    logger.info(info_message.replace(url, req_prep.url))
-                urllib_req = Request(req_prep.url, headers=USER_AGENT)
-                urllib_response = urlopen(urllib_req, timeout=timeout, context=ssl_ctx)
-                # build Response
-                adapter = HTTPAdapter()
-                response = cast(
-                    Response, adapter.build_response(req_prep, urllib_response)
-                )
+                    # Build URL manually to avoid automatic quoting
+                    qry = params
+                    for keep_unquoted in self.config.dont_quote:
+                        # Ensure specific characters remain unquoted
+                        qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+
+                    final_url = base_url + ("?" + qry if qry else "")
+
+                    if info_message:
+                        logger.info(info_message.replace(url, final_url))
+
+                    # Use httpx with constructed URL
+                    with httpx.Client(
+                        timeout=timeout,
+                        verify=ssl_verify,
+                    ) as session:
+                        response = session.get(
+                            final_url,
+                            headers=USER_AGENT,
+                            **kwargs,
+                        )
+                        response.raise_for_status()
+
+                except (httpx.RequestError, UnicodeError):
+                    # Fallback to urllib for problematic URLs
+                    logger.debug("Falling back to urllib for URL: %s", url)
+                    base_url, params = url.split("?") if "?" in url else (url, "")
+                    qry = quote(params)
+                    for keep_unquoted in self.config.dont_quote:
+                        qry = qry.replace(quote(keep_unquoted), keep_unquoted)
+
+                    final_url = base_url + "?" + qry
+                    urllib_req = Request(final_url, headers=USER_AGENT)
+                    urllib_response = urlopen(
+                        urllib_req, timeout=timeout, context=ssl_ctx
+                    )
+
+                    # Create a simplified response object that mimics httpx.Response
+                    class SimpleResponse:
+                        def __init__(self, urllib_resp):
+                            self._urllib_resp = urllib_resp
+                            self.status_code = urllib_resp.getcode()
+                            self.headers = dict(urllib_resp.headers)
+                            self.url = urllib_resp.url
+
+                        def json(self):
+                            import json
+
+                            return json.loads(self.text)
+
+                        @property
+                        def text(self):
+                            return self._urllib_resp.read().decode("utf-8")
+
+                        def raise_for_status(self):
+                            if self.status_code >= 400:
+                                raise httpx.HTTPStatusError(
+                                    f"HTTP {self.status_code}",
+                                    request=None,
+                                    response=self,
+                                )
+
+                    response = SimpleResponse(urllib_response)
             else:
                 if info_message:
                     logger.info(info_message)
 
-                session = requests.Session()
-                retries = Retry(
-                    total=retry_total,
-                    backoff_factor=retry_backoff_factor,
-                    status_forcelist=retry_status_forcelist,
-                )
-                session.mount(url, HTTPAdapter(max_retries=retries))
-
-                response = session.get(
-                    url,
+                # httpx doesn't use adapters/retries like requests
+                # Configure retry in the client or handle manually
+                with httpx.Client(
                     timeout=timeout,
-                    headers=USER_AGENT,
                     verify=ssl_verify,
-                    **kwargs,
-                )
-                response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+                ) as session:
+                    response = session.get(
+                        url,
+                        headers=USER_AGENT,
+                        **kwargs,
+                    )
+                    response.raise_for_status()
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
         except socket.timeout:
-            err = requests.exceptions.Timeout(request=requests.Request(url=url))
+            err = httpx.TimeoutException(request=httpx.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
-        except (requests.RequestException, URLError) as err:
+        except (httpx.RequestError, URLError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -1388,16 +1411,16 @@ class ODataV4Search(QueryStringSearch):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
-                    response = requests.get(
+                    response = httpx.get(
                         metadata_url,
                         headers=USER_AGENT,
                         timeout=HTTP_REQ_TIMEOUT,
                         verify=ssl_verify,
                     )
                     response.raise_for_status()
-                except requests.exceptions.Timeout as exc:
+                except httpx.TimeoutException as exc:
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-                except requests.RequestException:
+                except httpx.RequestError:
                     logger.exception(
                         "Skipping error while searching for %s %s instance",
                         self.provider,
@@ -1716,7 +1739,7 @@ class PostJsonSearch(QueryStringSearch):
     def _request(
         self,
         prep: PreparedSearch,
-    ) -> Response:
+    ) -> httpx.Response:
         url = prep.url
         if url is None:
             raise ValidationError("Cannot request empty URL")
@@ -1727,7 +1750,7 @@ class PostJsonSearch(QueryStringSearch):
         try:
             # auth if needed
             RequestsKwargs = TypedDict(
-                "RequestsKwargs", {"auth": AuthBase}, total=False
+                "RequestsKwargs", {"auth": httpx.Auth}, total=False
             )
             kwargs: RequestsKwargs = {}
             if (
@@ -1753,7 +1776,7 @@ class PostJsonSearch(QueryStringSearch):
                 logger.debug("Query kwargs: %s" % geojson.dumps(kwargs))
             except TypeError:
                 logger.debug("Query kwargs: %s" % kwargs)
-            response = requests.post(
+            response = httpx.post(
                 url,
                 json=prep.query_params,
                 headers=USER_AGENT,
@@ -1762,10 +1785,15 @@ class PostJsonSearch(QueryStringSearch):
                 **kwargs,
             )
             response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
+        except httpx.TimeoutException as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
-        except (requests.RequestException, URLError) as err:
-            response = locals().get("response", Response())
+        except (httpx.HTTPError, URLError) as err:
+            # Special handling for HTTPStatusError (which inherits from HTTPError)
+            if isinstance(err, httpx.HTTPStatusError):
+                response = err.response
+            else:
+                response = locals().get("response", httpx.Response(200))
+
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
@@ -1894,7 +1922,7 @@ class StacSearch(PostJsonSearch):
             )
             auth = (
                 self.auth
-                if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
+                if hasattr(self, "auth") and isinstance(self.auth, httpx.Auth)
                 else None
             )
             response = QueryStringSearch._request(

@@ -25,7 +25,7 @@ import tempfile
 import zipfile
 
 import geojson
-import requests
+import httpx
 from lxml import html
 from shapely import geometry
 
@@ -63,7 +63,10 @@ class TestEOProduct(EODagTestCase):
             spec_set=Download(provider=self.provider, config=None)
         )
         mock_downloader.config = config.PluginConfig.from_mapping(
-            {"type": "Foo", "output_dir": tempfile.gettempdir()}
+            {
+                "type": "Foo",
+                "output_dir": tempfile.gettempdir(),
+            }
         )
         return mock_downloader
 
@@ -176,14 +179,14 @@ class TestEOProduct(EODagTestCase):
         product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
 
-        self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
-            requests.HTTPError
+        self.httpx_get.return_value.__enter__.return_value.raise_for_status.side_effect = httpx.HTTPStatusError(  # noqa
+            "HTTP Error", request=None, response=None
         )
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
-        self.assertEqual(self.requests_http_get.call_count, 2)
-        self.requests_http_get.assert_called_with(
+        self.assertEqual(self.httpx_get.call_count, 2)
+        self.httpx_get.assert_called_with(
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
@@ -198,15 +201,15 @@ class TestEOProduct(EODagTestCase):
         product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
 
-        self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
-            requests.HTTPError,
+        self.httpx_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
+            httpx.HTTPStatusError("HTTP Error", request=None, response=None),
             None,
         )
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
-        self.assertEqual(self.requests_http_get.call_count, 2)
-        self.requests_http_get.assert_called_with(
+        self.assertEqual(self.httpx_get.call_count, 2)
+        self.httpx_get.assert_called_with(
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
@@ -221,11 +224,11 @@ class TestEOProduct(EODagTestCase):
         product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
 
-        self.requests_http_get.return_value = self._quicklook_response()
+        self.httpx_get.return_value = self._quicklook_response()
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
-        self.requests_http_get.assert_called_once_with(
+        self.httpx_get.assert_called_once_with(
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
@@ -244,7 +247,7 @@ class TestEOProduct(EODagTestCase):
 
         # Test the same thing as above but with an explicit name given to the downloaded File
         quicklook_file_path = product.get_quicklook(filename="the_quicklook.png")
-        self.requests_http_get.assert_called_with(
+        self.httpx_get.assert_called_with(
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
@@ -252,7 +255,7 @@ class TestEOProduct(EODagTestCase):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=True,
         )
-        self.assertEqual(self.requests_http_get.call_count, 2)
+        self.assertEqual(self.httpx_get.call_count, 2)
         self.assertEqual(os.path.basename(quicklook_file_path), "the_quicklook.png")
         self.assertEqual(
             os.path.dirname(quicklook_file_path),
@@ -277,7 +280,7 @@ class TestEOProduct(EODagTestCase):
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook(filename=quicklook_basename)
-        self.assertEqual(self.requests_http_get.call_count, 0)
+        self.assertEqual(self.httpx_get.call_count, 0)
         self.assertEqual(quicklook_file_path, existing_quicklook_file_path)
         os.remove(existing_quicklook_file_path)
         os.rmdir(quicklook_dir)
@@ -285,7 +288,7 @@ class TestEOProduct(EODagTestCase):
     @staticmethod
     def _quicklook_response():
         class Response(object):
-            """Emulation of a response to requests.get method for a quicklook"""
+            """Emulation of a response to httpx.get method for a quicklook"""
 
             def __init__(response):
                 response.headers = {"content-length": 2**5}
@@ -324,7 +327,7 @@ class TestEOProduct(EODagTestCase):
             )
 
         # Check that the mocked request was properly called.
-        self.requests_request.assert_called_once()
+        self.httpx_request.assert_called_once()
         download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
         # A .downloaded folder should be created, including a text file that
         # lists the downloaded product by their url
@@ -363,7 +366,7 @@ class TestEOProduct(EODagTestCase):
             # Download
             product_dir_path = product.download()
             # Check that the mocked request was properly called.
-            self.requests_request.assert_called_once()
+            self.httpx_request.assert_called_once()
             # Check that the product's directory exists.
             self.assertTrue(os.path.isdir(product_dir_path))
             # Check that the ZIP file was deleted there
@@ -430,7 +433,7 @@ class TestEOProduct(EODagTestCase):
                 dl_url_params={"fakeparam": "dummy"},
             )
             # Check that dl_url_params are properly passed to the GET request
-            self.requests_request.assert_called_once()
+            self.httpx_request.assert_called_once()
             # Check that "output_dir" is respected.
             product_dir_path = pathlib.Path(product_dir_path)
             self.assertEqual(product_dir_path.parent.name, output_dir_name)
@@ -519,7 +522,6 @@ class TestEOProduct(EODagTestCase):
 
         logger = logging.getLogger("eodag.product")
         with mock.patch.object(logger, "debug") as mock_debug:
-
             downloadable_product = self._dummy_downloadable_product(
                 product=self._dummy_product(
                     properties=dict(

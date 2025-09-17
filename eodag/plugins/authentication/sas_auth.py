@@ -20,25 +20,25 @@ from __future__ import annotations
 import logging
 import re
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-import requests
-from requests.auth import AuthBase
+import httpx
+from httpx import Auth
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_items
 from eodag.utils.exceptions import AuthenticationError, TimeOutError
 
 if TYPE_CHECKING:
-    from typing import Pattern
+    from typing import Iterator, Optional, Pattern
 
-    from requests import PreparedRequest
+    from httpx import Request
 
 
 logger = logging.getLogger("eodag.auth.sas_auth")
 
 
-class RequestsSASAuth(AuthBase):
+class RequestsSASAuth(Auth):
     """A custom authentication class to be used with requests module"""
 
     def __init__(
@@ -56,7 +56,7 @@ class RequestsSASAuth(AuthBase):
         self.ssl_verify = ssl_verify
         self.matching_url = matching_url
 
-    def __call__(self, request: PreparedRequest) -> PreparedRequest:
+    def auth_flow(self, request: Request) -> Iterator[Request]:
         """Perform the actual authentication"""
         # if matching_url is set, check if request.url matches
         if (
@@ -64,7 +64,7 @@ class RequestsSASAuth(AuthBase):
             and request.url
             and not self.matching_url.match(request.url)
         ):
-            return request
+            yield request
 
         # update headers
         if self.headers and isinstance(self.headers, dict):
@@ -76,24 +76,24 @@ class RequestsSASAuth(AuthBase):
         if req_signed_url not in self.signed_urls.keys():
             logger.debug(f"Signed URL request: {req_signed_url}")
             try:
-                response = requests.get(
-                    req_signed_url,
-                    headers=self.headers,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    verify=self.ssl_verify,
-                )
-                response.raise_for_status()
-                signed_url = response.json().get(self.signed_url_key)
-            except requests.exceptions.Timeout as exc:
+                with httpx.Client(verify=self.ssl_verify) as client:
+                    response = client.get(
+                        req_signed_url,
+                        headers=self.headers,
+                        timeout=HTTP_REQ_TIMEOUT,
+                    )
+                    response.raise_for_status()
+                    signed_url = response.json().get(self.signed_url_key)
+            except httpx.TimeoutException as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-            except (requests.RequestException, JSONDecodeError, KeyError) as e:
+            except (httpx.RequestError, JSONDecodeError, KeyError) as e:
                 raise AuthenticationError("Could no get signed url", str(e)) from e
             else:
                 self.signed_urls[req_signed_url] = signed_url
 
         request.url = self.signed_urls[req_signed_url]
 
-        return request
+        yield request
 
 
 class SASAuth(Authentication):
@@ -121,7 +121,7 @@ class SASAuth(Authentication):
         # credentials are optionnal
         pass
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> Auth:
         """Authenticate"""
         self.validate_config_credentials()
 

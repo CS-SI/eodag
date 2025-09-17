@@ -24,9 +24,8 @@ import tarfile
 import zipfile
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-import requests
+import httpx
 from jsonpath_ng.ext import parse
-from requests import RequestException
 from usgs import USGSAuthExpiredError, USGSError, api
 
 from eodag.api.product import EOProduct
@@ -57,7 +56,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
+    from httpx import Auth
 
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
@@ -296,7 +295,7 @@ class UsgsApi(Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -313,7 +312,8 @@ class UsgsApi(Api):
         output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+                product.product_type,
+                self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
             ).get("output_extension", ".tar.gz"),
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
@@ -384,16 +384,16 @@ class UsgsApi(Api):
             **kwargs: Unpack[DownloadConf],
         ) -> None:
             try:
-                with requests.get(
+                with httpx.stream(
+                    "GET",
                     req_url,
-                    stream=True,
                     headers=USER_AGENT,
                     timeout=wait * 60,
                     verify=ssl_verify,
                 ) as stream:
                     try:
                         stream.raise_for_status()
-                    except RequestException as e:
+                    except httpx.RequestError as e:
                         if e.response and hasattr(e.response, "content"):
                             error_message = (
                                 f"{e.response.content.decode('utf-8')} - {e}"
@@ -411,7 +411,7 @@ class UsgsApi(Api):
                                 if chunk:
                                     fhandle.write(chunk)
                                     progress_callback(len(chunk))
-            except requests.exceptions.Timeout as e:
+            except httpx.TimeoutException as e:
                 if e.response and hasattr(e.response, "content"):
                     error_message = f"{e.response.content.decode('utf-8')} - {e}"
                 else:
@@ -465,7 +465,7 @@ class UsgsApi(Api):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[Auth, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

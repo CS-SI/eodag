@@ -63,7 +63,7 @@ from eodag.utils import parse_header, update_nested_dict
 
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
-    from requests import Response
+    from httpx import Response
 
 from starlette.responses import Response as StarletteResponse
 

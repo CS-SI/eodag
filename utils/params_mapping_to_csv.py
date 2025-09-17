@@ -22,7 +22,7 @@ import json
 import logging
 import os
 
-import requests
+import httpx
 from lxml import html
 
 from eodag.api.core import EODataAccessGateway
@@ -103,7 +103,7 @@ def params_mapping_to_csv(
 
             # create metadata mapping table rows
             try:
-                page = requests.get(ogc_doc_url, timeout=HTTP_REQ_TIMEOUT)
+                page = httpx.get(ogc_doc_url, timeout=HTTP_REQ_TIMEOUT)
                 # page reachable, read infos from remote html
                 tree = html.fromstring(page.content.decode("utf8"))
 
@@ -154,7 +154,7 @@ def params_mapping_to_csv(
                     json.dump(params_rows, f)
                     f.write("\n")
 
-            except requests.RequestException:
+            except httpx.RequestError:
                 # page unreachable, read infos from previously saved json
                 with open(OFFLINE_OPENSEARCH_JSON, "r") as f:
                     params_rows = json.load(f)
