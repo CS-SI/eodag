@@ -39,7 +39,7 @@ See `how to add a new provider <notebooks/api_user_guide/2_configuration.ipynb#A
    .. grid-item::
       :columns: 10
 
-      Element84 STAC API on AWS
+      Element84 STAC API for data on AWS.
 
    .. grid-item::
       :columns: 2
@@ -81,7 +81,7 @@ See `how to add a new provider <notebooks/api_user_guide/2_configuration.ipynb#A
    .. grid-item::
       :columns: 10
 
-      Element84 STAC API on AWS (COG access)
+      Element84 STAC API for COG data on AWS.
 
    .. grid-item::
       :columns: 2
@@ -108,7 +108,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Element84 Earth Search on Google Cloud Storage
+      Element84 Earth Search on Google Cloud Storage.
 
    .. grid-item::
       :columns: 2
@@ -147,7 +147,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      EOS Data Analytics search for Amazon public datasets
+      EOS Data Analytics search for AWS public datasets.
 
    .. grid-item::
       :columns: 2
@@ -204,7 +204,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Copernicus Atmosphere Data Store
+      Copernicus Atmosphere Data Store.
 
    .. grid-item::
       :columns: 2
@@ -420,73 +420,6 @@ No account is required
 **WEkEO**
 ----------
 
-**wekeo_cmems**
-^^^^^^^^^^^^^^^
-
-.. grid:: 2
-   :gutter: 2
-   :class-container: sd-d-flex sd-align-items-center
-
-   .. grid-item::
-      :columns: 10
-
-      Copernicus Marine (CMEMS) data from WEkEO
-
-   .. grid-item::
-      :columns: 2
-      :class: sd-text-right
-
-      .. button-link:: https://www.wekeo.eu/
-        :color: primary
-        :outline:
-        :tooltip: WEkEO website
-
-        :fas:`external-link-alt`
-
-
-.. dropdown:: Registration info
-  :color: muted
-  :class-container: dropdown-fade-in slim-dropdown
-
-  The registration procedure is the same as for ``wekeo_main``.
-  The licence that has to be accepted to access the Copernicus Marine data is:
-
-  * ``Copernicus_Marine_Service_Product_License``
-
-----
-
-**wekeo_ecmwf**
-^^^^^^^^^^^^^^^^
-
-.. grid:: 2
-   :gutter: 2
-   :class-container: sd-d-flex sd-align-items-center
-
-   .. grid-item::
-      :columns: 10
-
-      WEkEO ECMWF data
-
-   .. grid-item::
-      :columns: 2
-      :class: sd-text-right
-
-      .. button-link:: https://www.wekeo.eu/
-        :color: primary
-        :outline:
-        :tooltip: WEkEO website
-
-        :fas:`external-link-alt`
-
-
-.. dropdown:: Registration info
-  :color: muted
-  :class-container: dropdown-fade-in slim-dropdown
-
-  The registration procedure is the same as for ``wekeo_main``.
-
-----
-
 **wekeo_main**
 ^^^^^^^^^^^^^^
 
@@ -561,6 +494,73 @@ No account is required
   * Copernicus_ECMWF_License
   * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
   * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
+
+----
+
+**wekeo_cmems**
+^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Marine (CMEMS) data from WEkEO
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.wekeo.eu/
+        :color: primary
+        :outline:
+        :tooltip: WEkEO website
+
+        :fas:`external-link-alt`
+
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  The registration procedure is the same as for ``wekeo_main``.
+  The licence that has to be accepted to access the Copernicus Marine data is:
+
+  * ``Copernicus_Marine_Service_Product_License``
+
+----
+
+**wekeo_ecmwf**
+^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      WEkEO ECMWF data
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.wekeo.eu/
+        :color: primary
+        :outline:
+        :tooltip: WEkEO website
+
+        :fas:`external-link-alt`
+
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  The registration procedure is the same as for ``wekeo_main``.
 
 ----
 
@@ -1042,11 +1042,8 @@ No account is required
 
    United States Geological Survey providing access to Landsat archive and other Earth observation programs.
 
-**USGS**
----------
-
 **usgs**
-^^^^^^^^^
+---------
 
 .. grid:: 2
    :gutter: 2
@@ -1055,7 +1052,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      U.S geological survey catalog for Landsat products
+      U.S geological survey catalog for Landsat products.
 
    .. grid-item::
       :columns: 2
@@ -1083,7 +1080,7 @@ No account is required
 ----
 
 **usgs_satapi_aws**
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 .. grid:: 2
    :gutter: 2
@@ -1092,13 +1089,13 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      USGS Landsatlook SAT API
+      USGS Landsatlook SAT API / STAC server for Landsat data hosted on AWS S3.
 
    .. grid-item::
       :columns: 2
       :class: sd-text-right
 
-      .. button-link:: https://landsatlook.usgs.gov/sat-api/
+      .. button-link:: https://landsatlook.usgs.gov/stac-server/
         :color: primary
         :outline:
         :tooltip: USGS Landsatlook SAT API
