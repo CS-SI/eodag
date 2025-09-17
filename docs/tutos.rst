@@ -37,3 +37,4 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/tutos/tuto_ship_detection.ipynb
    notebooks/tutos/tuto_burnt_areas_snappy.ipynb
    notebooks/tutos/tuto_dedt_lumi_roi.ipynb
+   notebooks/tutos/tuto_fedeo_ceda.ipynb
