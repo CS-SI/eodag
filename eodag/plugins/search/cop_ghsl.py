@@ -1,9 +1,11 @@
 import datetime
 import math
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 import requests
+from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
+from typing_extensions import get_args
 
 from eodag.api.product._assets import Asset, AssetsDict
 from eodag.api.product._product import EOProduct
@@ -13,7 +15,9 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
-from eodag.utils import HTTP_REQ_TIMEOUT
+from eodag.types import json_field_definition_to_python
+from eodag.types.queryables import Queryables
+from eodag.utils import HTTP_REQ_TIMEOUT, deepcopy
 from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
@@ -21,64 +25,73 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 
-available_values = {
+constraints_filters = {
     "GHS_BUILT_S": {
-        "filters": {
-            "year": [
-                "2030",
-                "2025",
-                "2020",
-                "2015",
-                "2018",
-                "2010",
-                "2005",
-                "2000",
-                "1995",
-                "1990",
-                "1985",
-                "1980",
-                "1975",
-            ],
-            "resolution": [
-                "10m",
-                "100m",
-                "1k",
-                "3ss",
-                "30ss",
-            ],
-            "coord_system": ["54009", "4326"],
-        },
-        "additional_filters": {"classification": ["TOTAL", "NRES"]},
+        "constraints": [
+            {
+                "year": [
+                    "2030",
+                    "2025",
+                    "2020",
+                    "2015",
+                    "2018",
+                    "2010",
+                    "2005",
+                    "2000",
+                    "1995",
+                    "1990",
+                    "1985",
+                    "1980",
+                    "1975",
+                ],
+                "resolution": ["10m", "100m", "1k"],
+                "coord_system": ["54009"],
+                "classification": ["TOTAL", "NRES"],
+            },
+            {
+                "year": [
+                    "2030",
+                    "2025",
+                    "2020",
+                    "2015",
+                    "2018",
+                    "2010",
+                    "2005",
+                    "2000",
+                    "1995",
+                    "1990",
+                    "1985",
+                    "1980",
+                    "1975",
+                ],
+                "resolution": ["3ss", "30ss"],
+                "coord_system": ["4326"],
+                "classification": ["TOTAL", "NRES"],
+            },
+        ],
+        "additional_filter": "classification",
     },
-    "GHS_ESM_2015": {"filters": {"resolution": ["2m", "10m"]}},
+    "GHS_ESM_2015": {
+        "constraints": [
+            {"year": ["2015"], "resolution": ["2m", "10m"], "coord_system": ["3035"]}
+        ]
+    },
 }
 
 
-def _check_input_parameters_valid(product_type: str, **kwargs: Any):
+def _check_input_parameters_valid(product_type: str, params: Any):
     """
     Check if all required parameters are given and if the values are valid
     raises a ValidationError if this is not the case
     """
-    all_filters = available_values[product_type]["filters"]
-    all_filters.update(available_values[product_type].get("additional_filters", {}))
-    required_params = set(all_filters.keys())
-    given_params = set(kwargs.keys())
-    missing_params = required_params - given_params
+    constraints_values = constraints_filters[product_type]["constraints"]
+    # get available values - will raise error if wrong parameters or wrong parameter values in request
+    available_values = _get_available_values_from_constraints(
+        constraints_values, params, product_type
+    )
+    missing_params = set(available_values.keys()) - set(params.keys())
     if missing_params:
-        raise ValidationError(
-            f"Invalid request - missing filter parameters {missing_params}"
-        )
-    for param in given_params:
-        if param not in required_params:
-            if param != "geometry":
-                raise ValidationError(
-                    f"Parameter {param} does not exist; available parameters: {required_params}"
-                )
-        elif kwargs[param] not in all_filters[param]:
-            raise ValidationError(
-                f"Parameter {param} does not have value {kwargs[param]} for product type {product_type}; \
-                                    available values: {all_filters[param]}"
-            )
+        raise ValidationError(f"parameter(s) {missing_params} missing in the request")
 
 
 def _convert_bbox_to_lonlat_mollweide(bbox: list[str]) -> list[float]:
@@ -122,6 +135,47 @@ def _convert_bbox_to_lonlat_EPSG3035(bbox: list[str]) -> list[float]:
     return [lon1, lat1, lon2, lat2]
 
 
+def _get_available_values_from_constraints(
+    constraints: list[dict[str, Any]], filters: dict[str, Any], product_type: str
+) -> dict[str, list[Any]]:
+    available_values = {}
+    constraint_keys = set([k for const in constraints for k in const.keys()])
+    not_found_keys = set(filters.keys()) - constraint_keys
+    if not_found_keys:
+        raise ValidationError(
+            f"Parameters {not_found_keys} do not exist for product type {product_type}; "
+            f"available parameters: {constraint_keys}"
+        )
+
+    filtered_constraints = deepcopy(constraints)
+    for filter_key, value in filters.items():
+        available_values_key = []
+        for i, constraint in enumerate(constraints):
+            if constraint not in filtered_constraints:
+                continue
+            if filter_key in constraint:
+                available_values_key.extend(constraint[filter_key])
+                if (
+                    value not in constraint[filter_key]
+                    and str(value) not in constraint[filter_key]
+                ):
+                    filtered_constraints.remove(constraint)
+            if len(filtered_constraints) == 0:
+                raise ValidationError(
+                    f"Value {value} is not available for parameter {filter_key} with the given values; "
+                    f"available values: {available_values_key}"
+                )
+
+    for constraint in filtered_constraints:
+        for key, values in constraint.items():
+            if key in available_values:
+                available_values[key].extend(values)
+            else:
+                available_values[key] = values
+
+    return available_values
+
+
 class CopGhslSearch(Search):
     """
     Search plugin to fetch items from Copernicus Global Human Settlement Layer
@@ -147,6 +201,7 @@ class CopGhslSearch(Search):
         properties["completionTimeFromAscendingNode"] = datetime.datetime(
             year=int(params["year"]), month=12, day=31
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
         filter_geometry = params.pop("geometry", None)
 
         # information for id and download path
@@ -229,16 +284,20 @@ class CopGhslSearch(Search):
                 kwargs["year"] = start_time[:4]
             elif end_time:
                 kwargs["year"] = end_time[:4]
-        _check_input_parameters_valid(product_type, **kwargs)
 
         product_type_config = self.config.products.get(product_type, {})
-        provider_product_type = product_type_config.get("productType", None)
+        provider_product_type = product_type_config.pop("productType", None)
         if not provider_product_type:
             raise MisconfiguredError(
                 f"provider productType mapping not available for {product_type}"
             )
-        filter_params = kwargs
+        filter_params = deepcopy(kwargs)
+        filter_params.pop("geometry", None)
         filter_params.update(product_type_config)
+        filter_params.pop("metadata_mapping")
+
+        _check_input_parameters_valid(product_type, filter_params)
+
         filter_str = (
             f"{provider_product_type}_{filter_params['year']}_"
             f"{filter_params['resolution']}_{filter_params['coord_system']}"
@@ -257,16 +316,17 @@ class CopGhslSearch(Search):
         except requests.exceptions.RequestException as exc:
             raise RequestError.from_error(exc, f"Unable to fetch {tiles_url}") from exc
 
-        additional_filters = list(
-            available_values[product_type].get("additional_filters", {}).keys()
+        kwargs.update(product_type_config)
+        additional_filter = constraints_filters[product_type].get(
+            "additional_filter", None
         )
-        if len(additional_filters) > 0:
+        if additional_filter:
             products = self._create_products_from_tiles(
                 tiles,
                 unit,
                 product_type,
                 kwargs,
-                additional_filter=additional_filters[0],
+                additional_filter=additional_filter,
             )
         else:
             products = self._create_products_from_tiles(
@@ -274,3 +334,44 @@ class CopGhslSearch(Search):
             )
 
         return products, None
+
+    def discover_queryables(
+        self, **kwargs
+    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
+        """Create queryables list based on constraints
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :returns: queryable parameters dict
+        """
+
+        product_type = kwargs.pop("productType")
+        constraints_values = constraints_filters[product_type]["constraints"]
+        available_values = _get_available_values_from_constraints(
+            constraints_values, kwargs, product_type
+        )
+        queryables = {}
+        for name, values in available_values.items():
+            queryables[name] = Annotated[
+                get_args(
+                    json_field_definition_to_python(
+                        {"type": "string", "title": name, "enum": values},
+                        default_value=kwargs.get(name, None),
+                        required=True,
+                    )
+                )
+            ]
+        # add datetimes and geometry
+        queryables.update(
+            {
+                "start": Queryables.get_with_default(
+                    "start", kwargs.get("startTimeFromAscendingNode")
+                ),
+                "end": Queryables.get_with_default(
+                    "end",
+                    kwargs.get("completionTimeFromAscendingNode"),
+                ),
+                "geom": Queryables.get_with_default("geom", None),
+            }
+        )
+        return queryables
