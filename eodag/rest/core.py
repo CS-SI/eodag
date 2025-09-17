@@ -21,10 +21,9 @@ import datetime
 import logging
 import os
 import re
-from json import JSONDecodeError
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import unquote_plus, urlencode
 
 import dateutil
 import geojson
@@ -373,23 +372,16 @@ def validate_order_request(product: EOProduct, auth: Optional[AuthBase]) -> None
     order_method: str = getattr(download_plugin.config, "order_method", "GET").upper()
     order_kwargs: dict[str, Union[Any, list[str]]] = {}
     if order_method == "POST":
-        # separate url & parameters
-        parts = urlparse(str(product.properties["orderLink"]))
-        query_dict = {}
-        # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
-        # the resulting `query_dict` would be erroneous.
-        try:
-            query_dict = geojson.loads(parts.query)
-        except JSONDecodeError:
-            if parts.query:
-                query_dict = parse_qs(parts.query)
-        if query_dict:
-            order_kwargs = query_dict["inputs"]
+        order_kwargs = geojson.loads(
+            unquote_plus(unquote_plus(product.properties["downloadLink"]))
+        )
     else:
         order_kwargs = {}
     order_kwargs["productType"] = product.product_type
     search_plugin: Union[Search, Api] = next(
-        eodag_api._plugins_manager.get_search_plugins(product, product.provider)
+        eodag_api._plugins_manager.get_search_plugins(
+            product.product_type, product.provider
+        )
     )
     search_plugin.validate(order_kwargs, auth)
 
