@@ -58,6 +58,7 @@ def raise_if_auth_error(exception: ClientError, provider: str) -> None:
 
 def create_s3_session(**kwargs) -> boto3.Session:
     """create s3 session based on available credentials
+
     :param kwargs: keyword arguments containing credentials
     :returns: boto3 Session
     """
@@ -89,6 +90,9 @@ class AwsAuth(Authentication):
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): AwsAuth
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``) (mandatory for ``creodias_s3``):
           which error code is returned in case of an authentication error
+        * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``): s3 endpoint url
+        * :attr:`~eodag.config.PluginConfig.requester_pays` (``bool``): whether download is done
+          from a requester-pays bucket or not; default: ``False``
 
     """
 
@@ -96,6 +100,7 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.s3_session: Optional[boto3.Session] = None
         self.s3_resource: Optional[S3ServiceResource] = None
+        self.requester_pays = getattr(self.config, "requester_pays", False)
 
     def _create_s3_session_from_credentials(self) -> boto3.Session:
         credentials = getattr(self.config, "credentials", {}) or {}
@@ -145,7 +150,7 @@ class AwsAuth(Authentication):
     def authenticate(self) -> S3ServiceResource:
         """Authenticate
 
-        :returns: S3AuthContextPool with possible auth contexts
+        :returns: S3 Resource created based on an S3 session
         """
         self.s3_resource = self._create_s3_resource()
         return self.s3_resource

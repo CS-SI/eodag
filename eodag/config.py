@@ -542,8 +542,6 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
-    #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
-    requester_pays: bool
     #: :class:`~eodag.plugins.download.aws.AwsDownload` S3 endpoint
     s3_endpoint: str
 
@@ -570,6 +568,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.base.Authentication` Part of the search or download plugin configuration
     #: that needs authentication
     matching_conf: dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`
+    #: Whether download is done from a requester-pays bucket or not
+    requester_pays: bool
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
     #: How the token should be used in the request
     token_provision: str

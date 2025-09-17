@@ -199,8 +199,6 @@ class AwsDownload(Download):
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): AwsDownload
         * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``): s3 endpoint url
-        * :attr:`~eodag.config.PluginConfig.requester_pays` (``bool``): whether download is done
-          from a requester-pays bucket or not; default: ``False``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure
           should be flattened; default: ``True``
         * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download
@@ -223,7 +221,6 @@ class AwsDownload(Download):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsDownload, self).__init__(provider, config)
-        self.requester_pays = getattr(self.config, "requester_pays", False)
 
     def download(
         self,
@@ -813,7 +810,7 @@ class AwsDownload(Download):
 
         s3_session = auth_plugin.s3_session
 
-        if self.requester_pays:
+        if auth_plugin.requester_pays:
             rio_env_kwargs["requester_pays"] = True
         return {
             "session": s3_session,
