@@ -360,7 +360,7 @@
         completionTimeFromAscendingNode:
           - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
           - '$.date'
-        polarizationMode:
+        polarizationChannels:
           - '{{"search":{{"polarization":"{polarizationMode}" }} }}'
           - '{$.polarization#normalize_polarization}'
         # Custom parameters (not defined in the base document referenced above)
@@ -630,7 +630,7 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      polarizationMode:
+      polarizationChannels:
         - 'polarisation'
         - '{$.properties.polarisation#normalize_polarization}'
 
@@ -2105,7 +2105,7 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      polarizationMode:
+      polarizationChannels:
         - 'polarisation'
         - '{$.properties.polarisation#normalize_polarization}'
       # Custom parameters (not defined in the base document referenced above)

@@ -557,7 +557,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             Examples:
             'VV VH' -> 'VV+VH'
             """
-            if not s:
+            if not s or s == NOT_AVAILABLE:
                 return s
             # split on any non word character
             parts = re.split(r"\W+", s.strip())
