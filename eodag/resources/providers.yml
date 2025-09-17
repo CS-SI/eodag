@@ -6502,7 +6502,6 @@
         resolution: '{$.resolution#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{resolution}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
-      version:
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
