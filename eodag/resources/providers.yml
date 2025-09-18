@@ -362,7 +362,7 @@
           - '$.date'
         polarizationChannels:
           - '{{"search":{{"polarization":"{polarizationMode}" }} }}'
-          - '{$.polarization#normalize_polarization}'
+          - '$.polarization'
         # Custom parameters (not defined in the base document referenced above)
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
@@ -632,7 +632,7 @@
         - '$.properties.completionDate'
       polarizationChannels:
         - 'polarisation'
-        - '{$.properties.polarisation#normalize_polarization}'
+        - '{$.properties.polarisation#replace_str(" ","+")}'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
@@ -824,7 +824,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '{$.Attributes.polarisationChannels#normalize_polarization}'
+        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -2107,7 +2107,7 @@
         - '$.properties.completionDate'
       polarizationChannels:
         - 'polarisation'
-        - '{$.properties.polarisation#normalize_polarization}'
+        - '{$.properties.polarisation#replace_str(",","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier={id#remove_extension}'
@@ -2534,7 +2534,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '{$.Attributes.polarisationChannels#normalize_polarization}'
+        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -4046,7 +4046,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '{$.Attributes.polarisationChannels#normalize_polarization}'
+        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null

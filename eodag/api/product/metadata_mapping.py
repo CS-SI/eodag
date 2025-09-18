@@ -171,7 +171,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``replace_str``: execute "string".replace(old, new)
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
           values matching a regex
-        - ``normalize_polarization``: normalize the polarization channels and mode
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``to_lower``: Convert a string to lowercase
         - ``to_upper``: Convert a string to uppercase
@@ -549,22 +548,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 lambda k, v, x, y: re.sub(x, y, v) if isinstance(v, str) else v,
                 **{"x": old, "y": new},
             )
-
-        @staticmethod
-        def convert_normalize_polarization(s: str) -> str:
-            """
-            Normalize polarization channels and mode
-            Examples:
-            'VV VH' -> 'VV+VH'
-            """
-            if not s or s == NOT_AVAILABLE:
-                return s
-            # split on any non word character
-            parts = re.split(r"\W+", s.strip())
-            # remove empty parts
-            parts = [p for p in parts if p]
-            # return parts joined by +
-            return "+".join(parts)
 
         @staticmethod
         def convert_dict_update(

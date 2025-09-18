@@ -347,25 +347,6 @@ class TestMetadataFormatter(unittest.TestCase):
             "[{'a': 'this was foo...', 'b': [{'c': 'that was bar...'}]}]",
         )
 
-    def test_convert_normalize_polarization(self):
-        to_format = r"{fieldname#normalize_polarization}"
-        self.assertEqual(
-            format_metadata(to_format, fieldname="VV VH"),
-            "VV+VH",
-        )
-        self.assertEqual(
-            format_metadata(to_format, fieldname="VV&VH"),
-            "VV+VH",
-        )
-        self.assertEqual(
-            format_metadata(to_format, fieldname="VV/VH"),
-            "VV+VH",
-        )
-        self.assertEqual(
-            format_metadata(to_format, fieldname="VV"),
-            "VV",
-        )
-
     def test_convert_dict_update(self):
         to_format = '{fieldname#dict_update([["b",[["href","bar"],["title","baz"]]]])}'
         self.assertEqual(
