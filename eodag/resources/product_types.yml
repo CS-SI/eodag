@@ -389,6 +389,149 @@ NAIP:
   title: National Agriculture Imagery Program
 
 # MARK: Sentinel 1 ---------------------------------------------------------------------
+S1_AUX_GNSSRD:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the International GNSS Service (IGS).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,GNSSRD,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_MOEORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,MOEORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_POEORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,POEORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_PREORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,PREORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_PROQUA:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,PROQUA,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_RESORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,RESORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_SAR_L3_IW_MCM:
+  abstract: |
+    Level-3 IW (Interferometric Wide Swath) products are terrain corrected (geocoded) products in map geometry,
+    projected using the Range-Doppler model and resampled using nearest neighbor method. The pixel spacing is
+    approximately 10 m x 10 m. The product is available in two polarizations: Single (HH or VV) and Dual (HH+HV or
+    VV+VH). The product is provided in GeoTIFF format.
+    Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L3
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L3,IW,MCM,COG
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Level-3 IW MCM
+  missionStartDate: "2023-01-01T00:00:00Z"
+
+S1_SAR_L3_DH_MCM:
+  abstract: |
+    Level-3 DH (Dual polarization High Resolution) products are terrain corrected (geocoded) products in map geometry,
+    projected using the Range-Doppler model and resampled using nearest neighbor method. The pixel spacing is
+    approximately 10 m x 10 m. The product is available in dual polarization (HH+HV or VV+VH). The product is provided
+    in GeoTIFF format.
+    Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L3
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L3,DH,MCM,COG
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Level-3 DH MCM
+  missionStartDate: "2023-01-01T00:00:00Z"
+
 S1_SAR_OCN:
   abstract: |
     Level-2 OCN products include components for Ocean Swell spectra (OSW) providing continuity with ERS and ASAR WV
@@ -4535,6 +4678,23 @@ EEA_DAILY_VI:
   license: other
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
+
+EEA_HRL_TCF:
+  abstract: |
+    Tree Cover Fraction (TCF) is defined as the percentage of ground covered by tree canopy when viewed from above.
+    It is a biophysical variable that characterizes the land surface and is important for many applications in
+    environmental and climate studies. TCF is derived from Sentinel-2 imagery at 20m resolution using a machine
+    learning approach. The TCF product is part of the pan-European High Resolution Vegetation Phenology and Productivity
+    (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
+  instrument:
+  platform: Sentinel-2
+  platformSerialIdentifier: S2A, S2B
+  processingLevel:
+  keywords: Land,Tree-cover-fraction,TCF,Sentinel-2,S2A,S2B
+  sensorType: RADAR
+  license: other
+  title: Tree Cover Fraction, UTM projection
+  missionStartDate: "2017-01-01T00:00:00Z"
 
 # MARK: AERIS --------------------------------------------------------------------------
 AERIS_IAGOS:

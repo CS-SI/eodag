@@ -143,6 +143,7 @@ class TestCore(TestCoreBase):
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "EEA_DAILY_VI": ["dedl", "wekeo_main"],
+        "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
         "EFAS_REFORECAST": ["cop_ewds", "dedl"],
@@ -305,6 +306,12 @@ class TestCore(TestCoreBase):
         "NAIP": ["aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
+        "S1_AUX_GNSSRD": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_MOEORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_POEORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_PREORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_PROQUA": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_RESORB": ["cop_dataspace", "creodias", "creodias_s3"],
         "S1_SAR_GRD": [
             "aws_eos",
             "cop_dataspace",
@@ -320,6 +327,8 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S1_SAR_GRD_COG": ["cop_dataspace"],
+        "S1_SAR_L3_IW_MCM": ["creodias", "cop_dataspace", "creodias_s3"],
+        "S1_SAR_L3_DH_MCM": ["creodias", "cop_dataspace", "creodias_s3"],
         "S1_SAR_OCN": [
             "cop_dataspace",
             "creodias",
@@ -522,9 +531,9 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S3_LAN_HY": ["wekeo_main"],
-        "S3_LAN_SI": ["wekeo_main"],
-        "S3_LAN_LI": ["wekeo_main"],
+        "S3_LAN_HY": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
+        "S3_LAN_SI": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
+        "S3_LAN_LI": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_IR_ALL": ["dedl", "wekeo_main"],
         "S5P_L2_IR_ALL": ["dedl", "wekeo_main"],
         "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
@@ -2241,6 +2250,7 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
             "EEA_DAILY_VI",
+            "EEA_HRL_TCF",
         ]
         self.assertListEqual(actual, expected)
 
