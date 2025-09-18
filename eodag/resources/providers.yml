@@ -1615,26 +1615,20 @@
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
       dataset: cams-global-atmospheric-composition-forecasts
-      data_format: grib
     CAMS_GFE_GFAS:
       dataset: cams-global-fire-emissions-gfas
-      data_format: grib
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
-      data_format: grib
     CAMS_EU_AIR_QUALITY_RE:
       dataset: cams-europe-air-quality-reanalyses
-      data_format: zip
       metadata_mapping:
         <<: *month_year
     CAMS_GRF:
       dataset: cams-global-radiative-forcings
-      data_format: zip
       metadata_mapping:
         <<: *month_year
     CAMS_GRF_AUX:
       dataset: cams-global-radiative-forcing-auxilliary-variables
-      data_format: zip
       metadata_mapping:
         <<: *month_year
     CAMS_SOLAR_RADIATION:
@@ -1648,19 +1642,16 @@
           - $."longitude"
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: cams-global-ghg-reanalysis-egg4-monthly
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_EGG4:
       dataset: cams-global-ghg-reanalysis-egg4
-      data_format: grib
     CAMS_GREENHOUSE_INVERSION:
       dataset: cams-global-greenhouse-gas-inversion
       metadata_mapping:
         <<: *month_year
     CAMS_GLOBAL_EMISSIONS:
       dataset: cams-global-emission-inventories
-      data_format: zip
       metadata_mapping:
         completionTimeFromAscendingNode:
           - |
@@ -1670,10 +1661,8 @@
           - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
-      data_format: grib
     CAMS_EAC4_MONTHLY:
       dataset: cams-global-reanalysis-eac4-monthly
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     GENERIC_PRODUCT_TYPE:
@@ -1803,50 +1792,36 @@
         <<: *day_month_year
     ERA5_SL:
       dataset: reanalysis-era5-single-levels
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL:
       dataset: reanalysis-era5-pressure-levels
-      download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL_MONTHLY:
       dataset: reanalysis-era5-pressure-levels-monthly-means
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_month_year
     ERA5_LAND:
       dataset: reanalysis-era5-land
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_LAND_MONTHLY:
       dataset: reanalysis-era5-land-monthly-means
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_month_year
     ERA5_SL_MONTHLY:
       dataset: reanalysis-era5-single-levels-monthly-means
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_month_year
     UERRA_EUROPE_SL:
       dataset: reanalysis-uerra-europe-single-levels
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     GLACIERS_DIST_RANDOLPH:
       dataset: insitu-glaciers-extent
-      data_format: zip
     GRIDDED_GLACIERS_MASS_CHANGE:
       dataset: derived-gridded-glacier-mass-change
-      data_format: zip
       metadata_mapping:
         completionTimeFromAscendingNode:
           - |
@@ -1884,32 +1859,26 @@
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_PL:
       dataset: seasonal-postprocessed-pressure-levels
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_POSTPROCESSED_SL:
       dataset: seasonal-postprocessed-single-levels
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_ORIGINAL_SL:
       dataset: seasonal-original-single-levels
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_PL:
       dataset: seasonal-original-pressure-levels
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_MONTHLY_PL:
       dataset: seasonal-monthly-pressure-levels
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_SL:
       dataset: seasonal-monthly-single-levels
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SIS_HYDRO_MET_PROJ:
@@ -3510,47 +3479,38 @@
         <<: *day_month_year
     SEASONAL_ORIGINAL_SL:
       dataset: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_PL:
       dataset: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_SL:
       dataset: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_POSTPROCESSED_PL:
       dataset: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_SL:
       dataset: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_PL:
       dataset: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     GLACIERS_DIST_RANDOLPH:
       dataset: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
-      data_format: zip
       metadata_mapping:
         <<: *day_month_year
     FIRE_HISTORICAL:
       dataset: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     GRIDDED_GLACIERS_MASS_CHANGE:
       dataset: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
-      data_format: zip
       metadata_mapping:
         startTimeFromAscendingNode:
           - |
@@ -3561,30 +3521,22 @@
         completionTimeFromAscendingNode: $.properties.enddate
     UERRA_EUROPE_SL:
       dataset: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
-      data_format: grib # netcdf format may fail
       metadata_mapping:
         <<: *time_day_month_year
     AG_ERA5:
       dataset: EO:ECMWF:DAT:SIS_AGROMETEOROLOGICAL_INDICATORS
-      data_format: zip
       metadata_mapping:
         <<: *day_month_year
     ERA5_SL:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
-      download_format: unarchived
-      data_format: grib # netcdf format may fail
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
-      data_format: grib
-      download_format: unarchived
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_SL_MONTHLY:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
-      data_format: grib
-      download_format: unarchived
       metadata_mapping:
         startTimeFromAscendingNode:
           - |
@@ -3597,26 +3549,18 @@
         completionTimeFromAscendingNode: $.properties.enddate
     ERA5_PL_MONTHLY:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
-      data_format: grib
-      download_format: unarchived
       metadata_mapping_from_product: ERA5_SL_MONTHLY
     ERA5_LAND:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
-      data_format: grib
-      download_format: unarchived
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_LAND_MONTHLY:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
-      data_format: grib
-      download_format: unarchived
       metadata_mapping_from_product: ERA5_SL_MONTHLY
     CAMS_EAC4:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4
-      data_format: grib
     CAMS_GLOBAL_EMISSIONS:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES
-      data_format: zip
       metadata_mapping:
         startTimeFromAscendingNode:
           - |
@@ -3627,7 +3571,6 @@
         completionTimeFromAscendingNode: $.properties.enddate
     CAMS_EAC4_MONTHLY:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_INVERSION:
@@ -3636,36 +3579,28 @@
         <<: *month_year
     CAMS_EU_AIR_QUALITY_RE:
       dataset: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES
-      data_format: zip
       metadata_mapping:
         <<: *month_year
     CAMS_GRF:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS
-      data_format: zip
       metadata_mapping:
         <<: *month_year
     CAMS_GRF_AUX:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES
-      data_format: zip
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_EGG4:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4
-      data_format: grib
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY
-      data_format: grib
       metadata_mapping:
         <<: *month_year
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS
-      data_format: grib
     CAMS_GAC_FORECAST:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
-      data_format: grib
     CAMS_GFE_GFAS:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
-      data_format: grib
     CAMS_SOLAR_RADIATION:
       dataset: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
       metadata_mapping:
@@ -6010,67 +5945,46 @@
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_hday_hmonth_hyear
     EFAS_FORECAST:
       dataset: efas-forecast
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     EFAS_SEASONAL:
       dataset: efas-seasonal
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *month_year
     EFAS_REFORECAST:
       dataset: efas-reforecast
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *hday_hmonth_hyear
     EFAS_SEASONAL_REFORECAST:
       dataset: efas-seasonal-reforecast
-      data_format: grib
-      download_format: zip
       metadata_mapping:
         <<: *hmonth_hyear
     GLOFAS_HISTORICAL:
       dataset: cems-glofas-historical
-      data_format: grib2
-      download_format: zip
       metadata_mapping:
         <<: *hday_hmonth_hyear
     GLOFAS_FORECAST:
       dataset: cems-glofas-forecast
-      data_format: grib2
-      download_format: zip
       metadata_mapping:
         <<: *day_month_year
     GLOFAS_SEASONAL:
       dataset: cems-glofas-seasonal
-      data_format: grib2
-      download_format: zip
       metadata_mapping:
         <<: *month_year
     GLOFAS_SEASONAL_REFORECAST:
       dataset: cems-glofas-seasonal-reforecast
-      data_format: grib2
-      download_format: zip
       metadata_mapping:
         <<: *hmonth_hyear
     GLOFAS_REFORECAST:
       dataset: cems-glofas-reforecast
-      data_format: grib2
-      download_format: zip
       metadata_mapping:
         <<: *hday_hmonth_hyear
     FIRE_HISTORICAL:
       dataset: cems-fire-historical-v1
-      data_format: grib
       metadata_mapping:
         <<: *day_month_year
     FIRE_SEASONAL:
