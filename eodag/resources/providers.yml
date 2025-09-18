@@ -361,7 +361,7 @@
           - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
           - '$.date'
         polarizationChannels:
-          - '{{"search":{{"polarization":"{polarizationMode}" }} }}'
+          - '{{"search":{{"polarization":"{polarizationChannels}" }} }}'
           - '$.polarization'
         # Custom parameters (not defined in the base document referenced above)
         awsPath:
