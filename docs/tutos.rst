@@ -116,3 +116,11 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :shadow: md
 
       Access DEDT Lumi data through the ECMWF Polytope API using the dedicated EODAG plugin.
+
+   .. grid-item-card:: Accessing Fedeo data through CEDA API
+      :link: notebooks/tutos/tuto_fedeo_ceda
+      :link-type: doc
+      :text-align: center
+      :shadow: md
+
+      Access Fedeo data through the CEDA API using the dedicated EODAG plugin.
