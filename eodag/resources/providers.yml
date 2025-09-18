@@ -2235,8 +2235,20 @@
       orderLink: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
       # orderLink: '{$.downloadLink#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
   products:
-    NEMSGLOBAL_TCDC: {}
-    NEMSAUTO_TCDC: {}
+    NEMSGLOBAL_TCDC:
+      productType: NEMSGLOBAL
+      queries: [{'domain':'NEMSGLOBAL','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
+      format: netCDF
+      units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
+      timeIntervalsAlignment:
+      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
+    NEMSAUTO_TCDC:
+      productType: NEMSAUTO
+      queries: [{'domain':'NEMSAUTO','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
+      format: netCDF
+      units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
+      timeIntervalsAlignment:
+      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
