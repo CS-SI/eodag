@@ -1419,7 +1419,7 @@ def format_query_params(
                     provider_value, product_type, **query_dict
                 )
         else:
-            query_params[provider_search_key] = user_input
+            query_params[provider_search_param] = user_input
     # Now get all the literal search params (i.e params to be passed "as is"
     # in the search request)
     # ignore additional_params if it isn't a dictionary
