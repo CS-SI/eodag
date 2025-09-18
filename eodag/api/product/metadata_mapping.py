@@ -1378,7 +1378,14 @@ def format_query_params(
         if provider_search_key == user_input:
             # means the mapping is to be passed as is, in which case we
             # readily register it
-            query_params[eodag_search_key] = user_input
+            if (
+                eodag_search_key in query_params
+                and isinstance(query_params[eodag_search_key], dict)
+                and isinstance(user_input, dict)
+            ):
+                query_params[eodag_search_key].update(user_input)
+            else:
+                query_params[eodag_search_key] = user_input
             continue
 
         if COMPLEX_QS_REGEX.match(provider_search_key):
