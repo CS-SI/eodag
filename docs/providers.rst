@@ -96,7 +96,7 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
 
          :fas:`external-link-alt`
 
-No account is required
+No credentials are needed
 
 ----
 
@@ -247,7 +247,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Copernicus Climate Data Store
+      Copernicus Climate Data Store.
 
    .. grid-item::
       :columns: 2
@@ -293,7 +293,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Copernicus Data Space Ecosystem
+      Copernicus Data Space Ecosystem.
 
    .. grid-item::
       :columns: 2
@@ -324,7 +324,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      CEMS Early Warning Data Store
+      CEMS Early Warning Data Store.
 
    .. grid-item::
       :columns: 2
@@ -370,7 +370,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Copernicus Marine Service
+      Copernicus Marine Service.
 
    .. grid-item::
       :columns: 2
@@ -383,7 +383,7 @@ No account is required
 
         :fas:`external-link-alt`
 
-No account is required
+No credentials are needed
 
 ----
 
@@ -397,7 +397,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Sentinel Australasia Regional Access
+      Sentinel Australasia Regional Access.
 
    .. grid-item::
       :columns: 2
@@ -432,7 +432,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      WEkEO Copernicus Sentinel, DEM, and CLMS data
+      WEkEO Copernicus Sentinel, DEM, and CLMS data.
 
    .. grid-item::
       :columns: 2
@@ -509,7 +509,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Copernicus Marine (CMEMS) data from WEkEO
+      Copernicus Marine (CMEMS) data from WEkEO.
 
    .. grid-item::
       :columns: 2
@@ -544,7 +544,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      WEkEO ECMWF data
+      WEkEO ECMWF data.
 
    .. grid-item::
       :columns: 2
@@ -579,7 +579,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      CloudFerro DIAS
+      CloudFerro DIAS.
 
    .. grid-item::
       :columns: 2
@@ -617,7 +617,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      CloudFerro DIAS data through S3 protocol
+      CloudFerro DIAS data through their S3 EODATA.
 
    .. grid-item::
       :columns: 2
@@ -662,7 +662,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      French National Space Agency (CNES) Earth Observation portal
+      GEODES, French National Space Agency (CNES) Earth Observation portal.
 
    .. grid-item::
       :columns: 2
@@ -695,7 +695,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
+      GEODES, French National Space Agency (CNES) Earth Observation portal through their internal S3 Datalake.
 
    .. grid-item::
       :columns: 2
@@ -728,7 +728,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      hydroweb.next thematic hub for hydrology data access
+      hydroweb.next thematic hub for hydrology data access.
 
    .. grid-item::
       :columns: 2
@@ -762,7 +762,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      French National Space Agency (CNES) catalog for Sentinel products
+      French National Space Agency (CNES) catalog for Sentinel products.
 
    .. grid-item::
       :columns: 2
@@ -803,7 +803,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Destination Earth Data Lake (DEDL)
+      Destination Earth Data Lake (DEDL).
 
    .. grid-item::
       :columns: 2
@@ -839,7 +839,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Destination Earth Digital Twin output on Lumi
+      Destination Earth Digital Twin output on Lumi.
 
    .. grid-item::
       :columns: 2
@@ -871,7 +871,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      European Centre for Medium-Range Weather Forecasts
+      European Centre for Medium-Range Weather Forecasts.
 
    .. grid-item::
       :columns: 2
@@ -915,7 +915,9 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access. The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue of all CCI datasets.
+      FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access.
+      The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue
+      of all CCI datasets.
 
    .. grid-item::
       :columns: 2
@@ -928,7 +930,7 @@ No account is required
 
         :fas:`external-link-alt`
 
-No account is required
+No credentials are needed
 
 ----
 
@@ -942,7 +944,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
+      EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites).
 
    .. grid-item::
       :columns: 2
@@ -976,7 +978,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Meteoblue forecast
+      Meteoblue weather and forecast Dataset API.
 
    .. grid-item::
       :columns: 2
@@ -1011,7 +1013,7 @@ No account is required
    .. grid-item::
       :columns: 10
 
-      Microsoft Planetary Computer
+      Microsoft Planetary Computer.
 
    .. grid-item::
       :columns: 2
