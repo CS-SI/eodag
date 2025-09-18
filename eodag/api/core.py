@@ -1138,6 +1138,7 @@ class EODataAccessGateway:
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         count: bool = False,
+        validate: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1178,6 +1179,8 @@ class EODataAccessGateway:
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
         :param count: (optional) Whether to run a query with a count request or not
+        :param validate: (optional) Set to True to validate the request query before sending it
+                         to the provider
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria
@@ -1200,10 +1203,12 @@ class EODataAccessGateway:
             **kwargs,
         )
         if search_kwargs.get("id"):
+            # Don't validate requests by ID. "id" is not queryable.
             return self._search_by_id(
                 search_kwargs.pop("id"),
                 provider=provider,
                 raise_errors=raise_errors,
+                validate=False,
                 **search_kwargs,
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
@@ -1222,6 +1227,7 @@ class EODataAccessGateway:
                 search_plugin,
                 count=count,
                 raise_errors=raise_errors,
+                validate=validate,
                 **search_kwargs,
             )
             errors.extend(search_results.errors)
@@ -1827,6 +1833,7 @@ class EODataAccessGateway:
         search_plugin: Union[Search, Api],
         count: bool = False,
         raise_errors: bool = False,
+        validate: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Internal method that performs a search on a given provider.
@@ -1836,6 +1843,8 @@ class EODataAccessGateway:
         :param raise_errors: (optional) When an error occurs when searching, if this is set to
                              True, the error is raised
         :param kwargs: Some other criteria that will be used to do the search
+        :param validate: (optional) Set to True to validate the request query before sending it
+                         to the provider
         :returns: A collection of EO products matching the criteria
         """
         logger.info("Searching on provider %s", search_plugin.provider)
@@ -1875,6 +1884,9 @@ class EODataAccessGateway:
 
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
+
+            if validate:
+                search_plugin.validate(kwargs, prep.auth)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 
