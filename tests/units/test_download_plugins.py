@@ -33,7 +33,12 @@ import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import MockResponse, ProgressCallback
-from eodag.utils.exceptions import DownloadError, NoMatchingProductType, ValidationError
+from eodag.utils.exceptions import (
+    DownloadError,
+    MisconfiguredError,
+    NoMatchingProductType,
+    ValidationError,
+)
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -775,6 +780,171 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Product location not changed
         self.assertEqual(self.product.location, "http://somewhere")
         self.assertEqual(self.product.remote_location, "http://somewhere")
+
+    def test_plugins_download_http_stream_dict_misconfigured(self):
+        """HTTPDownload._stream_download_dict() must raise an error if misconfigured"""
+
+        plugin = self.get_download_plugin(self.product)
+        with self.assertRaises(MisconfiguredError):
+            # Wrong auth instance
+            wrong_auth = "not_an_auth_instance"
+            plugin._stream_download_dict(
+                self.product, auth=wrong_auth, output_dir=self.output_dir
+            )
+
+    def test_stream_download_dict_single_asset(self):
+        """HTTPDownload._stream_download_dict() must return a response with a single asset"""
+
+        plugin = self.get_download_plugin(self.product)
+
+        asset = mock.Mock()
+        asset.filename = "myfile.txt"
+        asset.headers = {}
+        asset.get.return_value = None
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.return_value = [asset]
+
+        chunk_asset1 = mock.Mock()
+        chunk_asset1.content = [b"chunk1"]
+        chunk_asset1.arcname = "file1.txt"
+        chunk_asset1.size = len(b"chunk1")
+        plugin._stream_download_assets = mock.Mock(return_value=[chunk_asset1])
+
+        self.product.assets.__len__ = lambda self=self.product.assets: 1
+
+        response = plugin._stream_download_dict(
+            self.product, output_dir=self.output_dir
+        )
+
+        self.assertEqual(response.arcname, "file1.txt")
+        self.assertEqual(response.size, len(b"chunk1"))
+        self.assertEqual(response.content, [b"chunk1"])
+
+    def test_stream_download_dict_multiple_assets_zip(self):
+        """HTTPDownload._stream_download_dict() must return a zipped response with multiple assets"""
+
+        plugin = self.get_download_plugin(self.product)
+
+        asset1 = mock.Mock(filename="file1.txt")
+        asset2 = mock.Mock(filename="file2.txt")
+        asset1.get.return_value = "text/plain"
+        asset2.get.return_value = "text/plain"
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.return_value = [asset1, asset2]
+
+        chunk_asset1 = mock.Mock()
+        chunk_asset1.content = [b"chunk1"]
+        chunk_asset1.arcname = "file1.txt"
+        chunk_asset1.size = len(b"chunk1")
+
+        chunk_asset2 = mock.Mock()
+        chunk_asset2.content = [b"chunk2"]
+        chunk_asset2.arcname = "file2.txt"
+        chunk_asset2.size = len(b"chunk2")
+
+        plugin._stream_download_assets = mock.Mock(
+            return_value=[chunk_asset1, chunk_asset2]
+        )
+        self.product.assets.__len__ = lambda self=self.product.assets: 2
+
+        with mock.patch("eodag.plugins.download.http.ZipStream") as mockZipStream:
+            fake_zip = mock.Mock()
+            fake_zip.add = mock.Mock()
+            fake_zip.__len__ = mock.Mock(return_value=2)
+            mockZipStream.return_value = fake_zip
+
+            response = plugin._stream_download_dict(
+                self.product, output_dir=self.output_dir
+            )
+
+        self.assertIn("content-disposition", response.headers)
+        self.assertIn(".zip", response.headers["content-disposition"])
+
+    def test_stream_download_dict_asset_not_available(self):
+        """HTTPDownload._stream_download_dict() must raise NotAvailableError if asset not available"""
+
+        plugin = self.get_download_plugin(self.product)
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.side_effect = NotAvailableError("not available")
+        self.product.assets.__len__ = lambda self=self.product.assets: 1
+
+        with self.assertRaises(NotAvailableError):
+            plugin._stream_download_dict(
+                self.product, asset="foo", output_dir=self.output_dir
+            )
+
+    def test_stream_download_dict_single_asset_with_type(self):
+        """HTTPDownload._stream_download_dict() must return a response with a single asset and its type"""
+
+        plugin = self.get_download_plugin(self.product)
+
+        asset = mock.Mock()
+        asset.filename = "myfile.txt"
+        asset.headers = {}
+        asset.__getitem__ = lambda self, key: "text/plain" if key == "type" else None
+        asset.get.side_effect = (
+            lambda key, default=None: "text/plain" if key == "type" else default
+        )
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.return_value = [asset]
+        self.product.assets.__len__ = lambda self=self.product.assets: 1
+
+        chunk_asset1 = mock.Mock()
+        chunk_asset1.content = [b"chunk1"]
+        chunk_asset1.arcname = "file1.txt"
+        chunk_asset1.size = len(b"chunk1")
+        chunk_asset1.headers = {}
+
+        plugin._stream_download_assets = mock.Mock(return_value=[chunk_asset1])
+
+        response = plugin._stream_download_dict(
+            self.product, output_dir=self.output_dir
+        )
+
+        self.assertEqual(response.arcname, "file1.txt")
+        self.assertEqual(response.size, len(b"chunk1"))
+        self.assertEqual(response.content, [b"chunk1"])
+
+    def test_stream_download_dict_fallback_to_product(self):
+        """HTTPDownload._stream_download_dict() must return a response with product headers if no asset headers"""
+
+        plugin = self.get_download_plugin(self.product)
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.return_value = []
+        self.product.assets.__len__ = lambda self=self.product.assets: 0
+        self.product.headers = {}
+
+        chunk_iter = iter([b"first_chunk", b"second_chunk"])
+        plugin._stream_download = mock.Mock(return_value=chunk_iter)
+
+        response = plugin._stream_download_dict(
+            self.product, output_dir=self.output_dir
+        )
+
+        self.assertEqual(list(response.content), [b"first_chunk", b"second_chunk"])
+        self.assertEqual(response.headers, self.product.headers)
+
+    def test_stream_download_dict_product_empty_raises(self):
+        """HTTPDownload._stream_download_dict() must raise NotAvailableError if no asset and no product headers"""
+
+        plugin = self.get_download_plugin(self.product)
+
+        self.product.assets = mock.Mock()
+        self.product.assets.get_values.return_value = []
+        self.product.assets.__len__ = lambda self=self.product.assets: 0
+        self.product.headers = {}
+
+        plugin._stream_download = mock.Mock(return_value=iter([]))
+
+        with self.assertRaises(NotAvailableError) as cm:
+            plugin._stream_download_dict(self.product, output_dir=self.output_dir)
+
+        self.assertIn(self.product.properties.get("id", ""), str(cm.exception))
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
