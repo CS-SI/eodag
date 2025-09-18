@@ -100,7 +100,9 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.s3_session: Optional[boto3.Session] = None
         self.s3_resource: Optional[S3ServiceResource] = None
-        self.requester_pays = getattr(self.config, "requester_pays", False)
+        # set default for requester_pays if not given
+        if not getattr(self.config, "requester_pays", False):
+            setattr(self.config, "requester_pays", False)
 
     def _create_s3_session_from_credentials(self) -> boto3.Session:
         credentials = getattr(self.config, "credentials", {}) or {}
@@ -167,7 +169,7 @@ class AwsAuth(Authentication):
         if not self.s3_resource:
             self.s3_resource = self._create_s3_resource()
         try:
-            if getattr(self.config, "requester_pays", False):
+            if self.config.requester_pays:
                 objects = self.s3_resource.Bucket(bucket_name).objects.filter(
                     RequestPayer="requester"
                 )

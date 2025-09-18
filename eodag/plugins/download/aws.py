@@ -810,7 +810,7 @@ class AwsDownload(Download):
 
         s3_session = auth_plugin.s3_session
 
-        if auth_plugin.requester_pays:
+        if auth_plugin.config.requester_pays:
             rio_env_kwargs["requester_pays"] = True
         return {
             "session": s3_session,
