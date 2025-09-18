@@ -1372,10 +1372,10 @@ def format_query_params(
         error_context,
     )
 
-    for eodag_search_key, provider_search_key in queryables.items():
+    for eodag_search_key, provider_search_param in queryables.items():
         user_input = query_dict[eodag_search_key]
 
-        if provider_search_key == user_input:
+        if provider_search_param == user_input:
             # means the mapping is to be passed as is, in which case we
             # readily register it
             if (
@@ -1388,14 +1388,14 @@ def format_query_params(
                 query_params[eodag_search_key] = user_input
             continue
 
-        if COMPLEX_QS_REGEX.match(provider_search_key):
-            parts = provider_search_key.split("=")
+        if COMPLEX_QS_REGEX.match(provider_search_param):
+            parts = provider_search_param.split("=")
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
-                    provider_search_key, product_type, **query_dict
+                    provider_search_param, product_type, **query_dict
                 )
                 formatted_query_param = formatted_query_param.replace("'", '"')
-                if "{{" in provider_search_key:
+                if "{{" in provider_search_param:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
