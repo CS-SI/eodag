@@ -400,7 +400,9 @@ class Search(PluginTopic):
                 **all_queryables,
             )
 
-    def validate(self, filter: dict[str, Any], auth: Optional[AuthBase]) -> None:
+    def validate(
+        self, filter: dict[str, Any], auth: Optional[Union[AuthBase, S3SessionKwargs]]
+    ) -> None:
         """Validate a search request.
 
         :param filter: Arguments of the search request
