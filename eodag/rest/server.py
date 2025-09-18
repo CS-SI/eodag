@@ -31,7 +31,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse
-from pydantic import ValidationError as PydanticValidationError
+from pydantic import ValidationError as pydanticValidationError
 from pygeofilter.backends.cql2_json import to_cql2
 from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
 
@@ -303,21 +303,13 @@ def stac_collections_item_download_asset(
     include_in_schema=False,
 )
 def stac_collections_item(
-    collection_id: str,
-    item_id: str,
-    request: Request,
-    provider: Optional[str] = None,
-    validate: Optional[bool] = None,
+    collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection item by id"""
     logger.info(f"{request.method} {request.state.url}")
 
     search_request = SearchPostRequest(
-        provider=provider,
-        ids=[item_id],
-        collections=[collection_id],
-        limit=1,
-        validate_request=validate,
+        provider=provider, ids=[item_id], collections=[collection_id], limit=1
     )
 
     item_collection = search_stac_items(request, search_request)
@@ -350,7 +342,6 @@ def stac_collections_items(
     filter: Optional[str] = None,
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
-    validate: Optional[bool] = None,
 ) -> ORJSONResponse:
     """Fetch collection's features"""
 
@@ -367,7 +358,6 @@ def stac_collections_items(
         filter=filter,
         filter_lang=filter_lang,
         crunch=crunch,
-        validate=validate,
     )
 
 
@@ -517,7 +507,6 @@ def get_search(
     filter: Optional[str] = None,  # pylint: disable=redefined-builtin
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
-    validate: Optional[bool] = None,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
     logger.info(f"{request.method} {request.state.url}")
@@ -542,7 +531,6 @@ def get_search(
         "page": page,
         "sortby": sortby2list(sortby),
         "crunch": crunch,
-        "validate_request": validate,
     }
 
     if filter:
@@ -557,7 +545,7 @@ def get_search(
 
     try:
         search_request = SearchPostRequest.model_validate(clean)
-    except PydanticValidationError as e:
+    except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
@@ -591,7 +579,7 @@ async def post_search(request: Request) -> ORJSONResponse:
 
     try:
         search_request = SearchPostRequest.model_validate(payload)
-    except PydanticValidationError as e:
+    except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     logger.debug("Body: %s", search_request.model_dump(exclude_none=True))

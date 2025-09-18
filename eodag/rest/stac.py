@@ -234,17 +234,12 @@ class StacItem(StacCommon):
         )
 
     def __get_item_list(
-        self,
-        search_results: SearchResult,
-        catalog: dict[str, Any],
-        validate: Optional[bool] = None,
+        self, search_results: SearchResult, catalog: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Build STAC items list from EODAG search results
 
         :param search_results: EODAG search results
         :param catalog: STAC catalog dict used for parsing item metadata
-        :param validate: (optional) The value of the `validate` parameter to add in the download URLs.
-                         Use None to don't set the parameter.
         :returns: STAC item dicts list
         """
         if len(search_results) <= 0:
@@ -315,9 +310,6 @@ class StacItem(StacCommon):
             # add datacube query-string to query-args
             if _dc_qs:
                 query_dict.update(_dc_qs=[_dc_qs])
-            # add validate to query-args
-            if validate is not None:
-                query_dict.update(validate=["true"] if validate else ["false"])
             if query_dict:
                 downloadlink_href = (
                     f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
@@ -363,8 +355,8 @@ class StacItem(StacCommon):
             for link in product_item["links"]:
                 link["href"] = _quote_url_path(link["href"])
 
-            # update item link with datacube query-string and propagate `validate`
-            if _dc_qs or self.provider or validate is not None:
+            # update item link with datacube query-string
+            if _dc_qs or self.provider:
                 url_parts = urlparse(str(product_item["links"][0]["href"]))
                 without_arg_url = (
                     f"{url_parts.scheme}://{url_parts.netloc}{url_parts.path}"
@@ -468,14 +460,11 @@ class StacItem(StacCommon):
         total: int,
         catalog: dict[str, Any],
         next_link: Optional[dict[str, Any]],
-        validate: Optional[bool] = None,
     ) -> dict[str, Any]:
         """Build STAC items from EODAG search results
 
         :param search_results: EODAG search results
         :param catalog: STAC catalog dict used for parsing item metadata
-        :param validate: (optional) The value of the `validate` parameter to add in the download URLs.
-                         Use None to don't set the parameter.
         :returns: Items dictionary
         """
         items_model = deepcopy(self.stac_config["items"])
@@ -514,7 +503,7 @@ class StacItem(StacCommon):
             )
         else:
             catalog["url"] = catalog["url"].split("?")[0]
-        items["features"] = self.__get_item_list(search_results, catalog, validate)
+        items["features"] = self.__get_item_list(search_results, catalog)
 
         self.update_data(items)
         return self.data

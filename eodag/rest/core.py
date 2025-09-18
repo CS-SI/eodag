@@ -23,13 +23,12 @@ import os
 import re
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
-from urllib.parse import unquote_plus, urlencode
+from urllib.parse import urlencode
 
 import dateutil
-import geojson
 from cachetools.func import lru_cache
 from fastapi.responses import ORJSONResponse, StreamingResponse
-from pydantic import ValidationError as PydanticValidationError
+from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
 
 import eodag
@@ -43,12 +42,9 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config
-from eodag.plugins.apis.base import Api
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.plugins.download.base import Download
-from eodag.plugins.search.base import Search
 from eodag.rest.cache import cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
@@ -164,7 +160,7 @@ def search_stac_items(
         stac_args["geometry"] = search_request.spatial_filter
     try:
         eodag_args = EODAGSearch.model_validate(stac_args)
-    except PydanticValidationError as e:
+    except pydanticValidationError as e:
         raise ValidationError(format_pydantic_error(e)) from e
 
     catalog_url = re.sub("/items.*", "", request.state.url)
@@ -181,7 +177,6 @@ def search_stac_items(
     if eodag_args.ids:
         results = SearchResult([])
         for item_id in eodag_args.ids:
-            # Don't validate requests by ID. "id" is not queryable.
             results.extend(
                 eodag_api.search(
                     id=item_id,
@@ -201,9 +196,6 @@ def search_stac_items(
             if ":" in key and key.split(":")[0] not in stac_extensions:
                 new_key = key.split(":")[1]
                 criteria[new_key] = criteria.pop(key)
-        # map `validate_request` to `validate`
-        if criteria.get("validate_request", None) is not None:
-            criteria["validate"] = criteria.pop("validate_request")
 
         results = eodag_api.search(count=True, **criteria)
         total = results.number_matched or 0
@@ -233,7 +225,6 @@ def search_stac_items(
             **catalog.data,
             **{"url": catalog.url, "root": catalog.root},
         },
-        validate=eodag_args.validate_request,
     )
     return items
 
@@ -256,7 +247,6 @@ def download_stac_item(
     """
     product_type = collection_id
 
-    kwargs["validate"] = kwargs.get("validate", "true") == "true"
     search_results = eodag_api.search(
         id=item_id, productType=product_type, provider=provider, **kwargs
     )
@@ -336,8 +326,6 @@ def _order_and_update(
     ):
         # first order
         logger.debug("Order product")
-        if query_args.get("validate", True):
-            validate_order_request(product, auth)
         order_status_dict = product.downloader._order(product=product, auth=auth)
         query_args.update(order_status_dict or {})
 
@@ -357,33 +345,6 @@ def _order_and_update(
 
     if product.properties.get("storageStatus") != ONLINE_STATUS:
         raise NotAvailableError("Product is not available yet")
-
-
-def validate_order_request(product: EOProduct, auth: Optional[AuthBase]) -> None:
-    """Validate a product order request.
-
-    :param product: The product to validate
-    :param auth: Authentication object
-    :raises: :class:`~eodag.utils.exceptions.ValidationError`
-    """
-    download_plugin: Union[
-        Download, Api
-    ] = eodag_api._plugins_manager.get_download_plugin(product)
-    order_method: str = getattr(download_plugin.config, "order_method", "GET").upper()
-    order_kwargs: dict[str, Union[Any, list[str]]] = {}
-    if order_method == "POST":
-        order_kwargs = geojson.loads(
-            unquote_plus(unquote_plus(product.properties["downloadLink"]))
-        )
-    else:
-        order_kwargs = {}
-    order_kwargs["productType"] = product.product_type
-    search_plugin: Union[Search, Api] = next(
-        eodag_api._plugins_manager.get_search_plugins(
-            product.product_type, product.provider
-        )
-    )
-    search_plugin.validate(order_kwargs, auth)
 
 
 @lru_cache(maxsize=1)

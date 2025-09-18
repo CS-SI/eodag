@@ -26,7 +26,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional, Union
 from unittest.mock import Mock, call
-from urllib.parse import parse_qs, quote_plus, urlparse
+from urllib.parse import quote_plus
 
 import geojson
 import httpx
@@ -724,45 +724,6 @@ class RequestTestCase(unittest.TestCase):
             ),
         )
 
-    def test_validate_search_from_items(self):
-        """Validate search through endpoint /collection/{collection_id}/items"""
-        # Validation by default
-        self._request_valid(
-            f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"collections/{self.tested_product_type}/items?validate=False&bbox=0,43,1,44",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-                validate=False,
-            ),
-        )
-        self._request_valid(
-            f"collections/{self.tested_product_type}/items?validate=True&bbox=0,43,1,44",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-                validate=True,
-            ),
-        )
-
     def test_search_item_id_from_collection(self):
         """Search by id through eodag server /collection endpoint should return a valid response"""
         self._request_valid(
@@ -1100,74 +1061,6 @@ class RequestTestCase(unittest.TestCase):
                 record["detail"] = set(s.strip() for s in record["detail"].split(","))
         self.assertDictEqual(expected_response, response_content)
 
-    @mock.patch(
-        "eodag.rest.core.eodag_api.search",
-        autospec=True,
-    )
-    def test_search_validate(self, mock_search: Mock):
-        """Validate search through endpoint /search"""
-
-        # Validation by default
-        self.app.get(
-            f"search?collections={self.tested_product_type}", follow_redirects=True
-        )
-        self.assertNotIn("validate", mock_search.call_args[1])
-        mock_search.reset_mock()
-
-        self.app.get(
-            f"search?validate=false&collections={self.tested_product_type}",
-            follow_redirects=True,
-        )
-        self.assertFalse(mock_search.call_args[1]["validate"])
-        mock_search.reset_mock()
-
-        # Validate request
-        self.app.get(
-            f"search?validate=true&collections={self.tested_product_type}",
-            follow_redirects=True,
-        )
-        self.assertTrue(mock_search.call_args[1]["validate"])
-
-    def test_links_self_validate(self):
-        """The `validate` parameter must be propagated to the self and download links"""
-
-        def assert_query_string_validate(url: str, validate: Optional[str]):
-            url_parts = urlparse(url)
-            query_dict = parse_qs(url_parts.query)
-            if validate is None:
-                # in this case don't propagate the parameter
-                self.assertNotIn("validate", query_dict)
-            else:
-                self.assertIn("validate", query_dict)
-                self.assertListEqual(query_dict["validate"], [validate])
-
-        def assert_response_validate(response, validate: Optional[str]):
-            for feature in response["features"]:
-                # Download link
-                assert_query_string_validate(
-                    feature["assets"]["downloadLink"]["href"], validate
-                )
-                # Self link
-                for link in response["features"][0]["links"]:
-                    if link["rel"] == "self":
-                        assert_query_string_validate(link["href"], validate)
-
-        # No `validate` parameter in the links
-        response = self._request_valid(f"search?collections={self.tested_product_type}")
-        assert_response_validate(response, None)
-
-        # Propagate `validate=true`
-        response = self._request_valid(
-            f"search?collections={self.tested_product_type}&validate=true"
-        )
-        assert_response_validate(response, "true")
-
-        # Propagate `validate=false`
-        response = self._request_valid(
-            f"search?collections={self.tested_product_type}&validate=false"
-        )
-        assert_response_validate(response, "false")
-
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
         # no blacklist
@@ -1323,78 +1216,6 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(
             mock_order_and_update.call_args[0][0].properties["qs"]["foo"], "bar"
         )
-
-    @mock.patch(
-        "eodag.plugins.authentication.base.Authentication.authenticate",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._order",
-        autospec=True,
-        return_value={},
-    )
-    @mock.patch("eodag.rest.core.validate_order_request", autospec=True)
-    @mock.patch("eodag.plugins.search.base.Search.validate", autospec=True)
-    def test_download_item_orderable_validate(
-        self,
-        mock_validate: mock.Mock,
-        mock_validate_order_request: mock.Mock,
-        mock__order: Mock,
-        mock_auth: Mock,
-    ):
-        """The product order should be validated if requested by the user"""
-
-        qs = '{"foo": "bar"}'
-
-        # Validation by default
-        self.app.request(
-            "GET",
-            f"collections/foo/items/FOO_ORDERABLE_13245/download?provider=cop_cds&_dc_qs={quote_plus(qs)}",
-            json=None,
-            follow_redirects=True,
-            headers={},
-        )
-        # no validation for the search by id
-        mock_validate.assert_not_called()
-        # call to validate order
-        mock_validate_order_request.assert_called_once()
-        product_validated = mock_validate_order_request.call_args.args[0]
-        self.assertEqual(product_validated.product_type, "foo")
-        self.assertEqual(product_validated.provider, "cop_cds")
-        mock_validate.reset_mock()
-        mock_validate_order_request.reset_mock()
-
-        # Validate request
-        self.app.request(
-            "GET",
-            "collections/foo/items/FOO_ORDERABLE_13245/download"
-            + f"?validate=true&provider=cop_cds&_dc_qs={quote_plus(qs)}",
-            json=None,
-            follow_redirects=True,
-            headers={},
-        )
-        # no validation for the search by id
-        mock_validate.assert_not_called()
-
-        # call to validate order
-        mock_validate_order_request.assert_called_once()
-        product_validated = mock_validate_order_request.call_args.args[0]
-        self.assertEqual(product_validated.product_type, "foo")
-        self.assertEqual(product_validated.provider, "cop_cds")
-        mock_validate.reset_mock()
-        mock_validate_order_request.reset_mock()
-
-        # Don't validate request
-        self.app.request(
-            "GET",
-            "collections/foo/items/FOO_ORDERABLE_13245/download"
-            + f"?validate=false&provider=cop_cds&_dc_qs={quote_plus(qs)}",
-            json=None,
-            follow_redirects=True,
-            headers={},
-        )
-        mock_validate.assert_not_called()
-        mock_validate_order_request.assert_not_called()
 
     @mock.patch(
         "eodag.plugins.authentication.base.Authentication.authenticate",
