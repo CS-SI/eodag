@@ -317,8 +317,8 @@ class ProductTypesList(UserList[ProductType]):
     def _repr_html_(self, embedded: bool = False) -> str:
         # mock "thead" tag by reproduicing its style to make "details" and "summary" tags work properly
         mock_thead = (
-            f"""<details>
-                <summary style='text-align: left; color: grey; border-bottom: 1px solid black; padding: 0.5em 0.5em;'>
+            f"""<details class='foldable'>
+                <summary style='text-align: left; color: grey; padding: 0.5em 0.5em;'>
                 {type(self).__name__}&ensp;({len(self)}):&ensp;
                 {"[" + str(self[0]) + ",&ensp;...]" if len(self) > 0 else "[]"}
                 </summary>
@@ -333,7 +333,7 @@ class ProductTypesList(UserList[ProductType]):
             + "".join(
                 [
                     f"""<tr {tr_style}><td style='text-align: left;'>
-                        <details><summary style='color: grey;'>
+                        <details class='foldable'><summary style='color: grey; padding: 0.5em 0.5em;'>
                         <span style='color: black'>{pt}</span>:&ensp;
                         title={pt.title},&ensp;...
                     </summary>
