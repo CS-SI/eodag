@@ -12,9 +12,11 @@ easily start searching, accessing, and downloading products.
 Some providers are completely open, while others require an account to access their data.
 If credentials are needed, check the :doc:`registration guide <providers>` for details.
 
-Note that ``eodag`` is not limited to the providers listed here.
-If a desired provider is missing, you can add it yourself.
-See `how to add a new provider <notebooks/api_user_guide/2_configuration.ipynb#Add-or-update-a-provider>`_ for more details.
+.. admonition::  EODAG is not limited to the providers listed here
+   :class: note
+
+   If a desired provider is missing, you can add it yourself.
+   See `how to add a new provider <notebooks/api_user_guide/2_configuration.ipynb#Add-or-update-a-provider>`_ for more details.
 
 ----
 

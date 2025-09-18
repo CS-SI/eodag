@@ -15,52 +15,23 @@ Earth Observation Data Access Gateway (|version|)
 :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://github.com/CS-SI/eodag" rel="nofollow"><img src="https://img.shields.io/github/stars/CS-SI/eodag?style=social" type="image/svg+xml"/></a>`
 
-**EODAG (Earth Observation Data Access Gateway) is a command line tool and a Python package for searching and downloading
+**EODAG (Earth Observation Data Access Gateway) is a command line tool and a Python library for searching and downloading
 remotely sensed images while offering a unified API for data access regardless of the data provider.**
 
-|
+.. admonition::  Explore EODAG `featured providers <providers.rst>`_
+   :class: seealso
 
-EODAG gives you an easy way to access products from more than 10 providers, with more than 50 different product
-types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched and downloaded.
-
-.. glossary::
-
-    [Growing list of] supported providers
-      `aws_eos <https://eos.com>`_,
-      `cop_ads <https://ads.atmosphere.copernicus.eu>`_,
-      `cop_cds <https://cds.climate.copernicus.eu>`_,
-      `cop_dataspace <https://dataspace.copernicus.eu/>`_,
-      `cop_ewds <https://ewds.climate.copernicus.eu>`_,
-      `cop_marine <https://marine.copernicus.eu>`_,
-      `creodias <https://creodias.eu>`_,
-      `creodias_s3 <https://creodias.eu>`_,
-      `dedl <https://hda.data.destination-earth.eu/ui>`_,
-      `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_,
-      `earth_search <https://www.element84.com/earth-search/>`_,
-      `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_,
-      `ecmwf <https://www.ecmwf.int>`_,
-      `fedeo_ceda <https://climate.esa.int/en/>`_,
-      `geodes <https://geodes.cnes.fr>`_,
-      `geodes_s3 <https://geodes.cnes.fr>`_,
-      `eumetsat_ds <https://data.eumetsat.int>`_,
-      `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
-      `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_,
-      `peps <https://peps.cnes.fr/rocket/#/home>`_,
-      `planetary_computer <https://planetarycomputer.microsoft.com>`_,
-      `sara <https://copernicus.nci.org.au>`_,
-      `usgs <https://earthexplorer.usgs.gov>`_,
-      `usgs_satapi_aws <https://landsatlook.usgs.gov>`_,
-      `wekeo_cmems <https://www.wekeo.eu>`_,
-      `wekeo_ecmwf <https://www.wekeo.eu>`_,
-      `wekeo_main <https://www.wekeo.eu>`_
+   EODAG comes already configured with many providers from AWS / GCS EO catalogs, Copernicus, CNES, Destination Earth,
+   ECMWF, ESA, EUMETSAT, Meteoblue, Planetary Computer, USGS / Landsat, ...
 
 EODAG has the following primary features:
 
 * Search and download Earth Observation products from different providers with **a unified API**
-* It is both a `Command Line Tool <cli_user_guide.rst>`_ and a `Python Package <api_user_guide.rst>`_
+* It is both a `Command Line Tool <cli_user_guide.rst>`_ and a `Python library <api_user_guide.rst>`_
 * It supports `STAC and Static STAC <notebooks/tutos/tuto_stac_client.ipynb>`_ catalogs
 * It can run as a `STAC API REST server <stac_rest.rst>`_ to give access to a provider's catalog
 * New providers can be added with a `configuration file <add_provider.rst>`_ or by extending EODAG with `plugins <plugins.rst>`_
+* More than 270 `product types <getting_started_guide/product_types.rst#product-types-information-csv>`_ configured
 
 .. image:: _static/eodag_overview.png
    :width: 800
