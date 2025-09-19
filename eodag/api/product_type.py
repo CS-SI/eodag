@@ -227,7 +227,7 @@ class ProductType(BaseModel):
     def _repr_html_(self, embedded: bool = False) -> str:
         thead = (
             f"""<thead><tr><td style='text-align: left; color: grey;'>
-                {type(self).__name__}("{self.id}")</td></tr></thead>
+                {type(self).__name__}("<span style='color: black'>{self.id}</span>")</td></tr></thead>
             """
             if not embedded
             else ""
@@ -318,9 +318,8 @@ class ProductTypesList(UserList[ProductType]):
         # mock "thead" tag by reproduicing its style to make "details" and "summary" tags work properly
         mock_thead = (
             f"""<details class='foldable'>
-                <summary style='text-align: left; color: grey; padding: 0.5em 0.5em;'>
-                {type(self).__name__}&ensp;({len(self)}):&ensp;
-                {"[" + str(self[0]) + ",&ensp;...]" if len(self) > 0 else "[]"}
+                <summary style='text-align: left; color: grey; font-size: 12px; padding: 0.5em 0.5em;'>
+                {type(self).__name__}&ensp;({len(self)})
                 </summary>
             """
             if not embedded
@@ -333,15 +332,16 @@ class ProductTypesList(UserList[ProductType]):
             + "".join(
                 [
                     f"""<tr {tr_style}><td style='text-align: left;'>
-                        <details class='foldable'><summary style='color: grey; padding: 0.5em 0.5em;'>
-                        <span style='color: black'>{pt}</span>:&ensp;
-                        title={pt.title},&ensp;...
+                        <details class='foldable'>
+                        <summary style='color: grey; font-family: monospace; padding: 0.5em 0.5em;'>
+                        {i}&ensp;
+                        {type(pt).__name__}("<span style='color: black'>{pt.id}</span>")
                     </summary>
                     {re.sub(r"(<thead>.*|.*</thead>)", "", pt._repr_html_())}
                     </details>
                     </td></tr>
                     """
-                    for pt in self
+                    for i, pt in enumerate(self)
                 ]
             )
             + "</tbody></table></details>"
