@@ -6734,6 +6734,16 @@
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+    S1_SAR_L3_IW_MCM:
+      productType: S1SAR_L3_IW_MCM
+      collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_L3_DH_MCM:
+      productType: S1SAR_L3_DH_MCM
+      collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        cloudCover: '$.null'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___

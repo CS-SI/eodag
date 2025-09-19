@@ -328,8 +328,18 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S1_SAR_GRD_COG": ["cop_dataspace", "cop_dataspace_s3"],
-        "S1_SAR_L3_IW_MCM": ["creodias", "cop_dataspace", "creodias_s3", "cop_dataspace_s3"],
-        "S1_SAR_L3_DH_MCM": ["creodias", "cop_dataspace", "creodias_s3", "cop_dataspace_s3"],
+        "S1_SAR_L3_IW_MCM": [
+            "creodias",
+            "cop_dataspace",
+            "creodias_s3",
+            "cop_dataspace_s3",
+        ],
+        "S1_SAR_L3_DH_MCM": [
+            "creodias",
+            "cop_dataspace",
+            "creodias_s3",
+            "cop_dataspace_s3",
+        ],
         "S1_SAR_OCN": [
             "cop_dataspace",
             "cop_dataspace_s3",
