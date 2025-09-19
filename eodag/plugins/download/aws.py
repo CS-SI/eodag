@@ -34,7 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.plugins.authentication.aws_auth import AwsAuth, raise_if_auth_error
+from eodag.plugins.authentication.aws_auth import raise_if_auth_error
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -792,30 +792,6 @@ class AwsDownload(Download):
                 self.get_chunk_dest_path(product, product_chunk, build_safe=build_safe)
             )
         return os.path.commonpath(chunk_paths)
-
-    def get_rio_env(
-        self, bucket_name: str, prefix: str, auth_plugin: AwsAuth
-    ) -> dict[str, Any]:
-        """Get rasterio environment variables needed for data access authentication.
-
-        :param bucket_name: Bucket containg objects
-        :param prefix: Prefix used to try auth
-        :param auth_dict: Dictionary containing authentication keys
-        :returns: The rasterio environement variables
-        """
-        rio_env_kwargs = {}
-        if endpoint_url := getattr(self.config, "s3_endpoint", None):
-            rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
-        rio_env_kwargs |= {}
-
-        s3_session = auth_plugin.s3_session
-
-        if auth_plugin.config.requester_pays:
-            rio_env_kwargs["requester_pays"] = True
-        return {
-            "session": s3_session,
-            **rio_env_kwargs,
-        }
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None
