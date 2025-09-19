@@ -389,6 +389,16 @@ class TestMetadataFormatter(unittest.TestCase):
         to_format = r"{fieldname#to_upper}"
         self.assertEqual(format_metadata(to_format, fieldname=None), "None")
 
+    def test_convert_to_title(self):
+        to_format = r"{fieldname#to_title}"
+        self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "Foo.Bar")
+
+    def test_convert_to_title_not_available(self):
+        to_format = r"{fieldname#to_title}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="Not Available"), "Not Available"
+        )
+
     def test_convert_fake_l2a_title_from_l1c(self):
         to_format = "{fieldname#fake_l2a_title_from_l1c}"
         self.assertEqual(

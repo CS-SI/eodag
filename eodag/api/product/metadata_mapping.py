@@ -174,6 +174,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``to_lower``: Convert a string to lowercase
         - ``to_upper``: Convert a string to uppercase
+        - ``to_title``: Convert a string to title case
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``split_cop_dem_id``: get the bbox by splitting the product id
@@ -599,6 +600,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_to_upper(string: str) -> str:
             """Convert a string to uppercase."""
             return string.upper()
+
+        @staticmethod
+        def convert_to_title(string: str) -> str:
+            """Convert a string to title case."""
+            if string == NOT_AVAILABLE:
+                return string
+            return string.title()
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:
