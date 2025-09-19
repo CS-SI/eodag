@@ -17,6 +17,7 @@
 # limitations under the License.
 import logging
 import re
+import warnings
 from typing import Union
 
 from fastapi import FastAPI, Request
@@ -52,6 +53,14 @@ EODAG_DEFAULT_STATUS_CODES = {
     UnsupportedProvider: status.HTTP_404_NOT_FOUND,
     ValidationError: status.HTTP_400_BAD_REQUEST,
 }
+
+warnings.warn(
+    "The module `eodag.rest.errors` is deprecated since v3.9.0 and will be removed in a future version. "
+    "The STAC server has moved to https://github.com/CS-SI/stac-fastapi-eodag",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
+
 
 logger = logging.getLogger("eodag.rest.server")
 

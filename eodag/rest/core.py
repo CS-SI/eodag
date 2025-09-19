@@ -21,6 +21,7 @@ import datetime
 import logging
 import os
 import re
+import warnings
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
 from urllib.parse import urlencode
@@ -82,6 +83,13 @@ if TYPE_CHECKING:
     from requests.auth import AuthBase
     from starlette.responses import Response
 
+
+warnings.warn(
+    "The module `eodag.rest.core` is deprecated since v3.9.0 and will be removed in a future version. "
+    "The STAC server has moved to https://github.com/CS-SI/stac-fastapi-eodag",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
 
 eodag_api = eodag.EODataAccessGateway()
 
