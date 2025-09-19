@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import warnings
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from json import JSONDecodeError
@@ -66,6 +67,13 @@ if TYPE_CHECKING:
     from requests import Response
 
 from starlette.responses import Response as StarletteResponse
+
+warnings.warn(
+    "The module `eodag.rest.server` is deprecated since v3.9.0 and will be removed in a future version. "
+    "The STAC server has moved to https://github.com/CS-SI/stac-fastapi-eodag",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
 
 logger = logging.getLogger("eodag.rest.server")
 

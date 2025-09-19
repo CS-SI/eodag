@@ -42,13 +42,14 @@ Commands:
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import shutil
 import sys
 import textwrap
 from importlib.metadata import metadata
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
@@ -116,6 +117,22 @@ class MutuallyExclusiveOption(click.Option):
             )
 
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
+
+
+def _deprecated_cli(message: str, version: Optional[str] = None) -> Callable[..., Any]:
+    """Decorator to mark a CLI command as deprecated and print a bold yellow warning."""
+    version_msg = f" -- Deprecated since v{version}" if version else ""
+
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            full_message = f"DEPRECATED: {message}{version_msg}"
+            click.echo(click.style(full_message, fg="yellow", bold=True), err=True)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 @click.group(chain=True)
@@ -631,9 +648,17 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
 
 @eodag.command(
-    help="Start eodag HTTP server\n\n"
-    "Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-Origin Resource Sharing allowed origins as "
-    "comma-separated URLs (e.g. 'http://somewhere,htttp://somewhere.else')."
+    help="(deprecated) Start eodag HTTP server\n\n"
+    + (
+        click.style(
+            "Running a web server from the CLI is deprecated and will be removed in a future version.\n"
+            "This feature has been moved to its own repository: https://github.com/CS-SI/stac-fastapi-eodag\n\n",
+            fg="yellow",
+            bold=True,
+        )
+        + "Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-Origin Resource Sharing allowed "
+        "origins as comma-separated URLs (e.g. 'http://somewhere,http://somewhere.else')."
+    )
 )
 @click.option(
     "-f",
@@ -676,6 +701,13 @@ def download(ctx: Context, **kwargs: Any) -> None:
     help="Run in debug mode (for development purpose)",
 )
 @click.pass_context
+@_deprecated_cli(
+    message=(
+        "Running a web server from the CLI is deprecated and will be removed in a future version. "
+        "This feature has been moved to its own repository: https://github.com/CS-SI/stac-fastapi-eodag"
+    ),
+    version="3.9.0",
+)
 def serve_rest(
     ctx: Context,
     daemon: bool,
