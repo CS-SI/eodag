@@ -2303,15 +2303,15 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         auth_plugin.authenticate()
 
         # nothing needed
-        rio_env_dict = plugin.get_rio_env("some-bucket", "some/prefix", auth_plugin)
+        rio_env_dict = auth_plugin.get_rio_env()
         self.assertIn("session", rio_env_dict)
         self.assertIn("requester_pays", rio_env_dict)
         self.assertTrue(rio_env_dict["requester_pays"])
 
         # with endpoint url
-        plugin.config.s3_endpoint = "some.endpoint"
+        auth_plugin.config.s3_endpoint = "some.endpoint"
         self.assertEqual(auth_plugin.config.requester_pays, True)
-        rio_env_dict = plugin.get_rio_env("some-bucket", "some/prefix", auth_plugin)
+        rio_env_dict = auth_plugin.get_rio_env()
         self.assertIsNotNone(rio_env_dict.pop("session", None))
         self.assertDictEqual(
             rio_env_dict,

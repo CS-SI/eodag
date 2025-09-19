@@ -256,3 +256,23 @@ class AwsAuth(Authentication):
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
         return authenticated_objects
+
+    def get_rio_env(self) -> dict[str, Any]:
+        """Get rasterio environment variables needed for data access authentication.
+
+        :returns: The rasterio environement variables
+        """
+        rio_env_kwargs = {}
+        if endpoint_url := getattr(self.config, "s3_endpoint", None):
+            rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
+
+        if self.s3_session is None:
+            self.authenticate()
+
+        if self.config.requester_pays:
+            rio_env_kwargs["requester_pays"] = True
+
+        return {
+            "session": self.s3_session,
+            **rio_env_kwargs,
+        }
