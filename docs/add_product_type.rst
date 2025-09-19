@@ -3,6 +3,9 @@
 Add a product type
 ==================
 
+A product type in `eodag` represents a specific kind of Earth Observation data product, defined by its characteristics and metadata.
+By following the steps outlined below, you can extend EODAG's capabilities to support additional product types from various providers.
+
 Add product type definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -4,6 +4,11 @@
 EODataAccessGateway
 ===================
 
+The `EODataAccessGateway` class is the core component of the EODAG library.
+It provides a unified interface for interacting with various Earth Observation data providers.
+This class allows users to configure providers, search for products, download data, and perform other operations related to Earth Observation data management.
+Below is an overview of its main functionalities, categorized for ease of use.
+
 Constructor
 -----------
 .. autosummary::

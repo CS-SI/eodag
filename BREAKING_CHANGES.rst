@@ -1,4 +1,4 @@
-Breaking changes
+Migration guide
 ----------------
 
 Full changelog available in `Release history <changelog.html>`_.

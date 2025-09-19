@@ -5,6 +5,10 @@
 Utils
 =====
 
+This section provides an overview of the utility functions and classes available in the `eodag` library.
+These utilities are designed to assist with various tasks such as logging, handling callbacks, performing free text searches, working with Jupyter notebooks, interacting with S3 storage, and processing xarray data.
+Each subsection below details the specific utilities and their usage.
+
 Logging
 -------
 

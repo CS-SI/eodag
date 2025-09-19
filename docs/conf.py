@@ -25,6 +25,9 @@ from datetime import datetime
 from importlib.metadata import metadata
 from typing import Any
 
+from docutils import nodes
+from sphinx.writers.html import HTMLTranslator
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -48,6 +51,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinxcontrib.programoutput",
     "sphinxemoji.sphinxemoji",
+    "sphinx_design",
 ]
 
 # Notebook integration parameters
@@ -259,6 +263,52 @@ intersphinx_mapping = {
 suppress_warnings = ["misc.copy_overwrite"]
 
 
+class PatchedHTMLTranslator(HTMLTranslator):
+    """
+    Patched HTML translator to add cloaking of mailto links and
+    external links.
+    """
+
+    def visit_reference(self, node: nodes.Element) -> None:
+        """
+        Visit a reference node and add cloaking for mailto links and
+        target and rel attributes for external links.
+        """
+        atts = {"class": "reference"}
+        if node.get("internal") or "refuri" not in node:
+            atts["class"] += " internal"
+        else:
+            atts["class"] += " external"
+            # add target and rel attributes for external links
+            atts["target"] = "_blank"
+            atts["rel"] = "noopener noreferrer"
+        if "refuri" in node:
+            atts["href"] = node["refuri"] or "#"
+            if self.settings.cloak_email_addresses and atts["href"].startswith(
+                "mailto:"
+            ):
+                atts["href"] = self.cloak_mailto(atts["href"])
+                self.in_mailto = True
+        else:
+            assert (
+                "refid" in node
+            ), 'References must have "refuri" or "refid" attribute.'
+            atts["href"] = "#" + node["refid"]
+        if not isinstance(node.parent, nodes.TextElement):
+            assert len(node) == 1 and isinstance(node[0], nodes.image)
+            atts["class"] += " image-reference"
+        if "reftitle" in node:
+            atts["title"] = node["reftitle"]
+        # if node already have a target, keep it
+        if "target" in node:
+            atts["target"] = node["target"]
+        self.body.append(self.starttag(node, "a", "", **atts))
+        if node.get("secnumber"):
+            self.body.append(
+                ("%s" + self.secnumber_suffix) % ".".join(map(str, node["secnumber"]))
+            )
+
+
 def _build_finished(app, exception):
     """Post-build pages edit"""
 
@@ -309,3 +359,4 @@ def setup(app):
     """dummy docstring for pydocstyle"""
     app.connect("html-page-context", _html_page_context)
     app.connect("build-finished", _build_finished)
+    app.set_translator("html", PatchedHTMLTranslator)
