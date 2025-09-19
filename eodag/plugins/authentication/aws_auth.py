@@ -265,16 +265,14 @@ class AwsAuth(Authentication):
         rio_env_kwargs = {}
         if endpoint_url := getattr(self.config, "s3_endpoint", None):
             rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
-        rio_env_kwargs |= {}
 
         if self.s3_session is None:
             self.authenticate()
 
-        s3_session = self.s3_session
-
         if self.config.requester_pays:
             rio_env_kwargs["requester_pays"] = True
+
         return {
-            "session": s3_session,
+            "session": self.s3_session,
             **rio_env_kwargs,
         }
