@@ -15,17 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import TYPE_CHECKING, Optional
-
-import boto3
-from botocore.exceptions import ClientError
+from typing import Optional
 
 from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
-from eodag.utils.exceptions import MisconfiguredError
-
-if TYPE_CHECKING:
-    from mypy_boto3_s3.service_resource import S3ServiceResource
 
 
 class CreodiasS3Download(AwsDownload):
@@ -41,36 +34,6 @@ class CreodiasS3Download(AwsDownload):
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be
           verified in requests; default: ``True``
     """
-
-    def _get_authenticated_objects_unsigned(self, bucket_name, prefix, auth_dict):
-        """Auth strategy using no-sign-request"""
-
-        raise ClientError(
-            {"Error": {"Code": "AccessDenied", "Message": "skip unsigned"}},
-            "_get_authenticated_objects_unsigned",
-        )
-
-    def _get_authenticated_objects_from_auth_keys(self, bucket_name, prefix, auth_dict):
-        """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
-        from provided credentials"""
-
-        # check if credentials are missing
-        required_creds = ["aws_access_key_id", "aws_secret_access_key"]
-        if not all(auth_dict.get(x, None) for x in required_creds):
-            raise MisconfiguredError(
-                f"Incomplete credentials for {self.provider}, missing "
-                f"{[x for x in required_creds if not auth_dict.get(x, None)]}"
-            )
-
-        s3_session = boto3.session.Session(**auth_dict)
-        s3_resource: S3ServiceResource = s3_session.resource(
-            "s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
-        )
-        objects = s3_resource.Bucket(bucket_name).objects.filter()
-        list(objects.filter(Prefix=prefix).limit(1))
-        self.s3_session = s3_session
-        self.s3_resource = s3_resource
-        return objects
 
     def _get_bucket_names_and_prefixes(
         self,

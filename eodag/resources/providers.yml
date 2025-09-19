@@ -492,7 +492,6 @@
 
   download: !plugin
     type: AwsDownload
-    requester_pays: True
     ssl_verify: true
     products:
       CBERS4_MUX_L2:
@@ -531,6 +530,7 @@
   download_auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    requester_pays: True
   search_auth: !plugin
     type: HttpQueryStringAuth
     matching_url: https://gate.eos.com
@@ -1179,11 +1179,11 @@
       productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    requester_pays: True
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    requester_pays: True
 
 ---
 !provider # MARK: earth_search
@@ -1278,7 +1278,6 @@
       productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    requester_pays: True
     ssl_verify: true
     products:
       S2_MSI_L1C:
@@ -1290,6 +1289,7 @@
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    requester_pays: True
 
 ---
 !provider # MARK: earth_search_cog
@@ -1413,6 +1413,7 @@
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    s3_endpoint: https://storage.googleapis.com
     matching_conf:
       s3_endpoint: https://storage.googleapis.com
 ---
@@ -4068,6 +4069,7 @@
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    s3_endpoint: 'https://eodata.cloudferro.com'
     matching_conf:
       s3_endpoint: 'https://eodata.cloudferro.com'
   products:
@@ -5604,6 +5606,7 @@
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    s3_endpoint: https://s3.waw3-1.cloudferro.com
     matching_conf:
       s3_endpoint: https://s3.waw3-1.cloudferro.com
 
@@ -5850,6 +5853,7 @@
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    s3_endpoint: https://s3.datalake.cnes.fr
     matching_conf:
       s3_endpoint: https://s3.datalake.cnes.fr
 

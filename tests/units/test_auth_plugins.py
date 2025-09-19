@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from unittest import mock
 
 import responses
+from mypy_boto3_s3.service_resource import BucketObjectsCollection
 from pystac.utils import now_in_utc
 from requests import Request, Response, Timeout
 from requests.auth import AuthBase
@@ -47,6 +48,7 @@ class BaseAuthPluginTest(unittest.TestCase):
         super(BaseAuthPluginTest, cls).setUpClass()
         cls.providers_config = {}
         cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.auth_plugins = {}
 
     def tearDown(self):
         super(BaseAuthPluginTest, self).tearDown()
@@ -55,7 +57,11 @@ class BaseAuthPluginTest(unittest.TestCase):
             self.get_auth_plugin(provider).config.__dict__.pop("credentials", None)
 
     def get_auth_plugin(self, provider):
-        return next(self.plugins_manager.get_auth_plugins(provider))
+        if provider in self.auth_plugins:
+            return self.auth_plugins[provider]
+        auth_plugin = next(self.plugins_manager.get_auth_plugins(provider))
+        self.auth_plugins[provider] = auth_plugin
+        return auth_plugin
 
 
 class TestAuthPluginTokenAuth(BaseAuthPluginTest):
@@ -607,29 +613,120 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         )
         cls.plugins_manager = PluginManager(cls.providers_config)
 
-    def test_plugins_auth_aws_authenticate(self):
-        """AwsAuth.authenticate must return credentials in a dict"""
-        self.assertDictEqual(
-            self.get_auth_plugin("provider_with_auth_keys").authenticate(),
-            {
-                "aws_access_key_id": self.aws_access_key_id,
-                "aws_secret_access_key": self.aws_secret_access_key,
-            },
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
+    )
+    def test_plugins_auth_aws_authenticate(self, mock_s3_client, mock_create_session):
+        """AwsAuth.authenticate must return an S3AuthContextPool containing available auth contexts"""
+
+        class MockSession:
+            def __init__(
+                self,
+                profile_name: str = None,
+                aws_access_key_id: str = None,
+                aws_secret_access_key: str = None,
+                aws_session_token: str = None,
+            ):
+                self.profile_name = profile_name
+                self.aws_access_key_id = aws_access_key_id
+                self.aws_secret_access_key = aws_secret_access_key
+                self.aws_session_token = aws_session_token
+                self.resource = mock.MagicMock()
+
+            def get_credentials(self):
+                return self.__dict__
+
+        mock_create_session.return_value = MockSession(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
         )
-        self.assertDictEqual(
-            self.get_auth_plugin("provider_with_auth_keys_session").authenticate(),
-            {
-                "aws_access_key_id": self.aws_access_key_id,
-                "aws_secret_access_key": self.aws_secret_access_key,
-                "aws_session_token": self.aws_session_token,
-            },
+        plugin_auth_keys = self.get_auth_plugin("provider_with_auth_keys")
+        plugin_auth_keys.authenticate()
+        mock_create_session.assert_called_once_with(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
         )
-        self.assertDictEqual(
-            self.get_auth_plugin("provider_with_auth_profile").authenticate(),
-            {
-                "profile_name": self.profile_name,
-            },
+
+        keys_dict = {
+            "aws_access_key_id": self.aws_access_key_id,
+            "aws_secret_access_key": self.aws_secret_access_key,
+        }
+        self.assertDictEqual(keys_dict, plugin_auth_keys.config.credentials)
+        mock_create_session.reset_mock()
+
+        mock_create_session.return_value = MockSession(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
         )
+        plugin_auth_keys_session = self.get_auth_plugin(
+            "provider_with_auth_keys_session"
+        )
+        plugin_auth_keys_session.authenticate()
+        mock_create_session.assert_called_once_with(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
+        )
+
+        keys_dict = {
+            "aws_access_key_id": self.aws_access_key_id,
+            "aws_secret_access_key": self.aws_secret_access_key,
+            "aws_session_token": self.aws_session_token,
+        }
+        self.assertDictEqual(keys_dict, plugin_auth_keys_session.config.credentials)
+        mock_create_session.reset_mock()
+
+        mock_create_session.return_value = MockSession(profile_name=self.profile_name)
+        plugin_auth_profile = self.get_auth_plugin("provider_with_auth_profile")
+        plugin_auth_profile.authenticate()
+        mock_create_session.assert_called_once_with(profile_name=self.profile_name)
+
+        keys_dict = {"aws_profile": self.profile_name}
+        self.assertDictEqual(keys_dict, plugin_auth_profile.config.credentials)
+
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_auth_aws_authenticate_objects(
+        self, mock_get_authenticated_objects, mock_s3_client, mock_session
+    ):
+        """authenticate_objects should return the available objects per accessible bucket"""
+
+        # no authenticated objects -> error
+        plugin = self.get_auth_plugin("provider_with_auth_keys")
+        buckets_prefixes = [("a", "b/c/x.png"), ("a", "b/c/y.json")]
+        mock_get_authenticated_objects.side_effect = AuthenticationError("problem")
+        with self.assertRaises(AuthenticationError):
+            plugin.authenticate_objects(buckets_prefixes)
+
+        auth_objects_a = mock.Mock(spec=BucketObjectsCollection)
+        auth_objects_b = mock.Mock(spec=BucketObjectsCollection)
+        # one authenticated
+        plugin = self.get_auth_plugin("provider_with_auth_keys_session")
+        buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
+        mock_get_authenticated_objects.side_effect = [
+            AuthenticationError("problem"),
+            auth_objects_b,
+        ]
+        auth_objects = plugin.authenticate_objects(buckets_prefixes)
+        self.assertDictEqual({"b": auth_objects_b}, auth_objects)
+        # both buckets authenticated
+        plugin = self.get_auth_plugin("provider_with_auth_profile")
+        buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
+        mock_get_authenticated_objects.side_effect = [auth_objects_a, auth_objects_b]
+        auth_objects = plugin.authenticate_objects(buckets_prefixes)
+        self.assertDictEqual({"a": auth_objects_a, "b": auth_objects_b}, auth_objects)
 
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):

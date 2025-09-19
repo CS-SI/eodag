@@ -14,7 +14,6 @@ from tests.context import (
     AwsAuth,
     EOProduct,
     InvalidDataError,
-    MisconfiguredError,
     PluginConfig,
     S3FileInfo,
     StreamResponse,
@@ -242,18 +241,6 @@ class TestUtilsS3(TestCase):
         for asset_name, expected in expected_assets.items():
             with self.subTest(asset=asset_name):
                 self.assertDictEqual(self.prod.assets[asset_name].data, expected)
-
-    def test_utils_s3_update_assets_from_s3_credentials_nok(self):
-        """update_assets_from_s3 must have required credentials"""
-        prod = EOProduct("dummy", dict(geometry="POINT (0 0)", id="foo"))
-        auth_plugin = AwsAuth("dummy", PluginConfig())
-        self.assertRaises(
-            MisconfiguredError,
-            update_assets_from_s3,
-            prod,
-            auth_plugin,
-            content_url="s3://mybucket/path/to/unzipped",
-        )
 
     def test_utils_s3_file_position_from_s3_zip(self):
         # Prepare a zip with both uncompressed and compressed files

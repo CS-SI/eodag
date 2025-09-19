@@ -86,6 +86,7 @@ from eodag.utils.exceptions import (
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
+    from mypy_boto3_s3 import S3ServiceResource
     from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
@@ -588,7 +589,7 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -752,7 +753,7 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,

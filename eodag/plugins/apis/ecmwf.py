@@ -46,6 +46,7 @@ from eodag.utils.logging import get_logging_verbose
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
+    from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
@@ -54,6 +55,7 @@ if TYPE_CHECKING:
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
+
 
 logger = logging.getLogger("eodag.apis.ecmwf")
 
@@ -171,7 +173,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
