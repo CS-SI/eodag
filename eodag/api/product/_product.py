@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import tempfile
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import requests
@@ -122,6 +123,8 @@ class EOProduct:
     filename: str
     #: Product search keyword arguments, stored during search
     search_kwargs: Any
+    #: Datetime for download next try
+    next_try: datetime
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
@@ -407,7 +410,6 @@ class EOProduct:
         ssl_verify: Optional[bool] = None,
         auth: Optional[AuthBase] = None,
     ):
-
         """Download the quicklook image from the EOProduct's quicklook URL.
 
         This method performs an HTTP GET request to retrieve the quicklook image and saves it
@@ -505,7 +507,6 @@ class EOProduct:
         )
 
         if not os.path.isfile(quicklook_file):
-
             # progress bar init
             if progress_callback is None:
                 progress_callback = ProgressCallback()
@@ -548,7 +549,6 @@ class EOProduct:
                     quicklook_file, progress_callback, ssl_verify, auth
                 )
             except RequestException as e:
-
                 logger.debug(
                     f"Error while getting resource with authentication. {e} \nTrying without authentication..."
                 )
