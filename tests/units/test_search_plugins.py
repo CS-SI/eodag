@@ -163,7 +163,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             "https://Sentinel2.browse.catalog.mundiwebservices.com/opensearch?timeStart=2020-08-08T00:00:00.000Z&"
             "timeEnd=2020-08-16T00:00:00.000Z&geometry="
             "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&"
-            "collection=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
+            "productType=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
         )
         mundi_products_count = 47
         number_of_products = 2
@@ -205,7 +205,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             "https://Sentinel2.browse.catalog.mundiwebservices.com/opensearch?timeStart=2020-08-08T00:00:00.000Z&"
             "timeEnd=2020-08-16T00:00:00.000Z&geometry="
             "POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, 137.7729 13.1342))&"
-            "collection=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
+            "productType=IMAGE&processingLevel=L1C&format=atom&relation=intersects&maxRecords=2&startIndex=1"
         )
         number_of_products = 2
 
