@@ -532,40 +532,40 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # restore configuration
         search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_without_fetch_url(
+    def test_plugins_search_querystringsearch_discover_collections_without_fetch_url(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle missing fetch_url"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        """QueryStringSearch.discover_collections must handle missing fetch_url"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_collections configured
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types.pop("fetch_url", None)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections.pop("fetch_url", None)
 
-        response = search_plugin.discover_product_types()
+        response = search_plugin.discover_collections()
         self.assertIsNone(response)
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_paginated_qs_dict(
+    def test_plugins_search_querystringsearch_discover_collections_paginated_qs_dict(
         self,
     ):
         """
-        QueryStringSearch.discover_product_types must handle paginated responses with query string parameters
+        QueryStringSearch.discover_collections must handle paginated responses with query string parameters
         """
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
         # change configuration for this test to filter out some collections
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types[
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections[
             "fetch_url"
         ] = "https://foo.bar/collections"
-        search_plugin.config.discover_product_types[
+        search_plugin.config.discover_collections[
             "next_page_url_tpl"
         ] = "{url}?page={page}"
-        search_plugin.config.discover_product_types["start_page"] = 0
-        search_plugin.config.discover_product_types[
+        search_plugin.config.discover_collections["start_page"] = 0
+        search_plugin.config.discover_collections[
             "single_collection_fetch_qs"
         ] = "foo=bar"
 
@@ -603,47 +603,47 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 "https://foo.bar/collections?page=2&foo=bar",
                 json={"collections": []},
             )
-            conf_update_dict = search_plugin.discover_product_types()
+            conf_update_dict = search_plugin.discover_collections()
             self.assertIn("foo_collection", conf_update_dict["providers_config"])
-            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("foo_collection", conf_update_dict["collections_config"])
             self.assertIn("bar_collection", conf_update_dict["providers_config"])
-            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["collections_config"])
             self.assertEqual(
-                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                conf_update_dict["providers_config"]["foo_collection"]["_collection"],
                 "foo_collection",
             )
             self.assertEqual(
-                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                conf_update_dict["collections_config"]["foo_collection"]["title"],
                 "The FOO collection",
             )
 
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_per_page_no_fetch_url(
+    def test_plugins_search_querystringsearch_discover_collections_per_page_no_fetch_url(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle paginated responses with query string parameters"""
+        """QueryStringSearch.discover_collections must handle paginated responses with query string parameters"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types.pop("fetch_url")
-        search_plugin.config.discover_product_types[
+        search_plugin = self.get_search_plugin(self.collection, provider)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections.pop("fetch_url")
+        search_plugin.config.discover_collections[
             "next_page_url_tpl"
         ] = "{url}?page={page}"
-        search_plugin.config.discover_product_types["start_page"] = 0
-        result = search_plugin.discover_product_types_per_page()
+        search_plugin.config.discover_collections["start_page"] = 0
+        result = search_plugin.discover_collections_per_page()
         assert result is None
 
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_per_page_keyerror(
+    def test_plugins_search_querystringsearch_discover_collections_per_page_keyerror(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle missing keys in the response"""
+        """QueryStringSearch.discover_collections must handle missing keys in the response"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types = {
+        search_plugin = self.get_search_plugin(self.collection, provider)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections = {
             "result_type": "json",
             "results_entry": parse("$.collections"),
         }
@@ -656,21 +656,21 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             QueryStringSearch, "_request", return_value=DummyResponse()
         ):
             with self.assertLogs(level="WARNING") as log:
-                result = search_plugin.discover_product_types_per_page(
+                result = search_plugin.discover_collections_per_page(
                     fetch_url="https://foo.bar/collections"
                 )
                 assert result is None
                 assert any("Incomplete" in m for m in log.output)
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_per_page_request_exception(
+    def test_plugins_search_querystringsearch_discover_collections_per_page_request_exception(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle request exceptions"""
+        """QueryStringSearch.discover_collections must handle request exceptions"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types = {
+        search_plugin = self.get_search_plugin(self.collection, provider)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections = {
             "result_type": "json",
             "results_entry": JSONPath(),
         }
@@ -683,7 +683,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             QueryStringSearch, "_request", return_value=DummyResponse()
         ):
             with self.assertLogs(level="DEBUG") as log:
-                result = search_plugin.discover_product_types_per_page(
+                result = search_plugin.discover_collections_per_page(
                     fetch_url="https://foo.bar/collections"
                 )
                 assert result is None
@@ -692,7 +692,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                     for m in log.output
                 )
 
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_querystringsearch_discover_collections_post(
@@ -872,7 +872,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_count_hits_xml(self):
         """Test QueryStringSearch.count_hits() with XML response and XPath key path"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {
             "total_items_nb_key_path": "string(//ns:TotalResults)"
         }
@@ -890,7 +890,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_count_hits_json_dict_ok(self):
         """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {"total_items_nb_key_path": parse("$.total")}
 
         mock_response = mock.Mock()
@@ -903,7 +903,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_count_hits_json_dict_not_jsonpath(self):
         """Test QueryStringSearch.count_hits() with JSON response and non-JSONPath key path"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {"total_items_nb_key_path": "$.total"}
 
         mock_response = mock.Mock()
@@ -918,7 +918,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path not found in the response"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {
             "total_items_nb_key_path": parse("$.missing")
         }

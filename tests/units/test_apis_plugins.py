@@ -162,7 +162,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "2015-10-21T00:00:00.000Z",
         )
 
-    def test_plugins_apis_ecmwf_query_without_producttype(self):
+    def test_plugins_apis_ecmwf_query_without_collection(self):
         """
         EcmwfApi.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
@@ -179,7 +179,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert eoproduct.properties["title"].startswith("MARS___")
         assert eoproduct.location.startswith("http")
 
-    def test_plugins_apis_ecmwf_query_with_producttype(self):
+    def test_plugins_apis_ecmwf_query_with_collection(self):
         """EcmwfApi.query must build a EOProduct from input parameters with predefined collection"""
         results, _ = self.api_plugin.query(
             **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
@@ -198,7 +198,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         eoproduct = results[0]
         assert eoproduct.properties["ecmwf:param"] == "tcc"
 
-    def test_plugins_apis_ecmwf_query_with_custom_producttype(self):
+    def test_plugins_apis_ecmwf_query_with_custom_collection(self):
         """EcmwfApi.query must build a EOProduct from input parameters with custom collection"""
         results, _ = self.api_plugin.query(
             **self.query_dates,
