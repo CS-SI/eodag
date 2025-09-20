@@ -1099,7 +1099,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
             collection="S2_MSI_L1C",
-            cloudCover=50,
+            **{"eo:cloud_cover": 50},
         )
         mock_requests_post.assert_called()
         self.assertIn("cloudCoverage", str(mock_requests_post.call_args_list[-1][1]))
@@ -1108,7 +1108,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
             collection="S1_SAR_GRD",
-            cloudCover=50,
+            **{"eo:cloud_cover": 50},
         )
         mock_requests_post.assert_called()
         self.assertNotIn(
@@ -1426,7 +1426,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.onda_url_count = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count?$search="footprint:"'
             "Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, "
-            '137.7729 13.1342)))" AND collection:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
             'AND endPosition:[* TO 2020-08-16T00:00:00.000Z] AND foo:bar"'
         )
         self.onda_products_count = 47
@@ -1453,7 +1453,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         ]
         products = self.onda_search_plugin.normalize_results(raw_results)
 
-        self.assertEqual(products[0].properties["foo"], "bar")
+        self.assertEqual(products[0].properties["onda:foo"], "bar")
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
@@ -1508,7 +1508,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         onda_url_search = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
             'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
-            '137.7729 13.1342)))" AND collection:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
             "AND endPosition:[* TO 2020-08-16T00:00:00.000Z] "
             'AND foo:bar"&$orderby=beginPosition asc&$top=2&$skip=0&$expand=Metadata'
         )
@@ -1631,7 +1631,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         onda_url_search = (
             'https://catalogue.onda-dias.eu/dias-catalogue/Products?$format=json&$search="'
             'footprint:"Intersects(POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, 153.7491 13.1342, '
-            '137.7729 13.1342)))" AND collection:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
+            '137.7729 13.1342)))" AND productType:S2MSI1C AND beginPosition:[2020-08-08T00:00:00.000Z TO *] '
             "AND endPosition:[* TO 2020-08-16T00:00:00.000Z] "
             'AND foo:bar"&$orderby=beginPosition asc&$top=2&$skip=0&$expand=Metadata'
         )
@@ -2279,8 +2279,6 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
 
         # custom query for meteoblue
         custom_query = {"queries": {"foo": "bar"}}
-        collection_config = {"platform": "NEMSGLOBAL", "alias": "THE.ALIAS"}
-        setattr(self.search_plugin.config, "collection_config", collection_config)
         products, estimate = self.search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.auth_plugin, auth=self.auth),
             **custom_query,
@@ -2320,8 +2318,6 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
                 }
             ),
         )
-        self.assertEqual(products[0].properties["platform"], "NEMSGLOBAL")
-        self.assertEqual(products[0].properties["alias"], "THE.ALIAS")
 
 
 class MockResponse:
@@ -3280,10 +3276,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.dataset1_data,
             self.dataset2_data,
         ]
-
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        collection_config = {"platform": "P1"}
-        setattr(search_plugin.config, "collection_config", collection_config)
 
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
             s3_stub.return_value = self.s3
@@ -3341,7 +3334,6 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 "2020-01-03T00:00:00Z",
                 products_dataset2[0].properties["end_datetime"],
             )
-            self.assertEqual("P1", products_dataset2[0].properties["platform"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_no_dates_in_id(self, mock_requests_get):

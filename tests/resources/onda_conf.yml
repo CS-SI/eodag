@@ -48,8 +48,8 @@
             - 'productType:{productType}'
             - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
-            - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
-            - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
+            - 'beginPosition:[{start_datetime#to_iso_utc_datetime} TO *]'
+            - 'endPosition:[* TO {end_datetime#to_iso_utc_datetime}]'
             - '{id#remove_extension}'
             - 'platformSerialIdentifier:{platformSerialIdentifier}'
             - 'instrumentShortName:{instrument}'
@@ -136,10 +136,10 @@
         - '$.Metadata.sensorOperationalMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      startTimeFromAscendingNode:
+      start_datetime:
         - null
         - '$.beginPosition'
-      completionTimeFromAscendingNode:
+      end_datetime:
         - null
         - '$.endPosition'
       polarizationChannels: '{$.Metadata.polarisationChannels#replace_str(","," ")}'
