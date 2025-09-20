@@ -26,8 +26,6 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.types import S3SessionKwargs
-
 
 class Authentication(PluginTopic):
     """Plugins authentication Base plugin
@@ -41,7 +39,7 @@ class Authentication(PluginTopic):
           configuration that needs authentication and helps identifying it
     """
 
-    def authenticate(self) -> Union[AuthBase, S3SessionKwargs, S3ServiceResource]:
+    def authenticate(self) -> Union[AuthBase, S3ServiceResource]:
         """Authenticate"""
         raise NotImplementedError
 
