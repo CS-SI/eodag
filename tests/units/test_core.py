@@ -2922,12 +2922,12 @@ class TestCoreSearch(TestCoreBase):
 
         mock_prepare_search.return_value = (
             [plugin1, plugin2],
-            {"productType": "S2_MSI_L1C"},
+            {"collection": "S2_MSI_L1C"},
         )
         mock_search_plugin.side_effect = [RequestError("fail"), iter([1, 2, 3])]
 
         page_iterator = self.dag.search_iter_page(
-            items_per_page=2, productType="S2_MSI_L1C"
+            items_per_page=2, collection="S2_MSI_L1C"
         )
         results = list(page_iterator)
         self.assertEqual(results, [1, 2, 3])
@@ -2945,12 +2945,12 @@ class TestCoreSearch(TestCoreBase):
 
         mock_prepare_search.return_value = (
             [plugin1, plugin2],
-            {"productType": "S2_MSI_L1C"},
+            {"collection": "S2_MSI_L1C"},
         )
         mock_search_plugin.side_effect = [RequestError("fail1"), RequestError("fail2")]
 
         with self.assertRaises(RequestError):
-            list(self.dag.search_iter_page(items_per_page=2, productType="S2_MSI_L1C"))
+            list(self.dag.search_iter_page(items_per_page=2, collection="S2_MSI_L1C"))
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -3457,35 +3457,35 @@ class TestCoreSearch(TestCoreBase):
         mock_fetch_collections_list.assert_called_with(self.dag)
         mock_search_iter_page_plugin.assert_called_once()
 
-    def test_fetch_external_product_type_with_auth(self):
-        """test _fetch_external_product_type when the plugin needs authentication"""
+    def test_fetch_external_collection_with_auth(self):
+        """test _fetch_external_collection when the plugin needs authentication"""
         provider = "peps"
-        product_type = "S2_MSI_L1C"
+        collection = "S2_MSI_L1C"
 
         plugin = mock.Mock()
         plugin.config = mock.Mock()
-        plugin.config.discover_product_types = {"fetch_url": "http://fake-fetch-url"}
+        plugin.config.discover_collections = {"fetch_url": "http://fake-fetch-url"}
         plugin.config.need_auth = True
         plugin.config.api_endpoint = "http://fake-api"
         plugin.provider = provider
 
-        plugin.discover_product_types = mock.Mock(return_value={"product1": {}})
+        plugin.discover_collections = mock.Mock(return_value={"product1": {}})
 
         dag = EODataAccessGateway()
         dag._plugins_manager = mock.Mock()
         dag._plugins_manager.get_search_plugins.return_value = iter([plugin])
         auth_mock = mock.Mock()
         dag._plugins_manager.get_auth.return_value = auth_mock
-        dag.update_product_types_list = mock.Mock()
-        dag._fetch_external_product_type(provider, product_type)
+        dag.update_collections_list = mock.Mock()
+        dag._fetch_external_collection(provider, collection)
 
         dag._plugins_manager.get_auth.assert_called_once_with(
             plugin.provider, plugin.config.api_endpoint, plugin.config
         )
-        plugin.discover_product_types.assert_called_once_with(
-            productType=product_type, auth=auth_mock
+        plugin.discover_collections.assert_called_once_with(
+            collection=collection, auth=auth_mock
         )
-        dag.update_product_types_list.assert_called_once_with(
+        dag.update_collections_list.assert_called_once_with(
             {provider: {"product1": {}}}
         )
 

@@ -127,7 +127,7 @@ class TestEodagCli(unittest.TestCase):
             )
         self.assertNotEqual(result.exit_code, 0)
 
-    def test_eodag_search_without_producttype_arg(self):
+    def test_eodag_search_without_collection_arg(self):
         """Calling eodag search without -p | --collection should print the help message and return error code"""  # noqa
         start_date = self.faker.date()
         end_date = self.faker.date()
