@@ -985,6 +985,27 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
         try:
             result = str_to_format.format_map(defaultdict(str, **format_variables))
         except (ValueError, TypeError) as e:
+            if not re.search(r"{[\w-]*:[\w-]*}", str_to_format):
+                raise MisconfiguredError(
+                    f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
+                )
+        # retry parsing colons
+        try:
+            str_without_colons = re.sub(
+                r"{([\w-]*):([\w-]*)}",
+                r"{\1_COLON_\2}",
+                str_to_format,
+            )
+            result = str_without_colons.format_map(
+                defaultdict(
+                    str,
+                    **{
+                        k.replace(":", "_COLON_"): v
+                        for k, v in format_variables.items()
+                    },
+                )
+            )
+        except (ValueError, TypeError) as e:
             raise MisconfiguredError(
                 f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
             )
