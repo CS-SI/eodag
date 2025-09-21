@@ -1039,7 +1039,7 @@ def properties_from_json(
         else:
             conversion_or_none, path_or_text = value
         if isinstance(path_or_text, str):
-            if re.search(r"({[^{}:]+})+", path_or_text):
+            if re.search(r"{[\w:-]+}", path_or_text):
                 templates[metadata] = path_or_text
             else:
                 properties[metadata] = path_or_text

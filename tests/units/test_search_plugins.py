@@ -2031,9 +2031,9 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             collection=collection,
             auth=None,
         )
-        self.assertIn("tileIdentifier", products[0].properties)
+        self.assertIn("grid:code", products[0].properties)
         self.assertEqual(
-            products[0].properties["tileIdentifier"],
+            products[0].properties["grid:code"],
             "31TCJ",
         )
 
