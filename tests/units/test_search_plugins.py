@@ -352,16 +352,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_search_cloudcover_peps(
         self, mock__request, mock_normalize_results
     ):
-        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar collections"""  # noqa
+        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar collections"""
 
-        self.peps_search_plugin.query(collection="S2_MSI_L1C", cloudCover=50)
+        self.peps_search_plugin.query(collection="S2_MSI_L1C", **{"eo:cloud_cover": 50})
         mock__request.assert_called()
-        self.assertIn("eo:cloud_cover", mock__request.call_args_list[-1][0][1].url)
+        self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
         mock__request.reset_mock()
 
-        self.peps_search_plugin.query(collection="S1_SAR_GRD", cloudCover=50)
+        self.peps_search_plugin.query(collection="S1_SAR_GRD", **{"eo:cloud_cover": 50})
         mock__request.assert_called()
-        self.assertNotIn("eo:cloud_cover", mock__request.call_args_list[-1][0][1].url)
+        self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
     def test_plugins_search_querystringsearch_search_peps_ko(self):
         """A query with a parameter which is not queryable must
@@ -688,7 +688,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 )
                 assert result is None
                 assert any(
-                    "Could not parse discovered product types response" in m
+                    "Could not parse discovered collections response" in m
                     for m in log.output
                 )
 
@@ -2073,8 +2073,8 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9]+$",
                 },
-                "collection": {
-                    "title": "Collection",
+                "productType": {
+                    "title": "Product Type",
                     "type": "string",
                     "oneOf": [
                         {"const": "DGE_30", "title": "DGE_30", "group": None},
@@ -2108,8 +2108,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         queryables = plugin.discover_queryables(
             collection="COP_DEM_GLO90_DGED", provider="wekeo_main"
         )
-        self.assertIn("collection", queryables)
-        self.assertIn("providerCollection", queryables)
+        self.assertIn("product_type", queryables)
         self.assertIn("geom", queryables)
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)

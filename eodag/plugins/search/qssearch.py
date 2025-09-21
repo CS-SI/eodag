@@ -1483,13 +1483,15 @@ class PostJsonSearch(QueryStringSearch):
             )
         else:
             keywords = {
-                k: v for k, v in kwargs.items() if k != "auth" and v is not None
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("auth", "collection") and v is not None
             }
 
             if provider_collection and provider_collection != GENERIC_COLLECTION:
-                keywords["collection"] = provider_collection
+                keywords["_collection"] = provider_collection
             elif collection:
-                keywords["collection"] = collection
+                keywords["_collection"] = collection
 
             # provider collection specific conf
             prep.collection_def_params = self.get_collection_def_params(
@@ -1931,7 +1933,8 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param,
                 )
-                if param is None:
+                # do not expose internal parameters
+                if param is None or param.startswith("_"):
                     continue
 
                 default = kwargs.get(param, json_mtd.get("default"))
