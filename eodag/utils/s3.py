@@ -23,7 +23,6 @@ import os
 import uuid
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 from zipfile import ZIP_STORED, ZipFile
 
 import botocore
@@ -563,12 +562,10 @@ def update_assets_from_s3(
             key, roles = product.driver.guess_asset_key_and_roles(
                 out_of_zip_url, product
             )
-            parsed_url = urlparse(out_of_zip_url)
-            title = os.path.basename(parsed_url.path)
 
             if key and key not in product.assets:
                 product.assets[key] = {
-                    "title": title,
+                    "title": key,  # Normalize title with key
                     "roles": roles,
                     "href": asset_url,
                 }

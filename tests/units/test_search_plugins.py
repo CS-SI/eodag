@@ -1921,6 +1921,10 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(len(products[0].assets), 1)
         self.assertEqual(products[0].assets["normalized_key"]["roles"], ["some_role"])
+        # title is also set using normlized key
+        self.assertEqual(
+            products[0].assets["normalized_key"]["title"], "normalized_key"
+        )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
     def test_plugins_search_stacsearch_opened_time_intervals(self, mock_requests_post):

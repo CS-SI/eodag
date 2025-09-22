@@ -1133,6 +1133,8 @@ class QueryStringSearch(Search):
                 )
                 if norm_key:
                     product.assets[norm_key] = asset
+                    # Normalize title with key
+                    product.assets[norm_key]["title"] = norm_key
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
             products.append(product)
