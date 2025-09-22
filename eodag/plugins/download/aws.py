@@ -1147,10 +1147,10 @@ class AwsDownload(Download):
         :param expires_in: expiration time of the presigned url in seconds
         :returns: presigned url
         """
+        ignore_assets = getattr(self.config, "ignore_assets", False)
         url_parts = urlparse(asset["href"])
-        print(url_parts)
-        if "." not in url_parts.netloc:
-            # not a full url
+        if "." not in url_parts.netloc or ignore_assets:
+            # asset url is created based on downloadLink and S3 objects -> no presign
             logger.warning(f"Couldn't get a presigned URL for '{asset}'.")
             return ""
         if auth and isinstance(auth, boto3.resources.base.ServiceResource):

@@ -28,6 +28,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from typing import Any, Callable
 from unittest import mock
 
+import boto3
 import responses
 import yaml
 
@@ -1683,6 +1684,37 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         run(error_code=500)
         run(error_code=400)
 
+    def test_plugins_download_http_presign_url(self):
+        """should create a presigned url to download via HTTP"""
+        provider = "planetary_computer"
+        product_type = "LANDSAT_C2_L1"
+        product = EOProduct(
+            provider,
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+            productType=product_type,
+        )
+        product.assets.update(
+            {"a1": {"href": "https://abc.blob.core.windows.net/b1/a1/a1.json"}}
+        )
+        product.assets.update(
+            {"a2": {"href": "https://abc.blob.core.windows.net/b1/a2/a2.json"}}
+        )
+
+        plugin = self.get_download_plugin(product=product)
+        auth_plugin = self.get_auth_plugin(plugin, product)
+        auth = auth_plugin.authenticate()
+        url = plugin.presign_url(product.assets["a1"], auth)
+        expected_url = (
+            "https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}".format(
+                url="https://abc.blob.core.windows.net/b1/a1/a1.json"
+            )
+        )
+        self.assertEqual(expected_url, url)
+
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
     def setUp(self):
@@ -2320,6 +2352,67 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                 "requester_pays": True,
             },
         )
+
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_session_from_credentials",
+        autospec=True,
+    )
+    def test_plugins_download_aws_presigned_url(self, mock_s3_session):
+        """should create a presigned url to download from S3"""
+
+        class MockSession:
+            def __init__(
+                self,
+                aws_access_key_id: str = None,
+                aws_secret_access_key: str = None,
+            ):
+                self.aws_access_key_id = aws_access_key_id
+                self.aws_secret_access_key = aws_secret_access_key
+
+            def resource(self, service_name: str, endpoint_url: str):
+                return boto3.resource(
+                    service_name=service_name,
+                    endpoint_url=endpoint_url,
+                    aws_access_key_id=self.aws_access_key_id,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                )
+
+            def get_credentials(self):
+                return self.__dict__
+
+        mock_s3_session.return_value = MockSession(
+            aws_access_key_id="123", aws_secret_access_key="abc"
+        )
+        # provider with no credentials required
+        provider = "cop_marine"
+        product_type = "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024"
+        product = EOProduct(
+            provider,
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+            productType=product_type,
+        )
+        product.assets.update(
+            {"a1": {"href": "https://s3.waw3-1.cloudferro.com/b1/a1/a1.json"}}
+        )
+        product.assets.update(
+            {"a2": {"href": "https://s3.waw3-1.cloudferro.com/b1/a2/a2.json"}}
+        )
+        plugin = self.get_download_plugin(product=product)
+        # no auth
+        url = plugin.presign_url(product.assets["a1"])
+        self.assertEqual("https://s3.waw3-1.cloudferro.com/b1/a1/a1.json", url)
+
+        # auth plugin with access and secret key
+        auth_plugin = self.get_auth_plugin(plugin, product)
+        auth = auth_plugin.authenticate()
+        url = plugin.presign_url(product.assets["a1"], auth)
+        self.assertIn("https://s3.waw3-1.cloudferro.com/b1/a1/a1.json", url)
+        self.assertIn("AWSAccessKeyId=123", url)
+        self.assertIn("Expires", url)
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
