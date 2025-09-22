@@ -155,6 +155,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[dict[str, Any]]:
+
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is OFFLINE
@@ -332,6 +333,7 @@ class HTTPDownload(Download):
                 logger.debug(
                     f"Order download status request responded with {response.status_code}"
                 )
+
                 response.raise_for_status()  # Raise an exception if status code indicates an error
 
                 # Handle redirection (if needed)
