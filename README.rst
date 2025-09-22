@@ -57,7 +57,7 @@ integrate new data providers. Three types of plugins compose the tool:
 * Download plugins, allowing to download and retrieve data locally (via HTTP, S3, ...), always with the same directory
   organization
 
-* Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
+* Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OIDC, ...).
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
