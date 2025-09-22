@@ -4079,18 +4079,18 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 self.assertIsNone(queryable.__metadata__[0].get_default())
 
 
-class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
+class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
     def setUp(self):
-        super(TestSearchPluginPostJsonSearchWithStacQueryables, self).setUp()
-        # One of the providers that has a PostJsonSearchWithStacQueryables Search plugin
+        super(TestSearchPluginWekeoSearch, self).setUp()
+        # One of the providers that has a WekeoSearch Search plugin
         provider = "wekeo_main"
         self.wekeomain_search_plugin = self.get_search_plugin(
             self.product_type, provider
         )
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
-    def test_plugins_search_postjsonsearchwithstacqueryables_init_wekeomain(self):
-        """Check that the PostJsonSearchWithStacQueryables plugin is initialized correctly for wekeo_main provider"""
+    def test_plugins_search_wekeosearch_init_wekeomain(self):
+        """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
         default_providers_config = load_default_config()
         default_config = default_providers_config["wekeo_main"]
@@ -4153,17 +4153,17 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.PostJsonSearch.build_query_string", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables._request",
+        "eodag.plugins.search.qssearch.WekeoSearch._request",
         autospec=True,
     )
-    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain(
+    def test_plugins_search_wekeosearch_search_wekeomain(
         self,
         mock__request,
         mock_build_qs_postjsonsearch,
         mock_build_qs_stacsearch,
         mock_normalize_results,
     ):
-        """A query with a PostJsonSearchWithStacQueryables provider (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
+        """A query with a WekeoSearch provider (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
         mock_build_qs_postjsonsearch.return_value = (
             mock_build_qs_stacsearch.return_value
         ) = (
@@ -4190,7 +4190,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_build_qs_postjsonsearch.assert_called()
         mock_build_qs_stacsearch.assert_not_called()
 
-    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain_ko(self):
+    def test_plugins_search_wekeosearch_search_wekeomain_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
         # with raised error parameter set to True in the global config of the provider
@@ -4260,7 +4260,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_stacsearch_discover_queryables,
         mock_postjsonsearch_discover_queryables,
     ):
-        """Queryables discovery with a PostJsonSearchWithStacQueryables (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
+        """Queryables discovery with a WekeoSearch (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
         self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
