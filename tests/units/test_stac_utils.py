@@ -30,8 +30,8 @@ import eodag.rest.utils.rfc3339 as rfc3339
 from eodag.rest.stac import StacCollection
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
+from eodag.utils.dates import rfc3339_str_to_datetime
 from eodag.utils.exceptions import ValidationError
-from eodag.utils.rest import rfc3339_str_to_datetime
 from tests import TEST_RESOURCES_PATH, mock
 from tests.context import SearchResult
 from tests.utils import mock_request

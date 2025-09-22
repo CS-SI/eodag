@@ -18,7 +18,7 @@
 import datetime
 from typing import Optional
 
-from eodag.utils.rest import rfc3339_str_to_datetime
+from eodag.utils.dates import rfc3339_str_to_datetime
 
 
 def str_to_interval(
