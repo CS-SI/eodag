@@ -387,147 +387,147 @@ NAIP:
 
 # MARK: Sentinel 1 ---------------------------------------------------------------------
 S1_AUX_GNSSRD:
-  abstract: |
+  description: |
     The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
     The precise orbit ephemerides are provided as a text file in the format of the International GNSS Service (IGS).
     The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,GNSSRD,SAFE
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: AUX
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "GNSSRD", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
-  missionStartDate: "2014-04-06T00:00:00Z"
+  extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
 
 S1_AUX_MOEORB:
-  abstract: |
+  description: |
     The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
     The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
     (ESOC).
     The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,MOEORB,SAFE
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: AUX
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "MOEORB", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
-  missionStartDate: "2014-04-06T00:00:00Z"
+  extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
 
 S1_AUX_POEORB:
-  abstract: |
+  description: |
     The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
     The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
     (ESOC).
     The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,POEORB,SAFE
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: AUX
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "POEORB", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
-  missionStartDate: "2014-04-06T00:00:00Z"
+  extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
 
 S1_AUX_PREORB:
-  abstract: |
+  description: |
     The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
     The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
     (ESOC).
     The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,PREORB,SAFE
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: AUX
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "PREORB", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
-  missionStartDate: "2014-04-06T00:00:00Z"
+  extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
 
 S1_AUX_PROQUA:
-  abstract: |
+  description: |
     The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
     The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
     (ESOC).
     The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,PROQUA,SAFE
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: AUX
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "PROQUA", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
-  missionStartDate: "2014-04-06T00:00:00Z"
+  extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
 
 S1_AUX_RESORB:
-  abstract: |
+  description: |
     The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
     The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
     (ESOC).
     The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,RESORB,SAFE
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: AUX
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "RESORB", "SAFE"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
-  missionStartDate: "2014-04-06T00:00:00Z"
+  extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
 
 S1_SAR_L3_IW_MCM:
-  abstract: |
+  description: |
     Level-3 IW (Interferometric Wide Swath) products are terrain corrected (geocoded) products in map geometry,
     projected using the Range-Doppler model and resampled using nearest neighbor method. The pixel spacing is
     approximately 10 m x 10 m. The product is available in two polarizations: Single (HH or VV) and Dual (HH+HV or
     VV+VH). The product is provided in GeoTIFF format.
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: L3
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L3,IW,MCM,COG
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: L3
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L3", "IW", "MCM", "COG"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-3 IW MCM
-  missionStartDate: "2023-01-01T00:00:00Z"
+  extent: {"temporal": {"interval": [["2023-01-01T00:00:00Z", null]]}}
 
 S1_SAR_L3_DH_MCM:
-  abstract: |
+  description: |
     Level-3 DH (Dual polarization High Resolution) products are terrain corrected (geocoded) products in map geometry,
     projected using the Range-Doppler model and resampled using nearest neighbor method. The pixel spacing is
     approximately 10 m x 10 m. The product is available in dual polarization (HH+HV or VV+VH). The product is provided
     in GeoTIFF format.
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B,S1C
-  processingLevel: L3
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L3,DH,MCM,COG
+  instruments: ["SAR"]
+  constellation: SENTINEL1
+  platform: S1A,S1B,S1C
+  processing:level: L3
+  keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L3", "DH", "MCM", "COG"]
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-3 DH MCM
-  missionStartDate: "2023-01-01T00:00:00Z"
+  extent: {"temporal": {"interval": [["2023-01-01T00:00:00Z", null]]}}
 
 S1_SAR_OCN:
   description: |
@@ -4681,21 +4681,21 @@ EEA_DAILY_VI:
   title: Vegetation Indices, daily, UTM projection
 
 EEA_HRL_TCF:
-  abstract: |
+  description: |
     Tree Cover Fraction (TCF) is defined as the percentage of ground covered by tree canopy when viewed from above.
     It is a biophysical variable that characterizes the land surface and is important for many applications in
     environmental and climate studies. TCF is derived from Sentinel-2 imagery at 20m resolution using a machine
     learning approach. The TCF product is part of the pan-European High Resolution Vegetation Phenology and Productivity
     (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instrument:
-  platform: Sentinel-2
-  platformSerialIdentifier: S2A,S2B,S2C
-  processingLevel:
-  keywords: Land,Tree-cover-fraction,TCF,Sentinel-2,S2A,S2B,S2C
+  instruments: []
+  constellation: Sentinel-2
+  platform: S2A,S2B,S2C
+  processing:level:
+  keywords: ["Land","Tree-cover-fraction","TCF","Sentinel-2","S2A","S2B","S2C"]
   sensorType: RADAR
   license: other
   title: Tree Cover Fraction, UTM projection
-  missionStartDate: "2017-01-01T00:00:00Z"
+  extent: {"temporal": {"interval": [["2017-01-01T00:00:00Z", null]]}}
 
 # MARK: AERIS --------------------------------------------------------------------------
 AERIS_IAGOS:
