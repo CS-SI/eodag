@@ -27,12 +27,11 @@ Since ``v3.0``, EODAG comes with a minimal set of dependencies. If you want more
 the following extras:
 
 * ``eodag[all]``, includes everything that would be needed to run EODAG and associated tutorials with all features
-  (`== eodag[all-providers,csw,server,tutorials]`)
+  (`== eodag[all-providers,csw,tutorials]`)
 * ``eodag[all-providers]``, includes dependencies required to have all providers available (`== eodag[ecmwf,usgs]`)
 * ``eodag[csw]``, includes dependencies for plugins using CSW
 * ``eodag[ecmwf]``, includes dependencies for :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` (`ecmwf` provider)
 * ``eodag[usgs]``, includes dependencies for :class:`~eodag.plugins.apis.usgs.UsgsApi` (`usgs` provider)
-* ``eodag[server]``, includes dependencies for server-mode
 
 Also available:
 
@@ -40,7 +39,7 @@ Also available:
 * ``eodag[tutorials]``, includes dependencies to run notebooks (`eodag[ecmwf,notebook]`, visualisation and
   jupyter-related stuff)
 * ``eodag[stubs]``, includes dependencies stubs
-* ``eodag[dev]``, includes dependencies required for contributing (`eodag[all-providers,csw,server,stubs]`, testing
+* ``eodag[dev]``, includes dependencies required for contributing (`eodag[all-providers,csw,stubs]`, testing
   and linting tools)
 * ``eodag[docs]``, includes dependencies required to build documentation
 
@@ -48,11 +47,10 @@ Conda
 """""
 
 Conda does not support for the moment `optional groups of dependencies (conda/conda#7502)
-<https://github.com/conda/conda/issues/7502>`_. To separate *server-mode* dependencies from the default installation,
-we made 2 distinct packages on conda-forge:
+<https://github.com/conda/conda/issues/7502>`_.
 
-* `eodag <https://anaconda.org/conda-forge/eodag>`_ equivalent to ``eodag[all-providers,csw]``
-* `eodag-server <https://anaconda.org/conda-forge/eodag-server>`_ equivalent to ``eodag[all-providers,csw,server]``
+Package is available on `conda-forge/eodag <https://anaconda.org/conda-forge/eodag>`_
+(equivalent to ``eodag[all-providers,csw]``).
 
 .. _install_notebooks:
 
