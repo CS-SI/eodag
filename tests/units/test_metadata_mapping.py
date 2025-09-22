@@ -327,6 +327,29 @@ class TestMetadataFormatter(unittest.TestCase):
         with self.assertRaises(TypeError):
             format_metadata(to_format, fieldname=123)
 
+    def test_convert_replace_str_tuple(self):
+        to_format = r"{fieldname#replace_str_tuple((('foo','bar'),('this','that')))}"
+
+        # Test with a string
+        self.assertEqual(
+            format_metadata(to_format, fieldname="this is foo"),
+            "that is bar",
+        )
+
+        # Test with a dictionary
+        self.assertEqual(
+            format_metadata(to_format, fieldname={"key": "this is foo"}),
+            '{"key": "that is bar"}',
+        )
+
+        # Test with a list (should fail)
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname=["this is foo"])
+
+        # Test with an integer (should fail)
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname=123)
+
     def test_convert_ceda_collection_name(self):
         to_format = r"{fieldname#ceda_collection_name}"
         self.assertEqual(

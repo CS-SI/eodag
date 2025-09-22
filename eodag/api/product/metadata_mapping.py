@@ -531,6 +531,35 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
+        def convert_replace_str_tuple(value: Any, args: str) -> str:
+            """
+            Apply multiple replacements on a string.
+            args should be a string representing a list/tuple of (old, new) pairs.
+            Example: '(("old1", "new1"), ("old2", "new2"))'
+            """
+            if isinstance(value, dict):
+                value = MetadataFormatter.convert_to_geojson(value)
+            elif not isinstance(value, str):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a string or a dict (apply to_geojson). "
+                    f"Got {type(value)}: {value}"
+                )
+
+            # args sera une chaîne représentant une liste/tuple de tuples
+            replacements = ast.literal_eval(args)
+
+            if not isinstance(replacements, (list, tuple)):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a list/tuple of (old,new) pairs. "
+                    f"Got {type(replacements)}: {replacements}"
+                )
+
+            for old, new in replacements:
+                value = re.sub(old, new, value)
+
+            return value
+
+        @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
             data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
             match = data_regex.search(value)
