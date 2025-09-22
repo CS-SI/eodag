@@ -1982,7 +1982,7 @@ class StacSearch(PostJsonSearch):
             return queryables_dict
 
 
-class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
+class WekeoSearch(StacSearch, PostJsonSearch):
     """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses
     generic STAC configuration for queryables (inherited from :class:`~eodag.plugins.search.qssearch.StacSearch`).
     """

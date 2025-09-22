@@ -82,7 +82,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``wekeo_cmems``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``wekeo_main``         | |PostJsonSearchWithStacQueryables| | |TokenAuth|                     | |HTTPDownload|   |
+| ``wekeo_main``         | |WekeoSearch|                      | |TokenAuth|                     | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 
 .. |UsgsApi| replace:: :class:`~eodag.plugins.apis.usgs.UsgsApi`
@@ -106,7 +106,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |ODataV4Search| replace:: :class:`~eodag.plugins.search.qssearch.ODataV4Search`
 .. |PostJsonSearch| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearch`
 .. |StacSearch| replace:: :class:`~eodag.plugins.search.qssearch.StacSearch`
-.. |PostJsonSearchWithStacQueryables| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables`
+.. |WekeoSearch| replace:: :class:`~eodag.plugins.search.qssearch.WekeoSearch`
 .. |ECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
 .. |MeteoblueSearch| replace:: :class:`~eodag.plugins.search.build_search_result.MeteoblueSearch`
 .. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`

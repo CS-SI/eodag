@@ -2970,7 +2970,7 @@
         }}
       - '$.id'
   search: !plugin
-    type: PostJsonSearchWithStacQueryables
+    type: WekeoSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
     need_auth: true
