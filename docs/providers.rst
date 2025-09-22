@@ -288,6 +288,41 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
 
 ----
 
+**cop_dataspace_s3**
+^^^^^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Data Space Ecosystem data through S3 protocol.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://dataspace.copernicus.eu/
+        :color: primary
+        :outline:
+        :tooltip: Data Space Ecosystem website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account on `cop_dataspace <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&response_type=code&scope=openid&redirect_uri=https%3A//dataspace.copernicus.eu/account/confirmed/1>`__, then go to
+  `keymanager <https://eodata-s3keysmanager.dataspace.copernicus.eu/panel/s3-credentials>`__ and click `Add credential` to generate the s3 access key and
+  secret key. Add those credentials to the user configuration file (variables `aws_access_key_id` and
+  `aws_secret_access_key`).
+
+
+----
+
 **cop_ewds**
 ^^^^^^^^^^^^
 .. grid:: 2
