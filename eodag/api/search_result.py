@@ -328,12 +328,12 @@ def _import_stac_item_from_known_provider(
                 configured_pts = [
                     k
                     for k, v in search_plugin.config.products.items()
-                    if v.get("collection") == feature.get("_collection")
+                    if v.get("_collection") == feature.get("collection")
                 ]
                 if len(configured_pts) > 0:
                     eo_product.collection = configured_pts[0]
                 else:
-                    eo_product.collection = feature.get("_collection")
+                    eo_product.collection = feature.get("collection")
 
                 eo_product._register_downloader_from_manager(plugins_manager)
                 imported_products.append(eo_product)
