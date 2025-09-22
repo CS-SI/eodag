@@ -29,7 +29,6 @@ EODAG has the following primary features:
 * Search and download Earth Observation products from different providers with **a unified API**
 * It is both a `Command Line Tool <cli_user_guide.rst>`_ and a `Python library <api_user_guide.rst>`_
 * It supports `STAC and Static STAC <notebooks/tutos/tuto_stac_client.ipynb>`_ catalogs
-* It can run as a `STAC API REST server <stac_rest.rst>`_ to give access to a provider's catalog
 * New providers can be added with a `configuration file <add_provider.rst>`_ or by extending EODAG with `plugins <plugins.rst>`_
 * More than 270 `product types <getting_started_guide/product_types.rst#product-types-information-csv>`_ configured
 
