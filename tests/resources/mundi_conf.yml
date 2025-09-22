@@ -2,7 +2,7 @@
   name: mundi
   search: !plugin
     type: QueryStringSearch
-    api_endpoint: 'https://{collection}.browse.catalog.mundiwebservices.com/opensearch'
+    api_endpoint: 'https://{_collection}.browse.catalog.mundiwebservices.com/opensearch'
     need_auth: false
     result_type: 'xml'
     results_entry: '//ns:entry'
@@ -19,23 +19,23 @@
         search_param: '{metadata}={{{metadata}}}'
         metadata_path: '*'
     metadata_mapping:
-        productType:
+        product:type:
             - 'productType'
             - 'eo:productType/text()'
-        processingLevel:
+        processing:level:
             - 'processingLevel'
             - 'eo:processingLevel/text()'
         title: 'ns:title/text()'
-        startTimeFromAscendingNode:
-            - 'timeStart={startTimeFromAscendingNode#to_iso_utc_datetime}'
+        start_datetime:
+            - 'timeStart={start_datetime#to_iso_utc_datetime}'
             - 'DIAS:sensingStartDate/text()'
-        completionTimeFromAscendingNode:
-            - 'timeEnd={completionTimeFromAscendingNode#to_iso_utc_datetime}'
+        end_datetime:
+            - 'timeEnd={end_datetime#to_iso_utc_datetime}'
             - 'DIAS:sensingStopDate/text()'
         id:
             - 'uid={id#remove_extension}'
             - 'dc:identifier/text()'
-        tileIdentifier:
+        grid:code:
             - 'tileIdentifier'
             - 'DIAS:tileIdentifier/text()'
         geometry:
@@ -43,24 +43,24 @@
             - '{georss:polygon|georss:where#from_georss}'
   products:
     S1_SAR_GRD:
-        productType: GRD
-        collection: Sentinel1
+        product:type: GRD
+        _collection: Sentinel1
         metadata_mapping:
-            cloudCover: 'null/text()'
+            eo:cloud_cover: 'null/text()'
     S1_SAR_SLC:
-        productType: SLC
-        collection: Sentinel1
+        product:type: SLC
+        _collection: Sentinel1
         metadata_mapping:
-            cloudCover: 'null/text()'
+            eo:cloud_cover: 'null/text()'
     S2_MSI_L1C:
-        productType: IMAGE
-        processingLevel: L1C
-        collection: Sentinel2
-    GENERIC_PRODUCT_TYPE:
-        productType: '{productType}'
-        collection: '{collection}'
+        product:type: IMAGE
+        processing:level: L1C
+        _collection: Sentinel2
+    GENERIC_COLLECTION:
+        product:type: '{product:type}'
+        _collection: '{collection}'
         instrument: '{instrument}'
-        processingLevel: '{processingLevel}'
+        processing:level: '{processing:level}'
   auth: !plugin
     type: HTTPHeaderAuth
     headers:

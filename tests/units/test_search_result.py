@@ -34,11 +34,11 @@ class TestSearchResult(unittest.TestCase):
             [
                 EOProduct(
                     provider=None,
-                    properties={"geometry": "POINT (0 0)", "storageStatus": "ONLINE"},
+                    properties={"geometry": "POINT (0 0)", "order:status": "succeeded"},
                 ),
                 EOProduct(
                     provider=None,
-                    properties={"geometry": "POINT (0 0)", "storageStatus": "OFFLINE"},
+                    properties={"geometry": "POINT (0 0)", "order:status": "orderable"},
                 ),
             ]
         )
@@ -50,7 +50,7 @@ class TestSearchResult(unittest.TestCase):
         filtered_size = len(filtered_products)
         self.assertFalse(origin_size == filtered_size)
         for product in filtered_products:
-            assert product.properties["storageStatus"] == "ONLINE"
+            assert product.properties["order:status"] == "succeeded"
 
     def test_search_result_geo_interface(self):
         """SearchResult must provide a FeatureCollection geo-interface"""

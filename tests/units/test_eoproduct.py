@@ -46,7 +46,7 @@ from tests.utils import mock
 
 
 class TestEOProduct(EODagTestCase):
-    NOT_ASSOCIATED_PRODUCT_TYPE = "EODAG_DOES_NOT_SUPPORT_THIS_PRODUCT_TYPE"
+    NOT_ASSOCIATED_COLLECTION = "EODAG_DOES_NOT_SUPPORT_THIS_COLLECTION"
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
@@ -110,9 +110,9 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertIsNone(product.search_intersection)
 
-    def test_eoproduct_default_driver_unsupported_product_type(self):
-        """EOProduct driver attr must be set even if its product type is not supported"""
-        product = self._dummy_product(productType=self.NOT_ASSOCIATED_PRODUCT_TYPE)
+    def test_eoproduct_default_driver_unsupported_collection(self):
+        """EOProduct driver attr must be set even if its collection is not supported"""
+        product = self._dummy_product(collection=self.NOT_ASSOCIATED_COLLECTION)
         self.assertIsInstance(product.driver, DatasetDriver)
 
     def test_eoproduct_geointerface(self):
@@ -125,12 +125,12 @@ class TestEOProduct(EODagTestCase):
             self._tuples_to_lists(geometry.mapping(self.geometry)),
         )
         properties = geo_interface["properties"]
-        self.assertEqual(properties["eodag_provider"], self.provider)
+        self.assertEqual(properties["eodag:provider"], self.provider)
         self.assertEqual(
-            properties["eodag_search_intersection"],
+            properties["eodag:search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag_product_type"], self.product_type)
+        self.assertEqual(properties["eodag:collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
@@ -141,25 +141,25 @@ class TestEOProduct(EODagTestCase):
                 product.provider,
                 product.location,
                 product.properties["title"],
-                product.properties["instrument"],
+                product.properties["instruments"],
                 self._tuples_to_lists(geometry.mapping(product.geometry)),
                 self._tuples_to_lists(geometry.mapping(product.search_intersection)),
-                product.product_type,
-                product.properties["productType"],
-                product.properties["platformSerialIdentifier"],
+                product.collection,
+                product.properties["collection"],
+                product.properties["platform"],
             ],
             [
                 same_product.provider,
                 same_product.location,
                 same_product.properties["title"],
-                same_product.properties["instrument"],
+                same_product.properties["instruments"],
                 self._tuples_to_lists(geometry.mapping(same_product.geometry)),
                 self._tuples_to_lists(
                     geometry.mapping(same_product.search_intersection)
                 ),
-                same_product.product_type,
-                same_product.properties["productType"],
-                same_product.properties["platformSerialIdentifier"],
+                same_product.collection,
+                same_product.properties["collection"],
+                same_product.properties["platform"],
             ],
         )
 

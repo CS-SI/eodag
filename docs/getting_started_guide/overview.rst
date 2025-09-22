@@ -8,7 +8,7 @@ Together with it, there is more and more EO data providers, each potentially hav
 a different data access policy. This difference is visible at various levels:
 in the data discovery (STAC, OData, OpenSearch more or less custom, etc.), in the
 product access (object storage, downloads, direct file system access, etc.), in
-the storage structure and in the authentication mechanisms (OAUTH, JWT, basic
+the storage structure and in the authentication mechanisms (OIDC, JWT, basic
 auth,...). All these different technologies add a knowledge overhead on a user
 (end-user or application developer) wishing to take advantage of these
 data. EODAG was designed to solve this problem.
@@ -19,8 +19,8 @@ downloading remote sensed images while offering a unified API for data access
 regardless of the data provider. The EODAG SDK is structured around three
 functions:
 
-* List product types: list of supported products and their description
-* Search products (by product type) : searches products according to the
+* List collections: list of supported products and their description
+* Search products (by collection) : searches products according to the
   search criteria provided
 * Download products : download product “as is"
 
@@ -33,4 +33,4 @@ types of plugins compose the tool:
 * Download plugins, allowing to download and retrieve data locally (via HTTP, S3, ...),
   always with the same directory organization
 * Authentication plugins, which are used to authenticate the user on the
-  external services used (JSON Token, Basic Auth, OAUTH, ...).
+  external services used (JSON Token, Basic Auth, OIDC, ...).

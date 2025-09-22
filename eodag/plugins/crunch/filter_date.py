@@ -49,7 +49,7 @@ class FilterDate(Crunch):
     @staticmethod
     def sort_product_by_start_date(product: EOProduct) -> dt:
         """Get product start date"""
-        start_date = product.properties.get("startTimeFromAscendingNode")
+        start_date = product.properties.get("start_datetime")
         if not start_date:
             # Retrieve year, month, day, hour, minute, second of EPOCH start
             epoch = time.gmtime(0)[:-3]
@@ -93,7 +93,7 @@ class FilterDate(Crunch):
         for product in products:
 
             # product start date
-            product_start_str = product.properties.get("startTimeFromAscendingNode")
+            product_start_str = product.properties.get("start_datetime")
             if product_start_str:
                 product_start = dateutil.parser.parse(product_start_str)
                 if not product_start.tzinfo:
@@ -102,7 +102,7 @@ class FilterDate(Crunch):
                 product_start = None
 
             # product end date
-            product_end_str = product.properties.get("completionTimeFromAscendingNode")
+            product_end_str = product.properties.get("end_datetime")
             if product_end_str:
                 product_end = dateutil.parser.parse(product_end_str)
                 if not product_end.tzinfo:

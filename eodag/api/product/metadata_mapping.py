@@ -42,7 +42,6 @@ from shapely.ops import transform
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
-    _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -58,6 +57,8 @@ from eodag.utils import (
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from shapely.geometry.base import BaseGeometry
 
     from eodag.config import PluginConfig
@@ -70,9 +71,9 @@ INGEST_CONVERSION_REGEX = re.compile(
 )
 NOT_AVAILABLE = "Not Available"
 NOT_MAPPED = "Not Mapped"
-ONLINE_STATUS = "ONLINE"
-STAGING_STATUS = "STAGING"
-OFFLINE_STATUS = "OFFLINE"
+ONLINE_STATUS = "succeeded"
+STAGING_STATUS = "ordered"
+OFFLINE_STATUS = "orderable"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
@@ -96,23 +97,23 @@ def get_metadata_path(
             search:
                 ...
                 metadata_mapping:
-                    productType:
-                        - productType
-                        - $.properties.productType
+                    platform:
+                        - platform
+                        - $.properties.platform
                     id: $.properties.id
                     ...
                 ...
             ...
 
-    Then the metadata `id` is not queryable for this provider meanwhile `productType`
-    is queryable. The first value of the `metadata_mapping.productType` is how the
-    eodag search parameter `productType` is interpreted in the
+    Then the metadata `id` is not queryable for this provider meanwhile `platform`
+    is queryable. The first value of the `metadata_mapping.platform` is how the
+    eodag search parameter `platform` is interpreted in the
     :class:`~eodag.plugins.search.base.Search` plugin implemented by `provider`, and is
     used when eodag delegates search process to the corresponding plugin.
 
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config. For example, it is the list
-                      `['productType', '$.properties.productType']` with the sample
+                      `['platform', '$.properties.platform']` with the sample
                       above. Or the string `$.properties.id`.
     :returns: Either, None and the path to the metadata value, or a list of converter
              and its args, and the path to the metadata value.
@@ -178,11 +179,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``split_cop_dem_id``: get the bbox by splitting the product id
-        - ``split_corine_id``: get the product type by splitting the product id
+        - ``split_corine_id``: get the collection by splitting the product id
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``not_available``: replace value with "Not Available"
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -200,6 +202,43 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def __init__(self) -> None:
             self.custom_converter: Optional[Callable] = None
             self.custom_args: Optional[str] = None
+
+        def parse(self, format_string: str):
+            """
+            Rewrite field names in the template before the base parser sees them.
+            Replaces `{foo:bar}` with `{foo__bar}`.
+            """
+            pattern = re.compile(r"{([^{}]+)}")
+
+            def rewrite_field(field: str) -> str:
+                # If there's a format spec (e.g., {foo:bar:.2f}), preserve it
+                if ":" in field and not field.lstrip().startswith(("!", ".", ":")):
+                    before_colon, *after = field.split(":")
+                    # Don't confuse format spec with field name colons
+                    if len(after) == 1 and "." in after[0]:
+                        # It's a format specifier, leave it
+                        return field
+                    return field.replace(":", "__", 1)
+                return field
+
+            # Replace in string (but not in format_spec itself)
+            safe_template = pattern.sub(
+                lambda m: "{" + rewrite_field(m.group(1)) + "}", format_string
+            )
+
+            # Yield from base class
+            yield from super().parse(safe_template)
+
+        def get_value(
+            self, key: Any, args: "Sequence[Any]", kwargs: "Mapping[str, Any]"
+        ) -> Any:
+            """
+            Look up rewritten field name in kwargs by converting __ back to :
+            """
+            if isinstance(key, str):
+                original_key = key.replace("__", ":")
+                return kwargs[original_key]
+            return super().get_value(key, args, kwargs)
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
@@ -531,6 +570,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
+        def convert_not_available(value: Any) -> str:
+            """Convert any value to "Not Available".
+
+            This is more useful than "$.null" to keep original jsonpath while parsing in metadata_mapping.
+            """
+            return NOT_AVAILABLE
+
+        @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
             data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
             match = data_regex.search(value)
@@ -636,7 +683,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             if id_match:
                 id_dict = id_match.groupdict()
                 return (
-                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{collection}.json"
+                    "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/%s/%s/%s/%s/%s/%s/0/{_collection}.json"
                     % (
                         id_dict["tile1"],
                         id_dict["tile2"],
@@ -651,48 +698,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
-        @_deprecated(
-            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
-            version="3.7.1",
-        )
-        def convert_split_id_into_s1_params(product_id: str) -> dict[str, str]:
-            parts: list[str] = re.split(r"_(?!_)", product_id)
-            if len(parts) < 9:
-                logger.error(
-                    "id %s does not match expected Sentinel-1 id format", product_id
-                )
-                raise ValueError
-            params = {"sensorMode": parts[1]}
-            level = "LEVEL" + parts[3][0]
-            params["processingLevel"] = level
-            start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
-                seconds=1
-            )
-            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
-                seconds=1
-            )
-            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            product_type = parts[2][:3]
-            if product_type == "GRD" and parts[-1] == "COG":
-                product_type = "GRD-COG"
-            elif product_type == "GRD" and parts[-2] == "CARD" and parts[-1] == "BS":
-                product_type = "CARD-BS"
-            params["productType"] = product_type
-            polarisation_mapping = {
-                "SV": "VV",
-                "SH": "HH",
-                "DH": "HH+HV",
-                "DV": "VV+VH",
-            }
-            polarisation = polarisation_mapping[parts[3][2:]]
-            params["polarisation"] = polarisation
-            return params
-
-        @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
-            params = {"productType": product_id[4:15]}
+            params = {"collection": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
             start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
                 seconds=1
@@ -705,48 +713,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]
             return params
-
-        @staticmethod
-        @_deprecated(
-            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
-            version="3.7.1",
-        )
-        def convert_split_id_into_s5p_params(product_id: str) -> dict[str, str]:
-            parts: list[str] = re.split(r"_(?!_)", product_id)
-            params = {
-                "productType": product_id[9:19],
-                "processingMode": parts[1],
-                "processingLevel": parts[2].replace("_", ""),
-            }
-            start_date = datetime.strptime(parts[-6], "%Y%m%dT%H%M%S") - timedelta(
-                seconds=10
-            )
-            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(parts[-5], "%Y%m%dT%H%M%S") + timedelta(
-                seconds=10
-            )
-            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            return params
-
-        @staticmethod
-        @_deprecated(
-            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
-            version="3.7.1",
-        )
-        def convert_split_cop_dem_id(product_id: str) -> list[int]:
-            parts = product_id.split("_")
-            lattitude = parts[3]
-            longitude = parts[5]
-            if lattitude[0] == "N":
-                lat_num = int(lattitude[1:])
-            else:
-                lat_num = -1 * int(lattitude[1:])
-            if longitude[0] == "E":
-                long_num = int(longitude[1:])
-            else:
-                long_num = -1 * int(longitude[1:])
-            bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
-            return bbox
 
         @staticmethod
         def convert_dates_from_cmems_id(product_id: str):
@@ -969,8 +935,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return assets_dict
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
-    if re.search(r"{[\w-]*:[\w#-]*}", search_param):
-        search_param = re.sub(r"{([\w-]*):([\w#-]*)}", r"{\1_COLON_\2}", search_param)
+    if re.search(r"{[\w-]*:[\w#-]*\(?.*}", search_param):
+        search_param = re.sub(
+            r"{([\w-]*):([\w#-]*\(?.*)}",
+            r"{\1_COLON_\2}",
+            search_param,
+        )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
@@ -1003,7 +973,7 @@ def properties_from_json(
         else:
             conversion_or_none, path_or_text = value
         if isinstance(path_or_text, str):
-            if re.search(r"({[^{}:]+})+", path_or_text):
+            if re.search(r"{[\w:-]+}", path_or_text):
                 templates[metadata] = path_or_text
             else:
                 properties[metadata] = path_or_text
@@ -1088,6 +1058,7 @@ def properties_from_json(
             if isinstance(discovery_jsonpath, JSONPath)
             else []
         )
+        mtd_prefix = discovery_config.get("metadata_prefix", "provider")
         for found_jsonpath in discovered_properties:
             if "metadata_path_id" in discovery_config.keys():
                 found_key_paths = string_to_jsonpath(
@@ -1109,8 +1080,13 @@ def properties_from_json(
             if (
                 re.compile(discovery_pattern).match(found_key)
                 and found_key not in properties.keys()
+                and f"{mtd_prefix}:{found_key}" not in properties.keys()
                 and used_jsonpath not in used_jsonpaths
             ):
+                # prepend with default STAC prefix if none is already used
+                if ":" not in found_key:
+                    found_key = f"{mtd_prefix}:{found_key}"
+
                 if "metadata_path_value" in discovery_config.keys():
                     found_value_path = string_to_jsonpath(
                         discovery_config["metadata_path_value"], force=True
@@ -1335,7 +1311,7 @@ def mtd_cfg_as_conversion_and_querypath(
 
 
 def format_query_params(
-    product_type: str,
+    collection: str,
     config: PluginConfig,
     query_dict: dict[str, Any],
     error_context: str = "",
@@ -1346,14 +1322,14 @@ def format_query_params(
     # . not allowed in eodag_search_key, replaced with %2E
     query_dict = {k.replace(".", "%2E"): v for k, v in query_dict.items()}
 
-    product_type_metadata_mapping = dict(
+    collection_metadata_mapping = dict(
         config.metadata_mapping,
-        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+        **config.products.get(collection, {}).get("metadata_mapping", {}),
     )
 
     # Raise error if non-queryables parameters are used and raise_mtd_discovery_error configured
     if (
-        raise_mtd_discovery_error := config.products.get(product_type, {})
+        raise_mtd_discovery_error := config.products.get(collection, {})
         .get("discover_metadata", {})
         .get("raise_mtd_discovery_error")
     ) is None:
@@ -1367,7 +1343,7 @@ def format_query_params(
     queryables = _get_queryables(
         query_dict,
         config,
-        product_type_metadata_mapping,
+        collection_metadata_mapping,
         raise_mtd_discovery_error,
         error_context,
     )
@@ -1392,7 +1368,7 @@ def format_query_params(
             parts = provider_search_param.split("=")
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
-                    provider_search_param, product_type, **query_dict
+                    provider_search_param, collection, **query_dict
                 )
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_param:
@@ -1416,7 +1392,7 @@ def format_query_params(
             else:
                 provider_search_key, provider_value = parts
                 query_params[provider_search_key] = format_metadata(
-                    provider_value, product_type, **query_dict
+                    provider_value, collection, **query_dict
                 )
         else:
             query_params[provider_search_param] = user_input
@@ -1430,12 +1406,12 @@ def format_query_params(
     # Now add formatted free text search parameters (this is for cases where a
     # complex query through a free text search parameter is available for the
     # provider and needed for the consumer)
-    product_type_metadata_mapping = dict(
+    collection_metadata_mapping = dict(
         config.metadata_mapping,
-        **config.products.get(product_type, {}).get("metadata_mapping", {}),
+        **config.products.get(collection, {}).get("metadata_mapping", {}),
     )
     literal_search_params.update(
-        _format_free_text_search(config, product_type_metadata_mapping, **query_dict)
+        _format_free_text_search(config, collection_metadata_mapping, **query_dict)
     )
     for provider_search_key, provider_value in literal_search_params.items():
         if isinstance(provider_value, list):
@@ -1532,7 +1508,7 @@ def _get_queryables(
             # raise an error when a query param not allowed by the provider is found
             if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
                 raise ValidationError(
-                    "Search parameters which are not queryable are disallowed for this product type on this provider: "
+                    "Search parameters which are not queryable are disallowed for this collection on this provider: "
                     f"please remove '{eodag_search_key}' from your search parameters. {error_context}",
                     {eodag_search_key},
                 )
@@ -1654,102 +1630,3 @@ def get_provider_queryable_key(
         return ""
     else:
         return eodag_key
-
-
-# Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html
-# For a metadata to be queryable, The way to query it must be specified in the
-# provider metadata_mapping configuration parameter. It will be automatically
-# detected as queryable by eodag when this is done
-OSEO_METADATA_MAPPING = {
-    # Opensearch resource identifier within the search engine context (in our case
-    # within the context of the data provider)
-    "uid": "$.uid",
-    # OpenSearch Parameters for Collection Search (Table 3)
-    "productType": "$.properties.productType",
-    "doi": "$.properties.doi",
-    "platform": "$.properties.platform",
-    "platformSerialIdentifier": "$.properties.platformSerialIdentifier",
-    "instrument": "$.properties.instrument",
-    "sensorType": "$.properties.sensorType",
-    "compositeType": "$.properties.compositeType",
-    "processingLevel": "$.properties.processingLevel",
-    "orbitType": "$.properties.orbitType",
-    "spectralRange": "$.properties.spectralRange",
-    "wavelengths": "$.properties.wavelengths",
-    "hasSecurityConstraints": "$.properties.hasSecurityConstraints",
-    "dissemination": "$.properties.dissemination",
-    # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-    "title": "$.properties.title",
-    "topicCategory": "$.properties.topicCategory",
-    "keyword": "$.properties.keyword",
-    "abstract": "$.properties.abstract",
-    "resolution": "$.properties.resolution",
-    "organisationName": "$.properties.organisationName",
-    "organisationRole": "$.properties.organisationRole",
-    "publicationDate": "$.properties.publicationDate",
-    "lineage": "$.properties.lineage",
-    "useLimitation": "$.properties.useLimitation",
-    "accessConstraint": "$.properties.accessConstraint",
-    "otherConstraint": "$.properties.otherConstraint",
-    "classification": "$.properties.classification",
-    "language": "$.properties.language",
-    "specification": "$.properties.specification",
-    # OpenSearch Parameters for Product Search (Table 5)
-    "parentIdentifier": "$.properties.parentIdentifier",
-    "productionStatus": "$.properties.productionStatus",
-    "acquisitionType": "$.properties.acquisitionType",
-    "orbitNumber": "$.properties.orbitNumber",
-    "orbitDirection": "$.properties.orbitDirection",
-    "track": "$.properties.track",
-    "frame": "$.properties.frame",
-    "swathIdentifier": "$.properties.swathIdentifier",
-    "cloudCover": "$.properties.cloudCover",
-    "snowCover": "$.properties.snowCover",
-    "lowestLocation": "$.properties.lowestLocation",
-    "highestLocation": "$.properties.highestLocation",
-    "productVersion": "$.properties.productVersion",
-    "productQualityStatus": "$.properties.productQualityStatus",
-    "productQualityDegradationTag": "$.properties.productQualityDegradationTag",
-    "processorName": "$.properties.processorName",
-    "processingCenter": "$.properties.processingCenter",
-    "creationDate": "$.properties.creationDate",
-    "modificationDate": "$.properties.modificationDate",
-    "processingDate": "$.properties.processingDate",
-    "sensorMode": "$.properties.sensorMode",
-    "archivingCenter": "$.properties.archivingCenter",
-    "processingMode": "$.properties.processingMode",
-    # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-    "availabilityTime": "$.properties.availabilityTime",
-    "acquisitionStation": "$.properties.acquisitionStation",
-    "acquisitionSubType": "$.properties.acquisitionSubType",
-    "startTimeFromAscendingNode": "$.properties.startTimeFromAscendingNode",
-    "completionTimeFromAscendingNode": "$.properties.completionTimeFromAscendingNode",
-    "illuminationAzimuthAngle": "$.properties.illuminationAzimuthAngle",
-    "illuminationZenithAngle": "$.properties.illuminationZenithAngle",
-    "illuminationElevationAngle": "$.properties.illuminationElevationAngle",
-    "polarizationMode": "$.properties.polarizationMode",
-    "polarizationChannels": "$.properties.polarizationChannels",
-    "antennaLookDirection": "$.properties.antennaLookDirection",
-    "minimumIncidenceAngle": "$.properties.minimumIncidenceAngle",
-    "maximumIncidenceAngle": "$.properties.maximumIncidenceAngle",
-    "dopplerFrequency": "$.properties.dopplerFrequency",
-    "incidenceAngleVariation": "$.properties.incidenceAngleVariation",
-}
-DEFAULT_METADATA_MAPPING = dict(
-    OSEO_METADATA_MAPPING,
-    **{
-        # Custom parameters (not defined in the base document referenced above)
-        # id differs from uid. The id is an identifier by which a product which is
-        # distributed by many providers can be retrieved (a property that it has in common
-        # in the catalogues of all the providers on which it is referenced)
-        "id": "$.id",
-        # The geographic extent of the product
-        "geometry": "$.geometry",
-        # The url of the quicklook
-        "quicklook": "$.properties.quicklook",
-        # The url to download the product "as is" (literal or as a template to be completed
-        # either after the search result is obtained from the provider or during the eodag
-        # download phase)
-        "downloadLink": "$.properties.downloadLink",
-    },
-)

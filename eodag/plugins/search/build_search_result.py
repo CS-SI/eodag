@@ -144,7 +144,6 @@ ECMWF_KEYWORDS = {
 COP_DS_KEYWORDS = {
     "aerosol_type",
     "altitude",
-    "product_type",
     "band",
     "cdr_type",
     "data_format",
@@ -176,6 +175,7 @@ COP_DS_KEYWORDS = {
     "pressure_level",
     "processing_level",
     "processing_type",
+    "product_type",
     "product_version",
     "quantity",
     "rcm",
@@ -200,9 +200,9 @@ COP_DS_KEYWORDS = {
 
 ALLOWED_KEYWORDS = ECMWF_KEYWORDS | COP_DS_KEYWORDS
 
-END = "completionTimeFromAscendingNode"
+END = "end_datetime"
 
-START = "startTimeFromAscendingNode"
+START = "start_datetime"
 
 
 def ecmwf_mtd() -> dict[str, Any]:
@@ -435,14 +435,15 @@ class ECMWFSearch(PostJsonSearch):
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
+        * :attr:`~eodag.config.PluginConfig.dates_required` (``bool``): if date parameters are mandatory in the request
         * :attr:`~eodag.config.PluginConfig.discover_queryables`
           (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
           provider queryables endpoint; It has the following keys:
 
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` (``str``): url to fetch the queryables valid
-            for all product types
-          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` (``str``): url to fetch the
-            queryables for a specific product type
+            for all collections
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` (``str``): url to fetch the
+            queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
     """
@@ -453,7 +454,7 @@ class ECMWFSearch(PostJsonSearch):
             **{
                 "id": "$.id",
                 "title": "$.id",
-                "storageStatus": OFFLINE_STATUS,
+                "order:status": OFFLINE_STATUS,
                 "downloadLink": "$.null",
                 "geometry": ["feature", "$.geometry"],
                 "defaultGeometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
@@ -499,10 +500,10 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: keyword arguments to be used in the search
         :returns: list of products and number of products (optional)
         """
-        product_type = prep.product_type
-        if not product_type:
-            product_type = kwargs.get("productType")
-        kwargs = self._preprocess_search_params(kwargs, product_type)
+        collection = prep.collection
+        if not collection:
+            collection = kwargs.get("collection")
+        kwargs = self._preprocess_search_params(kwargs, collection)
         result, num_items = super().query(prep, **kwargs)
         if prep.count and not num_items:
             num_items = 1
@@ -514,11 +515,11 @@ class ECMWFSearch(PostJsonSearch):
         super().clear()
 
     def build_query_string(
-        self, product_type: str, query_dict: dict[str, Any]
+        self, collection: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
-        :param product_type: product type id
+        :param collection: collection id
         :param query_dict: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
@@ -533,21 +534,21 @@ class ECMWFSearch(PostJsonSearch):
         ordered_kwargs.update(query_dict)
 
         return super().build_query_string(
-            product_type=product_type, query_dict=ordered_kwargs
+            collection=collection, query_dict=ordered_kwargs
         )
 
     def _preprocess_search_params(
-        self, params: dict[str, Any], product_type: Optional[str]
+        self, params: dict[str, Any], collection: Optional[str]
     ) -> dict[str, Any]:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
-        to ensure that required parameters like 'productType', 'startTimeFromAscendingNode',
-        'completionTimeFromAscendingNode', and 'geometry' are properly set. If not specified
+        to ensure that required parameters like 'collection', 'start_datetime',
+        'end_datetime', and 'geometry' are properly set. If not specified
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
-        :param product_type: (optional) product type id
+        :param collection: (optional) collection id
         """
 
         _dc_qs = params.get("_dc_qs")
@@ -574,7 +575,7 @@ class ECMWFSearch(PostJsonSearch):
         # dates
         # check if default dates have to be added
         if getattr(self.config, "dates_required", False):
-            self._check_date_params(params, product_type)
+            self._check_date_params(params, collection)
 
         # adapt end date if it is midnight
         if END in params:
@@ -611,65 +612,61 @@ class ECMWFSearch(PostJsonSearch):
         return params
 
     def _check_date_params(
-        self, keywords: dict[str, Any], product_type: Optional[str]
+        self, keywords: dict[str, Any], collection: Optional[str]
     ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
 
         if START and END in keywords:
             return
 
-        product_type_conf = getattr(self.config, "metadata_mapping", {})
+        collection_conf = getattr(self.config, "metadata_mapping", {})
         if (
-            product_type
-            and product_type in self.config.products
-            and "metadata_mapping" in self.config.products[product_type]
+            collection
+            and collection in self.config.products
+            and "metadata_mapping" in self.config.products[collection]
         ):
-            product_type_conf = self.config.products[product_type]["metadata_mapping"]
+            collection_conf = self.config.products[collection]["metadata_mapping"]
 
         # start time given, end time missing
         if START in keywords:
             keywords[END] = (
                 keywords[START]
-                if END in product_type_conf
-                else self.get_product_type_cfg_value(
-                    "missionEndDate", today().isoformat()
-                )
+                if END in collection_conf
+                # else self.get_collection_cfg_value(
+                else self.get_collection_cfg_dates(None, today().isoformat())[1]
             )
             return
 
-        if END in product_type_conf:
-            mapping = product_type_conf[START]
+        if END in collection_conf:
+            mapping = collection_conf[START]
             if not isinstance(mapping, list):
-                mapping = product_type_conf[END]
+                mapping = collection_conf[END]
             if isinstance(mapping, list):
                 # if startTime is not given but other time params (e.g. year/month/(day)) are given,
                 # no default date is required
                 start, end = ecmwf_temporal_to_eodag(keywords)
                 if start is None:
-                    keywords[START] = self.get_product_type_cfg_value(
-                        "missionStartDate", DEFAULT_MISSION_START_DATE
+                    col_start, col_end = self.get_collection_cfg_dates(
+                        DEFAULT_MISSION_START_DATE, today().isoformat()
                     )
+                    keywords[START] = col_start
                     keywords[END] = (
-                        keywords[START]
-                        if END in product_type_conf
-                        else self.get_product_type_cfg_value(
-                            "missionEndDate", today().isoformat()
-                        )
+                        keywords[START] if END in collection_conf else col_end
                     )
                 else:
                     keywords[START] = start
                     keywords[END] = end
 
-    def _get_product_type_queryables(
-        self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
+    def _get_collection_queryables(
+        self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
     ) -> QueryablesDict:
         """Override to set additional_properties to false."""
         default_values: dict[str, Any] = deepcopy(
-            getattr(self.config, "products", {}).get(product_type, {})
+            getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
 
-        filters["productType"] = product_type
+        filters["collection"] = collection
         queryables = self.discover_queryables(**{**default_values, **filters}) or {}
 
         return QueryablesDict(additional_properties=False, **queryables)
@@ -679,13 +676,13 @@ class ECMWFSearch(PostJsonSearch):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using its constraints file
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        product_type = kwargs.pop("productType")
+        collection = kwargs.pop("collection")
 
-        pt_config = self.get_product_type_def_params(product_type)
+        pt_config = self.get_collection_def_params(collection)
 
         default_values = deepcopy(pt_config)
         default_values.pop("metadata_mapping", None)
@@ -698,7 +695,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # extract default datetime
         processed_filters = self._preprocess_search_params(
-            deepcopy(filters), product_type
+            deepcopy(filters), collection
         )
 
         constraints_url = format_metadata(
@@ -714,7 +711,7 @@ class ECMWFSearch(PostJsonSearch):
         form: list[dict[str, Any]] = self._fetch_data(form_url)
 
         formated_filters = self.format_as_provider_keyword(
-            product_type, processed_filters
+            collection, processed_filters
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
         for k, v in {**default_values, **kwargs}.items():
@@ -762,7 +759,7 @@ class ECMWFSearch(PostJsonSearch):
         else:
             values_url = getattr(self.config, "available_values_url", "")
             if not values_url:
-                return self.queryables_from_metadata_mapping(product_type)
+                return self.queryables_from_metadata_mapping(collection)
             if "{" in values_url:
                 values_url = values_url.format(**filters)
             data = self._fetch_data(values_url)
@@ -770,7 +767,7 @@ class ECMWFSearch(PostJsonSearch):
             required_keywords = data.get("required", [])
 
         # To check if all keywords are queryable parameters, we check if they are in the
-        # available values or the product type config (available values calculated from the
+        # available values or the collection config (available values calculated from the
         # constraints might not include all queryables)
         for keyword in filters:
             if (
@@ -1075,32 +1072,32 @@ class ECMWFSearch(PostJsonSearch):
         return queryables
 
     def format_as_provider_keyword(
-        self, product_type: str, properties: dict[str, Any]
+        self, collection: str, properties: dict[str, Any]
     ) -> dict[str, Any]:
         """Return provider equivalent keyword names from EODAG keywords.
 
-        :param product_type: product type id
+        :param collection: collection id
         :param properties: dict of properties to be formatted
         :return: dict of formatted properties
         """
-        properties["productType"] = product_type
+        properties["collection"] = collection
 
-        # provider product type specific conf
-        product_type_def_params = self.get_product_type_def_params(
-            product_type, format_variables=properties
+        # provider collection specific conf
+        collection_def_params = self.get_collection_def_params(
+            collection, format_variables=properties
         )
 
-        # Add to the query, the queryable parameters set in the provider product type definition
+        # Add to the query, the queryable parameters set in the provider collection definition
         properties.update(
             {
                 k: v
-                for k, v in product_type_def_params.items()
+                for k, v in collection_def_params.items()
                 if k not in properties.keys()
                 and k in self.config.metadata_mapping.keys()
                 and isinstance(self.config.metadata_mapping[k], list)
             }
         )
-        qp, _ = self.build_query_string(product_type, properties)
+        qp, _ = self.build_query_string(collection, properties)
 
         return qp
 
@@ -1133,7 +1130,7 @@ class ECMWFSearch(PostJsonSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        product_type = kwargs.get("productType")
+        collection = kwargs.get("collection")
 
         result = results[0]
 
@@ -1158,20 +1155,20 @@ class ECMWFSearch(PostJsonSearch):
             properties["geometry"] = properties.get("area") or DEFAULT_GEOMETRY
 
             start, end = ecmwf_temporal_to_eodag(properties)
-            properties["startTimeFromAscendingNode"] = start
-            properties["completionTimeFromAscendingNode"] = end
+            properties["start_datetime"] = start
+            properties["end_datetime"] = end
 
         else:
             # use all available query_params to parse properties
             result_data: dict[str, Any] = {
-                **results.product_type_def_params,
+                **results.collection_def_params,
                 **sorted_unpaginated_qp,
                 **{"qs": sorted_unpaginated_qp},
             }
 
-            # update result with product_type_def_params and search args if not None (and not auth)
+            # update result with collection_def_params and search args if not None (and not auth)
             kwargs.pop("auth", None)
-            result_data.update(results.product_type_def_params)
+            result_data.update(results.collection_def_params)
             result_data = {
                 **result_data,
                 **{k: v for k, v in kwargs.items() if v is not None},
@@ -1186,13 +1183,14 @@ class ECMWFSearch(PostJsonSearch):
             query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
             properties["title"] = properties["id"] = (
-                (product_type or kwargs.get("dataset", self.provider)).upper()
+                (collection or kwargs.get("dataset", self.provider)).upper()
                 + "_ORDERABLE_"
                 + query_hash
             )
-            # use product_type_config as default properties
-            product_type_config = getattr(self.config, "product_type_config", {})
-            properties = dict(product_type_config, **properties)
+
+            # collection alias (required by opentelemetry-instrumentation-eodag)
+            if alias := getattr(self.config, "collection_config", {}).get("alias"):
+                properties["eodag:alias"] = alias
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
@@ -1263,7 +1261,7 @@ def _check_id(product: EOProduct) -> EOProduct:
         product.downloader._order_status(product=product, auth=auth)  # type: ignore
     # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
     except NotAvailableError:
-        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["order:status"] = STAGING_STATUS
     except Exception as e:
         if (
             isinstance(e, DownloadError) or isinstance(e, ValidationError)
@@ -1275,16 +1273,16 @@ def _check_id(product: EOProduct) -> EOProduct:
 
     # update product id
     product.properties["id"] = product_id
-    # update product type if needed
-    if product.product_type is None:
-        product.product_type = product.properties.get("ecmwf:dataset")
+    # update collection if needed
+    if product.collection is None:
+        product.collection = product.properties.get("ecmwf:dataset")
     # update product title
     product.properties["title"] = (
-        (product.product_type or product.provider).upper() + "_" + product_id
+        (product.collection or product.provider).upper() + "_" + product_id
     )
-    # use NOT_AVAILABLE as fallback product_type to avoid using guess_product_type
-    if product.product_type is None:
-        product.product_type = NOT_AVAILABLE
+    # use NOT_AVAILABLE as fallback collection to avoid using guess_collection
+    if product.collection is None:
+        product.collection = NOT_AVAILABLE
 
     return product
 
@@ -1363,15 +1361,15 @@ class MeteoblueSearch(ECMWFSearch):
         return [response.json()]
 
     def build_query_string(
-        self, product_type: str, query_dict: dict[str, Any]
+        self, collection: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
-        :param product_type: product type id
+        :param collection: collection id
         :param query_dict: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
-        return QueryStringSearch.build_query_string(self, product_type, query_dict)
+        return QueryStringSearch.build_query_string(self, collection, query_dict)
 
     def normalize_results(self, results, **kwargs):
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
@@ -1381,7 +1379,7 @@ class MeteoblueSearch(ECMWFSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        product_type = kwargs.get("productType")
+        collection = kwargs.get("collection")
 
         result = results[0]
 
@@ -1415,9 +1413,9 @@ class MeteoblueSearch(ECMWFSearch):
 
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
-        # update result with product_type_def_params and search args if not None (and not auth)
+        # update result with collection_def_params and search args if not None (and not auth)
         kwargs.pop("auth", None)
-        result.update(results.product_type_def_params)
+        result.update(results.collection_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
         # parse properties
@@ -1427,17 +1425,16 @@ class MeteoblueSearch(ECMWFSearch):
             discovery_config=getattr(self.config, "discover_metadata", {}),
         )
 
-        properties = {
-            # use product_type_config as default properties
-            **getattr(self.config, "product_type_config", {}),
-            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
-        }
+        properties = {ecmwf_format(k): v for k, v in parsed_properties.items()}
+        # collection alias (required by opentelemetry-instrumentation-eodag)
+        if alias := getattr(self.config, "collection_config", {}).get("alias"):
+            properties["eodag:alias"] = alias
 
         def slugify(date_str: str) -> str:
             return date_str.split("T")[0].replace("-", "")
 
         # build product id
-        product_id = (product_type or self.provider).upper()
+        product_id = (collection or self.provider).upper()
 
         start = properties.get(START, NOT_AVAILABLE)
         end = properties.get(END, NOT_AVAILABLE)
@@ -1456,12 +1453,9 @@ class MeteoblueSearch(ECMWFSearch):
 
         product = EOProduct(
             provider=self.provider,
-            productType=product_type,
+            collection=collection,
             properties=properties,
         )
-        # use product_type_config as default properties
-        product_type_config = getattr(self.config, "product_type_config", {})
-        product.properties = dict(product_type_config, **product.properties)
 
         return [
             product,
@@ -1507,9 +1501,9 @@ class WekeoECMWFSearch(ECMWFSearch):
             # id is order id (only letters and numbers) -> use parent normalize results
             return super().normalize_results(results, **kwargs)
 
-        # formating of orderLink requires access to the productType value.
+        # formating of orderLink requires access to the collection value.
         results.data = [
-            {**result, **results.product_type_def_params} for result in results
+            {**result, **results.collection_def_params} for result in results
         ]
 
         normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
@@ -1534,7 +1528,7 @@ class WekeoECMWFSearch(ECMWFSearch):
             dataset = "_".join(splitted_id[:-1])
             query_hash = splitted_id[-1]
             product.properties["title"] = product.properties["id"] = (
-                (product.product_type or dataset or self.provider).upper()
+                (product.collection or dataset or self.provider).upper()
                 + "_ORDERABLE_"
                 + query_hash
             )

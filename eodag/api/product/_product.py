@@ -104,8 +104,8 @@ class EOProduct:
     provider: str
     #: The metadata of the product
     properties: dict[str, Any]
-    #: The product type
-    product_type: Optional[str]
+    #: The collection
+    collection: Optional[str]
     #: The geometry of the product
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
@@ -127,7 +127,7 @@ class EOProduct:
         self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
         self.provider = provider
-        self.product_type = kwargs.get("productType")
+        self.collection = kwargs.get("collection")
         self.location = self.remote_location = properties.get("downloadLink", "")
         self.assets = AssetsDict(self)
         self.properties = {
@@ -136,7 +136,18 @@ class EOProduct:
             if key != "geometry"
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
+            and not key.startswith("_")
         }
+        common_stac_properties = {
+            key: self.properties[key]
+            for key in sorted(self.properties)
+            if ":" not in key
+        }
+        extensions_stac_properties = {
+            key: self.properties[key] for key in sorted(self.properties) if ":" in key
+        }
+        self.properties = common_stac_properties | extensions_stac_properties
+
         if "geometry" not in properties or (
             (
                 properties["geometry"] == NOT_AVAILABLE
@@ -192,9 +203,9 @@ class EOProduct:
             "id": self.properties["id"],
             "assets": self.assets.as_dict(),
             "properties": {
-                "eodag_product_type": self.product_type,
-                "eodag_provider": self.provider,
-                "eodag_search_intersection": search_intersection,
+                "eodag:collection": self.collection,
+                "eodag:provider": self.provider,
+                "eodag:search_intersection": search_intersection,
                 **{
                     key: value
                     for key, value in self.properties.items()
@@ -217,11 +228,11 @@ class EOProduct:
         properties = feature["properties"]
         properties["geometry"] = feature["geometry"]
         properties["id"] = feature["id"]
-        provider = feature["properties"]["eodag_provider"]
-        product_type = feature["properties"]["eodag_product_type"]
-        obj = cls(provider, properties, productType=product_type)
+        provider = feature["properties"]["eodag:provider"]
+        collection = feature["properties"]["eodag:collection"]
+        obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(
-            feature["properties"]["eodag_search_intersection"]
+            feature["properties"]["eodag:search_intersection"]
         )
         obj.assets = AssetsDict(obj, feature.get("assets", {}))
         return obj
@@ -252,7 +263,7 @@ class EOProduct:
         download_plugin = plugins_manager.get_download_plugin(self)
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("storageStatus") != ONLINE_STATUS:
+        elif self.properties.get("order:status") != ONLINE_STATUS:
             matching_url = self.properties.get("orderLink") or self.properties.get(
                 "downloadLink"
             )
@@ -608,13 +619,13 @@ class EOProduct:
                     <td style='text-align: left; vertical-align: top;'>
                         {dict_to_html_table({
                          "provider": self.provider,
-                         "product_type": self.product_type,
+                         "collection": self.collection,
                          "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
-                             'startTimeFromAscendingNode'
+                         "properties[&quot;start_datetime&quot;]": self.properties.get(
+                             'start_datetime'
                          ),
-                         "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
-                             'completionTimeFromAscendingNode'
+                         "properties[&quot;end_datetime&quot;]": self.properties.get(
+                             'end_datetime'
                          ),
                          }, brackets=False)}
                         <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(

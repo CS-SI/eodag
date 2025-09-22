@@ -29,7 +29,7 @@ my_new_provider:
     products:
         S2_MSI_L1C:
           productType: sentinel2_l1c
-        GENERIC_PRODUCT_TYPE:
+        GENERIC_COLLECTION:
           productType: '{productType}'
     download:
         type: AwsDownload

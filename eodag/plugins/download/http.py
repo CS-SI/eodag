@@ -92,7 +92,6 @@ if TYPE_CHECKING:
     from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -140,9 +139,9 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
-        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type specific config; the
-          keys are the product types, the values are dictionaries which can contain the key
-          :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific product type
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): collection specific config; the
+          keys are the collections, the values are dictionaries which can contain the key
+          :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific collection
 
     """
 
@@ -157,7 +156,7 @@ class HTTPDownload(Download):
     ) -> Optional[dict[str, Any]]:
         """Send product order request.
 
-        It will be executed once before the download retry loop, if the product is OFFLINE
+        It will be executed once before the download retry loop, if the product is orderable
         and has `orderLink` in its properties.
         Product ordering can be configured using the following download plugin parameters:
 
@@ -180,7 +179,7 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :returns: the returned json status response
         """
-        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["order:status"] = STAGING_STATUS
 
         order_method = getattr(self.config, "order_method", "GET").upper()
         ssl_verify = getattr(self.config, "ssl_verify", True)
@@ -223,7 +222,7 @@ class HTTPDownload(Download):
                     response.raise_for_status()
                     ordered_message = response.text
                     logger.debug(ordered_message)
-                    product.properties["storageStatus"] = STAGING_STATUS
+                    product.properties["order:status"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
                     msg = f"{product.properties['title']} could not be ordered"
@@ -271,7 +270,7 @@ class HTTPDownload(Download):
                 "orderId", product.properties["id"]
             )
             product.properties["title"] = (
-                (product.product_type or product.provider).upper()
+                (product.collection or product.provider).upper()
                 + "_"
                 + product.properties["id"]
             )
@@ -464,7 +463,7 @@ class HTTPDownload(Download):
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
-        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["order:status"] = STAGING_STATUS
 
         success_status: dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
@@ -473,7 +472,7 @@ class HTTPDownload(Download):
         ):
             return None
 
-        product.properties["storageStatus"] = ONLINE_STATUS
+        product.properties["order:status"] = ONLINE_STATUS
 
         if not config_on_success:
             # Nothing left to do
@@ -589,7 +588,7 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -675,7 +674,7 @@ class HTTPDownload(Download):
                     raise DownloadError(f"product {product.properties['id']} is empty")
                 else:
                     # make sure storage status is online
-                    product.properties["storageStatus"] = ONLINE_STATUS
+                    product.properties["order:status"] = ONLINE_STATUS
 
                 return path
             else:
@@ -718,14 +717,14 @@ class HTTPDownload(Download):
         stream_size = int(self.stream.headers.get("content-length", 0))
         if (
             stream_size == 0
-            and "storageStatus" in product.properties
-            and product.properties["storageStatus"] != ONLINE_STATUS
+            and "order:status" in product.properties
+            and product.properties["order:status"] != ONLINE_STATUS
         ):
             raise NotAvailableError(
                 "%s(initially %s) ordered, got: %s"
                 % (
                     product.properties["title"],
-                    product.properties["storageStatus"],
+                    product.properties["order:status"],
                     self.stream.reason,
                 )
             )
@@ -753,7 +752,7 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -880,7 +879,7 @@ class HTTPDownload(Download):
             e.response.text.strip() if e is not None and e.response is not None else ""
         )
         # product not available
-        if product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
+        if product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not response_text
@@ -891,7 +890,7 @@ class HTTPDownload(Download):
                 "%s(initially %s) requested, returned: %s"
                 % (
                     product.properties["title"],
-                    product.properties["storageStatus"],
+                    product.properties["order:status"],
                     msg,
                 )
             )
@@ -914,21 +913,21 @@ class HTTPDownload(Download):
     ) -> None:
         if (
             "orderLink" in product.properties
-            and product.properties.get("storageStatus") == OFFLINE_STATUS
+            and product.properties.get("order:status") == OFFLINE_STATUS
             and not product.properties.get("orderStatus")
         ):
             self._order(product=product, auth=auth)
 
         if (
             product.properties.get("orderStatusLink")
-            and product.properties.get("storageStatus") != ONLINE_STATUS
+            and product.properties.get("order:status") != ONLINE_STATUS
         ):
             self._order_status(product=product, auth=auth)
 
     def order(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> None:
@@ -1039,7 +1038,7 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                product.properties["storageStatus"] = "ORDERED"
+                product.properties["order:status"] = "ORDERED"
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 
@@ -1094,9 +1093,7 @@ class HTTPDownload(Download):
             assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
 
         # product conf overrides provider conf for "flatten_top_dirs"
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
@@ -1244,9 +1241,7 @@ class HTTPDownload(Download):
             os.makedirs(fs_dir_path)
 
         # product conf overrides provider conf for "flatten_top_dirs"
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
@@ -1411,7 +1406,7 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

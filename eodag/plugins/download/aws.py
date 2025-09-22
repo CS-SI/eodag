@@ -53,7 +53,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     NotAvailableError,
     TimeOutError,
 )
@@ -66,7 +66,6 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -208,11 +207,11 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the
           path part of the url the bucket can be found; If no bucket_path_level is given, the bucket
           is taken from the first element of the netloc part.
-        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type
-          specific config; the keys are the product types, the values are dictionaries which can contain the keys:
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): collection
+          specific config; the keys are the collections, the values are dictionaries which can contain the keys:
 
-          * **default_bucket** (``str``): bucket where the product type can be found
-          * **complementary_url_key** (``str``): keys to add additional urls
+          * **default_bucket** (``str``): bucket where the collection can be found
+          * **complementary_url_key** (``str``): properties keys pointing to additional urls of content to download
           * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
             be created; used for Sentinel products; default: False
           * **fetch_metadata** (``dict[str, Any]``): config for metadata to be fetched for the SAFE product
@@ -225,7 +224,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -234,7 +233,7 @@ class AwsDownload(Download):
         """Download method for AWS S3 API.
 
         The product can be downloaded as it is, or as SAFE-formatted product.
-        SAFE-build is configured for a given provider and product type.
+        SAFE-build is configured for a given provider and collection.
         If the product title is configured to be updated during download and
         SAFE-formatted, its destination path will be:
         `{output_dir}/{title}`
@@ -266,9 +265,7 @@ class AwsDownload(Download):
         if not record_filename or not product_local_path:
             return product_local_path
 
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
 
         # do not try to build SAFE if asset filter is used
         asset_filter = kwargs.get("asset")
@@ -368,7 +365,7 @@ class AwsDownload(Download):
             logger.warning("Unexpected error: %s" % e)
 
         # finalize safe product
-        if build_safe and product.product_type and "S2_MSI" in product.product_type:
+        if build_safe and product.collection and "S2_MSI" in product.collection:
             self.finalize_s2_safe_product(product_local_path)
         # flatten directory structure
         elif flatten_top_dirs:
@@ -479,9 +476,7 @@ class AwsDownload(Download):
         :param build_safe: if safe build is enabled
         :param product: product to be updated
         """
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
@@ -619,14 +614,14 @@ class AwsDownload(Download):
                 )
 
         if not unique_product_chunks and raise_error:
-            raise NoMatchingProductType("No product found to download.")
+            raise NoMatchingCollection("No product found to download.")
 
         return unique_product_chunks
 
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -664,7 +659,7 @@ class AwsDownload(Download):
 
         #### SAFE Archive Support:
 
-        If the product type supports SAFE structure and no `asset_regex` is specified (i.e., full product download),
+        If the collection supports SAFE structure and no `asset_regex` is specified (i.e., full product download),
         the method attempts to reconstruct a valid SAFE archive layout in the streamed output.
 
         :param product: The EO product to download.
@@ -680,9 +675,7 @@ class AwsDownload(Download):
         """
         asset_regex = kwargs.get("asset")
 
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
 
         build_safe = (
             False if asset_regex is not None else product_conf.get("build_safe", False)
@@ -724,9 +717,7 @@ class AwsDownload(Download):
                 endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
 
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
@@ -814,7 +805,7 @@ class AwsDownload(Download):
         if bucket is None:
             bucket = (
                 getattr(self.config, "products", {})
-                .get(product.product_type, {})
+                .get(product.collection, {})
                 .get("default_bucket", "")
             )
 
@@ -925,7 +916,7 @@ class AwsDownload(Download):
         s2_processing_level: str = ""
         s1_title_suffix: Optional[str] = None
         # S2 common
-        if product.product_type and "S2_MSI" in product.product_type:
+        if product.collection and "S2_MSI" in product.collection:
             title_search: Optional[re.Match[str]] = re.search(
                 r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
                 product.properties["title"],
@@ -937,9 +928,9 @@ class AwsDownload(Download):
                 product.properties.get("originalSceneID", ""),
             )
             ds_dir = ds_dir_search.group(1) if ds_dir_search else 0
-            s2_processing_level = product.product_type.split("_")[-1]
+            s2_processing_level = product.collection.split("_")[-1]
         # S1 common
-        elif product.product_type == "S1_SAR_GRD":
+        elif product.collection == "S1_SAR_GRD":
             s1_title_suffix_search = re.search(
                 r"^.+_([A-Z0-9_]+_[A-Z0-9_]+_[A-Z0-9_]+_[A-Z0-9_]+)_\w+$",
                 product.properties["title"],
@@ -1061,7 +1052,7 @@ class AwsDownload(Download):
             found_dict = matched.groupdict()
             product_path = "annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml" % (
                 found_dict["file_prefix"],
-                product.properties["platformSerialIdentifier"].lower(),
+                product.properties["platform"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
@@ -1072,7 +1063,7 @@ class AwsDownload(Download):
         elif matched := S1_ANNOT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
             product_path = "annotation/%s-%s-grd-%s-%s-%03d.xml" % (
-                product.properties["platformSerialIdentifier"].lower(),
+                product.properties["platform"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
@@ -1083,7 +1074,7 @@ class AwsDownload(Download):
         elif matched := S1_MEAS_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
             product_path = "measurement/%s-%s-grd-%s-%s-%03d.%s" % (
-                product.properties["platformSerialIdentifier"].lower(),
+                product.properties["platform"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
@@ -1112,7 +1103,7 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

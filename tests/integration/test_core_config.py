@@ -53,11 +53,11 @@ class TestCoreProvidersConfig(TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_core_providers_config_update(
-        self, mock__request, mock_fetch_product_types_list, mock_auth_session_request
+        self, mock__request, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Providers config must be updatable"""
         mock__request.return_value = mock.Mock()
@@ -82,8 +82,8 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
                 download:
                     type: HTTPDownload
                     base_uri: https://foo.bar
@@ -149,8 +149,8 @@ class TestCoreProvidersConfig(TestCase):
                 auth:
                     type: GenericAuth
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
             """
         )
         self.assertIn("bar_provider", self.dag.providers_config)
@@ -200,8 +200,8 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
                 auth:
                     type: GenericAuth
                     matching_conf:
@@ -215,8 +215,8 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
                 auth:
                     type: GenericAuth
                     matching_conf:
@@ -325,13 +325,13 @@ class TestCoreProvidersConfig(TestCase):
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_core_providers_add_update(
-        self, mock__request, mock_fetch_product_types_list
+        self, mock__request, mock_fetch_collections_list
     ):
         """add_provider method must add provider using given conf and update if exists"""
         mock__request.return_value = mock.Mock()
@@ -352,7 +352,7 @@ class TestCoreProvidersConfig(TestCase):
         )
 
         # search method must build metadata_mapping as jsonpath object
-        self.dag.search(provider="foo", productType="abc", raise_errors=True)
+        self.dag.search(provider="foo", collection="abc", raise_errors=True)
         self.assertEqual(
             self.dag.providers_config["foo"].search.metadata_mapping["bar"],
             (None, Child(Child(Root(), Fields("properties")), Fields("bar"))),
@@ -374,9 +374,9 @@ class TestCoreProvidersConfig(TestCase):
         )
 
 
-class TestCoreProductTypesConfig(TestCase):
+class TestCoreCollectionsConfig(TestCase):
     def setUp(self):
-        super(TestCoreProductTypesConfig, self).setUp()
+        super(TestCoreCollectionsConfig, self).setUp()
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = tempfile.TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -386,7 +386,7 @@ class TestCoreProductTypesConfig(TestCase):
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
-        super(TestCoreProductTypesConfig, self).tearDown()
+        super(TestCoreCollectionsConfig, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
@@ -397,7 +397,7 @@ class TestCoreProductTypesConfig(TestCase):
     )
     @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
-    def test_core_discover_product_types_auth(
+    def test_core_discover_collections_auth(
         self, mock_requests_get, mock_urlopen, mock_build_response
     ):
         # without auth plugin
@@ -407,21 +407,21 @@ class TestCoreProductTypesConfig(TestCase):
                 search:
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
-                    discover_product_types:
+                    discover_collections:
                         fetch_url: https://foo.bar/collections
                     need_auth: true
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
+            ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
             )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.assertIsNone(ext_collections_conf["foo_provider"])
             self.assertIn(
-                "Could not authenticate on foo_provider for product types discovery",
+                "Could not authenticate on foo_provider for collections discovery",
                 str(cm.output),
             )
 
@@ -437,10 +437,10 @@ class TestCoreProductTypesConfig(TestCase):
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
+            ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
             )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.assertIsNone(ext_collections_conf["foo_provider"])
             self.assertIn(
                 "Could not authenticate on foo_provider: Missing credentials",
                 str(cm.output),
@@ -455,11 +455,11 @@ class TestCoreProductTypesConfig(TestCase):
                         apikey: my-api-key
             """
         )
-        self.dag.discover_product_types(provider="foo_provider")
+        self.dag.discover_collections(provider="foo_provider")
 
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            self.dag.providers_config["foo_provider"].search.discover_product_types[
+            self.dag.providers_config["foo_provider"].search.discover_collections[
                 "fetch_url"
             ],
             auth=mock.ANY,
@@ -481,7 +481,7 @@ class TestCoreProductTypesConfig(TestCase):
                         - ']'
             """
         )
-        self.dag.discover_product_types(provider="foo_provider")
+        self.dag.discover_collections(provider="foo_provider")
 
         mock_urlopen.assert_called_once()
         self.assertDictEqual(
@@ -506,10 +506,10 @@ class TestCoreProductTypesConfig(TestCase):
             mock_get_auth_plugins.return_value = iter([mock_auth_plugin])
 
             with self.assertLogs(level="DEBUG") as cm:
-                ext_product_types_conf = self.dag.discover_product_types(
+                ext_collections_conf = self.dag.discover_collections(
                     provider="foo_provider"
                 )
-                self.assertIsNone(ext_product_types_conf["foo_provider"])
+                self.assertIsNone(ext_collections_conf["foo_provider"])
                 self.assertIn(
                     "Could not authenticate on foo_provider: cannot auth for test",
                     str(cm.output),
