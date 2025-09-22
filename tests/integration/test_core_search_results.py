@@ -54,7 +54,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "resolution": None,
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
-                        "collection": "OCN",
+                        "product:type": "OCN",
                         "downloadLink": (
                             "https://peps.cnes.fr/resto/collections/S1/"
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
@@ -63,8 +63,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "eodag:collection": "S1_SAR_OCN",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
-                        "title": "S1A_WV_OCN__2SSV_20180215T235323_"
-                        "20180216T001213_020624_023501_0FD3",
+                        "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
                         "instruments": "SAR-C SAR",
                         "description": None,
