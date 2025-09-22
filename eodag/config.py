@@ -38,7 +38,6 @@ from typing import (
 import orjson
 import requests
 import yaml
-import yaml.constructor
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
