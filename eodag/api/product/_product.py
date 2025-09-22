@@ -127,7 +127,11 @@ class EOProduct:
         self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
         self.provider = provider
-        self.collection = kwargs.get("collection")
+        self.collection = (
+            kwargs.get("collection")
+            or properties.pop("collection", None)
+            or properties.get("_collection")
+        )
         self.location = self.remote_location = properties.get("downloadLink", "")
         self.assets = AssetsDict(self)
         self.properties = {
