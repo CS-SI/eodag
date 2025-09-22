@@ -1180,12 +1180,12 @@ class HTTPDownload(Download):
                             progress_callback(len(chunk))
                             yield chunk
 
-            except requests.exceptions.Timeout as exc:
-                raise TimeOutError(
-                    exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
-                ) from exc
-            except RequestException as e:
-                self._handle_asset_exception(e, asset)
+                except requests.exceptions.Timeout as exc:
+                    raise TimeOutError(
+                        exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
+                    ) from exc
+                except RequestException as e:
+                    self._handle_asset_exception(e, asset)
 
         assets_stream_list = []
 

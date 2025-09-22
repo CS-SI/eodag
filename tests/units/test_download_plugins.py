@@ -33,12 +33,7 @@ import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import MockResponse, ProgressCallback
-from eodag.utils.exceptions import (
-    DownloadError,
-    MisconfiguredError,
-    NoMatchingProductType,
-    ValidationError,
-)
+from eodag.utils.exceptions import DownloadError, NoMatchingProductType, ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -744,9 +739,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product.properties["id"] = "someproduct"
             self.product.assets.clear()
             self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
-            mock_session.get.return_value.iter_content.return_value = io.BytesIO(
-                b"some content"
-            )
+            mock_session.get.return_value.iter_content.return_value = [
+                b"part1",
+                b"part2",
+            ]
             mock_session.get.return_value.headers = {
                 "content-disposition": '; filename = "somethingelse"'
             }
