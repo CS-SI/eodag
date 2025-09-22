@@ -1992,6 +1992,8 @@
       gcm: ec_earth
       ensemble_member: r12i1p1
       period: 1_5_c
+    CMIP6_CLIMATE_PROJECTIONS:
+      dataset: projections-cmip6
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---

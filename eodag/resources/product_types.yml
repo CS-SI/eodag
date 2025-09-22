@@ -4031,6 +4031,36 @@ SIS_HYDRO_MET_PROJ:
   missionStartDate: "1970-01-01T00:00:00Z"
   missionEndDate: "2100-12-31T23:59:00Z"
 
+CMIP6_CLIMATE_PROJECTIONS:
+  abstract: |
+    This catalogue entry provides daily and monthly global climate projections data from a large number of experiments,
+    models and time periods computed in the framework of the sixth phase of the Coupled Model Intercomparison Project
+    (CMIP6). CMIP6 data underpins the Intergovernmental Panel on Climate Change 6th Assessment Report. The use of these
+    data is mostly aimed at:\n\naddressing outstanding scientific questions that arose as part of the IPCC reporting
+    process; improving the understanding of the climate system; providing estimates of future climate change and related
+    uncertainties; providing input data for the adaptation to the climate change; examining climate predictability and
+    exploring the ability of models to predict climate on decadal time scales; evaluating how realistic the different
+    models are in simulating the recent past.\n\nThe term "experiments" refers to the three main categories of CMIP6
+    simulations:\n\nHistorical experiments which cover the period where modern climate observations exist. These
+    experiments show how the GCMs performs for the past climate and can be used as a reference period for comparison
+    with scenario runs for the future. The period covered is typically 1850-2014. Climate projection experiments
+    following the combined pathways of Shared Socioeconomic Pathway (SSP) and Representative Concentration Pathway
+    (RCP). The SSP scenarios provide different pathways of the future climate forcing. The period covered is typically
+    2015-2100.\n\nThis catalogue entry provides both two- and three-dimensional data, along with an option to apply
+    spatial and/or temporal subsetting to data requests. This is a new feature of the global climate projection dataset,
+    which relies on compute processes run simultaneously in the ESGF nodes, where the data are originally located. The
+    data are produced by the participating institutes of the CMIP6 project.
+  platform: CMIP6
+  instrument: CMIP6
+  platformSerialIdentifier: CMIP6
+  processingLevel:
+  sensorType:
+  keywords: ECMWF,CDS,C3S,CMIP6,historical,projection,global
+  license: other
+  title: CMIP6 climate projections
+  missionStartDate: "1850-01-01T00:00:00Z"
+  missionEndDate: "2100-12-31T23:59:00Z"
+
 # MARK: CEMS
 
 FIRE_HISTORICAL:
