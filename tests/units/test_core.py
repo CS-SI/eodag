@@ -586,6 +586,7 @@ class TestCore(TestCoreBase):
         "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SIS_HYDRO_MET_PROJ": ["cop_cds", "dedl"],
+        "CMIP6_CLIMATE_PROJECTIONS": ["cop_cds"],
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         GENERIC_PRODUCT_TYPE: [
