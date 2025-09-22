@@ -29,6 +29,7 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
 
+from eodag.api.product._assets import Asset
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -691,3 +692,20 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
+
+    def presign_url(
+        self,
+        asset: Asset,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        expires_in: int = 3600,
+    ) -> str:
+        """presign a url to download an asset
+
+        :param asset: asset for which the url shall be presigned
+        :param auth: authentification information
+        :param expires_in: expiration time of the presigned url in seconds
+        :returns: presigned url
+        """
+        raise NotImplementedError(
+            f"presign_url is not implemented for plugin {type(self).__name__}"
+        )
