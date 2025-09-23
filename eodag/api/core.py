@@ -1142,7 +1142,8 @@ class EODataAccessGateway:
         will be request from the provider with the next highest priority.
         Only if the request fails for all available providers, an error will be thrown.
 
-        :param page: (optional) The page number to return
+        :param page: (optional) The page number to return (**deprecated**, use
+                     :meth:`eodag.api.search_result.SearchResult.next_page` instead)
         :param items_per_page: (optional) The number of results that must appear in one single
                                page. If ``None``, the maximum number possible will be used.
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
@@ -1267,6 +1268,9 @@ class EODataAccessGateway:
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search.
 
+        .. deprecated:: v3.9.0
+            Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
+
         :param items_per_page: (optional) The number of results requested per page
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
@@ -1328,6 +1332,9 @@ class EODataAccessGateway:
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
+
+        .. deprecated:: v3.9.0
+            Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param items_per_page: (optional) The number of results requested per page
         :param kwargs: Some other criteria that will be used to do the search,
