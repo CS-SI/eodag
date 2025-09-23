@@ -30,7 +30,9 @@ from typing import (
     cast,
 )
 
-from shapely.geometry import GeometryCollection, shape
+from shapely.geometry import GeometryCollection
+from shapely.geometry import mapping as shapely_mapping
+from shapely.geometry import shape
 from typing_extensions import Doc
 
 from eodag.api.product import EOProduct, unregistered_product_from_item
@@ -173,23 +175,36 @@ class SearchResult(UserList[EOProduct]):
         ]
         props = feature_collection.get("properties", {}) or {}
 
+        eodag_search_params = props.get("eodag_search_params", {})
+        # wkt to shapely geometry
+        if eodag_search_params and eodag_search_params.get("geometry"):
+            eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
+
         return SearchResult(
             products=products,
             number_matched=props.get("eodag_number_matched"),
             next_page_token=props.get("eodag_next_page_token"),
-            search_params=props.get("eodag_search_params"),
+            search_params=eodag_search_params or None,
             raise_errors=props.get("eodag_raise_errors"),
         )
 
     def as_geojson_object(self) -> dict[str, Any]:
         """GeoJSON representation of SearchResult"""
+
+        geojson_search_params = {} | (self.search_params or {})
+        # search_params shapely geometry to wkt
+        if self.search_params and self.search_params.get("geometry"):
+            geojson_search_params["geometry"] = shapely_mapping(
+                self.search_params["geometry"]
+            )
+
         return {
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
             "metadata": {
                 "eodag_number_matched": self.number_matched,
                 "eodag_next_page_token": self.next_page_token,
-                "eodag_search_params": self.search_params,
+                "eodag_search_params": geojson_search_params or None,
                 "eodag_raise_errors": self.raise_errors,
             },
         }
