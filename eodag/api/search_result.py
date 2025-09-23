@@ -19,7 +19,16 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Iterable,
+    Iterator,
+    Optional,
+    Union,
+    cast,
+)
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -250,6 +259,11 @@ class SearchResult(UserList[EOProduct]):
 
         :param update: If ``True``, update the current ``SearchResult`` with new results.
         :returns: An iterator yielding ``SearchResult`` objects for each subsequent page.
+
+        Example:
+        >>> first_page = SearchResult([])  # result of a search
+        >>> for new_results in first_page.next_page():
+        ...     continue  # do something with new_results
         """
         if self.next_page_token is None:
             return
@@ -280,6 +294,15 @@ class SearchResult(UserList[EOProduct]):
                     **search_kwargs,
                 )
 
+        # Do not iterate if there is no next page token
+        #  or if the current one returned less than the maximum number of items asked for.
+        if self.next_page_token is None or (
+            self.search_params
+            and self.search_params.get("items_per_page")
+            and len(self) < cast(int, self.search_params["items_per_page"])
+        ):
+            return
+
         new_results = get_next_page(self)
 
         while new_results.data:
@@ -289,11 +312,11 @@ class SearchResult(UserList[EOProduct]):
                 self.next_page_token = new_results.next_page_token
             yield new_results
             # Stop iterating if there is no next page token
-            if new_results.next_page_token is None:
-                break
-            # Stop iterating if the numbre of results is not a multiple of items_per_page, which means that the last
-            # request returned less products than items_per_page, and so it was the last page
-            if len(self) % new_results.search_params["items_per_page"] != 0:
+            #  or if the current one returned less than the maximum number of items asked for.
+            if (
+                new_results.next_page_token is None
+                or len(new_results) < new_results.search_params["items_per_page"]
+            ):
                 break
             old_results = new_results
             new_results = get_next_page(new_results)
