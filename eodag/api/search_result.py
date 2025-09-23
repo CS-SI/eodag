@@ -292,6 +292,10 @@ class SearchResult(UserList[EOProduct]):
             # Stop iterating if there is no next page token
             if new_results.next_page_token is None:
                 break
+            # Stop iterating if the numbre of results is not a multiple of items_per_page, which means that the last
+            # request returned less products than items_per_page, and so it was the last page
+            if len(self) % new_results.search_params["items_per_page"] != 0:
+                break
             old_results = new_results
             new_results = get_next_page(new_results)
             if not new_results:
@@ -303,7 +307,6 @@ class SearchResult(UserList[EOProduct]):
                 old_results.data[0].properties["id"]
                 == new_results.data[0].properties["id"]
             ):
-
                 logger.warning(
                     "Iterate over pages: stop iterating since the next page "
                     "appears to have the same products as in the previous one. "
