@@ -245,12 +245,11 @@ class SearchResult(UserList[EOProduct]):
         Retrieve and iterate over the next pages of search results, if available.
 
         This method uses the current search parameters and next page token to request
-        additional results from the provider. If `update` is True, the current SearchResult
+        additional results from the provider. If ``update`` is ``True``, the current ``SearchResult``
         instance is updated with new products and pagination information as pages are fetched.
 
-        :param update: If True, update the current SearchResult with new results (default: True).
-        :returns: An iterator yielding SearchResult objects for each subsequent page.
-        :raises: Stops iteration if no next page token is available or if pagination fails.
+        :param update: If ``True``, update the current ``SearchResult`` with new results.
+        :returns: An iterator yielding ``SearchResult`` objects for each subsequent page.
         """
         if self.next_page_token is None:
             return
