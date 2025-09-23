@@ -8,7 +8,7 @@ Together with it, there is more and more EO data providers, each potentially hav
 a different data access policy. This difference is visible at various levels:
 in the data discovery (STAC, OData, OpenSearch more or less custom, etc.), in the
 product access (object storage, downloads, direct file system access, etc.), in
-the storage structure and in the authentication mechanisms (OAUTH, JWT, basic
+the storage structure and in the authentication mechanisms (JWT, basic
 auth,...). All these different technologies add a knowledge overhead on a user
 (end-user or application developer) wishing to take advantage of these
 data. EODAG was designed to solve this problem.
@@ -33,4 +33,4 @@ types of plugins compose the tool:
 * Download plugins, allowing to download and retrieve data locally (via HTTP, S3, ...),
   always with the same directory organization
 * Authentication plugins, which are used to authenticate the user on the
-  external services used (JSON Token, Basic Auth, OAUTH, ...).
+  external services used (JSON Token, Basic Auth, ...).
