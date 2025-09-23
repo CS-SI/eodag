@@ -24,6 +24,7 @@ import re
 import shutil
 import tempfile
 import warnings
+from collections import deque
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import itemgetter
@@ -1121,7 +1122,7 @@ class EODataAccessGateway:
     def search(
         self,
         page: int = DEFAULT_PAGE,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE,
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1143,7 +1144,7 @@ class EODataAccessGateway:
 
         :param page: (optional) The page number to return
         :param items_per_page: (optional) The number of results that must appear in one single
-                               page
+                               page. If ``None``, the maximum number possible will be used.
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
                               True, the error is raised
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1213,16 +1214,23 @@ class EODataAccessGateway:
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
         search_kwargs.pop("_dc_qs", None)
-
-        search_kwargs.update(
-            page=page,
-            items_per_page=items_per_page,
-        )
+        # add page parameter
+        search_kwargs["page"] = page
 
         errors: list[tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
+
+            # add appropriate items_per_page value
+            search_kwargs["items_per_page"] = (
+                items_per_page
+                if items_per_page is not None
+                else getattr(search_plugin.config, "pagination", {}).get(
+                    "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+                )
+            )
+
             search_results = self._do_search(
                 search_plugin,
                 count=count,
@@ -1414,104 +1422,41 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-        # Get the search plugin and the maximized value
-        # of items_per_page if defined for the provider used.
-        try:
-            collection = self.get_collection_from_alias(
-                self.guess_collection(**kwargs)[0]
-            )
-        except NoMatchingCollection:
-            collection = GENERIC_COLLECTION
-        else:
-            # fetch collections list if collection is unknown
-            if (
-                collection
-                not in self._plugins_manager.collection_to_provider_config_map.keys()
-            ):
-                logger.debug(
-                    f"Fetching external collections sources to find {collection} collection"
-                )
-                self.fetch_collections_list()
-
         # remove unwanted count
         kwargs.pop("count", None)
 
-        search_plugins, search_kwargs = self._prepare_search(
-            start=start, end=end, geom=geom, locations=locations, **kwargs
+        # First search
+        search_results = self.search(
+            items_per_page=items_per_page,
+            start=start,
+            end=end,
+            geom=geom,
+            locations=locations,
+            **kwargs,
         )
-        for i, search_plugin in enumerate(search_plugins):
-            itp = (
-                items_per_page
-                or getattr(search_plugin.config, "pagination", {}).get(
-                    "max_items_per_page"
-                )
-                or DEFAULT_MAX_ITEMS_PER_PAGE
-            )
-            logger.info(
-                "Searching for all the products with provider %s and a maximum of %s "
-                "items per page.",
-                search_plugin.provider,
-                itp,
-            )
-            all_results = SearchResult([])
-            try:
-                items_per_page = itp if itp is not None else DEFAULT_ITEMS_PER_PAGE
-                search_kwargs.update(
-                    page=1,
-                    items_per_page=items_per_page,
-                )
-                search_kwargs.pop("raise_errors", None)
-                # First search
-                search_result = self._do_search(
-                    search_plugin, raise_errors=True, **search_kwargs
-                )
-                search_result.raise_errors = True
-                if len(search_result) == 0:
-                    break
-                all_results.data.extend(search_result.data)
-                if search_kwargs.get("count") is True:
-                    search_kwargs["count"] = False
-                search_kwargs.pop("page", None)
-                search_result.search_params = search_kwargs
-                if search_result._dag is None:
-                    search_result._dag = self
-                for next_result in search_result.next_page():
-                    all_results.data.extend(next_result.data)
+        if len(search_results) == 0:
+            return search_results
 
-                logger.info(
-                    "Found %s result(s) on provider '%s'",
-                    len(all_results),
-                    search_plugin.provider,
-                )
-                return all_results
-            except Exception:
-                logger.warning(
-                    "error at retrieval of data from %s, for params: %s",
-                    search_plugin.provider,
-                    str(kwargs),
-                )
-                raise
-            except RequestError:
-                if len(all_results) == 0 and i < len(search_plugins) - 1:
-                    logger.warning(
-                        "No result could be obtained from provider %s, "
-                        "we will try to get the data from another provider",
-                        search_plugin.provider,
-                    )
-                elif len(all_results) == 0:
-                    logger.error(
-                        "No result could be obtained from any available provider"
-                    )
-                    raise
-                elif len(all_results) > 0:
-                    logger.warning(
-                        "Found %s result(s) on provider '%s', but it may be incomplete "
-                        "as it ended with an error",
-                        len(all_results),
-                        search_plugin.provider,
-                    )
-                    return all_results
-        raise RequestError("No result could be obtained from any available provider")
+        try:
+            search_results.raise_errors = True
+
+            # consume iterator
+            deque(search_results.next_page(update=True))
+
+            logger.info(
+                "Found %s result(s) on provider '%s'",
+                len(search_results),
+                search_results[0].provider,
+            )
+        except RequestError:
+            logger.warning(
+                "Found %s result(s) on provider '%s', but it may be incomplete "
+                "as it ended with an error",
+                len(search_results),
+                search_results[0].provider,
+            )
+
+        return search_results
 
     def _search_by_id(
         self, uid: str, provider: Optional[str] = None, **kwargs: Any
