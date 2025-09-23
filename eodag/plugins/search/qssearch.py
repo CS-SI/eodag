@@ -1129,15 +1129,12 @@ class QueryStringSearch(Search):
         sets the search parameters, and determines the token or identifier for the next page
         based on the pagination configuration.
 
-        Args:
-            :param results: Raw results returned by the search.
-            :param resp_as_json: The search response parsed as JSON.
-            :param kwargs: Search parameters used for the query.
-            :param items_per_page: Number of items per page.
-            :param prep: Request preparation object containing query parameters.
-
-        :returns: An object containing the raw results, search parameters,
-                            and the next page token if available.
+        :param results: Raw results returned by the search.
+        :param resp_as_json: The search response parsed as JSON.
+        :param kwargs: Search parameters used for the query.
+        :param items_per_page: Number of items per page.
+        :param prep: Request preparation object containing query parameters.
+        :returns: An object containing the raw results, search parameters, and the next page token if available.
         """
         # Create the RawSearchResult object and populate basic fields
         raw_search_results = RawSearchResult(results)
