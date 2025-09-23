@@ -560,6 +560,20 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return value
 
         @staticmethod
+        def convert_add_prefix(value: str, prefix: str) -> str:
+            """Add a prefix to a string value."""
+            return (prefix + value).upper()
+
+        @staticmethod
+        def convert_remove_arg(value: str, args: str) -> str:
+            """Remove a prefix from a string value."""
+            args_list = args.split(",")
+            for arg in args_list:
+                if value.upper().startswith(arg.upper()):
+                    value = value.upper().replace(arg.upper(), "", 1)
+            return value.upper()
+
+        @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
             data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
             match = data_regex.search(value)
