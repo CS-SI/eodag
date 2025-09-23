@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -43,6 +43,14 @@ def get_timestamp(date_time: str) -> float:
 
     :param date_time: The datetime string to return as timestamp
     :returns: The timestamp corresponding to the ``date_time`` string in seconds
+
+    Examples:
+        >>> get_timestamp("2023-09-23T12:34:56Z")  # doctest: +ELLIPSIS
+        1695472496.0
+        >>> get_timestamp("2023-09-23T12:34:56+02:00")  # doctest: +ELLIPSIS
+        1695465296.0
+        >>> get_timestamp("2023-09-23")  # doctest: +ELLIPSIS
+        1695427200.0
     """
     dt = isoparse(date_time)
     if not dt.tzinfo:
@@ -66,6 +74,17 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
     :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
     :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
     :returns: True if check_range is within valid_range, otherwise False.
+    Examples:
+        >>> is_range_in_range("2023-01-01/2023-12-31", "2023-03-01/2023-03-31")
+        True
+        >>> is_range_in_range("2023-01-01/2023-12-31", "2022-12-01/2023-03-31")
+        False
+        >>> is_range_in_range("2023-01-01/2023-12-31", "2023-11-01/2024-01-01")
+        False
+        >>> is_range_in_range("2023-01-01/2023-12-31", "invalid-range")
+        False
+        >>> is_range_in_range("invalid-range", "2023-03-01/2023-03-31")
+        False
     """
     if "/" not in valid_range or "/" not in check_range:
         return False
@@ -89,6 +108,20 @@ def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str
 
     :param arguments: dict containing a single date or `/` separated dates in `datetime` item
     :returns: Start date and end date from datetime string (duplicate value if only one date as input)
+
+    Examples:
+        >>> get_datetime({"datetime": "2023-03-01/2023-03-31"})
+        ('2023-03-01T00:00:00', '2023-03-31T00:00:00')
+        >>> get_datetime({"datetime": "2023-03-01"})
+        ('2023-03-01T00:00:00', '2023-03-01T00:00:00')
+        >>> get_datetime({"datetime": "../2023-03-31"})
+        (None, '2023-03-31T00:00:00')
+        >>> get_datetime({"datetime": "2023-03-01/.."})
+        ('2023-03-01T00:00:00', None)
+        >>> get_datetime({"dtstart": "2023-03-01", "dtend": "2023-03-31"})
+        ('2023-03-01T00:00:00', '2023-03-31T00:00:00')
+        >>> get_datetime({})
+        (None, None)
     """
     datetime_str = arguments.pop("datetime", None)
 
@@ -113,7 +146,20 @@ def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str
 
 
 def get_date(date: Optional[str]) -> Optional[str]:
-    """Check if the input date can be parsed as a date"""
+    """
+    Check if the input date can be parsed as a date
+
+    Examples:
+        >>> from eodag.utils.exceptions import ValidationError
+        >>> get_date("2023-09-23")
+        '2023-09-23T00:00:00'
+        >>> get_date(None) is None
+        True
+        >>> get_date("invalid-date")  # doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+            ...
+        ValidationError
+    """
 
     if not date:
         return None
@@ -137,6 +183,16 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
     :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
 
     raises: :class:`ValidationError`
+
+    Examples:
+        >>> from eodag.utils.exceptions import ValidationError
+        >>> rfc3339_str_to_datetime("2023-09-23T12:34:56Z")
+        datetime.datetime(2023, 9, 23, 12, 34, 56, tzinfo=datetime.timezone.utc)
+
+        >>> rfc3339_str_to_datetime("invalid-date")  # doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+            ...
+        ValidationError
     """
     # Uppercase the string
     s = s.upper()
