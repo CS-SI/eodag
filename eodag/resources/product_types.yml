@@ -398,9 +398,9 @@ S1_AUX_GNSSRD:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,GNSSRD,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,GNSSRD,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
@@ -416,9 +416,9 @@ S1_AUX_MOEORB:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,MOEORB,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,MOEORB,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
@@ -434,9 +434,9 @@ S1_AUX_POEORB:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,POEORB,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,POEORB,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
@@ -452,9 +452,9 @@ S1_AUX_PREORB:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,PREORB,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,PREORB,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
@@ -470,9 +470,9 @@ S1_AUX_PROQUA:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,PROQUA,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,PROQUA,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
@@ -488,9 +488,9 @@ S1_AUX_RESORB:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: AUX
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,AUX,RESORB,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,RESORB,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
@@ -506,9 +506,9 @@ S1_SAR_L3_IW_MCM:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L3
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L3,IW,MCM,COG
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L3,IW,MCM,COG
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-3 IW MCM
@@ -524,9 +524,9 @@ S1_SAR_L3_DH_MCM:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L3
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L3,DH,MCM,COG
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L3,DH,MCM,COG
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-3 DH MCM
@@ -547,9 +547,9 @@ S1_SAR_OCN:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L2
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L2,OCN,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L2,OCN,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-2 OCN
@@ -571,9 +571,9 @@ S1_SAR_GRD:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -595,9 +595,9 @@ S1_SAR_GRD_JP2:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,JP2
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,JP2
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -619,9 +619,9 @@ S1_SAR_GRD_COG:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,COG
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,COG
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -637,9 +637,9 @@ S1_SAR_SLC:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,SLC,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,SLC,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Single Look Complex
@@ -654,9 +654,9 @@ S1_SAR_RAW:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L0
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L0,RAW,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L0,RAW,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 SAR Level-0
@@ -675,9 +675,9 @@ S2_MSI_L1C:
     SAFE formatted product, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L1
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L1,L1C,SAFE
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L1,L1C,SAFE
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -695,9 +695,9 @@ S2_MSI_L1C_JP2:
     Product without SAFE formatting, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L1
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L1C,JP2
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L1C,JP2
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -710,9 +710,9 @@ S2_MSI_L2A:
     SAFE formatted product, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,SAFE
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,SAFE
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -725,9 +725,9 @@ S2_MSI_L2A_JP2:
     Product without SAFE formatting, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,JP2
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,JP2
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -740,9 +740,9 @@ S2_MSI_L2A_COG:
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,COG
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,COG
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -756,9 +756,9 @@ S2_MSI_L2A_MAJA:
     https://theia.cnes.fr/atdistrib/documents/PSC-NT-411-0362-CNES_01_00_SENTINEL-2A_L2A_Products_Description.pdf
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,MAJA
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,MAJA
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -772,9 +772,9 @@ S2_MSI_L2B_MAJA_SNOW:
     products description are available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=10748#en
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,L2,L2B,SNOW
+  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,S2C,L2,L2B,SNOW
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -786,9 +786,9 @@ S2_MSI_L2B_MAJA_WATER:
     https://theia.cnes.fr/atdistrib/documents/THEIA-ST-411-0477-CNES_01-03_Format_Specification_of_OBS2CO_WaterColor_Products.pdf
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,L2,L2B,WATER
+  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,S2C,L2,L2B,WATER
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -4701,9 +4701,9 @@ EEA_DAILY_VI:
     Land Monitoring Service (CLMS).
   instrument:
   platform: Sentinel-2
-  platformSerialIdentifier: S2A, S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel:
-  keywords: Land,Plant-phenology-index,Phenology,Vegetation,Sentinel-2,S2A,S2B
+  keywords: Land,Plant-phenology-index,Phenology,Vegetation,Sentinel-2,S2A,S2B,S2C
   sensorType: RADAR
   license: other
   title: Vegetation Indices, daily, UTM projection
@@ -4718,9 +4718,9 @@ EEA_HRL_TCF:
     (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
   instrument:
   platform: Sentinel-2
-  platformSerialIdentifier: S2A, S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel:
-  keywords: Land,Tree-cover-fraction,TCF,Sentinel-2,S2A,S2B
+  keywords: Land,Tree-cover-fraction,TCF,Sentinel-2,S2A,S2B,S2C
   sensorType: RADAR
   license: other
   title: Tree Cover Fraction, UTM projection
