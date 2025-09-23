@@ -3979,10 +3979,10 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
