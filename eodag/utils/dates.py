@@ -74,6 +74,7 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
     :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
     :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
     :returns: True if check_range is within valid_range, otherwise False.
+
     Examples:
         >>> is_range_in_range("2023-01-01/2023-12-31", "2023-03-01/2023-03-31")
         True
