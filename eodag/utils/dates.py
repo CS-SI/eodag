@@ -181,7 +181,7 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
 
     :param s: The string to convert to :class:`datetime.datetime`
     :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
-    raises: :class:`ValidationError`
+    :raises: :class:`ValidationError`
 
     Examples:
         >>> from eodag.utils.exceptions import ValidationError
