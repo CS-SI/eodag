@@ -71,6 +71,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
+from eodag.utils.dates import rfc3339_str_to_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -81,7 +82,6 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
 )
 from eodag.utils.free_text_search import compile_free_text_query
-from eodag.utils.rest import rfc3339_str_to_datetime
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
