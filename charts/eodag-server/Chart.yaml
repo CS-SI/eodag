@@ -15,4 +15,4 @@ name: eodag-server
 sources:
 - https://github.com/CS-SI/eodag
 type: application
-version: 3.8.1
+version: 3.8.2-rc1
