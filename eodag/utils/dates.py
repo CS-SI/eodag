@@ -180,9 +180,7 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
     """Convert a string conforming to RFC 3339 to a :class:`datetime.datetime`.
 
     :param s: The string to convert to :class:`datetime.datetime`
-
     :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
-
     raises: :class:`ValidationError`
 
     Examples:
