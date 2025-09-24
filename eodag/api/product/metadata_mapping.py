@@ -624,6 +624,39 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
 
         @staticmethod
+        def convert_remove_index_asset(
+            input_obj: Union[dict[str, Any], list], _metadata=None
+        ) -> dict[str, Any]:
+            """
+            Remove the index from the asset dict.
+            """
+            if not isinstance(input_obj, dict):
+                return {}
+
+            return {k: v for k, v in input_obj.items() if k != "index"}
+
+        @staticmethod
+        def convert_alternate_href(
+            input_obj: Union[dict[str, Any], list]
+        ) -> dict[str, str]:
+            """
+            Extract alternate href from assets dict.
+            """
+            if not isinstance(input_obj, dict):
+                return {}
+
+            result = {}
+            for k, v in input_obj.items():
+                if k == "index" or not isinstance(v, dict):
+                    continue
+                alt_dict_alternate = v.get("alternate")
+                if alt_dict_alternate and isinstance(alt_dict_alternate, dict):
+                    result[k] = alt_dict_alternate.get("s3").get("href")
+                else:
+                    result[k] = None
+            return result
+
+        @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
             cmin, cmax, cstep = [
                 int(x.strip()) if x.strip().lstrip("-").isdigit() else None

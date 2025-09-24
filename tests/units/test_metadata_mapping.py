@@ -387,6 +387,58 @@ class TestMetadataFormatter(unittest.TestCase):
             "{'b': {'href': 's3://bar'}}",
         )
 
+    def test_convert_remove_index_asset(self):
+        """
+        Test the removal of the index asset from the metadata.
+        """
+        to_format = "{fieldname#remove_index_asset}"
+        self.assertEqual(
+            format_metadata(
+                to_format, fieldname={"a": {"title": "foo"}, "index": {"title": "bar"}}
+            ),
+            "{'a': {'title': 'foo'}}",
+        )
+
+    def test_convert_alternate_href(self):
+        """
+        Test retrieving the alternate href from assets metadata.
+        """
+        assets1 = {
+            "a": {"href": "http://example.com/a"},
+            "b": {"href": "http://example.com/b"},
+        }
+        to_format1 = "{fieldname#alternate_href}"
+        self.assertEqual(
+            format_metadata(to_format1, fieldname=assets1), "{'a': None, 'b': None}"
+        )
+
+        # case with alternate s3
+        assets2 = {
+            "a": {
+                "href": "http://example.com/a",
+                "alternate": {"s3": {"href": "s3://bucket/a"}},
+            },
+            "b": {"href": "http://example.com/b"},
+        }
+        self.assertEqual(
+            format_metadata(to_format1, fieldname=assets2),
+            "{'a': 's3://bucket/a', 'b': None}",
+        )
+
+        # index in assets
+        assets3 = {
+            "index": {"href": "http://example.com/index"},
+            "c": {
+                "href": "http://example.com/c",
+                "alternate": {"s3": {"href": "s3://bucket/c"}},
+            },
+        }
+        self.assertEqual(
+            format_metadata(to_format1, fieldname=assets3), "{'c': 's3://bucket/c'}"
+        )
+        # input not a dict
+        self.assertEqual(format_metadata(to_format1, fieldname=None), "None")
+
     def test_convert_slice_str(self):
         to_format = "{fieldname#slice_str(1,12,2)}"
         self.assertEqual(
