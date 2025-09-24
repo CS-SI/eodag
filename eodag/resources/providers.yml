@@ -742,7 +742,7 @@
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdShort}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
@@ -771,7 +771,6 @@
       metadata_path: '$.Attributes'
       metadata_path_id: 'Name'
       metadata_path_value: 'Value'
-      platformSerialIdShort: '{platformSerialIdentifier#replace_str("^S[1-3]", "")}'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -2670,7 +2669,7 @@
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdShort}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {orbitNumber})"
@@ -2702,7 +2701,6 @@
       metadata_path: '$.Attributes'
       metadata_path_id: 'Name'
       metadata_path_value: 'Value'
-      platformSerialIdShort: '{platformSerialIdentifier#replace_str("^S[1-3]", "")}'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -4432,7 +4430,7 @@
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdShort}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
@@ -4461,7 +4459,6 @@
       metadata_path: '$.Attributes'
       metadata_path_id: 'Name'
       metadata_path_value: 'Value'
-      platformSerialIdShort: '{platformSerialIdentifier#replace_str("^S[1-3]", "")}'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)

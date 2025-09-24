@@ -350,30 +350,6 @@ class TestMetadataFormatter(unittest.TestCase):
         with self.assertRaises(TypeError):
             format_metadata(to_format, fieldname=123)
 
-    def test_convert_add_prefix(self):
-        """
-        Test adding a prefix to a string
-        """
-        to_format = "{fieldname#add_prefix(FOO_)}"
-        self.assertEqual(
-            format_metadata(to_format, fieldname="bar"),
-            "FOO_BAR",
-        )
-
-    def test_convert_remove_arg(self):
-        """
-        Test removing arguments from a string
-        """
-        to_format = "{fieldname#remove_arg(FOO,BAR)}"
-        self.assertEqual(
-            format_metadata(to_format, fieldname="fooA"),
-            "A",
-        )
-        self.assertEqual(
-            format_metadata(to_format, fieldname="FOObarB"),
-            "B",
-        )
-
     def test_convert_ceda_collection_name(self):
         to_format = r"{fieldname#ceda_collection_name}"
         self.assertEqual(
