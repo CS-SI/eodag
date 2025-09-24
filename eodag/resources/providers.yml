@@ -3274,9 +3274,6 @@
         id:
           - '{{"format": "{id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}"}}'
           - '$.id'
-        providerProductType:
-          - '{{"product_type": "{providerProductType}"}}'
-          - '$.null'
         startTimeFromAscendingNode: '$.properties.startdate'
         completionTimeFromAscendingNode: '$.properties.enddate'
         format:
