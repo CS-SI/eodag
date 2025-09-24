@@ -58,9 +58,9 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
-    is_range_in_range,
 )
 from eodag.utils.cache import instance_cached_method
+from eodag.utils.dates import is_range_in_range
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 

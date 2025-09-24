@@ -47,7 +47,6 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_string,
     get_geometry_from_various,
-    get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
     remove_str_array_quotes,
@@ -55,6 +54,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+from eodag.utils.dates import get_timestamp
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:

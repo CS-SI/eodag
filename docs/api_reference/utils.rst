@@ -22,6 +22,12 @@ Callbacks
    :special-members: __call__
 .. autofunction:: eodag.utils.ProgressCallback
 
+Dates
+-----
+
+.. automodule:: eodag.utils.dates
+   :members:
+
 Free text search
 ----------------
 
