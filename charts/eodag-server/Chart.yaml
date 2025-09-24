@@ -15,4 +15,5 @@ name: eodag-server
 sources:
 - https://github.com/CS-SI/eodag
 type: application
-version: 3.9.0
+version: 3.8.2-otel
+
