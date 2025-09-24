@@ -448,7 +448,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_cop_dataspace_s3(self):
         product = self.execute_search(*COP_DATASPACE_S3_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
+        expected_filename = product.properties["title"]
         self.execute_download(product, expected_filename, wait_sec=15)
 
     def test_end_to_end_search_download_planetary_computer(self):
