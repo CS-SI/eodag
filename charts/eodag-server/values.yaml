@@ -607,6 +607,12 @@ configExistingSecret:
   name:
   key:
 
+## Deployment configuration
+deployment:
+  ## @param deployment.annotations Additional custom annotations for eodag deployment
+  annotations: {}
+
+
 ## Service configuration
 ##
 service:
