@@ -3092,9 +3092,13 @@ class TestCoreSearch(TestCoreBase):
             products=self.search_results.data, number_matched=None
         )
         first_page.next_page_token = "token_for_page_2"
+        first_page.search_params = {"items_per_page": 2}
 
-        second_page = SearchResult(products=self.search_results_2, number_matched=None)
+        second_page = SearchResult(
+            products=self.search_results_2.data, number_matched=None
+        )
         second_page.next_page_token = "token_for_page_3"  # last page
+        second_page.search_params = {"items_per_page": 2}
 
         third_page = SearchResult(products=[], number_matched=None)
         search_plugin.query.side_effect = [first_page, second_page, third_page]
@@ -3123,8 +3127,11 @@ class TestCoreSearch(TestCoreBase):
         with self.assertRaises(AttributeError):
             next(page_iterator)
 
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_finally_breaks_when_same_product_as_previous(self, search_plugin):
+    def test_finally_breaks_when_same_product_as_previous(
+        self, search_plugin, prepare_seach
+    ):
         """search_iter_page must stop if the next page appears to have the same products"""
 
         class DummyConfig:
@@ -3152,8 +3159,15 @@ class TestCoreSearch(TestCoreBase):
         result_page2.__iter__ = lambda self: iter([same_product, mock.Mock()])
         result_page2.__len__ = lambda self: 2
 
+        prepare_seach.return_value = ([search_plugin], {})
+
         with mock.patch.object(
-            self.dag, "_do_search", side_effect=[result_page1, result_page2]
+            self.dag,
+            "_do_search",
+            side_effect=[
+                SearchResult(result_page1, 2, next_page_token="token_for_page_2"),
+                SearchResult(result_page2, 2),
+            ],
         ):
             with self.assertLogs(level="WARNING") as cm_logs:
                 page_iterator = self.dag.search_iter_page_plugin(
@@ -3490,18 +3504,13 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        first_page = SearchResult([self.search_results.data[0]], 1)
-        first_page.next_page_token = "token_for_page_2"
-        second_page = SearchResult([self.search_results.data[1]], 1)
-        mock__do_search.side_effect = [first_page, second_page]
+        mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C")
 
         first_call_kwargs = mock__do_search.call_args_list[0][1]
         self.assertEqual(first_call_kwargs["items_per_page"], 2)
-        second_call_kwargs = mock__do_search.call_args_list[1][1]
-        self.assertEqual(second_call_kwargs["items_per_page"], 2)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
@@ -3522,21 +3531,14 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        first_page = SearchResult([self.search_results.data[0]], 1)
-        first_page.next_page_token = "token_for_page_2"
-        second_page = SearchResult([self.search_results.data[1]], 1)
-        mock__do_search.side_effect = [first_page, second_page]
+        mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C")
 
-        first_call_kwargs = mock__do_search.call_args_list[0][1]
         self.assertEqual(
-            first_call_kwargs["items_per_page"], DEFAULT_MAX_ITEMS_PER_PAGE
-        )
-        second_call_kwargs = mock__do_search.call_args_list[1][1]
-        self.assertEqual(
-            second_call_kwargs["items_per_page"], DEFAULT_MAX_ITEMS_PER_PAGE
+            mock__do_search.call_args_list[0].kwargs["items_per_page"],
+            DEFAULT_MAX_ITEMS_PER_PAGE,
         )
 
     @mock.patch(
@@ -3557,18 +3559,12 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        first_page = SearchResult([self.search_results.data[0]], 1)
-        first_page.next_page_token = "token_for_page_2"
-        second_page = SearchResult([self.search_results.data[1]], 1)
-        mock__do_search.side_effect = [first_page, second_page]
+        mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C", items_per_page=7)
 
-        first_call_kwargs = mock__do_search.call_args_list[0][1]
-        self.assertEqual(first_call_kwargs["items_per_page"], 7)
-        second_call_kwargs = mock__do_search.call_args_list[1][1]
-        self.assertEqual(second_call_kwargs["items_per_page"], 7)
+        self.assertEqual(mock__do_search.call_args_list[0].kwargs["items_per_page"], 7)
 
     @unittest.skip("Disable until fixed")
     def test_search_all_request_error(self):
