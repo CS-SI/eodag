@@ -280,8 +280,6 @@ class SearchResult(UserList[EOProduct]):
         >>> for new_results in first_page.next_page():
         ...     continue  # do something with new_results
         """
-        if self.next_page_token is None:
-            return
 
         def get_next_page(current):
             if current.search_params is None:
@@ -319,8 +317,22 @@ class SearchResult(UserList[EOProduct]):
             return
 
         new_results = get_next_page(self)
+        old_results = self
 
         while new_results.data:
+            # The products between two iterations are compared. If they
+            # are actually the same product, it means the iteration failed at
+            # progressing for some reason.
+            if (
+                old_results.data[0].properties["id"]
+                == new_results.data[0].properties["id"]
+            ):
+                logger.warning(
+                    "Iterate over pages: stop iterating since the next page "
+                    "appears to have the same products as in the previous one. "
+                    "This provider may not implement pagination.",
+                )
+                break
             if update:
                 self.data += new_results.data
                 self.search_params = new_results.search_params
@@ -336,19 +348,6 @@ class SearchResult(UserList[EOProduct]):
             old_results = new_results
             new_results = get_next_page(new_results)
             if not new_results:
-                break
-            # The products between two iterations are compared. If they
-            # are actually the same product, it means the iteration failed at
-            # progressing for some reason.
-            if (
-                old_results.data[0].properties["id"]
-                == new_results.data[0].properties["id"]
-            ):
-                logger.warning(
-                    "Iterate over pages: stop iterating since the next page "
-                    "appears to have the same products as in the previous one. "
-                    "This provider may not implement pagination.",
-                )
                 break
         return
 
