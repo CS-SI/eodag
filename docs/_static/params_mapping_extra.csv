@@ -13,8 +13,8 @@ latitudeBand,,,,:green:`queryable metadata`,,,,,,,,,,
 links,,,,,,,,,,,metadata only,,,
 modifiedAfter,:green:`queryable metadata`,,,,,,,,,,,,,
 modifiedBefore,:green:`queryable metadata`,,,,,,,,,,,,,
-polarizationChannels,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`
-polarizationMode,,,,,metadata only,,,,,,:green:`queryable metadata`,,:green:`queryable metadata`,
+polarizationChannels,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+polarizationMode,,,,,metadata only,,,,,,,,,
 productIdentifier,metadata only,,metadata only,,,,,,,,,,,
 productInformation,,,,,,,,metadata only,,,,,,
 providerProductType,,,,,,,,,,:green:`queryable metadata`,,,,

@@ -140,7 +140,7 @@ search:
       - '$.properties."view:sun_elevation"'
     polarizationChannels:
       - '{{"query":{{"sar:polarizations":{{"eq":"{polarizationChannels}"}}}}}}'
-      - '$.properties."sar:polarizations"'
+      - '{$.properties."sar:polarizations"#replace_str(" ","+")}'
     dopplerFrequency:
       - '{{"query":{{"sar:frequency_band":{{"eq":"{dopplerFrequency}"}}}}}}'
       - '$.properties."sar:frequency_band"'

@@ -360,9 +360,9 @@
         completionTimeFromAscendingNode:
           - '{{"search":{{"date":{{"to":"{completionTimeFromAscendingNode}"}} }} }}'
           - '$.date'
-        polarizationMode:
-          - '{{"search":{{"polarization":"{polarizationMode}" }} }}'
-          - '$.polarization'
+        polarizationChannels:
+          - '{{"search":{{"polarization":"{polarizationChannels#replace_str_tuple((("HH","SH"),("VV","SV"),("HH+HV", "DH"),("VV+VH","DV")))}" }} }}'
+          - '{$.polarization#replace_str_tuple((("SH","HH"),("SV","VV"),("DH","HH+HV"),("DV","VV+VH")))}'
         # Custom parameters (not defined in the base document referenced above)
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
@@ -630,9 +630,9 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      polarizationMode:
+      polarizationChannels:
         - 'polarisation'
-        - '$.properties.polarisation'
+        - '{$.properties.polarisation#replace_str(" ","+")}'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
@@ -712,6 +712,7 @@
       - '='
       - '&'
       - ':'
+      - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
@@ -748,10 +749,10 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -824,7 +825,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '$.Attributes.polarisationChannels'
+        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -2035,6 +2036,12 @@
         operations:
           and:
             - '{orbitDirection#to_title}'
+      polarisation:
+        union: '&'
+        wrapper: '{}'
+        operations:
+          and:
+            - '{polarizationChannels#replace_str("\\+",",")}'
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -2107,9 +2114,9 @@
       completionTimeFromAscendingNode:
         - completionDate
         - '$.properties.completionDate'
-      polarizationMode:
-        - 'polarisation'
-        - '$.properties.polarisation'
+      polarizationChannels:
+        - null
+        - '{$.properties.polarisation#replace_str(",","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier={id#remove_extension}'
@@ -2404,6 +2411,7 @@
       - '='
       - '&'
       - ':'
+      - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
@@ -2441,7 +2449,7 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ModificationDate gt {modifiedAfter#to_iso_utc_datetime}"
             - "ModificationDate lt {modifiedBefore#to_iso_utc_datetime}"
@@ -2536,7 +2544,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '$.Attributes.polarisationChannels'
+        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -3936,6 +3944,7 @@
       - '='
       - '&'
       - ':'
+      - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
@@ -3972,10 +3981,10 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -4048,7 +4057,7 @@
         - '$.ContentDate.End'
       polarizationChannels:
         - null
-        - '$.Attributes.polarisationChannels'
+        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
