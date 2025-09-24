@@ -611,6 +611,18 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return result
 
         @staticmethod
+        def convert_dict_filter_and_sub(
+            input_dict: dict[Any, Any], args: str
+        ) -> dict[Any, Any]:
+            """Fitlers dict items using jsonpath and then apply recursive_sub_str"""
+            jsonpath_filter_str, old, new = args.split("|")
+            filtered = MetadataFormatter.convert_dict_filter(
+                input_dict, jsonpath_filter_str
+            )
+            args_str = f"('{old}', '{new}')"
+            return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
+
+        @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
             cmin, cmax, cstep = [
                 int(x.strip()) if x.strip().lstrip("-").isdigit() else None
