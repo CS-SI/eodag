@@ -1118,7 +1118,7 @@ class QueryStringSearch(Search):
         self,
         results: list[dict[str, Any]],
         resp_as_json: dict[str, Any],
-        kwargs: dict[str, Any],
+        search_kwargs: dict[str, Any],
         items_per_page: Optional[int],
         prep: PreparedSearch,
     ):
@@ -1131,14 +1131,16 @@ class QueryStringSearch(Search):
 
         :param results: Raw results returned by the search.
         :param resp_as_json: The search response parsed as JSON.
-        :param kwargs: Search parameters used for the query.
+        :param search_kwargs: Search parameters used for the query.
         :param items_per_page: Number of items per page.
         :param prep: Request preparation object containing query parameters.
         :returns: An object containing the raw results, search parameters, and the next page token if available.
         """
         # Create the RawSearchResult object and populate basic fields
         raw_search_results = RawSearchResult(results)
-        raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
+        raw_search_results.search_params = search_kwargs | {
+            "items_per_page": items_per_page
+        }
         raw_search_results.query_params = prep.query_params
         raw_search_results.product_type_def_params = prep.product_type_def_params
 
