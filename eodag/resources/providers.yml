@@ -1163,172 +1163,76 @@
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_IR_UVN:
       productType: L1B_IR_UVN
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD1:
       productType: L1B_RA_BD1
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD2:
       productType: L1B_RA_BD2
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD3:
       productType: L1B_RA_BD3
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD4:
       productType: L1B_RA_BD4
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD5:
       productType: L1B_RA_BD5
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD6:
       productType: L1B_RA_BD6
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD7:
       productType: L1B_RA_BD7
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD8:
       productType: L1B_RA_BD8
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     # S5P L2
     S5P_L2_NO2:
       productType: L2__NO2___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CLOUD:
       productType: L2__CLOUD_
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3:
       productType: L2__O3____
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CO:
       productType: L2__CO____
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_AER_AI:
       productType: L2__AER_AI
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3_PR:
       productType: L2__O3__PR
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3_TCL:
       productType: L2__O3_TCL
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_AER_LH:
       productType: L2__AER_LH
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_HCHO:
       productType: L2__HCHO__
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CH4:
       productType: L2__CH4___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD3:
       productType: L2__NP_BD3
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD6:
       productType: L2__NP_BD6
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD7:
       productType: L2__NP_BD7
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_SO2:
       productType: L2__SO2___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     # COP DEM
     COP_DEM_GLO30_DGED:
       productType: DGE_30
@@ -3118,172 +3022,76 @@
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
       collection: Sentinel-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_IR_UVN:
       productType: L1B_IR_UVN
       collection: Sentinel-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD1:
       productType: L1B_RA_BD1
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD2:
       productType: L1B_RA_BD2
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD3:
       productType: L1B_RA_BD3
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD4:
       productType: L1B_RA_BD4
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD5:
       productType: L1B_RA_BD5
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD6:
       productType: L1B_RA_BD6
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD7:
       productType: L1B_RA_BD7
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD8:
       productType: L1B_RA_BD8
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     # S5P L2
     S5P_L2_NO2:
       productType: L2__NO2___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CLOUD:
       productType: L2__CLOUD_
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3:
       productType: L2__O3____
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CO:
       productType: L2__CO____
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_AER_AI:
       productType: L2__AER_AI
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3_PR:
       productType: L2__O3__PR
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3_TCL:
       productType: L2__O3_TCL
       collection: Sentinel-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_AER_LH:
       productType: L2__AER_LH
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_HCHO:
       productType: L2__HCHO__
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CH4:
       productType: L2__CH4___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD3:
       productType: L2__NP_BD3
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD6:
       productType: L2__NP_BD6
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD7:
       productType: L2__NP_BD7
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_SO2:
       productType: L2__SO2___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
@@ -4843,172 +4651,76 @@
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_IR_UVN:
       productType: L1B_IR_UVN
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD1:
       productType: L1B_RA_BD1
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD2:
       productType: L1B_RA_BD2
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD3:
       productType: L1B_RA_BD3
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD4:
       productType: L1B_RA_BD4
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD5:
       productType: L1B_RA_BD5
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD6:
       productType: L1B_RA_BD6
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD7:
       productType: L1B_RA_BD7
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L1B_RA_BD8:
       productType: L1B_RA_BD8
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     # S5P L2
     S5P_L2_NO2:
       productType: L2__NO2___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CLOUD:
       productType: L2__CLOUD_
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3:
       productType: L2__O3____
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CO:
       productType: L2__CO____
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_AER_AI:
       productType: L2__AER_AI
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3_PR:
       productType: L2__O3__PR
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_O3_TCL:
       productType: L2__O3_TCL
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_AER_LH:
       productType: L2__AER_LH
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_HCHO:
       productType: L2__HCHO__
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_CH4:
       productType: L2__CH4___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD3:
       productType: L2__NP_BD3
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD6:
       productType: L2__NP_BD6
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_NP_BD7:
       productType: L2__NP_BD7
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     S5P_L2_SO2:
       productType: L2__SO2___
       collection: SENTINEL-5P
-      metadata_mapping:
-        platformSerialIdentifier:
-          - null
-          - '$.Attributes.platformSerialIdentifier'
     # COP DEM
     COP_DEM_GLO30_DGED:
       productType: DGE_30
