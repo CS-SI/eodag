@@ -1798,9 +1798,21 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
+            prep.items_per_page = kwargs.pop("items_per_page", None)
             prep.next_page_token = kwargs.pop("next_page_token", None)
             prep.page = kwargs.pop("page", None)
-            prep.items_per_page = kwargs.pop("items_per_page", None)
+
+            if (
+                search_plugin.config.pagination.get("next_page_token_key", "page")
+                == "page"
+                and prep.items_per_page is not None
+                and prep.next_page_token is None
+            ):
+                prep.next_page_token = str(
+                    prep.page
+                    - 1
+                    + search_plugin.config.pagination.get("start_page", DEFAULT_PAGE)
+                )
 
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
