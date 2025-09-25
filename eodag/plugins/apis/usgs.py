@@ -140,12 +140,17 @@ class UsgsApi(Api):
         **kwargs: Any,
     ) -> SearchResult:
         """Search for data on USGS catalogues"""
-        page = prep.page if prep.page is not None else DEFAULT_PAGE
+        page = (
+            int(prep.next_page_token)
+            if prep.next_page_token is not None
+            else DEFAULT_PAGE
+        )
         items_per_page = (
             prep.items_per_page
             if prep.items_per_page is not None
             else DEFAULT_ITEMS_PER_PAGE
         )
+        search_params = {"items_per_page": items_per_page} | kwargs
         collection = kwargs.get("collection")
         if collection is None:
             raise NoMatchingCollection(
@@ -296,6 +301,8 @@ class UsgsApi(Api):
         formated_result = SearchResult(
             final,
             total_results,
+            search_params=search_params,
+            next_page_token=str(page + 1),
         )
         return formated_result
 
