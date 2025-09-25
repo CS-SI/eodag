@@ -1291,9 +1291,8 @@
         illuminationAzimuthAngle: properties.view:sun_azimuth
         cloudCover: properties.eo:cloud_cover
     metadata_mapping:
-      assets: '{$.assets#remove_index_asset}'
+      assets: '{$.assets#from_alternate(s3)}'
       awsProductId: '{$.assets.thumbnail.href#replace_str(r".+/([A-Z0-9_]+)/[\w.]+$",r"\1")}'
-      alternate_link: '{$.assets#alternate_href}'
   products:
     LANDSAT_C2L1:
       productType: landsat-c2l1

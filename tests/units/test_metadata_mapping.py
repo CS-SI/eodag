@@ -387,32 +387,22 @@ class TestMetadataFormatter(unittest.TestCase):
             "{'b': {'href': 's3://bar'}}",
         )
 
-    def test_convert_remove_index_asset(self):
+    def test_convert_from_alternate(self):
         """
-        Test the removal of the index asset from the metadata.
+        Test converting assets by replacing href with alternate.<value>.href,
+        copying metadata, and removing alternate.
         """
-        to_format = "{fieldname#remove_index_asset}"
-        self.assertEqual(
-            format_metadata(
-                to_format, fieldname={"a": {"title": "foo"}, "index": {"title": "bar"}}
-            ),
-            "{'a': {'title': 'foo'}}",
-        )
+        to_format = "{fieldname#from_alternate(s3)}"
+        self.assertEqual(format_metadata(to_format, fieldname=None), "None")
 
-    def test_convert_alternate_href(self):
-        """
-        Test retrieving the alternate href from assets metadata.
-        """
+        # Cas 2 : aucun alternate.s3
         assets1 = {
             "a": {"href": "http://example.com/a"},
             "b": {"href": "http://example.com/b"},
         }
-        to_format1 = "{fieldname#alternate_href}"
-        self.assertEqual(
-            format_metadata(to_format1, fieldname=assets1), "{'a': None, 'b': None}"
-        )
+        self.assertEqual(format_metadata(to_format, fieldname=assets1), "{}")
 
-        # case with alternate s3
+        # Cas 3 : alternate.s3 avec href simple
         assets2 = {
             "a": {
                 "href": "http://example.com/a",
@@ -420,24 +410,39 @@ class TestMetadataFormatter(unittest.TestCase):
             },
             "b": {"href": "http://example.com/b"},
         }
-        self.assertEqual(
-            format_metadata(to_format1, fieldname=assets2),
-            "{'a': 's3://bucket/a', 'b': None}",
-        )
+        expected2 = """{'a': {'href': 's3://bucket/a'}}"""
+        self.assertEqual(format_metadata(to_format, fieldname=assets2), expected2)
 
-        # index in assets
+        # Cas 4 : alternate.s3 avec métadonnées supplémentaires
         assets3 = {
-            "index": {"href": "http://example.com/index"},
             "c": {
                 "href": "http://example.com/c",
-                "alternate": {"s3": {"href": "s3://bucket/c"}},
+                "size": 123,
+                "alternate": {
+                    "s3": {
+                        "href": "s3://bucket/c",
+                        "storage:region": "eu-west-1",
+                        "storage:class": "STANDARD",
+                    }
+                },
+            }
+        }
+        expected3 = (
+            "{'c': {'href': 's3://bucket/c', 'size': 123, "
+            "'storage:region': 'eu-west-1', 'storage:class': 'STANDARD'}}"
+        )
+        self.assertEqual(format_metadata(to_format, fieldname=assets3), expected3)
+
+        # Cas 5 : asset "index" doit disparaître si pas d'alternate.s3
+        assets4 = {
+            "index": {"href": "http://example.com/index"},
+            "d": {
+                "href": "http://example.com/d",
+                "alternate": {"s3": {"href": "s3://bucket/d"}},
             },
         }
-        self.assertEqual(
-            format_metadata(to_format1, fieldname=assets3), "{'c': 's3://bucket/c'}"
-        )
-        # input not a dict
-        self.assertEqual(format_metadata(to_format1, fieldname=None), "None")
+        expected4 = """{'d': {'href': 's3://bucket/d'}}"""
+        self.assertEqual(format_metadata(to_format, fieldname=assets4), expected4)
 
     def test_convert_slice_str(self):
         to_format = "{fieldname#slice_str(1,12,2)}"

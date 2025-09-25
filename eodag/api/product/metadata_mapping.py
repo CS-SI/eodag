@@ -624,20 +624,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
 
         @staticmethod
-        def convert_remove_index_asset(
-            input_obj: Union[dict[str, Any], list], _metadata=None
-        ) -> dict[str, Any]:
-            """
-            Remove the index from the asset dict.
-            """
-            if not isinstance(input_obj, dict):
-                return {}
-
-            return {k: v for k, v in input_obj.items() if k != "index"}
-
-        @staticmethod
-        def convert_alternate_href(
-            input_obj: Union[dict[str, Any], list]
+        def convert_from_alternate(
+            input_obj: Union[dict[str, Any], list], value: str
         ) -> dict[str, str]:
             """
             Extract alternate href from assets dict.
@@ -645,15 +633,28 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             if not isinstance(input_obj, dict):
                 return {}
 
-            result = {}
+            result: dict[str, Any] = {}
             for k, v in input_obj.items():
-                if k == "index" or not isinstance(v, dict):
+                if not isinstance(v, dict):
                     continue
-                alt_dict_alternate = v.get("alternate")
-                if alt_dict_alternate and isinstance(alt_dict_alternate, dict):
-                    result[k] = alt_dict_alternate.get("s3").get("href")
-                else:
-                    result[k] = None
+
+                alt_dict = v.get("alternate")
+                if not isinstance(alt_dict, dict):
+                    continue
+
+                value_entry = alt_dict.get(value)
+                if not isinstance(value_entry, dict):
+                    continue
+
+                new_asset = {**v}
+                new_asset["href"] = value_entry["href"]
+
+                for alt_key, alt_val in value_entry.items():
+                    if alt_key != "href":
+                        new_asset[alt_key] = alt_val
+                new_asset.pop("alternate", None)
+                result[k] = new_asset
+
             return result
 
         @staticmethod
