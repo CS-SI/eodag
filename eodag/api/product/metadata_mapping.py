@@ -615,7 +615,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             input_dict: dict[Any, Any], args: str
         ) -> Union[dict[Any, Any], list[Any]]:
             """Fitlers dict items using jsonpath and then apply recursive_sub_str"""
-            jsonpath_filter_str, old, new = args.split("|")
+            jsonpath_filter_str, old, new = ast.literal_eval(args)
             filtered = MetadataFormatter.convert_dict_filter(
                 input_dict, jsonpath_filter_str
             )
