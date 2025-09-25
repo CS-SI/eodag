@@ -138,6 +138,7 @@ def _convert_bbox_to_lonlat_EPSG3035(bbox: list[str]) -> list[float]:
 def _get_available_values_from_constraints(
     constraints: list[dict[str, Any]], filters: dict[str, Any], product_type: str
 ) -> dict[str, list[Any]]:
+    """get the available values for each parameter from the constraints"""
     available_values = {}
     constraint_keys = set([k for const in constraints for k in const.keys()])
     not_found_keys = set(filters.keys()) - constraint_keys
@@ -218,6 +219,8 @@ class CopGhslSearch(Search):
                 f"dataset mapping not available for {product_type}"
             )
         format_params = params
+        format_params = {k: str(v) for k, v in format_params.items()}
+        product_id_base = product_type + "__" + "_".join(format_params.values())
         # format tile_size
         tile_size = properties_from_json(
             {"tile_size": params["tile_size"]}, parsed_metadata_mapping
@@ -247,7 +250,7 @@ class CopGhslSearch(Search):
                 bbox_lon_lat = _convert_bbox_to_lonlat_EPSG3035(tile["BBox_3035"])
                 properties["geometry"] = bbox_lon_lat
             # create id
-            product_id = f"{dataset}_{tile['tileID']}"
+            product_id = f"{product_id_base}__{tile['tileID']}"
             properties["id"] = properties["title"] = product_id
             downloadLink = metadata_mapping.get("downloadLink").format(
                 dataset=dataset, tile_id=tile["tileID"]
@@ -272,40 +275,45 @@ class CopGhslSearch(Search):
 
         return products, current_index + 1
 
-    def query(
-        self,
-        prep: PreparedSearch = PreparedSearch(),
-        **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    def _get_tile_from_product_id(
+        self, query_params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        """fetch the tile for a specific product id from the provider
+        returns a list  of length 1 to simplify further processing
         """
-        Implementation of search for the Copernicus GHSL provider
-        :param prep: object containing search parameters
-        :param kwargs: additional search arguments
-        :returns: list of products and total number of products
-        """
-        page = prep.page
-        items_per_page = prep.items_per_page
+        product_id = query_params.pop("id")
+        product_type = query_params["productType"]
+        tile_id = product_id.split("__")[-1]
+        filter_part = product_id.split("__")[1]
+        constraints_values = constraints_filters[product_type]["constraints"]
+        available_values = _get_available_values_from_constraints(
+            constraints_values, {}, product_type
+        )
+        product_type_config = deepcopy(self.config.products.get(product_type, {}))
+        for key, values in available_values.items():
+            for value in values:
+                if value in filter_part:
+                    query_params[key] = value
+                    break
+        tiles, unit = self._get_tiles_for_filters(product_type_config, query_params)
+        matching_tile = [tile for tile in tiles if tile and tile["tileID"] == tile_id]
+        return matching_tile, unit
+
+    def _get_tiles_for_filters(
+        self, product_type_config: dict[str, Any], filter_params: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], str]:
+        """fetch the tiles matching the given filters from the provider"""
+        product_type = filter_params.pop("productType")
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
-        product_type = kwargs.pop("productType", prep.product_type)
-
-        # get year from start/end time if not given separately
-        start_time = kwargs.pop("startTimeFromAscendingNode", None)
-        end_time = kwargs.pop("completionTimeFromAscendingNode", None)
-        if "year" not in kwargs:
-            if start_time:
-                kwargs["year"] = start_time[:4]
-            elif end_time:
-                kwargs["year"] = end_time[:4]
 
         # update filters with values from product type mapping
-        product_type_config = deepcopy(self.config.products.get(product_type, {}))
         provider_product_type = product_type_config.pop("productType", None)
         if not provider_product_type:
             raise MisconfiguredError(
                 f"provider productType mapping not available for {product_type}"
             )
-        filter_params = deepcopy(kwargs)
+        filter_params = deepcopy(filter_params)
         filter_params.pop("geometry", None)
         filter_params.update(product_type_config)
         filter_params.pop("metadata_mapping")
@@ -330,6 +338,40 @@ class CopGhslSearch(Search):
             raise TimeOutError(exc, timeout=timeout) from exc
         except requests.exceptions.RequestException as exc:
             raise RequestError.from_error(exc, f"Unable to fetch {tiles_url}") from exc
+
+        return tiles, unit
+
+    def query(
+        self,
+        prep: PreparedSearch = PreparedSearch(),
+        **kwargs: Any,
+    ) -> tuple[list[EOProduct], Optional[int]]:
+        """
+        Implementation of search for the Copernicus GHSL provider
+        :param prep: object containing search parameters
+        :param kwargs: additional search arguments
+        :returns: list of products and total number of products
+        """
+        page = prep.page
+        items_per_page = prep.items_per_page
+
+        # get year from start/end time if not given separately
+        start_time = kwargs.pop("startTimeFromAscendingNode", None)
+        end_time = kwargs.pop("completionTimeFromAscendingNode", None)
+        if "year" not in kwargs:
+            if start_time:
+                kwargs["year"] = start_time[:4]
+            elif end_time:
+                kwargs["year"] = end_time[:4]
+
+        product_type = kwargs.get("productType", None)
+        if not product_type:
+            product_type = kwargs["productType"] = prep.product_type
+        product_type_config = deepcopy(self.config.products.get(product_type, {}))
+        if "id" in kwargs:
+            tiles, unit = self._get_tile_from_product_id(kwargs)
+        else:
+            tiles, unit = self._get_tiles_for_filters(product_type_config, kwargs)
 
         # create products from tiles
         kwargs.update(product_type_config)
