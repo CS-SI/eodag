@@ -1145,11 +1145,13 @@ class MockResponse:
         json_data: Any = None,
         status_code: int = 200,
         headers: Optional[dict[str, Any]] = None,
+        text: str = "",
     ) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
         self.headers = headers
+        self.text = text
 
     def json(self) -> Any:
         """Return json data"""

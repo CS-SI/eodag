@@ -623,6 +623,9 @@ class TestCore(TestCoreBase):
         "earth_search",
         "earth_search_cog",
         "earth_search_gcs",
+        "earthdata_lars_asdc",
+        "earthdata_obdaac",
+        "earthdata_podaac",
         "ecmwf",
         "eumetsat_ds",
         "fedeo_ceda",
@@ -1744,6 +1747,9 @@ class TestCore(TestCoreBase):
                 ],
             },
             "dedt_lumi": None,
+            "earthdata_lars_asdc": {"max_sort_params": None, "sortables": []},
+            "earthdata_obdaac": {"max_sort_params": None, "sortables": []},
+            "earthdata_podaac": {"max_sort_params": None, "sortables": []},
             "earth_search": {
                 "sortables": [
                     "id",
