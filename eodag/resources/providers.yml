@@ -742,7 +742,7 @@
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
@@ -873,160 +873,292 @@
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_MOEORB:
       productType: AUX_MOEORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_POEORB:
       productType: AUX_POEORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_PREORB:
       productType: AUX_PREORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_PROQUA:
       productType: AUX_PROQUA
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_RESORB:
       productType: AUX_RESORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_GRD:
       productType: GRD
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_SLC:
       productType: SLC
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_OCN:
       productType: OCN
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_L3_IW_MCM:
       productType: S1SAR_L3_IW_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_L3_DH_MCM:
       productType: S1SAR_L3_DH_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     # S2
     S2_MSI_L1C:
       collection: SENTINEL-2
       productType: S2MSI1C
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     S2_MSI_L2A:
       collection: SENTINEL-2
       productType: S2MSI2A
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SRA_A:
       productType: SR_1_SRA_A_
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SRA_BS:
       productType: SR_1_SRA_BS
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN:
       productType: SR_2_LAN___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_HY:
       productType: SR_2_LAN_HY
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_SI:
       productType: SR_2_LAN_SI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_LI:
       productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_WAT:
       productType: SR_2_WAT___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_ERR:
       productType: OL_1_ERR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2LRR:
       productType: OL_2_LRR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2LFR:
       productType: OL_2_LFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2WRR:
       productType: OL_2_WRR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2WFR:
       productType: OL_2_WFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2LST:
       productType: SL_2_LST___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2WST:
       productType: SL_2_WST___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2AOD:
       productType: SL_2_AOD___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 SY
     S3_SY_AOD:
       productType: SY_2_AOD___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_SYN:
       productType: SY_2_SYN___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_V10:
       productType: SY_2_V10___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_VG1:
       productType: SY_2_VG1___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_VGP:
       productType: SY_2_VGP___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S5P L1
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
@@ -2441,7 +2573,7 @@
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {orbitNumber})"
@@ -2590,167 +2722,302 @@
     S2_MSI_L1C:
       collection: SENTINEL-2
       productType: S2MSI1C
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     S2_MSI_L2A:
       collection: SENTINEL-2
       productType: S2MSI2A
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     # S1
     S1_AUX_GNSSRD:
       productType: AUX_GNSSRD
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_MOEORB:
       productType: AUX_MOEORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_POEORB:
       productType: AUX_POEORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_PREORB:
       productType: AUX_PREORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_PROQUA:
       productType: AUX_PROQUA
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_RESORB:
       productType: AUX_RESORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_GRD:
       productType: GRD
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_GRD_COG:
       productType: GRD-COG
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_SLC:
       productType: SLC
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_OCN:
       productType: OCN
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_L3_IW_MCM:
       productType: S1SAR_L3_IW_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_L3_DH_MCM:
       productType: S1SAR_L3_DH_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SRA_A:
       productType: SR_1_SRA_A_
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SRA_BS:
       productType: SR_1_SRA_BS
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN:
       productType: SR_2_LAN___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_HY:
       productType: SR_2_LAN_HY
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_SI:
       productType: SR_2_LAN_SI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_LI:
       productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_WAT:
       productType: SR_2_WAT___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_ERR:
       productType: OL_1_ERR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2LRR:
       productType: OL_2_LRR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2LFR:
       productType: OL_2_LFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2WRR:
       productType: OL_2_WRR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2WFR:
       productType: OL_2_WFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2LST:
       productType: SL_2_LST___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2WST:
       productType: SL_2_WST___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2AOD:
       productType: SL_2_AOD___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 SY
     S3_SY_AOD:
       productType: SY_2_AOD___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_SYN:
       productType: SY_2_SYN___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_V10:
       productType: SY_2_V10___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_VG1:
       productType: SY_2_VG1___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_VGP:
       productType: SY_2_VGP___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S5P L1
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
@@ -3971,7 +4238,7 @@
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{productType}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{platform}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
@@ -4094,160 +4361,292 @@
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_MOEORB:
       productType: AUX_MOEORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_POEORB:
       productType: AUX_POEORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_PREORB:
       productType: AUX_PREORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_PROQUA:
       productType: AUX_PROQUA
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_AUX_RESORB:
       productType: AUX_RESORB
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_GRD:
       productType: GRD
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_SLC:
       productType: SLC
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_OCN:
       productType: OCN
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_L3_IW_MCM:
       productType: S1SAR_L3_IW_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_L3_DH_MCM:
       productType: S1SAR_L3_DH_MCM
       collection: GLOBAL-MOSAICS
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     # S2
     S2_MSI_L1C:
       collection: SENTINEL-2
       productType: S2MSI1C
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     S2_MSI_L2A:
       collection: SENTINEL-2
       productType: S2MSI2A
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     # S3 SRAL
     S3_SRA:
       productType: SR_1_SRA___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SRA_A:
       productType: SR_1_SRA_A_
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SRA_BS:
       productType: SR_1_SRA_BS
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN:
       productType: SR_2_LAN___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_HY:
       productType: SR_2_LAN_HY
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_SI:
       productType: SR_2_LAN_SI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN_LI:
       productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_WAT:
       productType: SR_2_WAT___
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_ERR:
       productType: OL_1_ERR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2LRR:
       productType: OL_2_LRR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2LFR:
       productType: OL_2_LFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2WRR:
       productType: OL_2_WRR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_OLCI_L2WFR:
       productType: OL_2_WFR___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2LST:
       productType: SL_2_LST___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2WST:
       productType: SL_2_WST___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2AOD:
       productType: SL_2_AOD___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S3 SY
     S3_SY_AOD:
       productType: SY_2_AOD___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_SYN:
       productType: SY_2_SYN___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_V10:
       productType: SY_2_V10___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_VG1:
       productType: SY_2_VG1___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_SY_VGP:
       productType: SY_2_VGP___
       collection: SENTINEL-3
+      metadata_mapping:
+        platformSerialIdentifier:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     # S5P L1
     S5P_L1B_IR_SIR:
       productType: L1B_IR_SIR
