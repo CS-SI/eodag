@@ -117,6 +117,11 @@ class SearchPostRequest(BaseModel):
     )
     sortby: Optional[list[SortBy]] = None
     crunch: Optional[str] = None
+    next_page_token: Optional[str] = Field(
+        default=None,
+        alias="next_page_token",
+        description="Token to retrieve the next page of results.",
+    )
 
     @field_serializer("intersects")
     def serialize_intersects(

@@ -514,6 +514,7 @@ def get_search(
     sortby: Optional[str] = None,
     filter: Optional[str] = None,  # pylint: disable=redefined-builtin
     filter_lang: Optional[str] = "cql2-text",
+    next_page_token: Optional[str] = None,
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
@@ -539,6 +540,7 @@ def get_search(
         "page": page,
         "sortby": sortby2list(sortby),
         "crunch": crunch,
+        "next_page_token": next_page_token,
     }
 
     if filter:

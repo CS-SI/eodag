@@ -16,6 +16,13 @@ Constructor
 
    .. members::
 
+Pagination
+----------
+
+.. autosummary::
+
+   SearchResult.next_page
+
 Crunch
 ------
 
@@ -47,4 +54,6 @@ Interface
    SearchResult.__geo_interface__
 
 .. autoclass:: SearchResult
-   :members: crunch, filter_date, filter_latest_intersect, filter_latest_by_name, filter_overlap, filter_property, filter_online, from_geojson, as_geojson_object, as_shapely_geometry_object, as_wkt_object, __geo_interface__
+   :members: crunch, filter_date, filter_latest_intersect, filter_latest_by_name, filter_overlap, filter_property,
+             filter_online, from_geojson, as_geojson_object, as_shapely_geometry_object, as_wkt_object, next_page,
+             __geo_interface__
