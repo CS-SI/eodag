@@ -6487,6 +6487,8 @@
     ssl_verify: true
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+    pagination:
+      max_items_per_page: 10000
   products:
     GHS_BUILT_S:
       productType: BUILT
