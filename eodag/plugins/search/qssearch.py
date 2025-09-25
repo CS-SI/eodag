@@ -909,9 +909,6 @@ class QueryStringSearch(Search):
             )
             if next_page_token_key == "page" and items_per_page is not None:
                 token = page if token is None else int(token)
-                token = (
-                    token - 1 + self.config.pagination.get("start_page", DEFAULT_PAGE)
-                )
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
@@ -1195,7 +1192,7 @@ class QueryStringSearch(Search):
                     raw_search_results.next_page_token = href_value
             else:
                 # No token found: set to empty string
-                raw_search_results.next_page_token = ""
+                raw_search_results.next_page_token = None
         elif self.config.pagination.get("next_page_url_key_path") is not None:
             # Use next_page_url_key_path to find the next page token in the response
             jsonpath_expr = string_to_jsonpath(
@@ -1217,7 +1214,7 @@ class QueryStringSearch(Search):
             )
             raw_search_results.next_page_token = (
                 str(prep.query_params[next_page_token_key] + 1)
-                if prep.query_params[next_page_token_key]
+                if prep.query_params[next_page_token_key] is not None
                 else None
             )
 
