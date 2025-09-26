@@ -2125,10 +2125,10 @@ class TestCore(TestCoreBase):
             "cop_dataspace_s3": {
                 "max_sort_params": 1,
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                    "modificationDate",
+                    "start_datetime",
+                    "end_datetime",
+                    "published",
+                    "updated",
                 ],
             },
             "cop_ewds": None,
