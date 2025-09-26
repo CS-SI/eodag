@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
@@ -67,6 +68,13 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
 
+
+warnings.warn(
+    "The module `eodag.rest.stac` is deprecated since v3.9.0 and will be removed in a future version. "
+    "The STAC server has moved to https://github.com/CS-SI/stac-fastapi-eodag",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
 
 logger = logging.getLogger("eodag.rest.stac")
 

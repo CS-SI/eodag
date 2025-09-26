@@ -1133,6 +1133,8 @@ class QueryStringSearch(Search):
                 )
                 if norm_key:
                     product.assets[norm_key] = asset
+                    # Normalize title with key
+                    product.assets[norm_key]["title"] = norm_key
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
             products.append(product)
@@ -1982,7 +1984,7 @@ class StacSearch(PostJsonSearch):
             return queryables_dict
 
 
-class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
+class WekeoSearch(StacSearch, PostJsonSearch):
     """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses
     generic STAC configuration for queryables (inherited from :class:`~eodag.plugins.search.qssearch.StacSearch`).
     """

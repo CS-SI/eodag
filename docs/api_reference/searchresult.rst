@@ -4,6 +4,9 @@
 SearchResult
 ============
 
+The `SearchResult` class provides a convenient way to handle and manipulate search results obtained from the EODAG API.
+It offers various methods to filter, transform, and interact with the search results, making it easier to work with geospatial data in different formats.
+
 Constructor
 -----------
 

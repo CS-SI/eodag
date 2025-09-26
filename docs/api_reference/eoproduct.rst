@@ -4,6 +4,10 @@
 EOProduct
 =========
 
+EOProduct is the main class representing Earth Observation (EO) products in the EODAG library.
+It provides a comprehensive interface for interacting with EO products, including metadata access, downloading, and conversion to various formats.
+This section details the attributes, methods, and additional functionalities available in the EOProduct class.
+
 Constructor
 -----------
 

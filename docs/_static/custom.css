@@ -1,26 +1,43 @@
 .bd-main .bd-content .bd-article-container {
-    max-width: 100%;  /* default is 60em */
-  }
-  .bd-page-width {
-    max-width: 100%;  /* default is 88rem */
-  }
+    max-width: 100%; /* default is 60em */
+}
+.bd-page-width {
+    max-width: 100%; /* default is 88rem */
+}
 
 .green {
     color: green;
 }
 
 table.datatable {
-    display: block; overflow-x: auto; width: 100%; max-height: 500px; font-size: smaller; border-bottom: 0px;
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    max-height: 500px;
+    font-size: smaller;
+    border-bottom: 0px;
 }
 
-table.datatable th:nth-child(2), table.datatable td:nth-child(2),
-table.datatable th:nth-child(3), table.datatable td:nth-child(3),
-table.datatable th:nth-child(5), table.datatable td:nth-child(5),
-table.datatable th:nth-child(7), table.datatable td:nth-child(7),
-table.datatable th:nth-child(8), table.datatable td:nth-child(8),
-table.datatable th:nth-child(9), table.datatable td:nth-child(9),
-table.datatable th:nth-child(10), table.datatable td:nth-child(10),
-table.datatable th:nth-child(11), table.datatable td:nth-child(11) {
+table.datatable th:nth-child(2),
+table.datatable td:nth-child(2),
+table.datatable th:nth-child(3),
+table.datatable td:nth-child(3),
+table.datatable th:nth-child(5),
+table.datatable td:nth-child(5),
+table.datatable th:nth-child(6),
+table.datatable td:nth-child(6),
+table.datatable th:nth-child(7),
+table.datatable td:nth-child(7),
+table.datatable th:nth-child(8),
+table.datatable td:nth-child(8),
+table.datatable th:nth-child(9),
+table.datatable td:nth-child(9),
+table.datatable th:nth-child(10),
+table.datatable td:nth-child(10),
+table.datatable th:nth-child(12),
+table.datatable td:nth-child(12),
+table.datatable th:nth-child(11),
+table.datatable td:nth-child(11) {
     display: none;
 }
 
@@ -31,7 +48,7 @@ table.params {
     height: 500px;
     font-size: smaller;
 }
-table.params td{
+table.params td {
     padding-top: 0;
     padding-bottom: 0;
 }
@@ -44,13 +61,15 @@ table.params thead tr th {
 table.params thead tr th:first-child {
     z-index: 3;
 }
-table.params th:first-child, table.params td:first-child {
+table.params th:first-child,
+table.params td:first-child {
     background-color: #fafafa;
     z-index: 2;
     position: sticky;
     left: 0;
 }
-a.hidden:hover, a.highlighted:hover {
+a.hidden:hover,
+a.highlighted:hover {
     cursor: pointer;
 }
 table.datatable thead tr th {
@@ -68,13 +87,15 @@ table.datatable thead tr th:first-child {
 table.datatable thead tr th:last-child {
     border-right: 1px solid #ddd;
 }
-table.datatable th:first-child, table.datatable td:first-child {
+table.datatable th:first-child,
+table.datatable td:first-child {
     background-color: #fafafa;
     z-index: 2;
     position: sticky;
     left: 0;
 }
-table.datatable tbody tr:last-child th, table.datatable tbody tr:last-child td {
+table.datatable tbody tr:last-child th,
+table.datatable tbody tr:last-child td {
     border-bottom: 1px solid #ddd;
 }
 
@@ -95,4 +116,34 @@ dl.attribute dd {
 .nboutput table {
     margin-left: unset;
     margin-right: unset;
+}
+
+.grid-item-card h2 span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.grid-item-card h2 img,
+.grid-item-card h2 svg {
+    width: 20px;
+    height: 20px;
+}
+
+.sd-dropdown.muted {
+    background-color: #fafafa !important;
+    border: 1px solid #ddd !important;
+    color: #444 !important;
+    box-shadow: none !important;
+    font-size: 0.9em;
+}
+
+.sd-dropdown.muted .sd-summary-content {
+    padding: 0.5em 0.8em !important;
+}
+
+.sd-card.card-border-primary,
+.sd-card.card-border-success,
+.sd-card.card-border-warning,
+.sd-card.card-border-info {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }

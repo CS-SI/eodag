@@ -58,9 +58,9 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
-    is_range_in_range,
 )
 from eodag.utils.cache import instance_cached_method
+from eodag.utils.dates import is_range_in_range
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
@@ -1269,7 +1269,7 @@ def _check_id(product: EOProduct) -> EOProduct:
             isinstance(e, DownloadError) or isinstance(e, ValidationError)
         ) and "order status could not be checked" in e.args[0]:
             raise ValidationError(
-                f"Item {product_id} does not exist with {product.provider}."
+                f"Requested data is not available on {product.provider} ({product_id})."
             ) from e
         raise ValidationError(e.args[0]) from e
 

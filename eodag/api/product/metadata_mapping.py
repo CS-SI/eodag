@@ -47,7 +47,6 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_string,
     get_geometry_from_various,
-    get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
     remove_str_array_quotes,
@@ -55,6 +54,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+from eodag.utils.dates import get_timestamp
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -174,6 +174,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``to_lower``: Convert a string to lowercase
         - ``to_upper``: Convert a string to uppercase
+        - ``to_title``: Convert a string to title case
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``split_cop_dem_id``: get the bbox by splitting the product id
@@ -182,6 +183,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``convert_from_alternate``: update assets using given alternate
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -530,6 +533,35 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
+        def convert_replace_str_tuple(value: Any, args: str) -> str:
+            """
+            Apply multiple replacements on a string.
+            args should be a string representing a list/tuple of (old, new) pairs.
+            Example: '(("old1", "new1"), ("old2", "new2"))'
+            """
+            if isinstance(value, dict):
+                value = MetadataFormatter.convert_to_geojson(value)
+            elif not isinstance(value, str):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a string or a dict (apply to_geojson). "
+                    f"Got {type(value)}: {value}"
+                )
+
+            # args sera une chaîne représentant une liste/tuple de tuples
+            replacements = ast.literal_eval(args)
+
+            if not isinstance(replacements, (list, tuple)):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a list/tuple of (old,new) pairs. "
+                    f"Got {type(replacements)}: {replacements}"
+                )
+
+            for old, new in replacements:
+                value = re.sub(old, new, value)
+
+            return value
+
+        @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
             data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
             match = data_regex.search(value)
@@ -581,6 +613,45 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return result
 
         @staticmethod
+        def convert_dict_filter_and_sub(
+            input_dict: dict[Any, Any], args: str
+        ) -> Union[dict[Any, Any], list[Any]]:
+            """Fitlers dict items using jsonpath and then apply recursive_sub_str"""
+            jsonpath_filter_str, old, new = ast.literal_eval(args)
+            filtered = MetadataFormatter.convert_dict_filter(
+                input_dict, jsonpath_filter_str
+            )
+            args_str = f"('{old}', '{new}')"
+            return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
+
+        @staticmethod
+        def convert_from_alternate(
+            input_obj: dict[str, Any], value: str
+        ) -> dict[str, Any]:
+            """
+            Update assets using given alternate.
+            """
+            result: dict[str, Any] = {}
+            for k, v in input_obj.items():
+                if not isinstance(v, dict):
+                    continue
+
+                alt_dict = deepcopy(v).get("alternate")
+                if not isinstance(alt_dict, dict):
+                    continue
+
+                value_entry = alt_dict.pop(value, None)
+                if not isinstance(value_entry, dict):
+                    continue
+
+                result[k] = v | value_entry | {"alternate": alt_dict}
+
+                if len(result[k]["alternate"]) == 0:
+                    del result[k]["alternate"]
+
+            return result
+
+        @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
             cmin, cmax, cstep = [
                 int(x.strip()) if x.strip().lstrip("-").isdigit() else None
@@ -591,12 +662,21 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_lower(string: str) -> str:
             """Convert a string to lowercase."""
+            if string == NOT_AVAILABLE:
+                return string
             return string.lower()
 
         @staticmethod
         def convert_to_upper(string: str) -> str:
             """Convert a string to uppercase."""
             return string.upper()
+
+        @staticmethod
+        def convert_to_title(string: str) -> str:
+            """Convert a string to title case."""
+            if string == NOT_AVAILABLE:
+                return string
+            return string.title()
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:
@@ -1362,17 +1442,30 @@ def format_query_params(
         error_context,
     )
 
-    for eodag_search_key, provider_search_key in queryables.items():
+    for eodag_search_key, provider_search_param in queryables.items():
         user_input = query_dict[eodag_search_key]
 
-        if COMPLEX_QS_REGEX.match(provider_search_key):
-            parts = provider_search_key.split("=")
+        if provider_search_param == user_input:
+            # means the mapping is to be passed as is, in which case we
+            # readily register it
+            if (
+                eodag_search_key in query_params
+                and isinstance(query_params[eodag_search_key], dict)
+                and isinstance(user_input, dict)
+            ):
+                query_params[eodag_search_key].update(user_input)
+            else:
+                query_params[eodag_search_key] = user_input
+            continue
+
+        if COMPLEX_QS_REGEX.match(provider_search_param):
+            parts = provider_search_param.split("=")
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
-                    provider_search_key, product_type, **query_dict
+                    provider_search_param, product_type, **query_dict
                 )
                 formatted_query_param = formatted_query_param.replace("'", '"')
-                if "{{" in provider_search_key:
+                if "{{" in provider_search_param:
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
@@ -1396,7 +1489,7 @@ def format_query_params(
                     provider_value, product_type, **query_dict
                 )
         else:
-            query_params[provider_search_key] = user_input
+            query_params[provider_search_param] = user_input
     # Now get all the literal search params (i.e params to be passed "as is"
     # in the search request)
     # ignore additional_params if it isn't a dictionary
@@ -1527,7 +1620,15 @@ def _get_queryables(
                     config.discover_metadata.get("metadata_pattern", "")
                 )
                 search_param_cfg = config.discover_metadata.get("search_param", "")
-                if pattern.match(eodag_search_key) and isinstance(
+                search_param_unparsed_cfg = config.discover_metadata.get(
+                    "search_param_unparsed", []
+                )
+                if (
+                    search_param_unparsed_cfg
+                    and eodag_search_key in search_param_unparsed_cfg
+                ):
+                    queryables[eodag_search_key] = user_input
+                elif pattern.match(eodag_search_key) and isinstance(
                     search_param_cfg, str
                 ):
                     search_param = search_param_cfg.format(metadata=eodag_search_key)

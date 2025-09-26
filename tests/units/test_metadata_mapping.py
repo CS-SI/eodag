@@ -16,13 +16,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
+from unittest import mock
 
 import orjson
 from jsonpath_ng.ext import parse
 from lxml import etree
-from shapely import wkt
+from shapely import LineString, Polygon, wkt
 
-from eodag.api.product.metadata_mapping import get_provider_queryable_key
+from eodag.api.product.metadata_mapping import (
+    WKT_MAX_LEN,
+    get_provider_queryable_key,
+    get_provider_queryable_path,
+    get_queryable_from_provider,
+    properties_from_xml,
+)
+from eodag.types.queryables import Queryables
 from tests.context import (
     NOT_AVAILABLE,
     format_metadata,
@@ -106,6 +114,32 @@ class TestMetadataFormatter(unittest.TestCase):
             "POINT (0.1111 1.2222)",
         )
 
+    def test_convert_to_rounded_wkt_too_long(self):
+        """Test rounding WKT coordinates for long geometries"""
+        to_format = "{fieldname#to_rounded_wkt}"
+        coords = [(x, x * 0.5) for x in range(1000)]
+        geom = LineString(coords)
+
+        with self.assertLogs(level="DEBUG") as cm:
+            result = format_metadata(to_format, fieldname=geom)
+
+        self.assertIsInstance(result, str)
+        self.assertLessEqual(len(result), WKT_MAX_LEN)
+        self.assertIn("Geometry WKT is too long", cm.output[0])
+
+    def test_convert_to_rounded_wkt_warns_if_still_too_long(self):
+        """Test warning when rounding WKT coordinates does not help enough"""
+        to_format = "{fieldname#to_rounded_wkt}"
+        coords = [(x, x * 0.5) for x in range(10000)]
+        geom = LineString(coords)
+
+        with mock.patch("eodag.api.product.metadata_mapping.WKT_MAX_LEN", 10):
+            with self.assertLogs(level="WARNING") as cm:
+                result = format_metadata(to_format, fieldname=geom)
+
+        self.assertIsInstance(result, str)
+        self.assertIn("Failed to reduce WKT length lower than", cm.output[0])
+
     def test_convert_to_bounds_lists(self):
         to_format = "{fieldname#to_bounds_lists}"
         geom = get_geometry_from_various(
@@ -118,6 +152,16 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, fieldname=geom),
             "[[2.23, 43.42, 3.68, 43.76], [1.23, 43.42, 1.68, 43.76]]",
         )
+
+    def test_convert_to_bounds_lists_with_polygon(self):
+        """Test converting to bounds lists with a single polygon geometry"""
+        to_format = "{fieldname#to_bounds_lists}"
+        geom = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+
+        result = format_metadata(to_format, fieldname=geom)
+
+        expected = "[[0.0, 0.0, 1.0, 1.0]]"
+        self.assertEqual(result, expected)
 
     def test_convert_to_bounds(self):
         to_format = "{fieldname#to_bounds}"
@@ -233,6 +277,14 @@ class TestMetadataFormatter(unittest.TestCase):
             "foo",
         )
 
+    def test_convert_remove_extension_no_parts(self):
+        """Test removing extension from a filename with no parts"""
+        to_format = "{fieldname#remove_extension}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname=""),
+            "",
+        )
+
     def test_convert_get_group_name(self):
         to_format = (
             "{fieldname#get_group_name((?P<this is foo>foo)|(?P<that_is_bar>bar))}"
@@ -240,6 +292,16 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, fieldname="foo"),
             "this is foo",
+        )
+
+    def test_convert_get_group_name_not_available(self):
+        """Test getting group name when no group matches"""
+        to_format = "{fieldname#get_group_name(foo)}"
+        string = "this has foo in it"
+
+        self.assertEqual(
+            format_metadata(to_format, fieldname=string),
+            NOT_AVAILABLE,
         )
 
     def test_convert_replace_str(self):
@@ -255,6 +317,29 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, fieldname={"key": "this is foo"}),
             '{"key": "this was foo"}...',
+        )
+
+        # Test with a list (should fail)
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname=["this is foo"])
+
+        # Test with an integer (should fail)
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname=123)
+
+    def test_convert_replace_str_tuple(self):
+        to_format = r"{fieldname#replace_str_tuple((('foo','bar'),('this','that')))}"
+
+        # Test with a string
+        self.assertEqual(
+            format_metadata(to_format, fieldname="this is foo"),
+            "that is bar",
+        )
+
+        # Test with a dictionary
+        self.assertEqual(
+            format_metadata(to_format, fieldname={"key": "this is foo"}),
+            '{"key": "that is bar"}',
         )
 
         # Test with a list (should fail)
@@ -302,6 +387,63 @@ class TestMetadataFormatter(unittest.TestCase):
             "{'b': {'href': 's3://bar'}}",
         )
 
+    def test_convert_from_alternate(self):
+        """
+        Test converting assets by replacing href with alternate.<value>.href,
+        copying metadata, and removing alternate.
+        """
+        to_format = "{fieldname#from_alternate(s3)}"
+        self.assertEqual(format_metadata(to_format, fieldname=None), "None")
+
+        # Cas 2 : aucun alternate.s3
+        assets1 = {
+            "a": {"href": "http://example.com/a"},
+            "b": {"href": "http://example.com/b"},
+        }
+        self.assertEqual(format_metadata(to_format, fieldname=assets1), "{}")
+
+        # Cas 3 : alternate.s3 avec href simple
+        assets2 = {
+            "a": {
+                "href": "http://example.com/a",
+                "alternate": {"s3": {"href": "s3://bucket/a"}},
+            },
+            "b": {"href": "http://example.com/b"},
+        }
+        expected2 = """{'a': {'href': 's3://bucket/a'}}"""
+        self.assertEqual(format_metadata(to_format, fieldname=assets2), expected2)
+
+        # Cas 4 : alternate.s3 avec métadonnées supplémentaires
+        assets3 = {
+            "c": {
+                "href": "http://example.com/c",
+                "size": 123,
+                "alternate": {
+                    "s3": {
+                        "href": "s3://bucket/c",
+                        "storage:region": "eu-west-1",
+                        "storage:class": "STANDARD",
+                    }
+                },
+            }
+        }
+        expected3 = (
+            "{'c': {'href': 's3://bucket/c', 'size': 123, "
+            "'storage:region': 'eu-west-1', 'storage:class': 'STANDARD'}}"
+        )
+        self.assertEqual(format_metadata(to_format, fieldname=assets3), expected3)
+
+        # Cas 5 : asset "index" doit disparaître si pas d'alternate.s3
+        assets4 = {
+            "index": {"href": "http://example.com/index"},
+            "d": {
+                "href": "http://example.com/d",
+                "alternate": {"s3": {"href": "s3://bucket/d"}},
+            },
+        }
+        expected4 = """{'d': {'href': 's3://bucket/d'}}"""
+        self.assertEqual(format_metadata(to_format, fieldname=assets4), expected4)
+
     def test_convert_slice_str(self):
         to_format = "{fieldname#slice_str(1,12,2)}"
         self.assertEqual(
@@ -313,6 +455,12 @@ class TestMetadataFormatter(unittest.TestCase):
         to_format = r"{fieldname#to_lower}"
         self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "foo.bar")
 
+    def test_convert_to_lower_not_available(self):
+        to_format = r"{fieldname#to_lower}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="Not Available"), "Not Available"
+        )
+
     def test_convert_to_upper(self):
         to_format = r"{fieldname#to_upper}"
         self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "FOO.BAR")
@@ -320,6 +468,16 @@ class TestMetadataFormatter(unittest.TestCase):
     def test_convert_to_upper_empty(self):
         to_format = r"{fieldname#to_upper}"
         self.assertEqual(format_metadata(to_format, fieldname=None), "None")
+
+    def test_convert_to_title(self):
+        to_format = r"{fieldname#to_title}"
+        self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "Foo.Bar")
+
+    def test_convert_to_title_not_available(self):
+        to_format = r"{fieldname#to_title}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="Not Available"), "Not Available"
+        )
 
     def test_convert_fake_l2a_title_from_l1c(self):
         to_format = "{fieldname#fake_l2a_title_from_l1c}"
@@ -331,6 +489,18 @@ class TestMetadataFormatter(unittest.TestCase):
             "S2B_MSIL2A_20210427T103619____________T31TCJ________________",
         )
 
+    def test_convert_fake_l2a_title_from_l1c_not_match(self):
+        """Test converting L1C title to fake L2A title when input does not match expected format"""
+        to_format = "{fieldname#fake_l2a_title_from_l1c}"
+
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname="",
+            ),
+            NOT_AVAILABLE,
+        )
+
     def test_convert_s2msil2a_title_to_aws_productinfo(self):
         to_format = "{fieldname#s2msil2a_title_to_aws_productinfo}"
         self.assertEqual(
@@ -339,6 +509,17 @@ class TestMetadataFormatter(unittest.TestCase):
                 fieldname="S2A_MSIL2A_20201201T100401_N0214_R122_T32SNA_20201201T114520",
             ),
             "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/32/S/NA/2020/12/1/0/{collection}.json",
+        )
+
+    def test_convert_s2msil2a_title_to_aws_productinfo_not_available(self):
+        """Test converting S2MSIL2A title to AWS product info when input does not match expected format"""
+        to_format = "{fieldname#s2msil2a_title_to_aws_productinfo}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname="",
+            ),
+            NOT_AVAILABLE,
         )
 
     def test_format_stac_extension_parameter(self):
@@ -428,6 +609,25 @@ class TestMetadataFormatter(unittest.TestCase):
                 id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
             ),
             str(expected),
+        )
+
+    def test_convert_split_id_into_s1_params_invalid_id(self):
+        """Test converting Sentinel-1 id to parameters when input does not match expected format"""
+        to_format = "{id#split_id_into_s1_params}"
+        invalid_id = "S1A_IW_GRDH_1SSV_20210901"
+
+        with self.assertLogs(level="ERROR") as cm:
+            with self.assertRaises(ValueError) as context:
+                self.assertEqual(
+                    format_metadata(
+                        to_format,
+                        id=invalid_id,
+                    ),
+                    str(context.exception),
+                )
+        self.assertIn(
+            f"id {invalid_id} does not match expected Sentinel-1 id format",
+            "".join(cm.output),
         )
 
     def test_convert_split_id_into_s3_params(self):
@@ -522,6 +722,12 @@ class TestMetadataFormatter(unittest.TestCase):
         formated_dict = orjson.loads(formated.replace("'", '"'))
         for k in expected_result.keys():
             self.assertCountEqual(formated_dict[k], expected_result[k])
+
+    def test_convert_interval_to_datetime_dict_without_separator_in_date(self):
+        """Test converting interval to datetime dict when input date does not contain a '/' separator"""
+        to_format = "{date#interval_to_datetime_dict}"
+        with self.assertRaises(ValueError):
+            format_metadata(to_format, date="wrong_date")
 
     def test_convert_get_ecmwf_time(self):
         to_format = "{date#get_ecmwf_time}"
@@ -653,6 +859,111 @@ class TestMetadataFormatter(unittest.TestCase):
 
 
 class TestMetadataMappingFunctions(unittest.TestCase):
+    def test_properties_from_xml_single_value_no_conversion(self):
+        """Test extracting a single value from XML without conversion"""
+        xml = """<root><id>123</id></root>"""
+        mapping = {"id": (None, "./id/text()")}
+        props = properties_from_xml(xml, mapping)
+        assert props["id"] == "123"
+
+    def test_properties_from_xml_not_available(self):
+        """Test extracting a single value from XML when not available"""
+        xml = """<root></root>"""
+        mapping = {"id": (None, "./id/text()")}
+        props = properties_from_xml(xml, mapping)
+        assert props["id"] == NOT_AVAILABLE
+
+    def test_properties_from_xml_with_conversion(self):
+        """Test extracting a single value from XML with conversion"""
+        xml = """<root><val>hello</val></root>"""
+        mapping = {"val": (["to_upper"], "./val/text()")}
+        props = properties_from_xml(xml, mapping)
+        assert props["val"] == "HELLO"
+
+    def test_properties_from_xml_multiple_values(self):
+        """Test extracting multiple values from XML without conversion"""
+        xml = """<root>
+            <item>A</item>
+            <item>B</item>
+        </root>"""
+        mapping = {"items": (None, "./item/text()")}
+        props = properties_from_xml(xml, mapping)
+        assert props["items"] == ["A", "B"]
+
+    def test_properties_from_xml_xpath_eval_error(self):
+        """Test handling of XPath evaluation error"""
+        xml = """<root><id>123</id></root>"""
+        mapping = {"custom": (None, "//*invalid_xpath")}
+        props = properties_from_xml(xml, mapping)
+        assert props["custom"] == "//*invalid_xpath"
+
+    def test_properties_from_xml_discovery(self):
+        """Test auto-discovery of metadata from XML"""
+        xml = """<root>
+            <auto_discovered>value1</auto_discovered>
+        </root>"""
+        mapping = {}
+        discovery_config = {
+            "metadata_pattern": "^[a-z_]+$",
+            "metadata_path": "./*",
+        }
+        props = properties_from_xml(xml, mapping, discovery_config=discovery_config)
+        assert props["auto_discovered"] == "value1"
+
+    def test_properties_from_xml_multiple_matches_with_conversion(self):
+        """Test extracting multiple values from XML with conversion"""
+        xml = """<root>
+                    <val>hello</val>
+                    <val>world</val>
+                </root>"""
+        mapping = {"val": (["to_upper"], "./val/text()")}
+        props = properties_from_xml(xml, mapping)
+        assert props["val"] == ["HELLO", "WORLD"]
+
+    def test_properties_from_xml_multiple_matches_with_conversion_and_args(self):
+        """Test extracting multiple values from XML with conversion that requires arguments"""
+        xml = """<root>
+                    <val>test1</val>
+                    <val>test2</val>
+                </root>"""
+        mapping = {"val": ("to_upper", "./val/text()")}
+
+        props = properties_from_xml(xml, mapping)
+        assert props["val"] == ["TEST1", "TEST2"]
+
+    def test_properties_from_xml_multiple_matches_no_conversion(self):
+        """Test extracting multiple values from XML without conversion"""
+        xml = """<root>
+                    <val>a</val>
+                    <val>b</val>
+                </root>"""
+        mapping = {"val": (None, "./val/text()")}
+
+        props = properties_from_xml(xml, mapping)
+
+        assert props["val"] == ["a", "b"]
+
+    def test_get_queryable_from_provider_found(self):
+        """Test getting a queryable from provider mapping when found"""
+        metadata_mapping = {
+            "year": ["year"],
+            "date": ["date"],
+        }
+        provider_queryable = "year"
+
+        result = get_queryable_from_provider(provider_queryable, metadata_mapping)
+
+        expected = Queryables.get_queryable_from_alias("year")
+        self.assertEqual(result, expected)
+
+    def test_get_provider_queryable_path(self):
+        """Test getting the provider queryable path"""
+        metadata_mapping = {"id": "id", "path": ["path1", "path2"]}
+        queryable_path = get_provider_queryable_path("path", metadata_mapping)
+        self.assertEqual(queryable_path, "path1")
+        queryable_path = get_provider_queryable_path("id", metadata_mapping)
+        self.assertEqual(queryable_path, None)
+
     def test_get_provider_queryable_key(self):
         metadata_mapping = {
             "id": "id",
@@ -692,6 +1003,10 @@ class TestMetadataMappingFunctions(unittest.TestCase):
             "variable", provider_queryables, metadata_mapping
         )
         self.assertEqual("variable", provider_key)
+        provider_key = get_provider_queryable_key(
+            "not_here", provider_queryables, metadata_mapping
+        )
+        self.assertEqual("", provider_key)
 
     def test_convert_sanitize(self):
         to_format = "{path#sanitize}"

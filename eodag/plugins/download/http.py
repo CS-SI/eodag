@@ -23,7 +23,6 @@ import re
 import shutil
 import tarfile
 import zipfile
-from datetime import datetime
 from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
@@ -46,7 +45,7 @@ from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
-from stream_zip import ZIP_AUTO, stream_zip
+from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
@@ -87,6 +86,7 @@ from eodag.utils.exceptions import (
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
+    from mypy_boto3_s3 import S3ServiceResource
     from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
@@ -155,6 +155,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[dict[str, Any]]:
+
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is OFFLINE
@@ -332,6 +333,7 @@ class HTTPDownload(Download):
                 logger.debug(
                     f"Order download status request responded with {response.status_code}"
                 )
+
                 response.raise_for_status()  # Raise an exception if status code indicates an error
 
                 # Handle redirection (if needed)
@@ -589,7 +591,7 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -753,7 +755,7 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -786,7 +788,7 @@ class HTTPDownload(Download):
         ):
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
-                chunks_tuples = self._stream_download_assets(
+                assets_stream_list = self._stream_download_assets(
                     product,
                     auth,
                     None,
@@ -794,40 +796,41 @@ class HTTPDownload(Download):
                     **kwargs,
                 )
 
-                if len(assets_values) == 1:
-                    # start reading chunks to set asset.headers
-                    first_chunks_tuple = next(chunks_tuples)
-
-                    # update headers
-                    assets_values[0].headers[
-                        "content-disposition"
-                    ] = f"attachment; filename={assets_values[0].filename}"
+                # single asset
+                if len(assets_stream_list) == 1:
+                    asset_stream = assets_stream_list[0]
                     if assets_values[0].get("type"):
-                        assets_values[0].headers["content-type"] = assets_values[0][
-                            "type"
-                        ]
+                        asset_stream.headers["content-type"] = assets_values[0]["type"]
+                    return asset_stream
 
-                    return StreamResponse(
-                        content=chain(iter([first_chunks_tuple]), chunks_tuples),
-                        headers=assets_values[0].headers,
-                    )
-
+                # multiple assets in zip
                 else:
-                    # get first chunk to check if it does not contain an error (if it does, that error will be raised)
-                    first_chunks_tuple = next(chunks_tuples)
                     outputs_filename = (
                         sanitize(product.properties["title"])
                         if "title" in product.properties
                         else sanitize(product.properties.get("id", "download"))
                     )
+
+                    # do not use global size if one of the assets has no size
+                    missing_length = any(not (asset.size) for asset in assets_values)
+
+                    zip_stream = (
+                        ZipStream(sized=True) if not missing_length else ZipStream()
+                    )
+                    for asset_stream in assets_stream_list:
+                        zip_stream.add(
+                            asset_stream.content,
+                            arcname=asset_stream.arcname,
+                            size=asset_stream.size,
+                        )
+
+                    zip_length = len(zip_stream) if not missing_length else None
+
                     return StreamResponse(
-                        content=stream_zip(
-                            chain(iter([first_chunks_tuple]), chunks_tuples)
-                        ),
+                        content=zip_stream,
                         media_type="application/zip",
-                        headers={
-                            "content-disposition": f"attachment; filename={outputs_filename}.zip",
-                        },
+                        filename=f"{outputs_filename}.zip",
+                        size=zip_length,
                     )
             except NotAvailableError as e:
                 if kwargs.get("asset") is not None:
@@ -848,6 +851,8 @@ class HTTPDownload(Download):
         return StreamResponse(
             content=chain(iter([first_chunk]), chunk_iterator),
             headers=product.headers,
+            filename=getattr(product, "filename", None),
+            size=getattr(product, "size", None),
         )
 
     def _check_auth_exception(self, e: Optional[RequestException]) -> None:
@@ -1042,7 +1047,6 @@ class HTTPDownload(Download):
 
             product.headers = self.stream.headers
             filename = self._check_product_filename(product)
-            product.headers["content-disposition"] = f"attachment; filename={filename}"
             content_type = product.headers.get("Content-Type")
             guessed_content_type = (
                 guess_file_type(filename) if filename and not content_type else None
@@ -1051,6 +1055,7 @@ class HTTPDownload(Download):
                 product.headers["Content-Type"] = guessed_content_type
 
             progress_callback.reset(total=stream_size)
+            product.size = stream_size
 
             product.filename = filename
             return self.stream.iter_content(chunk_size=64 * 1024)
@@ -1062,17 +1067,12 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         assets_values: list[Asset] = [],
         **kwargs: Unpack[DownloadConf],
-    ) -> Iterator[Any]:
+    ) -> list[StreamResponse]:
+        """Stream download assets as a zip file."""
+
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
-
-        assets_urls = [
-            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
-
-        if not assets_urls:
-            raise NotAvailableError("No assets available for %s" % product)
 
         # get extra parameters to pass to the query
         params = kwargs.pop("dl_url_params", None) or getattr(
@@ -1082,16 +1082,6 @@ class HTTPDownload(Download):
         total_size = self._get_asset_sizes(assets_values, auth, params) or None
 
         progress_callback.reset(total=total_size)
-
-        def get_chunks(stream: Response) -> Any:
-            for chunk in stream.iter_content(chunk_size=64 * 1024):
-                if chunk:
-                    progress_callback(len(chunk))
-                    yield chunk
-
-        # zipped files properties
-        modified_at = datetime.now()
-        perms = 0o600
 
         # loop for assets paths and get common_subdir
         asset_rel_paths_list = []
@@ -1124,37 +1114,35 @@ class HTTPDownload(Download):
             else None
         )
 
-        # loop for assets download
-        for asset in assets_values:
-            if not asset["href"] or asset["href"].startswith("file:"):
-                logger.info(
-                    f"Local asset detected. Download skipped for {asset['href']}"
-                )
-                continue
-            if matching_conf or (
-                matching_url and re.match(matching_url, asset["href"])
-            ):
+        def get_chunks_generator(asset: Asset) -> Iterator[bytes]:
+            """Create a generator function that will be called by ZipStream when needed."""
+
+            asset_href = asset.get("href")
+            # This function will be called by zipstream when it needs the data
+            if not asset_href or asset_href.startswith("file:"):
+                logger.info(f"Local asset detected. Download skipped for {asset_href}")
+                return
+
+            # Determine auth
+            if matching_conf or (matching_url and re.match(matching_url, asset_href)):
                 auth_object = auth
             else:
                 auth_object = None
-            with requests.get(
-                asset["href"],
-                stream=True,
-                auth=auth_object,
-                params=params,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                verify=ssl_verify,
-            ) as stream:
-                try:
+
+            # Make the request inside the generator
+            try:
+                with requests.get(
+                    asset_href,
+                    stream=True,
+                    auth=auth_object,
+                    params=params,
+                    headers=USER_AGENT,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
+                ) as stream:
                     stream.raise_for_status()
-                except requests.exceptions.Timeout as exc:
-                    raise TimeOutError(
-                        exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
-                    ) from exc
-                except RequestException as e:
-                    self._handle_asset_exception(e, asset)
-                else:
+
+                    # Process asset path
                     asset_rel_path = (
                         asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
                         if flatten_top_dirs
@@ -1183,19 +1171,46 @@ class HTTPDownload(Download):
                         asset_rel_dir, cast(str, asset.filename)
                     )
 
-                    if len(assets_values) == 1:
-                        # apply headers to asset
-                        product.assets[assets_values[0].key].headers = stream.headers
-                        yield from get_chunks(stream)
-                    else:
-                        # several assets to zip
-                        yield (
-                            asset.rel_path,
-                            modified_at,
-                            perms,
-                            ZIP_AUTO(asset.size),
-                            get_chunks(stream),
-                        )
+                    for chunk in stream.iter_content(chunk_size=64 * 1024):
+                        if chunk:
+                            progress_callback(len(chunk))
+                            yield chunk
+
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(
+                    exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
+                ) from exc
+            except RequestException as e:
+                self._handle_asset_exception(e, asset)
+
+        assets_stream_list = []
+
+        # Process each asset
+        for asset in assets_values:
+            if not asset["href"] or asset["href"].startswith("file:"):
+                logger.info(
+                    f"Local asset detected. Download skipped for {asset['href']}"
+                )
+                continue
+            asset_chunks = get_chunks_generator(asset)
+            try:
+                # start reading chunks to set assets attributes
+                first_chunk = next(asset_chunks)
+                asset_chunks = chain(iter([first_chunk]), asset_chunks)
+            except StopIteration:
+                # Empty generator
+                asset_chunks = iter([])
+
+            assets_stream_list.append(
+                StreamResponse(
+                    content=asset_chunks,
+                    filename=getattr(asset, "filename", None),
+                    arcname=getattr(asset, "rel_path", None),
+                    size=getattr(asset, "size", 0) or None,
+                )
+            )
+
+        return assets_stream_list
 
     def _download_assets(
         self,
@@ -1219,7 +1234,7 @@ class HTTPDownload(Download):
 
         assets_values = product.assets.get_values(kwargs.get("asset"))
 
-        chunks_tuples = self._stream_download_assets(
+        assets_stream_list = self._stream_download_assets(
             product, auth, progress_callback, assets_values=assets_values, **kwargs
         )
 
@@ -1245,17 +1260,9 @@ class HTTPDownload(Download):
                 local_assets_count += 1
                 continue
 
-        if len(assets_values) == 1 and local_assets_count == 0:
-            # start reading chunks to set asset.rel_path
-            first_chunks_tuple = next(chunks_tuples)
-            chunks = chain(iter([first_chunks_tuple]), chunks_tuples)
-            chunks_tuples = iter(
-                [(assets_values[0].rel_path, None, None, None, chunks)]
-            )
-
-        for chunk_tuple in chunks_tuples:
-            asset_path = chunk_tuple[0]
-            asset_chunks = chunk_tuple[4]
+        for asset_stream in assets_stream_list:
+            asset_chunks = asset_stream.content
+            asset_path = cast(str, asset_stream.arcname)
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
@@ -1271,7 +1278,6 @@ class HTTPDownload(Download):
                     for chunk in asset_chunks:
                         if chunk:
                             fhandle.write(chunk)
-                            progress_callback(len(chunk))
                 logger.debug(
                     "Download completed. Renaming temporary file '%s' to '%s'",
                     os.path.basename(asset_abs_path_temp),
@@ -1344,14 +1350,16 @@ class HTTPDownload(Download):
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 try:
-                    asset_headers = requests.head(
+                    asset_headers_resp = requests.head(
                         asset["href"],
                         auth=auth,
                         params=params,
                         headers=USER_AGENT,
                         timeout=timeout,
                         verify=ssl_verify,
-                    ).headers
+                    )
+                    asset_headers_resp.raise_for_status()
+                    asset_headers = asset_headers_resp.headers
                 except RequestException as e:
                     logger.debug(f"HEAD request failed: {str(e)}")
                     asset_headers = CaseInsensitiveDict()

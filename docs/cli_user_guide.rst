@@ -3,7 +3,7 @@
 CLI User Guide
 ==============
 
-Make sure you correctly followed instructions on :ref:`configure` and :ref:`register`.
+Make sure you correctly followed instructions on :ref:`configure`.
 
 Then you can start playing with it:
 

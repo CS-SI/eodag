@@ -3,6 +3,12 @@
 STAC REST API Server
 ====================
 
+.. warning::
+
+   DEPRECATED since v3.9.0: Running the STAC REST API server from the CLI is deprecated
+   and will be removed in a future version. This functionality has moved to its own repository:
+   https://github.com/CS-SI/stac-fastapi-eodag
+
 .. image:: _static/eodag_stac_server.png
    :width: 800
    :alt: EODAG as STAC server
@@ -93,7 +99,7 @@ available on `https://hub.docker.com/r/csspace/eodag-server <https://hub.docker.
 
 .. code-block:: bash
 
-    $ docker run -p 5000:5000 --rm csspace/eodag-server:3.8.1
+    $ docker run -p 5000:5000 --rm csspace/eodag-server:3.9.0
 
 Example
 -------

@@ -44,6 +44,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
@@ -361,7 +362,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
-    ) -> Optional[Union[AuthBase, S3SessionKwargs]]:
+    ) -> Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]]:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 

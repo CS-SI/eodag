@@ -33,6 +33,9 @@ search:
     auto_discovery: true
     metadata_pattern: '^[a-zA-Z0-9_:-]+$'
     search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
+    search_param_unparsed:
+      - filter
+      - query
     metadata_path: '$.properties.*'
   discover_product_types:
     fetch_url: '{api_endpoint}/../collections'
@@ -99,7 +102,7 @@ search:
       - '$.properties."sat:relative_orbit"'
     orbitDirection:
       - '{{"query":{{"sat:orbit_state":{{"eq":"{orbitDirection}"}}}}}}'
-      - '$.properties."sat:orbit_state"'
+      - '{$.properties."sat:orbit_state"#to_lower}'
     cloudCover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}'
       - '$.properties."eo:cloud_cover"'
@@ -137,7 +140,7 @@ search:
       - '$.properties."view:sun_elevation"'
     polarizationChannels:
       - '{{"query":{{"sar:polarizations":{{"eq":"{polarizationChannels}"}}}}}}'
-      - '$.properties."sar:polarizations"'
+      - '{$.properties."sar:polarizations"#replace_str(" ","+")}'
     dopplerFrequency:
       - '{{"query":{{"sar:frequency_band":{{"eq":"{dopplerFrequency}"}}}}}}'
       - '$.properties."sar:frequency_band"'

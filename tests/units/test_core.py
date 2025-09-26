@@ -143,6 +143,7 @@ class TestCore(TestCoreBase):
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "EEA_DAILY_VI": ["dedl", "wekeo_main"],
+        "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
         "EFAS_REFORECAST": ["cop_ewds", "dedl"],
@@ -305,6 +306,12 @@ class TestCore(TestCoreBase):
         "NAIP": ["aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
+        "S1_AUX_GNSSRD": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_MOEORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_POEORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_PREORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_PROQUA": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_RESORB": ["cop_dataspace", "creodias", "creodias_s3"],
         "S1_SAR_GRD": [
             "aws_eos",
             "cop_dataspace",
@@ -320,6 +327,8 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S1_SAR_GRD_COG": ["cop_dataspace"],
+        "S1_SAR_L3_IW_MCM": ["creodias", "cop_dataspace", "creodias_s3"],
+        "S1_SAR_L3_DH_MCM": ["creodias", "cop_dataspace", "creodias_s3"],
         "S1_SAR_OCN": [
             "cop_dataspace",
             "creodias",
@@ -372,7 +381,7 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S2_MSI_L2A_COG": ["earth_search_cog"],
+        "S2_MSI_L2A_COG": ["earth_search"],
         "S2_MSI_L2A_MAJA": ["geodes", "geodes_s3"],
         "S2_MSI_L2B_MAJA_SNOW": ["geodes", "geodes_s3"],
         "S2_MSI_L2B_MAJA_WATER": ["geodes", "geodes_s3"],
@@ -522,9 +531,9 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S3_LAN_HY": ["wekeo_main"],
-        "S3_LAN_SI": ["wekeo_main"],
-        "S3_LAN_LI": ["wekeo_main"],
+        "S3_LAN_HY": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
+        "S3_LAN_SI": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
+        "S3_LAN_LI": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_IR_ALL": ["dedl", "wekeo_main"],
         "S5P_L2_IR_ALL": ["dedl", "wekeo_main"],
         "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
@@ -577,6 +586,7 @@ class TestCore(TestCoreBase):
         "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SIS_HYDRO_MET_PROJ": ["cop_cds", "dedl"],
+        "CMIP6_CLIMATE_PROJECTIONS": ["cop_cds"],
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         GENERIC_PRODUCT_TYPE: [
@@ -585,7 +595,6 @@ class TestCore(TestCoreBase):
             "creodias",
             "usgs_satapi_aws",
             "earth_search",
-            "earth_search_cog",
             "earth_search_gcs",
             "ecmwf",
             "cop_ads",
@@ -611,7 +620,6 @@ class TestCore(TestCoreBase):
         "dedl",
         "dedt_lumi",
         "earth_search",
-        "earth_search_cog",
         "earth_search_gcs",
         "ecmwf",
         "eumetsat_ds",
@@ -1758,19 +1766,6 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": None,
             },
-            "earth_search_cog": {
-                "sortables": [
-                    "id",
-                    "startTimeFromAscendingNode",
-                    "creationDate",
-                    "modificationDate",
-                    "platform",
-                    "platformSerialIdentifier",
-                    "resolution",
-                    "cloudCover",
-                ],
-                "max_sort_params": None,
-            },
             "ecmwf": None,
             "eumetsat_ds": {
                 "sortables": [
@@ -2241,6 +2236,7 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
             "EEA_DAILY_VI",
+            "EEA_HRL_TCF",
         ]
         self.assertListEqual(actual, expected)
 
@@ -2866,6 +2862,47 @@ class TestCoreSearch(TestCoreBase):
             items_per_page=2,
         )
 
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search")
+    def test_search_iter_page_requesterror_retry(
+        self, mock_prepare_search, mock_search_plugin
+    ):
+        """Simulate a search with two plugins. The first one fails, the second one succeeds."""
+        plugin1 = mock.Mock(provider="provider1")
+        plugin2 = mock.Mock(provider="provider2")
+
+        mock_prepare_search.return_value = (
+            [plugin1, plugin2],
+            {"productType": "S2_MSI_L1C"},
+        )
+        mock_search_plugin.side_effect = [RequestError("fail"), iter([1, 2, 3])]
+
+        page_iterator = self.dag.search_iter_page(
+            items_per_page=2, productType="S2_MSI_L1C"
+        )
+        results = list(page_iterator)
+        self.assertEqual(results, [1, 2, 3])
+
+        self.assertEqual(mock_search_plugin.call_count, 2)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search")
+    def test_search_iter_page_requesterror_all_fail(
+        self, mock_prepare_search, mock_search_plugin
+    ):
+        """Simulate a search with two plugins that both fail."""
+        plugin1 = mock.Mock(provider="provider1")
+        plugin2 = mock.Mock(provider="provider2")
+
+        mock_prepare_search.return_value = (
+            [plugin1, plugin2],
+            {"productType": "S2_MSI_L1C"},
+        )
+        mock_search_plugin.side_effect = [RequestError("fail1"), RequestError("fail2")]
+
+        with self.assertRaises(RequestError):
+            list(self.dag.search_iter_page(items_per_page=2, productType="S2_MSI_L1C"))
+
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_iter_page_exhaust_get_all_pages_and_quit_early(
@@ -2926,6 +2963,54 @@ class TestCoreSearch(TestCoreBase):
         page_iterator = self.dag.search_iter_page_plugin(search_plugin=search_plugin)
         with self.assertRaises(AttributeError):
             next(page_iterator)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test_finally_breaks_when_same_product_as_previous(self, search_plugin):
+        """search_iter_page must stop if the next page appears to have the same products"""
+
+        class DummyConfig:
+            pagination = {"next_page_url_tpl": "tpl"}
+
+        search_plugin.config = DummyConfig()
+        search_plugin.provider = "peps"
+        search_plugin.next_page_url = "page2"
+        search_plugin.next_page_query_obj = None
+        search_plugin.next_page_merge = False
+
+        same_product = mock.Mock()
+        same_product.properties = {"id": "123"}
+        same_product.provider = "peps"
+
+        result_page1 = mock.Mock()
+        result_page1.number_matched = 10
+        result_page1.__getitem__ = lambda self, i: [same_product, mock.Mock()][i]
+        result_page1.__iter__ = lambda self: iter([same_product, mock.Mock()])
+        result_page1.__len__ = lambda self: 2
+
+        result_page2 = mock.Mock()
+        result_page2.number_matched = 10
+        result_page2.__getitem__ = lambda self, i: [same_product, mock.Mock()][i]
+        result_page2.__iter__ = lambda self: iter([same_product, mock.Mock()])
+        result_page2.__len__ = lambda self: 2
+
+        with mock.patch.object(
+            self.dag, "_do_search", side_effect=[result_page1, result_page2]
+        ):
+            with self.assertLogs(level="WARNING") as cm_logs:
+                page_iterator = self.dag.search_iter_page_plugin(
+                    items_per_page=2, search_plugin=search_plugin
+                )
+
+                first_page = next(page_iterator)
+                self.assertEqual(len(first_page), 2)
+
+                with self.assertRaises(StopIteration):
+                    next(page_iterator)
+
+        self.assertIn(
+            "stop iterating since the next page appears to have the same products",
+            "".join(cm_logs.output),
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -3324,6 +3409,138 @@ class TestCoreSearch(TestCoreBase):
         self.dag.search_all(productType="foo")
         mock_fetch_product_types_list.assert_called_with(self.dag)
         mock_search_iter_page_plugin.assert_called_once()
+
+    def test_fetch_external_product_type_with_auth(self):
+        """test _fetch_external_product_type when the plugin needs authentication"""
+        provider = "peps"
+        product_type = "S2_MSI_L1C"
+
+        plugin = mock.Mock()
+        plugin.config = mock.Mock()
+        plugin.config.discover_product_types = {"fetch_url": "http://fake-fetch-url"}
+        plugin.config.need_auth = True
+        plugin.config.api_endpoint = "http://fake-api"
+        plugin.provider = provider
+
+        plugin.discover_product_types = mock.Mock(return_value={"product1": {}})
+
+        dag = EODataAccessGateway()
+        dag._plugins_manager = mock.Mock()
+        dag._plugins_manager.get_search_plugins.return_value = iter([plugin])
+        auth_mock = mock.Mock()
+        dag._plugins_manager.get_auth.return_value = auth_mock
+        dag.update_product_types_list = mock.Mock()
+        dag._fetch_external_product_type(provider, product_type)
+
+        dag._plugins_manager.get_auth.assert_called_once_with(
+            plugin.provider, plugin.config.api_endpoint, plugin.config
+        )
+        plugin.discover_product_types.assert_called_once_with(
+            productType=product_type, auth=auth_mock
+        )
+        dag.update_product_types_list.assert_called_once_with(
+            {provider: {"product1": {}}}
+        )
+
+    def test_core_crunch(self):
+        """Test crunch method with multiple crunchers"""
+        results = mock.Mock()
+        results_after_first = mock.Mock()
+        results_after_second = mock.Mock()
+
+        results.crunch.return_value = results_after_first
+        results_after_first.crunch.return_value = results_after_second
+
+        dag = EODataAccessGateway()
+        cruncher_1 = mock.Mock()
+        cruncher_2 = mock.Mock()
+        dag._plugins_manager = mock.Mock()
+        dag._plugins_manager.get_crunch_plugin.side_effect = [cruncher_1, cruncher_2]
+
+        kwargs = {
+            "cruncher1": {"arg1": 1},
+            "cruncher2": {"arg2": 2},
+            "search_criteria": {"filter": "value"},
+        }
+
+        final_result = dag.crunch(results, **kwargs)
+
+        dag._plugins_manager.get_crunch_plugin.assert_has_calls(
+            [
+                mock.call("cruncher1", **{"arg1": 1}),
+                mock.call("cruncher2", **{"arg2": 2}),
+            ]
+        )
+
+        results.crunch.assert_called_once_with(cruncher_1, **{"filter": "value"})
+        results_after_first.crunch.assert_called_once_with(
+            cruncher_2, **{"filter": "value"}
+        )
+
+        self.assertEqual(final_result, results_after_second)
+
+    def test_setup_downloader_with_auth_none(self):
+        """Test _setup_downloader method when both downloader and auth need to be set up"""
+        product = mock.Mock()
+        product.downloader = None
+        product.downloader_auth = None
+
+        dag = EODataAccessGateway()
+        downloader_mock = mock.Mock()
+        auth_mock = mock.Mock()
+        dag._plugins_manager = mock.Mock()
+        dag._plugins_manager.get_download_plugin.return_value = downloader_mock
+        dag._plugins_manager.get_auth_plugin.return_value = auth_mock
+        dag._setup_downloader(product)
+
+        dag._plugins_manager.get_download_plugin.assert_called_once_with(product)
+        dag._plugins_manager.get_auth_plugin.assert_called_once_with(
+            downloader_mock, product
+        )
+        product.register_downloader.assert_called_once_with(downloader_mock, auth_mock)
+
+    def test_setup_downloader_with_existing_auth(self):
+        """Test _setup_downloader method when downloader needs to be set up but auth already exists"""
+        product = mock.Mock()
+        product.downloader = None
+        auth_existing = mock.Mock()
+        product.downloader_auth = auth_existing
+
+        dag = EODataAccessGateway()
+        downloader_mock = mock.Mock()
+        dag._plugins_manager = mock.Mock()
+        dag._plugins_manager.get_download_plugin.return_value = downloader_mock
+
+        dag._setup_downloader(product)
+        dag._plugins_manager.get_download_plugin.assert_called_once_with(product)
+        dag._plugins_manager.get_auth_plugin.assert_not_called()
+        product.register_downloader.assert_called_once_with(
+            downloader_mock, auth_existing
+        )
+
+    def test_get_cruncher(self):
+        """Test get_cruncher method"""
+        dag = EODataAccessGateway()
+        dag._plugins_manager = mock.Mock()
+
+        expected_crunch = mock.Mock()
+        dag._plugins_manager.get_crunch_plugin.return_value = expected_crunch
+        crunch = dag.get_cruncher(
+            "my_cruncher",
+            option1="value1",
+            option2="value2",
+            **{"option-with-dash": "dash_value"},
+        )
+        expected_conf = {
+            "name": "my_cruncher",
+            "option1": "value1",
+            "option2": "value2",
+            "option_with_dash": "dash_value",
+        }
+        dag._plugins_manager.get_crunch_plugin.assert_called_once_with(
+            "my_cruncher", **expected_conf
+        )
+        self.assertEqual(crunch, expected_crunch)
 
 
 class TestCoreDownload(TestCoreBase):

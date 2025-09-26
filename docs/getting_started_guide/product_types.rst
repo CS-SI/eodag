@@ -1,6 +1,6 @@
 .. _product_types:
 
-EO product types
+Product types
 ================
 
 ``eodag`` maintains a catalog of EO product types including some of their metadata. Each product type is
@@ -85,7 +85,8 @@ Click on the link below to display its full content.
    </details>
    </br>
 
-The following table lists the metadata parameters of the product types, and shows whether these product types are available for providers or not. The table allows you to display desired columns only, sort, and filter its content.
+The following table lists the metadata parameters of the product types, and shows whether these product types are
+available for providers or not.
 
 Product types information (`CSV <../_static/product_types_information.csv>`__)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

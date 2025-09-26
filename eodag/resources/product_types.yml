@@ -389,6 +389,149 @@ NAIP:
   title: National Agriculture Imagery Program
 
 # MARK: Sentinel 1 ---------------------------------------------------------------------
+S1_AUX_GNSSRD:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the International GNSS Service (IGS).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,GNSSRD,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_MOEORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,MOEORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_POEORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,POEORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_PREORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,PREORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_PROQUA:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,PROQUA,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_AUX_RESORB:
+  abstract: |
+    The Auxiliary (AUX) product contains the precise orbit ephemerides and the GNSS-Raw Data (GNSSRD) data.
+    The precise orbit ephemerides are provided as a text file in the format of the European Space Operations Centre
+    (ESOC).
+    The GNSS-Raw Data (GNSSRD) data is provided as a binary file in a specific format.
+    SAFE formatted product, see
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: AUX
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,AUX,RESORB,SAFE
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Auxiliary Product
+  missionStartDate: "2014-04-06T00:00:00Z"
+
+S1_SAR_L3_IW_MCM:
+  abstract: |
+    Level-3 IW (Interferometric Wide Swath) products are terrain corrected (geocoded) products in map geometry,
+    projected using the Range-Doppler model and resampled using nearest neighbor method. The pixel spacing is
+    approximately 10 m x 10 m. The product is available in two polarizations: Single (HH or VV) and Dual (HH+HV or
+    VV+VH). The product is provided in GeoTIFF format.
+    Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: L3
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L3,IW,MCM,COG
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Level-3 IW MCM
+  missionStartDate: "2023-01-01T00:00:00Z"
+
+S1_SAR_L3_DH_MCM:
+  abstract: |
+    Level-3 DH (Dual polarization High Resolution) products are terrain corrected (geocoded) products in map geometry,
+    projected using the Range-Doppler model and resampled using nearest neighbor method. The pixel spacing is
+    approximately 10 m x 10 m. The product is available in dual polarization (HH+HV or VV+VH). The product is provided
+    in GeoTIFF format.
+    Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B,S1C
+  processingLevel: L3
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L3,DH,MCM,COG
+  sensorType: RADAR
+  license: other
+  title: SENTINEL1 Level-3 DH MCM
+  missionStartDate: "2023-01-01T00:00:00Z"
+
 S1_SAR_OCN:
   abstract: |
     Level-2 OCN products include components for Ocean Swell spectra (OSW) providing continuity with ERS and ASAR WV
@@ -404,9 +547,9 @@ S1_SAR_OCN:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L2
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L2,OCN,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L2,OCN,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-2 OCN
@@ -428,9 +571,9 @@ S1_SAR_GRD:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -452,9 +595,9 @@ S1_SAR_GRD_JP2:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,JP2
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,JP2
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -476,9 +619,9 @@ S1_SAR_GRD_COG:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,COG
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,GRD,COG
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
@@ -494,9 +637,9 @@ S1_SAR_SLC:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L1
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,SLC,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L1,SLC,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 Level-1 Single Look Complex
@@ -511,9 +654,9 @@ S1_SAR_RAW:
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
+  platformSerialIdentifier: S1A,S1B,S1C
   processingLevel: L0
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L0,RAW,SAFE
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,S1C,L0,RAW,SAFE
   sensorType: RADAR
   license: other
   title: SENTINEL1 SAR Level-0
@@ -532,9 +675,9 @@ S2_MSI_L1C:
     SAFE formatted product, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L1
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L1,L1C,SAFE
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L1,L1C,SAFE
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -552,9 +695,9 @@ S2_MSI_L1C_JP2:
     Product without SAFE formatting, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L1
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L1C,JP2
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L1C,JP2
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -567,9 +710,9 @@ S2_MSI_L2A:
     SAFE formatted product, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,SAFE
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,SAFE
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -582,9 +725,9 @@ S2_MSI_L2A_JP2:
     Product without SAFE formatting, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,JP2
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,JP2
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -597,9 +740,9 @@ S2_MSI_L2A_COG:
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,COG
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,COG
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -613,9 +756,9 @@ S2_MSI_L2A_MAJA:
     https://theia.cnes.fr/atdistrib/documents/PSC-NT-411-0362-CNES_01_00_SENTINEL-2A_L2A_Products_Description.pdf
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,L2,L2A,MAJA
+  keywords: MSI,SENTINEL,SENTINEL2,S2,S2A,S2B,S2C,L2,L2A,MAJA
   sensorType: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
@@ -629,9 +772,9 @@ S2_MSI_L2B_MAJA_SNOW:
     products description are available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=10748#en
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,L2,L2B,SNOW
+  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,S2C,L2,L2B,SNOW
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -643,9 +786,9 @@ S2_MSI_L2B_MAJA_WATER:
     https://theia.cnes.fr/atdistrib/documents/THEIA-ST-411-0477-CNES_01-03_Format_Specification_of_OBS2CO_WaterColor_Products.pdf
   instrument: MSI
   platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel: L2
-  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,L2,L2B,WATER
+  keywords: MSI,MAJA,SENTINEL,sentinel2,S2,S2A,S2B,S2C,L2,L2B,WATER
   sensorType: OPTICAL
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
@@ -3888,6 +4031,36 @@ SIS_HYDRO_MET_PROJ:
   missionStartDate: "1970-01-01T00:00:00Z"
   missionEndDate: "2100-12-31T23:59:00Z"
 
+CMIP6_CLIMATE_PROJECTIONS:
+  abstract: |
+    This catalogue entry provides daily and monthly global climate projections data from a large number of experiments,
+    models and time periods computed in the framework of the sixth phase of the Coupled Model Intercomparison Project
+    (CMIP6). CMIP6 data underpins the Intergovernmental Panel on Climate Change 6th Assessment Report. The use of these
+    data is mostly aimed at:\n\naddressing outstanding scientific questions that arose as part of the IPCC reporting
+    process; improving the understanding of the climate system; providing estimates of future climate change and related
+    uncertainties; providing input data for the adaptation to the climate change; examining climate predictability and
+    exploring the ability of models to predict climate on decadal time scales; evaluating how realistic the different
+    models are in simulating the recent past.\n\nThe term "experiments" refers to the three main categories of CMIP6
+    simulations:\n\nHistorical experiments which cover the period where modern climate observations exist. These
+    experiments show how the GCMs performs for the past climate and can be used as a reference period for comparison
+    with scenario runs for the future. The period covered is typically 1850-2014. Climate projection experiments
+    following the combined pathways of Shared Socioeconomic Pathway (SSP) and Representative Concentration Pathway
+    (RCP). The SSP scenarios provide different pathways of the future climate forcing. The period covered is typically
+    2015-2100.\n\nThis catalogue entry provides both two- and three-dimensional data, along with an option to apply
+    spatial and/or temporal subsetting to data requests. This is a new feature of the global climate projection dataset,
+    which relies on compute processes run simultaneously in the ESGF nodes, where the data are originally located. The
+    data are produced by the participating institutes of the CMIP6 project.
+  platform: CMIP6
+  instrument: CMIP6
+  platformSerialIdentifier: CMIP6
+  processingLevel:
+  sensorType:
+  keywords: ECMWF,CDS,C3S,CMIP6,historical,projection,global
+  license: other
+  title: CMIP6 climate projections
+  missionStartDate: "1850-01-01T00:00:00Z"
+  missionEndDate: "2100-12-31T23:59:00Z"
+
 # MARK: CEMS
 
 FIRE_HISTORICAL:
@@ -4528,13 +4701,30 @@ EEA_DAILY_VI:
     Land Monitoring Service (CLMS).
   instrument:
   platform: Sentinel-2
-  platformSerialIdentifier: S2A, S2B
+  platformSerialIdentifier: S2A,S2B,S2C
   processingLevel:
-  keywords: Land,Plant-phenology-index,Phenology,Vegetation,Sentinel-2,S2A,S2B
+  keywords: Land,Plant-phenology-index,Phenology,Vegetation,Sentinel-2,S2A,S2B,S2C
   sensorType: RADAR
   license: other
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
+
+EEA_HRL_TCF:
+  abstract: |
+    Tree Cover Fraction (TCF) is defined as the percentage of ground covered by tree canopy when viewed from above.
+    It is a biophysical variable that characterizes the land surface and is important for many applications in
+    environmental and climate studies. TCF is derived from Sentinel-2 imagery at 20m resolution using a machine
+    learning approach. The TCF product is part of the pan-European High Resolution Vegetation Phenology and Productivity
+    (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
+  instrument:
+  platform: Sentinel-2
+  platformSerialIdentifier: S2A,S2B,S2C
+  processingLevel:
+  keywords: Land,Tree-cover-fraction,TCF,Sentinel-2,S2A,S2B,S2C
+  sensorType: RADAR
+  license: other
+  title: Tree Cover Fraction, UTM projection
+  missionStartDate: "2017-01-01T00:00:00Z"
 
 # MARK: AERIS --------------------------------------------------------------------------
 AERIS_IAGOS:

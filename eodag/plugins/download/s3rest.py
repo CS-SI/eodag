@@ -52,6 +52,8 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
+
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
@@ -98,7 +100,7 @@ class S3RestDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,

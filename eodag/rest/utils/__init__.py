@@ -34,8 +34,8 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.utils import StreamResponse
+from eodag.utils.dates import get_date, get_datetime
 from eodag.utils.exceptions import ValidationError
-from eodag.utils.rest import get_date, get_datetime
 
 if TYPE_CHECKING:
     from eodag.rest.types.stac_search import SearchPostRequest
@@ -203,7 +203,5 @@ def file_to_stream(
     filename = os.path.basename(filepath_to_stream)
     return StreamResponse(
         content=read_file_chunks_and_delete(open(filepath_to_stream, "rb")),
-        headers={
-            "content-disposition": f"attachment; filename={filename}",
-        },
+        filename=filename,
     )

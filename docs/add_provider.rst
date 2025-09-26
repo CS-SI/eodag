@@ -15,7 +15,7 @@ Dynamically add a new provider
 
 You can dynamically add a new provider, from your python code using :meth:`~eodag.api.core.EODataAccessGateway.add_provider`
 or :meth:`~eodag.api.core.EODataAccessGateway.update_providers_config` methods.
-Check `Python API User Guide / Add-or-update-a-provider <notebooks/api_user_guide/3_configuration.ipynb#Add-or-update-a-provider>`_ for guidelines.
+Check `Python API User Guide / Add-or-update-a-provider <notebooks/api_user_guide/2_configuration.ipynb#Add-or-update-a-provider>`_ for guidelines.
 
 Configure a new provider
 ^^^^^^^^^^^^^^^^^^^^^^^^

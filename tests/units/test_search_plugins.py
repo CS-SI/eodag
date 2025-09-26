@@ -31,10 +31,12 @@ from unittest.mock import call
 import boto3
 import botocore
 import dateutil
+import pytest
 import requests
 import responses
 import yaml
 from botocore.stub import Stubber
+from jsonpath_ng import JSONPath, parse
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 from shapely.geometry.base import BaseGeometry
@@ -43,7 +45,11 @@ from typing_extensions import get_args
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
-from eodag.utils.exceptions import UnsupportedProductType, ValidationError
+from eodag.utils.exceptions import (
+    PluginImplementationError,
+    UnsupportedProductType,
+    ValidationError,
+)
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
@@ -470,7 +476,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
-        # change onfiguration for this test to filter out some collections
+        # change configuration for this test to filter out some collections
         discover_product_types_conf = search_plugin.config.discover_product_types
         search_plugin.config.discover_product_types[
             "fetch_url"
@@ -529,6 +535,168 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             )
 
         # restore configuration
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_without_fetch_url(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle missing fetch_url"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types.pop("fetch_url", None)
+
+        response = search_plugin.discover_product_types()
+        self.assertIsNone(response)
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_paginated_qs_dict(
+        self,
+    ):
+        """
+        QueryStringSearch.discover_product_types must handle paginated responses with query string parameters
+        """
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        # change configuration for this test to filter out some collections
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types[
+            "fetch_url"
+        ] = "https://foo.bar/collections"
+        search_plugin.config.discover_product_types[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
+        search_plugin.config.discover_product_types["start_page"] = 0
+        search_plugin.config.discover_product_types[
+            "single_collection_fetch_qs"
+        ] = "foo=bar"
+
+        with responses.RequestsMock(
+            assert_all_requests_are_fired=True
+        ) as mock_requests_post:
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=0&foo=bar",
+                json={
+                    "collections": [
+                        {
+                            "id": "foo_collection",
+                            "title": "The FOO collection",
+                            "billing": "free",
+                        }
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=1&foo=bar",
+                json={
+                    "collections": [
+                        {
+                            "id": "bar_collection",
+                            "title": "The BAR non-free collection",
+                            "billing": "non-free",
+                        },
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=2&foo=bar",
+                json={"collections": []},
+            )
+            conf_update_dict = search_plugin.discover_product_types()
+            self.assertIn("foo_collection", conf_update_dict["providers_config"])
+            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["providers_config"])
+            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertEqual(
+                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                "foo_collection",
+            )
+            self.assertEqual(
+                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                "The FOO collection",
+            )
+
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_per_page_no_fetch_url(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle paginated responses with query string parameters"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types.pop("fetch_url")
+        search_plugin.config.discover_product_types[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
+        search_plugin.config.discover_product_types["start_page"] = 0
+        result = search_plugin.discover_product_types_per_page()
+        assert result is None
+
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_per_page_keyerror(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle missing keys in the response"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types = {
+            "result_type": "json",
+            "results_entry": parse("$.collections"),
+        }
+
+        class DummyResponse:
+            def json(self):
+                return {"collections": [{}]}
+
+        with mock.patch.object(
+            QueryStringSearch, "_request", return_value=DummyResponse()
+        ):
+            with self.assertLogs(level="WARNING") as log:
+                result = search_plugin.discover_product_types_per_page(
+                    fetch_url="https://foo.bar/collections"
+                )
+                assert result is None
+                assert any("Incomplete" in m for m in log.output)
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_per_page_request_exception(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle request exceptions"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types = {
+            "result_type": "json",
+            "results_entry": JSONPath(),
+        }
+
+        class DummyResponse:
+            def json(self):
+                raise requests.RequestException("boom")
+
+        with mock.patch.object(
+            QueryStringSearch, "_request", return_value=DummyResponse()
+        ):
+            with self.assertLogs(level="DEBUG") as log:
+                result = search_plugin.discover_product_types_per_page(
+                    fetch_url="https://foo.bar/collections"
+                )
+                assert result is None
+                assert any(
+                    "Could not parse discovered product types response" in m
+                    for m in log.output
+                )
+
         search_plugin.config.discover_product_types = discover_product_types_conf
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
@@ -705,6 +873,67 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 productType="S1_SAR_SLC",
                 auth=None,
             )
+
+    def test_plugins_search_querystringsearch_count_hits_xml(self):
+        """Test QueryStringSearch.count_hits() with XML response and XPath key path"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {
+            "total_items_nb_key_path": "string(//ns:TotalResults)"
+        }
+        xml = (
+            """<root xmlns="http://example.com"><TotalResults>4</TotalResults></root>"""
+        )
+
+        mock_response = mock.Mock()
+        mock_response.content = xml.encode()
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            result = search_plugin.count_hits("http://fake.url", result_type="xml")
+            assert result == 4
+
+    def test_plugins_search_querystringsearch_count_hits_json_dict_ok(self):
+        """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {"total_items_nb_key_path": parse("$.total")}
+
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"total": 99}
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            result = search_plugin.count_hits("http://fake.url")
+            assert result == 99
+
+    def test_plugins_search_querystringsearch_count_hits_json_dict_not_jsonpath(self):
+        """Test QueryStringSearch.count_hits() with JSON response and non-JSONPath key path"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {"total_items_nb_key_path": "$.total"}
+
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"total": 99}
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            with pytest.raises(PluginImplementationError):
+                search_plugin.count_hits("http://fake.url")
+
+    def test_plugins_search_querystringsearch_count_hits_json_dict_jsonpath_not_found(
+        self,
+    ):
+        """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path not found in the response"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {
+            "total_items_nb_key_path": parse("$.missing")
+        }
+
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"total": 99}
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            with pytest.raises(MisconfiguredError):
+                search_plugin.count_hits("http://fake.url")
 
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
@@ -1692,6 +1921,10 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(len(products[0].assets), 1)
         self.assertEqual(products[0].assets["normalized_key"]["roles"], ["some_role"])
+        # title is also set using normlized key
+        self.assertEqual(
+            products[0].assets["normalized_key"]["title"], "normalized_key"
+        )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
     def test_plugins_search_stacsearch_opened_time_intervals(self, mock_requests_post):
@@ -1881,6 +2114,22 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertIn("geom", queryables)
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)
+
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_unparsed_query_parameters(self, mock__request):
+        """search_param_unparsed should pass query params as-is to the provider"""
+        result = {"features": []}
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [result]
+        search_plugin = self.get_search_plugin(provider="earth_search")
+        search_plugin.query(query={"foo": "bar", "baz": "qux"})
+
+        self.assertTrue(mock__request.called)
+        called_args, _ = mock__request.call_args
+        prepared_search = called_args[1]
+        self.assertEqual(
+            prepared_search.query_params["query"], {"foo": "bar", "baz": "qux"}
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -2149,6 +2398,71 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             verify=True,
         )
 
+    @mock.patch("eodag.plugins.search.data_request_search.format_query_params")
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    def test_create_data_request_validation_error(
+        self, mock_post, mock_format_query_params
+    ):
+        mock_format_query_params.side_effect = ValidationError("Invalid: bad_param")
+
+        with self.assertRaises(ValidationError) as cm:
+            self.search_plugin._create_data_request("PRODUCT", "TYPE", bad_param="XXX")
+
+        self.assertIn("not queryable", str(cm.exception))
+
+        mock_post.assert_not_called()
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    def test_create_data_request_timeout(self, mock_post):
+        mock_post.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with self.assertRaises(TimeOutError):
+            self.search_plugin._create_data_request("PRODUCT", "TYPE")
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    def test_create_data_request_request_exception(self, mock_post):
+        mock_post.side_effect = requests.RequestException("Boom")
+
+        with self.assertRaises(RequestError) as cm:
+            self.search_plugin._create_data_request("PRODUCT", "TYPE")
+
+        self.assertIn("could not be created", str(cm.exception))
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
+    )
+    def test_cancel_request_success(self, mock_delete):
+        self.search_plugin.config.data_request_url = "http://fake-url.com"
+        mock_delete.return_value = MockResponse(json_data={}, status_code=200)
+
+        self.search_plugin._cancel_request("123")
+
+        mock_delete.assert_called_with(
+            "http://fake-url.com/123",
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
+    )
+    def test_cancel_request_timeout(self, mock_delete):
+        mock_delete.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with self.assertRaises(TimeOutError):
+            self.search_plugin._cancel_request("123")
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
+    )
+    def test_cancel_request_request_exception(self, mock_delete):
+        mock_delete.side_effect = requests.RequestException("Boom")
+
+        with self.assertRaises(RequestError) as cm:
+            self.search_plugin._cancel_request("123")
+
+        self.assertIn("_cancel_request failed", str(cm.exception))
+
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_check_request_status(self, mock_requests_get):
         mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
@@ -2167,6 +2481,48 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             self.search_plugin._check_request_status("123")
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_timeout(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with pytest.raises(TimeOutError):
+            self.search_plugin._check_request_status("123")
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_request_exception(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.RequestException("boom")
+
+        with pytest.raises(RequestError) as excinfo:
+            self.search_plugin._check_request_status("123")
+        assert "_check_request_status failed" in str(excinfo.value)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_auth_expired(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse({"status_code": 403}, 200)
+
+        with pytest.raises(RequestError) as excinfo:
+            self.search_plugin._check_request_status("123")
+
+        assert getattr(excinfo.value, "status_code", None) == 403
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_failed_status(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse(
+            {"status": "failed", "message": "something wrong"}, 200
+        )
+
+        with pytest.raises(RequestError) as excinfo:
+            self.search_plugin._check_request_status("123")
+
+        assert "data request job has failed" in str(excinfo.value)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_completed(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
+
+        result = self.search_plugin._check_request_status("123")
+        assert result is True
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_get_result_data(self, mock_requests_get):
         self.search_plugin._get_result_data("123", items_per_page=5, page=1)
         mock_requests_get.assert_called_with(
@@ -2177,6 +2533,27 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
         )
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_get_result_data_timeout(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with pytest.raises(TimeOutError) as excinfo:
+            self.search_plugin._get_result_data("123", items_per_page=5, page=1)
+
+        assert "Request timed out" in str(excinfo.value)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_get_result_data_request_exception(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.RequestException("Boom")
+
+        with self.assertLogs(level="ERROR") as cm:
+            result = self.search_plugin._get_result_data(
+                "123", items_per_page=5, page=1
+            )
+
+        self.assertEqual(result, {})
+        self.assertIn("Result could not be retrieved", "".join(cm.output))
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_get_result_data_ssl_verify_false(self, mock_requests_get):
@@ -2313,6 +2690,79 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
 
         run()
 
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_match(self, mock_jsonpath):
+        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ABC'",
+        }
+
+        mock_jsonpath.return_value.find.side_effect = lambda rec: [
+            mock.Mock(value=rec["attr"])
+        ]
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(len(filtered["content"]), 1)
+        self.assertEqual(filtered["content"][0]["id"], "record1")
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_no_match(self, mock_jsonpath):
+        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ZZZ'",
+        }
+
+        mock_jsonpath.return_value.find.side_effect = lambda rec: [
+            mock.Mock(value=rec["attr"])
+        ]
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(filtered["content"], [])
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_empty_path(self, mock_jsonpath):
+        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ABC'",
+        }
+
+        mock_jsonpath.return_value.find.return_value = []
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(filtered["content"], [])
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_multiple_records(self, mock_jsonpath):
+        result = {
+            "content": [
+                {"id": "record1", "attr": "ABCDEFG"},
+                {"id": "record2", "attr": "ZZZZZZZ"},
+            ]
+        }
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ABC'",
+        }
+
+        mock_jsonpath.return_value.find.side_effect = lambda rec: [
+            mock.Mock(value=rec["attr"])
+        ]
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(len(filtered["content"]), 1)
+        self.assertEqual(filtered["content"][0]["id"], "record1")
+
 
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     def setUp(self):
@@ -2320,12 +2770,16 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self.provider = "creodias_s3"
 
     @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_creodias_s3_links(self, mock_request):
+    def test_plugins_search_creodias_s3_links(self, mock_request, mock_s3_client):
         # s3 links should be added to products with register_downloader
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        mock_s3_client.return_value = client
         stubber = Stubber(client)
         s3_response_file = (
             Path(TEST_RESOURCES_PATH) / "provider_responses/creodias_s3_objects.json"
@@ -2345,7 +2799,6 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
             stubber.add_response("list_objects", list_objects_response)
             stubber.activate()
-            setattr(auth_plugin, "s3_client", client)
             # fails if credentials are missing
             auth_plugin.config.credentials = {
                 "aws_access_key_id": "",
@@ -2379,12 +2832,18 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self.assertEqual(0, len(res[0][0].assets))
 
     @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_creodias_s3_client_error(self, mock_request):
+    def test_plugins_search_creodias_s3_client_error(
+        self, mock_request, mock_s3_client
+    ):
         # request error should be raised when there is an error when fetching data from the s3
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        mock_s3_client.return_value = client
         stubber = Stubber(client)
 
         creodias_search_result_file = (
@@ -2407,7 +2866,6 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 }
                 stubber.add_client_error("list_objects")
                 stubber.activate()
-                setattr(auth_plugin, "s3_client", client)
                 product.register_downloader(download_plugin, auth_plugin)
 
 
@@ -3625,18 +4083,18 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 self.assertIsNone(queryable.__metadata__[0].get_default())
 
 
-class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
+class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
     def setUp(self):
-        super(TestSearchPluginPostJsonSearchWithStacQueryables, self).setUp()
-        # One of the providers that has a PostJsonSearchWithStacQueryables Search plugin
+        super(TestSearchPluginWekeoSearch, self).setUp()
+        # One of the providers that has a WekeoSearch Search plugin
         provider = "wekeo_main"
         self.wekeomain_search_plugin = self.get_search_plugin(
             self.product_type, provider
         )
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
-    def test_plugins_search_postjsonsearchwithstacqueryables_init_wekeomain(self):
-        """Check that the PostJsonSearchWithStacQueryables plugin is initialized correctly for wekeo_main provider"""
+    def test_plugins_search_wekeosearch_init_wekeomain(self):
+        """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
         default_providers_config = load_default_config()
         default_config = default_providers_config["wekeo_main"]
@@ -3699,17 +4157,17 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.PostJsonSearch.build_query_string", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables._request",
+        "eodag.plugins.search.qssearch.WekeoSearch._request",
         autospec=True,
     )
-    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain(
+    def test_plugins_search_wekeosearch_search_wekeomain(
         self,
         mock__request,
         mock_build_qs_postjsonsearch,
         mock_build_qs_stacsearch,
         mock_normalize_results,
     ):
-        """A query with a PostJsonSearchWithStacQueryables provider (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
+        """A query with a WekeoSearch provider (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
         mock_build_qs_postjsonsearch.return_value = (
             mock_build_qs_stacsearch.return_value
         ) = (
@@ -3736,7 +4194,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_build_qs_postjsonsearch.assert_called()
         mock_build_qs_stacsearch.assert_not_called()
 
-    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain_ko(self):
+    def test_plugins_search_wekeosearch_search_wekeomain_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
         # with raised error parameter set to True in the global config of the provider
@@ -3806,7 +4264,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_stacsearch_discover_queryables,
         mock_postjsonsearch_discover_queryables,
     ):
-        """Queryables discovery with a PostJsonSearchWithStacQueryables (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
+        """Queryables discovery with a WekeoSearch (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
         self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
