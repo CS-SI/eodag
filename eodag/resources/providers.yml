@@ -6489,6 +6489,10 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     pagination:
       max_items_per_page: 10000
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/cop_ghsl/{product_type}.json"
   products:
     GHS_BUILT_S:
       productType: BUILT
@@ -6496,6 +6500,50 @@
         resolution: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_BUILT_S_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_BUILT_H:
+      productType: builtH
+      year: 2018
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("m", "")}'
+        dataset: GHS_BUILT_H_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_BUILT_V:
+      productType: builtV
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_strings("m", "", "k", "000")}'
+        dataset: GHS_BUILT_V_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_BUILT_C:
+      productType: builtC
+      year: 2018
+      tile_size: 10m
+      coord_system: 54009
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("m", "")}'
+        dataset: GHS_BUILT_C_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_LAND:
+      productType: land
+      year: 2018
+      coord_system: 54009
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_strings("m", "", "k", "000")}'
+        dataset: GHS_LAND_E2018_GLOBE_R2022A_{coord_system}_{tile_size}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_POP:
+      productType: POP
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_strings("m", "", "k", "000")}'
+        dataset: GHS_POP_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_SMOD:
+      productType: SMOD
+      tile_size: 1k
+      coord_system: 54009
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("k", "000")}'
+        dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
     GHS_ESM_2015:
       productType: ESM
       year: 2015
