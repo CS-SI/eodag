@@ -6,6 +6,18 @@ Release history
 v3.9.0 (2025-09-26)
 ===================
 
+Features
+--------
+
+* **core**: Assets title normalized to key name (`#1826`_, `3662954`_)
+
+* **providers**: Add CMIP6_CLIMATE_PROJECTIONS product type on cop_cds (`#1827`_, `308e0a9`_)
+
+* **providers**: Available product types update for creodias, cop_dataspace and wekeo_main
+  (`#1817`_, `04b0b55`_)
+
+* **providers**: Send query and filter parameters as is for STAC providers (`#1828`_, `3b04096`_)
+
 Bug Fixes
 ---------
 
@@ -13,9 +25,7 @@ Bug Fixes
 
 * **providers**: CLMS_CORINE metadata mapping for wekeo (`#1846`_, `55b1ffe`_)
 
-* **providers**: Harmonize orbitDirection properties (`#1836`_, `b428d61`_)
-
-* **providers**: Harmonize orbitDirection properties to lowercase (`#1830`_, `57fecd0`_)
+* **providers**: Harmonize orbitDirection properties (`#1836`_, `b428d61`_, `#1830`_, `57fecd0`_)
 
 * **providers**: Harmonize polarizationChannels property (`#1831`_, `b85ef0f`_)
 
@@ -33,32 +43,20 @@ Documentation
 
 * Documentation overhaul (`#1823`_, `df67693`_)
 
-* **tuto**: Add tutorial for CCI data through fedeo_ceda (`#1832`_, `01b130a`_)
-
-Features
---------
-
-* **core**: Assets title normalized to key name (`#1826`_, `3662954`_)
-
-* **providers**: Add CMIP6_CLIMATE_PROJECTIONS product type on cop_cds (`#1827`_, `308e0a9`_)
-
-* **providers**: Available product types update for creodias, cop_dataspace and wekeo_main
-  (`#1817`_, `04b0b55`_)
-
-* **providers**: Send query and filter parameters as is for STAC providers (`#1828`_, `3b04096`_)
+* Add tutorial for CCI data through fedeo_ceda (`#1832`_, `01b130a`_)
 
 Refactoring
 -----------
 
-* Deprecate oauth plugin (`#1821`_, `1bdf8a9`_)
+* **core**: Move dates utils functions to eodag.utils.dates (`#1844`_, `d2cd928`_)
 
-* Get_rio_env to AwsAuth (`#1838`_, `0ae4c17`_)
-
-* Move dates utils functions to eodag.utils.dates (`#1844`_, `d2cd928`_)
-
-* Use zipstream-ng instead of stream-zip (`#1805`_, `182cdc0`_)
+* **core**: Use zipstream-ng instead of stream-zip (`#1805`_, `182cdc0`_)
 
 * **plugins**: Dedt_lumi not-available data error message (`#1770`_, `bf8cbe1`_)
+
+* **plugins**: Deprecate oauth plugin (`#1821`_, `1bdf8a9`_)
+
+* **plugins**: Get_rio_env to AwsAuth (`#1838`_, `0ae4c17`_)
 
 * **plugins**: Move aws authentication methods to AwsAuth plugin (`#1769`_, `1c072f8`_)
 
@@ -150,6 +148,11 @@ Bug Fixes
 v3.8.0 (2025-08-27)
 ===================
 
+Features
+--------
+
+* **providers**: New provider fedeo_ceda (`#1778`_, `4d9f091`_)
+
 Bug Fixes
 ---------
 
@@ -170,11 +173,6 @@ Documentation
 -------------
 
 * Aws_eos logo added (`#1773`_, `af6d959`_)
-
-Features
---------
-
-* **providers**: New provider fedeo_ceda (`#1778`_, `4d9f091`_)
 
 Refactoring
 -----------
@@ -202,6 +200,15 @@ Refactoring
 v3.7.0 (2025-07-31)
 ===================
 
+Features
+--------
+
+* **plugins**: New search config for assets mapping (`#1711`_, `1281268`_)
+
+* **providers**: Add 2 new MSG collections to provider ``eumetsat_ds`` (`#1742`_, `801c52c`_)
+
+* **providers**: dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
+
 Bug Fixes
 ---------
 
@@ -223,15 +230,6 @@ Documentation
 -------------
 
 * Updated description, overview and ecosystem (`#1734`_, `ea929e4`_)
-
-Features
---------
-
-* **plugins**: New search config for assets mapping (`#1711`_, `1281268`_)
-
-* **providers**: Add 2 new MSG collections to provider ``eumetsat_ds`` (`#1742`_, `801c52c`_)
-
-* **providers**: dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
 
 Performance Improvements
 ------------------------
@@ -274,6 +272,19 @@ Refactoring
 v3.6.0 (2025-07-01)
 ===================
 
+Features
+--------
+
+* **cli**: Commands chaining (`#1714`_, `754772b`_)
+
+* **cli**: Download output directory (`#1716`_, `036b86b`_)
+
+* **cli**: Download STAC items from their urls (`#1705`_, `5d598a9`_)
+
+* **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
+
+* **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
+
 Bug Fixes
 ---------
 
@@ -287,19 +298,6 @@ Documentation
 * Cli and stac support update (`#1707`_, `c50aae1`_)
 
 * Import_stac_items documentation update (`#1709`_, `7a04158`_)
-
-Features
---------
-
-* **cli**: Commands chaining (`#1714`_, `754772b`_)
-
-* **cli**: Download output directory (`#1716`_, `036b86b`_)
-
-* **cli**: Download STAC items from their urls (`#1705`_, `5d598a9`_)
-
-* **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
-
-* **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
 
 .. _#1662: https://github.com/CS-SI/eodag/pull/1662
 .. _#1702: https://github.com/CS-SI/eodag/pull/1702
@@ -349,6 +347,17 @@ Refactoring
 v3.5.0 (2025-06-20)
 ===================
 
+Features
+--------
+
+* **core**: Add env variable to whitelist providers (`#1672`_, `b93c4c8`_)
+
+* **core**: Add strict product types mode (`#1677`_, `5077fa5`_)
+
+* **plugins**: Auth token expiration margin (`#1665`_, `ef5fc18`_)
+
+* **server**: Added bbox filter support for collections search (`#1671`_, `5717f0d`_)
+
 Bug Fixes
 ---------
 
@@ -372,17 +381,6 @@ Documentation
 -------------
 
 * Dead-links and out-of-date param fix (`#1692`_, `445a20e`_)
-
-Features
---------
-
-* **core**: Add env variable to whitelist providers (`#1672`_, `b93c4c8`_)
-
-* **core**: Add strict product types mode (`#1677`_, `5077fa5`_)
-
-* **plugins**: Auth token expiration margin (`#1665`_, `ef5fc18`_)
-
-* **server**: Added bbox filter support for collections search (`#1671`_, `5717f0d`_)
 
 .. _#1534: https://github.com/CS-SI/eodag/pull/1534
 .. _#1665: https://github.com/CS-SI/eodag/pull/1665
@@ -497,6 +495,11 @@ Continuous Integration
 v3.4.1 (2025-05-12)
 ===================
 
+Features
+--------
+
+* **plugins**: Add queryables to cop_marine (`#1638`_, `bcc793e`_)
+
 Bug Fixes
 ---------
 
@@ -533,11 +536,6 @@ Bug Fixes
 * **plugins**: Stac providers datetime queryables handling (`#1625`_, `9417fd9`_)
 
 * **providers**: cop_ewds metadata mapping (`#1629`_, `30b5554`_)
-
-Features
---------
-
-* **plugins**: Add queryables to cop_marine (`#1638`_, `bcc793e`_)
 
 Refactoring
 -----------
@@ -616,6 +614,12 @@ Bug Fixes
 v3.3.0 (2025-04-10)
 ===================
 
+
+Features
+--------
+
+* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
+
 Bug Fixes
 ---------
 
@@ -633,11 +637,6 @@ Continuous Integration
 ----------------------
 
 * Automatic changelog update (`#1601`_, `0625802`_)
-
-Features
---------
-
-* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
 
 Testing
 -------
