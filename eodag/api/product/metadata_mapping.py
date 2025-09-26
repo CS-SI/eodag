@@ -183,6 +183,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
