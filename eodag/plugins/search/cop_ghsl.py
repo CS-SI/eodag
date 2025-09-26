@@ -18,80 +18,13 @@ from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import HTTP_REQ_TIMEOUT, deepcopy
+from eodag.utils.cache import instance_cached_method
 from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
     TimeOutError,
     ValidationError,
 )
-
-constraints_filters = {
-    "GHS_BUILT_S": {
-        "constraints": [
-            {
-                "year": [
-                    "2030",
-                    "2025",
-                    "2020",
-                    "2015",
-                    "2018",
-                    "2010",
-                    "2005",
-                    "2000",
-                    "1995",
-                    "1990",
-                    "1985",
-                    "1980",
-                    "1975",
-                ],
-                "tile_size": ["10m", "100m", "1k"],
-                "coord_system": ["54009"],
-                "classification": ["TOTAL", "NRES"],
-            },
-            {
-                "year": [
-                    "2030",
-                    "2025",
-                    "2020",
-                    "2015",
-                    "2018",
-                    "2010",
-                    "2005",
-                    "2000",
-                    "1995",
-                    "1990",
-                    "1985",
-                    "1980",
-                    "1975",
-                ],
-                "tile_size": ["3ss", "30ss"],
-                "coord_system": ["4326"],
-                "classification": ["TOTAL", "NRES"],
-            },
-        ],
-        "additional_filter": "classification",
-    },
-    "GHS_ESM_2015": {
-        "constraints": [
-            {"year": ["2015"], "tile_size": ["2m", "10m"], "coord_system": ["3035"]}
-        ]
-    },
-}
-
-
-def _check_input_parameters_valid(product_type: str, params: Any):
-    """
-    Check if all required parameters are given and if the values are valid
-    raises a ValidationError if this is not the case
-    """
-    constraints_values = constraints_filters[product_type]["constraints"]
-    # get available values - will raise error if wrong parameters or wrong parameter values in request
-    available_values = _get_available_values_from_constraints(
-        constraints_values, params, product_type
-    )
-    missing_params = set(available_values.keys()) - set(params.keys())
-    if missing_params:
-        raise ValidationError(f"parameter(s) {missing_params} missing in the request")
 
 
 def _convert_bbox_to_lonlat_mollweide(bbox: list[str]) -> list[float]:
@@ -182,6 +115,22 @@ class CopGhslSearch(Search):
     Search plugin to fetch items from Copernicus Global Human Settlement Layer
     """
 
+    def _check_input_parameters_valid(self, product_type: str, params: Any):
+        """
+        Check if all required parameters are given and if the values are valid
+        raises a ValidationError if this is not the case
+        """
+        constraints_values = self._fetch_constraints(product_type)["constraints"]
+        # get available values - will raise error if wrong parameters or wrong parameter values in request
+        available_values = _get_available_values_from_constraints(
+            constraints_values, params, product_type
+        )
+        missing_params = set(available_values.keys()) - set(params.keys())
+        if missing_params:
+            raise ValidationError(
+                f"parameter(s) {missing_params} missing in the request"
+            )
+
     def _create_products_from_tiles(
         self,
         tiles: list[dict[str, Any]],
@@ -221,11 +170,12 @@ class CopGhslSearch(Search):
         format_params = params
         format_params = {k: str(v) for k, v in format_params.items()}
         product_id_base = product_type + "__" + "_".join(format_params.values())
-        # format tile_size
-        tile_size = properties_from_json(
-            {"tile_size": params["tile_size"]}, parsed_metadata_mapping
-        )["tile_size"]
-        format_params.update({"tile_size": tile_size})
+        if "tile_size" in parsed_metadata_mapping:
+            # format tile_size
+            tile_size = properties_from_json(
+                {"tile_size": params["tile_size"]}, parsed_metadata_mapping
+            )["tile_size"]
+            format_params.update({"tile_size": tile_size})
         # additional filter
         if additional_filter:
             add_filter_value = format_params.pop(additional_filter)
@@ -285,7 +235,7 @@ class CopGhslSearch(Search):
         product_type = query_params["productType"]
         tile_id = product_id.split("__")[-1]
         filter_part = product_id.split("__")[1]
-        constraints_values = constraints_filters[product_type]["constraints"]
+        constraints_values = self._fetch_constraints(product_type)["constraints"]
         available_values = _get_available_values_from_constraints(
             constraints_values, {}, product_type
         )
@@ -318,7 +268,7 @@ class CopGhslSearch(Search):
         filter_params.update(product_type_config)
         filter_params.pop("metadata_mapping")
 
-        _check_input_parameters_valid(product_type, filter_params)
+        self._check_input_parameters_valid(product_type, filter_params)
 
         # fetch available tiles based on filters
         filter_str = (
@@ -328,6 +278,7 @@ class CopGhslSearch(Search):
         tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
         try:
             res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
+            res.raise_for_status()
             tiles = res.json()["grid"]
             if filter_params["coord_system"] == 3035:
                 tiles = []
@@ -377,9 +328,8 @@ class CopGhslSearch(Search):
         kwargs.update(product_type_config)
         kwargs["page"] = page
         kwargs["per_page"] = items_per_page
-        additional_filter = constraints_filters[product_type].get(
-            "additional_filter", None
-        )
+        constraints_filters = self._fetch_constraints(product_type)
+        additional_filter = constraints_filters.get("additional_filter", None)
         if additional_filter:
             products, count = self._create_products_from_tiles(
                 tiles,
@@ -397,6 +347,23 @@ class CopGhslSearch(Search):
         else:
             return products, None
 
+    @instance_cached_method()
+    def _fetch_constraints(self, product_type: str):
+        constraints_url = self.config.discover_queryables["constraints_url"].format(
+            product_type=product_type
+        )
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+        try:
+            res = requests.get(constraints_url)
+            res.raise_for_status()
+            return res.json()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=timeout) from exc
+        except requests.exceptions.RequestException as exc:
+            raise RequestError.from_error(
+                exc, f"Unable to fetch constraints from {constraints_url}"
+            ) from exc
+
     def discover_queryables(
         self, **kwargs
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
@@ -408,7 +375,7 @@ class CopGhslSearch(Search):
         """
 
         product_type = kwargs.pop("productType")
-        constraints_values = constraints_filters[product_type]["constraints"]
+        constraints_values = self._fetch_constraints(product_type)["constraints"]
         available_values = _get_available_values_from_constraints(
             constraints_values, kwargs, product_type
         )
