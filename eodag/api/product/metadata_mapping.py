@@ -184,6 +184,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
         - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``convert_from_alternate``: update assets using given alternate
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -622,6 +623,33 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             )
             args_str = f"('{old}', '{new}')"
             return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
+
+        @staticmethod
+        def convert_from_alternate(
+            input_obj: dict[str, Any], value: str
+        ) -> dict[str, Any]:
+            """
+            Update assets using given alternate.
+            """
+            result: dict[str, Any] = {}
+            for k, v in input_obj.items():
+                if not isinstance(v, dict):
+                    continue
+
+                alt_dict = deepcopy(v).get("alternate")
+                if not isinstance(alt_dict, dict):
+                    continue
+
+                value_entry = alt_dict.pop(value, None)
+                if not isinstance(value_entry, dict):
+                    continue
+
+                result[k] = v | value_entry | {"alternate": alt_dict}
+
+                if len(result[k]["alternate"]) == 0:
+                    del result[k]["alternate"]
+
+            return result
 
         @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
