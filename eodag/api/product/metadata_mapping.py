@@ -183,6 +183,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -609,6 +610,18 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 key = keys_list[matched_index]
                 result[key] = match.value
             return result
+
+        @staticmethod
+        def convert_dict_filter_and_sub(
+            input_dict: dict[Any, Any], args: str
+        ) -> Union[dict[Any, Any], list[Any]]:
+            """Fitlers dict items using jsonpath and then apply recursive_sub_str"""
+            jsonpath_filter_str, old, new = ast.literal_eval(args)
+            filtered = MetadataFormatter.convert_dict_filter(
+                input_dict, jsonpath_filter_str
+            )
+            args_str = f"('{old}', '{new}')"
+            return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
 
         @staticmethod
         def convert_slice_str(string: str, args: str) -> str:

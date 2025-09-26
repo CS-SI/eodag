@@ -73,33 +73,6 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
 
 ----
 
-**earth_search_cog**
-^^^^^^^^^^^^^^^^^^^^^
-
-.. grid:: 2
-   :gutter: 2
-   :class-container: sd-d-flex sd-align-items-center
-
-   .. grid-item::
-      :columns: 10
-
-      Element84 STAC API for COG data on AWS.
-
-   .. grid-item::
-      :columns: 2
-      :class: sd-text-right
-
-      .. button-link:: https://www.element84.com/earth-search/
-         :color: primary
-         :outline:
-         :tooltip: Earth Search website
-
-         :fas:`external-link-alt`
-
-No credentials are needed
-
-----
-
 **earth_search_gcs**
 ^^^^^^^^^^^^^^^^^^^^^
 
