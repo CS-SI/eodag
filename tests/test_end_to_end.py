@@ -96,6 +96,13 @@ COP_DATASPACE_SEARCH_ARGS = [
     "2019-03-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+COP_DATASPACE_S3_SEARCH_ARGS = [
+    "cop_dataspace_s3",
+    "S2_MSI_L1C",
+    "2019-03-01",
+    "2019-03-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 PLANETARY_COMPUTER_SEARCH_ARGS = [
     "planetary_computer",
     "S2_MSI_L2A",
@@ -438,6 +445,11 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*COP_DATASPACE_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cop_dataspace_s3(self):
+        product = self.execute_search(*COP_DATASPACE_S3_SEARCH_ARGS)
+        expected_filename = product.properties["title"]
+        self.execute_download(product, expected_filename, wait_sec=15)
 
     def test_end_to_end_search_download_planetary_computer(self):
         product = self.execute_search(*PLANETARY_COMPUTER_SEARCH_ARGS)
