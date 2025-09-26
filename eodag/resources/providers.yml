@@ -6762,6 +6762,7 @@
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
     matching_conf:
       s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
   products:
