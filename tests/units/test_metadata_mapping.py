@@ -387,6 +387,63 @@ class TestMetadataFormatter(unittest.TestCase):
             "{'b': {'href': 's3://bar'}}",
         )
 
+    def test_convert_from_alternate(self):
+        """
+        Test converting assets by replacing href with alternate.<value>.href,
+        copying metadata, and removing alternate.
+        """
+        to_format = "{fieldname#from_alternate(s3)}"
+        self.assertEqual(format_metadata(to_format, fieldname=None), "None")
+
+        # Cas 2 : aucun alternate.s3
+        assets1 = {
+            "a": {"href": "http://example.com/a"},
+            "b": {"href": "http://example.com/b"},
+        }
+        self.assertEqual(format_metadata(to_format, fieldname=assets1), "{}")
+
+        # Cas 3 : alternate.s3 avec href simple
+        assets2 = {
+            "a": {
+                "href": "http://example.com/a",
+                "alternate": {"s3": {"href": "s3://bucket/a"}},
+            },
+            "b": {"href": "http://example.com/b"},
+        }
+        expected2 = """{'a': {'href': 's3://bucket/a'}}"""
+        self.assertEqual(format_metadata(to_format, fieldname=assets2), expected2)
+
+        # Cas 4 : alternate.s3 avec métadonnées supplémentaires
+        assets3 = {
+            "c": {
+                "href": "http://example.com/c",
+                "size": 123,
+                "alternate": {
+                    "s3": {
+                        "href": "s3://bucket/c",
+                        "storage:region": "eu-west-1",
+                        "storage:class": "STANDARD",
+                    }
+                },
+            }
+        }
+        expected3 = (
+            "{'c': {'href': 's3://bucket/c', 'size': 123, "
+            "'storage:region': 'eu-west-1', 'storage:class': 'STANDARD'}}"
+        )
+        self.assertEqual(format_metadata(to_format, fieldname=assets3), expected3)
+
+        # Cas 5 : asset "index" doit disparaître si pas d'alternate.s3
+        assets4 = {
+            "index": {"href": "http://example.com/index"},
+            "d": {
+                "href": "http://example.com/d",
+                "alternate": {"s3": {"href": "s3://bucket/d"}},
+            },
+        }
+        expected4 = """{'d': {'href': 's3://bucket/d'}}"""
+        self.assertEqual(format_metadata(to_format, fieldname=assets4), expected4)
+
     def test_convert_slice_str(self):
         to_format = "{fieldname#slice_str(1,12,2)}"
         self.assertEqual(
