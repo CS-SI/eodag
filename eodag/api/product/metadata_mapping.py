@@ -625,35 +625,28 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_from_alternate(
-            input_obj: Union[dict[str, Any], list], value: str
-        ) -> dict[str, str]:
+            input_obj: dict[str, Any], value: str
+        ) -> dict[str, Any]:
             """
             Extract alternate href from assets dict.
             """
-            if not isinstance(input_obj, dict):
-                return {}
-
             result: dict[str, Any] = {}
             for k, v in input_obj.items():
                 if not isinstance(v, dict):
                     continue
 
-                alt_dict = v.get("alternate")
+                alt_dict = deepcopy(v).get("alternate")
                 if not isinstance(alt_dict, dict):
                     continue
 
-                value_entry = alt_dict.get(value)
+                value_entry = alt_dict.pop(value, None)
                 if not isinstance(value_entry, dict):
                     continue
 
-                new_asset = {**v}
-                new_asset["href"] = value_entry["href"]
+                result[k] = v | value_entry | {"alternate": alt_dict}
 
-                for alt_key, alt_val in value_entry.items():
-                    if alt_key != "href":
-                        new_asset[alt_key] = alt_val
-                new_asset.pop("alternate", None)
-                result[k] = new_asset
+                if len(result[k]["alternate"]) == 0:
+                    del result[k]["alternate"]
 
             return result
 
