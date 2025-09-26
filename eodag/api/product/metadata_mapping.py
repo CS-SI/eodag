@@ -184,6 +184,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
         - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``convert_from_alternate``: extract alternate href from assets dict
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
