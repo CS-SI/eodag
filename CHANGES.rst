@@ -3,6 +3,124 @@ Release history
 ===============
 
 
+v3.9.0 (2025-09-26)
+===================
+
+Features
+--------
+
+* **core**: Assets title normalized to key name (`#1826`_, `3662954`_)
+
+* **providers**: Add CMIP6_CLIMATE_PROJECTIONS product type on cop_cds (`#1827`_, `308e0a9`_)
+
+* **providers**: Available product types update for creodias, cop_dataspace and wekeo_main
+  (`#1817`_, `04b0b55`_)
+
+* **providers**: Send query and filter parameters as is for STAC providers (`#1828`_, `3b04096`_)
+
+Bug Fixes
+---------
+
+* **core**: Update pattern of data roles in GenericDriver (`#1815`_, `c75351d`_)
+
+* **providers**: CLMS_CORINE metadata mapping for wekeo (`#1846`_, `55b1ffe`_)
+
+* **providers**: Harmonize orbitDirection properties (`#1836`_, `b428d61`_, `#1830`_, `57fecd0`_)
+
+* **providers**: Harmonize polarizationChannels property (`#1831`_, `b85ef0f`_)
+
+* **providers**: PlatformSerialIdentifier mapping for creodias/cop_dataspace (`#1848`_, `f890fbf`_)
+
+* **providers**: S2_MSI_L2A_COG moved to earth_search (`#1841`_, `786c663`_)
+
+Chores
+------
+
+* **cli,docs**: Deprecate STAC REST API server (`#1837`_, `083989e`_)
+
+Documentation
+-------------
+
+* Documentation overhaul (`#1823`_, `df67693`_)
+
+* Add tutorial for CCI data through fedeo_ceda (`#1832`_, `01b130a`_)
+
+Refactoring
+-----------
+
+* **core**: Move dates utils functions to eodag.utils.dates (`#1844`_, `d2cd928`_)
+
+* **core**: Use zipstream-ng instead of stream-zip (`#1805`_, `182cdc0`_)
+
+* **plugins**: Dedt_lumi not-available data error message (`#1770`_, `bf8cbe1`_)
+
+* **plugins**: Deprecate oauth plugin (`#1821`_, `1bdf8a9`_)
+
+* **plugins**: Get_rio_env to AwsAuth (`#1838`_, `0ae4c17`_)
+
+* **plugins**: Move aws authentication methods to AwsAuth plugin (`#1769`_, `1c072f8`_)
+
+* **plugins**: Rename PostJsonSearchWithStacQueryables to WekeoSearch (`#1842`_, `4bfbd6d`_)
+
+* **product-types**: S1C and S2C as available platformSerialIdentifier (`#1850`_, `7c532f4`_)
+
+* **providers**: Use s3 alternate assets in usgs_satapi_aws (`#1851`_, `27b1ab2`_)
+
+Testing
+-------
+
+* Add more tests to improve coverage (`#1791`_, `f7519f8`_)
+
+.. _#1769: https://github.com/CS-SI/eodag/pull/1769
+.. _#1770: https://github.com/CS-SI/eodag/pull/1770
+.. _#1791: https://github.com/CS-SI/eodag/pull/1791
+.. _#1805: https://github.com/CS-SI/eodag/pull/1805
+.. _#1815: https://github.com/CS-SI/eodag/pull/1815
+.. _#1817: https://github.com/CS-SI/eodag/pull/1817
+.. _#1821: https://github.com/CS-SI/eodag/pull/1821
+.. _#1823: https://github.com/CS-SI/eodag/pull/1823
+.. _#1826: https://github.com/CS-SI/eodag/pull/1826
+.. _#1827: https://github.com/CS-SI/eodag/pull/1827
+.. _#1828: https://github.com/CS-SI/eodag/pull/1828
+.. _#1830: https://github.com/CS-SI/eodag/pull/1830
+.. _#1831: https://github.com/CS-SI/eodag/pull/1831
+.. _#1832: https://github.com/CS-SI/eodag/pull/1832
+.. _#1836: https://github.com/CS-SI/eodag/pull/1836
+.. _#1837: https://github.com/CS-SI/eodag/pull/1837
+.. _#1838: https://github.com/CS-SI/eodag/pull/1838
+.. _#1841: https://github.com/CS-SI/eodag/pull/1841
+.. _#1842: https://github.com/CS-SI/eodag/pull/1842
+.. _#1844: https://github.com/CS-SI/eodag/pull/1844
+.. _#1846: https://github.com/CS-SI/eodag/pull/1846
+.. _#1848: https://github.com/CS-SI/eodag/pull/1848
+.. _#1850: https://github.com/CS-SI/eodag/pull/1850
+.. _#1851: https://github.com/CS-SI/eodag/pull/1851
+.. _01b130a: https://github.com/CS-SI/eodag/commit/01b130a02a9c16fc3c76ee180bf56d1356380f82
+.. _04b0b55: https://github.com/CS-SI/eodag/commit/04b0b5536b370a92843886ebf5135fac37172c18
+.. _083989e: https://github.com/CS-SI/eodag/commit/083989e0d1be8878fa1da2c984c6025bc4a564f0
+.. _0ae4c17: https://github.com/CS-SI/eodag/commit/0ae4c170fee95cfb2263c4f1b90a3219d502e819
+.. _182cdc0: https://github.com/CS-SI/eodag/commit/182cdc0eb82e7e4ca9e073b12edf6c3e51952d39
+.. _1bdf8a9: https://github.com/CS-SI/eodag/commit/1bdf8a9544717533f6ea85c7fc86f27b226a8f0f
+.. _1c072f8: https://github.com/CS-SI/eodag/commit/1c072f8f857f24e08642c1cb6ddaff51fe26e52d
+.. _27b1ab2: https://github.com/CS-SI/eodag/commit/27b1ab2174e9855323db26975ab347699f5d60cd
+.. _308e0a9: https://github.com/CS-SI/eodag/commit/308e0a9884d4b2e3435922c89a23cc0aab1edab9
+.. _3662954: https://github.com/CS-SI/eodag/commit/3662954cf31dd91dc79d740686e6557c9cbf7954
+.. _3b04096: https://github.com/CS-SI/eodag/commit/3b04096ac6255f89c8eb8bb363a2b38ece1b02af
+.. _4bfbd6d: https://github.com/CS-SI/eodag/commit/4bfbd6dfc11a08744935f8fdd4e3d9c321252d26
+.. _55b1ffe: https://github.com/CS-SI/eodag/commit/55b1ffeae8b2ef03e5ecac35838675f9328cde90
+.. _57fecd0: https://github.com/CS-SI/eodag/commit/57fecd07d32830ad12be3fb8074d5124c5797dc5
+.. _786c663: https://github.com/CS-SI/eodag/commit/786c663414f42297e7ceeace2646446872160941
+.. _7c532f4: https://github.com/CS-SI/eodag/commit/7c532f47fb3b17b4a39d379301134ac75f55253d
+.. _b428d61: https://github.com/CS-SI/eodag/commit/b428d61405e2a24a59756016bade3788841c89dd
+.. _b85ef0f: https://github.com/CS-SI/eodag/commit/b85ef0f360e805a61c2a7e9826a3cd7df4183315
+.. _bf8cbe1: https://github.com/CS-SI/eodag/commit/bf8cbe1bd1ade032a1a7abdc17f3785a11fca5d9
+.. _c75351d: https://github.com/CS-SI/eodag/commit/c75351d9b74ffa1cab3746a04637eb0de1a9f642
+.. _d2cd928: https://github.com/CS-SI/eodag/commit/d2cd928e9e887e88db639e3ebb02d4e006c0f653
+.. _df67693: https://github.com/CS-SI/eodag/commit/df67693099f72cbaf42e008f8b5b9c5af062e573
+.. _f7519f8: https://github.com/CS-SI/eodag/commit/f7519f847af0253046d1329dead9d5a12b527923
+.. _f890fbf: https://github.com/CS-SI/eodag/commit/f890fbfe85c514e5f6794ff7db875bfbf5798b98
+
+
 v3.8.1 (2025-09-02)
 ===================
 
@@ -30,6 +148,11 @@ Bug Fixes
 v3.8.0 (2025-08-27)
 ===================
 
+Features
+--------
+
+* **providers**: New provider fedeo_ceda (`#1778`_, `4d9f091`_)
+
 Bug Fixes
 ---------
 
@@ -50,11 +173,6 @@ Documentation
 -------------
 
 * Aws_eos logo added (`#1773`_, `af6d959`_)
-
-Features
---------
-
-* **providers**: New provider fedeo_ceda (`#1778`_, `4d9f091`_)
 
 Refactoring
 -----------
@@ -82,6 +200,15 @@ Refactoring
 v3.7.0 (2025-07-31)
 ===================
 
+Features
+--------
+
+* **plugins**: New search config for assets mapping (`#1711`_, `1281268`_)
+
+* **providers**: Add 2 new MSG collections to provider ``eumetsat_ds`` (`#1742`_, `801c52c`_)
+
+* **providers**: dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
+
 Bug Fixes
 ---------
 
@@ -103,15 +230,6 @@ Documentation
 -------------
 
 * Updated description, overview and ecosystem (`#1734`_, `ea929e4`_)
-
-Features
---------
-
-* **plugins**: New search config for assets mapping (`#1711`_, `1281268`_)
-
-* **providers**: Add 2 new MSG collections to provider ``eumetsat_ds`` (`#1742`_, `801c52c`_)
-
-* **providers**: dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
 
 Performance Improvements
 ------------------------
@@ -154,6 +272,19 @@ Refactoring
 v3.6.0 (2025-07-01)
 ===================
 
+Features
+--------
+
+* **cli**: Commands chaining (`#1714`_, `754772b`_)
+
+* **cli**: Download output directory (`#1716`_, `036b86b`_)
+
+* **cli**: Download STAC items from their urls (`#1705`_, `5d598a9`_)
+
+* **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
+
+* **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
+
 Bug Fixes
 ---------
 
@@ -167,19 +298,6 @@ Documentation
 * Cli and stac support update (`#1707`_, `c50aae1`_)
 
 * Import_stac_items documentation update (`#1709`_, `7a04158`_)
-
-Features
---------
-
-* **cli**: Commands chaining (`#1714`_, `754772b`_)
-
-* **cli**: Download output directory (`#1716`_, `036b86b`_)
-
-* **cli**: Download STAC items from their urls (`#1705`_, `5d598a9`_)
-
-* **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
-
-* **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
 
 .. _#1662: https://github.com/CS-SI/eodag/pull/1662
 .. _#1702: https://github.com/CS-SI/eodag/pull/1702
@@ -229,6 +347,17 @@ Refactoring
 v3.5.0 (2025-06-20)
 ===================
 
+Features
+--------
+
+* **core**: Add env variable to whitelist providers (`#1672`_, `b93c4c8`_)
+
+* **core**: Add strict product types mode (`#1677`_, `5077fa5`_)
+
+* **plugins**: Auth token expiration margin (`#1665`_, `ef5fc18`_)
+
+* **server**: Added bbox filter support for collections search (`#1671`_, `5717f0d`_)
+
 Bug Fixes
 ---------
 
@@ -252,17 +381,6 @@ Documentation
 -------------
 
 * Dead-links and out-of-date param fix (`#1692`_, `445a20e`_)
-
-Features
---------
-
-* **core**: Add env variable to whitelist providers (`#1672`_, `b93c4c8`_)
-
-* **core**: Add strict product types mode (`#1677`_, `5077fa5`_)
-
-* **plugins**: Auth token expiration margin (`#1665`_, `ef5fc18`_)
-
-* **server**: Added bbox filter support for collections search (`#1671`_, `5717f0d`_)
 
 .. _#1534: https://github.com/CS-SI/eodag/pull/1534
 .. _#1665: https://github.com/CS-SI/eodag/pull/1665
@@ -377,6 +495,11 @@ Continuous Integration
 v3.4.1 (2025-05-12)
 ===================
 
+Features
+--------
+
+* **plugins**: Add queryables to cop_marine (`#1638`_, `bcc793e`_)
+
 Bug Fixes
 ---------
 
@@ -413,11 +536,6 @@ Bug Fixes
 * **plugins**: Stac providers datetime queryables handling (`#1625`_, `9417fd9`_)
 
 * **providers**: cop_ewds metadata mapping (`#1629`_, `30b5554`_)
-
-Features
---------
-
-* **plugins**: Add queryables to cop_marine (`#1638`_, `bcc793e`_)
 
 Refactoring
 -----------
@@ -496,6 +614,12 @@ Bug Fixes
 v3.3.0 (2025-04-10)
 ===================
 
+
+Features
+--------
+
+* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
+
 Bug Fixes
 ---------
 
@@ -513,11 +637,6 @@ Continuous Integration
 ----------------------
 
 * Automatic changelog update (`#1601`_, `0625802`_)
-
-Features
---------
-
-* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
 
 Testing
 -------
