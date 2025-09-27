@@ -56,6 +56,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
+from eodag.plugins.authentication.sas_auth import RequestsSASAuth
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -1432,3 +1433,24 @@ class HTTPDownload(Download):
             timeout=timeout,
             **kwargs,
         )
+
+    def presign_url(
+        self,
+        asset: Asset,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        expires_in: int = 3600,
+    ) -> str:
+        """presign a url to download an asset via http (only possible for SASAuth)
+
+        :param asset: asset for which the url shall be presigned
+        :param auth: authentification information
+        :param expires_in: expiration time of the presigned url in seconds
+        :returns: presigned url
+        """
+        if isinstance(auth, RequestsSASAuth):  # sas auth (auth_uri)
+            url = asset["href"]
+            return auth.auth_uri.format(url=url)
+        else:
+            raise NotImplementedError(
+                f"presign_url is not implemented for HTTPDownload with authentication parameters {auth}"
+            )

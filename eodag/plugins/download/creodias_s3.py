@@ -15,10 +15,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Union
+
+from requests.auth import AuthBase
 
 from eodag import EOProduct
+from eodag.api.product._assets import Asset
 from eodag.plugins.download.aws import AwsDownload
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
+
+    from eodag.types import S3SessionKwargs
 
 
 class CreodiasS3Download(AwsDownload):
@@ -62,3 +72,18 @@ class CreodiasS3Download(AwsDownload):
                 self.get_product_bucket_name_and_prefix(product, s3_url)
             ]
         return bucket_names_and_prefixes
+
+    def presign_url(
+        self,
+        asset: Asset,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        expires_in: int = 3600,
+    ) -> str:
+        """presign a url to download an asset
+
+        :param asset: asset for which the url shall be presigned
+        :param auth: authentification information
+        :param expires_in: expiration time of the presigned url in seconds
+        :returns: presigned url
+        """
+        raise NotImplementedError("presign_url is not available for creodias S3")
