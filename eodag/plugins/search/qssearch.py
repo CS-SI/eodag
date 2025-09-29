@@ -517,7 +517,7 @@ class QueryStringSearch(Search):
             "providers_config": {},
             "product_types_config": {},
         }
-        fetch_url = unpaginated_fetch_url
+        fetch_url: str | None = unpaginated_fetch_url
 
         while fetch_url:
 
