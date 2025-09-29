@@ -262,11 +262,19 @@ earthdata_lars_asdc:
     search:
     download:
         output_dir:
+    auth:
+        credentials:
+            username:
+            password:
 earthdata_obdaac:
     priority: # Lower value means lower priority (Default: 0)
     search:
     download:
         outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
 earthdata_podaac:
     priority: # Lower value means lower priority (Default: 0)
     search:

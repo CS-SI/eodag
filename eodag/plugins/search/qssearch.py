@@ -463,6 +463,10 @@ class QueryStringSearch(Search):
         # product types pagination
         next_page_url_tpl = self.config.discover_product_types.get("next_page_url_tpl")
         page = self.config.discover_product_types.get("start_page", 1)
+        cursor = self.config.discover_product_types.get("cursor", False)
+
+        if cursor and next_page_url_tpl:
+            return self._discover_product_type_with_cursor(**kwargs)
 
         if not next_page_url_tpl:
             # no pagination
@@ -496,6 +500,53 @@ class QueryStringSearch(Search):
                 )
 
             page += 1
+
+        return conf_update_dict
+
+    def _discover_product_type_with_cursor(
+        self, **kwargs: Any
+    ) -> Optional[dict[str, Any]]:
+        """
+        Fetch product types list from provider using `discover_product_types` conf
+        using cursor pagination"""
+        unpaginated_fetch_url = self.config.discover_product_types.get("fetch_url")
+        if not unpaginated_fetch_url:
+            return None
+
+        conf_update_dict: dict[str, Any] = {
+            "providers_config": {},
+            "product_types_config": {},
+        }
+        fetch_url = unpaginated_fetch_url
+
+        while fetch_url:
+
+            data = requests.get(fetch_url).json()
+
+            conf_update_dict_per_page = self.discover_product_types_per_page(
+                fetch_url=fetch_url, **kwargs
+            )
+
+            if (
+                not conf_update_dict_per_page
+                or not conf_update_dict_per_page.get("providers_config")
+                or conf_update_dict_per_page.items() <= conf_update_dict.items()
+            ):
+                break
+
+            conf_update_dict["providers_config"].update(
+                conf_update_dict_per_page["providers_config"]
+            )
+            conf_update_dict["product_types_config"].update(
+                conf_update_dict_per_page["product_types_config"]
+            )
+
+            # chercher le lien "next"
+            fetch_url = None
+            for link in data.get("links", []):
+                if link.get("rel") == "next":
+                    fetch_url = link.get("href")
+                    break
 
         return conf_update_dict
 
