@@ -1,4 +1,5 @@
 import datetime
+import logging
 import math
 from typing import Annotated, Any, Optional
 
@@ -7,7 +8,6 @@ from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
 from typing_extensions import get_args
 
-from eodag.api.product._assets import Asset, AssetsDict
 from eodag.api.product._product import EOProduct
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -25,6 +25,8 @@ from eodag.utils.exceptions import (
     TimeOutError,
     ValidationError,
 )
+
+logger = logging.getLogger("eodag.search.cop_ghsl")
 
 
 def _convert_bbox_to_lonlat_mollweide(bbox: list[str]) -> list[float]:
@@ -75,7 +77,7 @@ def _get_available_values_from_constraints(
     available_values = {}
     constraint_keys = set([k for const in constraints for k in const.keys()])
     not_found_keys = set(filters.keys()) - constraint_keys
-    if not_found_keys:
+    if not_found_keys and not_found_keys != {"id"}:
         raise ValidationError(
             f"Parameters {not_found_keys} do not exist for product type {product_type}; "
             f"available parameters: {constraint_keys}"
@@ -209,21 +211,38 @@ class CopGhslSearch(Search):
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, productType=product_type
             )
-            assets = AssetsDict(product=product)
-            assets[tile["tileID"]] = Asset(
-                product=product,
-                key=tile["tileID"],
-                href=downloadLink,
-                title=tile["tileID"],
-                type="application/zip",
-            )
-            product.assets = assets
             if not filter_geometry or filter_geometry.intersects(product.geometry):
                 if current_index >= start_index and current_index <= end_index:
                     products.append(product)
                 current_index += 1
 
         return products, current_index + 1
+
+    def _create_products_without_tiles(
+        self, product_type: str, count: bool
+    ) -> tuple[list[EOProduct], Optional[int]]:
+        download_link = (
+            self.config.products.get(product_type, {})
+            .get("metadata_mapping", {})
+            .get("downloadLink", None)
+        )
+        if not download_link:
+            raise MisconfiguredError(
+                f"Download link configuration missing for product type {product_type}"
+            )
+        product_id = f"{product_type}_ALL"
+        default_geometry = getattr(self.config, "metadata_mapping")["defaultGeometry"]
+        properties = {}
+        properties["id"] = properties["title"] = product_id
+        properties["downloadLink"] = download_link
+        properties["geometry"] = default_geometry[1]
+        product = EOProduct(
+            provider="cop_ghsl", properties=properties, productType=product_type
+        )
+        if count:
+            return [product], 1
+        else:
+            return [product], None
 
     def _get_tile_from_product_id(
         self, query_params: dict[str, Any]
@@ -251,8 +270,10 @@ class CopGhslSearch(Search):
 
     def _get_tiles_for_filters(
         self, product_type_config: dict[str, Any], filter_params: dict[str, Any]
-    ) -> tuple[list[dict[str, Any]], str]:
+    ) -> Optional[tuple[list[dict[str, Any]], str]]:
         """fetch the tiles matching the given filters from the provider"""
+
+        logger.debug(f"get tiles for filter parameters {filter_params}")
         product_type = filter_params.pop("productType")
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
@@ -271,10 +292,14 @@ class CopGhslSearch(Search):
         self._check_input_parameters_valid(product_type, filter_params)
 
         # fetch available tiles based on filters
-        filter_str = (
-            f"{provider_product_type}_{filter_params['year']}_"
-            f"{filter_params['tile_size']}_{filter_params['coord_system']}"
-        )
+        try:
+            filter_str = (
+                f"{provider_product_type}_{filter_params['year']}_"
+                f"{filter_params['tile_size']}_{filter_params['coord_system']}"
+            )
+        except KeyError:
+            logger.warning(f"no tiles available for {product_type}")
+            return None
         tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
         try:
             res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
@@ -319,10 +344,14 @@ class CopGhslSearch(Search):
         if not product_type:
             product_type = kwargs["productType"] = prep.product_type
         product_type_config = deepcopy(self.config.products.get(product_type, {}))
-        if "id" in kwargs:
+        if "id" in kwargs and "ALL" not in kwargs["id"]:
             tiles, unit = self._get_tile_from_product_id(kwargs)
         else:
-            tiles, unit = self._get_tiles_for_filters(product_type_config, kwargs)
+            tiles_or_none = self._get_tiles_for_filters(product_type_config, kwargs)
+            if not tiles_or_none:
+                return self._create_products_without_tiles(product_type, prep.count)
+            else:
+                tiles, unit = tiles_or_none
 
         # create products from tiles
         kwargs.update(product_type_config)
@@ -348,13 +377,17 @@ class CopGhslSearch(Search):
             return products, None
 
     @instance_cached_method()
-    def _fetch_constraints(self, product_type: str):
+    def _fetch_constraints(self, product_type: str) -> dict[str, Any]:
+        logger.debug(f"fetching constraints for {product_type}")
         constraints_url = self.config.discover_queryables["constraints_url"].format(
             product_type=product_type
         )
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         try:
             res = requests.get(constraints_url)
+            if res.status_code == 404:
+                logger.warning(f"no constraints found for {product_type}")
+                return {"constraints": {}}
             res.raise_for_status()
             return res.json()
         except requests.exceptions.Timeout as exc:
@@ -390,17 +423,25 @@ class CopGhslSearch(Search):
                     )
                 )
             ]
-        # add datetimes and geometry
-        queryables.update(
-            {
-                "start": Queryables.get_with_default(
-                    "start", kwargs.get("startTimeFromAscendingNode")
-                ),
-                "end": Queryables.get_with_default(
-                    "end",
-                    kwargs.get("completionTimeFromAscendingNode"),
-                ),
-                "geom": Queryables.get_with_default("geom", None),
-            }
-        )
+        # add datetimes queryables if year filter is available
+        if "year" in available_values:
+            queryables.update(
+                {
+                    "start": Queryables.get_with_default(
+                        "start", kwargs.get("startTimeFromAscendingNode")
+                    ),
+                    "end": Queryables.get_with_default(
+                        "end",
+                        kwargs.get("completionTimeFromAscendingNode"),
+                    ),
+                }
+            )
+        # add geometry queryable if there are tiles
+        if "tile_size" in available_values:
+            queryables.update(
+                {
+                    "geom": Queryables.get_with_default("geom", None),
+                }
+            )
+
         return queryables
