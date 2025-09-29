@@ -6987,7 +6987,7 @@ GHS_SMOD:
     This product (v2) is an update of the data released in 2023 (v1) based on GHS-BUILT-S, GHS-POP and uses an updated definition of
     Semi-Dennse Urban Clusters. The Settlement Model is provided at the detailed level (Second Level - L2). First level can be obtained aggregating L2.
   instrument:
-  platform:
+  platform: Landsat, Sentinel-2
   platformSerialIdentifier:
   processingLevel:
   keywords: GHS,Settlement,Urbanisation,Landsat,Sentinel-2,CIESIN,GPW
@@ -6997,7 +6997,7 @@ GHS_SMOD:
   missionStartDate: "1975-01-01T00:00:00Z"
   missionEndDate: "2030-12-31T00:00:00Z"
 
-GHS_ESM_2015:
+GHS_ESM:
   abstract: |
      The European Settlement Map is a spatial raster dataset that is mapping human settlements in Europe based on
      Copernicus Very High Resolution optical coverage for reference year 2015 (VHR_IMAGE_2015).The ESM_2015 product
@@ -7013,6 +7013,64 @@ GHS_ESM_2015:
   title: European Settlement Map from Copernicus Very High Resolution data for reference year 2015
   missionStartDate: "2015-01-01T00:00:00Z"
   missionEndDate: "2015-12-31T00:00:00Z"
+
+GHS_DUC:
+  abstract: |
+    This dataset contains the Global Degree of Urbanisation Classification of administrative units delineated by the Global ADMinistrative layer version 4.1 (GADM41)
+    according to the application of stage II of the Degree of Urbanisation.
+    The classification is based on the Global Human Settlement Layer (GHSL) global datasets GHS R2023: the settlement classification GHS-SMOD (GHS-SMOD_GLOBE_R2023A) and
+    the population grid GHS-POP (GHS-POP_GLOBE_R2023A) layers for target years 1975-2030 (5 years timestep).
+    This dataset contains a package composed by one excel table, a summary table gathering global summary statistics and by countries and territories in GADM4.1,
+    and 72 CSV files, one per GADM level (from 0 to 5) and epoch (1975-2030), with all administrative units classified according to the Degree of Urbanisation.
+    The spatial delineation of GADM 4.1 administrative units is available on the GADM official website. Please select the whole world shapefile as six separate
+    layers (one for each level of subdivision/aggregation). The vector layers can be used to join each classification table (csv) with the actual spatial units.
+    Version 2 includes the improvement of the classification of small spatial units by Degree of Urbanisation level 2 as described in the updated (EUROSTAT manual).
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: GHS,Settlement,Urbanisation,Classification,GADM
+  sensorType: multi
+  license: other
+  title: GHS Degree of Urbanisation Classification, application of the Degree of Urbanisation methodology (stage II) to GADM 4.1 layer, multitemporal (1975-2030)
+  missionStartDate: "1975-01-01T00:00:00Z"
+  missionEndDate: "2030-12-31T00:00:00Z"
+
+GHS_FUA:
+  abstract: |
+    The GHS Functional Urban Areas (GHS-FUA) delineate the spatial entities representing the commuting area of the Urban Centres of 2015.
+    The Functional Urban Areas for the epoch 2015 are estimated through an automated classification procedure developed in collaboration
+    with the OECD, based on objective characteristics (i.e. travel time to the Urban Centres, area of the Urban Centres, local population and country GDP per capita).
+    Information on the Urban Centres are derived from the GHS-UCDB R2019A dataset (GHS_STATS_UCDB2015MT_GLOBE_R2019A_V1_0); population information
+    are calculated from the 2015 GHS-POP R2019A dataset (GHS_POP_E2015_GLOBE_R2019A_V1_0); travel time from each cell towards the edge of
+    the closest (in time) Urban Centre is estimated by using the global friction matrix; the Urban Centre GDP is inherited from the
+    country GDP per capita (World Development Indicators: NY.GDP.PCAP.CD), as provided by The World Bank.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: GHS,Settlement,FUA,Functional,Areas,Centres
+  sensorType: multi
+  license: other
+  title: GHS functional urban areas, derived from GHS-UCDB R2019A, (2015), R2019A
+  missionStartDate: "2015-01-01T00:00:00Z"
+  missionEndDate: "2015-12-31T00:00:00Z"
+
+GHS_BUILT_LAUSTAT:
+  abstract: |
+     This product contains the summary statistics of GHS-BUILT-S multi-temporal (1975-2020) at Local Administrative Unit Level (LAU)
+     from the 2020 layer provided by GISCO. For each LAU the table contains the sum of built-up surface (GHS-BUILT-S) between
+     1975 and 2020 in 5 years interval, expressed in square kilometres.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: GHS,Settlement,BUILT,LAU,GISCO,surface
+  sensorType: multi
+  license: other
+  title: GHS built-up surface statistics in European LAU, multitemporal (1975-2020)
+  missionStartDate: "1975-01-01T00:00:00Z"
+  missionEndDate: "2020-12-31T00:00:00Z"
 
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:

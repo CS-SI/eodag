@@ -6494,6 +6494,7 @@
       product_type_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/cop_ghsl/{product_type}.json"
   products:
+    # product types with tiles
     GHS_BUILT_S:
       productType: BUILT
       metadata_mapping:
@@ -6544,7 +6545,7 @@
         tile_size: '{$.tile_size#replace_str("k", "000")}'
         dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
-    GHS_ESM_2015:
+    GHS_ESM:
       productType: ESM
       year: 2015
       coord_system: 3035
@@ -6552,6 +6553,19 @@
         tile_size: '{$.tile_size#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
+    # produc types with one file
+    GHS_DUC:
+      productType: DUC
+      metadata_mapping:
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_DUC_GLOBE_R2023A/V2-0/GHS_DUC_MT_GLOBE_R2023A_V2_0.zip'
+    GHS_FUA:
+      productType: FUA
+      metadata_mapping:
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip'
+    GHS_BUILT_LAUSTAT:
+      productType: BUILT_LAUSTAT
+      metadata_mapping:
+        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
