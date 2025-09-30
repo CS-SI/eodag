@@ -1997,3 +1997,86 @@ class WekeoSearch(StacSearch, PostJsonSearch):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         return PostJsonSearch.build_query_string(self, product_type, query_dict)
+
+
+class GeodesSearch(StacSearch, PostJsonSearch):
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses
+    generic STAC configuration for queryables (inherited from :class:`~eodag.plugins.search.qssearch.StacSearch`).
+    Perform a second query to retrieve status of the product.
+    """
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        PostJsonSearch.__init__(self, provider, config)
+
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> list[Any]:
+        """
+        Perform a search on an OpenSearch-like interface and then a second query to retrieve status of the product
+        """
+        results = super().do_search(prep, **kwargs)
+
+        # Perform a second query to retrieve status of the product
+        availability_endpoint = "https://geodes-portal.cnes.fr/availability/{id}"
+        if availability_endpoint:
+            ssl_verify = getattr(self.config, "ssl_verify", True)
+            for result in results:
+                metadata_url = availability_endpoint.format(
+                    id=result["properties"]["identifier"]
+                )
+                try:
+                    response = requests.get(
+                        metadata_url,
+                        headers=USER_AGENT,
+                        timeout=HTTP_REQ_TIMEOUT,
+                        verify=ssl_verify,
+                    )
+                    response.raise_for_status()
+                except requests.exceptions.Timeout:
+                    logger.exception(
+                        "Skipping timeout error while searching for %s %s instance",
+                        self.provider,
+                        self.__class__.__name__,
+                    )
+                except requests.RequestException:
+                    logger.exception(
+                        "Skipping error while searching for %s %s instance",
+                        self.provider,
+                        self.__class__.__name__,
+                    )
+                else:
+                    availability_data = response.json()
+                    logger.debug(
+                        "Response from availability endpoint: %s", availability_data
+                    )
+
+                    if response.status_code == 200 and availability_data.get("files"):
+                        for asset_key, asset in result["assets"].items():
+                            if "data" in asset.get("roles", []):
+                                href = asset.get("href")
+                                urn = href.split("/download/")[1].split("/files/")[0]
+
+                                if urn == availability_data.get("id"):
+                                    all_available = all(
+                                        f.get("available", False)
+                                        for f in availability_data.get("files", [])
+                                    )
+                                    result["properties"]["storageStatus"] = (
+                                        "ONLINE" if all_available else "OFFLINE"
+                                    )
+                                else:
+                                    result["properties"]["storageStatus"] = "OFFLINE"
+                    else:
+                        result["properties"]["storageStatus"] = "ONLINE"
+        return results
+
+    def normalize_results(self, results, **kwargs):
+        """
+        Build EOProducts from provider results, adding storageStatus property
+        """
+        normalized = super().normalize_results(results, **kwargs)
+        for result_normalized, result in zip(normalized, results):
+            result_normalized.properties["storageStatus"] = result["properties"].get(
+                "storageStatus", "ONLINE"
+            )
+        return normalized
