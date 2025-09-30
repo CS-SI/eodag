@@ -7068,6 +7068,23 @@ GHS_BUILT_LAUSTAT:
   missionStartDate: "1975-01-01T00:00:00Z"
   missionEndDate: "2020-12-31T00:00:00Z"
 
+GHS_ENACT_POP:
+  abstract: |
+      This spatial raster dataset depicts the seasonal nighttime and daytime population grids for 2011 (coverage: EU28-2013) produced in the ENACT project.
+      Values are expressed as decimals (Float) representing the number of people per cell. The data is published at 1 km resolution in
+      Lambert Azimuthal Equal Area (EPSG:3035, 12 monthly nighttime grids and 12 daytime grids), and at 30 arc-seconds in WGS-84 (EPSG:4326, 12 monthly
+      nighttime grids and 12 daytime grids). The compressed ZIP files contain TIF files and short documentation.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: GHS,Settlement,ENACT,Population,grid
+  sensorType: multi
+  license: other
+  title: ENACT-POP R2020A - ENACT 2011 Population Grid
+  missionStartDate: "2011-01-01T00:00:00Z"
+  missionEndDate: "2011-12-31T00:00:00Z"
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
   description:
