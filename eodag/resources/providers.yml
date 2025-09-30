@@ -6566,6 +6566,21 @@
       productType: BUILT_LAUSTAT
       metadata_mapping:
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
+    # products with several files
+    GHS_ENACT_POP:
+      productType: ENACT_POP
+      year: 2011
+      metadata_mapping:
+        downloadLink: https://jeodpp.jrc.ec.europa.eu
+      assets_mapping:
+        day:
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{coord_system}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{coord_system}_{tile_size}_V1_0.zip'
+          type: "application/zip"
+          title: Daytime grid
+        night:
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_N{month}2011_EU28_R2020A_{coord_system}_{tile_size}/V1-0/ENACT_POP_N{month}2011_EU28_R2020A_{coord_system}_{tile_size}_V1_0.zip'
+          type: "application/zip"
+          title: Nightime grid
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
