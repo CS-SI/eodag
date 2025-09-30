@@ -1,6 +1,7 @@
 import datetime
 import logging
 import math
+from calendar import monthrange
 from typing import Annotated, Any, Optional
 
 import requests
@@ -8,6 +9,7 @@ from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
 from typing_extensions import get_args
 
+from eodag.api.product._assets import Asset, AssetsDict
 from eodag.api.product._product import EOProduct
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -219,8 +221,12 @@ class CopGhslSearch(Search):
         return products, current_index + 1
 
     def _create_products_without_tiles(
-        self, product_type: str, count: bool
+        self, product_type: str, count: bool, filter_params: dict[str, Any]
     ) -> tuple[list[EOProduct], Optional[int]]:
+        filters = deepcopy(filter_params)
+        default_geometry = getattr(self.config, "metadata_mapping")["defaultGeometry"]
+        properties = {}
+        properties["geometry"] = default_geometry[1]
         download_link = (
             self.config.products.get(product_type, {})
             .get("metadata_mapping", {})
@@ -230,15 +236,58 @@ class CopGhslSearch(Search):
             raise MisconfiguredError(
                 f"Download link configuration missing for product type {product_type}"
             )
-        product_id = f"{product_type}_ALL"
-        default_geometry = getattr(self.config, "metadata_mapping")["defaultGeometry"]
-        properties = {}
-        properties["id"] = properties["title"] = product_id
         properties["downloadLink"] = download_link
-        properties["geometry"] = default_geometry[1]
-        product = EOProduct(
-            provider="cop_ghsl", properties=properties, productType=product_type
-        )
+        # product type with assets mapping
+        assets_mapping = filters.pop("assets_mapping", None)
+        if assets_mapping:
+            format_params = {k: str(v) for k, v in filters.items() if v}
+            format_params.pop("metadata_mapping", None)
+            product_id = product_type + "__" + "_".join(format_params.values())
+            properties["id"] = properties["title"] = product_id
+            month = int(filters.get("month", "12"))
+            end_day = monthrange(int(filters["year"]), month)[1]
+            start_time = datetime.datetime(
+                year=int(filters["year"]),
+                month=int(filters.get("month", "1")),
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+            )
+            end_time = datetime.datetime(
+                year=int(filters["year"]),
+                month=month,
+                day=end_day,
+                hour=23,
+                minute=59,
+                second=59,
+            )
+            properties["startTimeFromAscendingNode"] = start_time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+            properties["completionTimeFromAscendingNode"] = end_time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+            product = EOProduct(
+                provider="cop_ghsl", properties=properties, productType=product_type
+            )
+            assets = AssetsDict(product=product)
+            for key, mapping in assets_mapping.items():
+                download_link = mapping["href"].format(**filters)
+                assets[key] = Asset(
+                    product=product,
+                    key=key,
+                    href=download_link,
+                    title=mapping["title"],
+                    type=mapping["type"],
+                )
+            product.assets = assets
+        else:  # product type with only one file to download
+            product_id = f"{product_type}_ALL"
+            properties["id"] = properties["title"] = product_id
+            product = EOProduct(
+                provider="cop_ghsl", properties=properties, productType=product_type
+            )
         if count:
             return [product], 1
         else:
@@ -246,7 +295,7 @@ class CopGhslSearch(Search):
 
     def _get_tile_from_product_id(
         self, query_params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    ) -> Optional[list[dict[str, Any]]]:
         """fetch the tile for a specific product id from the provider
         returns a list  of length 1 to simplify further processing
         """
@@ -264,9 +313,15 @@ class CopGhslSearch(Search):
                 if value in filter_part:
                     query_params[key] = value
                     break
-        tiles, unit = self._get_tiles_for_filters(product_type_config, query_params)
-        matching_tile = [tile for tile in tiles if tile and tile["tileID"] == tile_id]
-        return matching_tile, unit
+        tiles_or_none = self._get_tiles_for_filters(product_type_config, query_params)
+        if tiles_or_none:
+            tiles, unit = tiles_or_none
+            matching_tile = [
+                tile for tile in tiles if tile and tile["tileID"] == tile_id
+            ]
+            return matching_tile, unit
+        else:
+            return None
 
     def _get_tiles_for_filters(
         self, product_type_config: dict[str, Any], filter_params: dict[str, Any]
@@ -287,7 +342,8 @@ class CopGhslSearch(Search):
         filter_params = deepcopy(filter_params)
         filter_params.pop("geometry", None)
         filter_params.update(product_type_config)
-        filter_params.pop("metadata_mapping")
+        filter_params.pop("metadata_mapping", None)
+        filter_params.pop("assets_mapping", None)
 
         self._check_input_parameters_valid(product_type, filter_params)
 
@@ -303,6 +359,8 @@ class CopGhslSearch(Search):
         tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
         try:
             res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
+            if res.status_code == 404:
+                return None
             res.raise_for_status()
             tiles = res.json()["grid"]
             if filter_params["coord_system"] == 3035:
@@ -345,13 +403,14 @@ class CopGhslSearch(Search):
             product_type = kwargs["productType"] = prep.product_type
         product_type_config = deepcopy(self.config.products.get(product_type, {}))
         if "id" in kwargs and "ALL" not in kwargs["id"]:
-            tiles, unit = self._get_tile_from_product_id(kwargs)
+            tiles_or_none = self._get_tile_from_product_id(kwargs)
         else:
             tiles_or_none = self._get_tiles_for_filters(product_type_config, kwargs)
-            if not tiles_or_none:
-                return self._create_products_without_tiles(product_type, prep.count)
-            else:
-                tiles, unit = tiles_or_none
+        if tiles_or_none:
+            tiles, unit = tiles_or_none
+        else:
+            kwargs.update(product_type_config)
+            return self._create_products_without_tiles(product_type, prep.count, kwargs)
 
         # create products from tiles
         kwargs.update(product_type_config)
