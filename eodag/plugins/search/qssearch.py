@@ -2076,7 +2076,8 @@ class GeodesSearch(StacSearch, PostJsonSearch):
         """
         normalized = super().normalize_results(results, **kwargs)
         for result_normalized, result in zip(normalized, results):
-            result_normalized.properties["storageStatus"] = result["properties"].get(
-                "storageStatus", "ONLINE"
-            )
+            if "properties" in result and "storageStatus" in result["properties"]:
+                result_normalized.properties["storageStatus"] = result[
+                    "properties"
+                ].get("storageStatus", "ONLINE")
         return normalized
