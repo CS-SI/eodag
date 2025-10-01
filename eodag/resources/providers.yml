@@ -6086,8 +6086,6 @@
       downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # storageStatus set to ONLINE for consistency between providers
-      # storageStatus: '{$.null#replace_str("Not Available","PROUT")}'
       processingLevel:
         - '{{"query":{{"processing:level":{{"eq":"{processingLevel}"}}}}}}'
         - '$.properties."processing:level"'
