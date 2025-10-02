@@ -925,8 +925,8 @@ class QueryStringSearch(Search):
                     search=qs_with_sort,
                     items_per_page=items_per_page,
                     next_page_token=token,
-                    skip=(token - 1) * items_per_page,
-                    skip_base_1=(token - 1) * items_per_page + 1,
+                    skip=token - 1,
+                    skip_base_1=token,
                 )
 
             if token is not None:
