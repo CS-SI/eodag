@@ -1807,6 +1807,7 @@ class EODataAccessGateway:
                 == "page"
                 and prep.items_per_page is not None
                 and prep.next_page_token is None
+                and prep.page is not None
             ):
                 prep.next_page_token = str(
                     prep.page

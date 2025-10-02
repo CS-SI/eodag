@@ -1159,9 +1159,6 @@ class QueryStringSearch(Search):
 
         if jsonpath_expr:
             # Use next_page_query_obj_key_path to find the next page token in the response
-            jsonpath_expr = string_to_jsonpath(
-                self.config.pagination["next_page_query_obj_key_path"]
-            )
             if isinstance(jsonpath_expr, str):
                 raise PluginImplementationError(
                     "next_page_query_obj_key_path must be parsed to JSONPath on plugin init"
