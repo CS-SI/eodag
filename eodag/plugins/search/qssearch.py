@@ -1186,6 +1186,11 @@ class QueryStringSearch(Search):
                 else:
                     # Use the whole value as the token
                     raw_search_results.next_page_token = href_value
+                if next_page_token_key and "parse_url_key" in self.config.pagination:
+                    raw_search_results.next_page_token = str(
+                        int(raw_search_results.next_page_token) + 1
+                    )
+
             else:
                 # No token found: set to empty string
                 raw_search_results.next_page_token = None
@@ -1845,8 +1850,8 @@ class PostJsonSearch(QueryStringSearch):
                     ].format(
                         items_per_page=items_per_page,
                         next_page_token=token,
-                        skip=(token - 1) * items_per_page,
-                        skip_base_1=(token - 1) * items_per_page + 1,
+                        skip=token - 1,
+                        skip_base_1=token,
                     )
                     update_nested_dict(
                         prep.query_params, orjson.loads(next_page_query_obj)
