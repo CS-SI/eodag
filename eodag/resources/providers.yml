@@ -4589,7 +4589,101 @@
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
 ---
-
+!provider # MARK: dedt_mn5
+  name: dedt_mn5
+  priority: 0
+  roles:
+    - host
+  description: Destination Earth Digital Twin Outputs from marenostrum through Polytope API
+  url: https://polytope.mn5.apps.dte.destination-earth.eu/openapi
+  search: !plugin
+    type: ECMWFSearch
+    need_auth: true
+    ssl_verify: true
+    dates_required: True
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+    metadata_mapping:
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      completionTimeFromAscendingNode:
+        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      productType:
+        - dataset
+        - $.dataset
+      qs: $.qs
+      orderLink: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+  products:
+    DT_EXTREMES:
+      dataset: extremes-dt
+      class: d1
+      expver: "0001"
+      stream: oper
+      type: fc
+      levtype: sfc
+      step: 0
+      param: 31
+      time: "0000"
+    DT_CLIMATE_ADAPTATION:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: 1
+      model: IFS-NEMO
+      param: 134/165/166
+      resolution: high
+      levtype: sfc
+      time: "0000"
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
+    auth_error_code: 401
+    order_enabled: True
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        orderId: '{$.headers.Location#slice_str(-36,,1)}'
+        _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
+        combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
+        orderStatusLink: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
+    order_status:
+      request:
+        method: GET
+        headers:
+      metadata_mapping:
+        status: $.json.status
+        message: $.json.message
+        error_message: $.null
+      success:
+        http_code: 303
+      error:
+        status: failed
+      on_success:
+        result_type: json
+        metadata_mapping:
+          downloadLink: $.headers.Location
+    no_auth_download: True
+    products:
+      DT_EXTREMES:
+      DT_CLIMATE_ADAPTATION:
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
+    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
+    redirect_uri: https://polytope.mn5.apps.dte.destination-earth.eu/
+    client_id: polytope-api-public
+    user_consent_needed: false
+    token_exchange_post_data_method: data
+    token_provision: header
+    login_form_xpath: //form[@id='kc-form-login']
+    authentication_uri_source: login-form
+---
 !provider # MARK: dedl
   name: dedl
   priority: 0
