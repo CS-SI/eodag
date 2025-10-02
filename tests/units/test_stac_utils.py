@@ -194,7 +194,7 @@ class TestStacUtils(unittest.TestCase):
                 "href": "http://foo/search",
                 "title": "Next page",
                 "method": "POST",
-                "body": {"next_page_token": "3"},
+                "body": {"next_page_token": "2"},
                 "type": "application/geo+json",
             },
         )
