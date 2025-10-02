@@ -41,6 +41,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
@@ -597,6 +598,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -638,6 +640,7 @@ class HTTPDownload(Download):
                     record_filename,
                     auth,
                     progress_callback,
+                    executor,
                     **kwargs,
                 )
                 if kwargs.get("asset") is None:
@@ -1189,11 +1192,6 @@ class HTTPDownload(Download):
 
         # Process each asset
         for asset in assets_values:
-            if not asset["href"] or asset["href"].startswith("file:"):
-                logger.info(
-                    f"Local asset detected. Download skipped for {asset['href']}"
-                )
-                continue
             asset_chunks = get_chunks_generator(asset)
             try:
                 # start reading chunks to set assets attributes
@@ -1221,6 +1219,7 @@ class HTTPDownload(Download):
         record_filename: str,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download product assets if they exist"""
@@ -1260,15 +1259,14 @@ class HTTPDownload(Download):
                 local_assets_count += 1
                 continue
 
-        for asset_stream in assets_stream_list:
+        def download_asset(asset_stream: StreamResponse) -> None:
             asset_chunks = asset_stream.content
             asset_path = cast(str, asset_stream.arcname)
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
             asset_abs_path_dir = os.path.dirname(asset_abs_path)
-            if not os.path.isdir(asset_abs_path_dir):
-                os.makedirs(asset_abs_path_dir)
+            os.makedirs(asset_abs_path_dir, exist_ok=True)
             # remove temporary file
             if os.path.isfile(asset_abs_path_temp):
                 os.remove(asset_abs_path_temp)
@@ -1284,6 +1282,24 @@ class HTTPDownload(Download):
                     os.path.basename(asset_abs_path),
                 )
                 os.rename(asset_abs_path_temp, asset_abs_path)
+            return
+
+        # create executor if not given
+        if executor is None:
+            executor = ThreadPoolExecutor()
+            shutdown_executor = True
+        else:
+            shutdown_executor = False
+
+        futures = (
+            executor.submit(download_asset, asset_stream)
+            for asset_stream in assets_stream_list
+        )
+        [f.result() for f in as_completed(futures)]
+
+        if shutdown_executor:
+            executor.shutdown(wait=True)
+
         # only one local asset
         if local_assets_count == len(assets_urls) and local_assets_count == 1:
             # remove empty {fs_dir_path}
@@ -1416,6 +1432,7 @@ class HTTPDownload(Download):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -1428,6 +1445,7 @@ class HTTPDownload(Download):
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
+            executor=executor,
             wait=wait,
             timeout=timeout,
             **kwargs,

@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 import boto3
 import requests
 from botocore.exceptions import ClientError
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from lxml import etree
 from requests.auth import AuthBase
 
@@ -227,6 +228,7 @@ class AwsDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -246,6 +248,7 @@ class AwsDownload(Download):
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
+        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
         :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
@@ -302,9 +305,20 @@ class AwsDownload(Download):
                 "Authentication plugin (AwsAuth) has to be configured if AwsDownload is used"
             )
 
+        # create executor if not given
+        if executor is None:
+            executor = ThreadPoolExecutor()
+            shutdown_executor = True
+        else:
+            shutdown_executor = False
+
         # files in zip
         updated_bucket_names_and_prefixes = self._download_file_in_zip(
-            product, bucket_names_and_prefixes, product_local_path, progress_callback
+            product,
+            bucket_names_and_prefixes,
+            product_local_path,
+            progress_callback,
+            executor,
         )
         # prevent nothing-to-download errors if download was performed in zip
         raise_error = (
@@ -329,7 +343,8 @@ class AwsDownload(Download):
         if len(unique_product_chunks) > 0:
             progress_callback.reset(total=total_size)
         try:
-            for product_chunk in unique_product_chunks:
+
+            def download_chunk(product_chunk: Any) -> None:
                 try:
                     chunk_rel_path = self.get_chunk_dest_path(
                         product,
@@ -339,11 +354,11 @@ class AwsDownload(Download):
                 except NotAvailableError as e:
                     # out of SAFE format chunk
                     logger.warning(e)
-                    continue
+                    return
+
                 chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
                 chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
-                if not os.path.isdir(chunk_abs_path_dir):
-                    os.makedirs(chunk_abs_path_dir)
+                os.makedirs(chunk_abs_path_dir, exist_ok=True)
 
                 bucket_objects = authenticated_objects.get(product_chunk.bucket_name)
                 extra_args = (
@@ -358,12 +373,22 @@ class AwsDownload(Download):
                         ExtraArgs=extra_args,
                         Callback=progress_callback,
                     )
+                return
+
+            futures = (
+                executor.submit(download_chunk, chunk)
+                for chunk in unique_product_chunks
+            )
+            [f.result() for f in as_completed(futures)]
 
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
         except ClientError as e:
             raise_if_auth_error(e, self.provider)
             logger.warning("Unexpected error: %s" % e)
+
+        if shutdown_executor:
+            executor.shutdown(wait=True)
 
         # finalize safe product
         if build_safe and product.collection and "S2_MSI" in product.collection:
@@ -386,7 +411,12 @@ class AwsDownload(Download):
         return product_local_path
 
     def _download_file_in_zip(
-        self, product, bucket_names_and_prefixes, product_local_path, progress_callback
+        self,
+        product,
+        bucket_names_and_prefixes,
+        product_local_path,
+        progress_callback,
+        executor,
     ):
         """
         Download file in zip from a prefix like `foo/bar.zip!file.txt`
@@ -401,16 +431,16 @@ class AwsDownload(Download):
         s3_client = product.downloader_auth.get_s3_client()
 
         downloaded = []
-        for i, pack in enumerate(bucket_names_and_prefixes):
+
+        def process_zip_file(i: int, pack: tuple[str, Optional[str]]) -> Optional[int]:
             bucket_name, prefix = pack
-            if ".zip!" in prefix:
+            if prefix is not None and ".zip!" in prefix:
                 splitted_path = prefix.split(".zip!")
                 zip_prefix = f"{splitted_path[0]}.zip"
                 rel_path = splitted_path[-1]
                 dest_file = os.path.join(product_local_path, rel_path)
                 dest_abs_path_dir = os.path.dirname(dest_file)
-                if not os.path.isdir(dest_abs_path_dir):
-                    os.makedirs(dest_abs_path_dir)
+                os.makedirs(dest_abs_path_dir, exist_ok=True)
 
                 zip_file, _ = open_s3_zipped_object(
                     bucket_name, zip_prefix, s3_client, partial=False
@@ -428,7 +458,18 @@ class AwsDownload(Download):
                             output_file.write(zchunk)
                             progress_callback(len(zchunk))
 
-                downloaded.append(i)
+                return i
+            return None
+
+        futures = (
+            executor.submit(process_zip_file, i, pack)
+            for i, pack in enumerate(bucket_names_and_prefixes)
+        )
+
+        for future in as_completed(futures):
+            result = future.result()
+            if result is not None:
+                downloaded.append(result)
 
         return [
             pack
@@ -1119,6 +1160,7 @@ class AwsDownload(Download):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -1131,6 +1173,7 @@ class AwsDownload(Download):
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
+            executor=executor,
             wait=wait,
             timeout=timeout,
             **kwargs,
