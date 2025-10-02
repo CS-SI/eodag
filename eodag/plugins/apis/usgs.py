@@ -140,15 +140,15 @@ class UsgsApi(Api):
         **kwargs: Any,
     ) -> SearchResult:
         """Search for data on USGS catalogues"""
-        page = (
+        token = (
             int(prep.next_page_token)
             if prep.next_page_token is not None
             else DEFAULT_PAGE
         )
         items_per_page = (
             prep.items_per_page
-            if prep.items_per_page is not None
-            else DEFAULT_ITEMS_PER_PAGE
+            or kwargs.pop("max_results", None)
+            or DEFAULT_ITEMS_PER_PAGE
         )
         search_params = {"items_per_page": items_per_page} | kwargs
         collection = kwargs.get("collection")
@@ -201,7 +201,7 @@ class UsgsApi(Api):
                 ll=lower_left,
                 ur=upper_right,
                 max_results=items_per_page,
-                starting_number=(1 + (page - 1) * items_per_page),
+                starting_number=token,
             )
 
             # search by id
@@ -298,11 +298,15 @@ class UsgsApi(Api):
             total_results = path_parsed.find(results["data"])[0].value
         else:
             total_results = 0
+
+        if product_type:
+            api_search_kwargs["productType"] = product_type
+
         formated_result = SearchResult(
             final,
             total_results,
             search_params=search_params,
-            next_page_token=str(page + 1),
+            next_page_token=results["data"]["nextRecord"],
         )
         return formated_result
 

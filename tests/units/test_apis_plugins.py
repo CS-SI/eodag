@@ -540,9 +540,9 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
             "prep": PreparedSearch(
                 items_per_page=5,
-                page=2,
             ),
         }
+        search_kwargs["prep"].next_page_token = "6"
         search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
@@ -618,9 +618,9 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "id": "SOME_PRODUCT_ID",
             "prep": PreparedSearch(
                 items_per_page=500,
-                page=1,
             ),
         }
+        search_kwargs["prep"].next_page_token = "1"
         search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",

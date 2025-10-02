@@ -1147,6 +1147,17 @@ class QueryStringSearch(Search):
 
         # Handle pagination
         if self.config.pagination.get("next_page_query_obj_key_path") is not None:
+            jsonpath_expr = string_to_jsonpath(
+                self.config.pagination["next_page_query_obj_key_path"]
+            )
+        elif self.config.pagination.get("next_page_url_key_path") is not None:
+            jsonpath_expr = string_to_jsonpath(
+                self.config.pagination["next_page_url_key_path"]
+            )
+        else:
+            jsonpath_expr = None
+
+        if jsonpath_expr:
             # Use next_page_query_obj_key_path to find the next page token in the response
             jsonpath_expr = string_to_jsonpath(
                 self.config.pagination["next_page_query_obj_key_path"]

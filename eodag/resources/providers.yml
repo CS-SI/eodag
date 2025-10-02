@@ -684,7 +684,7 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
-      next_page_query_obj_key_path: '$.["@odata.nextLink"]'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
@@ -1995,7 +1995,7 @@
     GENERIC_COLLECTION:
       dataset: '{collection}'
 ---
-!provider # MARK: search_iter_page_plugin
+!provider # MARK: sara
   name: sara
   priority: 0
   description: Sentinel Australasia Regional Access
@@ -2394,7 +2394,7 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
-      next_page_query_obj_key_path: '$.["@odata.nextLink"]'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
@@ -3953,7 +3953,7 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      next_page_query_obj_key_path: '$.["@odata.nextLink"]'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
       parse_url_key: $skip
       max_items_per_page: 1_000
     sort:
@@ -4689,7 +4689,6 @@
         title: '$.title'
         extent: '$.extent'
     pagination:
-      # next_page_url_key_path: null
       max_items_per_page: 100
       next_page_query_obj: '{{"limit":{items_per_page},"token":{next_page_token}}}'
       next_page_token_key: 'page'
