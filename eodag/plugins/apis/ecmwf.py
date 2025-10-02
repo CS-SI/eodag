@@ -48,6 +48,7 @@ from eodag.utils.logging import get_logging_verbose
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
+    from concurrent.futures import ThreadPoolExecutor
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
@@ -185,6 +186,7 @@ class EcmwfApi(Api, ECMWFSearch):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -275,6 +277,7 @@ class EcmwfApi(Api, ECMWFSearch):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -287,6 +290,7 @@ class EcmwfApi(Api, ECMWFSearch):
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,
+            executor=executor,
             wait=wait,
             timeout=timeout,
             **kwargs,

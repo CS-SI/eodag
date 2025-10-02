@@ -61,6 +61,7 @@ from eodag.utils.exceptions import DownloadError, MisconfiguredError, Validation
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product.drivers.base import DatasetDriver
@@ -337,6 +338,8 @@ class EOProduct:
     def download(
         self,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
+        in_parallel: bool = False,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -353,6 +356,9 @@ class EOProduct:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
+        :param executor: (optional) An executor to download assets of the product in parallel if it has any
+        :param in_parallel: (optional) Whether this download is called from
+                            :meth:`eodag.plugins.download.base.Download.download_all` method
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
@@ -379,14 +385,19 @@ class EOProduct:
         progress_callback, close_progress_callback = self._init_progress_bar(
             progress_callback
         )
+
         fs_path = self.downloader.download(
             self,
             auth=auth,
             progress_callback=progress_callback,
+            executor=executor,
             wait=wait,
             timeout=timeout,
             **kwargs,
         )
+
+        if executor is not None and not in_parallel:
+            executor.shutdown(wait=True)
 
         # close progress bar if needed
         if close_progress_callback:

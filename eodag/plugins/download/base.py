@@ -29,6 +29,8 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -105,6 +107,7 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -115,6 +118,7 @@ class Download(PluginTopic):
         :param product: The EO product to download
         :param auth: (optional) authenticated object
         :param progress_callback: (optional) A progress callback
+        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
@@ -447,6 +451,7 @@ class Download(PluginTopic):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -454,7 +459,7 @@ class Download(PluginTopic):
         """
         Base download_all method.
 
-        This specific implementation uses the :meth:`eodag.plugins.download.base.Download.download` method
+        This specific implementation uses the :meth:`~eodag.api.product._product.EOProduct.download` method
         implemented by the plugin to **sequentially** attempt to download products.
 
         :param products: Products to download
@@ -465,6 +470,7 @@ class Download(PluginTopic):
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :param progress_callback: (optional) A progress callback
+        :param executor: (optional) An executor to download products in parallel
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
@@ -485,8 +491,11 @@ class Download(PluginTopic):
         stop_time = start_time + timedelta(minutes=timeout)
         nb_products = len(products)
         retry_count = 0
-        # another output for notbooks
+        # another output for notebooks
         nb_info = NotebookWidgets()
+
+        # initialize an executor if not given
+        executor = ThreadPoolExecutor() if executor is None else executor
 
         for product in products:
             product.next_try = start_time
@@ -510,19 +519,29 @@ class Download(PluginTopic):
 
         with progress_callback as bar:
             while "Loop until all products are download or timeout is reached":
-                # try downloading each product before retry
-                for idx, product in enumerate(products):
-                    if datetime.now() >= product.next_try:
-                        products[idx].next_try += timedelta(minutes=wait)
-                        try:
-                            paths.append(
-                                product.download(
-                                    progress_callback=product_progress_callback,
-                                    wait=wait,
-                                    timeout=-1,
-                                    **kwargs,
-                                )
+                # try downloading each product before retry in parallel
+                with executor:
+                    futures = {}
+
+                    for idx, product in enumerate(products):
+                        if datetime.now() >= product.next_try:
+                            products[idx].next_try += timedelta(minutes=wait)
+                            future = executor.submit(
+                                product.download,
+                                progress_callback=product_progress_callback,
+                                wait=wait,
+                                timeout=-1,
+                                executor=executor,
+                                in_parallel=True,
+                                **kwargs,
                             )
+                            futures[future] = product
+
+                    for future in as_completed(futures.keys()):
+                        product = futures[future]
+                        try:
+                            result = future.result()
+                            paths.append(result)
 
                             if downloaded_callback:
                                 downloaded_callback(product)
