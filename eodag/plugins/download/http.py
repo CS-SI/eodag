@@ -91,10 +91,9 @@ if TYPE_CHECKING:
     from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, Unpack
+    from eodag.utils import Unpack
 
 logger = logging.getLogger("eodag.download.http")
 
@@ -1424,28 +1423,3 @@ class HTTPDownload(Download):
 
                 total_size += asset.size
         return total_size
-
-    def download_all(
-        self,
-        products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
-        wait: float = DEFAULT_DOWNLOAD_WAIT,
-        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Unpack[DownloadConf],
-    ):
-        """
-        Download all using parent (base plugin) method
-        """
-        return super(HTTPDownload, self).download_all(
-            products,
-            auth=auth,
-            downloaded_callback=downloaded_callback,
-            progress_callback=progress_callback,
-            executor=executor,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )

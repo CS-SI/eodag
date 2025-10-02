@@ -66,10 +66,9 @@ if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
 
     from eodag.api.product import EOProduct
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, Unpack
+    from eodag.utils import Unpack
 
 
 logger = logging.getLogger("eodag.download.aws")
@@ -1153,28 +1152,3 @@ class AwsDownload(Download):
 
         logger.debug(f"Downloading {chunk.key} to {product_path}")
         return product_path
-
-    def download_all(
-        self,
-        products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
-        wait: float = DEFAULT_DOWNLOAD_WAIT,
-        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Unpack[DownloadConf],
-    ) -> list[str]:
-        """
-        download_all using parent (base plugin) method
-        """
-        return super(AwsDownload, self).download_all(
-            products,
-            auth=auth,
-            downloaded_callback=downloaded_callback,
-            progress_callback=progress_callback,
-            executor=executor,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )
