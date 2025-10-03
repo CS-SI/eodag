@@ -46,7 +46,6 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_string,
     get_geometry_from_various,
-    get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
     remove_str_array_quotes,
@@ -54,6 +53,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+from eodag.utils.dates import get_timestamp
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -182,6 +182,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``convert_from_alternate``: update assets using given alternate
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -530,6 +532,35 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
+        def convert_replace_str_tuple(value: Any, args: str) -> str:
+            """
+            Apply multiple replacements on a string.
+            args should be a string representing a list/tuple of (old, new) pairs.
+            Example: '(("old1", "new1"), ("old2", "new2"))'
+            """
+            if isinstance(value, dict):
+                value = MetadataFormatter.convert_to_geojson(value)
+            elif not isinstance(value, str):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a string or a dict (apply to_geojson). "
+                    f"Got {type(value)}: {value}"
+                )
+
+            # args sera une chaîne représentant une liste/tuple de tuples
+            replacements = ast.literal_eval(args)
+
+            if not isinstance(replacements, (list, tuple)):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a list/tuple of (old,new) pairs. "
+                    f"Got {type(replacements)}: {replacements}"
+                )
+
+            for old, new in replacements:
+                value = re.sub(old, new, value)
+
+            return value
+
+        @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
             data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
             match = data_regex.search(value)
@@ -578,6 +609,45 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 matched_index = int(matched_jsonpath_str.split(".")[-1][1:-1])
                 key = keys_list[matched_index]
                 result[key] = match.value
+            return result
+
+        @staticmethod
+        def convert_dict_filter_and_sub(
+            input_dict: dict[Any, Any], args: str
+        ) -> Union[dict[Any, Any], list[Any]]:
+            """Fitlers dict items using jsonpath and then apply recursive_sub_str"""
+            jsonpath_filter_str, old, new = ast.literal_eval(args)
+            filtered = MetadataFormatter.convert_dict_filter(
+                input_dict, jsonpath_filter_str
+            )
+            args_str = f"('{old}', '{new}')"
+            return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
+
+        @staticmethod
+        def convert_from_alternate(
+            input_obj: dict[str, Any], value: str
+        ) -> dict[str, Any]:
+            """
+            Update assets using given alternate.
+            """
+            result: dict[str, Any] = {}
+            for k, v in input_obj.items():
+                if not isinstance(v, dict):
+                    continue
+
+                alt_dict = deepcopy(v).get("alternate")
+                if not isinstance(alt_dict, dict):
+                    continue
+
+                value_entry = alt_dict.pop(value, None)
+                if not isinstance(value_entry, dict):
+                    continue
+
+                result[k] = v | value_entry | {"alternate": alt_dict}
+
+                if len(result[k]["alternate"]) == 0:
+                    del result[k]["alternate"]
+
             return result
 
         @staticmethod

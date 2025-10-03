@@ -41,19 +41,18 @@ from eodag.api.product.metadata_mapping import (
     STAGING_STATUS,
     properties_from_json,
     NOT_AVAILABLE,
+    DEFAULT_METADATA_MAPPING,
 )
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.config import (
     load_default_config,
-    merge_configs,
-    override_config_from_mapping,
     load_stac_provider_config,
     get_ext_product_types_conf,
     EXT_PRODUCT_TYPES_CONF_URI,
-    PluginConfig,
-    ProviderConfig,
 )
+from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
+from eodag.config import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.aws_auth import AwsAuth
@@ -85,7 +84,6 @@ from eodag.utils import (
     USER_AGENT,
     get_bucket_name_and_prefix,
     get_geometry_from_various,
-    get_timestamp,
     makedirs,
     merge_mappings,
     path_to_uri,
@@ -103,7 +101,9 @@ from eodag.utils import (
     get_ssl_context,
     cached_yaml_load_all,
     StreamResponse,
+    MockResponse,
 )
+from eodag.utils.dates import get_timestamp
 from eodag.utils.env import is_env_var_true
 from eodag.utils.requests import fetch_json
 from eodag.utils.s3 import (

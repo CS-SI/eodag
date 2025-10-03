@@ -1,32 +1,31 @@
-parameter,cop_dataspace,cop_marine,creodias,earth_search,earth_search_cog,earth_search_gcs,ecmwf,eumetsat_ds,fedeo_ceda,geodes,peps,planetary_computer,sara,usgs_satapi_aws
-acquisitionInformation,,,,,,,,metadata only,,,,,,
-assets,,,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,,metadata only,,metadata only
-awsProductId,,,,,,,,,,,,,,metadata only
-collection,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,,
-defaultGeometry,,metadata only,,,,,,metadata only,,,,,,
-downloadLink,metadata only,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-extraInformation,,,,,,,,metadata only,,,,,,
-geometry,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
-gridSquare,,,,:green:`queryable metadata`,,,,,,,,,,
-id,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
-latitudeBand,,,,:green:`queryable metadata`,,,,,,,,,,
-links,,,,,,,,,,,metadata only,,,
-modifiedAfter,:green:`queryable metadata`,,,,,,,,,,,,,
-modifiedBefore,:green:`queryable metadata`,,,,,,,,,,,,,
-polarizationChannels,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`
-polarizationMode,,,,,metadata only,,,,,,:green:`queryable metadata`,,:green:`queryable metadata`,
-productIdentifier,metadata only,,metadata only,,,,,,,,,,,
-productInformation,,,,,,,,metadata only,,,,,,
-providerProductType,,,,,,,,,,:green:`queryable metadata`,,,,
-publishedAfter,:green:`queryable metadata`,,,,,,,,,,,,,
-publishedBefore,:green:`queryable metadata`,,,,,,,,,,,,,
-quicklook,metadata only,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-relativeOrbitNumber,:green:`queryable metadata`,,,,,,,,,:green:`queryable metadata`,,,,
-services,,,,,,,,,,,metadata only,,,
-size,,,,,,,,metadata only,,,,,,
-storageStatus,metadata only,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-thumbnail,metadata only,,metadata only,metadata only,metadata only,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-tileIdentifier,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,,,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,
-type,,,,,,,,metadata only,,,,,,
-uid,metadata only,,metadata only,,,,,metadata only,,metadata only,metadata only,,metadata only,
-utmZone,,,,:green:`queryable metadata`,,,,,,,,,,
+parameter,cop_dataspace,cop_marine,creodias,earth_search,earth_search_gcs,ecmwf,eumetsat_ds,fedeo_ceda,geodes,peps,planetary_computer,sara,usgs_satapi_aws
+acquisitionInformation,,,,,,,metadata only,,,,,,
+assets,,,,metadata only,metadata only,,metadata only,metadata only,metadata only,,metadata only,,metadata only
+awsProductId,,,,,,,,,,,,,metadata only
+collection,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
+defaultGeometry,,metadata only,,,,,metadata only,,,,,,
+downloadLink,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+extraInformation,,,,,,,metadata only,,,,,,
+geometry,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+gridSquare,,,,:green:`queryable metadata`,,,,,,,,,
+id,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+latitudeBand,,,,:green:`queryable metadata`,,,,,,,,,
+links,,,,,,,,,,metadata only,,,
+modifiedAfter,:green:`queryable metadata`,,,,,,,,,,,,
+modifiedBefore,:green:`queryable metadata`,,,,,,,,,,,,
+polarizationChannels,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+productIdentifier,metadata only,,metadata only,,,,,,,,,,
+productInformation,,,,,,,metadata only,,,,,,
+providerProductType,,,,,,,,,:green:`queryable metadata`,,,,
+publishedAfter,:green:`queryable metadata`,,,,,,,,,,,,
+publishedBefore,:green:`queryable metadata`,,,,,,,,,,,,
+quicklook,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+relativeOrbitNumber,:green:`queryable metadata`,,,,,,,,:green:`queryable metadata`,,,,
+services,,,,,,,,,,metadata only,,,
+size,,,,,,,metadata only,,,,,,
+storageStatus,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+thumbnail,metadata only,,metadata only,metadata only,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+tileIdentifier,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,
+type,,,,,,,metadata only,,,,,,
+uid,metadata only,,metadata only,,,,metadata only,,metadata only,metadata only,,metadata only,
+utmZone,,,,:green:`queryable metadata`,,,,,,,,,

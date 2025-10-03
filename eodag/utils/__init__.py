@@ -24,7 +24,6 @@ this package should go here
 from __future__ import annotations
 
 import ast
-import datetime
 import errno
 import functools
 import hashlib
@@ -44,7 +43,6 @@ import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
 from dataclasses import dataclass, field
-from datetime import datetime as dt
 from email.message import Message
 from glob import glob
 from importlib.metadata import metadata
@@ -75,8 +73,6 @@ import orjson
 import shapefile
 import shapely.wkt
 import yaml
-from dateutil.parser import isoparse
-from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
@@ -412,54 +408,6 @@ def maybe_generator(obj: Any) -> Iterator[Any]:
             yield elt
     else:
         yield obj
-
-
-def get_timestamp(date_time: str) -> float:
-    """Return the Unix timestamp of an ISO8601 date/datetime in seconds.
-
-    If the datetime has no offset, it is assumed to be an UTC datetime.
-
-    :param date_time: The datetime string to return as timestamp
-    :returns: The timestamp corresponding to the ``date_time`` string in seconds
-    """
-    dt = isoparse(date_time)
-    if not dt.tzinfo:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.timestamp()
-
-
-def datetime_range(start: dt, end: dt) -> Iterator[dt]:
-    """Generator function for all dates in-between ``start`` and ``end`` date."""
-    delta = end - start
-    for nday in range(delta.days + 1):
-        yield start + datetime.timedelta(days=nday)
-
-
-def is_range_in_range(valid_range: str, check_range: str) -> bool:
-    """Check if the check_range is completely within the valid_range.
-
-    This function checks if both the start and end dates of the check_range
-    are within the start and end dates of the valid_range.
-
-    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
-    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
-    :returns: True if check_range is within valid_range, otherwise False.
-    """
-    if "/" not in valid_range or "/" not in check_range:
-        return False
-
-    # Split the date ranges into start and end dates
-    start_valid, end_valid = valid_range.split("/")
-    start_check, end_check = check_range.split("/")
-
-    # Convert the strings to datetime objects using fromisoformat
-    start_valid_dt = datetime.datetime.fromisoformat(start_valid)
-    end_valid_dt = datetime.datetime.fromisoformat(end_valid)
-    start_check_dt = datetime.datetime.fromisoformat(start_check)
-    end_check_dt = datetime.datetime.fromisoformat(end_check)
-
-    # Check if check_range is within valid_range
-    return start_valid_dt <= start_check_dt and end_valid_dt >= end_check_dt
 
 
 class DownloadedCallback:

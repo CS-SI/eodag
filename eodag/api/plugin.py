@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -17,81 +17,17 @@
 # limitations under the License.
 from __future__ import annotations
 
-import logging
-import os
-from importlib.resources import files as res_files
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, TypedDict, Union
 
-import orjson
-import requests
 import yaml
-import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
 
-from eodag.utils import (
-    HTTP_REQ_TIMEOUT,
-    USER_AGENT,
-    cached_yaml_load,
-    cached_yaml_load_all,
-    deepcopy,
-    dict_items_recursive_apply,
-    merge_mappings,
-    sort_dict,
-    string_to_jsonpath,
-    uri_to_path,
-)
+from eodag.utils import merge_mappings, sort_dict
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from typing import ItemsView, Iterator, ValuesView
-
     from typing_extensions import Self
-
-    from eodag.api.provider import ProviderConfig
-
-logger = logging.getLogger("eodag.config")
-
-EXT_PRODUCT_TYPES_CONF_URI = (
-    "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
-)
-AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
-PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
-
-
-class SimpleYamlProxyConfig:
-    """A simple configuration class acting as a proxy to an underlying dict object
-    as returned by yaml.load"""
-
-    def __init__(self, conf_file_path: str) -> None:
-        try:
-            self.source: dict[str, Any] = cached_yaml_load(conf_file_path)
-        except yaml.parser.ParserError as e:
-            print("Unable to load user configuration file")
-            raise e
-
-    def __getitem__(self, item: Any) -> Any:
-        return self.source[item]
-
-    def __contains__(self, item: Any) -> Any:
-        return item in self.source
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.source)
-
-    def items(self) -> ItemsView[str, Any]:
-        """Iterate over keys and values of source"""
-        return self.source.items()
-
-    def values(self) -> ValuesView[Any]:
-        """Iterate over values of source"""
-        return self.source.values()
-
-    def update(self, other: "SimpleYamlProxyConfig") -> None:
-        """Update a :class:`~eodag.config.SimpleYamlProxyConfig`"""
-        if not isinstance(other, self.__class__):
-            raise ValueError("'{}' must be of type {}".format(other, self.__class__))
-        self.source.update(other.source)
 
 
 class Pagination(TypedDict):
@@ -144,7 +80,7 @@ class DiscoverMetadata(TypedDict):
     #: Metadata regex pattern used for discovery in search result properties
     metadata_pattern: str
     #: Configuration/template that will be used to query for a discovered parameter
-    search_param: Union[str, dict[str, Any]]
+    search_param: str | dict[str, Any]
     #: Path to the metadata in search result
     metadata_path: str
     #: Whether an error must be raised when using a search parameter which is not queryable or not
@@ -169,7 +105,7 @@ class DiscoverProductTypes(TypedDict, total=False):
     #: Type of the provider result
     result_type: str
     #: JsonPath to the list of product types
-    results_entry: Union[str, JSONPath]
+    results_entry: Union[JSONPath, str]
     #: Mapping for the product type id
     generic_product_type_id: str
     #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
@@ -365,16 +301,6 @@ class PluginConfig(yaml.YAMLObject):
     per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
     metadata_pre_mapping: MetadataPreMapping
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
-    data_request_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
-    status_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: URL to fetch the search result when the data request is done
-    result_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: if date parameters are mandatory in the request
-    dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
     search_definition: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
@@ -384,6 +310,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
+    #: if date parameters are mandatory in the request
+    dates_required: bool
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
@@ -431,7 +360,7 @@ class PluginConfig(yaml.YAMLObject):
     no_auth_download: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
     dl_url_params: dict[str, str]
-    #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
+    #: :class:`~eodag.plugins.download.aws.AwsDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
     #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
@@ -581,14 +510,13 @@ class PluginConfig(yaml.YAMLObject):
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         cls.validate(tuple(mapping.keys()))
         c = cls()
-        c.__dict__.update(deepcopy(mapping))
+        c.__dict__.update(mapping)
         return c
 
     @staticmethod
     def validate(config_keys: tuple[Any, ...]) -> None:
         """Validate a :class:`~eodag.config.PluginConfig`"""
-        # credentials may be set without type when the provider uses search_auth plugin.
-        if "type" not in config_keys and "credentials" not in config_keys:
+        if "type" not in config_keys:
             raise ValidationError(
                 "A Plugin config must specify the type of Plugin it configures"
             )
@@ -633,112 +561,3 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     return any(
         c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
     )
-
-
-def load_default_config() -> dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionary.
-
-    Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
-    variable if exists.
-
-    :returns: The default provider's configuration
-    """
-    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
-        res_files("eodag") / "resources" / "providers.yml"
-    )
-
-    return load_config(eodag_providers_cfg_file)
-
-
-def load_config(config_path: str) -> dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionary from a given file
-
-    If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
-
-    :param config_path: The path to the provider config file
-    :returns: The default provider's configuration
-    """
-    logger.debug("Loading configuration from %s", config_path)
-
-    try:
-        # Providers configs are stored in this file as separated yaml documents
-        # Load all of it
-        providers_configs: list[ProviderConfig] = cached_yaml_load_all(config_path)
-    except yaml.parser.ParserError as e:
-        logger.error("Unable to load configuration")
-        raise e
-
-    return {p.name: p for p in providers_configs if p is not None}
-
-
-def load_yml_config(yml_path: str) -> dict[Any, Any]:
-    """Load a conf dictionary from given yml absolute path
-
-    :returns: The yml configuration file
-    """
-    config = SimpleYamlProxyConfig(yml_path)
-    return dict_items_recursive_apply(config.source, string_to_jsonpath)
-
-
-def load_stac_config() -> dict[str, Any]:
-    """Load the stac configuration into a dictionary
-
-    :returns: The stac configuration
-    """
-    return load_yml_config(str(res_files("eodag") / "resources" / "stac.yml"))
-
-
-def load_stac_api_config() -> dict[str, Any]:
-    """Load the stac API configuration into a dictionary
-
-    :returns: The stac API configuration
-    """
-    return load_yml_config(str(res_files("eodag") / "resources" / "stac_api.yml"))
-
-
-def load_stac_provider_config() -> dict[str, Any]:
-    """Load the stac provider configuration into a dictionary
-
-    :returns: The stac provider configuration
-    """
-    return SimpleYamlProxyConfig(
-        str(res_files("eodag") / "resources" / "stac_provider.yml")
-    ).source
-
-
-def get_ext_product_types_conf(
-    conf_uri: str = EXT_PRODUCT_TYPES_CONF_URI,
-) -> dict[str, Any]:
-    """Read external product types conf
-
-    :param conf_uri: URI to local or remote configuration file
-    :returns: The external product types configuration
-    """
-    logger.info("Fetching external product types from %s", conf_uri)
-    if conf_uri.lower().startswith("http"):
-        # read from remote
-        try:
-            response = requests.get(
-                conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            logger.debug(e)
-            logger.warning(
-                "Could not read remote external product types conf from %s", conf_uri
-            )
-            return {}
-    elif conf_uri.lower().startswith("file"):
-        conf_uri = uri_to_path(conf_uri)
-
-    # read from local
-    try:
-        with open(conf_uri, "rb") as f:
-            return orjson.loads(f.read())
-    except (orjson.JSONDecodeError, FileNotFoundError) as e:
-        logger.debug(e)
-        logger.warning(
-            "Could not read local external product types conf from %s", conf_uri
-        )
-        return {}

@@ -344,19 +344,15 @@ class UsgsApi(Api):
         req_urls: list[str] = []
         try:
             if len(download_request_results["data"]["preparingDownloads"]) > 0:
-                req_urls.extend(
-                    [
-                        x["url"]
-                        for x in download_request_results["data"]["preparingDownloads"]
-                    ]
-                )
+                req_urls.extend([
+                    x["url"]
+                    for x in download_request_results["data"]["preparingDownloads"]
+                ])
             else:
-                req_urls.extend(
-                    [
-                        x["url"]
-                        for x in download_request_results["data"]["availableDownloads"]
-                    ]
-                )
+                req_urls.extend([
+                    x["url"]
+                    for x in download_request_results["data"]["availableDownloads"]
+                ])
         except KeyError as e:
             raise NotAvailableError(
                 f"{e} not found in {product.properties['id']} download_request"

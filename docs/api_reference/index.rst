@@ -55,6 +55,14 @@ The API Reference provides an overview of all public objects, functions and meth
 
          Manage product assets including AssetsDict and Asset classes for handling multi-file products and pixel access operations.
 
+   .. grid-item-card:: :octicon:`database;1.5em`  Providers
+         :link: provider
+         :link-type: doc
+         :text-align: center
+         :shadow: md
+
+         Provider management including ProvidersDict and Provider classes for handling multiple data sources and their configurations.
+
    .. grid-item-card:: :octicon:`tools;1.5em`  Utils
          :link: utils
          :link-type: doc
