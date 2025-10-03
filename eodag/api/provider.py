@@ -19,11 +19,9 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import tempfile
 import traceback
 from collections import UserDict
-from dataclasses import dataclass, field
 from inspect import isclass
 from typing import (
     TYPE_CHECKING,
@@ -57,7 +55,8 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
-from eodag.utils.repr import dict_to_html_table
+from eodag.utils.free_text_search import compile_free_text_query
+from eodag.utils.repr import html_table
 
 if TYPE_CHECKING:
     from eodag.api.core import EODataAccessGateway
@@ -70,7 +69,7 @@ PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
 
 
 class ProviderConfig(yaml.YAMLObject):
-    """Representation of eodag configuration.
+    """EODAG configuration for a provider.
 
     :param name: The name of the provider
     :param priority: (optional) The priority of the provider while searching a product.
@@ -90,7 +89,7 @@ class ProviderConfig(yaml.YAMLObject):
 
     name: str
     group: str
-    priority: int = 0  # Set default priority to 0
+    priority: int = 0
     roles: list[str]
     description: str
     url: str
@@ -111,17 +110,6 @@ class ProviderConfig(yaml.YAMLObject):
         self.__dict__.update(state)
         self._apply_defaults()
 
-    def __or__(self, other: Self | dict[str, Any]) -> Self:
-        """Merge ProviderConfig with another ProviderConfig or a dict using | operator"""
-        new_conf = deepcopy(self)
-        new_conf.update(other)
-        return new_conf
-
-    def __ior__(self, other: Self | dict[str, Any]) -> Self:
-        """In-place merge of ProviderConfig with another ProviderConfig or a dict using |= operator"""
-        self.update(other)
-        return self
-
     def __contains__(self, key):
         """Check if a key is in the ProviderConfig."""
         return key in self.__dict__
@@ -140,11 +128,13 @@ class ProviderConfig(yaml.YAMLObject):
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
+        # Create a deep copy to avoid modifying the input dict or its nested structures
+        mapping_copy = deepcopy(mapping)
         for key in PLUGINS_TOPICS_KEYS:
-            if _mapping := mapping.get(key):
-                mapping[key] = PluginConfig.from_mapping(_mapping)
+            if _mapping := mapping_copy.get(key):
+                mapping_copy[key] = PluginConfig.from_mapping(_mapping)
         c = cls()
-        c.__dict__.update(mapping)
+        c.__dict__.update(mapping_copy)
         c._apply_defaults()
         return c
 
@@ -203,6 +193,21 @@ class ProviderConfig(yaml.YAMLObject):
                     )
         self._apply_defaults()
 
+    def with_name(self, new_name: str) -> Self:
+        """Create a copy of this ProviderConfig with a different name.
+
+        :param new_name: The new name for the provider config.
+        :return: A new ProviderConfig instance with the updated name.
+        """
+        config_dict = self.__dict__.copy()
+        config_dict["name"] = new_name
+
+        for key in PLUGINS_TOPICS_KEYS:
+            if key in config_dict and isinstance(config_dict[key], PluginConfig):
+                config_dict[key] = config_dict[key].__dict__
+
+        return self.__class__.from_mapping(config_dict)
+
     def _apply_defaults(self: Self) -> None:
         """Applies some default values to provider config."""
         stac_search_default_conf = load_stac_provider_config()
@@ -234,36 +239,48 @@ class ProviderConfig(yaml.YAMLObject):
             pass
 
 
-@dataclass
 class Provider:
     """
     Represents a data provider with its configuration and utility methods.
 
-    :param name: Name of the provider.
-    :param collections_fetched: Flag indicating whether product types have been fetched.
+    :param config: Provider configuration as ProviderConfig instance or dict
+    :param collections_fetched: Flag indicating whether collections have been fetched
+
+    Example
+    -------
+
+    >>> from eodag.api.provider import Provider
+    >>> config = {
+    ...     'name': 'example_provider',
+    ...     'description': 'Example provider for testing',
+    ...     'search': {'type': 'StacSearch'},
+    ...     'products': {'S2_MSI_L1C': {'_collection': 'S2_MSI_L1C'}}
+    ... }
+    >>> provider = Provider(config)
+    >>> provider.name
+    'example_provider'
+    >>> 'S2_MSI_L1C' in provider.product_types
+    True
+    >>> provider.priority  # Default priority
+    0
     """
 
-    _config: ProviderConfig | dict[str, Any]
-    _name: Optional[str] = field(default=None)
-    collections_fetched: bool = False  # set in core.update_collections_list
+    _name: str
+    _config: ProviderConfig
+    collections_fetched: bool
 
-    def __post_init__(self):
-        """Post-initialization to set the provider name if not provided."""
-        if isinstance(self._config, dict):
-            self._config.setdefault("name", self.name)
-            self._config = ProviderConfig.from_mapping(self._config)
-
-        elif not isinstance(self._config, ProviderConfig):
-            msg = (
-                f"Unsupported config type: {type(self._config)}. "
-                "Expected ProviderConfig or dict."
-            )
+    def __init__(self, config: ProviderConfig | dict[str, Any]):
+        """Initialize provider with configuration."""
+        if isinstance(config, dict):
+            self._config = ProviderConfig.from_mapping(config)
+        elif isinstance(config, ProviderConfig):
+            self._config = config
+        else:
+            msg = f"Unsupported config type: {type(config)}. Expected ProviderConfig or dict."
             raise ValidationError(msg)
 
-        self._name = self._name or self._config.name
-
-        if self._name is None:
-            raise ValidationError("Provider name could not be determined.")
+        self._name = self._config.name
+        self.collections_fetched = False
 
     def __str__(self) -> str:
         """Return the provider's name as string."""
@@ -287,43 +304,54 @@ class Provider:
         """Hash based on provider name, for use in sets/dicts."""
         return hash(self.name)
 
-    def _repr_html_(self) -> str:
+    def _repr_html_(self, show_name: bool = True) -> str:
         """HTML representation for Jupyter/IPython display."""
-        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
-            Provider: <span style='color: black'>{self.name}</span>
-            </td></tr></thead>
+        group_display = f" ({self.group})" if self.group else ""
+        header_html = (
+            f"""
+        <h4 class="provider-title">{self.name}{group_display}</h4>
         """
-        # Show some key info, but not all config
-        summary = {
-            "name": self.name,
-            "group": self.group,
-            "priority": self.priority,
-            "products": list(self.product_types.keys()) if self.product_types else [],
+            if show_name
+            else ""
+        )
+
+        summaries = {
+            "Description": self.config.description or "",
+            "URL": self.config.url or "",
+            "Priority": self.priority,
         }
 
-        return (
-            f"<table>{thead}"
-            f"<tr><td style='text-align: left;'>"
-            f"{dict_to_html_table(summary, depth=1)}"
-            f"</td></tr></table>"
-        )
+        html = f"""
+        <br />
+        <div>
+            {header_html}
+            <br />
+            {html_table(summaries)}
+            <br />
+            <br />
+            {html_table(list(self.product_types.keys()))}
+        </div>
+        """
+
+        return html
+
+    @property
+    def config(self) -> ProviderConfig:
+        """
+        Provider configuration (read-only assignment).
+
+        To update configuration safely, use provider.update_from_config()
+        which handles metadata mapping and other provider-specific logic.
+
+        Note: Direct config modification (config.update(), config.name = ...)
+        bypasses important provider validation.
+        """
+        return self._config
 
     @property
     def name(self) -> str:
         """The name of the provider."""
-        assert self._name is not None
         return self._name
-
-    @property
-    def config(self) -> ProviderConfig:
-        """Get the provider's configuration."""
-        assert isinstance(self._config, ProviderConfig)
-        return self._config
-
-    @config.setter
-    def config(self, value: ProviderConfig) -> None:
-        """Set the provider's configuration."""
-        self._config = value
 
     @property
     def product_types(self) -> dict[str, Any]:
@@ -492,10 +520,18 @@ class Provider:
         """Update the provider's configuration from a given config.
 
         :param config: The new configuration to update from.
+        :raises ValidationError: If the config attempts to change the provider name.
         """
+        # Prevent name changes to maintain provider identity
+        source = config if isinstance(config, dict) else config.__dict__
+        if (new_name := source.get("name")) and new_name != self._name:
+            raise ValidationError(
+                f"Cannot change provider name from '{self._name}' to '{new_name}'. "
+                "Provider names are immutable after creation."
+            )
+
         # check if metadata mapping is already built for that provider
         # this happens when the provider search plugin has already been used
-        source = config if isinstance(config, dict) else config.__dict__
         search_key = "search" if "search" in self.config else "api"
         new_conf_search = source.get(search_key, {}) or {}
 
@@ -505,7 +541,7 @@ class Provider:
                 new_conf_search["metadata_mapping"],
             )
 
-        self.config |= config
+        self.config.update(config)
 
 
 class ProvidersDict(UserDict[str, Provider]):
@@ -571,8 +607,14 @@ class ProvidersDict(UserDict[str, Provider]):
         rows = ""
 
         for provider in self.data.values():
+            # Wrap each provider in a collapsible details element
             rows += (
-                f"<tr><td style='text-align: left;'>{provider._repr_html_()}</td></tr>"
+                f"<tr><td style='text-align: left;'>"
+                f"<details>"
+                f"<summary style='cursor: pointer; font-weight: bold;'>{provider.name}</summary>"
+                f"{provider._repr_html_(show_name=False)}"
+                f"</details>"
+                f"</td></tr>"
             )
 
         return f"<table>{thead}{rows}</table>"
@@ -618,21 +660,104 @@ class ProvidersDict(UserDict[str, Provider]):
         prov = self.get(provider)
         return prov.config if prov else None
 
-    def filter(self, pattern: Optional[str] = None) -> Iterator[Provider]:
+    def filter(self, q: Optional[str] = None) -> Iterator[Provider]:
         """
-        Yield providers whose name or group matches the regex pattern.
+        Yield providers whose name, group, description or URL matches the free-text query.
 
-        :param pattern: Regex pattern to filter provider name or group.
+        Supports logical operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
+        ``*`` and ``?`` wildcards.
+
+        If no query is provided, returns all providers in the collection.
+
+        :param q: Free-text parameter to filter providers. If None, yields all providers.
         :return: Iterator of matching Provider objects.
+
+        Example
+        -------
+
+        >>> from eodag.api.provider import ProvidersDict, Provider
+        >>> providers = ProvidersDict()
+        >>> providers['test1'] = Provider({
+        ...     'name': 'test1',
+        ...     'description': 'Satellite data',
+        ...     'search': {'type': 'StacSearch'}
+        ... })
+        >>> providers['test2'] = Provider({
+        ...     'name': 'test2',
+        ...     'description': 'Weather data',
+        ...     'search': {'type': 'StacSearch'}
+        ... })
+        >>> # Filter by description content
+        >>> list(p.name for p in providers.filter('Satellite'))
+        ['test1']
+        >>> # Filter with logical operators
+        >>> providers['test3'] = Provider({
+        ...     'name': 'test3',
+        ...     'description': 'Satellite weather data',
+        ...     'search': {'type': 'StacSearch'}
+        ... })
+        >>> list(p.name for p in providers.filter('Satellite AND weather'))
+        ['test3']
+        >>> # Get all providers when no filter
+        >>> len(list(providers.filter()))
+        3
         """
-        if not pattern:
+        if not q:
             yield from self.data.values()
             return
 
-        regex = re.compile(pattern)
+        free_text_query = compile_free_text_query(q)
+        searchable_attributes = {"name", "group", "description", "url"}
+
         for p in self.data.values():
-            if regex.search(p.name) or (p.group and regex.search(p.group)):
+            searchables = {
+                k: v for k, v in p.config.__dict__.items() if k in searchable_attributes
+            }
+            if free_text_query(searchables):
                 yield p
+
+    def filter_by_name_or_group(
+        self, name_or_group: Optional[str] = None
+    ) -> Iterator[Provider]:
+        """
+        Yield providers whose name or group matches the given name_or_group.
+
+        If name_or_group is None, yields all providers.
+
+        :param name_or_group: The provider name or group to filter by. If None, yields all providers.
+        :return: Iterator of matching Provider objects.
+
+        Example
+        -------
+
+        >>> from eodag.api.provider import ProvidersDict, Provider
+        >>> providers = ProvidersDict()
+        >>> providers['sentinel'] = Provider({'name': 'sentinel', 'group': 'esa', 'search': {'type': 'StacSearch'}})
+        >>> providers['landsat'] = Provider({'name': 'landsat', 'group': 'usgs', 'search': {'type': 'StacSearch'}})
+        >>> providers['modis'] = Provider({'name': 'modis', 'group': 'nasa', 'search': {'type': 'StacSearch'}})
+        >>>
+        >>> # Filter by exact provider name
+        >>> list(p.name for p in providers.filter_by_name_or_group('sentinel'))
+        ['sentinel']
+        >>>
+        >>> # Filter by group (case-insensitive)
+        >>> list(p.name for p in providers.filter_by_name_or_group('ESA'))
+        ['sentinel']
+        >>>
+        >>> # Get all providers when no filter
+        >>> len(list(providers.filter_by_name_or_group()))
+        3
+        """
+        if name_or_group is None:
+            yield from self.data.values()
+            return
+
+        name_or_group_lower = name_or_group.lower()
+        for provider in self.data.values():
+            if provider.name.lower() == name_or_group_lower or (
+                provider.group and provider.group.lower() == name_or_group_lower
+            ):
+                yield provider
 
     def delete_product_type(self, provider: str, product_type: str) -> None:
         """
@@ -693,13 +818,26 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         configs = self._get_whitelisted_configs(configs)
         for name, conf in configs.items():
+            if isinstance(conf, dict) and conf.get("name") != name:
+                if "name" in conf:
+                    logger.debug(
+                        "%s: config name '%s' overridden by dict key",
+                        name,
+                        conf["name"],
+                    )
+                conf = {**conf, "name": name}
+            elif isinstance(conf, ProviderConfig) and conf.name != name:
+                raise ValidationError(
+                    f"ProviderConfig name '{conf.name}' must match dict key '{name}'"
+                )
+
             try:
                 if name in self.data:
                     self.data[name].update_from_config(conf)
                     logger.debug("%s: configuration updated", name)
                 else:
                     logger.info("%s: loading provider from configuration", name)
-                    self.data[name] = Provider(conf, name)
+                    self.data[name] = Provider(conf)
 
                 self.data[name].collections_fetched = False
 

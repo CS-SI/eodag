@@ -124,7 +124,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                 "provider_json_token_with_expiration": {
                     "products": {"foo_product": {}},
                     "auth": {
-                        "" "type": "TokenAuth",
+                        "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
                         "token_type": "json",
                         "token_key": "token_is_here",

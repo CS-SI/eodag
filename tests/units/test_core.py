@@ -1239,7 +1239,9 @@ class TestCore(TestCoreBase):
         """fetch_collections_list must launch collections discovery for new system-wide providers"""
         # add a new system-wide provider not listed in ext-conf
         new_default_conf = load_default_config()
-        new_default_conf["new_provider"] = new_default_conf["earth_search"]
+        new_default_conf["new_provider"] = new_default_conf["earth_search"].with_name(
+            "new_provider"
+        )
 
         with mock.patch(
             "eodag.api.core.load_default_config",
