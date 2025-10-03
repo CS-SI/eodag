@@ -1186,7 +1186,11 @@ class QueryStringSearch(Search):
                 else:
                     # Use the whole value as the token
                     raw_search_results.next_page_token = href_value
-                if next_page_token_key and "parse_url_key" in self.config.pagination:
+                if (
+                    "parse_url_key" in self.config.pagination
+                    and raw_search_results.next_page_token is not None
+                    and raw_search_results.next_page_token.isdigit()
+                ):
                     raw_search_results.next_page_token = str(
                         int(raw_search_results.next_page_token) + 1
                     )
