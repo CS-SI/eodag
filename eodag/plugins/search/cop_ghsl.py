@@ -79,6 +79,10 @@ def _get_available_values_from_constraints(
     available_values = {}
     constraint_keys = set([k for const in constraints for k in const.keys()])
     not_found_keys = set(filters.keys()) - constraint_keys
+    if "month" in not_found_keys and isinstance(filters["month"], list):
+        # month added from datetime but filter not available
+        filters.pop("month")
+        not_found_keys.pop("month")
     if not_found_keys and not_found_keys != {"id"}:
         raise ValidationError(
             f"Parameters {not_found_keys} do not exist for product type {product_type}; "
@@ -88,10 +92,16 @@ def _get_available_values_from_constraints(
     filtered_constraints = deepcopy(constraints)
     for filter_key, value in filters.items():
         available_values_key = []
+        values_in_constraints = []
         for i, constraint in enumerate(constraints):
             if constraint not in filtered_constraints:
                 continue
-            if filter_key in constraint:
+            if filter_key in constraint and isinstance(value, list):
+                for v in value:
+                    if v in constraint[filter_key]:
+                        values_in_constraints.append(v)
+
+            elif filter_key in constraint:
                 available_values_key.extend(constraint[filter_key])
                 if (
                     value not in constraint[filter_key]
@@ -104,6 +114,14 @@ def _get_available_values_from_constraints(
                     f"available values: {set(available_values_key)}"
                 )
 
+        if not values_in_constraints and isinstance(value, list):
+            constraints_values = []
+            for const in constraints:
+                constraints_values.extend(const[filter_key])
+            raise ValidationError(
+                f"No values for {filter_key} available in given range; available values {set(constraints_values)}"
+            )
+
     for constraint in filtered_constraints:
         for key, values in constraint.items():
             if key in available_values:
@@ -112,6 +130,27 @@ def _get_available_values_from_constraints(
                 available_values[key] = values
 
     return available_values
+
+
+def _get_years_and_months_from_dates(
+    start_date_str: str, end_date_str: str
+) -> dict[str, list[str]]:
+    try:
+        start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%dT%H:%M:%SZ")
+        end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d")
+    start_year = start_date.year
+    end_year = end_date.year
+    years = [str(y) for y in range(start_year, end_year + 1)]
+    result = {"years": years}
+    if start_year == end_year:
+        # month is only used for collection where only one year is available
+        start_month = start_date.month
+        end_month = end_date.month
+        result["months"] = [f"{m:02}" for m in range(start_month, end_month + 1)]
+    return result
 
 
 class CopGhslSearch(Search):
@@ -134,10 +173,18 @@ class CopGhslSearch(Search):
             raise ValidationError(
                 f"parameter(s) {missing_params} missing in the request"
             )
+        if "year" in available_values and isinstance(params["year"], list):
+            params["year"] = set(params["year"]).intersection(
+                set(available_values["year"])
+            )
+        if "month" in available_values and isinstance(params["month"], list):
+            params["month"] = set(params["month"]).intersection(
+                set(available_values["month"])
+            )
 
     def _create_products_from_tiles(
         self,
-        tiles: list[dict[str, Any]],
+        tiles: dict[str, list[dict[str, Any]]],
         unit: str,
         product_type: str,
         params: dict[str, Any],
@@ -151,77 +198,90 @@ class CopGhslSearch(Search):
         metadata_mapping = params.pop("metadata_mapping", {})
         parsed_metadata_mapping = mtd_cfg_as_conversion_and_querypath(metadata_mapping)
 
-        properties = deepcopy(params)
-        properties["startTimeFromAscendingNode"] = datetime.datetime(
-            year=int(params["year"]), month=1, day=1
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
-        properties["completionTimeFromAscendingNode"] = datetime.datetime(
-            year=int(params["year"]), month=12, day=31
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
-
         filter_geometry = params.pop("geometry", None)
         page = params.pop("page")
         per_page = params.pop("per_page")
         start_index = per_page * (page - 1)
         end_index = start_index + per_page - 1
 
-        # information for id and download path
+        # parameters that need formatting
         dataset = metadata_mapping.get("dataset", None)
         if not dataset:
             raise MisconfiguredError(
                 f"dataset mapping not available for {product_type}"
             )
-        format_params = params
-        format_params = {k: str(v) for k, v in format_params.items()}
-        product_id_base = product_type + "__" + "_".join(format_params.values())
         if "tile_size" in parsed_metadata_mapping:
             # format tile_size
             tile_size = properties_from_json(
                 {"tile_size": params["tile_size"]}, parsed_metadata_mapping
             )["tile_size"]
-            format_params.update({"tile_size": tile_size})
+            params.update({"tile_size": tile_size})
+
         # additional filter
         if additional_filter:
-            add_filter_value = format_params.pop(additional_filter)
+            add_filter_value = params.pop(additional_filter)
             if add_filter_value == "TOTAL":
                 add_filter_value = ""
-            format_params.update({"add_filter": add_filter_value})
-        dataset = dataset.format(**format_params)
-        dataset = dataset.replace("__", "_")  # in case additional filter value is empty
+            params.update({"add_filter": add_filter_value})
 
-        # create items from tiles
-        current_index = 0
-        for tile in tiles:
-            if not tile:  # empty grid position
-                continue
-            # get geometry from tile
-            if unit == "lat/lon":  # bbox is given as latitude/longitude
-                properties["geometry"] = tile["BBox"]
-            elif unit == "metres" and "BBox" in tile:  # bbox is given in metres
-                bbox_lon_lat = _convert_bbox_to_lonlat_mollweide(tile["BBox"])
-                properties["geometry"] = bbox_lon_lat
-            else:
-                bbox_lon_lat = _convert_bbox_to_lonlat_EPSG3035(tile["BBox_3035"])
-                properties["geometry"] = bbox_lon_lat
-            # create id
-            product_id = f"{product_id_base}__{tile['tileID']}"
-            properties["id"] = properties["title"] = product_id
-            downloadLink = metadata_mapping.get("downloadLink").format(
-                dataset=dataset, tile_id=tile["tileID"]
-            )
-            properties["downloadLink"] = downloadLink
-            product = EOProduct(
-                provider="cop_ghsl", properties=properties, productType=product_type
-            )
-            if not filter_geometry or filter_geometry.intersects(product.geometry):
-                if current_index >= start_index and current_index <= end_index:
-                    products.append(product)
-                current_index += 1
+        if isinstance(params["year"], int) or isinstance(params["year"], str):
+            list_years = [params["year"]]
+        else:
+            list_years = params["year"]
+        for year in list_years:
+            properties = deepcopy(params)
+            properties["startTimeFromAscendingNode"] = datetime.datetime(
+                year=int(year), month=1, day=1
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            properties["completionTimeFromAscendingNode"] = datetime.datetime(
+                year=int(year), month=12, day=31
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            properties["year"] = year
+
+            # information for id and download path
+            format_params = deepcopy(params)
+            format_params["year"] = year
+            format_params = {k: str(v) for k, v in format_params.items()}
+            product_id_base = product_type + "__" + "_".join(format_params.values())
+
+            dataset = dataset.format(**format_params)
+            dataset = dataset.replace(
+                "__", "_"
+            )  # in case additional filter value is empty
+
+            # create items from tiles
+            current_index = 0
+            for tile in tiles[year]:
+                if not tile:  # empty grid position
+                    continue
+                # get geometry from tile
+                if unit == "lat/lon":  # bbox is given as latitude/longitude
+                    properties["geometry"] = tile["BBox"]
+                elif unit == "metres" and "BBox" in tile:  # bbox is given in metres
+                    bbox_lon_lat = _convert_bbox_to_lonlat_mollweide(tile["BBox"])
+                    properties["geometry"] = bbox_lon_lat
+                else:  # ETRS89/LAEA Europe coordinate system
+                    bbox_lon_lat = _convert_bbox_to_lonlat_EPSG3035(tile["BBox_3035"])
+                    properties["geometry"] = bbox_lon_lat
+                # create id
+                product_id = f"{product_id_base}__{tile['tileID']}"
+                properties["id"] = properties["title"] = product_id
+                downloadLink = metadata_mapping.get("downloadLink").format(
+                    dataset=dataset, tile_id=tile["tileID"]
+                )
+                properties["downloadLink"] = downloadLink
+                product = EOProduct(
+                    provider="cop_ghsl", properties=properties, productType=product_type
+                )
+                if not filter_geometry or filter_geometry.intersects(product.geometry):
+                    if current_index >= start_index and current_index <= end_index:
+                        products.append(product)
+                    current_index += 1
 
         return products, current_index + 1
 
     def _create_products_without_tiles(
-        self, product_type: str, count: bool, filter_params: dict[str, Any]
+        self, product_type: str, prep: PreparedSearch, filter_params: dict[str, Any]
     ) -> tuple[list[EOProduct], Optional[int]]:
         filters = deepcopy(filter_params)
         default_geometry = getattr(self.config, "metadata_mapping")["defaultGeometry"]
@@ -239,65 +299,80 @@ class CopGhslSearch(Search):
         properties["downloadLink"] = download_link
         # product type with assets mapping
         assets_mapping = filters.pop("assets_mapping", None)
+        products = []
+        start_index = prep.items_per_page * (prep.page - 1)
+        end_index = start_index + prep.items_per_page - 1
         if assets_mapping:
             format_params = {k: str(v) for k, v in filters.items() if v}
             format_params.pop("metadata_mapping", None)
-            product_id = product_type + "__" + "_".join(format_params.values())
-            properties["id"] = properties["title"] = product_id
-            month = int(filters.get("month", "12"))
-            end_day = monthrange(int(filters["year"]), month)[1]
-            start_time = datetime.datetime(
-                year=int(filters["year"]),
-                month=int(filters.get("month", "1")),
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-            )
-            end_time = datetime.datetime(
-                year=int(filters["year"]),
-                month=month,
-                day=end_day,
-                hour=23,
-                minute=59,
-                second=59,
-            )
-            properties["startTimeFromAscendingNode"] = start_time.strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
-            properties["completionTimeFromAscendingNode"] = end_time.strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
-            product = EOProduct(
-                provider="cop_ghsl", properties=properties, productType=product_type
-            )
-            assets = AssetsDict(product=product)
-            for key, mapping in assets_mapping.items():
-                download_link = mapping["href"].format(**filters)
-                assets[key] = Asset(
-                    product=product,
-                    key=key,
-                    href=download_link,
-                    title=mapping["title"],
-                    type=mapping["type"],
+            months = filters.get("month", "12")
+            num_products = len(months)
+            if isinstance(months, str) or isinstance(months, int):
+                months = [months]
+            for i, month in enumerate(months):
+                if i < start_index:
+                    continue
+                filters["month"] = format_params["month"] = str(month)
+                product_id = product_type + "__" + "_".join(format_params.values())
+                properties["id"] = properties["title"] = product_id
+                end_day = monthrange(int(filters["year"]), int(month))[1]
+                start_time = datetime.datetime(
+                    year=int(filters["year"]),
+                    month=int(month),
+                    day=1,
+                    hour=0,
+                    minute=0,
+                    second=0,
                 )
-            product.assets = assets
+                end_time = datetime.datetime(
+                    year=int(filters["year"]),
+                    month=int(month),
+                    day=end_day,
+                    hour=23,
+                    minute=59,
+                    second=59,
+                )
+                properties["startTimeFromAscendingNode"] = start_time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+                properties["completionTimeFromAscendingNode"] = end_time.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+                product = EOProduct(
+                    provider="cop_ghsl", properties=properties, productType=product_type
+                )
+                assets = AssetsDict(product=product)
+                for key, mapping in assets_mapping.items():
+                    download_link = mapping["href"].format(**filters)
+                    assets[key] = Asset(
+                        product=product,
+                        key=key,
+                        href=download_link,
+                        title=mapping["title"],
+                        type=mapping["type"],
+                    )
+                product.assets = assets
+                products.append(product)
+                if i == end_index:
+                    break
         else:  # product type with only one file to download
             product_id = f"{product_type}_ALL"
             properties["id"] = properties["title"] = product_id
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, productType=product_type
             )
-        if count:
-            return [product], 1
+            products.append(product)
+            num_products = 1
+        if prep.count:
+            return products, num_products
         else:
-            return [product], None
+            return products, None
 
     def _get_tile_from_product_id(
         self, query_params: dict[str, Any]
-    ) -> Optional[list[dict[str, Any]]]:
+    ) -> Optional[tuple[dict[str, list[dict[str, Any]]], int]]:
         """fetch the tile for a specific product id from the provider
-        returns a list  of length 1 to simplify further processing
+        returns a a dict with a list of length 1 to simplify further processing
         """
         product_id = query_params.pop("id")
         product_type = query_params["productType"]
@@ -317,19 +392,21 @@ class CopGhslSearch(Search):
         if tiles_or_none:
             tiles, unit = tiles_or_none
             matching_tile = [
-                tile for tile in tiles if tile and tile["tileID"] == tile_id
+                tile
+                for tile in tiles[query_params["year"]]
+                if tile and tile["tileID"] == tile_id
             ]
-            return matching_tile, unit
+            return {query_params["year"]: matching_tile}, unit
         else:
             return None
 
     def _get_tiles_for_filters(
-        self, product_type_config: dict[str, Any], filter_params: dict[str, Any]
-    ) -> Optional[tuple[list[dict[str, Any]], str]]:
+        self, product_type_config: dict[str, Any], params: dict[str, Any]
+    ) -> Optional[tuple[dict[str, list[dict[str, Any]]], str]]:
         """fetch the tiles matching the given filters from the provider"""
 
-        logger.debug(f"get tiles for filter parameters {filter_params}")
-        product_type = filter_params.pop("productType")
+        logger.debug(f"get tiles for filter parameters {params}")
+        product_type = params.pop("productType")
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
@@ -339,41 +416,54 @@ class CopGhslSearch(Search):
             raise MisconfiguredError(
                 f"provider productType mapping not available for {product_type}"
             )
-        filter_params = deepcopy(filter_params)
+        filter_params = deepcopy(params)
         filter_params.pop("geometry", None)
         filter_params.update(product_type_config)
         filter_params.pop("metadata_mapping", None)
         filter_params.pop("assets_mapping", None)
 
         self._check_input_parameters_valid(product_type, filter_params)
+        if "year" in filter_params:
+            params["year"] = filter_params["year"]
 
         # fetch available tiles based on filters
-        try:
-            filter_str = (
-                f"{provider_product_type}_{filter_params['year']}_"
-                f"{filter_params['tile_size']}_{filter_params['coord_system']}"
-            )
-        except KeyError:
-            logger.warning(f"no tiles available for {product_type}")
-            return None
-        tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
-        try:
-            res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
-            if res.status_code == 404:
+        if isinstance(filter_params["year"], int) or isinstance(
+            filter_params["year"], str
+        ):
+            list_years = [filter_params["year"]]
+        else:
+            list_years = filter_params["year"]
+        all_tiles = {}
+        for year in list_years:
+            try:
+                filter_str = (
+                    f"{provider_product_type}_{year}_"
+                    f"{filter_params['tile_size']}_{filter_params['coord_system']}"
+                )
+            except KeyError:
+                logger.warning(f"no tiles available for {product_type}")
                 return None
-            res.raise_for_status()
-            tiles = res.json()["grid"]
-            if filter_params["coord_system"] == 3035:
-                tiles = []
-                for t_id, bbox in res.json()["BBoxes"].items():
-                    tiles.append({"tileID": t_id, "BBox_3035": bbox})
-            unit = res.json().get("unit", "")
-        except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=timeout) from exc
-        except requests.exceptions.RequestException as exc:
-            raise RequestError.from_error(exc, f"Unable to fetch {tiles_url}") from exc
+            tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
+            try:
+                res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
+                if res.status_code == 404:
+                    return None
+                res.raise_for_status()
+                tiles = res.json()["grid"]
+                if filter_params["coord_system"] == 3035:
+                    tiles = []
+                    for t_id, bbox in res.json()["BBoxes"].items():
+                        tiles.append({"tileID": t_id, "BBox_3035": bbox})
+                all_tiles[year] = tiles
+                unit = res.json().get("unit", "")
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=timeout) from exc
+            except requests.exceptions.RequestException as exc:
+                raise RequestError.from_error(
+                    exc, f"Unable to fetch {tiles_url}"
+                ) from exc
 
-        return tiles, unit
+        return all_tiles, unit
 
     def query(
         self,
@@ -392,11 +482,16 @@ class CopGhslSearch(Search):
         # get year from start/end time if not given separately
         start_time = kwargs.pop("startTimeFromAscendingNode", None)
         end_time = kwargs.pop("completionTimeFromAscendingNode", None)
-        if "year" not in kwargs:
-            if start_time:
-                kwargs["year"] = start_time[:4]
-            elif end_time:
-                kwargs["year"] = end_time[:4]
+        if start_time and not end_time:
+            end_time = start_time
+        if end_time and not start_time:
+            start_time = end_time
+        if start_time:
+            years_months = _get_years_and_months_from_dates(start_time, end_time)
+            if "year" not in kwargs:
+                kwargs["year"] = years_months["years"]
+            if "month" not in kwargs and "months" in years_months:
+                kwargs["month"] = years_months["months"]
 
         product_type = kwargs.get("productType", None)
         if not product_type:
@@ -410,7 +505,7 @@ class CopGhslSearch(Search):
             tiles, unit = tiles_or_none
         else:
             kwargs.update(product_type_config)
-            return self._create_products_without_tiles(product_type, prep.count, kwargs)
+            return self._create_products_without_tiles(product_type, prep, kwargs)
 
         # create products from tiles
         kwargs.update(product_type_config)
