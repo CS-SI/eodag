@@ -76,6 +76,65 @@ image:
   ##
   pullSecrets: []
 
+## OpenTelemetry Collector image version
+## ref: https://hub.docker.com/r/otel/opentelemetry-collector-contrib
+## @param image.registry OpenTelemetry Collector image registry
+## @param image.repository OpenTelemetry Collector image repository
+## @param image.tag Overrides the OpenTelemetry Collector image tag
+## @param image.pullPolicy EODAG Server image pull policy
+## Number of replicas to deploy
+##
+otel:
+  enabled: false
+  endpoint: "http://localhost:4318"
+  interval: 60000
+  timeout: 10
+  collector:
+    enabled: false
+    image:
+      registry: docker.io
+      repository: otel/opentelemetry-collector-contrib
+      tag: "0.104.0"
+      ports:
+        otlpReceiver: 4318
+        prometheusExporter: 8000
+      ## Specify a imagePullPolicy
+      ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+      ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+      ##
+      pullPolicy: IfNotPresent
+    resources:
+      limits: {}
+      requests: {}
+  serviceMonitor:
+    ## @param otel.serviceMonitor.enabled if `true`, creates a Prometheus Operator PodMonitor
+    ##
+    enabled: false
+    ## @param otel.serviceMonitor.namespace Namespace for the PodMonitor Resource (defaults to the Release Namespace)
+    ##
+    namespace: ""
+    ## @param otel.serviceMonitor.interval Interval at which metrics should be scraped.
+    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+    ## e.g:
+    ## interval: 10s
+    ##
+    interval: ""
+    ## @param otel.serviceMonitor.scrapeTimeout Timeout after which the scrape is ended
+    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+    ## e.g:
+    ## scrapeTimeout: 10s
+    ##
+    scrapeTimeout: ""
+    ## @param otel.serviceMonitor.labels Labels that can be used so PodMonitor will be discovered by Prometheus
+    ##
+    labels: {}
+    ## @param otel.serviceMonitor.relabelings RelabelConfigs to apply to samples before scraping
+    ##
+    relabelings: []
+    ## @param otel.serviceMonitor.metricRelabelings MetricRelabelConfigs to apply to samples before ingestion
+    ##
+    metricRelabelings: []
+
 ## @param replicaCount Number of EODAG Server replicas
 ##
 replicaCount: 1
@@ -465,6 +524,49 @@ providers: ""
 #       GENERIC_PRODUCT_TYPE:
 #         dataset: '{productType}'
 
+## @param otelCollectorConfig Optional overwrite of OpenTelemetry Collector default configuration
+otelCollectorConfig: |-
+  extensions:
+    health_check:
+    pprof:
+      endpoint: 0.0.0.0:1777
+    zpages:
+      endpoint: 0.0.0.0:55679
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+    # Collect own metrics
+    prometheus:
+      config:
+        scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+          - targets: ['0.0.0.0:8888']
+  processors:
+    batch:
+  exporters:
+    debug:
+      verbosity: detailed
+    # Data sources: metrics
+    prometheus:
+      endpoint: 0.0.0.0:8000
+      namespace: eodag-otelcol-exporter
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [debug]
+      metrics:
+  #      receivers: [otlp, prometheus]
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [debug,prometheus]
+    extensions: [health_check, pprof, zpages]
+
 ## @param config [object] EODAG configuration
 ## doc: https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html
 ## ref: https://github.com/CS-SI/eodag/blob/master/eodag/resources/user_conf_template.yml
@@ -481,7 +583,7 @@ config:
   #       credentials:
   #           username:
   #           password:
-  # usgs:
+  # cop_cds:
   #     priority: # Lower value means lower priority (Default: 0)
   #     api:
   #         output_dir:
@@ -505,6 +607,12 @@ configExistingSecret:
   name:
   key:
 
+## Deployment configuration
+deployment:
+  ## @param deployment.annotations Additional custom annotations for eodag deployment
+  annotations: {}
+
+
 ## Service configuration
 ##
 service:
@@ -519,11 +627,13 @@ service:
   ##
   ports:
     http: 8080
+
   ## @param service.nodePorts [object] Specify the nodePort values for the LoadBalancer and NodePort service types.
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   ##
   nodePorts:
     http: ""
+    metrics: ""
   ## @param service.sessionAffinity Control where client requests go, to the same pod or round-robin
   ## Values: ClientIP or None
   ## ref: https://kubernetes.io/docs/user-guide/services/
@@ -690,17 +800,3 @@ serviceAccount:
   ## @param serviceAccount.automountServiceAccountToken Automount service account token for the server service account
   ##
   automountServiceAccountToken: true
-
-## Autoscaling configuration
-## @param autoscaling.enabled Enable autoscaling
-## @param autoscaling.minReplicas Minimum number of replicas
-## @param autoscaling.maxReplicas Maximum number of replicas
-## @param autoscaling.targetCPU Target CPU utilization percentage
-## @param autoscaling.targetMemory Target Memory utilization percentage
-##
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
-  targetCPU: ""
-  targetMemory: ""
