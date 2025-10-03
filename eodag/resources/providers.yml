@@ -1402,7 +1402,7 @@
     S2_MSI_L2A_COG:
       productType: sentinel-2-l2a
       metadata_mapping:
-        assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs\\.s3\\.us-west-2\\.amazonaws\\.com/.*\")]","https","s3")}'
+        assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs.*/\")]","https\u003A//[a-z0-9-\.]+/","s3\u003A//sentinel-cogs/")}'
     LANDSAT_C2L2:
       productType: landsat-c2-l2
     NAIP:
