@@ -34,6 +34,7 @@ from eodag.utils import (
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
+    deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
     sort_dict,
@@ -580,7 +581,7 @@ class PluginConfig(yaml.YAMLObject):
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         cls.validate(tuple(mapping.keys()))
         c = cls()
-        c.__dict__.update(mapping)
+        c.__dict__.update(deepcopy(mapping))
         return c
 
     @staticmethod
