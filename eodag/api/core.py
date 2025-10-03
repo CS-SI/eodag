@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import datetime
+import itertools
 import logging
 import os
 import re
@@ -237,7 +238,7 @@ class EODataAccessGateway:
                 logger.info(
                     "%s: provider restored from the pruned configurations", name
                 )
-                self.providers[name] = Provider(config, name)
+                self.providers[name] = Provider(config)
                 self._pruned_providers_config.pop(name)
 
         self.providers.update_from_configs(conf_update)
@@ -476,14 +477,16 @@ class EODataAccessGateway:
             self.fetch_product_types_list(provider=provider)
 
         product_types: list[dict[str, Any]] = []
-        providers = list(self.providers.filter(f"^{provider}$" if provider else None))
+        providers_iter, providers_check = itertools.tee(
+            self.providers.filter_by_name_or_group(provider)
+        )
 
-        if provider and not providers:
+        if provider and not any(providers_check):
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for p in providers:
+        for p in providers_iter:
             for product_type_id in p.product_types:  # type: ignore
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
@@ -516,9 +519,7 @@ class EODataAccessGateway:
         providers_discovery_configs_fetchable: dict[str, DiscoverProductTypes] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
-        for provider_to_fetch in self.providers.filter(
-            f"^{provider}$" if provider else None
-        ):
+        for provider_to_fetch in self.providers.filter_by_name_or_group(provider):
             if provider_to_fetch.fetchable and provider_to_fetch.search_config:
                 providers_discovery_configs_fetchable[
                     provider_to_fetch.name
@@ -636,11 +637,11 @@ class EODataAccessGateway:
         :returns: external product types configuration
         """
 
-        providers_to_discover = list(
-            self.providers.filter(f"^{provider}$" if provider else None)
+        providers_iter, providers_check = itertools.tee(
+            self.providers.filter_by_name_or_group(provider)
         )
 
-        if provider and not providers_to_discover:
+        if provider and not any(providers_check):
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
@@ -648,7 +649,7 @@ class EODataAccessGateway:
         ext_product_types_conf: dict[str, Any] = {}
 
         kwargs: dict[str, Any] = {}
-        for p in providers_to_discover:
+        for p in providers_iter:
             if not p.search_config:
                 return None
 
