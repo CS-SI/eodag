@@ -1715,7 +1715,7 @@ class TestCore(TestCoreBase):
                     "created",
                     "updated",
                     "platform",
-                    "resolution",
+                    "gsd",
                     "eo:cloud_cover",
                 ],
             },
@@ -1727,7 +1727,7 @@ class TestCore(TestCoreBase):
                     "created",
                     "updated",
                     "platform",
-                    "resolution",
+                    "gsd",
                     "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
@@ -1739,7 +1739,7 @@ class TestCore(TestCoreBase):
                     "created",
                     "updated",
                     "platform",
-                    "resolution",
+                    "gsd",
                     "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
@@ -1779,7 +1779,7 @@ class TestCore(TestCoreBase):
                     "id",
                     "start_datetime",
                     "end_datetime",
-                    "productVersion",
+                    "version",
                     "processing:level",
                 ],
                 "max_sort_params": None,
@@ -1797,7 +1797,7 @@ class TestCore(TestCoreBase):
                 "sortables": [
                     "start_datetime",
                     "end_datetime",
-                    "sensorMode",
+                    "sar:instrument_mode",
                 ],
                 "max_sort_params": 1,
             },
@@ -1809,8 +1809,8 @@ class TestCore(TestCoreBase):
                     "created",
                     "updated",
                     "platform",
-                    "illuminationElevationAngle",
-                    "illuminationAzimuthAngle",
+                    "view:sun_elevation",
+                    "view:sun_azimuth",
                     "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
@@ -1820,7 +1820,18 @@ class TestCore(TestCoreBase):
             "wekeo_main": None,
         }
         sortables = self.dag.available_sortables()
-        self.assertDictEqual(sortables, expected_result)
+        self.assertListEqual(
+            sorted(list(sortables.keys())), sorted(list(expected_result.keys()))
+        )
+        for provider, sortable in sortables.items():
+            if sortable is None:
+                self.assertIsNone(expected_result[provider])
+            else:
+                self.assertDictEqual(
+                    sortable,
+                    expected_result[provider],
+                    f"Expected sortables differ for provider {provider}",
+                )
 
         # check if sortables are set to None when the provider does not support the sorting feature
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
@@ -2300,12 +2311,8 @@ class TestCoreSearch(TestCoreBase):
             ][0][0],
             "2015-06-23T00:00:00Z",
         )
-        self.assertNotIn(
-            "S2_MSI_L1C", self.dag.guess_collection(missionEndDate="2015-06-01")
-        )
-        self.assertIn(
-            "S2_MSI_L1C", self.dag.guess_collection(missionEndDate="2015-07-01")
-        )
+        self.assertNotIn("S2_MSI_L1C", self.dag.guess_collection(end_date="2015-06-01"))
+        self.assertIn("S2_MSI_L1C", self.dag.guess_collection(end_date="2015-07-01"))
 
         # with individual filters
         actual = self.dag.guess_collection(
