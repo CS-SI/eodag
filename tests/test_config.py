@@ -525,11 +525,9 @@ class TestStacProviderConfig(unittest.TestCase):
         ].search.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
-        self.assertIn(
-            "resolution", common_stac_provider_search_conf["metadata_mapping"]
-        )
-        self.assertNotIn("resolution", raw_provider_search_conf["metadata_mapping"])
-        self.assertIn("resolution", provider_search_conf["metadata_mapping"])
+        self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])
+        self.assertNotIn("gsd", raw_provider_search_conf["metadata_mapping"])
+        self.assertIn("gsd", provider_search_conf["metadata_mapping"])
 
         self.assertIn("discover_metadata", common_stac_provider_search_conf)
         self.assertNotIn("discover_metadata", raw_provider_search_conf)

@@ -141,7 +141,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by property"""
-        search_result = self.dag.search(orbitNumber=110, count=True, validate=False)
+        search_result = self.dag.search(count=True, **{"sat:relative_orbit": 110}, validate=False)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 

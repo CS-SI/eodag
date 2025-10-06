@@ -1573,7 +1573,7 @@ class PostJsonSearch(QueryStringSearch):
         if not qp and any(
             k
             for k in keywords.keys()
-            if isinstance(collection_metadata_mapping.get(k, []), list)
+            if isinstance(collection_metadata_mapping.get(k), list)
         ):
             return ([], 0) if prep.count else ([], None)
         prep.query_params = dict(qp, **sort_by_qp)
