@@ -502,11 +502,7 @@ class HTTPDownload(Download):
 
         on_success_mm_querypath = (
             # append product.properties as input for on success response parsing
-            mtd_cfg_as_conversion_and_querypath(
-                dict(
-                    {k: str(v) for k, v in product.properties.items()}, **on_success_mm
-                ),
-            )
+            mtd_cfg_as_conversion_and_querypath(on_success_mm)
             if on_success_mm
             else {}
         )
