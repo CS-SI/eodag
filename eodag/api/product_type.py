@@ -215,7 +215,7 @@ class ProductType(BaseModel):
         return handler(values)
 
     def __str__(self) -> str:
-        return f'ProductType("{self.id}")'
+        return f'{type(self).__name__}("{self.id}")'
 
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(
@@ -299,6 +299,12 @@ class ProductTypesDict(UserDict[str, ProductType]):
 
         self.data = {pt.id: pt for pt in product_types}
 
+    def __str__(self) -> str:
+        return "{" + ", ".join(f'"{pt}": {pt_f}' for pt, pt_f in self.items()) + "}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 class ProductTypesList(UserList[ProductType]):
     """An object representing a collection of :class:`~eodag.api.product_type.ProductType`.
@@ -313,6 +319,12 @@ class ProductTypesList(UserList[ProductType]):
         product_types: list[ProductType],
     ) -> None:
         super().__init__(product_types)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}([{", ".join(str(pt) for pt in self)}])"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def _repr_html_(self, embedded: bool = False) -> str:
         # mock "thead" tag by reproduicing its style to make "details" and "summary" tags work properly
