@@ -19,14 +19,16 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Optional, cast
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 
+from eodag.api.product._assets import Asset
 from eodag.plugins.authentication.base import Authentication
 from eodag.types import S3SessionKwargs
-from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.exceptions import AuthenticationError, EodagError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client, S3ServiceResource
@@ -283,3 +285,38 @@ class AwsAuth(Authentication):
             "session": self.s3_session,
             **rio_env_kwargs,
         }
+
+    def presign_url(
+        self,
+        asset: Asset,
+        expires_in: int = 3600,
+    ) -> str:
+        """This method is used to presign a url to download an asset from S3.
+
+        :param asset: asset for which the url shall be presigned
+        :param expires_in: expiration time of the presigned url in seconds
+        :returns: presigned url
+        :raises: :class:`~eodag.utils.exceptions.EodagError`
+        :raises: :class:`NotImplementedError`
+        """
+        if not getattr(self.config, "support_presign_url", True):
+            raise NotImplementedError(
+                f"presign_url is not supported for provider {self.provider}"
+            )
+
+        url_parts = urlparse(asset["href"])
+
+        s3_client = self.get_s3_client()
+        url_path_parts = url_parts.path[1:].split("/")  # remove leading "/" and split
+        try:
+            presigned_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": url_path_parts[0],
+                    "Key": "/".join(url_path_parts[1:]),
+                },
+                ExpiresIn=expires_in,
+            )
+            return presigned_url
+        except ClientError:
+            raise EodagError(f"Couldn't get a presigned URL for '{asset}'.")

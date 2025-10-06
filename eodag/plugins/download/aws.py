@@ -22,7 +22,6 @@ import os
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
-from urllib.parse import urlparse
 
 import boto3
 import requests
@@ -30,7 +29,6 @@ from botocore.exceptions import ClientError
 from lxml import etree
 from requests.auth import AuthBase
 
-from eodag.api.product._assets import Asset
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
@@ -1133,48 +1131,3 @@ class AwsDownload(Download):
             timeout=timeout,
             **kwargs,
         )
-
-    def presign_url(
-        self,
-        asset: Asset,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
-        expires_in: int = 3600,
-    ) -> str:
-        """presign a url to download an asset from S3
-
-        :param asset: asset for which the url shall be presigned
-        :param auth: authentification information
-        :param expires_in: expiration time of the presigned url in seconds
-        :returns: presigned url
-        """
-        ignore_assets = getattr(self.config, "ignore_assets", False)
-        url_parts = urlparse(asset["href"])
-        if "." not in url_parts.netloc or ignore_assets:
-            # asset url is created based on downloadLink and S3 objects -> no presign
-            logger.warning(f"Couldn't get a presigned URL for '{asset}'.")
-            return ""
-        if auth and isinstance(auth, boto3.resources.base.ServiceResource):
-            s3_client = auth.meta.client
-            url_path_parts = url_parts.path[1:].split(
-                "/"
-            )  # remove leading "/" and split
-            try:
-                presigned_url = s3_client.generate_presigned_url(
-                    "get_object",
-                    Params={
-                        "Bucket": url_path_parts[0],
-                        "Key": "/".join(url_path_parts[1:]),
-                    },
-                    ExpiresIn=expires_in,
-                )
-                return presigned_url
-            except ClientError:
-                logger.warning(f"Couldn't get a presigned URL for '{asset}'.")
-            return ""
-        elif auth:
-            raise NotImplementedError(
-                f"presign_url is not implemented for authentication {auth}"
-            )
-        else:
-            # no authentication necessary
-            return asset["href"]
