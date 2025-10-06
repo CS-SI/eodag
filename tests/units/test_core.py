@@ -1429,12 +1429,12 @@ class TestCore(TestCoreBase):
 
         # model_validate should validate input parameters using the queryables result
         queryables_validated = queryables_peps_s1grd.get_model().model_validate(
-            {"collection": "S1_SAR_GRD", "snowCover": 50}
+            {"collection": "S1_SAR_GRD", "eo:snow_cover": 50}
         )
-        self.assertIn("snowCover", queryables_validated.__dict__)
+        self.assertIn("eo_snow_cover", queryables_validated.__dict__)
         with self.assertRaises(PydanticValidationError):
             queryables_peps_s1grd.get_model().model_validate(
-                {"collection": "S1_SAR_GRD", "snowCover": 500}
+                {"collection": "S1_SAR_GRD", "eo:snow_cover": 500}
             )
 
     @mock.patch(

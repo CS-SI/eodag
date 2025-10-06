@@ -471,10 +471,13 @@ class Search(PluginTopic):
         eodag_queryables = copy_deepcopy(
             model_fields_to_annotated(Queryables.model_fields)
         )
+        queryables["collection"] = eodag_queryables.pop("collection")
         # add default value for collection
-        if alias:
-            eodag_queryables.pop("collection")
-            eodag_queryables["collection"] = Annotated[str, Field(default=alias)]
+        if collection_or_alias := alias or collection:
+            queryables["collection"] = Annotated[
+                str, Field(default=collection_or_alias)
+            ]
+
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None
