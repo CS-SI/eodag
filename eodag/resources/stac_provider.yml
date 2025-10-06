@@ -77,6 +77,9 @@ search:
     processing:level:
       - '{{"query":{{"processing:level":{{"eq":"{processing:level}"}}}}}}'
       - '$.properties."processing:level"'
+    gsd:
+      - '{{"query":{{"gsd":{{"eq":"{gsd}"}}}}}}'
+      - '$.properties.gsd'
     constellation:
       - '{{"query":{{"constellation":{{"eq":"{constellation}"}}}}}}'
       - '$.properties.constellation'
@@ -84,10 +87,8 @@ search:
       - '{{"query":{{"platform":{{"eq":"{platform}"}}}}}}'
       - '$.properties.platform'
     instruments:
-    # to test
       - '{{"query":{{"instruments":{{"eq":"{instrument}"}}}}}}'
       - '{$.properties.instruments#csv_list}'
-    # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
     title: '$.id'
     eo:cloud_cover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":"{eo:cloud_cover}"}}}}}}'

@@ -2316,11 +2316,13 @@ class TestCoreSearch(TestCoreBase):
 
         # with individual filters
         actual = self.dag.guess_collection(
-            platform="SENTINEL1", processingLevel="L2", intersect=True
+            constellation="SENTINEL1", processing_level="L2", intersect=True
         )
         self.assertListEqual(actual, ["S1_SAR_OCN"])
         # without intersect, the most appropriate collection must be at first position
-        actual = self.dag.guess_collection(platform="SENTINEL1", processingLevel="L2")
+        actual = self.dag.guess_collection(
+            constellation="SENTINEL1", processing_level="L2"
+        )
         self.assertGreater(len(actual), 1)
         self.assertEqual(actual[0], "S1_SAR_OCN")
 
