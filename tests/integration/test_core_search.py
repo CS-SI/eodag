@@ -281,13 +281,13 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
-                "cop_dataspace",
-                "creodias",
-                "dedl",
-                "geodes",
-                "sara",
-                "wekeo_main",
+                "peps",  # requests.get
+                "cop_dataspace",  # requests.Request
+                "creodias",  # requests.Request
+                "dedl",  # requests.get
+                "geodes",  # requests.post
+                "sara",  # requests.get
+                "wekeo_main",  # requests.post
             ],
         )
 

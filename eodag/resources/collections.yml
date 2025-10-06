@@ -4009,7 +4009,7 @@ SIS_HYDRO_MET_PROJ:
   extent: {"temporal": {"interval": [["1970-01-01T00:00:00Z", "2100-12-31T23:59:00Z"]]}}
 
 CMIP6_CLIMATE_PROJECTIONS:
-  abstract: |
+  description: |
     This catalogue entry provides daily and monthly global climate projections data from a large number of experiments,
     models and time periods computed in the framework of the sixth phase of the Coupled Model Intercomparison Project
     (CMIP6). CMIP6 data underpins the Intergovernmental Panel on Climate Change 6th Assessment Report. The use of these
@@ -4027,16 +4027,15 @@ CMIP6_CLIMATE_PROJECTIONS:
     spatial and/or temporal subsetting to data requests. This is a new feature of the global climate projection dataset,
     which relies on compute processes run simultaneously in the ESGF nodes, where the data are originally located. The
     data are produced by the participating institutes of the CMIP6 project.
+  constellation: CMIP6
+  instruments: ["CMIP6"]
   platform: CMIP6
-  instrument: CMIP6
-  platformSerialIdentifier: CMIP6
-  processingLevel:
+  processing:level:
   sensorType:
-  keywords: ECMWF,CDS,C3S,CMIP6,historical,projection,global
+  keywords: ["ECMWF","CDS","C3S","CMIP6","historical","projection","global"]
   license: other
   title: CMIP6 climate projections
-  missionStartDate: "1850-01-01T00:00:00Z"
-  missionEndDate: "2100-12-31T23:59:00Z"
+  extent: {"temporal": {"interval": [["1850-01-01T00:00:00Z", "2100-12-31T23:59:00Z"]]}}
 
 # MARK: CEMS
 
