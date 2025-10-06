@@ -126,6 +126,6 @@ dl.attribute dd {
 }
 
 /* Add border-top to table elements when details elements are open */
-details.foldable[open] > table {
+details.foldable:first-child > table {
     border-top: 1px solid black;
 }

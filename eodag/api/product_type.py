@@ -318,7 +318,7 @@ class ProductTypesList(UserList[ProductType]):
         # mock "thead" tag by reproduicing its style to make "details" and "summary" tags work properly
         mock_thead = (
             f"""<details class='foldable'>
-                <summary style='text-align: left; color: grey; font-size: 12px; padding: 0.5em 0.5em;'>
+                <summary style='text-align: left; color: grey; font-size: 12px;'>
                 {type(self).__name__}&ensp;({len(self)})
                 </summary>
             """
@@ -332,8 +332,8 @@ class ProductTypesList(UserList[ProductType]):
             + "".join(
                 [
                     f"""<tr {tr_style}><td style='text-align: left;'>
-                        <details class='foldable'>
-                        <summary style='color: grey; font-family: monospace; padding: 0.5em 0.5em;'>
+                        <details>
+                        <summary style='color: grey; font-family: monospace;'>
                         {i}&ensp;
                         {type(pt).__name__}("<span style='color: black'>{pt.id}</span>")
                     </summary>
