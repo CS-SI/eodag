@@ -4527,7 +4527,7 @@
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4542,10 +4542,166 @@
       qs: $.qs
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
-    DT_EXTREMES:
-      dataset: extremes-dt
-    DT_CLIMATE_ADAPTATION:
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.CMIP6_HIST_ICON.R1:
       dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      realization: 1
+      model: ICON
+      resolution: high
+      levtype: sfc,o2d,o3d,pl
+      date: YYYYMMDD
+      experiment: hist
+      param: 263000/263001/263003/263004/263009/263114/263124/263500/263501/263505/263506/263507/129/130/131/132/133/135/157/246/78/79/130/134/137/151/165/166/167/168/235/228164/260048/146/147/169/175/176/177/178/179/260654/260655
+      time: "0000"
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.CMIP6_HIST_IFS-NEMO.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      experiment: hist
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-NEMO
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000"
+      param: 228246/228247/263000/263001/263003/263004/263008/263009/263021/263022/263100/263101/263121/263122/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.HIGHRESMIP_CONT_IFS-NEMO.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: HighResMIP
+      experiment: const
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-NEMO
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 228246/228247/263000/263001/263003/263004/263008/263009/263021/263022/263100/263101/263121/263122/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_ICON.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      date: YYYYMMDD
+      realization: 1
+      model: ICON
+      resolution: high
+      levtype: sfc,o2d,o3d,pl
+      time: "0000/0100/to/2300"
+      param: 263000/263001/263003/263004/263009/263114/263124/263500/263501/263505/263506/263507/129/130/131/132/133/135/157/78/79/130/134/137/151/165/166/167/168/235/228164/260048/146/147/169/175/176/177/178/179/260654/260655 (Time-integrated northward turbulent surface stress due to surface roughness [N m-2 s])
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-NEMO.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-NEMO
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 228246/228247/263000/263001/263003/263004/263008/263009/263021/263022/263100/263101/263121/263122/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_CONT_IFS-FESOM.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: const
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176 /177/178/179/180/181/182/212/228/129/172/228141
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_HIST_IFS-FESOM.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: Tplus2.0K
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+    EO.ECMWF.DAT.NG.DT_CLIMATE.G1.CMIP6_HIST_IFS-FESOM.R1:
+      dataset: climate-dt
+      class: ng
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      experiment: hist
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 131/132/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/228141
+    EO.ECMWF.DAT.NG.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-FESOM.R2:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      date: YYYYMMDD
+      realization: 2
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000/0100/to/2300"
+      param: 8/9/60/78/79/129/to/135/137/141/144/146/147/148/151/157/159/164/to/169/175/to/182/186/187/188/212/228/235/246/228141/260048/263000/to/263004/263100/263101/263124/263500/to/263507/
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4604,7 +4760,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}.json"
     metadata_mapping:
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
@@ -4616,6 +4772,40 @@
       qs: $.qs
       orderLink: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.HIGHRESMIP_CONT_IFS-FESOM.R1:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: HighResMIP
+      experiment: const
+      date: YYYYMMDD
+      realization: 1
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      time: "0000"
+      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228 /129/172/228141 (Snow depth water equivalent [kg m-2])
+    EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-FESOM.R1:
+      class: d1
+      dataset: climate-dt
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: 1
+      model: IFS-FESOM
+      resolution: standard/high
+      levtype: hl,o2d,o3d,pl,sfc,sol
+      date: YYYYMMDD
+      time: "0000/0100/to/2300"
+      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+
+
     DT_EXTREMES:
       dataset: extremes-dt
       class: d1
