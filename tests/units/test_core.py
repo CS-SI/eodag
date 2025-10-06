@@ -790,28 +790,28 @@ class TestCore(TestCoreBase):
 
         collections_ids = self.dag.guess_collection(
             title="TEST DATES",
-            missionStartDate="2013-02-01",
-            missionEndDate="2013-02-05",
+            start_date="2013-02-01",
+            end_date="2013-02-05",
         )
         self.assertListEqual(collections_ids, ["interval_end"])
         collections_ids = self.dag.guess_collection(
             title="TEST DATES",
-            missionStartDate="2013-02-01",
-            missionEndDate="2013-02-15",
+            start_date="2013-02-01",
+            end_date="2013-02-15",
         )
         self.assertListEqual(
             sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
         collections_ids = self.dag.guess_collection(
-            title="TEST DATES", missionStartDate="2013-02-01"
+            title="TEST DATES", start_date="2013-02-01"
         )
         self.assertListEqual(
             sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
         collections_ids = self.dag.guess_collection(
-            title="TEST DATES", missionEndDate="2013-02-20"
+            title="TEST DATES", end_date="2013-02-20"
         )
         self.assertListEqual(
             sorted(collections_ids),
