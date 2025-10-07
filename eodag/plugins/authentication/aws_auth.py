@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Optional, cast
-from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
@@ -28,6 +27,7 @@ from botocore.handlers import disable_signing
 from eodag.api.product._assets import Asset
 from eodag.plugins.authentication.base import Authentication
 from eodag.types import S3SessionKwargs
+from eodag.utils import get_bucket_name_and_prefix
 from eodag.utils.exceptions import AuthenticationError, EodagError
 
 if TYPE_CHECKING:
@@ -304,16 +304,14 @@ class AwsAuth(Authentication):
                 f"presign_url is not supported for provider {self.provider}"
             )
 
-        url_parts = urlparse(asset["href"])
-
         s3_client = self.get_s3_client()
-        url_path_parts = url_parts.path[1:].split("/")  # remove leading "/" and split
+        bucket, prefix = get_bucket_name_and_prefix(asset["href"])
         try:
             presigned_url = s3_client.generate_presigned_url(
                 "get_object",
                 Params={
-                    "Bucket": url_path_parts[0],
-                    "Key": "/".join(url_path_parts[1:]),
+                    "Bucket": bucket,
+                    "Key": prefix,
                 },
                 ExpiresIn=expires_in,
             )
