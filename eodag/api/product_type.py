@@ -321,7 +321,7 @@ class ProductTypesList(UserList[ProductType]):
         super().__init__(product_types)
 
     def __str__(self) -> str:
-        return f"{type(self).__name__}([{", ".join(str(pt) for pt in self)}])"
+        return f"{type(self).__name__}([{', '.join(str(pt) for pt in self)}])"
 
     def __repr__(self) -> str:
         return str(self)
