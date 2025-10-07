@@ -400,11 +400,13 @@ class Search(PluginTopic):
             )
 
     def validate(
-        self, filter: dict[str, Any], auth: Optional[Union[AuthBase, S3ServiceResource]]
+        self,
+        search_params: dict[str, Any],
+        auth: Optional[Union[AuthBase, S3ServiceResource]],
     ) -> None:
         """Validate a search request.
 
-        :param filter: Arguments of the search request
+        :param search_params: Arguments of the search request
         :param auth: Authentication object
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
@@ -413,14 +415,14 @@ class Search(PluginTopic):
         if getattr(self.config, "need_auth", False) and auth:
             self.auth = auth
         try:
-            product_type: str = filter["productType"]
+            product_type = search_params.get("productType")
             self.list_queryables(
-                filters=filter,
+                filters=search_params,
                 available_product_types=[product_type],
                 product_type_configs={product_type: self.config.product_type_config},
                 product_type=product_type,
                 alias=product_type,
-            ).get_model().model_validate(filter)
+            ).get_model().model_validate(search_params)
         except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
 

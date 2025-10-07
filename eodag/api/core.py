@@ -1176,8 +1176,8 @@ class EODataAccessGateway:
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
         :param count: (optional) Whether to run a query with a count request or not
-        :param validate: (optional) Set to True to validate the request query before sending it
-                         to the provider
+        :param validate: (optional) Set to True to validate search parameters
+                         before sending the query to the provider
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria
@@ -1840,8 +1840,8 @@ class EODataAccessGateway:
         :param raise_errors: (optional) When an error occurs when searching, if this is set to
                              True, the error is raised
         :param kwargs: Some other criteria that will be used to do the search
-        :param validate: (optional) Set to True to validate the request query before sending it
-                         to the provider
+        :param validate: (optional) Set to True to validate search parameters
+                         before sending the query to the provider
         :returns: A collection of EO products matching the criteria
         """
         logger.info("Searching on provider %s", search_plugin.provider)
