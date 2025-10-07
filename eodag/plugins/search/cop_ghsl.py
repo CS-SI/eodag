@@ -163,11 +163,15 @@ class CopGhslSearch(Search):
         Check if all required parameters are given and if the values are valid
         raises a ValidationError if this is not the case
         """
-        constraints_values = self._fetch_constraints(product_type)["constraints"]
+        constraints_data = self._fetch_constraints(product_type)
+        constraints_values = constraints_data["constraints"]
         # get available values - will raise error if wrong parameters or wrong parameter values in request
+        grouped_by = params.pop("grouped_by", None)
         available_values = _get_available_values_from_constraints(
             constraints_values, params, product_type
         )
+        if grouped_by and grouped_by not in params:
+            params[grouped_by] = available_values[grouped_by]
         missing_params = set(available_values.keys()) - set(params.keys())
         if missing_params:
             raise ValidationError(
@@ -181,6 +185,50 @@ class CopGhslSearch(Search):
             params["month"] = set(params["month"]).intersection(
                 set(available_values["month"])
             )
+
+    def _get_start_and_end_from_properties(
+        self, properties: dict[str, Any]
+    ) -> dict[str, str]:
+        """get the start and end time from year/month in the properties or missionStart/EndDate"""
+        if "month" in properties:
+            start_date = datetime.datetime(
+                year=int(properties["year"]),
+                month=int(properties["month"]),
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+            )
+            end_day = monthrange(int(properties["year"]), int(properties["month"]))[1]
+            end_date = datetime.datetime(
+                year=int(properties["year"]),
+                month=int(properties["month"]),
+                day=end_day,
+                hour=23,
+                minute=59,
+                second=59,
+            )
+        elif "year" in properties:
+            start_date = datetime.datetime(
+                year=int(properties["year"]), month=1, day=1, hour=0, minute=0, second=0
+            )
+            end_date = datetime.datetime(
+                year=int(properties["year"]),
+                month=12,
+                day=31,
+                hour=23,
+                minute=59,
+                second=59,
+            )
+        else:
+            start_date = self.get_product_type_cfg_value("missionStartDate")
+            end_date = self.get_product_type_cfg_value("missionEndDate")
+            return {"start_date": start_date, "end_date": end_date}
+
+        result = {}
+        result["start_date"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        result["end_date"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return result
 
     def _create_products_from_tiles(
         self,
@@ -287,77 +335,63 @@ class CopGhslSearch(Search):
         default_geometry = getattr(self.config, "metadata_mapping")["defaultGeometry"]
         properties = {}
         properties["geometry"] = default_geometry[1]
-        download_link = (
-            self.config.products.get(product_type, {})
-            .get("metadata_mapping", {})
-            .get("downloadLink", None)
+        product_type_config = self.config.products.get(product_type, {})
+        download_link = product_type_config.get("metadata_mapping", {}).get(
+            "downloadLink", None
         )
         if not download_link:
             raise MisconfiguredError(
                 f"Download link configuration missing for product type {product_type}"
             )
-        properties["downloadLink"] = download_link
+
         # product type with assets mapping
         assets_mapping = filters.pop("assets_mapping", None)
         products = []
         start_index = prep.items_per_page * (prep.page - 1)
         end_index = start_index + prep.items_per_page - 1
-        if assets_mapping:
+        grouped_by = filters.pop("grouped_by", None)
+        if grouped_by:  # dataset with several files differentiated by one parameter
             format_params = {k: str(v) for k, v in filters.items() if v}
             format_params.pop("metadata_mapping", None)
-            months = filters.get("month", "12")
-            num_products = len(months)
-            if isinstance(months, str) or isinstance(months, int):
-                months = [months]
-            for i, month in enumerate(months):
+            grouped_by_values = filters[grouped_by]
+            if isinstance(grouped_by_values, str) or isinstance(grouped_by_values, int):
+                grouped_by_values = [grouped_by_values]
+            num_products = len(grouped_by_values)
+            for i, value in enumerate(grouped_by_values):
                 if i < start_index:
                     continue
-                filters["month"] = format_params["month"] = str(month)
+                filters[grouped_by] = format_params[grouped_by] = str(value)
                 product_id = product_type + "__" + "_".join(format_params.values())
                 properties["id"] = properties["title"] = product_id
-                end_day = monthrange(int(filters["year"]), int(month))[1]
-                start_time = datetime.datetime(
-                    year=int(filters["year"]),
-                    month=int(month),
-                    day=1,
-                    hour=0,
-                    minute=0,
-                    second=0,
-                )
-                end_time = datetime.datetime(
-                    year=int(filters["year"]),
-                    month=int(month),
-                    day=end_day,
-                    hour=23,
-                    minute=59,
-                    second=59,
-                )
-                properties["startTimeFromAscendingNode"] = start_time.strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
-                properties["completionTimeFromAscendingNode"] = end_time.strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )
+                properties["downloadLink"] = download_link.format(**format_params)
+                datetimes = self._get_start_and_end_from_properties(format_params)
+                properties["startTimeFromAscendingNode"] = datetimes["start_date"]
+                properties["completionTimeFromAscendingNode"] = datetimes["end_date"]
                 product = EOProduct(
                     provider="cop_ghsl", properties=properties, productType=product_type
                 )
-                assets = AssetsDict(product=product)
-                for key, mapping in assets_mapping.items():
-                    download_link = mapping["href"].format(**filters)
-                    assets[key] = Asset(
-                        product=product,
-                        key=key,
-                        href=download_link,
-                        title=mapping["title"],
-                        type=mapping["type"],
-                    )
-                product.assets = assets
+                if assets_mapping:  # item with several assets
+                    assets = AssetsDict(product=product)
+                    for key, mapping in assets_mapping.items():
+                        download_link = mapping["href"].format(**filters)
+                        assets[key] = Asset(
+                            product=product,
+                            key=key,
+                            href=download_link,
+                            title=mapping["title"],
+                            type=mapping["type"],
+                        )
+                    product.assets = assets
                 products.append(product)
                 if i == end_index:
                     break
         else:  # product type with only one file to download
             product_id = f"{product_type}_ALL"
             properties["id"] = properties["title"] = product_id
+            datetimes = self._get_start_and_end_from_properties(properties)
+            properties["startTimeFromAscendingNode"] = datetimes["start_date"]
+            properties["completionTimeFromAscendingNode"] = datetimes["end_date"]
+            properties["downloadLink"] = download_link
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, productType=product_type
             )
@@ -423,10 +457,13 @@ class CopGhslSearch(Search):
         filter_params.pop("assets_mapping", None)
 
         self._check_input_parameters_valid(product_type, filter_params)
-        if "year" in filter_params:
-            params["year"] = filter_params["year"]
+        # update parameters based on changes during validation
+        params.update(filter_params)
 
         # fetch available tiles based on filters
+        if "year" not in filter_params:
+            logger.warning(f"no tiles available for {product_type}")
+            return None
         if isinstance(filter_params["year"], int) or isinstance(
             filter_params["year"], str
         ):
