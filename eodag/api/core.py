@@ -1040,7 +1040,7 @@ class EODataAccessGateway:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         **kwargs: Any,
-    ) -> list[str]:
+    ) -> ProductTypesList:
         """
         Find EODAG collection IDs that best match a set of search parameters.
 
@@ -1064,7 +1064,11 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
         if collection := kwargs.get("collection"):
-            return [collection]
+            try:
+                collection = self.get_collection_from_alias(collection)
+                return ProductTypesList([self.collections_config[collection]])
+            except NoMatchingCollection:
+                return ProductTypesList([ProductType(dag=self, id=collection)])
 
         filters: dict[str, str] = {
             k: v
@@ -1154,12 +1158,14 @@ class EODataAccessGateway:
                 if not (max_start <= min_end):
                     continue
 
-            guesses_with_score.append((pt_f.id, score))
+            guesses_with_score.append((pt_f._id, score))
 
         if guesses_with_score:
             # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt for pt, _ in guesses_with_score]
+            return ProductTypesList(
+                [self.product_types_config[pt] for pt, _ in guesses_with_score]
+            )
 
         raise NoMatchingCollection()
 
@@ -1598,9 +1604,9 @@ class EODataAccessGateway:
 
             if len(results) == 1:
                 if not results[0].collection:
-                    # guess collection from properties
+                    # guess product type from properties
                     guesses = self.guess_collection(**results[0].properties)
-                    results[0].collection = guesses[0]
+                    results[0].collection = guesses[0].id
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1691,7 +1697,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                collection = guesses[0]
+                product_type = guesses[0].id
             except NoMatchingCollection:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
@@ -1933,7 +1939,7 @@ class EODataAccessGateway:
                     except NoMatchingCollection:
                         pass
                     else:
-                        eo_product.collection = guesses[0]
+                        eo_product.collection = guesses[0].id
 
                 try:
                     if eo_product.collection is not None:

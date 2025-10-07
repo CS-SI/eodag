@@ -723,7 +723,12 @@ class TestEodagCli(unittest.TestCase):
         """
         provider = "peps"
 
-        dag.return_value.guess_collection.return_value = ["foo", "bar"]
+        dag.return_value.guess_collection.return_value = ProductTypesList(
+            [
+                ProductType(dag=dag, id="foo", title="this is foo"),
+                ProductType(dag=dag, id="bar", title="this is bar"),
+            ]
+        )
         dag.return_value.list_collections.return_value = ProductTypesList(
             [
                 ProductType(dag=dag, id="foo", title="this is foo"),
