@@ -2078,6 +2078,14 @@
       period: 1_5_c
     CMIP6_CLIMATE_PROJECTIONS:
       dataset: projections-cmip6
+      experiment: historical
+      variable: air_temperature
+      model: access_cm2
+      level: ["1"]
+      year: ["1850"]
+      month: ["01"]
+      metadata_mapping:
+        <<: *month_year
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---
