@@ -1036,7 +1036,7 @@ class EODataAccessGateway:
         missionStartDate: Optional[str] = None,
         missionEndDate: Optional[str] = None,
         **kwargs: Any,
-    ) -> list[str]:
+    ) -> ProductTypesList:
         """
         Find EODAG product type IDs that best match a set of search parameters.
 
@@ -1059,8 +1059,12 @@ class EODataAccessGateway:
         :returns: The best match for the given parameters.
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
         """
-        if productType := kwargs.get("productType"):
-            return [productType]
+        if product_type := kwargs.get("productType"):
+            try:
+                product_type = self.get_product_type_from_alias(product_type)
+                return ProductTypesList([self.product_types_config[product_type]])
+            except NoMatchingProductType:
+                return ProductTypesList([ProductType(dag=self, id=product_type)])
 
         filters: dict[str, str] = {
             k: v
@@ -1156,12 +1160,14 @@ class EODataAccessGateway:
                 if not (max_start <= min_end):
                     continue
 
-            guesses_with_score.append((pt_f.id, score))
+            guesses_with_score.append((pt_f._id, score))
 
         if guesses_with_score:
             # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt for pt, _ in guesses_with_score]
+            return ProductTypesList(
+                [self.product_types_config[pt] for pt, _ in guesses_with_score]
+            )
 
         raise NoMatchingProductType()
 
@@ -1522,7 +1528,7 @@ class EODataAccessGateway:
         # of items_per_page if defined for the provider used.
         try:
             product_type = self.get_product_type_from_alias(
-                self.guess_product_type(**kwargs)[0]
+                self.guess_product_type(**kwargs)[0].id
             )
         except NoMatchingProductType:
             product_type = GENERIC_PRODUCT_TYPE
@@ -1679,7 +1685,7 @@ class EODataAccessGateway:
                 if not results[0].product_type:
                     # guess product type from properties
                     guesses = self.guess_product_type(**results[0].properties)
-                    results[0].product_type = guesses[0]
+                    results[0].product_type = guesses[0].id
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1770,7 +1776,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                product_type = guesses[0]
+                product_type = guesses[0].id
             except NoMatchingProductType:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
@@ -1968,7 +1974,7 @@ class EODataAccessGateway:
                     except NoMatchingProductType:
                         pass
                     else:
-                        eo_product.product_type = guesses[0]
+                        eo_product.product_type = guesses[0].id
 
                 try:
                     if eo_product.product_type is not None:

@@ -438,7 +438,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_product_types = []
+    guessed_product_types = ProductTypesList([])
     try:
         guessed_product_types = dag.guess_product_type(
             platformSerialIdentifier=kwargs.get("platformserialidentifier"),
@@ -474,7 +474,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
                     for pt in dag.list_product_types(
                         provider=provider, fetch_providers=fetch_providers
                     )
-                    if pt.id in guessed_product_types
+                    if pt.id in [guessed_pt.id for guessed_pt in guessed_product_types]
                 ]
             )
         else:

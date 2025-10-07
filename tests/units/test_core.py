@@ -754,48 +754,53 @@ class TestCore(TestCoreBase):
 
         # Search any filter contains filter value
         filter = "ABSTRACTFOO"
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(product_types_ids, ["foo"])
         # Search the exact phrase. Search is case insensitive
         filter = '"THIS IS FOO. fooandbar"'
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(product_types_ids, ["foo"])
 
         # Free text search: match in the keywords
         filter = "LECTUS_BAR_KEY"
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(product_types_ids, ["bar"])
 
         # Free text search: match the phrase in title
         filter = '"FOOBAR COLLECTION"'
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(product_types_ids, ["foobar_alias"])
 
         # Free text search: Using OR term match
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(sorted(product_types_ids), ["bar", "foobar_alias"])
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(filter, title="FOO")
+        product_types_ids = [
+            pt.id for pt in self.dag.guess_product_type(filter, title="FOO")
+        ]
         self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar_alias"])
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(product_types_ids, ["foo"])
 
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
-        product_types_ids = self.dag.guess_product_type(filter)
+        product_types_ids = [pt.id for pt in self.dag.guess_product_type(filter)]
         self.assertListEqual(product_types_ids, ["foobar_alias"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(
-            filter, intersect=True, title="titleFOO*"
-        )
+        product_types_ids = [
+            pt.id
+            for pt in self.dag.guess_product_type(
+                filter, intersect=True, title="titleFOO*"
+            )
+        ]
         self.assertListEqual(product_types_ids, ["foobar_alias"])
 
     def test_guess_product_type_with_mission_dates(self):
@@ -807,31 +812,43 @@ class TestCore(TestCoreBase):
             ext_product_types_conf = json.load(f)
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        product_types_ids = self.dag.guess_product_type(
-            title="TEST DATES",
-            missionStartDate="2013-02-01",
-            missionEndDate="2013-02-05",
-        )
+        product_types_ids = [
+            pt.id
+            for pt in self.dag.guess_product_type(
+                title="TEST DATES",
+                missionStartDate="2013-02-01",
+                missionEndDate="2013-02-05",
+            )
+        ]
         self.assertListEqual(product_types_ids, ["interval_end"])
-        product_types_ids = self.dag.guess_product_type(
-            title="TEST DATES",
-            missionStartDate="2013-02-01",
-            missionEndDate="2013-02-15",
-        )
+        product_types_ids = [
+            pt.id
+            for pt in self.dag.guess_product_type(
+                title="TEST DATES",
+                missionStartDate="2013-02-01",
+                missionEndDate="2013-02-15",
+            )
+        ]
         self.assertListEqual(
             sorted(product_types_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
-        product_types_ids = self.dag.guess_product_type(
-            title="TEST DATES", missionStartDate="2013-02-01"
-        )
+        product_types_ids = [
+            pt.id
+            for pt in self.dag.guess_product_type(
+                title="TEST DATES", missionStartDate="2013-02-01"
+            )
+        ]
         self.assertListEqual(
             sorted(product_types_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
-        product_types_ids = self.dag.guess_product_type(
-            title="TEST DATES", missionEndDate="2013-02-20"
-        )
+        product_types_ids = [
+            pt.id
+            for pt in self.dag.guess_product_type(
+                title="TEST DATES", missionEndDate="2013-02-20"
+            )
+        ]
         self.assertListEqual(
             sorted(product_types_ids),
             ["interval_end", "interval_start", "interval_start_end"],
@@ -2412,6 +2429,23 @@ class TestCoreSearch(TestCoreBase):
 
     def test_guess_product_type_with_kwargs(self):
         """guess_product_type must return the products matching the given kwargs"""
+        ext_product_types_conf = {
+            "earth_search": {
+                "providers_config": {
+                    "foobar": {
+                        "productType": "foobar",
+                        "metadata_mapping": {"cloudCover": "$.null"},
+                    }
+                },
+                "product_types_config": {
+                    "foobar": {
+                        "alias": "foobar_alias",
+                    }
+                },
+            }
+        }
+        self.dag.update_product_types_list(ext_product_types_conf)
+
         kwargs = dict(
             instrument="MSI",
             platform="SENTINEL2",
@@ -2428,11 +2462,25 @@ class TestCoreSearch(TestCoreBase):
             "EEA_DAILY_VI",
             "EEA_HRL_TCF",
         ]
-        self.assertListEqual(actual, expected)
+        self.assertListEqual([pt.id for pt in actual], expected)
 
         # with product type specified
+
+        # unkwown product type and alias
         actual = self.dag.guess_product_type(productType="foo")
-        self.assertListEqual(actual, ["foo"])
+        self.assertListEqual([actual[0].id], ["foo"])
+
+        # known product type which does not have an alias
+        actual = self.dag.guess_product_type(productType="S2_MSI_L1C")
+        self.assertListEqual([actual[0].id], ["S2_MSI_L1C"])
+
+        # known product type which has an alias
+        actual = self.dag.guess_product_type(productType="foobar")
+        self.assertListEqual([actual[0].id], ["foobar_alias"])
+
+        # known alias
+        actual = self.dag.guess_product_type(productType="foobar_alias")
+        self.assertListEqual([actual[0].id], ["foobar_alias"])
 
         # with dates
         self.assertEqual(
@@ -2440,21 +2488,23 @@ class TestCoreSearch(TestCoreBase):
             "2015-06-23T00:00:00Z",
         )
         self.assertNotIn(
-            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-06-01")
+            "S2_MSI_L1C",
+            [pt.id for pt in self.dag.guess_product_type(missionEndDate="2015-06-01")],
         )
         self.assertIn(
-            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
+            "S2_MSI_L1C",
+            [pt.id for pt in self.dag.guess_product_type(missionEndDate="2015-07-01")],
         )
 
         # with individual filters
         actual = self.dag.guess_product_type(
             platform="SENTINEL1", processingLevel="L2", intersect=True
         )
-        self.assertListEqual(actual, ["S1_SAR_OCN"])
+        self.assertListEqual([pt.id for pt in actual], ["S1_SAR_OCN"])
         # without intersect, the most appropriate product type must be at first position
         actual = self.dag.guess_product_type(platform="SENTINEL1", processingLevel="L2")
         self.assertGreater(len(actual), 1)
-        self.assertEqual(actual[0], "S1_SAR_OCN")
+        self.assertEqual(actual[0].id, "S1_SAR_OCN")
 
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
