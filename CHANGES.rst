@@ -3,6 +3,30 @@ Release history
 ===============
 
 
+v3.9.1 (2025-10-07)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: AwsAuth without credentials (`#1865`_, `ab04612`_)
+
+* **providers**: Earth_search S2_MSI_L2A_COG assets href (`#1866`_, `f14ef6b`_)
+
+* **providers**: Fix syntax error (`#1860`_, `d207f27`_)
+
+* **providers**: PolarizationChannels mapping for STAC providers (`#1870`_, `819ecb2`_)
+
+.. _#1860: https://github.com/CS-SI/eodag/pull/1860
+.. _#1865: https://github.com/CS-SI/eodag/pull/1865
+.. _#1866: https://github.com/CS-SI/eodag/pull/1866
+.. _#1870: https://github.com/CS-SI/eodag/pull/1870
+.. _819ecb2: https://github.com/CS-SI/eodag/commit/819ecb2127d7728236e32aadb1e605017c98cec6
+.. _ab04612: https://github.com/CS-SI/eodag/commit/ab046125d1241adc164e8ffdec430b5d77d8193b
+.. _d207f27: https://github.com/CS-SI/eodag/commit/d207f2701b472b8c6c75da5c63f0621736dedd8a
+.. _f14ef6b: https://github.com/CS-SI/eodag/commit/f14ef6b1b11428f68bc1ff47e1b3081819e03d9a
+
+
 v3.9.0 (2025-09-26)
 ===================
 
