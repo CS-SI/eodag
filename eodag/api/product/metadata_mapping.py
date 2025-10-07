@@ -149,42 +149,38 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form ``{<field_name>#<conversion_function>}``
 
     The currently understood converters are:
-        - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
-          milliseconds
-        - ``to_rounded_wkt``: simplify the WKT of a geometry
-        - ``to_bounds_lists``: convert to list(s) of bounds
-        - ``to_nwse_bounds``: convert to North,West,South,East bounds
-        - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
-        - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
-        - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
-        - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
-        - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
+        - ``ceda_collection_name``: generate a CEDA collection name from a string
         - ``csv_list``: convert to a comma separated list
-        - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given
-          milliseconds to a utc iso datetime
-        - ``to_iso_utc_datetime``: convert a UTC datetime string to ISO UTC datetime
-          string
-        - ``to_iso_date``: remove the time part of a iso datetime string
-        - ``remove_extension``: on a string that contains dots, only take the first
-          part of the list obtained by splitting the string on dots
-        - ``get_group_name``: get the matching regex group name
-        - ``replace_str``: execute "string".replace(old, new)
-        - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
-          values matching a regex
-        - ``slice_str``: slice a string (equivalent to s[start, end, step])
-        - ``to_lower``: Convert a string to lowercase
-        - ``to_upper``: Convert a string to uppercase
-        - ``to_title``: Convert a string to title case
+        - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
+        - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
+        - ``from_alternate``: update assets using given alternate
+        - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
+        - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
+        - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
+        - ``get_group_name``: get the matching regex group name
+        - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
+        - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
+          splitting the string on dots
+        - ``replace_str``: execute "string".replace(old, new)
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
+        - ``sanitize``: sanitize string
+        - ``slice_str``: slice a string (equivalent to s[start, end, step])
         - ``split_cop_dem_id``: get the bbox by splitting the product id
         - ``split_corine_id``: get the product type by splitting the product id
+        - ``to_bounds_lists``: convert to list(s) of bounds
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
-        - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
-        - ``sanitize``: sanitize string
-        - ``ceda_collection_name``: generate a CEDA collection name from a string
-        - ``convert_dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
-        - ``convert_from_alternate``: update assets using given alternate
+        - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
+        - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
+        - ``to_iso_date``: remove the time part of a iso datetime string
+        - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given milliseconds to a utc iso datetime
+        - ``to_iso_utc_datetime``: convert a UTC datetime string to ISO UTC datetime string
+        - ``to_lower``: Convert a string to lowercase
+        - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
+        - ``to_nwse_bounds``: convert to North,West,South,East bounds
+        - ``to_rounded_wkt``: simplify the WKT of a geometry
+        - ``to_title``: Convert a string to title case
+        - ``to_upper``: Convert a string to uppercase
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -490,9 +486,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return {"lon": lon, "lat": lat}
 
         @staticmethod
-        def convert_csv_list(values_list: Any) -> Any:
+        def convert_csv_list(values_list: Any, separator=",") -> Any:
             if isinstance(values_list, list):
-                return ",".join([str(x) for x in values_list])
+                return separator.join([str(x) for x in values_list])
             else:
                 return values_list
 

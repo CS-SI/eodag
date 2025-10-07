@@ -269,6 +269,11 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, fieldname=[1, 2, 3]),
             "1,2,3",
         )
+        to_format = "{fieldname#csv_list(+)}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname=[1, 2, 3]),
+            "1+2+3",
+        )
 
     def test_convert_remove_extension(self):
         to_format = "{fieldname#remove_extension}"
