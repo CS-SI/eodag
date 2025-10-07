@@ -106,9 +106,12 @@ class AwsAuth(Authentication):
     def _create_s3_session_from_credentials(self) -> boto3.Session:
         credentials = getattr(self.config, "credentials", {}) or {}
         if "aws_profile" in credentials:
+            logger.debug("Authentication using AWS profile")
             return create_s3_session(profile_name=credentials["aws_profile"])
         # auth using aws keys
-        elif credentials:
+        elif credentials.get("aws_access_key_id") and credentials.get(
+            "aws_secret_access_key"
+        ):
             s3_session_kwargs: S3SessionKwargs = {
                 "aws_access_key_id": credentials["aws_access_key_id"],
                 "aws_secret_access_key": credentials["aws_secret_access_key"],
@@ -120,6 +123,7 @@ class AwsAuth(Authentication):
             return create_s3_session(**s3_session_kwargs)
         else:
             # auth using env variables or ~/.aws
+            logger.debug("Authentication using AWS environment")
             return create_s3_session()
 
     def _create_s3_resource(self) -> S3ServiceResource:
@@ -133,6 +137,9 @@ class AwsAuth(Authentication):
                 endpoint_url=endpoint_url,
             )
         # could not auth using credentials: use no-sign-request strategy
+        logger.debug(
+            "Authentication using AWS no-sign-request strategy (no credentials found)"
+        )
         s3_resource = boto3.resource(service_name="s3", endpoint_url=endpoint_url)
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing

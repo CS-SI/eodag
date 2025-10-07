@@ -752,7 +752,7 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\\\+','%26')}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -1402,7 +1402,7 @@
     S2_MSI_L2A_COG:
       productType: sentinel-2-l2a
       metadata_mapping:
-        assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs\\.s3\\.us-west-2\\.amazonaws\\.com/.*\")]","https","s3")}'
+        assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs.*/\")]","https\u003A//[a-z0-9-\.]+/","s3\u003A//sentinel-cogs/")}'
     LANDSAT_C2L2:
       productType: landsat-c2-l2
     NAIP:
@@ -2532,7 +2532,7 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\\\+','%26')}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ModificationDate gt {modifiedAfter#to_iso_utc_datetime}"
             - "ModificationDate lt {modifiedBefore#to_iso_utc_datetime}"
@@ -4199,7 +4199,7 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\+','%26')}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str('\\\\+','%26')}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
