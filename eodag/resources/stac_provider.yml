@@ -87,13 +87,20 @@ search:
       - '{{"query":{{"platform":{{"eq":"{platform}"}}}}}}'
       - '$.properties.platform'
     instruments:
-      - '{{"query":{{"instruments":{{"eq":"{instrument}"}}}}}}'
-      - '{$.properties.instruments#csv_list}'
+      - '{{"query":{{"instruments":{{"in":{instruments}}}}}}}'
+      - '$.properties.instruments'
+    sar:polarizations:
+      - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations}}}}}}}'
+      - '$.properties.sar:polarizations'
+    sar:beam_ids:
+      - '{{"query":{{"sar:beam_ids":{{"in":{sar:beam_ids}}}}}}}'
+      - '$.properties.sar:beam_ids'
     title: '$.id'
     eo:cloud_cover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":"{eo:cloud_cover}"}}}}}}'
       - '$.properties."eo:cloud_cover"'
-    start_datetime: '$.properties.datetime'
+    datetime: '$.properties.datetime'
+    start_datetime: '$.properties.start_datetime'
     end_datetime:
       - '{{"datetime":"{start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
