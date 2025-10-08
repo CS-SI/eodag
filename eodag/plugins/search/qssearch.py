@@ -2017,57 +2017,49 @@ class GeodesSearch(StacSearch, PostJsonSearch):
         results = super().do_search(prep, **kwargs)
 
         # Perform a second query to retrieve status of the product
-        availability_endpoint = "https://geodes-portal.cnes.fr/availability/{id}"
-        if availability_endpoint:
-            ssl_verify = getattr(self.config, "ssl_verify", True)
-            for result in results:
-                metadata_url = availability_endpoint.format(
-                    id=result["properties"]["identifier"]
+        availability_endpoint = "https://geodes-portal.cnes.fr/availability/"
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
+        product_ids = [r["id"] for r in results if "id" in r]
+        try:
+            response = requests.post(
+                availability_endpoint,
+                json={"product_ids": product_ids},
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
+            )
+            response.raise_for_status()
+        except requests.exceptions.Timeout:
+            logger.exception(
+                "Timeout on bulk availability request for %s", self.provider
+            )
+            return results
+        except requests.RequestException:
+            logger.exception("Error on bulk availability request for %s", self.provider)
+            return results
+
+        availability_map = {
+            item["id"]: item for item in response.json().get("products", [])
+        }
+
+        for result in results:
+            pid = result["id"]
+            availability_data = availability_map.get(pid)
+            if not availability_data:
+                result["properties"]["storageStatus"] = "ONLINE"
+                continue
+
+            if availability_data.get("files"):
+                all_available = all(
+                    f.get("available", False) for f in availability_data["files"]
                 )
-                try:
-                    response = requests.get(
-                        metadata_url,
-                        headers=USER_AGENT,
-                        timeout=HTTP_REQ_TIMEOUT,
-                        verify=ssl_verify,
-                    )
-                    response.raise_for_status()
-                except requests.exceptions.Timeout:
-                    logger.exception(
-                        "Skipping timeout error while searching for %s %s instance",
-                        self.provider,
-                        self.__class__.__name__,
-                    )
-                except requests.RequestException:
-                    logger.exception(
-                        "Skipping error while searching for %s %s instance",
-                        self.provider,
-                        self.__class__.__name__,
-                    )
-                else:
-                    availability_data = response.json()
-                    logger.debug(
-                        "Response from availability endpoint: %s", availability_data
-                    )
+                result["properties"]["storageStatus"] = (
+                    "ONLINE" if all_available else "OFFLINE"
+                )
+            else:
+                result["properties"]["storageStatus"] = "ONLINE"
 
-                    if response.status_code == 200 and availability_data.get("files"):
-                        for asset_key, asset in result["assets"].items():
-                            if "data" in asset.get("roles", []):
-                                href = asset.get("href")
-                                urn = href.split("/download/")[1].split("/files/")[0]
-
-                                if urn == availability_data.get("id"):
-                                    all_available = all(
-                                        f.get("available", False)
-                                        for f in availability_data.get("files", [])
-                                    )
-                                    result["properties"]["storageStatus"] = (
-                                        "ONLINE" if all_available else "OFFLINE"
-                                    )
-                                else:
-                                    result["properties"]["storageStatus"] = "OFFLINE"
-                    else:
-                        result["properties"]["storageStatus"] = "ONLINE"
         return results
 
     def normalize_results(self, results, **kwargs):
