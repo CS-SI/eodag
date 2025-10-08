@@ -103,7 +103,9 @@
       search_param: '{{{{"search":{{{{"{metadata}":"{{{metadata}}}" }}}} }}}}'
       metadata_path: '$.*'
     metadata_mapping:
-      # landsat8_downloadLink : 's3://landsat-pds/c{storedInCollection}/L8/{path}/{row}/{productID}'
+      _collection:
+        - '{{"collection": "{_collection}"}}'
+        - '$.null'
       geometry:
         - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
         - '$.dataGeometry'
@@ -121,8 +123,8 @@
           - '{{"search":{{"satelliteName":"{platform}" }} }}'
           - '$.satelliteName'
         instruments:
-          - '{{"search":{{"sensor":"{instruments}" }} }}'
-          - '$.sensor'
+          - '{{"search":{{"sensor":"{instruments#csv_list}" }} }}'
+          - '{$.sensor#split( )}'
         processing:level:
           - '{{"search":{{"processingLevel":"{processing:level}" }} }}'
           - '$.processingLevel'
@@ -220,8 +222,8 @@
           - '{{"search":{{"satelliteName":"{constellation}" }} }}'
           - '$.satelliteName'
         instruments:
-          - '{{"search":{{"sensor":"{instruments}" }} }}'
-          - '$.sensor'
+          - '{{"search":{{"sensor":"{instruments#csv_list}" }} }}'
+          - '{$.sensor#split( )}'
         # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
         title:
           - '{{"search":{{"productID":"{title}" }} }}'
@@ -271,8 +273,8 @@
         # OpenSearch Parameters for Collection Search (Table 3)
         product:type: '$.null'
         instruments:
-          - '{{"search":{{"satelliteName":"{instruments}" }} }}'
-          - '$.satelliteName'
+          - '{{"search":{{"satelliteName":"{instruments#csv_list}" }} }}'
+          - '{$.satelliteName#split( )}'
         # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
         title:
           - '{{"search":{{"sceneID":"{title}" }} }}'
@@ -572,8 +574,8 @@
         - platform
         - '$.properties.platform'
       instruments:
-        - instrument
-        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - '{instruments#csv_list}'
+        - '{$.properties.instrument#split( )}'
       processing:level:
         - processingLevel
         - '$.properties.processingLevel'
@@ -604,7 +606,7 @@
       sat:orbit_state:
         - 'orbitDirection'
         - '$.properties.orbitDirection'
-      sar:beam_ids:
+      sar:instrument_mode:
         - 'swath'
         - '$.properties.swath'
       eo:cloud_cover:
@@ -748,10 +750,15 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#replace_str('\\\\+','%26')}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code}')"
+            - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
+            - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
+            - "PublicationDate gt {published_after#to_iso_utc_datetime}"
+            - "PublicationDate lt {published_before#to_iso_utc_datetime}"
             - "ContentDate/Start lt {end_datetime#to_iso_utc_datetime}"
             - "ContentDate/End gt {start_datetime#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#csv_list(%26)}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -771,6 +778,9 @@
       metadata_path_id: 'Name'
       metadata_path_value: 'Value'
     metadata_mapping:
+      _collection:
+        - null
+        - '$.null'
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
       # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
@@ -788,7 +798,7 @@
         - '$.Attributes.platformSerialIdentifier'
       instruments:
         - null
-        - '{$.Attributes.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - '{$.Attributes.instrumentShortName#split( )}'
       processing:level:
         - null
         - '$.Attributes.processingLevel'
@@ -801,6 +811,12 @@
       providers:
         - null
         - '[{{"name":"{_provider}","roles":["producer"]}}]'
+      published_after:
+        - null
+        - '$.PublicationDate'
+      published_before:
+        - null
+        - '$.PublicationDate'
       published: '$.PublicationDate'
       # OpenSearch Parameters for Product Search (Table 5)
       sat:absolute_orbit:
@@ -812,6 +828,12 @@
       eo:cloud_cover:
         - null
         - '$.Attributes.cloudCover'
+      updated_after:
+        - null
+        - '$.null'
+      updated_before:
+        - null
+        - '$.null'
       updated: '$.ModificationDate'
       sar:instrument_mode:
         - null
@@ -825,7 +847,7 @@
         - '$.ContentDate.End'
       sar:polarizations:
         - null
-        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
+        - '{$.Attributes.polarisationChannels#split(&)}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -1948,8 +1970,8 @@
         - platform
         - '$.properties.platform'
       instruments:
-        - instrument
-        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - 'instrument={instruments#csv_list}'
+        - '{$.properties.instrument#split( )}'
       processing:level:
         - processingLevel
         - '$.properties.processingLevel'
@@ -1977,7 +1999,7 @@
       sat:orbit_state:
         - 'orbitDirection'
         - '{$.properties.orbitDirection#to_lower}'
-      sar:beam_ids:
+      sar:instrument_mode:
         - 'swath'
         - '$.properties.swath'
       eo:cloud_cover:
@@ -2026,24 +2048,24 @@
     # Sentinel 1
     S1_SAR_OCN:
       product:type: OCN
-      collection: S1
+      _collection: S1
       instruments: C-SAR
     S1_SAR_GRD:
       product:type: GRD
-      collection: S1
+      _collection: S1
       instruments: C-SAR
     S1_SAR_SLC:
       product:type: SLC
-      collection: S1
+      _collection: S1
       instruments: C-SAR
     # Sentinel 2
     S2_MSI_L1C:
-      collection: S2
+      _collection: S2
       product:type: S2MSIL1C
       instruments: MSI
       processing:level: L1C
     S2_MSI_L2A:
-      collection: S2
+      _collection: S2
       product:type: S2MSIL2A
       instruments: MSI
       processing:level: L2A
@@ -2051,119 +2073,119 @@
     # L1
     S3_EFR:
       product:type: OL_1_EFR___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-1
     S3_ERR:
       product:type: OL_1_ERR___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-1
     # output during radiometric calibration mode
     S3_RAC:
       product:type: OL_1_RAC___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-1
     # L2
     S3_OLCI_L2LRR:
       product:type: OL_2_LRR___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-2
     S3_OLCI_L2LFR:
       product:type: OL_2_LFR___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-2
     S3_OLCI_L2WRR:
       product:type: OL_2_WRR___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-2
     S3_OLCI_L2WFR:
       product:type: OL_2_WFR___
-      collection: S3
+      _collection: S3
       instruments: OLCI
       processing:level: LEVEL-2
     # SLSTR products
     S3_SLSTR_L1RBT:
       product:type: SL_1_RBT___
-      collection: S3
+      _collection: S3
       instruments: SLSTR
       processing:level: LEVEL-1
     S3_SLSTR_L2LST:
       product:type: SL_2_LST___
-      collection: S3
+      _collection: S3
       instruments: SLSTR
       processing:level: LEVEL-2
     S3_SLSTR_L2WST:
       product:type: SL_2_WST___
-      collection: S3
+      _collection: S3
       instruments: SLSTR
       processing:level: LEVEL-2
     S3_SLSTR_L2AOD:
       product:type: SL_2_AOD___
-      collection: S3
+      _collection: S3
       instruments: SLSTR
       processing:level: LEVEL-2
     S3_SLSTR_L2FRP:
       product:type: SL_2_FRP___
-      collection: S3
+      _collection: S3
       instruments: SLSTR
       processing:level: LEVEL-2
     # SRAL
     # L1
     S3_SRA:
       product:type: SR_1_SRA___
-      collection: S3
+      _collection: S3
       instruments: SRAL
       processing:level: LEVEL-1
     S3_SRA_A:
       product:type: SR_1_SRA_A_
-      collection: S3
+      _collection: S3
       instruments: SRAL
       processing:level: LEVEL-1
     S3_SRA_BS:
       product:type: SR_1_SRA_BS
-      collection: S3
+      _collection: S3
       instruments: SRAL
       processing:level: LEVEL-1
     # L2
     S3_LAN:
       product:type: SR_2_LAN___
-      collection: S3
+      _collection: S3
       instruments: SRAL
       processing:level: LEVEL-2
     S3_WAT:
       product:type: SR_2_WAT___
-      collection: S3
+      _collection: S3
       instruments: SRAL
       processing:level: LEVEL-2
     # Synergy products
     S3_SY_AOD:
       product:type: SY_2_AOD___
-      collection: S3
+      _collection: S3
       instruments: SYNERGY
       processing:level: LEVEL-2
     S3_SY_SYN:
       product:type: SY_2_SYN___
-      collection: S3
+      _collection: S3
       instruments: SYNERGY
       processing:level: LEVEL-2
     S3_SY_V10:
       product:type: SY_2_V10___
-      collection: S3
+      _collection: S3
       instruments: SYNERGY
       processing:level: LEVEL-2W
     S3_SY_VG1:
       product:type: SY_2_VG1___
-      collection: S3
+      _collection: S3
       instruments: SYNERGY
       processing:level: LEVEL-2
     S3_SY_VGP:
       product:type: SY_2_VGP___
-      collection: S3
+      _collection: S3
       instruments: SYNERGY
       processing:level: LEVEL-2
     GENERIC_COLLECTION:
@@ -2336,14 +2358,15 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#replace_str('\\\\+','%26')}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code}')"
-            - "ModificationDate gt {modifiedAfter#to_iso_utc_datetime}"
-            - "ModificationDate lt {modifiedBefore#to_iso_utc_datetime}"
-            - "PublicationDate gt {publishedAfter#to_iso_utc_datetime}"
-            - "PublicationDate lt {publishedBefore#to_iso_utc_datetime}"
+            - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
+            - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
+            - "PublicationDate gt {published_after#to_iso_utc_datetime}"
+            - "PublicationDate lt {published_before#to_iso_utc_datetime}"
             - "ContentDate/Start lt {end_datetime#to_iso_utc_datetime}"
             - "ContentDate/End gt {start_datetime#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#csv_list(%26)}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -2378,7 +2401,7 @@
         - '$.Attributes.platformSerialIdentifier'
       instruments:
         - null
-        - '{$.Attributes.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - '{$.Attributes.instrumentShortName#split( )}'
       processing:level:
         - null
         - '$.Attributes.processingLevel'
@@ -2390,10 +2413,10 @@
       providers:
         - null
         - '$.Attributes.authority'
-      publishedAfter:
+      published_after:
         - null
         - '$.PublicationDate'
-      publishedBefore:
+      published_before:
         - null
         - '$.PublicationDate'
       published: '$.PublicationDate'
@@ -2407,12 +2430,12 @@
       eo:cloud_cover:
         - null
         - '$.Attributes.cloudCover'
-      modifiedAfter:
+      updated_after:
         - null
-        - '$.ModificationDate'
-      modifiedBefore:
+        - '$.null'
+      updated_before:
         - null
-        - '$.ModificationDate'
+        - '$.null'
       updated:
         - null
         - '$.ModificationDate'
@@ -2431,7 +2454,7 @@
         - '$.ContentDate.End'
       sar:polarizations:
         - null
-        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
+        - '{$.Attributes.polarisationChannels#split(&)}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -3819,10 +3842,15 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#replace_str('\\\\+','%26')}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code}')"
+            - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
+            - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
+            - "PublicationDate gt {published_after#to_iso_utc_datetime}"
+            - "PublicationDate lt {published_before#to_iso_utc_datetime}"
             - "ContentDate/Start lt {end_datetime#to_iso_utc_datetime}"
             - "ContentDate/End gt {start_datetime#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#csv_list(%26)}')"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -3859,7 +3887,7 @@
         - '$.Attributes.platformSerialIdentifier'
       instruments:
         - null
-        - '{$.Attributes.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - '{$.Attributes.instrumentShortName#split( )}'
       processing:level:
         - null
         - '$.Attributes.processingLevel'
@@ -3871,6 +3899,12 @@
       providers:
         - null
         - '$.Attributes.authority'
+      published_after:
+        - null
+        - '$.PublicationDate'
+      published_before:
+        - null
+        - '$.PublicationDate'
       published: '$.PublicationDate'
       # OpenSearch Parameters for Product Search (Table 5)
       sat:absolute_orbit:
@@ -3882,6 +3916,12 @@
       eo:cloud_cover:
         - null
         - '$.Attributes.cloudCover'
+      updated_after:
+        - null
+        - '$.null'
+      updated_before:
+        - null
+        - '$.null'
       updated: '$.ModificationDate'
       sar:instrument_mode:
         - null
@@ -3895,7 +3935,7 @@
         - '$.ContentDate.End'
       sar:polarizations:
         - null
-        - '{$.Attributes.polarisationChannels#replace_str("&","+")}'
+        - '{$.Attributes.polarisationChannels#split(&)}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -5021,7 +5061,7 @@
         - type
         - '$.properties.productInformation.productType'
       constellation: '$.properties.acquisitionInformation[0].platform.platformShortName'
-      instruments: '{$.properties.acquisitionInformation[0].instrument.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
+      instruments: '{$.properties.acquisitionInformation[0].instrument.instrumentShortName#split( )}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.properties.title#sanitize}'
       # OpenSearch Parameters for Product Search (Table 5)
@@ -5618,11 +5658,11 @@
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       product:type:
-        - '{{"query":{{"dataset":{{"eq":"{product:type}"}}}}}}'
-        - '$.properties.dataset'
+        - '{{"query":{{"product:type":{{"eq":"{product:type}"}}}}}}'
+        - '$.properties.product:type'
       instruments:
-        - '{{"query":{{"instrument":{{"eq":"{instruments}"}}}}}}'
-        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - '{{"query":{{"instrument":{{"eq":"{instruments#csv_list( )}"}}}}}}'
+        - '{$.properties.instrument#split( )}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
       keywords: '$.properties.keywords'
@@ -5643,9 +5683,13 @@
       end_datetime:
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
+      sar:polarizations:
+        - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations#csv_list( )}}}}}}}'
+        - '{$.properties.sar:polarizations#split( )}'
+      sar:instrument_mode: '$.null'
       sar:beam_ids:
-        - '{{"query":{{"swath":{{"eq":"{sar:beam_ids}"}}}}}}'
-        - '$.properties.swath'
+        - '{{"query":{{"swath":{{"eq":"{sar:beam_ids#csv_list( )}"}}}}}}'
+        - '{$.properties.swath#split( )}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
@@ -5653,9 +5697,7 @@
       grid:code:
         - '{{"query":{{"grid:code":{{"contains":"{grid:code}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
-      providerCollection:
-        - '{{"query":{{"product:type":{{"eq":"{providerCollection}"}}}}}}'
-        - '$.null'
+      published: '$.properties.datetime'
       downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
@@ -5663,17 +5705,17 @@
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
     S1_SAR_OCN:
-      providerCollection: OCN
+      product:type: OCN
       _collection: PEPS_S1_L2
       metadata_mapping:
         eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_GRD:
-      providerCollection: GRD
+      product:type: GRD
       _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_SLC:
-      providerCollection: SLC
+      product:type: SLC
       _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
@@ -5743,11 +5785,11 @@
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       product:type:
-        - '{{"query":{{"dataset":{{"eq":"{product:type}"}}}}}}'
-        - '$.properties.dataset'
+        - '{{"query":{{"product:type":{{"eq":"{product:type}"}}}}}}'
+        - '$.properties.product:type'
       instruments:
-        - '{{"query":{{"instrument":{{"eq":"{instruments}"}}}}}}'
-        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
+        - '{{"query":{{"instrument":{{"eq":"{instruments#csv_list( )}"}}}}}}'
+        - '{$.properties.instrument#split( )}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
       keywords: '$.properties.keywords'
@@ -5768,9 +5810,13 @@
       end_datetime:
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
+      sar:polarizations:
+        - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations#csv_list( )}}}}}}}'
+        - '{$.properties.sar:polarizations#split( )}'
+      sar:instrument_mode: '$.null'
       sar:beam_ids:
-        - '{{"query":{{"swath":{{"eq":"{sar:beam_ids}"}}}}}}'
-        - '$.properties.swath'
+        - '{{"query":{{"swath":{{"eq":"{sar:beam_ids#csv_list( )}"}}}}}}'
+        - '{$.properties.swath#split( )}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
@@ -5778,9 +5824,7 @@
       grid:code:
         - '{{"query":{{"grid:code":{{"contains":"{grid:code}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
-      providerCollection:
-        - '{{"query":{{"product:type":{{"eq":"{providerCollection}"}}}}}}'
-        - '$.null'
+      published: '$.properties.datetime'
       downloadLink: '$.properties.endpoint_url'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
@@ -5788,17 +5832,17 @@
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
     S1_SAR_OCN:
-      providerCollection: OCN
+      product:type: OCN
       _collection: PEPS_S1_L2
       metadata_mapping:
         eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_GRD:
-      providerCollection: GRD
+      product:type: GRD
       _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
     S1_SAR_SLC:
-      providerCollection: SLC
+      product:type: SLC
       _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
@@ -6023,9 +6067,9 @@
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_collection_parsable_metadata:
         ID: '{$.assets.enclosure.href#ceda_collection_name}'
-        abstract: '$.description'
-        instrument: '{$.summaries.instruments#csv_list}'
-        keywords: '{$.keywords#csv_list}'
+        description: '$.description'
+        instruments: '$.summaries.instruments'
+        keywords: '$.keywords'
         license: '$.license'
         platform: '{$.summaries.platform#csv_list}'
         title: '$.title'

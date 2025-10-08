@@ -168,6 +168,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``sanitize``: sanitize string
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
+        - ``split``: split a string using given separator
         - ``split_cop_dem_id``: get the bbox by splitting the product id
         - ``split_corine_id``: get the collection by splitting the product id
         - ``to_bounds_lists``: convert to list(s) of bounds
@@ -603,6 +604,23 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             This is more useful than "$.null" to keep original jsonpath while parsing in metadata_mapping.
             """
             return NOT_AVAILABLE
+
+        @staticmethod
+        def convert_split(value: str, separator: str) -> list[str]:
+            """Split a string using given separator"""
+            if not isinstance(value, str):
+                logger.warning(
+                    "Could not split non-string value %s (type %s)", value, type(value)
+                )
+                return [NOT_AVAILABLE]
+            if not isinstance(separator, str):
+                logger.warning(
+                    "Could not split string using non-string separator %s (type %s)",
+                    separator,
+                    type(separator),
+                )
+                return [NOT_AVAILABLE]
+            return value.split(separator)
 
         @staticmethod
         def convert_ceda_collection_name(value: str) -> str:
