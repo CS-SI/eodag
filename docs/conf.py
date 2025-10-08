@@ -258,6 +258,7 @@ intersphinx_mapping = {
     "rasterio": ("https://rasterio.readthedocs.io/en/stable/", None),
     "rioxarray": ("https://corteva.github.io/rioxarray/stable/", None),
     "fsspec": ("https://filesystem-spec.readthedocs.io/en/stable/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest", None),
 }
 
 suppress_warnings = ["misc.copy_overwrite"]
