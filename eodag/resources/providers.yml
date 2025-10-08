@@ -813,10 +813,10 @@
         - '[{{"name":"{_provider}","roles":["producer"]}}]'
       published_after:
         - null
-        - '$.PublicationDate'
+        - '$.null'
       published_before:
         - null
-        - '$.PublicationDate'
+        - '$.null'
       published: '$.PublicationDate'
       # OpenSearch Parameters for Product Search (Table 5)
       sat:absolute_orbit:
@@ -1983,9 +1983,10 @@
       gsd:
         - 'resolution'
         - '$.properties.resolution'
+      _provider: '$.properties.organisationName'
       providers:
         - 'organisationName'
-        - '$.properties.organisationName'
+        - '[{{"name":"{_provider}","roles":["producer"]}}]'
       published: '$.properties.published'
       license: '$.properties.license'
       # OpenSearch Parameters for Product Search (Table 5)
@@ -2410,15 +2411,16 @@
       gsd:
         - null
         - '$.Attributes.spatialResolution'
+      _provider: '$.Attributes.origin'
       providers:
         - null
-        - '$.Attributes.authority'
+        - '[{{"name":"{_provider}","roles":["producer"]}}]'
       published_after:
         - null
-        - '$.PublicationDate'
+        - '$.null'
       published_before:
         - null
-        - '$.PublicationDate'
+        - '$.null'
       published: '$.PublicationDate'
       # OpenSearch Parameters for Product Search (Table 5)
       sat:absolute_orbit:
@@ -3896,15 +3898,16 @@
       gsd:
         - null
         - '$.Attributes.spatialResolution'
+      _provider: '$.Attributes.origin'
       providers:
         - null
-        - '$.Attributes.authority'
+        - '[{{"name":"{_provider}","roles":["producer"]}}]'
       published_after:
         - null
-        - '$.PublicationDate'
+        - '$.null'
       published_before:
         - null
-        - '$.PublicationDate'
+        - '$.null'
       published: '$.PublicationDate'
       # OpenSearch Parameters for Product Search (Table 5)
       sat:absolute_orbit:
