@@ -4527,7 +4527,7 @@
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4553,10 +4553,9 @@
       realization: 1
       model: ICON
       resolution: high
-      levtype: sfc,o2d,o3d,pl
-      date: YYYYMMDD
+      levtype: sfc
       experiment: hist
-      param: 263000/263001/263003/263004/263009/263114/263124/263500/263501/263505/263506/263507/129/130/131/132/133/135/157/246/78/79/130/134/137/151/165/166/167/168/235/228164/260048/146/147/169/175/176/177/178/179/260654/260655
+      param: 130
       time: "0000"
     DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
       dataset: climate-dt
