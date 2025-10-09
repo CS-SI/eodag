@@ -416,6 +416,8 @@ class Search(PluginTopic):
             self.auth = auth
         try:
             product_type = search_params.get("productType")
+            if not product_type:
+                raise ValidationError("Field required: productType")
             self.list_queryables(
                 filters=search_params,
                 available_product_types=[product_type],
