@@ -608,6 +608,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_split(value: str, separator: str) -> list[str]:
             """Split a string using given separator"""
+            if value == NOT_AVAILABLE:
+                return [NOT_AVAILABLE]
             if not isinstance(value, str):
                 logger.warning(
                     "Could not split non-string value %s (type %s)", value, type(value)

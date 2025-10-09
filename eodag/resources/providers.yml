@@ -747,11 +747,25 @@
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{gsd}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{providers}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:absolute_orbit}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:relative_orbit}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq '{processing:level}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingDate' and att/OData.CSC.StringAttribute/Value eq '{processing:datetime}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingCenter' and att/OData.CSC.StringAttribute/Value eq '{processing:facility}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processorVersion' and att/OData.CSC.StringAttribute/Value eq '{processing:version}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'swathIdentifier' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datatakeID' and att/OData.CSC.StringAttribute/Value eq '{s1:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentConfigurationID' and att/OData.CSC.StringAttribute/Value eq '{s1:instrument_configuration_ID}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'sliceNumber' and att/OData.CSC.StringAttribute/Value eq '{s1:slice_number}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'totalSlices' and att/OData.CSC.StringAttribute/Value eq '{s1:total_slices}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'granuleIdentifier' and att/OData.CSC.StringAttribute/Value eq '{s2:tile_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productGroupId' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'Name' and att/OData.CSC.StringAttribute/Value eq '{s2:product_uri}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datastripId' and att/OData.CSC.StringAttribute/Value eq '{s2:datastrip_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_type}')"
             - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
             - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
             - "PublicationDate gt {published_after#to_iso_utc_datetime}"
@@ -781,6 +795,10 @@
       _collection:
         - null
         - '$.null'
+      # hide duplicated metadata
+      beginningDateTime: '$.null'
+      endingDateTime: '$.null'
+      platformSerialIdentifier: '$.null'
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
       # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
@@ -802,6 +820,19 @@
       processing:level:
         - null
         - '$.Attributes.processingLevel'
+      processing:datetime:
+        - null
+        - '$.Attributes.processingDate'
+      processing:facility:
+        - null
+        - '$.Attributes.processingCenter'
+      processing:version:
+        - null
+        - '$.Attributes.processorVersion'
+      _processor_name:
+        - null
+        - '$.Attributes.processorName'
+      processing:software: '{{"{_processor_name}":"{processing:version}"}}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.Name#remove_extension}'
       gsd:
@@ -822,6 +853,9 @@
       sat:absolute_orbit:
         - null
         - '$.Attributes.orbitNumber'
+      sat:relative_orbit:
+        - null
+        - '$.Attributes.relativeOrbitNumber'
       sat:orbit_state:
         - null
         - '{$.Attributes.orbitDirection#to_lower}'
@@ -835,19 +869,48 @@
         - null
         - '$.null'
       updated: '$.ModificationDate'
-      sar:instrument_mode:
-        - null
-        - '$.Attributes.operationalMode'
-      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       start_datetime:
         - null
         - '$.ContentDate.Start'
       end_datetime:
         - null
         - '$.ContentDate.End'
+      product:timeliness:
+        - null
+        - '$.Attributes.timeliness'
+      sar:instrument_mode:
+        - null
+        - '$.Attributes.swathIdentifier'
       sar:polarizations:
         - null
         - '{$.Attributes.polarisationChannels#split(&)}'
+      s1:datatake_id:
+        - null
+        - '$.Attributes.datatakeID'
+      s1:instrument_configuration_ID:
+        - null
+        - '$.Attributes.instrumentConfigurationID'
+      s1:slice_number:
+        - null
+        - '$.Attributes.sliceNumber'
+      s1:total_slices:
+        - null
+        - '$.Attributes.totalSlices'
+      s2:tile_id:
+        - null
+        - '$.Attributes.granuleIdentifier'
+      s2:datatake_id:
+        - null
+        - '$.Attributes.productGroupId'
+      s2:product_uri:
+        - null
+        - '$.Attributes.Name'
+      s2:datastrip_id:
+        - null
+        - '$.Attributes.datastripId'
+      s2:datatake_type:
+        - null
+        - '$.Attributes.operationalMode'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -869,8 +932,6 @@
         - $.null
       quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      productIdentifier: '$.S3Path'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -2354,13 +2415,26 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platform#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{gsd}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{providers}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {sat:absolute_orbit})"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {relativeOrbitNumber})"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:absolute_orbit}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:relative_orbit}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq '{processing:level}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingDate' and att/OData.CSC.StringAttribute/Value eq '{processing:datetime}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingCenter' and att/OData.CSC.StringAttribute/Value eq '{processing:facility}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processorVersion' and att/OData.CSC.StringAttribute/Value eq '{processing:version}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'swathIdentifier' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datatakeID' and att/OData.CSC.StringAttribute/Value eq '{s1:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentConfigurationID' and att/OData.CSC.StringAttribute/Value eq '{s1:instrument_configuration_ID}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'sliceNumber' and att/OData.CSC.StringAttribute/Value eq '{s1:slice_number}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'totalSlices' and att/OData.CSC.StringAttribute/Value eq '{s1:total_slices}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'granuleIdentifier' and att/OData.CSC.StringAttribute/Value eq '{s2:tile_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productGroupId' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'Name' and att/OData.CSC.StringAttribute/Value eq '{s2:product_uri}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datastripId' and att/OData.CSC.StringAttribute/Value eq '{s2:datastrip_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_type}')"
             - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
             - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
             - "PublicationDate gt {published_after#to_iso_utc_datetime}"
@@ -2385,6 +2459,13 @@
       metadata_path_id: 'Name'
       metadata_path_value: 'Value'
     metadata_mapping:
+      _collection:
+        - null
+        - '$.null'
+      # hide duplicated metadata
+      beginningDateTime: '$.null'
+      endingDateTime: '$.null'
+      platformSerialIdentifier: '$.null'
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
       # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
@@ -2406,6 +2487,19 @@
       processing:level:
         - null
         - '$.Attributes.processingLevel'
+      processing:datetime:
+        - null
+        - '$.Attributes.processingDate'
+      processing:facility:
+        - null
+        - '$.Attributes.processingCenter'
+      processing:version:
+        - null
+        - '$.Attributes.processorVersion'
+      _processor_name:
+        - null
+        - '$.Attributes.processorName'
+      processing:software: '{{"{_processor_name}":"{processing:version}"}}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.Name#remove_extension}'
       gsd:
@@ -2426,6 +2520,9 @@
       sat:absolute_orbit:
         - null
         - '$.Attributes.orbitNumber'
+      sat:relative_orbit:
+        - null
+        - '$.Attributes.relativeOrbitNumber'
       sat:orbit_state:
         - null
         - '{$.Attributes.orbitDirection#to_lower}'
@@ -2444,9 +2541,6 @@
       sat:relative_orbit:
         - null
         - '$.Attributes.relativeOrbitNumber'
-      sar:instrument_mode:
-        - null
-        - '$.Attributes.operationalMode'
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       start_datetime:
         - null
@@ -2454,9 +2548,42 @@
       end_datetime:
         - null
         - '$.ContentDate.End'
+      product:timeliness:
+        - null
+        - '$.Attributes.timeliness'
+      sar:instrument_mode:
+        - null
+        - '$.Attributes.swathIdentifier'
       sar:polarizations:
         - null
         - '{$.Attributes.polarisationChannels#split(&)}'
+      s1:datatake_id:
+        - null
+        - '$.Attributes.datatakeID'
+      s1:instrument_configuration_ID:
+        - null
+        - '$.Attributes.instrumentConfigurationID'
+      s1:slice_number:
+        - null
+        - '$.Attributes.sliceNumber'
+      s1:total_slices:
+        - null
+        - '$.Attributes.totalSlices'
+      s2:tile_id:
+        - null
+        - '$.Attributes.granuleIdentifier'
+      s2:datatake_id:
+        - null
+        - '$.Attributes.productGroupId'
+      s2:product_uri:
+        - null
+        - '$.Attributes.Name'
+      s2:datastrip_id:
+        - null
+        - '$.Attributes.datastripId'
+      s2:datatake_type:
+        - null
+        - '$.Attributes.operationalMode'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
@@ -2478,8 +2605,6 @@
         - $.null
       quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      productIdentifier: '$.S3Path'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -3841,11 +3966,25 @@
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{gsd}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{providers}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:absolute_orbit}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:relative_orbit}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq '{processing:level}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingDate' and att/OData.CSC.StringAttribute/Value eq '{processing:datetime}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingCenter' and att/OData.CSC.StringAttribute/Value eq '{processing:facility}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processorVersion' and att/OData.CSC.StringAttribute/Value eq '{processing:version}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'swathIdentifier' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datatakeID' and att/OData.CSC.StringAttribute/Value eq '{s1:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentConfigurationID' and att/OData.CSC.StringAttribute/Value eq '{s1:instrument_configuration_ID}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'sliceNumber' and att/OData.CSC.StringAttribute/Value eq '{s1:slice_number}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'totalSlices' and att/OData.CSC.StringAttribute/Value eq '{s1:total_slices}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'granuleIdentifier' and att/OData.CSC.StringAttribute/Value eq '{s2:tile_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productGroupId' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'Name' and att/OData.CSC.StringAttribute/Value eq '{s2:product_uri}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datastripId' and att/OData.CSC.StringAttribute/Value eq '{s2:datastrip_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_type}')"
             - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
             - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
             - "PublicationDate gt {published_after#to_iso_utc_datetime}"
@@ -3872,6 +4011,13 @@
       metadata_path_id: 'Name'
       metadata_path_value: 'Value'
     metadata_mapping:
+      _collection:
+        - null
+        - '$.null'
+      # hide duplicated metadata
+      beginningDateTime: '$.null'
+      endingDateTime: '$.null'
+      platformSerialIdentifier: '$.null'
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
       # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
@@ -3893,6 +4039,19 @@
       processing:level:
         - null
         - '$.Attributes.processingLevel'
+      processing:datetime:
+        - null
+        - '$.Attributes.processingDate'
+      processing:facility:
+        - null
+        - '$.Attributes.processingCenter'
+      processing:version:
+        - null
+        - '$.Attributes.processorVersion'
+      _processor_name:
+        - null
+        - '$.Attributes.processorName'
+      processing:software: '{{"{_processor_name}":"{processing:version}"}}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.Name#remove_extension}'
       gsd:
@@ -3913,6 +4072,9 @@
       sat:absolute_orbit:
         - null
         - '$.Attributes.orbitNumber'
+      sat:relative_orbit:
+        - null
+        - '$.Attributes.relativeOrbitNumber'
       sat:orbit_state:
         - null
         - '{$.Attributes.orbitDirection#to_lower}'
@@ -3926,9 +4088,6 @@
         - null
         - '$.null'
       updated: '$.ModificationDate'
-      sar:instrument_mode:
-        - null
-        - '$.Attributes.operationalMode'
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       start_datetime:
         - null
@@ -3936,9 +4095,42 @@
       end_datetime:
         - null
         - '$.ContentDate.End'
+      product:timeliness:
+        - null
+        - '$.Attributes.timeliness'
+      sar:instrument_mode:
+        - null
+        - '$.Attributes.swathIdentifier'
       sar:polarizations:
         - null
         - '{$.Attributes.polarisationChannels#split(&)}'
+      s1:datatake_id:
+        - null
+        - '$.Attributes.datatakeID'
+      s1:instrument_configuration_ID:
+        - null
+        - '$.Attributes.instrumentConfigurationID'
+      s1:slice_number:
+        - null
+        - '$.Attributes.sliceNumber'
+      s1:total_slices:
+        - null
+        - '$.Attributes.totalSlices'
+      s2:tile_id:
+        - null
+        - '$.Attributes.granuleIdentifier'
+      s2:datatake_id:
+        - null
+        - '$.Attributes.productGroupId'
+      s2:product_uri:
+        - null
+        - '$.Attributes.Name'
+      s2:datastrip_id:
+        - null
+        - '$.Attributes.datastripId'
+      s2:datatake_type:
+        - null
+        - '$.Attributes.operationalMode'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - null
