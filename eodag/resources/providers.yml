@@ -6511,7 +6511,7 @@
     GHS_BUILT_V:
       productType: builtV
       metadata_mapping:
-        tile_size: '{$.tile_size#replace_strings("m", "", "k", "000")}'
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_BUILT_V_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_BUILT_C:
@@ -6528,13 +6528,13 @@
       year: 2018
       coord_system: 54009
       metadata_mapping:
-        tile_size: '{$.tile_size#replace_strings("m", "", "k", "000")}'
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_LAND_E2018_GLOBE_R2022A_{coord_system}_{tile_size}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_POP:
       productType: POP
       metadata_mapping:
-        tile_size: '{$.tile_size#replace_strings("m", "", "k", "000")}'
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_POP_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
         downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_SMOD:
