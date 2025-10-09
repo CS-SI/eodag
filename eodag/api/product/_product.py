@@ -53,7 +53,7 @@ from eodag.utils import (
     ProgressCallback,
     get_geometry_from_various,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError
+from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
@@ -228,16 +228,22 @@ class EOProduct:
         :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
                         as a Python dict
         :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
-        properties = feature["properties"]
-        properties["geometry"] = feature["geometry"]
-        properties["id"] = feature["id"]
-        provider = feature["properties"]["eodag:provider"]
-        collection = feature["properties"]["eodag:collection"]
+        try:
+            properties = feature["properties"]
+            properties["geometry"] = feature["geometry"]
+            properties["id"] = feature["id"]
+            provider = properties.pop("eodag:provider")
+            collection = properties.pop("eodag:collection")
+            search_intersection = properties.pop("eodag:search_intersection")
+        except KeyError as e:
+            raise ValidationError(
+                "Key %s not found in geojson, make sure it comes from a serialized SearchResult"
+                % e.args[0]
+            ) from e
         obj = cls(provider, properties, collection=collection)
-        obj.search_intersection = geometry.shape(
-            feature["properties"]["eodag:search_intersection"]
-        )
+        obj.search_intersection = geometry.shape(search_intersection)
         obj.assets = AssetsDict(obj, feature.get("assets", {}))
         return obj
 
