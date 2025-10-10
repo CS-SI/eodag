@@ -445,7 +445,7 @@ class EOProduct:
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
         with requests.get(
-            self.properties["quicklook"],
+            self.properties["eodag:quicklook"],
             stream=True,
             auth=auth,
             headers=USER_AGENT,
@@ -489,17 +489,17 @@ class EOProduct:
         def format_quicklook_address() -> None:
             """If the quicklook address is a Python format string, resolve the
             formatting with the properties of the product."""
-            fstrmatch = re.match(r".*{.+}*.*", self.properties["quicklook"])
+            fstrmatch = re.match(r".*{.+}*.*", self.properties["eodag:quicklook"])
             if fstrmatch:
-                self.properties["quicklook"].format(
+                self.properties["eodag:quicklook"].format(
                     {
                         prop_key: prop_val
                         for prop_key, prop_val in self.properties.items()
-                        if prop_key != "quicklook"
+                        if prop_key != "eodag:quicklook"
                     }
                 )
 
-        if self.properties.get("quicklook") is None:
+        if self.properties.get("eodag:quicklook") is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
@@ -542,11 +542,11 @@ class EOProduct:
             # it is a HTTP URL. If not, we assume it is a base64 string, in which case
             # we just decode the content, write it into the quicklook_file and return it.
             if not (
-                self.properties["quicklook"].startswith("http")
-                or self.properties["quicklook"].startswith("https")
+                self.properties["eodag:quicklook"].startswith("http")
+                or self.properties["eodag:quicklook"].startswith("https")
             ):
                 with open(quicklook_file, "wb") as fd:
-                    img = self.properties["quicklook"].encode("ascii")
+                    img = self.properties["eodag:quicklook"].encode("ascii")
                     fd.write(base64.b64decode(img))
                 return quicklook_file
 
@@ -609,7 +609,9 @@ class EOProduct:
         return NoDriver()
 
     def _repr_html_(self):
-        thumbnail = self.properties.get("thumbnail")
+        thumbnail = self.properties.get("eodag:thumbnail") or self.properties.get(
+            "eodag:quicklook"
+        )
         thumbnail_html = (
             f"<img src='{thumbnail}' width=100 alt='thumbnail'/>"
             if thumbnail and not thumbnail.startswith("s3")

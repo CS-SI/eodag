@@ -166,7 +166,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_no_quicklook_url(self):
         """EOProduct.get_quicklook must return an empty string if no quicklook property"""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = None
+        product.properties["eodag:quicklook"] = None
 
         quicklook_file_path = product.get_quicklook()
         self.assertEqual(quicklook_file_path, "")
@@ -174,7 +174,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_http_error(self):
         """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
             requests.HTTPError
@@ -196,7 +196,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_ok_without_auth(self):
         """EOProduct.get_quicklook must retrieve the quicklook without authentication."""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
             requests.HTTPError,
@@ -219,7 +219,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_ok(self):
         """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value = self._quicklook_response()
         product.register_downloader(self.get_mock_downloader(), None)
@@ -273,7 +273,7 @@ class TestEOProduct(EODagTestCase):
         with open(existing_quicklook_file_path, "wb") as fh:
             fh.write(b"content")
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook(filename=quicklook_basename)

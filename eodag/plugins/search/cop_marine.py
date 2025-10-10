@@ -272,9 +272,11 @@ class CopMarineSearch(StaticStacSearch):
 
         _check_int_values_properties(properties)
 
-        properties["thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
+        properties["eodag:thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
         if "omiFigure" in collection_dict["assets"]:
-            properties["quicklook"] = collection_dict["assets"]["omiFigure"]["href"]
+            properties["eodag:quicklook"] = collection_dict["assets"]["omiFigure"][
+                "href"
+            ]
         assets = {
             "native": {
                 "title": "native",
