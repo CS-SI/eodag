@@ -150,7 +150,7 @@
           - '{{"search":{{"downloadUrl":"{awsPath}" }} }}'
           - '$.downloadUrl'
         eodag:download_link: 's3://cbers-pds/{awsPath}'
-        metaeodag:download_link: 's3://cbers-meta-pds/{awsPath}'
+        eodag:mtd_download_link: 's3://cbers-meta-pds/{awsPath}'
         previewBaseName: '{$.sceneID#replace_str("_L2","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
@@ -498,16 +498,16 @@
       CBERS4_MUX_L2:
         default_bucket: 'cbers-pds'
         complementary_url_key:
-          - metaeodag:download_link
+          - eodag:mtd_download_link
       CBERS4_AWFI_L2:
         complementary_url_key:
-          - metaeodag:download_link
+          - eodag:mtd_download_link
       CBERS4_PAN5M_L2:
         complementary_url_key:
-          - metaeodag:download_link
+          - eodag:mtd_download_link
       CBERS4_PAN10M_L2:
         complementary_url_key:
-          - metaeodag:download_link
+          - eodag:mtd_download_link
       S1_SAR_GRD:
         default_bucket: 'sentinel-s1-l1c'
         build_safe: true
