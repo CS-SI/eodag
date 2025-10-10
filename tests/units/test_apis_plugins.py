@@ -652,9 +652,11 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                     geometry="POINT (0 0)",
                     title="dummy_product",
                     id="dummy",
-                    entityId="dummyEntityId",
-                    productId="dummyProductId",
                     collection="L8_OLI_TIRS_C1L1",
+                    **{
+                        "usgs:entityId": "dummyEntityId",
+                        "usgs:productId": "dummyProductId",
+                    },
                 ),
             )
             product.location = product.remote_location = product.properties[

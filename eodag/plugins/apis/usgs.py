@@ -342,8 +342,8 @@ class UsgsApi(Api):
         )
         download_request_results = api.download_request(
             usgs_dataset,
-            product.properties["entityId"],
-            product.properties["productId"],
+            product.properties["usgs:entityId"],
+            product.properties["usgs:productId"],
         )
 
         req_urls: list[str] = []
