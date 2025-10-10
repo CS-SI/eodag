@@ -443,8 +443,8 @@ class HTTPDownload(Download):
             )
 
             # display progress percentage
-            if "percent" in status_dict:
-                status_percent = str(status_dict["percent"])
+            if "eodag:order_percent" in status_dict:
+                status_percent = str(status_dict["eodag:order_percent"])
                 if status_percent.isdigit():
                     status_percent += "%"
                 logger.info(
@@ -455,7 +455,9 @@ class HTTPDownload(Download):
                 {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
             )
 
-            product.properties["orderStatus"] = status_dict.get("eodag:status")
+            product.properties["eodag:order_status"] = status_dict.get(
+                "eodag:order_status"
+            )
 
             status_message = status_dict.get("eodag:order_message")
 
@@ -469,12 +471,12 @@ class HTTPDownload(Download):
         product.properties["order:status"] = STAGING_STATUS
 
         success_status: dict[str, Any] = status_config.get("success", {}).get(
-            "eodag:status"
+            "eodag:order_status"
         )
         # if not success
-        if (success_status and success_status != status_dict.get("eodag:status")) or (
-            success_code and success_code != response.status_code
-        ):
+        if (
+            success_status and success_status != status_dict.get("eodag:order_status")
+        ) or (success_code and success_code != response.status_code):
             return None
 
         product.properties["order:status"] = ONLINE_STATUS
@@ -919,7 +921,7 @@ class HTTPDownload(Download):
         if (
             "eodag:order_link" in product.properties
             and product.properties.get("order:status") == OFFLINE_STATUS
-            and not product.properties.get("orderStatus")
+            and not product.properties.get("eodag:order_status")
         ):
             self._order(product=product, auth=auth)
 

@@ -1648,17 +1648,17 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.status
+        eodag:order_status: $.json.status
         order:date: $.json.created
         created: $.json.created
         published: $.json.finished
         updated: $.json.updated
         ecmwf:dataset: $.json.processID
-        request_params: $.json.metadata.request.ids
+        eodag:request_params: $.json.metadata.request.ids
       error:
-        eodag:status: failed
+        eodag:order_status: failed
       success:
-        eodag:status: successful
+        eodag:order_status: successful
       on_success:
         need_search: true
         metadata_mapping:
@@ -1820,17 +1820,17 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.status
+        eodag:order_status: $.json.status
         order:date: $.json.created
         created: $.json.created
         published: $.json.finished
         updated: $.json.updated
         ecmwf:dataset: $.json.processID
-        request_params: $.json.metadata.request.ids
+        eodag:request_params: $.json.metadata.request.ids
       error:
-        eodag:status: failed
+        eodag:order_status: failed
       success:
-        eodag:status: successful
+        eodag:order_status: successful
       on_success:
         need_search: true
         metadata_mapping:
@@ -2346,10 +2346,10 @@
       request:
         method: GET
       metadata_mapping:
-        percent: $.json.percentCompleted
-        eodag:status: $.json.status
+        eodag:order_percent: $.json.percentCompleted
+        eodag:order_status: $.json.status
       error:
-        eodag:status: error
+        eodag:order_status: error
       on_success:
         metadata_mapping:
           eodag:order_id: '$.json.id'
@@ -3509,18 +3509,18 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.features[0].status
+        eodag:order_status: $.json.features[0].status
         eodag:order_message: $.json.features[0].message
       error:
-        eodag:status: Error
+        eodag:order_status: Error
       success:
-        eodag:status: Done
+        eodag:order_status: Done
       ordered:
         http_code: 202
       on_success:
         metadata_mapping:
-          download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          eodag:download_id: $.json.features[0]._id
+          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
 
 ---
 !provider  # MARK: wekeo_ecmwf
@@ -3784,22 +3784,22 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.features[0].status
+        eodag:order_status: $.json.features[0].status
         order:date: $.json.features[0].started_at
         created: $.json.features[0].started_at
         eodag:order_message: $.json.features[0].message
         eodag:order_id: $.json.features[0]._id
         ecmwf:dataset: $.json.features[0].dataset_id
       error:
-        eodag:status: Error
+        eodag:order_status: Error
       success:
-        eodag:status: Done
+        eodag:order_status: Done
       ordered:
         http_code: 202
       on_success:
         metadata_mapping:
-          download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          eodag:download_id: $.json.features[0]._id
+          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
     products:
       FIRE_HISTORICAL:
         output_extension: .grib
@@ -3896,18 +3896,18 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.features[0].status
+        eodag:order_status: $.json.features[0].status
         eodag:order_message: $.json.features[0].message
       error:
-        eodag:status: Error
+        eodag:order_status: Error
       success:
-        eodag:status: Done
+        eodag:order_status: Done
       ordered:
         http_code: 202
       on_success:
         metadata_mapping:
-          download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          eodag:download_id: $.json.features[0]._id
+          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
 
 ---
 !provider # MARK: creodias_s3
@@ -4605,13 +4605,13 @@
         method: GET
         headers:
       metadata_mapping:
-        eodag:status: $.json.status
+        eodag:order_status: $.json.status
         eodag:order_message: $.json.message
         error_message: $.null
       success:
         http_code: 303
       error:
-        eodag:status: failed
+        eodag:order_status: failed
       on_success:
         result_type: json
         metadata_mapping:
@@ -4697,7 +4697,7 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.status
+        eodag:order_status: $.json.status
         eodag:order_message: $.json.description
       success:
         http_code: 200
@@ -6145,17 +6145,17 @@
       request:
         method: GET
       metadata_mapping:
-        eodag:status: $.json.status
+        eodag:order_status: $.json.status
         order:date: $.json.created
         created: $.json.created
         published: $.json.finished
         updated: $.json.updated
         ecmwf:dataset: $.json.processID
-        request_params: $.json.metadata.request.ids
+        eodag:request_params: $.json.metadata.request.ids
       error:
-        eodag:status: failed
+        eodag:order_status: failed
       success:
-        eodag:status: successful
+        eodag:order_status: successful
       on_success:
         need_search: true
         metadata_mapping:
