@@ -3840,8 +3840,9 @@
         platform: '$.null'
       single_collection_parsable_metadata:
         title: '$.metadata._source.datasetTitle'
-        missionStartDate: '$.metadata._source.tempextent_begin'
-        missionEndDate: '$.metadata._source.tempextent_end'
+        _mission_start_date: '$.metadata._source.tempextent_begin'
+        _mission_end_date: '$.metadata._source.tempextent_end'
+        extent: '{{"temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
         processing:level: '$.null'
         keywords: '$.metadata._source.keywords'
     discover_queryables:
@@ -4668,7 +4669,7 @@
         keywords: '{$.keywords#csv_list}'
         license: '$.license'
         title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+        extent: '$.extent'
     pagination:
       next_page_url_key_path: null
       max_items_per_page: 100
@@ -5245,7 +5246,7 @@
         keywords: '$.null'
         license: '$.null'
         title: '$.title'
-        missionStartDate: '$.null'
+        extent: '$.null'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -5672,7 +5673,7 @@
         keywords: '$.keywords'
         license: '$.license'
         title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+        extent: '$.extent'
         description: '$.description'
         providers: '$.providers'
         sci:doi: '$.sci:doi'
