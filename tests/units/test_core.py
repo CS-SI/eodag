@@ -1168,7 +1168,7 @@ class TestCore(TestCoreBase):
         self.assertIn("constellation", structure)
         self.assertIn("platform", structure)
         self.assertIn("processing:level", structure)
-        self.assertIn("sensorType", structure)
+        self.assertIn("eodag:sensor_type", structure)
         self.assertTrue(
             structure["ID"] in self.SUPPORTED_COLLECTIONS
             or structure["_id"] in self.SUPPORTED_COLLECTIONS

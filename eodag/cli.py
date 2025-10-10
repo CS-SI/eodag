@@ -203,7 +203,7 @@ def version() -> None:
     help="Search for products matching this processing level",
 )
 @click.option(
-    "-S", "--sensorType", help="Search for products matching this type of sensor"
+    "-S", "--sensor-type", help="Search for products matching this type of sensor"
 )
 @click.option(
     "--cloud-cover",
@@ -287,7 +287,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     platform = kwargs.pop("platform")
     constellation = kwargs.pop("constellation")
     processing_level = kwargs.pop("processing_level")
-    sensor_type = kwargs.pop("sensortype")
+    sensor_type = kwargs.pop("sensor_type")
     id_ = kwargs.pop("id")
     locations_qs = kwargs.pop("locations")
     custom = kwargs.pop("query")
@@ -333,7 +333,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         "constellation": constellation,
         "platform": platform,
         "processing:level": processing_level,
-        "sensorType": sensor_type,
+        "eodag:sensor_type": sensor_type,
         "id": id_,
     }
     if custom:
@@ -428,7 +428,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 )
 @click.option("-L", "--processing-level", help="List collections of processing level")
 @click.option(
-    "-S", "--sensorType", help="List collections originating from this type of sensor"
+    "-S", "--sensor-type", help="List collections originating from this type of sensor"
 )
 @click.option(
     "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
@@ -454,7 +454,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
                 "constellation",
                 "platform",
                 "processing_level",
-                "sensortype",
+                "sensor_type",
             ]
         ):
             click.echo("No collection match the following criteria you provided:")

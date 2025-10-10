@@ -26,7 +26,7 @@ CBERS4_MUX_L2:
   platform: CBERS-4
   processing:level: L2
   keywords: ["MUX", "CBERS", "CBERS-4", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 MUX Level-2
@@ -40,7 +40,7 @@ CBERS4_AWFI_L2:
   platform: CBERS-4
   processing:level: L2
   keywords: ["AWFI", "CBERS", "CBERS-4", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 AWFI Level-2
@@ -54,7 +54,7 @@ CBERS4_PAN5M_L2:
   platform: CBERS-4
   processing:level: L2
   keywords: ["PAN5M", "CBERS", "CBERS-4", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 PAN5M Level-2
@@ -68,7 +68,7 @@ CBERS4_PAN10M_L2:
   platform: CBERS-4
   processing:level: L2
   keywords: ["PAN10M", "CBERS", "CBERS-4", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 PAN10M Level-2
@@ -82,7 +82,7 @@ CBERS4_MUX_L4:
   platform: CBERS-4
   processing:level: L4
   keywords: ["MUX", "CBERS", "CBERS-4", "L4"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 MUX Level-4
@@ -96,7 +96,7 @@ CBERS4_AWFI_L4:
   platform: CBERS-4
   processing:level: L4
   keywords: ["AWFI", "CBERS", "CBERS-4", "L4"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 AWFI Level-4
@@ -110,7 +110,7 @@ CBERS4_PAN5M_L4:
   platform: CBERS-4
   processing:level: L4
   keywords: ["PAN5M", "CBERS", "CBERS-4", "L4"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 PAN5M Level-4
@@ -124,7 +124,7 @@ CBERS4_PAN10M_L4:
   platform: CBERS-4
   processing:level: L4
   keywords: ["PAN10M", "CBERS", "CBERS-4", "L4"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: CBERS-4 PAN10M Level-4
@@ -140,7 +140,7 @@ L8_OLI_TIRS_C1L1:
   platform: L8
   processing:level: L1
   keywords: ["OLI", "TIRS", "LANDSAT", "LANDSAT8", "L8", "L1", "C1", "COLLECTION1"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2013-02-11T00:00:00Z", null]]}}
   title: Landsat 8 Level-1
@@ -153,7 +153,7 @@ LANDSAT_C2L1:
   platform: L1,L2,L3,L4,L5,L6,L7,L8
   processing:level: L1
   keywords: ["OLI", "TIRS", "LANDSAT", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-1 Product
   extent: {"temporal": {"interval": [["1972-07-25T00:00:00Z", null]]}}
@@ -167,7 +167,7 @@ LANDSAT_C2L2:
   platform: L8,L9
   processing:level: L1
   keywords: ["OLI", "TIRS", "LANDSAT", "L8", "L9", "L2", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat OLI and TIRS Collection 2 Level-2 Science Products 30-meter multispectral data.
   extent: {"temporal": {"interval": [["2013-02-11T00:00:00Z", null]]}}
@@ -181,7 +181,7 @@ LANDSAT_C2L2_SR:
   platform: L4,L5,L7,L8
   processing:level: L2
   keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "SR", "surface", "reflectance", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 UTM Surface Reflectance (SR) Product
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", null]]}}
@@ -194,7 +194,7 @@ LANDSAT_C2L2_ST:
   platform: L4,L5,L7,L8
   processing:level: L2
   keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "ST", "surface", "temperature", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 UTM Surface Temperature (ST) Product
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", null]]}}
@@ -208,7 +208,7 @@ LANDSAT_C2L2ALB_BT:
   platform: L4,L5,L7,L8
   processing:level: L2
   keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "BT", "Brightness", "Temperature", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Top of Atmosphere Brightness Temperature (BT) Product
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", null]]}}
@@ -222,7 +222,7 @@ LANDSAT_C2L2ALB_SR:
   platform: L4,L5,L7,L8
   processing:level: L2
   keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "L2ALB", "SR", "Surface", "Reflectance", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Surface Reflectance (SR) Product
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", null]]}}
@@ -235,7 +235,7 @@ LANDSAT_C2L2ALB_ST:
   platform: L4,L5,L7,L8
   processing:level: L2
   keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "L2ALB", "Surface", "Temperature", "ST", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Surface Temperature (ST) Product
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", null]]}}
@@ -249,7 +249,7 @@ LANDSAT_C2L2ALB_TA:
   platform: L4,L5,L7,L8
   processing:level: L2
   keywords: ["OLI", "TIRS", "LANDSAT", "L4", "L5", "L7", "L8", "L2", "L2ALB", "TA", "Top", "Atmosphere", "Reflectance", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat Collection 2 Level-2 Albers Top of Atmosphere (TA) Reflectance Product
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", null]]}}
@@ -265,7 +265,7 @@ LANDSAT_TM_C1:
   platform: L4,L5
   processing:level: L1
   keywords: ["TM", "LANDSAT", "L4", "L5", "L1", "C1", "COLLECTION1"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat 4-5 Thematic Mapper (TM) Collection-1 Level-1 Data Products
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", "2013-06-06T00:00:00Z"]]}}
@@ -281,7 +281,7 @@ LANDSAT_TM_C2L1:
   platform: L4,L5
   processing:level: L1
   keywords: ["TM", "LANDSAT", "L4", "L5", "L1", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat 4-5 Thematic Mapper (TM) Collection-2 Level-1 Data Products
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", "2013-06-06T00:00:00Z"]]}}
@@ -295,7 +295,7 @@ LANDSAT_TM_C2L2:
   platform: L4,L5
   processing:level: L2
   keywords: ["TM", "LANDSAT", "L4", "L5", "L2", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Landsat 4-5 Thematic Mapper (TM) Collection-2 Level-2 Data Products
   extent: {"temporal": {"interval": [["1982-08-22T00:00:00Z", "2013-06-06T00:00:00Z"]]}}
@@ -311,7 +311,7 @@ LANDSAT_ETM_C1:
   platform: L7
   processing:level: L1
   keywords: ["ETM", "ETM+", "LANDSAT", "L7", "L1", "C1", "COLLECTION1"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-1 Level-1 data from Landsat 7
   extent: {"temporal": {"interval": [["1999-04-15T00:00:00Z", null]]}}
@@ -327,7 +327,7 @@ LANDSAT_ETM_C2L1:
   platform: L7
   processing:level: L1
   keywords: ["ETM", "ETM+", "LANDSAT", "L7", "L1", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-1 data from Landsat 7
   extent: {"temporal": {"interval": [["1999-04-15T00:00:00Z", null]]}}
@@ -341,7 +341,7 @@ LANDSAT_ETM_C2L2:
   platform: L7
   processing:level: L2
   keywords: ["ETM", "ETM+", "LANDSAT", "L7", "L2", "C2", "COLLECTION2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-2 data from Landsat 7
   extent: {"temporal": {"interval": [["1999-04-15T00:00:00Z", null]]}}
@@ -360,7 +360,7 @@ MODIS_MCD43A4:
   platform: EOS AM-1+PM-1
   processing:level: L3
   keywords: ["MODIS", "Terra", "Aqua", "EOS", "AM-1+PM-1", "L3", "MCD43A4"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2000-03-05T00:00:00Z", null]]}}
   title: MODIS MCD43A4
@@ -380,7 +380,7 @@ NAIP:
   platform: NAIP
   processing:level: N/A
   keywords: ["film", "digital", "cameras", "Agriculture", "NAIP"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
   title: National Agriculture Imagery Program
@@ -398,7 +398,7 @@ S1_AUX_GNSSRD:
   platform: S1A,S1B,S1C
   processing:level: AUX
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "GNSSRD", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
   extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
@@ -416,7 +416,7 @@ S1_AUX_MOEORB:
   platform: S1A,S1B,S1C
   processing:level: AUX
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "MOEORB", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
   extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
@@ -434,7 +434,7 @@ S1_AUX_POEORB:
   platform: S1A,S1B,S1C
   processing:level: AUX
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "POEORB", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
   extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
@@ -452,7 +452,7 @@ S1_AUX_PREORB:
   platform: S1A,S1B,S1C
   processing:level: AUX
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "PREORB", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
   extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
@@ -470,7 +470,7 @@ S1_AUX_PROQUA:
   platform: S1A,S1B,S1C
   processing:level: AUX
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "PROQUA", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
   extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
@@ -488,7 +488,7 @@ S1_AUX_RESORB:
   platform: S1A,S1B,S1C
   processing:level: AUX
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "AUX", "RESORB", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Auxiliary Product
   extent: {"temporal": {"interval": [["2014-04-06T00:00:00Z", null]]}}
@@ -506,7 +506,7 @@ S1_SAR_L3_IW_MCM:
   platform: S1A,S1B,S1C
   processing:level: L3
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L3", "IW", "MCM", "COG"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-3 IW MCM
   extent: {"temporal": {"interval": [["2023-01-01T00:00:00Z", null]]}}
@@ -524,7 +524,7 @@ S1_SAR_L3_DH_MCM:
   platform: S1A,S1B,S1C
   processing:level: L3
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L3", "DH", "MCM", "COG"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-3 DH MCM
   extent: {"temporal": {"interval": [["2023-01-01T00:00:00Z", null]]}}
@@ -547,7 +547,7 @@ S1_SAR_OCN:
   platform: S1A,S1B,S1C
   processing:level: L2
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L2", "OCN", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-2 OCN
   extent: {"temporal": {"interval": [["2014-04-03T00:00:00Z", null]]}}
@@ -571,7 +571,7 @@ S1_SAR_GRD:
   platform: S1A,S1B,S1C
   processing:level: L1
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "GRD", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
   extent: {"temporal": {"interval": [["2014-04-03T00:00:00Z", null]]}}
@@ -595,7 +595,7 @@ S1_SAR_GRD_JP2:
   platform: S1A,S1B,S1C
   processing:level: L1
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "GRD", "JP2"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
   extent: {"temporal": {"interval": [["2014-04-03T00:00:00Z", null]]}}
@@ -619,7 +619,7 @@ S1_SAR_GRD_COG:
   platform: S1A,S1B,S1C
   processing:level: L1
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "GRD", "COG"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-1 Ground Range Detected
   extent: {"temporal": {"interval": [["2014-04-03T00:00:00Z", null]]}}
@@ -637,7 +637,7 @@ S1_SAR_SLC:
   platform: S1A,S1B,S1C
   processing:level: L1
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L1", "SLC", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 Level-1 Single Look Complex
   extent: {"temporal": {"interval": [["2014-04-03T00:00:00Z", null]]}}
@@ -654,7 +654,7 @@ S1_SAR_RAW:
   platform: S1A,S1B,S1C
   processing:level: L0
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L0", "RAW", "SAFE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL1 SAR Level-0
   extent: {"temporal": {"interval": [["2014-04-03T00:00:00Z", null]]}}
@@ -675,7 +675,7 @@ S2_MSI_L1C:
   platform: S2A,S2B,S2C
   processing:level: L1
   keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L1", "L1C", "SAFE"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
   title: SENTINEL2 Level-1C
@@ -695,7 +695,7 @@ S2_MSI_L1C_JP2:
   platform: S2A,S2B,S2C
   processing:level: L1
   keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L1C", "JP2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
   title: SENTINEL2 Level-1C
@@ -710,7 +710,7 @@ S2_MSI_L2A:
   platform: S2A,S2B,S2C
   processing:level: L2
   keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "SAFE"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
   extent: {"temporal": {"interval": [["2018-03-26T00:00:00Z", null]]}}
@@ -725,7 +725,7 @@ S2_MSI_L2A_JP2:
   platform: S2A,S2B,S2C
   processing:level: L2
   keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "JP2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
@@ -740,7 +740,7 @@ S2_MSI_L2A_COG:
   platform: S2A,S2B,S2C
   processing:level: L2
   keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "COG"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
@@ -756,7 +756,7 @@ S2_MSI_L2A_MAJA:
   platform: S2A,S2B,S2C
   processing:level: L2
   keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L2", "L2A", "MAJA"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL2 Level-2A
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
@@ -772,7 +772,7 @@ S2_MSI_L2B_MAJA_SNOW:
   platform: S2A,S2B,S2C
   processing:level: L2
   keywords: ["MSI", "MAJA", "SENTINEL", "sentinel2", "S2", "S2A", "S2B", "S2C", "L2", "L2B", "SNOW"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
   title: SENTINEL2 snow product
@@ -786,7 +786,7 @@ S2_MSI_L2B_MAJA_WATER:
   platform: S2A,S2B,S2C
   processing:level: L2
   keywords: ["MSI", "MAJA", "SENTINEL", "sentinel2", "S2", "S2A", "S2B", "S2C", "L2", "L2B", "WATER"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   extent: {"temporal": {"interval": [["2015-06-23T00:00:00Z", null]]}}
   title: SENTINEL2 L2B-WATER
@@ -811,7 +811,7 @@ S3_EFR:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "EFR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 EFR
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -834,7 +834,7 @@ S3_EFR_BC002:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "EFR", "BC002"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-04-25T00:00:00Z", "2019-10-29T00:00:00Z"]]}}
@@ -857,7 +857,7 @@ S3_ERR:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "ERR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 ERR
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -879,7 +879,7 @@ S3_ERR_BC002:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "ERR", "BC002"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-04-25T00:00:00Z", "2019-10-29T00:00:00Z"]]}}
@@ -892,7 +892,7 @@ S3_RAC:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L2", "RAC"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 RAC
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -910,7 +910,7 @@ S3_OLCI_L2LRR:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2LRR", "LRR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Land Reduced Resolution
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -927,7 +927,7 @@ S3_OLCI_L2LFR:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2LFR", "LFR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Land Full Resolution
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -944,7 +944,7 @@ S3_OLCI_L2WRR:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WRR", "WRR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -962,7 +962,7 @@ S3_OLCI_L2WRR_BC003:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WRR", "WRR", "REPROCESSED", "BC003"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Reduced Resolution Reprocessed from BC003
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -979,7 +979,7 @@ S3_OLCI_L2WFR:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WFR", "WFR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Full Resolution
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -998,7 +998,7 @@ S3_OLCI_L2WFR_BC003:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WFR", "WFR", "REPROCESSED", "BC003"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Level-2 Water Full Resolution Reprocessed from BC003
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1016,7 +1016,7 @@ S3_OLCI_L4BALTIC:
   platform: S3A,S3B
   processing:level: L4
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L4", "BGC", "CHL", "BALTIC"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: SENTINEL3 OLCI Baltic Sea Surface Ocean Colour Plankton
   extent: {"temporal": {"interval": [["2023-04-10T00:00:00Z", null]]}}
@@ -1035,7 +1035,7 @@ S3_SLSTR_L1RBT:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1RBT", "RBT"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-1
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1055,7 +1055,7 @@ S3_SLSTR_L1RBT_BC003:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1RBT", "RBT", "VIS", "NIR", "SWIR", "BT", "TIR", "FIR", "Reprocessed", "BC003"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SLSTR Level 1B Radiances and Brightness Temperatures (version BC003) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-04-19T00:00:00Z", "2018-04-04T00:00:00Z"]]}}
@@ -1075,7 +1075,7 @@ S3_SLSTR_L1RBT_BC004:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1RBT", "RBT", "VIS", "NIR", "SWIR", "BT", "TIR", "FIR", "Reprocessed", "BC004"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-1 RBT - Reprocessed from BC004
   extent: {"temporal": {"interval": [["2018-05-09T00:00:00Z", null]]}}
@@ -1090,7 +1090,7 @@ S3_SLSTR_L2LST:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2LST", "LST"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 LST
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1105,7 +1105,7 @@ S3_SLSTR_L2WST:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WST", "WST"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 WST
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1121,7 +1121,7 @@ S3_SLSTR_L2WST_BC003:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2WST", "WST", "REPROCESSED", "BC003"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 WST Reprocessed from BC003
   extent: {"temporal": {"interval": [["2016-04-18T00:00:00Z", null]]}}
@@ -1138,7 +1138,7 @@ S3_SLSTR_L2AOD:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2AOD", "AOD"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 AOD
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1154,7 +1154,7 @@ S3_SLSTR_L2FRP:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2FRP", "FRP"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2 FRP
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1179,7 +1179,7 @@ S3_SLSTR_L2:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SLSTR", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "L2FRP", "FRP", "L2WCT", "WCT", "L2WST", "WST", "L2AOD", "AOD"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: SENTINEL3 SLSTR Level-2
   extent: {"temporal": {"interval": [["2017-07-05T00:00:00Z", null]]}}
@@ -1198,7 +1198,7 @@ S3_SRA:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1213,7 +1213,7 @@ S3_SRA_A:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1 SRA_A
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1230,7 +1230,7 @@ S3_SRA_BS:
   platform: S3A,S3B
   processing:level: L1
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1 SRA_BS
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1248,7 +1248,7 @@ S3_SRA_1A_BC004:
   platform: S3A,S3B
   processing:level: L1A
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1A", "REPROCESSED", "BC004"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed from BC004
   extent: {"temporal": {"interval": [["2016-03-01T00:00:00Z", null]]}}
@@ -1265,7 +1265,7 @@ S3_SRA_1A_BC005:
   platform: S3A,S3B
   processing:level: L1A
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1A", "REPROCESSED", "BC005"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SRAL Level 1A Unpacked L0 Complex Echoes (version BC005) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-05-05T00:00:00Z", "2023-03-09T00:00:00Z"]]}}
@@ -1283,7 +1283,7 @@ S3_SRA_1B_BC004:
   platform: S3A,S3B
   processing:level: L1B
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "BC004"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1B - Reprocessed from BC004
   extent: {"temporal": {"interval": [["2016-03-01T00:00:00Z", "2019-12-31T00:00:00Z"]]}}
@@ -1300,7 +1300,7 @@ S3_SRA_1B_BC005:
   platform: S3A,S3B
   processing:level: L1B
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "BC005"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-05-05T00:00:00Z", "2023-03-09T00:00:00Z"]]}}
@@ -1321,7 +1321,7 @@ S3_SRA_BS_BC004:
   platform: S3A,S3B
   processing:level: L1B
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "STACK", "ECHOES", "BC004"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-1B Stack Echoes - Reprocessed from BC004
   extent: {"temporal": {"interval": [["2016-03-01T00:00:00Z", "2019-12-31T00:00:00Z"]]}}
@@ -1341,7 +1341,7 @@ S3_SRA_BS_BC005:
   platform: S3A,S3B
   processing:level: L1B
   keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1B", "REPROCESSED", "STACK", "ECHOES", "BC005"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-05-05T00:00:00Z", "2023-03-09T00:00:00Z"]]}}
@@ -1365,7 +1365,7 @@ S3_WAT:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 WAT
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1386,7 +1386,7 @@ S3_WAT_BC004:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT", "REPROCESSED", "BC004"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SRAL Level 2 Altimetry Global - Reprocessed from BC004
   extent: {"temporal": {"interval": [["2016-03-01T00:00:00Z", "2019-12-31T00:00:00Z"]]}}
@@ -1407,7 +1407,7 @@ S3_WAT_BC005:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT", "REPROCESSED", "BC005"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SRAL Level 2 Altimetry Global (version BC005) - Sentinel-3 - Reprocessed
   extent: {"temporal": {"interval": [["2016-05-05T00:00:00Z", "2023-03-09T00:00:00Z"]]}}
@@ -1419,7 +1419,7 @@ S3_LAN:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1443,7 +1443,7 @@ S3_LAN_HY:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN", "HYDROLOGY"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN HYDRO
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1467,7 +1467,7 @@ S3_LAN_SI:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN", "SEA", "ICE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN SEA ICE
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1491,7 +1491,7 @@ S3_LAN_LI:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "LAN", "LAND", "ICE"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1511,7 +1511,7 @@ MFG_GSA_57:
   platform: MFG
   processing:level: L2
   keywords: ["MVIRI", "L2", "MFG", "Climate", "Thematic"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 57 degree
   extent: {"temporal": {"interval": [["2006-12-07T00:00:00Z", "2017-03-30T23:59:59Z"]]}}
@@ -1530,7 +1530,7 @@ MFG_GSA_63:
   platform: MFG
   processing:level: L2
   keywords: ["MVIRI", "L2", "MFG", "Climate", "Thematic"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
   extent: {"temporal": {"interval": [["1998-07-10T00:00:00Z", "2007-04-10T23:59:59Z"]]}}
@@ -1555,7 +1555,7 @@ HIRS_FDR_1_MULTI:
   platform: Metop,TIROS,NOAA
   processing:level: L1C
   keywords: ["HIRS", "L1C", "HIRS", "TIROS", "Metop", "NOAA", "Sounder", "FDR"]
-  sensorType: Sounder
+  eodag:sensor_type: Sounder
   license: other
   title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
   extent: {"temporal": {"interval": [["1978-10-29T00:00:00Z", "2020-12-31T23:59:59Z"]]}}
@@ -1570,7 +1570,7 @@ S6_RADIO_OCCULTATION:
   platform: Sentinel-6
   processing:level: L1B
   keywords: ["Sentinel-6", "L1B", "GNSS-RO", "Radio", "Occultation"]
-  sensorType: Radio Occultation
+  eodag:sensor_type: Radio Occultation
   license: other
   title: Radio Occultation Level 1B Products - Sentinel-6
   extent: {"temporal": {"interval": [["2021-11-19T00:00:00Z", null]]}}
@@ -1594,7 +1594,7 @@ MTG_LI_AF:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "LI", "AF", "Lightning", "Weather", "Flashes"]
-  sensorType: Lightning Imager
+  eodag:sensor_type: Lightning Imager
   license: other
   title:  LI Accumulated Flashes - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-07-08T00:00:00Z", null]]}}
@@ -1616,7 +1616,7 @@ MTG_LI_LFL:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "LI", "LFL", "Lightning", "Weather", "Flashes"]
-  sensorType: Lightning Imager
+  eodag:sensor_type: Lightning Imager
   license: other
   title:  LI Lightning Flashes - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-07-08T00:00:00Z", null]]}}
@@ -1644,7 +1644,7 @@ MTG_LI_LGR:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "LI", "LGR", "Lightning", "Weather", "groups"]
-  sensorType: Lightning Imager
+  eodag:sensor_type: Lightning Imager
   license: other
   title:  LI Lightning Groups - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-07-08T00:00:00Z", null]]}}
@@ -1668,7 +1668,7 @@ MTG_LI_AFA:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "LI", "AFA", "Lightning", "Weather", "Flashes", "Accumulated"]
-  sensorType: Lightning Imager
+  eodag:sensor_type: Lightning Imager
   license: other
   title: LI Accumulated Flash Area - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-07-08T00:00:00Z", null]]}}
@@ -1686,7 +1686,7 @@ MTG_LI_AFR:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "LI", "AFR", "Lightning", "Weather", "Flashes", "Accumulated", "Radiance"]
-  sensorType: Lightning Imager
+  eodag:sensor_type: Lightning Imager
   license: other
   title:  LI Accumulated Flash Radiance - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-07-08T00:00:00Z", null]]}}
@@ -1708,7 +1708,7 @@ MTG_LI_LEF:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "LI", "LEF", "Lightning", "Weather", "Flashes", "Filtered"]
-  sensorType: Lightning Imager
+  eodag:sensor_type: Lightning Imager
   license: other
   title:  LI Lightning Events Filtered - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-07-08T00:00:00Z", null]]}}
@@ -1736,7 +1736,7 @@ MTG_FCI_FDHSI:
   platform: MTG
   processing:level: L1
   keywords: ["MTG", "L1", "FCI", "FDHSI", "Atmosphere", "Ocean", "Land"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: FCI Level 1c Normal Resolution Image Data - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-09-24T00:00:00Z", null]]}}
@@ -1766,7 +1766,7 @@ MTG_FCI_HRFI:
   platform: MTG
   processing:level: L1
   keywords: ["MTG", "L1", "FCI", "HRFI", "Atmosphere", "Ocean", "Land"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
   extent: {"temporal": {"interval": [["2024-09-24T00:00:00Z", null]]}}
@@ -1787,7 +1787,7 @@ MTG_FCI_ASR_BUFR:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "ASR", "Radiance", "BUFR"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: All Sky Radiance (BUFR) - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1808,7 +1808,7 @@ MTG_FCI_ASR_NETCDF:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "ASR", "Radiance", "netCDF"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: All Sky Radiance (netCDF) - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1829,7 +1829,7 @@ MTG_FCI_AMV_BUFR:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "AMV", "Clouds", "BUFR"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: Atmospheric Motion Vectors (BUFR) - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1850,7 +1850,7 @@ MTG_FCI_AMV_NETCDF:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "AMV", "Clouds", "netCDF"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: Atmospheric Motion Vectors (netCDF) - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1872,7 +1872,7 @@ MTG_FCI_CLM:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "CLM", "Clouds"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: Cloud Mask - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1895,7 +1895,7 @@ MTG_FCI_GII:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "GII", "atmosphere"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: Global Instability Indices - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1917,7 +1917,7 @@ MTG_FCI_OCA:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "OCA", "Clouds"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: Optimal Cloud Analysis - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1939,7 +1939,7 @@ MTG_FCI_OLR:
   platform: MTG
   processing:level: L2
   keywords: ["MTG", "L2", "FCI", "OLR", "Radiation", "LW"]
-  sensorType: Imager
+  eodag:sensor_type: Imager
   license: other
   title: Outgoing LW radiation at TOA - MTG - 0 degree
   extent: {"temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
@@ -1958,7 +1958,7 @@ S3_SY_SYN:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "SYN"]
-  sensorType: OPTICAL,RADAR
+  eodag:sensor_type: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 SYN
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1974,7 +1974,7 @@ S3_SY_AOD:
   platform: S3A,S3B
   processing:level: L2
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "AOD"]
-  sensorType: OPTICAL,RADAR
+  eodag:sensor_type: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 AOD
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -1990,7 +1990,7 @@ S3_SY_V10:
   platform: S3A,S3B
   processing:level: LEVEL-2W
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "V10"]
-  sensorType: OPTICAL,RADAR
+  eodag:sensor_type: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 V10
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -2006,7 +2006,7 @@ S3_SY_VG1:
   platform: S3A,S3B
   processing:level: LEVEL-2
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "VG1"]
-  sensorType: OPTICAL,RADAR
+  eodag:sensor_type: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 VG1
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -2022,7 +2022,7 @@ S3_SY_VGP:
   platform: S3A,S3B
   processing:level: LEVEL-2
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "VGP"]
-  sensorType: OPTICAL,RADAR
+  eodag:sensor_type: OPTICAL,RADAR
   license: other
   title: SENTINEL3 SYNERGY Level-2 VGP
   extent: {"temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
@@ -2042,7 +2042,7 @@ S5P_L1B2_IR_ALL:
   platform: S5P
   processing:level: L1B, L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "SIR", "SWIR", "Irradiances", "UVN"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B and Level 2 Irradiances for the SWIR and UNV bands
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2061,7 +2061,7 @@ S5P_L1B_IR_ALL:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "SIR", "SWIR", "Irradiances", "UVN"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Irradiances for the SWIR and UNV bands
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2081,7 +2081,7 @@ S5P_L2_IR_ALL:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Data
   extent: {"temporal": {"interval": [["2018-04-01T00:00:00Z", null]]}}
@@ -2102,7 +2102,7 @@ S5P_L1B_IR_SIR:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "SIR", "SWIR", "Irradiances"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Irradiances for the SWIR bands
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2123,7 +2123,7 @@ S5P_L1B_IR_UVN:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "IR", "UVN", "Irradiances"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Irradiances for the UVN bands
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2144,7 +2144,7 @@ S5P_L1B_RA_BD1:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD1", "BAND1", "B01"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 1
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2165,7 +2165,7 @@ S5P_L1B_RA_BD2:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD2", "BAND2", "B02"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 2
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2186,7 +2186,7 @@ S5P_L1B_RA_BD3:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD3", "BAND3", "B03"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 3
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2207,7 +2207,7 @@ S5P_L1B_RA_BD4:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD4", "BAND4", "B04"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 4
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2228,7 +2228,7 @@ S5P_L1B_RA_BD5:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD5", "BAND5", "B05"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 5
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2249,7 +2249,7 @@ S5P_L1B_RA_BD6:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD6", "BAND6", "B06"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 6
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2270,7 +2270,7 @@ S5P_L1B_RA_BD7:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD7", "BAND7", "B07"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 7
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2291,7 +2291,7 @@ S5P_L1B_RA_BD8:
   platform: S5P
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L1", "L1B", "TROPOMI", "RA", "Radiances", "BD8", "BAND8", "B08"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 1B Radiances for spectral band 8
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2308,7 +2308,7 @@ S5P_L2_NO2:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NO2", "Nitrogen", "Dioxide"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Nitrogen Dioxide
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2325,7 +2325,7 @@ S5P_L2_CLOUD:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "CLOUD"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Cloud
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2343,7 +2343,7 @@ S5P_L2_O3:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "O3", "Ozone"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Ozone
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2360,7 +2360,7 @@ S5P_L2_CO:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "CO", "Carbon", "Monoxide"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Carbon Monoxide
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2377,7 +2377,7 @@ S5P_L2_AER_AI:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "AER", "AI", "Ultraviolet", "Aerosol", "Index"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Ultraviolet Aerosol Index
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2396,7 +2396,7 @@ S5P_L2_O3_PR:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "O3", "PR", "Ozone", "Profile"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Ozone Profile
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2417,7 +2417,7 @@ S5P_L2_O3_TCL:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "O3", "TCL", "Tropospheric", "Ozone"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Tropospheric Ozone
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2435,7 +2435,7 @@ S5P_L2_AER_LH:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "AER", "LH", "Aerosol", "Layer", "Height"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Aerosol Layer Height
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2454,7 +2454,7 @@ S5P_L2_HCHO:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "HCHO", "Formaldehyde"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Formaldehyde
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2481,7 +2481,7 @@ S5P_L2_CH4:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "CH4", "Methane"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Methane
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2505,7 +2505,7 @@ S5P_L2_NP_BD3:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NP", "NPP", "Cloud", "BD3", "B03", "BAND3"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 NPP Cloud for band 3
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2529,7 +2529,7 @@ S5P_L2_NP_BD6:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NP", "NPP", "Cloud", "BD6", "B06", "BAND6"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 NPP Cloud for band 6
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2553,7 +2553,7 @@ S5P_L2_NP_BD7:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "NP", "NPP", "Cloud", "BD7", "B07", "BAND7"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 NPP Cloud for band 7
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2571,7 +2571,7 @@ S5P_L2_SO2:
   platform: S5P
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL5P", "S5P", "L2", "TROPOMI", "SO2", "Sulphur", "Dioxide"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sentinel-5 Precursor Level 2 Sulphur Dioxide
   extent: {"temporal": {"interval": [["2017-10-13T00:00:00Z", null]]}}
@@ -2592,7 +2592,7 @@ S6_P4_L1AHR_F06:
   platform: S6A
   processing:level: L1A
   keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L1A", "ALTIMETRIC", "HR", "POSEIDON4", "P4", "F06"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 1A High Resolution Reprocessed at F06
   extent: {"temporal": {"interval": [["2020-12-17T00:00:00Z", null]]}}
@@ -2612,7 +2612,7 @@ S6_P4_L1BLR_F06:
   platform: S6A
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L1B", "ALTIMETRIC", "LR", "POSEIDON4", "P4", "F06"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 1B Low Resolution Reprocessed at F06
   extent: {"temporal": {"interval": [["2020-12-17T00:00:00Z", null]]}}
@@ -2632,7 +2632,7 @@ S6_P4_L1BAHR_F06:
   platform: S6A
   processing:level: L1B
   keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L1B", "ALTIMETRIC", "HR", "POSEIDON4", "P4", "F06"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 1B High Resolution Reprocessed at F06
   extent: {"temporal": {"interval": [["2020-12-17T00:00:00Z", null]]}}
@@ -2655,7 +2655,7 @@ S6_P4_L2LR_F06:
   platform: S6A
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L2", "ALTIMETRIC", "LR", "POSEIDON4", "P4", "F06"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 2 Low Resolution Reprocessed at F06
   extent: {"temporal": {"interval": [["2020-12-17T00:00:00Z", null]]}}
@@ -2680,7 +2680,7 @@ S6_P4_L2HR_F06:
   platform: S6A
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L2", "ALTIMETRIC", "HR", "POSEIDON4", "P4", "F06"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Sentinel 6 - Poseidon-4 Altimetry Level 2 High Resolution Reprocessed at F06
   extent: {"temporal": {"interval": [["2020-12-17T00:00:00Z", null]]}}
@@ -2698,7 +2698,7 @@ S6_AMR_L2_F06:
   platform: S6A
   processing:level: L2
   keywords: ["SENTINEL", "SENTINEL6", "S6", "S6A", "LEO", "L2", "AMR-C", "RADIOMETER", "MICROWAVE", "F06"]
-  sensorType: RADIOMETER
+  eodag:sensor_type: RADIOMETER
   license: other
   title: Sentinel 6 - Climate-quality Advanced Microwave Radiometer Level 2 Products Reprocessed at F06
   extent: {"temporal": {"interval": [["2020-11-28T00:00:00Z", null]]}}
@@ -2712,7 +2712,7 @@ VENUS_L1C:
   platform: VENUS
   processing:level: L1C
   keywords: ["VENUS", "L1", "L1C"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Venus Level1-C
   extent: {"temporal": {"interval": [["2017-08-02T00:00:00Z", null]]}}
@@ -2726,7 +2726,7 @@ VENUS_L2A_MAJA:
   platform: VENUS
   processing:level: L2A
   keywords: ["VENUS", "L2", "L2A"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Venus Level2-A
   extent: {"temporal": {"interval": [["2017-08-02T00:00:00Z", null]]}}
@@ -2738,7 +2738,7 @@ VENUS_L3A_MAJA:
   platform: VENUS
   processing:level: L3A
   keywords: ["VENUS", "L3", "L3A"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Venus Level3-A
   extent: {"temporal": {"interval": [["2017-08-02T00:00:00Z", null]]}}
@@ -2754,7 +2754,7 @@ TIGGE_CF_SFC:
   platform: TIGGE
   processing:level:
   keywords: ["THORPEX", "TIGGE", "CF", "SFC", "ECMWF"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: TIGGE ECMWF Surface Control forecast
   extent: {"temporal": {"interval": [["2006-10-01T00:00:00Z", null]]}}
@@ -2779,7 +2779,7 @@ CAMS_GAC_FORECAST:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Forecast", "GAC"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global atmospheric composition forecasts
   extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", null]]}}
@@ -2800,7 +2800,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Air", "Forecast", "EEA"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS European air quality forecasts
   extent: {"temporal": {"interval": [["2022-01-03T00:00:00Z", null]]}}
@@ -2818,7 +2818,7 @@ CAMS_GFE_GFAS:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Fire", "FRP", "DM", "MODIS", "NASA", "EOS", "ECMWF", "GFAS"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global biomass burning emissions based on fire radiative power (GFAS)
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -2838,7 +2838,7 @@ CAMS_SOLAR_RADIATION:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Solar", "Radiation"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS solar radiation time-series
   extent: {"temporal": {"interval": [["2004-01-02T00:00:00Z", null]]}}
@@ -2859,7 +2859,7 @@ CAMS_GREENHOUSE_INVERSION:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "IPCC", "CO2", "CH4", "N2O"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global inversion-optimised greenhouse gas fluxes and concentrations
   extent: {"temporal": {"interval": [["1979-01-01T00:00:00Z", null]]}}
@@ -2883,7 +2883,7 @@ CAMS_EAC4_MONTHLY:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "EWMCF", "EAC4"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global reanalysis (EAC4) monthly averaged fields
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -2904,7 +2904,7 @@ CAMS_EU_AIR_QUALITY_RE:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Air", "EEA"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS European air quality reanalyses
   extent: {"temporal": {"interval": [["2013-01-01T00:00:00Z", null]]}}
@@ -2926,7 +2926,7 @@ CAMS_EAC4:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "EWMCF", "EAC4"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global reanalysis (EAC4)
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -2944,7 +2944,7 @@ CAMS_GRF_AUX:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "RF", "CO2", "CH4", "O3", "Aerosol"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global radiative forcing - auxilliary variables
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -2970,7 +2970,7 @@ CAMS_GRF:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "RF", "CO2", "CH4", "O3", "Aerosol"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global radiative forcings
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -2995,7 +2995,7 @@ CAMS_GREENHOUSE_EGG4_MONTHLY:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "CO2", "CH4", "Greenhouse", "ECMWF", "EGG4"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global greenhouse gas reanalysis (EGG4) monthly averaged fields
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -3020,7 +3020,7 @@ CAMS_GREENHOUSE_EGG4:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmospheric", "Atmosphere", "CO2", "CH4", "GHG", "ECMWF", "EGG4"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global greenhouse gas reanalysis (EGG4)
   extent: {"temporal": {"interval": [["2003-01-01T00:00:00Z", null]]}}
@@ -3040,7 +3040,7 @@ CAMS_GLOBAL_EMISSIONS:
   platform: CAMS
   processing:level:
   keywords: ["Copernicus", "ADS", "CAMS", "Atmosphere", "Atmospheric", "Emissions", "Pollutants", "GHG"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: CAMS global emission inventories
   extent: {"temporal": {"interval": [["2000-01-01T00:00:00Z", null]]}}
@@ -3065,7 +3065,7 @@ AG_ERA5:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "climate", "land", "agriculture", "AgERA5", "surface"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Agrometeorological indicators from 1979 to present derived from reanalysis
   extent: {"temporal": {"interval": [["1979-01-01T00:00:00Z", null]]}}
@@ -3103,7 +3103,7 @@ ERA5_SL:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "hourly", "single", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: ERA5 hourly data on single levels from 1940 to present
   extent: {"temporal": {"interval": [["1940-01-01T09:00:00Z", null]]}}
@@ -3141,7 +3141,7 @@ ERA5_SL_MONTHLY:
   platform: ERA5
   processing:level:
   keywords: ["Climate", "ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "monthly", "single", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: ERA5 monthly averaged data on single levels from 1940 to present
   extent: {"temporal": {"interval": [["1940-01-01T00:00:00Z", null]]}}
@@ -3184,7 +3184,7 @@ ERA5_PL:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "hourly", "pressure", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: ERA5 hourly data on pressure levels from 1940 to present
   extent: {"temporal": {"interval": [["1940-01-01T00:00:00Z", null]]}}
@@ -3227,7 +3227,7 @@ ERA5_PL_MONTHLY:
   platform: ERA5
   processing:level:
   keywords: ["Climate", "ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "sea", "monthly", "pressure", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: ERA5 monthly averaged data on pressure levels from 1940 to present
   extent: {"temporal": {"interval": [["1940-01-01T00:00:00Z", null]]}}
@@ -3270,7 +3270,7 @@ ERA5_LAND:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "hourly", "evolution"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: ERA5-Land hourly data from 1950 to present
   extent: {"temporal": {"interval": [["1950-01-02T00:00:00Z", null]]}}
@@ -3305,7 +3305,7 @@ ERA5_LAND_MONTHLY:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "monthly", "evolution"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: ERA5-Land monthly averaged data from 1950 to present
   extent: {"temporal": {"interval": [["1950-01-01T00:00:00Z", null]]}}
@@ -3339,7 +3339,7 @@ UERRA_EUROPE_SL:
   platform: SURFEX
   processing:level:
   keywords: ["Climate", "ECMWF", "Reanalysis", "Regional", "Europe", "UERRA", "UERRA-HARMONIE", "SURFEX", "MESCAN-SURFEX", "CDS", "Atmospheric", "single", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: UERRA regional reanalysis for Europe on single levels from 1961 to 2019
   extent: {"temporal": {"interval": [["1961-01-01T00:00:00Z", null]]}}
@@ -3357,7 +3357,7 @@ GLACIERS_ELEVATION_AND_MASS_CHANGE:
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "elevation", "mass", "change"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Glaciers elevation and mass change data from 1850 to present from the Fluctuations of Glaciers Database
   extent: {"temporal": {"interval": [["1850-01-01T00:00:00Z", null]]}}
@@ -3377,7 +3377,7 @@ GLACIERS_DIST_RANDOLPH:
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "distribution", "inventory"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Glaciers distribution data from the Randolph Glacier Inventory for year 2000
   extent: {"temporal": {"interval": [["2000-01-01T00:00:00Z", "2000-12-31T23:59:00Z"]]}}
@@ -3415,7 +3415,7 @@ GRIDDED_GLACIERS_MASS_CHANGE:
   platform:
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "mass", "gridded"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Glacier mass change gridded data from 1976 to present derived from the Fluctuations of Glaciers Database
   extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", null]]}}
@@ -3455,7 +3455,7 @@ SATELLITE_CARBON_DIOXIDE:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "carbon-dioxide"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Carbon dioxide data from 2002 to present derived from satellite observations
   extent: {"temporal": {"interval": [["2002-10-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
@@ -3488,7 +3488,7 @@ SATELLITE_FIRE_BURNED_AREA:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "burned"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Fire burned area from 2001 to present derived from satellite observations
   extent: {"temporal": {"interval": [["2001-01-01T00:00:00Z", "2022-04-01T23:59:59Z"]]}}
@@ -3525,7 +3525,7 @@ SATELLITE_METHANE:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "methane"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Methane data from 2003 to present derived from satellite observations
   extent: {"temporal": {"interval": [["2002-10-01T00:00:00Z", null]]}}
@@ -3567,7 +3567,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "sea", "ice"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sea ice edge and type daily gridded data from 1978 to present derived from satellite observations
   extent: {"temporal": {"interval": [["1978-10-25T00:00:00Z", "2023-05-02T23:59:59Z"]]}}
@@ -3612,7 +3612,7 @@ SATELLITE_SEA_ICE_THICKNESS:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "sea", "ice"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sea ice thickness monthly gridded data for the Arctic from 2002 to present derived from satellite observations
   extent: {"temporal": {"interval": [["2002-10-01T00:00:00Z", null]]}}
@@ -3641,7 +3641,7 @@ SATELLITE_SEA_ICE_CONCENTRATION:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "sea", "ice"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Sea ice concentration daily gridded data from 1978 to present derived from satellite observations
   extent: {"temporal": {"interval": [["1978-10-25T00:00:00Z", null]]}}
@@ -3683,7 +3683,7 @@ SEASONAL_POSTPROCESSED_PL:
   instruments: []
   platform:
   processing:level:
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecast anomalies on pressure levels
   extent: {"temporal": {"interval": [["2017-09-01T00:00:00Z", null]]}}
@@ -3725,7 +3725,7 @@ SATELLITE_SEA_LEVEL_GLOBAL:
   platform:
   processing:level:
   keywords: ["Climate", "ECMWF", "CDS", "C3S", "sea", "level", "global"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: other
   title: Sea level gridded data from satellite observations for the global ocean
   extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", "2022-08-04T23:59:59Z"]]}}
@@ -3779,7 +3779,7 @@ SEASONAL_POSTPROCESSED_SL:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "single", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecast anomalies on single levels
   extent: {"temporal": {"interval": [["2017-09-01T00:00:00Z", null]]}}
@@ -3829,7 +3829,7 @@ SEASONAL_ORIGINAL_SL:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "daily", "single", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecast daily and subdaily data on single levels
   extent: {"temporal": {"interval": [["1981-01-01T00:00:00Z", null]]}}
@@ -3873,7 +3873,7 @@ SEASONAL_ORIGINAL_PL:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "subdaily", "pressure", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecast subdaily data on pressure levels
   extent: {"temporal": {"interval": [["1981-01-01T00:00:00Z", null]]}}
@@ -3916,7 +3916,7 @@ SEASONAL_MONTHLY_PL:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "pressure", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecast monthly statistics on pressure levels
   extent: {"temporal": {"interval": [["1981-01-01T00:00:00Z", null]]}}
@@ -3967,7 +3967,7 @@ SEASONAL_MONTHLY_SL:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "single", "levels"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecast monthly statistics on single levels
   extent: {"temporal": {"interval": [["1981-01-01T00:00:00Z", "2023-05-01T00:00:00Z"]]}}
@@ -4003,7 +4003,7 @@ SIS_HYDRO_MET_PROJ:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "hydrology", "meterology", "water", "precipitation", "temperature"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Temperature and precipitation climate impact indicators from 1970 to 2100 derived from European climate projections
   extent: {"temporal": {"interval": [["1970-01-01T00:00:00Z", "2100-12-31T23:59:00Z"]]}}
@@ -4031,7 +4031,7 @@ CMIP6_CLIMATE_PROJECTIONS:
   instruments: ["CMIP6"]
   platform: CMIP6
   processing:level:
-  sensorType:
+  eodag:sensor_type:
   keywords: ["ECMWF","CDS","C3S","CMIP6","historical","projection","global"]
   license: other
   title: CMIP6 climate projections
@@ -4059,7 +4059,7 @@ FIRE_HISTORICAL:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "EFFIS", "fire", "historical", "ERA5", "european", "sustainability", "CEMS", "system"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Fire danger indices historical data from the Copernicus Emergency Management Service
   extent: {"temporal": {"interval": [["1940-03-01T00:00:00Z", null]]}}
@@ -4092,7 +4092,7 @@ FIRE_SEASONAL:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "EFFIS", "GWIS", "fire", "danger", "seasonal", "GEFF"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Seasonal forecast of fire danger indices from the Copernicus Emergency Management Service
   extent: {"temporal": {"interval": [["1981-02-01T00:00:00Z", null]]}}
@@ -4112,7 +4112,7 @@ GLOFAS_FORECAST:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "GloFAS", "forecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: River discharge and related forecasted data by the Global Flood Awareness System
   extent: {"temporal": {"interval": [["2019-11-05T00:00:00Z", null]]}}
@@ -4130,7 +4130,7 @@ GLOFAS_HISTORICAL:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "GloFAS", "historical", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: River discharge and related historical data from the Global Flood Awareness System
   extent: {"temporal": {"interval": [["1979-01-01T00:00:00Z", null]]}}
@@ -4161,7 +4161,7 @@ GLOFAS_REFORECAST:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "GloFAS", "reforecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Reforecasts of river discharge and related data by the Global Flood Awareness System
   extent: {"temporal": {"interval": [["1999-01-03T00:00:00Z", "2023-11-25T23:59:59Z"]]}}
@@ -4191,7 +4191,7 @@ GLOFAS_SEASONAL:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "GloFAS", "seasonal", "forecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecasts of river discharge and related data by the Global Flood Awareness System
   extent: {"temporal": {"interval": [["2020-12-01T00:00:00Z", null]]}}
@@ -4225,7 +4225,7 @@ GLOFAS_SEASONAL_REFORECAST:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "GloFAS", "seasonal", "forecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
   extent: {"temporal": {"interval": [["1981-01-27T00:00:00Z", null]]}}
@@ -4263,7 +4263,7 @@ EFAS_FORECAST:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "EFAS", "forecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: River discharge and related forecasted data by the European Flood Awareness System
   extent: {"temporal": {"interval": [["2018-10-11T00:00:00Z", null]]}}
@@ -4296,7 +4296,7 @@ EFAS_HISTORICAL:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "EFAS", "historical", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: River discharge and related historical data from the European Flood Awareness System
   extent: {"temporal": {"interval": [["1991-01-01T06:00:00Z", null]]}}
@@ -4332,7 +4332,7 @@ EFAS_REFORECAST:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "EFAS", "reforecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Reforecasts of river discharge and related data by the European Flood Awareness System
   extent: {"temporal": {"interval": [["1999-01-03T00:00:00Z", "2023-11-21T23:59:59Z"]]}}
@@ -4367,7 +4367,7 @@ EFAS_SEASONAL:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "EFAS", "seasonal", "forecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal forecasts of river discharge and related data by the European Flood Awareness System
   extent: {"temporal": {"interval": [["2020-11-01T00:00:00Z", "2023-09-30T00:00:00Z"]]}}
@@ -4401,7 +4401,7 @@ EFAS_SEASONAL_REFORECAST:
   platform: CEMS
   processing:level:
   keywords: ["ECMWF", "CEMS", "EFAS", "seasonal", "reforecast", "river", "discharge"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Seasonal reforecasts of river discharge and related data by the European Flood Awareness System
   extent: {"temporal": {"interval": [["1991-01-01T00:00:00Z", "2020-10-01T00:00:00Z"]]}}
@@ -4419,7 +4419,7 @@ COP_DEM_GLO30_DGED:
   platform:
   processing:level:
   keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-30", "DSM", "GDGED"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-30 DGED
   extent: {"temporal": {"interval": [["2010-06-21T00:00:00Z", null]]}}
@@ -4435,7 +4435,7 @@ COP_DEM_GLO30_DTED:
   platform:
   processing:level:
   keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-30", "DSM", "DTED"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-30 DTED
   extent: {"temporal": {"interval": [["2010-06-21T00:00:00Z", null]]}}
@@ -4451,7 +4451,7 @@ COP_DEM_GLO90_DGED:
   platform:
   processing:level:
   keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-90", "DSM", "GDGED"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-90 DGED
   extent: {"temporal": {"interval": [["2010-06-21T00:00:00Z", null]]}}
@@ -4467,7 +4467,7 @@ COP_DEM_GLO90_DTED:
   platform:
   processing:level:
   keywords: ["TerraSAR", "TanDEM-X", "DEM", "surface", "GLO-90", "DSM", "DTED"]
-  sensorType: ALTIMETRIC
+  eodag:sensor_type: ALTIMETRIC
   license: other
   title: Copernicus DEM GLO-90 DTED
   extent: {"temporal": {"interval": [["2010-06-21T00:00:00Z", null]]}}
@@ -4487,7 +4487,7 @@ CLMS_CORINE:
   platform: S2, L5, L7, L8, SPOT4, SPOT5
   processing:level:
   keywords: ["Land-cover", "LCL", "CORINE", "CLMS"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: CORINE Land Cover
   extent: {"temporal": {"interval": [["1986-01-01T00:00:00Z", null]]}}
@@ -4504,7 +4504,7 @@ CLMS_GLO_FCOVER_333M:
   platform:
   processing:level:
   keywords: ["Land", "Fraction-of-vegetation-cover", "OLCI", "PROBA-V", "Sentinel-3"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global 10-daily Fraction of Vegetation Cover 333m
   extent: {"temporal": {"interval": [["2014-01-10T00:00:00Z", null]]}}
@@ -4519,7 +4519,7 @@ CLMS_GLO_NDVI_333M:
   platform:
   processing:level:
   keywords: ["Land", "NDVI", "PROBA-V"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global 10-daily Normalized Difference Vegetation Index 333M
   extent: {"temporal": {"interval": [["2014-01-01T00:00:00Z", "2021-01-01T23:59:59Z"]]}}
@@ -4538,7 +4538,7 @@ CLMS_GLO_NDVI_1KM_LTS:
   platform:
   processing:level:
   keywords: ["Land", "NDVI", "LTS", "SPOT", "VEGETATION", "PROBA-V"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: "Normalized Difference Vegetation Index: global Long Term Statistics (raster 1km) - version 2, Apr 2019"
   extent: {"temporal": {"interval": [["1999-01-01T00:00:00Z", null]]}}
@@ -4556,7 +4556,7 @@ CLMS_GLO_DMP_333M:
   platform:
   processing:level:
   keywords: ["Land", "Dry-matter-productivity", "DMP", "OLCI", "PROBA-V", "Sentinel-3"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: 10-daily Dry Matter Productivity 333M
   extent: {"temporal": {"interval": [["2014-01-10T00:00:00Z", null]]}}
@@ -4574,7 +4574,7 @@ CLMS_GLO_GDMP_333M:
   platform:
   processing:level:
   keywords: ["Land", "Gross-dry-matter-productivity", "GDMP", "GPP", "OLCI", "PROBA-V", "Sentinel-3"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: 10-daily Gross Dry Matter Productivity 333M
   extent: {"temporal": {"interval": [["2014-01-10T00:00:00Z", null]]}}
@@ -4594,7 +4594,7 @@ CLMS_GLO_LAI_333M:
   platform:
   processing:level:
   keywords: ["Land", "Leaf-area-index", "LAI", "OLCI", "PROBA-V", "Sentinel-3"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global 10-daily Leaf Area Index 333m
   extent: {"temporal": {"interval": [["2014-01-10T00:00:00Z", null]]}}
@@ -4612,7 +4612,7 @@ CLMS_GLO_FAPAR_333M:
   platform:
   processing:level:
   keywords: ["Land", "Fraction-of-absorbed-PAR", "FAPAR", "OLCI", "PROBA-V", "Sentinel-3"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global 10-daily Fraction of Absorbed PAR 333m
   extent: {"temporal": {"interval": [["2014-01-10T00:00:00Z", null]]}}
@@ -4632,7 +4632,7 @@ EEA_DAILY_SWI_1KM:
   platform:
   processing:level:
   keywords: ["SWI", "QFLAG", "SSF", "C-SAR", "Metop-ASCAT", "Sentinel-1"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: "Soil Water Index: continental Europe daily (raster 1km) - version 1, Apr 2019"
   extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", null]]}}
@@ -4653,7 +4653,7 @@ EEA_DAILY_SSM_1KM:
   platform:
   processing:level:
   keywords: ["SSM", "C-SAR", "Metop-ASCAT", "Sentinel-1"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: "Surface Soil Moisture: continental Europe daily (raster 1km) - version 1, Apr 2019"
   extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", null]]}}
@@ -4675,7 +4675,7 @@ EEA_DAILY_VI:
   platform: S2A,S2B,S2C
   processing:level:
   keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: Vegetation Indices, daily, UTM projection
 
@@ -4691,7 +4691,7 @@ EEA_HRL_TCF:
   platform: S2A,S2B,S2C
   processing:level:
   keywords: ["Land","Tree-cover-fraction","TCF","Sentinel-2","S2A","S2B","S2C"]
-  sensorType: RADAR
+  eodag:sensor_type: RADAR
   license: other
   title: Tree Cover Fraction, UTM projection
   extent: {"temporal": {"interval": [["2017-01-01T00:00:00Z", null]]}}
@@ -4707,7 +4707,7 @@ AERIS_IAGOS:
   platform:
   processing:level: L2
   keywords: ["AERIS", "AIRCRAFT", "ATMOSPHERIC", "IAGOS", "L2"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: In-service Aircraft for a Global Observing System
   extent: {"temporal": {"interval": [["1994-08-01T00:00:00Z", null]]}}
@@ -4723,7 +4723,7 @@ GSW_CHANGE:
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Change", "Landsat"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Occurrence Change Intensity 1984-2020
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", "2020-12-31T23:59:59Z"]]}}
@@ -4737,7 +4737,7 @@ GSW_EXTENT:
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Extent", "Landsat"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Maximum Water Extent 1984-2021
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
@@ -4752,7 +4752,7 @@ GSW_OCCURRENCE:
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Occurrence", "Landsat"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Occurrence 1984-2021
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
@@ -4767,7 +4767,7 @@ GSW_RECURRENCE:
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Recurrence", "Landsat"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Recurrence 1984-2021
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
@@ -4782,7 +4782,7 @@ GSW_SEASONALITY:
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Seasonality", "Landsat"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Seasonality 2014-2020
   extent: {"temporal": {"interval": [["2014-01-01T00:00:00Z", "2020-12-31T23:59:59Z"]]}}
@@ -4797,7 +4797,7 @@ GSW_TRANSITIONS:
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Transitions", "Landsat"]
-  sensorType: HYDROLOGICAL
+  eodag:sensor_type: HYDROLOGICAL
   license: proprietary
   title: Global Surface Water Transitions 1984-2021
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
@@ -4814,7 +4814,7 @@ EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Agriculture", "Greenhouse-gas", "CO2", "Emission", "Air-pollutants"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Eurostat - Greenhouse gas emissions from agriculture
   extent: {"temporal": {"interval": [["2011-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
@@ -4830,7 +4830,7 @@ EUSTAT_POP_AGE_SEX_NUTS2:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-2", "Unidemo", "Demographic"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Population on 1 January by age, sex and NUTS 2 region
   extent: {"temporal": {"interval": [["1990-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
@@ -4846,7 +4846,7 @@ EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-3", "Unidemo", "Demographic"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Population on 1 January by age, sex and NUTS 3 region
   extent: {"temporal": {"interval": [["2014-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
@@ -4863,7 +4863,7 @@ EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-3", "Unidemo", "Demographic"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Population change - Demographic balance and crude rates at regional level (NUTS 3)
   extent: {"temporal": {"interval": [["2000-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
@@ -4890,7 +4890,7 @@ EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Energy", "Renewable", "Transport", "Heating", "Cooling", "Electricity"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Share of energy from renewable sources
   extent: {"temporal": {"interval": [["2004-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
@@ -4903,7 +4903,7 @@ EUSTAT_AVAILABLE_BEDS_HOSPITALS_NUTS2:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Health-care", "Hospital", "Bed", "Health"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Available beds in hospitals by NUTS 2 region
   extent: {"temporal": {"interval": [["2013-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
@@ -4916,7 +4916,7 @@ EUSTAT_BATHING_SITES_WATER_QUALITY:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Bath", "Water", "Water-quality"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Bathing sites with excellent water quality by location
   extent: {"temporal": {"interval": [["2011-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
@@ -4929,7 +4929,7 @@ EUSTAT_POP_DENSITY_NUTS3:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Density", "NUTS-3"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Population density by NUTS 3 region
   extent: {"temporal": {"interval": [["1990-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
@@ -4942,7 +4942,7 @@ EUSTAT_SOIL_SEALING_INDEX:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "soil", "soil-sealing", "SDG", "EU-Sustainable-Development-Goals"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Soil sealing index
   extent: {"temporal": {"interval": [["2006-01-01T00:00:00Z", "2018-12-31T23:59:59Z"]]}}
@@ -4955,7 +4955,7 @@ EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS:
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "CO2", "terrestrial", "protected-areas"]
-  sensorType:
+  eodag:sensor_type:
   license: proprietary
   title: Surface of the terrestrial protected areas
   extent: {"temporal": {"interval": [["2013-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
@@ -4980,7 +4980,7 @@ ISIMIP_CLIMATE_FORCING_ISIMIP3B:
   platform: ISIMIP
   processing:level:
   keywords: ["ISIMIP", "CLIMATE-FORCING", "ISIMIP3b", "atmospheric", "climate", "HRMC"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: ISIMIP3b climate input data
   extent: {"temporal": {"interval": [["1601-01-01T00:00:00Z", "2500-12-31T23:59:59Z"]]}}
@@ -5004,7 +5004,7 @@ ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
   platform: ISIMIP
   processing:level:
   keywords: ["ISIMIP", "SOCIO-ECONOMIC-FORCING", "ISIMIP3b", "socioeconomic"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: ISIMIP3b socio-economic input data
   extent: {"temporal": {"interval": [["1601-01-01T00:00:00Z", "2100-12-31T23:59:59Z"]]}}
@@ -5020,7 +5020,7 @@ NEMSGLOBAL_TCDC:
   platform: NEMSGLOBAL
   processing:level:
   keywords: ["meteoblue", "NEMS", "NEMSGLOBAL", "CLOUD", "COVER", "TOTAL", "TCDC", "DAILY", "MEAN"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: NEMSGLOBAL Total Cloud Cover daily mean
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", null]]}}
@@ -5040,7 +5040,7 @@ NEMSAUTO_TCDC:
   platform: NEMSAUTO
   processing:level:
   keywords: ["meteoblue", "NEMS", "NEMSAUTO", "CLOUD", "COVER", "TOTAL", "TCDC", "DAILY", "MEAN"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: NEMSAUTO Total Cloud Cover daily mean
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", null]]}}
@@ -5056,7 +5056,7 @@ DT_EXTREMES:
   platform: DT
   processing:level:
   keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Weather", "Geophysical", "Extremes"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Weather and Geophysical Extremes Digital Twin (DT)
   extent: {"temporal": {"interval": [["2024-04-04T00:00:00Z", "2024-06-07T00:00:00Z"]]}}
@@ -5071,7 +5071,7 @@ DT_CLIMATE_ADAPTATION:
   platform: DT
   processing:level:
   keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate", "Change", "Adaptation"]
-  sensorType: ATMOSPHERIC
+  eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Climate Change Adaptation Digital Twin (DT)
   extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
@@ -5090,7 +5090,7 @@ METOP_AMSU_L1:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "AMSU-A", "SOUNDER", "L1", "L1B", "WATER", "ATHMOSPHERE", "TEMPERATURE", "AMSxxx1B", "AMSUL1"]
-  sensorType: SOUNDER
+  eodag:sensor_type: SOUNDER
   license: other
   title: AMSU-A Level 1B - Metop - Global
   extent: {"temporal": {"interval": [["2008-03-01T00:00:00Z", null]]}}
@@ -5108,7 +5108,7 @@ METOP_OSI_104:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "WEATHER", "OCEAN-SURFACE-WIND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "OSI-104", "ASCAT12+", "OSI-104-C", "OSI-104-B", "OASWC12"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Coastal Winds at 12.5 km Swath Grid - Metop
   extent: {"temporal": {"interval": [["2013-04-16T00:00:00Z", null]]}}
@@ -5123,7 +5123,7 @@ METOP_OSI_150A:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "WEATHER", "OCEAN-SURFACE-WIND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "OSI-150-A", "OR1ASW025", "REPASC25"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT L2 25 km Winds Data Record Release 1 - Metop
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", "2014-04-01T00:00:00Z"]]}}
@@ -5138,7 +5138,7 @@ METOP_OSI_150B:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "WEATHER", "OCEAN-SURFACE-WIND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "OSI-150-B", "OR1ASWC12", "REPASC12+"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT L2 12.5 km Winds Data Record Release 1 - Metop
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", "2014-04-01T00:00:00Z"]]}}
@@ -5162,7 +5162,7 @@ METOP_ASCSZF1B:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "OCEAN", "RADAR-BACKSCATTER-NRCS", "ASCSZF1B"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Level 1 Sigma0 Full Resolution - Metop - Global
   extent: {"temporal": {"interval": [["2007-05-31T00:00:00Z", null]]}}
@@ -5184,7 +5184,7 @@ METOP_ASCSZR1B:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "LAND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "ASCSZR1B"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Level 1 Sigma0 resampled at 12.5 km Swath Grid - Metop - Global
   extent: {"temporal": {"interval": [["2007-03-01T00:00:00Z", null]]}}
@@ -5206,7 +5206,7 @@ METOP_ASCSZO1B:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "LAND", "OCEAN", "RADAR-BACKSCATTER-NRCS", "ASCSZO1B"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Level 1 Sigma0 resampled at 25 km Swath Grid - Metop - Global
   extent: {"temporal": {"interval": [["2007-03-01T00:00:00Z", null]]}}
@@ -5228,7 +5228,7 @@ METOP_ASCSZFR02:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "CLIMATE", "FUNDAMENTAL-CLIMATE-DATA-RECORD", "ASCSZF1B0200", "ASCSZFR02"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Level 1 SZF Climate Data Record Release 2 - Metop
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", "2014-04-01T00:00:00Z"]]}}
@@ -5250,7 +5250,7 @@ METOP_ASCSZOR02:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "CLIMATE", "FUNDAMENTAL-CLIMATE-DATA-RECORD", "ASCSZOR02", "ASCSZO1B0200"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Level 1 SZO Climate Data Record Release 2 - Metop
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", "2014-04-01T00:00:00Z"]]}}
@@ -5272,7 +5272,7 @@ METOP_ASCSZRR02:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L1", "CLIMATE", "FUNDAMENTAL-CLIMATE-DATA-RECORD", "ASCSZR1B0200", "ASCSZRR02"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Level 1 SZR Climate Data Record Release 2 - Metop
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", "2014-04-01T00:00:00Z"]]}}
@@ -5295,7 +5295,7 @@ METOP_SOMO12:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "LAND", "SOIL-MOISTURE", "SOMO12", "ASCSMR02", "SSM-ASCAT-C-NRT-O12.5", "H101", "H16", "H104"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Soil Moisture at 12.5 km Swath Grid in NRT - Metop
   extent: {"temporal": {"interval": [["2007-06-01T00:00:00Z", null]]}}
@@ -5318,7 +5318,7 @@ METOP_SOMO25:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "ASCAT", "SCATTEROMETER", "L2", "LAND", "SOIL-MOISTURE", "ASCSMO02", "H102", "H103", "SOMO25", "H105", "SSM-ASCAT-C-NRT-O25"]
-  sensorType: SCATTEROMETER
+  eodag:sensor_type: SCATTEROMETER
   license: other
   title: ASCAT Soil Moisture at 25 km Swath Grid in NRT - Metop
   extent: {"temporal": {"interval": [["2007-06-01T00:00:00Z", null]]}}
@@ -5341,7 +5341,7 @@ METOP_AVHRRGACR02:
   platform: METOP,TIROS,NOAA
   processing:level: L2
   keywords: ["METOP", "AVHRR", "RADIOMETER", "L2", "WIND", "CLIMATE", "ATMOSPHERE", "THEMATIC-CLIMATE-DATA-RECORD", "AVHGAC020200"]
-  sensorType: RADIOMETER
+  eodag:sensor_type: RADIOMETER
   license: other
   title: AVHRR GAC Atmospheric Motion Vectors Climate Data Record Release 2 - Multimission - Polar
   extent: {"temporal": {"interval": [["1979-01-01T00:00:00Z", "2019-09-01T00:00:00Z"]]}}
@@ -5358,7 +5358,7 @@ METOP_AVHRRL1:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "AVHRR", "RADIOMETER", "L1", "ATMOSPHERE", "OCEAN", "AVHXXX1B", "AVHRRL1"]
-  sensorType: RADIOMETER
+  eodag:sensor_type: RADIOMETER
   license: other
   title: AVHRR Level 1B - Metop - Global
   extent: {"temporal": {"interval": [["2008-03-01T00:00:00Z", null]]}}
@@ -5372,7 +5372,7 @@ METOP_LSA_002:
   platform: METOP
   processing:level: L3
   keywords: ["METOP", "AVHRR", "RADIOMETER", "L3", "LAND-SURFACE-TEMPERATURE", "SURFACE-RADIATION-BUDGET", "LAND", "EDLST", "LSA-002"]
-  sensorType: RADIOMETER
+  eodag:sensor_type: RADIOMETER
   license: other
   title: Daily Land Surface Temperature - Metop
   extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", null]]}}
@@ -5386,7 +5386,7 @@ METOP_GLB_SST_NC:
   platform: METOP
   processing:level: L3
   keywords: ["METOP", "AVHRR", "RADIOMETER", "L3", "OCEAN", "SEA-SURFACE-TEMPERATURE", "OSSTGLBN", "OSI-201-B", "GLB-SST", "OSSTGLB"]
-  sensorType: RADIOMETER
+  eodag:sensor_type: RADIOMETER
   license: other
   title: Global L3C AVHRR Sea Surface Temperature (GHRSST) - Metop
   extent: {"temporal": {"interval": [["2016-07-12T00:00:00Z", null]]}}
@@ -5400,7 +5400,7 @@ METOP_GOMEL1:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "GOME-2", "SPECTROMETER", "L1", "ATMOSPHERE", "GOMEL1", "GOMXXX1B"]
-  sensorType: SPECTROMETER
+  eodag:sensor_type: SPECTROMETER
   license: other
   title: GOME-2 Level 1B - Metop - Global
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", null]]}}
@@ -5417,7 +5417,7 @@ METOP_GOMEL1R03:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "GOME-2", "SPECTROMETER", "L1", "CLIMATE", "FUNDAMENTAL-DATA-RECORD", "FDR", "CLOUDS", "ATMOSPHERE", "RADIATION", "GOMXXX1B0300"]
-  sensorType: SPECTROMETER
+  eodag:sensor_type: SPECTROMETER
   license: other
   title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
   extent: {"temporal": {"interval": [["2007-04-01T00:00:00Z", "2020-08-01T00:00:00Z"]]}}
@@ -5434,7 +5434,7 @@ METOP_IASTHR011:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "IASI", "INTERFEROMETER", "L2", "CLIMATE", "TEMPERATURE", "ATMOSPHERE", "HUMIDITY", "LAND-SURFACE-TEMPERATURE", "THEMATIC-CLIMATE-DATA-RECORD", "SEA-SURFACE-TEMPERATURE", "IASTHPW30101"]
-  sensorType: INTERFEROMETER
+  eodag:sensor_type: INTERFEROMETER
   license: other
   title: IASI All Sky Temperature and Humidity Profiles - Climate Data Record Release 1.1 - Metop-A and -B
   extent: {"temporal": {"interval": [["2007-07-10T00:00:00Z", "2023-01-01T00:00:00Z"]]}}
@@ -5453,7 +5453,7 @@ METOP_IASSND02:
   platform: METOP
   processing:level: L2
   keywords: ["METOP", "IASI", "INTERFEROMETER", "L2", "CLIMATE", "TEMPERATURE", "ATMOSPHERE", "HUMIDITY", "IASSND02"]
-  sensorType: INTERFEROMETER
+  eodag:sensor_type: INTERFEROMETER
   license: other
   title: IASI Combined Sounding Products - Metop
   extent: {"temporal": {"interval": [["2008-02-13T00:00:00Z", null]]}}
@@ -5470,7 +5470,7 @@ METOP_IASIL1C_ALL:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "IASI", "INTERFEROMETER", "L1", "L1C", "ATMOSPHERE", "IASIL1C-ALL", "IASxxx1C"]
-  sensorType: INTERFEROMETER
+  eodag:sensor_type: INTERFEROMETER
   license: other
   title: IASI Level 1C - All Spectral Samples - Metop - Global
   extent: {"temporal": {"interval": [["2009-03-23T00:00:00Z", null]]}}
@@ -5484,7 +5484,7 @@ METOP_MHSL1:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "MHS", "SOUNDER", "L1", "L1B", "ATMOSPHERE", "MHSxxx1B", "MHSL1"]
-  sensorType: SOUNDER
+  eodag:sensor_type: SOUNDER
   license: other
   title: MHS Level 1B - Metop - Global
   extent: {"temporal": {"interval": [["2009-03-23T00:00:00Z", null]]}}
@@ -5498,7 +5498,7 @@ METOP_HIRSL1:
   platform: METOP
   processing:level: L1
   keywords: ["METOP", "HIRS", "SOUNDER", "L1", "L1B", "ATMOSPHERE", "HIRxxx1B", "HIRSL1"]
-  sensorType: SOUNDER
+  eodag:sensor_type: SOUNDER
   license: other
   title: HIRS Level 1B - Metop - Global
   extent: {"temporal": {"interval": [["2009-03-23T00:00:00Z", null]]}}
@@ -5519,7 +5519,7 @@ MSG_MFG_GSA_0:
   platform: MFG,MSG
   processing:level: L2
   keywords: ["MVIRI", "SEVIRI", "L2", "MFG", "MSG", "Climate", "Thematic", "Meteosat", "TCDR"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
   extent: {"temporal": {"interval": [["1982-02-10T00:00:00Z", "2017-12-31T23:59:59Z"]]}}
@@ -5543,7 +5543,7 @@ MSG_OCA_CDR:
   platform: MSG
   processing:level: L2
   keywords: ["MSG", "L2", "SEVIRI", "Climate", "Clouds", "Atmosphere", "Observation", "Thematic", "TCDR", "OCA"]
-  sensorType: MSG
+  eodag:sensor_type: MSG
   license: other
   title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
   extent: {"temporal": {"interval": [["2004-01-19T00:00:00Z", "2019-08-31T23:59:59Z"]]}}
@@ -5559,7 +5559,7 @@ MSG_CLM:
   platform: MSG
   processing:level: L2
   keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "VISUALISATION", "L2", "MSGCLMK", "CLM"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Cloud Mask - MSG - 0 degree
   extent: {"temporal": {"interval": [["2020-09-01T00:00:00Z", null]]}}
@@ -5576,7 +5576,7 @@ MSG_CLM_IODC:
   platform: MSG
   processing:level: L2
   keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "ATMOSPHERIC", "COMPOSITION", "VISUALISATION", "L2", "MSGCLMK", "CLM"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Cloud Mask - MSG - Indian Ocean
   extent: {"temporal": {"interval": [["2017-02-01T00:00:00Z", null]]}}
@@ -5593,7 +5593,7 @@ MSG_GSAL2R02:
   platform: MSG,MFG
   processing:level: L2
   keywords: ["MSG", "MFG", "SEVIRI", "MVIRI", "OPTICAL", "CLIMATE", "L2", "MxGGSA000200"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title:  GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
   extent: {"temporal": {"interval": [["1982-02-10T00:00:00Z", null]]}}
@@ -5614,7 +5614,7 @@ MSG_HRSEVIRI:
   platform: MSG
   processing:level: L1
   keywords: ["MSG", "SEVIRI", "OPTICAL", "OCEAN", "ATMOSPHERE", "VISUALISATION", "L1", "MSG15", "HRSEVIRI"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: High Rate SEVIRI Level 1.5 Image Data - MSG - 0 degree
   extent: {"temporal": {"interval": [["2004-01-19T00:00:00Z", null]]}}
@@ -5636,7 +5636,7 @@ MSG_HRSEVIRI_IODC:
   platform: MSG
   processing:level: L1
   keywords: ["MSG", "SEVIRI", "OPTICAL", "OCEAN", "ATMOSPHERE", "VISUALISATION", "L1", "MSG15", "HRSEVIRI", "IODC"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title:  High Rate SEVIRI Level 1.5 Image Data - MSG - Indian Ocean
   extent: {"temporal": {"interval": [["2017-02-01T00:00:00Z", null]]}}
@@ -5652,7 +5652,7 @@ MSG_RSS_CLM:
   platform: MSG
   processing:level: L2
   keywords: ["RSS-CLM", "MSGCLMK", "MSG", "SEVIRI", "OPTICAL", "CLOUDS", "ATMOSPHERE", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Rapid Scan Cloud Mask - MSG
   extent: {"temporal": {"interval": [["2013-02-28T00:00:00Z", null]]}}
@@ -5671,7 +5671,7 @@ MSG_MSG15_RSS:
   platform: MSG
   processing:level: L1
   keywords: ["MSG15-RSS", "MSG15", "MSG", "SEVIRI", "OPTICAL", "OCEAN", "ATMOSPHERE", "LAND", "L1"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Rapid Scan High Rate SEVIRI Level 1.5 Image Data - MSG
   extent: {"temporal": {"interval": [["2008-05-13T00:00:00Z", null]]}}
@@ -5686,7 +5686,7 @@ MSG_LSA_FRM:
   platform: MSG
   processing:level: L2
   keywords: ["LSA-504.2", "FRMV2", "FIRE", "VEGETATION", "LAND", "MSG", "SEVIRI", "OPTICAL", "LAND", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Fire Risk Map - Released Energy Based - MSG
   # Note: There's a mismatch between the temporal extent mentioned on the
@@ -5706,7 +5706,7 @@ MSG_LSA_LST_CDR:
   platform: MSG
   processing:level: L3
   keywords: ["LSA-050", "MLST-R", "FIRE", "VEGETATION", "LAND", "MSG", "SEVIRI", "OPTICAL", "LAND", "L3"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Land Surface Temperature Climate Data Record - MSG
   extent: {"temporal": {"interval": [["2004-01-21T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
@@ -5726,7 +5726,7 @@ MSG_LSA_LSTDE:
   platform: MSG
   processing:level: L2
   keywords: ["LSA-004", "LSA-001", "MLST_DIR", "FIRE", "VEGETATION", "LAND", "MSG", "SEVIRI", "OPTICAL", "LAND", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Land Surface Temperature with Directional Effects - MSG
   extent: {"temporal": {"interval": [["2005-01-16T00:00:00Z", null]]}}
@@ -5746,7 +5746,7 @@ MSG_AMVR02:
   platform: MSG,MFG
   processing:level: L2
   keywords: ["WIND", "CLIMATE", "ATMOSPHERE", "OBSERVATION", "THEMATIC", "OPTICAL", "MXGAMV000200", "AMVR20000", "L2"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Atmospheric Motion Vectors Climate Data Record Release 2 - MFG and MSG - 0 degree
   extent: {"temporal": {"interval": [["1981-09-03", null]]}}
@@ -5760,7 +5760,7 @@ MSG_CTH:
   platform: MSG
   processing:level: L2
   keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "VISUALISATION", "L2", "MSGCLTH", "CTH"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Cloud Top Height - MSG - 0 degree
   extent: {"temporal": {"interval": [["2020-09-01T00:00:00Z", null]]}}
@@ -5775,7 +5775,7 @@ MSG_CTH_IODC:
   platform: MSG
   processing:level: L2
   keywords: ["MSG", "SEVIRI", "OPTICAL", "WEATHER", "CLOUDS", "ATMOSPHERE", "VISUALISATION", "L2", "MSGCLTH", "CTH"]
-  sensorType: OPTICAL
+  eodag:sensor_type: OPTICAL
   license: other
   title: Cloud Top Height - MSG - Indian Ocean
   extent: {"temporal": {"interval": [["2020-09-01T00:00:00Z", null]]}}
@@ -5797,7 +5797,7 @@ MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "analysis", "forecast", "marine", "physics"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Physics Analysis and Forecast
   extent: {"temporal": {"interval": [["2019-01-01T00:00:00Z", null]]}}
@@ -5821,7 +5821,7 @@ MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "analysis", "forecast", "marine", "biogeochemical", "biogeochemistry"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Biogeochemistry Analysis and Forecast
   extent: {"temporal": {"interval": [["2021-10-01T00:00:00Z", null]]}}
@@ -5848,7 +5848,7 @@ MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "analysis", "forecast", "marine", "waves", "surface"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Waves Analysis and Forecast
   extent: {"temporal": {"interval": [["2021-01-01T00:00:00Z", null]]}}
@@ -5871,7 +5871,7 @@ MO_GLOBAL_MULTIYEAR_BGC_001_033:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "hindcast", "marine", "biomass", "LMTL"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global ocean low and mid trophic levels biomass content hindcast
   extent: {"temporal": {"interval": [["1998-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
@@ -5892,7 +5892,7 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "reanalysis", "forecast", "marine", "waves", "WAVERYS"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Waves Reanalysis
   extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", "2024-01-31T21:00:00Z"]]}}
@@ -5916,7 +5916,7 @@ MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "ensemble", "multiyear", "reanalysis", "temperature", "currents", "salinity", "ice", "physics"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Ensemble Physics Reanalysis
   extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", "2022-12-31T00:00:00Z"]]}}
@@ -5936,7 +5936,7 @@ MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
   platform:
   processing:level: Level 2
   keywords: ["CMEMS", "Mercator", "ocean", "insitu", "NRT", "currents", "global", "L2"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean- in-situ Near real time observations of ocean currents
   extent: {"temporal": {"interval": [["1997-01-01T00:00:00Z", null]]}}
@@ -5953,7 +5953,7 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "insitu", "NRT", "gridded", "monthly", "global", "L4", "analysis"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean- Real time in-situ observations objective analysis
   extent: {"temporal": {"interval": [["2023-01-15T00:00:00Z", "2024-12-01T00:00:00Z"]]}}
@@ -5969,7 +5969,7 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "insitu", "delayed", "gridded", "global", "L4", "analysis", "temperature", "salinity", "CORA"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean- Delayed Mode gridded CORA- In-situ Observations objective analysis in Delayed Mode
   extent: {"temporal": {"interval": [["1960-01-01T00:00:00Z", "2023-12-01T00:00:00Z"]]}}
@@ -5988,7 +5988,7 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "marine", "POC", "organic", "carbon", "particulate", "chlorophyll", "backscattering", "bbp", "Chla"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean 3D Chlorophyll-a concentration, Particulate Backscattering coefficient and Particulate Organic Carbon
   extent: {"temporal": {"interval": [["1998-01-07T00:00:00Z", "2021-12-29T00:00:00Z"]]}}
@@ -6012,7 +6012,7 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "carbon", "L4", "REP"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Surface Carbon
   extent: {"temporal": {"interval": [["1985-01-01T00:00:00Z", "2023-12-01T00:00:00Z"]]}}
@@ -6038,7 +6038,7 @@ MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "vertical", "nutrients", "carbon", "carbonate", "L3"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Nutrient and carbon profiles vertical distribution
   extent: {"temporal": {"interval": [["2002-09-01T00:00:00Z", "2022-08-31T00:00:00Z"]]}}
@@ -6061,7 +6061,7 @@ MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "REP", "NRT", "geostrophic", "currents", "GLOBCURRENT", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Total (COPERNICUS-GLOBCURRENT), Ekman and Geostrophic currents at the Surface and 15m
   extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", null]]}}
@@ -6091,7 +6091,7 @@ MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "salinity", "density", "NRT", "daily", "REP", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Multi Observation Global Ocean Sea Surface Salinity and Sea Surface Density
   extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", null]]}}
@@ -6114,7 +6114,7 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "REP", "NRT", "ARMOR3D", "temperature", "salinity", "heights", "Geostrophic", "currents", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Multi Observation Global Ocean 3D Temperature Salinity Height Geostrophic Current and MLD
   extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", null]]}}
@@ -6139,7 +6139,7 @@ MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "ARMOR3D", "weekly", "ERA-Interim", "quasi-geostrophic", "currents", "L4", "OMEGA3D"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Observed Ocean Physics 3D Quasi-Geostrophic Currents (OMEGA3D)
   extent: {"temporal": {"interval": [["1993-01-06T00:00:00Z", "2018-12-26T00:00:00Z"]]}}
@@ -6157,7 +6157,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "ice", "arctic", "antarctic", "concentration", "edge", "type", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean - Arctic and Antarctic - Sea Ice Concentration, Edge, Type and Drift (OSI-SAF)
   extent: {"temporal": {"interval": [["2019-05-04T00:00:00Z", null]]}}
@@ -6172,7 +6172,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "gridded", "MCC", "DTU", "displacement", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean - High Resolution SAR Sea Ice Drift
   extent: {"temporal": {"interval": [["2019-05-04T00:00:00Z", null]]}}
@@ -6191,7 +6191,7 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "ice", "concentration", "CDR", "ICDR", "REP", "reprocessed", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Sea Ice Concentration Time Series REPROCESSED (OSI-SAF)
   extent: {"temporal": {"interval": [["1978-10-25T00:00:00Z", null]]}}
@@ -6209,7 +6209,7 @@ MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "gridded", "surface", "heights", "SLA", "NRT", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: GLOBAL OCEAN GRIDDED L4 SEA SURFACE HEIGHTS AND DERIVED VARIABLES NRT
   extent: {"temporal": {"interval": [["2022-01-01T00:00:00Z", null]]}}
@@ -6224,7 +6224,7 @@ MO_SEALEVEL_GLO_PHY_MDT_008_063:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "sealevel", "topography", "surface", "height", "L4"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: GLOBAL OCEAN MEAN DYNAMIC TOPOGRAPHY
   extent: {"temporal": {"interval": [["1993-01-06T00:00:00Z", null]]}}
@@ -6243,7 +6243,7 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "L3", "PIR", "PMW", "GIR"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: ODYSSEA Global Ocean - Sea Surface Temperature Multi-sensor L3 Observations
   extent: {"temporal": {"interval": [["2020-12-31T00:00:00Z", null]]}}
@@ -6268,7 +6268,7 @@ MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "L4", "OSTIA"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Analysis
   extent: {"temporal": {"interval": [["2007-01-01T00:00:00Z", null]]}}
@@ -6287,7 +6287,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "concentration", "L4", "OSTIA", "reprocessed", "REP"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Reprocessed
   extent: {"temporal": {"interval": [["1981-10-01T00:00:00Z", "2022-05-31T00:00:00Z"]]}}
@@ -6314,7 +6314,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "ESA", "SST", "CCI", "C3S", "L4", "reprocessed", "REP"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: ESA SST CCI and C3S reprocessed sea surface temperature analyses
   extent: {"temporal": {"interval": [["1981-09-01T00:00:00Z", "2022-10-31T00:00:00Z"]]}}
@@ -6339,7 +6339,7 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "L3", "WAVE-TAC", "SAR", "spectral", "mono-mission"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean L 3 Spectral Parameters From Nrt Satellite Measurements
   extent: {"temporal": {"interval": [["2018-04-22T00:00:00Z", null]]}}
@@ -6365,7 +6365,7 @@ MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "height", "L3", "wind", "speed", "WAVE-TAC", "mono-mission"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: GLOBAL OCEAN L3 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
   extent: {"temporal": {"interval": [["2021-01-01T00:00:00Z", null]]}}
@@ -6385,7 +6385,7 @@ MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "height", "L4", "gridded", "WAVE-TAC", "multi-mission"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: GLOBAL OCEAN L4 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
   extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
@@ -6403,7 +6403,7 @@ MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L4", "surface", "wind", "stress", "monthly", "Scatterometer"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model
   extent: {"temporal": {"interval": [["1999-08-01T00:00:00Z", "2024-01-01T00:00:00Z"]]}}
@@ -6424,7 +6424,7 @@ MO_WIND_GLO_PHY_L3_NRT_012_002:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "surface", "wind", "daily", "gridded", "NRT", "Scatterometer"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Daily Gridded Sea Surface Winds from Scatterometer
   extent: {"temporal": {"interval": [["2016-01-01T00:00:00Z", null]]}}
@@ -6445,7 +6445,7 @@ MO_WIND_GLO_PHY_L3_MY_012_005:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "surface", "wind", "daily", "gridded", "reprocessed", "REP", "Scatterometer"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Daily Gridded Reprocessed L3 Sea Surface Winds from Scatterometer
   extent: {"temporal": {"interval": [["1991-08-01T00:00:00Z", "2023-12-31T00:00:00Z"]]}}
@@ -6464,7 +6464,7 @@ MO_WIND_GLO_PHY_L4_NRT_012_004:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L4", "surface", "wind", "stress", "hourly", "NRT", "Scatterometer", "Metop"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Hourly Sea Surface Wind and Stress from Scatterometer and Model
   extent: {"temporal": {"interval": [["2020-07-01T00:00:00Z", null]]}}
@@ -6484,7 +6484,7 @@ MO_WIND_GLO_PHY_L4_MY_012_006:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L4", "surface", "wind", "stress", "hourly", "REP", "reprocessed", "Scatterometer", "Metop", "QuikSCAT", "ERS"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Hourly Reprocessed Sea Surface Wind and Stress from Scatterometer and Model
   extent: {"temporal": {"interval": [["1994-06-01T00:00:00Z", "2024-01-21T23:00:00Z"]]}}
@@ -6503,7 +6503,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "bio-geo-chemical", "BGC", "chlorophyll", "phytoplankton", "reflectance"]
-  sensorType: multi
+  eodag:sensor_type: multi
   license: other
   title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations
   extent: {"temporal": {"interval": [["1997-09-04T00:00:00Z", "2024-04-30T00:00:00Z"]]}}
@@ -6524,7 +6524,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L3", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "NRT"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (Near Real Time)
   extent: {"temporal": {"interval": [["2023-04-25T00:00:00Z", null]]}}
@@ -6544,7 +6544,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
   platform:
   processing:level: Level 3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L3", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "MY", "multi-years"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing)
   extent: {"temporal": {"interval": [["1997-09-04T00:00:00Z", null]]}}
@@ -6566,7 +6566,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L4", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "NRT", "monthly", "interpolated"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time)
   extent: {"temporal": {"interval": [["2023-04-01T00:00:00Z", null]]}}
@@ -6588,7 +6588,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L4", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "MY", "multi-years", "monthly", "interpolated"]
-  sensorType:
+  eodag:sensor_type:
   license: other
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)
   extent: {"temporal": {"interval": [["1997-09-01T00:00:00Z", null]]}}
@@ -6606,7 +6606,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   platform:
   processing:level: L4
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L4", "bio-geo-chemical", "BGC", "chlorophyll", "MY", "multi-years", "monthly"]
-  sensorType: multi
+  eodag:sensor_type: multi
   license: other
   title: Global Ocean Colour Plankton MY L4 monthly observations
   extent: {"temporal": {"interval": [["1997-09-01T00:00:00Z", "2024-04-01T00:00:00Z"]]}}
@@ -6619,7 +6619,7 @@ GENERIC_COLLECTION:
   platform:
   processing:level:
   keywords:
-  sensorType:
+  eodag:sensor_type:
   license:
   title:
   extent: {"temporal": {"interval": [[null, null]]}}

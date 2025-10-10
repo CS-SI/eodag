@@ -82,7 +82,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "organisationName": None,
                         "start_datetime": "2018-02-15T23:53:22.871Z",
                         "constellation": None,
-                        "sensorType": None,
+                        "eodag:sensor_type": None,
                         "processing:level": None,
                         "orbitType": None,
                         "topicCategory": None,
