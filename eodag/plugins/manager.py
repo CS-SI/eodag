@@ -265,7 +265,7 @@ class PluginManager:
         elif product is not None:
             matching_url = product.properties.get(
                 "eodag:download_link"
-            ) or product.properties.get("orderLink")
+            ) or product.properties.get("eodag:order_link")
         else:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)

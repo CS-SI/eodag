@@ -1641,9 +1641,9 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+        eodag:order_id: $.json.jobID
+        eodag:status_link: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
+        eodag:search_link: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
     order_status:
       request:
         method: GET
@@ -1688,7 +1688,7 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+      eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
@@ -1813,9 +1813,9 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+        eodag:order_id: $.json.jobID
+        eodag:status_link: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
+        eodag:search_link: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
     order_status:
       request:
         method: GET
@@ -1861,7 +1861,7 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      orderLink: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+      eodag:order_link: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
     AG_ERA5:
@@ -2312,8 +2312,7 @@
       timeIntervalsAlignment:
         - '{{"timeIntervalsAlignment": {timeIntervalsAlignment#to_geojson} }}'
         - '$.timeIntervalsAlignment'
-      orderLink: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
-      # orderLink: '{$.eodag:download_link#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
+      eodag:order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
   products:
     NEMSGLOBAL_TCDC:
       product:type: NEMSGLOBAL
@@ -2341,8 +2340,8 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: '$.json.id'
-        orderStatusLink: 'http://my.meteoblue.com/queue/status/{orderId}'
+        eodag:order_id: '$.json.id'
+        eodag:status_link: 'http://my.meteoblue.com/queue/status/{eodag:order_id}'
     order_status:
       request:
         method: GET
@@ -2353,9 +2352,9 @@
         status: error
       on_success:
         metadata_mapping:
-          orderId: '$.json.id'
-          eodag:download_link: 'http://queueresults.meteoblue.com/{orderId}'
-          downloadMethod: '{$.null#replace_str("Not Available","GET")}'
+          eodag:order_id: '$.json.id'
+          eodag:download_link: 'http://queueresults.meteoblue.com/{eodag:order_id}'
+          eodag:download_method: '{$.null#replace_str("Not Available","GET")}'
   auth: !plugin
     type: HttpQueryStringAuth
     matching_url: https?://[a-z]+.meteoblue.com
@@ -3236,7 +3235,7 @@
       product:type: GRD
       metadata_mapping:
         <<: *s1_sar_params
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_RAW:
       _collection: EO:ESA:DAT:SENTINEL-1
       product:type: RAW
@@ -3260,7 +3259,7 @@
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI2A
@@ -3274,7 +3273,7 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_SI
@@ -3311,37 +3310,37 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
     S3_ERR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
     S3_SLSTR_L1RBT:
       _collection: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
       product:type: SL_1_RBT___
@@ -3354,14 +3353,14 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startdate": {id#split_id_into_s3_params}["startDate"], "enddate": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L1B
@@ -3372,7 +3371,7 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     S5P_L2_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L2
@@ -3395,7 +3394,7 @@
         grid:code:
           - '{{"tileId": "{grid:code}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
     EEA_HRL_TCF:
       product:type: EO:EEA:DAT:HRL:TCF
       metadata_mapping:
@@ -3406,12 +3405,12 @@
           resolution:
               - '{{"resolution": "{resolution}"}}'
               - '{$.id#replace_str(r"^.*_R([0-9]+m)_.*$",r"\1")}'
-          orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
+          eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
     COP_DEM_GLO30_DGED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DTE_30
@@ -3429,13 +3428,13 @@
       product:type: NDVI300
       metadata_mapping:
         <<: *id_from_date
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
       product:type: NDVI
       metadata_mapping:
         <<: *id_from_date
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
       product:type: Corine Land Cover 2018
@@ -3451,7 +3450,7 @@
           - '{{"format": "{format}"}}'
           - '{$.id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
       product:type: FCOVER300
@@ -3460,31 +3459,31 @@
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_DMP_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF
       product:type: DMP300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_GDMP_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF
       product:type: GDMP300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_FAPAR_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF
       product:type: FAPAR300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_LAI_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF
       product:type: LAI300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -3503,9 +3502,9 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-        eodag:download_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
+        eodag:order_id: '$.json.download_id'
+        eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={eodag:order_id}'
+        eodag:download_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:order_id}'
     order_status:
       request:
         method: GET
@@ -3596,7 +3595,7 @@
       dataset:
         - dataset_id
         - $.dataset
-      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
+      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
@@ -3779,8 +3778,8 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+        eodag:order_id: '$.json.download_id'
+        eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={eodag:order_id}'
     order_status:
       request:
         method: GET
@@ -3789,7 +3788,7 @@
         order:date: $.json.features[0].started_at
         created: $.json.features[0].started_at
         message: $.json.features[0].message
-        orderId: $.json.features[0]._id
+        eodag:order_id: $.json.features[0]._id
         ecmwf:dataset: $.json.features[0].dataset_id
       error:
         status: Error
@@ -3872,7 +3871,7 @@
       eodag:download_link: '$.properties.location'
       title: '$.id'
       order:status: 'orderable'
-      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
+      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -3891,8 +3890,8 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+        eodag:order_id: '$.json.download_id'
+        eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={eodag:order_id}'
     order_status:
       request:
         method: GET
@@ -4583,7 +4582,7 @@
         - dataset
         - $.dataset
       qs: $.qs
-      orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+      eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
     DT_EXTREMES:
       dataset: extremes-dt
@@ -4597,10 +4596,10 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: '{$.headers.Location#slice_str(-36,,1)}'
-        _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
-        combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
-        orderStatusLink: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
+        eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
+        _previousOrderId: '{$.json.eodag:order_id#replace_str("Not Available","")}'
+        combinedOrderId: '{eodag:order_id#replace_str("Not Available","")}{_previousOrderId}'
+        eodag:status_link: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
@@ -4642,7 +4641,7 @@
   url: https://hda.data.destination-earth.eu/stac/
   # anchors to avoid duplications
   anchor_orderable_mm: &orderable_mm
-    orderLink: '$.assets.eodag:download_link.href'
+    eodag:order_link: '$.assets.eodag:download_link.href'
     eodag:download_link: '$.null'
     assets: '$.null'
   search: !plugin
@@ -4693,7 +4692,7 @@
     order_method: GET
     order_on_response:
       metadata_mapping:
-        orderStatusLink: $.json.location
+        eodag:status_link: $.json.location
     order_status:
       request:
         method: GET
@@ -4704,7 +4703,7 @@
         http_code: 200
       on_success:
         metadata_mapping:
-          eodag:download_link: '{orderStatusLink}'
+          eodag:download_link: '{eodag:status_link}'
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
@@ -6139,9 +6138,9 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+        eodag:order_id: $.json.jobID
+        eodag:status_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
+        eodag:search_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
     order_status:
       request:
         method: GET
@@ -6186,7 +6185,7 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      orderLink: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+      eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical

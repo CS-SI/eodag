@@ -163,7 +163,7 @@
       # storageStatus: must be one of succeeded, ordered, orderable
       storageStatus: '{$.offline#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       # Url used for ordering product if it is offline/archived
-      orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
+      eodag:order_link: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
   products:
     # S1
     S1_SAR_OCN:

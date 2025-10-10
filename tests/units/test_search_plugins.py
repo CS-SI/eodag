@@ -2305,9 +2305,9 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             products[0].properties["eodag:download_link"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
-        # check orderLink
+        # check eodag:order_link
         self.assertEqual(
-            products[0].properties["orderLink"],
+            products[0].properties["eodag:order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -2649,7 +2649,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.properties["orderLink"].startswith("http")
+        assert eoproduct.properties["eodag:order_link"].startswith("http")
         assert NOT_AVAILABLE in eoproduct.location
 
     def test_plugins_search_ecmwfsearch_with_producttype(self):
@@ -3656,10 +3656,11 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
 
         default_providers_config = load_default_config()
         default_config = default_providers_config["wekeo_main"]
-        # "orderLink" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
-        self.assertNotIn("orderLink", default_config.search.metadata_mapping)
+        # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
+        self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
         self.assertIn(
-            "orderLink", default_config.products["S1_SAR_GRD"]["metadata_mapping"]
+            "eodag:order_link",
+            default_config.products["S1_SAR_GRD"]["metadata_mapping"],
         )
         self.assertNotIn("metadata_mapping", default_config.products["S1_SAR_SLC"])
 
@@ -3682,11 +3683,11 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         # CLMS_GLO_LAI_333M has both metadata_mapping_from_product and metadata_mapping
         # "metadata_mapping" must override "metadata_mapping_from_product"
         self.assertIn(
-            "orderLink",
+            "eodag:order_link",
             default_config.products["CLMS_GLO_LAI_333M"]["metadata_mapping"],
         )
         self.assertIn(
-            "orderLink",
+            "eodag:order_link",
             default_config.products["CLMS_GLO_FCOVER_333M"]["metadata_mapping"],
         )
         self.assertEqual(
@@ -3698,10 +3699,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.assertNotEqual(
             self.wekeomain_search_plugin.config.products["CLMS_GLO_LAI_333M"][
                 "metadata_mapping"
-            ]["orderLink"],
+            ]["eodag:order_link"],
             self.wekeomain_search_plugin.config.products["CLMS_GLO_FCOVER_333M"][
                 "metadata_mapping"
-            ]["orderLink"],
+            ]["eodag:order_link"],
         )
 
     @mock.patch(

@@ -1236,7 +1236,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.register_downloader(plugin, auth)
 
         endpoint = "https://ads.atmosphere.copernicus.eu/api/retrieve/v1"
-        self.product.properties["orderLink"] = (
+        self.product.properties["eodag:order_link"] = (
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
         self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
@@ -1310,7 +1310,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 self.product.properties["eodag:download_link"], expected_remote_location
             )
             self.assertEqual(
-                self.product.properties["orderStatusLink"], expected_order_status_link
+                self.product.properties["eodag:status_link"], expected_order_status_link
             )
             self.assertEqual(path, expected_path)
             self.assertEqual(self.product.location, path_to_uri(expected_path))
@@ -1319,10 +1319,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get(self, mock_request):
-        """HTTPDownload._order() must request using orderLink and GET protocol"""
+        """HTTPDownload._order() must request using eodag:order_link and GET protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["order:status"] = OFFLINE_STATUS
 
         # customized timeout
@@ -1337,7 +1337,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
             mock_request.assert_called_once_with(
                 method="GET",
-                url=self.product.properties["orderLink"],
+                url=self.product.properties["eodag:order_link"],
                 auth=auth,
                 headers=USER_AGENT,
                 timeout=10,
@@ -1359,7 +1359,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1372,7 +1372,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["orderLink"],
+            url=self.product.properties["eodag:order_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=5,
@@ -1384,7 +1384,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1403,7 +1403,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["orderLink"],
+            url=self.product.properties["eodag:order_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -1412,7 +1412,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
-        """HTTPDownload._order() must request using orderLink and POST protocol"""
+        """HTTPDownload._order() must request using eodag:order_link and POST protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
         self.product.properties["order:status"] = OFFLINE_STATUS
@@ -1422,20 +1422,20 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
-        # orderLink without query query args
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        # eodag:order_link without query query args
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
-            url=self.product.properties["orderLink"],
+            url=self.product.properties["eodag:order_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
         )
-        # orderLink with query query args
+        # eodag:order_link with query query args
         mock_request.reset_mock()
-        self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
+        self.product.properties["eodag:order_link"] = "http://somewhere/order?foo=bar"
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
@@ -1447,10 +1447,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
-        # orderLink with JSON data containing a query string
+        # eodag:order_link with JSON data containing a query string
         mock_request.reset_mock()
         self.product.properties[
-            "orderLink"
+            "eodag:order_link"
         ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
         plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
@@ -1467,7 +1467,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def test_plugins_download_http_order_status(self):
-        """HTTPDownload._order_status() must request status using orderStatusLink"""
+        """HTTPDownload._order_status() must request status using eodag:status_link"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {
@@ -1476,7 +1476,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             },
             "error": {"that": "failed"},
         }
-        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1515,8 +1515,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin: HTTPDownload = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1529,7 +1529,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["orderStatusLink"],
+            url=self.product.properties["eodag:status_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=5,
@@ -1544,8 +1544,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Set up the EOProduct and the necessary properties
         plugin: HTTPDownload = self.get_download_plugin(self.product)
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
+        self.product.properties["eodag:order_link"] = "http://somewhere/order"
+        self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1564,7 +1564,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         mock_request.assert_called_once_with(
             method="GET",
-            url=self.product.properties["orderStatusLink"],
+            url=self.product.properties["eodag:status_link"],
             auth=auth,
             headers=USER_AGENT,
             timeout=5,
@@ -1587,8 +1587,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             },
         }
-        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
-        self.product.properties["searchLink"] = "http://somewhere/search-again"
+        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
+        self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1642,8 +1642,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 },
             },
         }
-        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
-        self.product.properties["searchLink"] = "http://somewhere/search-again"
+        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
+        self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
         self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
