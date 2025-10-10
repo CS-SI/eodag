@@ -207,12 +207,15 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
                 count=False,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     def test_eodag_search_geom_wkt_invalid(self):
@@ -254,12 +257,15 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
                 count=False,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     def test_eodag_search_bbox_geom_mutually_exclusive(self):
@@ -324,11 +330,14 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
             self.runner.invoke(
                 eodag,
@@ -394,11 +403,14 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
             self.runner.invoke(
                 eodag,
@@ -443,11 +455,14 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 collection=collection,
                 id=None,
                 locations=None,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -479,13 +494,16 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 id=None,
                 foo="1",
                 bar=["2", "3"],
                 locations=None,
                 count=False,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -517,11 +535,14 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 id=None,
                 locations={"country": "FRA", "continent": "Africa"},
                 count=False,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -557,11 +578,14 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 id=None,
                 locations=None,
                 count=False,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -598,11 +622,14 @@ class TestEodagCli(unittest.TestCase):
                 instruments=None,
                 platform=None,
                 constellation=None,
-                sensorType=None,
                 id=None,
                 locations=None,
                 count=True,
-                **{"eo:cloud_cover": None, "processing:level": None},
+                **{
+                    "eo:cloud_cover": None,
+                    "processing:level": None,
+                    "eodag:sensor_type": None,
+                },
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)

@@ -985,7 +985,7 @@ class EODataAccessGateway:
         platform: Optional[str] = None,
         constellation: Optional[str] = None,
         processing_level: Optional[str] = None,
-        sensorType: Optional[str] = None,
+        sensor_type: Optional[str] = None,
         keywords: Optional[str] = None,
         description: Optional[str] = None,
         title: Optional[str] = None,
@@ -1006,7 +1006,7 @@ class EODataAccessGateway:
         :param platform: Platform parameter.
         :param constellation: Constellation parameter.
         :param processing_level: Processing level parameter.
-        :param sensorType: Sensor type parameter.
+        :param sensor_type: Sensor type parameter.
         :param keywords: Keywords parameter.
         :param description: description parameter.
         :param title: Title parameter.
@@ -1025,7 +1025,7 @@ class EODataAccessGateway:
                 "constellation": constellation,
                 "platform": platform,
                 "processing:level": processing_level,
-                "sensorType": sensorType,
+                "eodag:sensor_type": sensor_type,
                 "keywords": keywords,
                 "description": description,
                 "title": title,
@@ -1714,7 +1714,7 @@ class EODataAccessGateway:
                     "constellation",
                     "platform",
                     "processing:level",
-                    "sensorType",
+                    "eodag:sensor_type",
                 ):
                     kwargs.pop(param, None)
 
@@ -1908,7 +1908,7 @@ class EODataAccessGateway:
                                     "constellation",
                                     "platform",
                                     "processing:level",
-                                    "sensorType",
+                                    "eodag:sensor_type",
                                     "keywords",
                                 ]
                                 and v is not None

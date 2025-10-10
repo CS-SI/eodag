@@ -76,7 +76,7 @@
         "platform": "S1A",
         "keyword": {},
         "processing:level": null,
-        "sensorType": null,
+        "eodag:sensor_type": null,
         "eodag:download_link": "https://peps.cnes.fr/resto/collections/S1/578f1768-e66e-5b86-9363-b19f8931cc7b/download",
         "product:type": "OCN",
         "orbitNumber": 20624,

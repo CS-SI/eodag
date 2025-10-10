@@ -5698,17 +5698,17 @@
     MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
       _collection: INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
       code_mapping:
-        param: platformSerialIdentifier
+        param: platform
         index: 3
     MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
       _collection: INSITU_GLO_PHY_TS_OA_NRT_013_002
       code_mapping:
-        param: analysis_name
+        param: cop_marine:analysis_name
         index: 1
     MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
       _collection: INSITU_GLO_PHY_TS_OA_MY_013_052
       code_mapping:
-        param: analysis_name
+        param: cop_marine:analysis_name
         index: 1
     MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
       _collection: MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
@@ -5737,7 +5737,7 @@
     MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
       _collection: SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010
       code_mapping:
-        param: sensorType
+        param: eodag:sensor_type
         index: 3
         pattern: '[A-Z]{3}'
     MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
@@ -5749,13 +5749,13 @@
     MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
       _collection: WAVE_GLO_PHY_SPC-FWK_L3_NRT_014_002
       code_mapping:
-        param: platformSerialIdentifier
+        param: platform
         index: 0
         pattern: 's1a|s1b|cfo'
     MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
       _collection: WAVE_GLO_PHY_SWH_L3_NRT_014_001
       code_mapping:
-        param: platformSerialIdentifier
+        param: platform
         index: 4
     MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
       _collection: WAVE_GLO_PHY_SWH_L4_NRT_014_003
@@ -5774,25 +5774,25 @@
     MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
       _collection: OCEANCOLOUR_GLO_BGC_L3_NRT_009_101
       code_mapping:
-        param: sensorType
+        param: eodag:sensor_type
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
       _collection: OCEANCOLOUR_GLO_BGC_L3_MY_009_103
       code_mapping:
-        param: sensorType
+        param: eodag:sensor_type
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
       _collection: OCEANCOLOUR_GLO_BGC_L4_NRT_009_102
       code_mapping:
-        param: sensorType
+        param: eodag:sensor_type
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
       _collection: OCEANCOLOUR_GLO_BGC_L4_MY_009_104
       code_mapping:
-        param: sensorType
+        param: eodag:sensor_type
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
