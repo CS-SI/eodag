@@ -1648,7 +1648,7 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.status
+        eodag:status: $.json.status
         order:date: $.json.created
         created: $.json.created
         published: $.json.finished
@@ -1656,9 +1656,9 @@
         ecmwf:dataset: $.json.processID
         request_params: $.json.metadata.request.ids
       error:
-        status: failed
+        eodag:status: failed
       success:
-        status: successful
+        eodag:status: successful
       on_success:
         need_search: true
         metadata_mapping:
@@ -1820,7 +1820,7 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.status
+        eodag:status: $.json.status
         order:date: $.json.created
         created: $.json.created
         published: $.json.finished
@@ -1828,9 +1828,9 @@
         ecmwf:dataset: $.json.processID
         request_params: $.json.metadata.request.ids
       error:
-        status: failed
+        eodag:status: failed
       success:
-        status: successful
+        eodag:status: successful
       on_success:
         need_search: true
         metadata_mapping:
@@ -2347,9 +2347,9 @@
         method: GET
       metadata_mapping:
         percent: $.json.percentCompleted
-        status: $.json.status
+        eodag:status: $.json.status
       error:
-        status: error
+        eodag:status: error
       on_success:
         metadata_mapping:
           eodag:order_id: '$.json.id'
@@ -3509,12 +3509,12 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.features[0].status
-        message: $.json.features[0].message
+        eodag:status: $.json.features[0].status
+        eodag:order_message: $.json.features[0].message
       error:
-        status: Error
+        eodag:status: Error
       success:
-        status: Done
+        eodag:status: Done
       ordered:
         http_code: 202
       on_success:
@@ -3784,16 +3784,16 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.features[0].status
+        eodag:status: $.json.features[0].status
         order:date: $.json.features[0].started_at
         created: $.json.features[0].started_at
-        message: $.json.features[0].message
+        eodag:order_message: $.json.features[0].message
         eodag:order_id: $.json.features[0]._id
         ecmwf:dataset: $.json.features[0].dataset_id
       error:
-        status: Error
+        eodag:status: Error
       success:
-        status: Done
+        eodag:status: Done
       ordered:
         http_code: 202
       on_success:
@@ -3896,12 +3896,12 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.features[0].status
-        message: $.json.features[0].message
+        eodag:status: $.json.features[0].status
+        eodag:order_message: $.json.features[0].message
       error:
-        status: Error
+        eodag:status: Error
       success:
-        status: Done
+        eodag:status: Done
       ordered:
         http_code: 202
       on_success:
@@ -4597,21 +4597,21 @@
     order_on_response:
       metadata_mapping:
         eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
-        _previousOrderId: '{$.json.eodag:order_id#replace_str("Not Available","")}'
-        combinedOrderId: '{eodag:order_id#replace_str("Not Available","")}{_previousOrderId}'
-        eodag:status_link: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
+        _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
+        eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
+        eodag:status_link: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
         headers:
       metadata_mapping:
-        status: $.json.status
-        message: $.json.message
+        eodag:status: $.json.status
+        eodag:order_message: $.json.message
         error_message: $.null
       success:
         http_code: 303
       error:
-        status: failed
+        eodag:status: failed
       on_success:
         result_type: json
         metadata_mapping:
@@ -4697,8 +4697,8 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.status
-        message: $.json.description
+        eodag:status: $.json.status
+        eodag:order_message: $.json.description
       success:
         http_code: 200
       on_success:
@@ -6145,7 +6145,7 @@
       request:
         method: GET
       metadata_mapping:
-        status: $.json.status
+        eodag:status: $.json.status
         order:date: $.json.created
         created: $.json.created
         published: $.json.finished
@@ -6153,9 +6153,9 @@
         ecmwf:dataset: $.json.processID
         request_params: $.json.metadata.request.ids
       error:
-        status: failed
+        eodag:status: failed
       success:
-        status: successful
+        eodag:status: successful
       on_success:
         need_search: true
         metadata_mapping:

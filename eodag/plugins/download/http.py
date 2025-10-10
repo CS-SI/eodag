@@ -455,9 +455,9 @@ class HTTPDownload(Download):
                 {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
             )
 
-            product.properties["orderStatus"] = status_dict.get("status")
+            product.properties["orderStatus"] = status_dict.get("eodag:status")
 
-            status_message = status_dict.get("eodag:message")
+            status_message = status_dict.get("eodag:order_message")
 
             # handle status error
             errors: dict[str, Any] = status_config.get("error", {})
@@ -468,9 +468,11 @@ class HTTPDownload(Download):
 
         product.properties["order:status"] = STAGING_STATUS
 
-        success_status: dict[str, Any] = status_config.get("success", {}).get("status")
+        success_status: dict[str, Any] = status_config.get("success", {}).get(
+            "eodag:status"
+        )
         # if not success
-        if (success_status and success_status != status_dict.get("status")) or (
+        if (success_status and success_status != status_dict.get("eodag:status")) or (
             success_code and success_code != response.status_code
         ):
             return None
