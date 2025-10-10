@@ -299,9 +299,6 @@ class UsgsApi(Api):
         else:
             total_results = 0
 
-        if product_type:
-            api_search_kwargs["productType"] = product_type
-
         formated_result = SearchResult(
             final,
             total_results,

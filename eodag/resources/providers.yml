@@ -1334,18 +1334,8 @@
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
       max_items_per_page: 500
-    sort:
-      sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
-      sort_param_mapping:
-        id: id
-        start_datetime: properties.datetime
-        created: properties.created
-        updated: properties.updated
-        platform: properties.platform
-        view:sun_elevation: properties.view:sun_elevation
-        view:sun_azimuth: properties.view:sun_azimuth
-        eo:cloud_cover: properties.eo:cloud_cover
+      next_page_token_key: next
+    # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
   products:

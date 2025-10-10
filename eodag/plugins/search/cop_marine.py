@@ -302,11 +302,12 @@ class CopMarineSearch(StaticStacSearch):
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
-        page = prep.page
+        token_value = getattr(prep, "next_page_token", prep.page)
+        token = int(token_value) if token_value is not None else 0
         items_per_page = prep.items_per_page
 
         # only return 1 page if pagination is disabled
-        if page is None or items_per_page is None or page > 1 and items_per_page <= 0:
+        if token == 0 or items_per_page is None or token > 1 and items_per_page <= 0:
             result = SearchResult([])
             if prep.count:
                 result.number_matched = 0
@@ -320,7 +321,7 @@ class CopMarineSearch(StaticStacSearch):
         collection_dict, datasets_items_list = self._get_collection_info(collection)
         geometry = kwargs.pop("geometry", None)
         products: list[EOProduct] = []
-        start_index = items_per_page * (page - 1) + 1
+        start_index = items_per_page * (token - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
             # Filter by geometry
@@ -488,8 +489,17 @@ class CopMarineSearch(StaticStacSearch):
                             if product:
                                 products.append(product)
                     current_object = item_key
+
+        search_params = (
+            {"items_per_page": prep.items_per_page}
+            | {"productType": product_type}
+            | {"provider": self.provider}
+        )
+
         formated_result = SearchResult(
             products,
             num_total,
+            search_params=search_params,
+            next_page_token=str(start_index + 1),
         )
         return formated_result
