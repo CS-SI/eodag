@@ -217,7 +217,7 @@ class CopMarineSearch(StaticStacSearch):
         download_url = s3_url + "/" + item_key
         geometry = (
             get_geometry_from_various(**dataset_item)
-            or self.config.metadata_mapping["defaultGeometry"]
+            or self.config.metadata_mapping["eodag:default_geometry"]
         )
         properties = {
             "id": item_id,

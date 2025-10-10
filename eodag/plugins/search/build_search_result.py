@@ -457,7 +457,7 @@ class ECMWFSearch(PostJsonSearch):
                 "order:status": OFFLINE_STATUS,
                 "eodag:download_link": "$.null",
                 "geometry": ["feature", "$.geometry"],
-                "defaultGeometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
+                "eodag:default_geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
             },
             **config.metadata_mapping,
         }
