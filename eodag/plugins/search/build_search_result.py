@@ -1151,7 +1151,7 @@ class ECMWFSearch(PostJsonSearch):
 
         if result:
             properties = result
-            properties.update(result.pop("request_params", None) or {})
+            properties.update(result.pop("eodag:request_params", None) or {})
 
             properties = {k: v for k, v in properties.items() if not k.startswith("__")}
 

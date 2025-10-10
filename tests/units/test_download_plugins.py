@@ -1471,7 +1471,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {
-                "percent": "$.json.progress_percentage",
+                "eodag:order_percent": "$.json.progress_percentage",
                 "that": "$.json.that",
             },
             "error": {"that": "failed"},
@@ -1576,8 +1576,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order_status() must search again after success if needed"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
-            "metadata_mapping": {"eodag:status": "$.json.status"},
-            "success": {"eodag:status": "great-success"},
+            "metadata_mapping": {"eodag:order_status": "$.json.status"},
+            "success": {"eodag:order_status": "great-success"},
             "on_success": {
                 "need_search": True,
                 "result_type": "xml",
@@ -1631,8 +1631,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order_status() must raise an error if the search request after success failed"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
-            "metadata_mapping": {"eodag:status": "$.json.status"},
-            "success": {"eodag:status": "great-success"},
+            "metadata_mapping": {"eodag:order_status": "$.json.status"},
+            "success": {"eodag:order_status": "great-success"},
             "on_success": {
                 "need_search": True,
                 "result_type": "xml",
