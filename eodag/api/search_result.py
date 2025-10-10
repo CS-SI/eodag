@@ -287,7 +287,7 @@ class SearchResult(UserList[EOProduct]):
             # Update the next_page_token in the search params
             current.search_params["next_page_token"] = current.next_page_token
             # Ensure the provider is in the search params
-            if hasattr(current.search_params, "provider"):
+            if "provider" in current.search_params:
                 current.search_params["provider"] = current.search_params.get(
                     "provider", None
                 )
