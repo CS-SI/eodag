@@ -132,7 +132,7 @@ class EOProduct:
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
-        self.location = self.remote_location = properties.get("downloadLink", "")
+        self.location = self.remote_location = properties.get("eodag:download_link", "")
         self.assets = AssetsDict(self)
         self.properties = {
             key: value
@@ -275,10 +275,10 @@ class EOProduct:
             matching_url = next(iter(self.assets.values()))["href"]
         elif self.properties.get("order:status") != ONLINE_STATUS:
             matching_url = self.properties.get("orderLink") or self.properties.get(
-                "downloadLink"
+                "eodag:download_link"
             )
         else:
-            matching_url = self.properties.get("downloadLink")
+            matching_url = self.properties.get("eodag:download_link")
 
         try:
             auth_plugin = next(

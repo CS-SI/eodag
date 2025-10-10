@@ -2300,9 +2300,9 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             ],
             "type": "Polygon",
         }
-        # check downloadLink
+        # check eodag:download_link
         self.assertEqual(
-            products[0].properties["downloadLink"],
+            products[0].properties["eodag:download_link"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
         # check orderLink

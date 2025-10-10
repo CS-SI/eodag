@@ -455,7 +455,7 @@ class ECMWFSearch(PostJsonSearch):
                 "id": "$.id",
                 "title": "$.id",
                 "order:status": OFFLINE_STATUS,
-                "downloadLink": "$.null",
+                "eodag:download_link": "$.null",
                 "geometry": ["feature", "$.geometry"],
                 "defaultGeometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
             },
@@ -1197,7 +1197,7 @@ class ECMWFSearch(PostJsonSearch):
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
-        # used by server mode to generate downloadlink href
+        # used by server mode to generate eodag:download_link href
         # TODO: to remove once the legacy server is removed
         properties["_dc_qs"] = quote_plus(qs)
 
@@ -1451,7 +1451,7 @@ class MeteoblueSearch(ECMWFSearch):
 
         properties["id"] = properties["title"] = product_id
 
-        # used by server mode to generate downloadlink href
+        # used by server mode to generate eodag:download_link href
         properties["_dc_qs"] = quote_plus(qs)
 
         product = EOProduct(

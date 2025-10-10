@@ -491,7 +491,7 @@ class TestEOProduct(EODagTestCase):
                 properties=dict(
                     self.eoproduct_props,
                     **{
-                        "downloadLink": "%(base_uri)s/is/resolved",
+                        "eodag:download_link": "%(base_uri)s/is/resolved",
                         "otherProperty": "%(output_dir)s/also/resolved",
                     },
                 )
@@ -506,7 +506,7 @@ class TestEOProduct(EODagTestCase):
             f"{downloadable_product.downloader.config.base_uri}/is/resolved",
         )
         self.assertEqual(
-            downloadable_product.properties["downloadLink"],
+            downloadable_product.properties["eodag:download_link"],
             f"{downloadable_product.downloader.config.base_uri}/is/resolved",
         )
         self.assertEqual(
@@ -525,7 +525,7 @@ class TestEOProduct(EODagTestCase):
                     properties=dict(
                         self.eoproduct_props,
                         **{
-                            "downloadLink": "%(257B/cannot/be/resolved",
+                            "eodag:download_link": "%(257B/cannot/be/resolved",
                             "otherProperty": "%(/%s/neither/resolved",
                         },
                     )
@@ -536,7 +536,7 @@ class TestEOProduct(EODagTestCase):
                 downloadable_product.remote_location, "%(257B/cannot/be/resolved"
             )
             self.assertEqual(
-                downloadable_product.properties["downloadLink"],
+                downloadable_product.properties["eodag:download_link"],
                 "%(257B/cannot/be/resolved",
             )
             self.assertEqual(
@@ -547,7 +547,8 @@ class TestEOProduct(EODagTestCase):
             needed_logs = [
                 f"Could not resolve product.location ({downloadable_product.location})",
                 f"Could not resolve product.remote_location ({downloadable_product.remote_location})",
-                f"Could not resolve downloadLink property ({downloadable_product.properties['downloadLink']})",
+                "Could not resolve eodag:download_link property (%s)"
+                % downloadable_product.properties["eodag:download_link"],
                 f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
             ]
             for needed_log in needed_logs:

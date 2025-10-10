@@ -2109,16 +2109,16 @@ class EODataAccessGateway:
         checks like verifying that a downloader and authenticator are registered
         for the product before trying to download it.
 
-        If the metadata mapping for ``downloadLink`` is set to something that can be
+        If the metadata mapping for ``eodag:download_link`` is set to something that can be
         interpreted as a link on a
         local filesystem, the download is skipped (by now, only a link starting
         with ``file:/`` is supported). Therefore, any user that knows how to extract
         product location from product metadata on a provider can override the
-        ``downloadLink`` metadata mapping in the right way. For example, using the
+        ``eodag:download_link`` metadata mapping in the right way. For example, using the
         environment variable:
-        ``EODAG__CREODIAS__SEARCH__METADATA_MAPPING__DOWNLOADLINK="file:///{id}"`` will
+        ``EODAG__CREODIAS__SEARCH__METADATA_MAPPING__EODAG_DOWNLOAD_LINK="file:///{id}"`` will
         lead to all :class:`~eodag.api.product._product.EOProduct`'s originating from the
-        provider ``creodias`` to have their ``downloadLink`` metadata point to something like:
+        provider ``creodias`` to have their ``eodag:download_link`` metadata point to something like:
         ``file:///12345-678``, making this method immediately return the later string without
         trying to download the product.
 

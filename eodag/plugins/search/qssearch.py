@@ -1600,8 +1600,8 @@ class PostJsonSearch(QueryStringSearch):
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)
         for product in normalized:
-            if "downloadLink" in product.properties:
-                decoded_link = unquote(product.properties["downloadLink"])
+            if "eodag:download_link" in product.properties:
+                decoded_link = unquote(product.properties["eodag:download_link"])
                 if decoded_link[0] == "{":  # not a url but a dict
                     default_values = deepcopy(
                         self.config.products.get(product.collection, {})
