@@ -1246,12 +1246,12 @@ def _check_id(product: EOProduct) -> EOProduct:
     if not on_response_mm:
         return product
 
-    logger.debug(f"Update product properties using given orderId {product_id}")
+    logger.debug(f"Update product properties using given eodag:order_id {product_id}")
     on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
         on_response_mm,
     )
     properties_update = properties_from_json(
-        {}, {**on_response_mm_jsonpath, **{"orderId": (None, product_id)}}
+        {}, {**on_response_mm_jsonpath, **{"eodag:order_id": (None, product_id)}}
     )
     product.properties.update(
         {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
@@ -1504,7 +1504,7 @@ class WekeoECMWFSearch(ECMWFSearch):
             # id is order id (only letters and numbers) -> use parent normalize results
             return super().normalize_results(results, **kwargs)
 
-        # formating of orderLink requires access to the collection value.
+        # formating of eodag:order_link requires access to the collection value.
         results.data = [
             {**result, **results.collection_def_params} for result in results
         ]

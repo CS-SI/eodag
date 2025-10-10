@@ -1619,11 +1619,11 @@ class PostJsonSearch(QueryStringSearch):
 
             # workaround to add collection to wekeo cmems order links
             if (
-                "orderLink" in product.properties
-                and "collection" in product.properties["orderLink"]
+                "eodag:order_link" in product.properties
+                and "collection" in product.properties["eodag:order_link"]
             ):
-                product.properties["orderLink"] = product.properties[
-                    "orderLink"
+                product.properties["eodag:order_link"] = product.properties[
+                    "eodag:order_link"
                 ].replace("collection", product.collection)
         return normalized
 

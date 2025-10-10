@@ -128,8 +128,8 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
           authentication; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
-          if this parameter is set to true, a mapping for the orderLink has to be added to the metadata mapping of
-          the search plugin used for the provider; default: ``False``
+          if this parameter is set to true, a mapping for ``eodag:order_link`` has to be added to the metadata mapping
+          of the search plugin used for the provider; default: ``False``
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
           or ``POST``); default: ``GET``
         * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): headers to be added to the order
@@ -159,11 +159,11 @@ class HTTPDownload(Download):
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is orderable
-        and has `orderLink` in its properties.
+        and has ``eodag:order_link`` in its properties.
         Product ordering can be configured using the following download plugin parameters:
 
             - :attr:`~eodag.config.PluginConfig.order_enabled`: Wether order is enabled or not (may not use this method
-              if no `orderLink` exists)
+              if no ``eodag:order_link`` exists)
 
             - :attr:`~eodag.config.PluginConfig.order_method`: (optional) HTTP request method, GET (default) or POST
 
@@ -174,7 +174,7 @@ class HTTPDownload(Download):
 
         Product properties used for order:
 
-            - **orderLink**: order request URL
+            - **eodag:order_link**: order request URL
 
         :param product: The EO product to order
         :param auth: (optional) authenticated object
@@ -192,7 +192,7 @@ class HTTPDownload(Download):
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
             # separate url & parameters
-            parts = urlparse(str(product.properties["orderLink"]))
+            parts = urlparse(str(product.properties["eodag:order_link"]))
             query_dict = {}
             # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
             # the resulting `query_dict` would be erroneous.
@@ -205,7 +205,7 @@ class HTTPDownload(Download):
             if query_dict:
                 order_kwargs["json"] = query_dict
         else:
-            order_url = product.properties["orderLink"]
+            order_url = product.properties["eodag:order_link"]
             order_kwargs = {}
 
         headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
@@ -269,7 +269,7 @@ class HTTPDownload(Download):
         # the job id becomes the product id for EcmwfSearch products
         if "ORDERABLE" in product.properties.get("id", ""):
             product.properties["id"] = product.properties.get(
-                "orderId", product.properties["id"]
+                "eodag:order_id", product.properties["id"]
             )
             product.properties["title"] = (
                 (product.collection or product.provider).upper()
@@ -298,7 +298,7 @@ class HTTPDownload(Download):
 
         Product properties used for order status:
 
-            - **orderStatusLink**: order status request URL
+            - **eodag:status_link**: order status request URL
 
         :param product: The ordered EO product
         :param auth: (optional) authenticated object
@@ -355,14 +355,14 @@ class HTTPDownload(Download):
 
         if status_request_method == "POST":
             # separate url & parameters
-            parts = urlparse(str(product.properties["orderStatusLink"]))
+            parts = urlparse(str(product.properties["eodag:status_link"]))
             status_url = parts._replace(query="").geturl()
             query_dict = parse_qs(parts.query)
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             json_data = query_dict if query_dict else None
         else:
-            status_url = product.properties["orderStatusLink"]
+            status_url = product.properties["eodag:status_link"]
             json_data = None
 
         # check header for success before full status request
@@ -457,7 +457,7 @@ class HTTPDownload(Download):
 
             product.properties["orderStatus"] = status_dict.get("status")
 
-            status_message = status_dict.get("message")
+            status_message = status_dict.get("eodag:message")
 
             # handle status error
             errors: dict[str, Any] = status_config.get("error", {})
@@ -483,9 +483,13 @@ class HTTPDownload(Download):
 
         # need search on success ?
         if config_on_success.get("need_search"):
-            logger.debug(f"Search for new location: {product.properties['searchLink']}")
+            logger.debug(
+                f"Search for new location: {product.properties['eodag:search_link']}"
+            )
             try:
-                response = _request(product.properties["searchLink"], timeout=timeout)
+                response = _request(
+                    product.properties["eodag:search_link"], timeout=timeout
+                )
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
@@ -526,7 +530,7 @@ class HTTPDownload(Download):
                 if len(results) != 1:
                     raise DownloadError(
                         "Could not get a single result after order success for "
-                        f"{product.properties['searchLink']} request. "
+                        f"{product.properties['eodag:search_link']} request. "
                         f"Please search and download {product} again"
                     )
                 assert isinstance(results, list), "results must be in a list"
@@ -911,14 +915,14 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase],
     ) -> None:
         if (
-            "orderLink" in product.properties
+            "eodag:order_link" in product.properties
             and product.properties.get("order:status") == OFFLINE_STATUS
             and not product.properties.get("orderStatus")
         ):
             self._order(product=product, auth=auth)
 
         if (
-            product.properties.get("orderStatusLink")
+            product.properties.get("eodag:status_link")
             and product.properties.get("order:status") != ONLINE_STATUS
         ):
             self._order_status(product=product, auth=auth)
@@ -978,7 +982,7 @@ class HTTPDownload(Download):
         )
 
         req_method = (
-            product.properties.get("downloadMethod", "").lower()
+            product.properties.get("eodag:download_method", "").lower()
             or getattr(self.config, "method", "GET").lower()
         )
         url = product.remote_location

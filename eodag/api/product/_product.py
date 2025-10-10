@@ -274,9 +274,9 @@ class EOProduct:
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
         elif self.properties.get("order:status") != ONLINE_STATUS:
-            matching_url = self.properties.get("orderLink") or self.properties.get(
-                "eodag:download_link"
-            )
+            matching_url = self.properties.get(
+                "eodag:order_link"
+            ) or self.properties.get("eodag:download_link")
         else:
             matching_url = self.properties.get("eodag:download_link")
 
