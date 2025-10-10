@@ -45,8 +45,8 @@
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
       # metadata needed for download
-      entityId: '$.entityId'
-      productId: '$.id'
+      usgs:entityId: '$.entityId'
+      usgs:productId: '$.id'
     extract: True
     order_enabled: true
   products:
