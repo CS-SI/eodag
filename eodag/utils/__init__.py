@@ -339,11 +339,11 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
 
     Do its best to detect the key in ``mapping1`` to override. For example:
 
-    >>> mapping2 = {"keya": "new"}
-    >>> mapping1 = {"keyA": "obsolete"}
+    >>> mapping2 = {"ext_keya": "new"}
+    >>> mapping1 = {"ext:keyA": "obsolete"}
     >>> merge_mappings(mapping1, mapping2)
     >>> mapping1
-    {'keyA': 'new'}
+    {'ext:keyA': 'new'}
 
     If ``mapping2`` has a key that cannot be detected in ``mapping1``, this new key is
     added to ``mapping1`` as is.
@@ -352,7 +352,7 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
     :param mapping2: The mapping containing values that will override the first mapping
     """
     # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
-    m1_keys_lowercase = {key.lower(): key for key in mapping1}
+    m1_keys_lowercase = {key.lower().replace(":", "_"): key for key in mapping1}
     for key, value in mapping2.items():
         if isinstance(value, dict):
             try:
