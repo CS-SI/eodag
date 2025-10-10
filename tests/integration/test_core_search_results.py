@@ -55,7 +55,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "product:type": "OCN",
-                        "downloadLink": (
+                        "eodag:download_link": (
                             "https://peps.cnes.fr/resto/collections/S1/"
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                         ),
@@ -393,7 +393,7 @@ class TestCoreSearchResults(EODagTestCase):
                     },
                     "collection": "bar-collection",
                     "assets": {
-                        "downloadLink": {
+                        "eodag:download_link": {
                             "title": "Download link",
                             "href": "https://legacy-server/download-link",
                             "type": "application/zip",

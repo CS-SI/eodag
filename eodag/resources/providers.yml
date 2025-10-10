@@ -43,7 +43,7 @@
       thumbnail: '$.browse[0].thumbnailPath'
       quicklook: '$.browse[0].browsePath'
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
-      downloadLink: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
+      eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
       # metadata needed for download
       entityId: '$.entityId'
       productId: '$.id'
@@ -149,8 +149,8 @@
         awsPath:
           - '{{"search":{{"downloadUrl":"{awsPath}" }} }}'
           - '$.downloadUrl'
-        downloadLink: 's3://cbers-pds/{awsPath}'
-        metaDownloadLink: 's3://cbers-meta-pds/{awsPath}'
+        eodag:download_link: 's3://cbers-pds/{awsPath}'
+        metaeodag:download_link: 's3://cbers-meta-pds/{awsPath}'
         previewBaseName: '{$.sceneID#replace_str("_L2","")}'
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
@@ -261,7 +261,7 @@
         row:
           - '{{"search":{{"row":"{row}" }} }}'
           - '$.row'
-        downloadLink: 's3://landsat-pds/c1/L8/{path:03.0f}/{row:03.0f}/{title}/'
+        eodag:download_link: 's3://landsat-pds/c1/L8/{path:03.0f}/{row:03.0f}/{title}/'
         thumbnail: '$.thumbnail'
         quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{path:03.0f}/{row:03.0f}/{title}/{title}_thumb_large.jpg'
         id:
@@ -298,7 +298,7 @@
           - '{{"search":{{"horizontalTileNumber":"{horizontalTileNumber}" }} }}'
           - '$.horizontalTileNumber'
         doyDate: '{$.sceneID#slice_str(9,16,1)}'
-        downloadLink: 's3://modis-pds/MCD43A4.006/{horizontalTileNumber:02.0f}/{verticalTileNumber:02.0f}/{doyDate}/'
+        eodag:download_link: 's3://modis-pds/MCD43A4.006/{horizontalTileNumber:02.0f}/{verticalTileNumber:02.0f}/{doyDate}/'
         thumbnail: '$.thumbnail'
         quicklook: '$.thumbnail'
         id:
@@ -327,7 +327,7 @@
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
           - '$.awsPath'
-        downloadLink: 's3://naip-analytic/{awsPath}'
+        eodag:download_link: 's3://naip-analytic/{awsPath}'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
@@ -368,7 +368,7 @@
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
           - '$.awsPath'
-        downloadLink: 's3://sentinel-s1-l1c/{awsPath}'
+        eodag:download_link: 's3://sentinel-s1-l1c/{awsPath}'
         thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
         quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
         id:
@@ -409,7 +409,7 @@
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
           - '$.awsPath'
-        downloadLink: 's3://sentinel-s2-l1c/{awsPath}'
+        eodag:download_link: 's3://sentinel-s2-l1c/{awsPath}'
         productMetaLink: '{$.productMetaLink#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         productPath:
           - '{{"search":{{"productPath":"{productPath}" }} }}'
@@ -440,7 +440,7 @@
             - 'title'
             - '{title}'
           awsPathL2A: '$.tiles[0].path'
-          downloadLink: 's3://sentinel-s2-l2a/{awsPathL2A}'
+          eodag:download_link: 's3://sentinel-s2-l2a/{awsPathL2A}'
           productPath: '$.path'
           start_datetime: '$.timestamp'
           end_datetime: '$.timestamp'
@@ -476,7 +476,7 @@
         originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l2a")}'
         thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         quicklook: '{thumbnail}'
-        downloadLink: 's3://sentinel-s2-l2a/{awsPathL2A}'
+        eodag:download_link: 's3://sentinel-s2-l2a/{awsPathL2A}'
         awsPath: '$.null'
         productMetaLink: '$.null'
         productPath: '$.null'
@@ -498,16 +498,16 @@
       CBERS4_MUX_L2:
         default_bucket: 'cbers-pds'
         complementary_url_key:
-          - metaDownloadLink
+          - metaeodag:download_link
       CBERS4_AWFI_L2:
         complementary_url_key:
-          - metaDownloadLink
+          - metaeodag:download_link
       CBERS4_PAN5M_L2:
         complementary_url_key:
-          - metaDownloadLink
+          - metaeodag:download_link
       CBERS4_PAN10M_L2:
         complementary_url_key:
-          - metaDownloadLink
+          - metaeodag:download_link
       S1_SAR_GRD:
         default_bucket: 'sentinel-s1-l1c'
         build_safe: true
@@ -651,7 +651,7 @@
       quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.services.download.url'
+      eodag:download_link: '$.properties.services.download.url'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.properties.storage.mode#get_group_name((?P<succeeded>disk|tier2)|(?P<ordered>staging)|(?P<orderable>unknown|tape|tier3))}'
 
@@ -924,14 +924,14 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
+      eodag:download_link: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -1554,13 +1554,13 @@
         mgrs:utm_zone: '$.properties."sentinel:utm_zone"'
         mgrs:latitude_band: '$.properties."sentinel:latitude_band"'
         mgrs:grid_square: '$.properties."sentinel:grid_square"'
-        downloadLink: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
+        eodag:download_link: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
     L8_OLI_TIRS_C1L1:
       _collection: landsat-8-l1-c1
       metadata_mapping:
         wrsPath: '$.properties."landsat:wrs_path"'
         wrsRow: '$.properties."landsat:wrs_row"'
-        downloadLink: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
+        eodag:download_link: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
@@ -1603,7 +1603,7 @@
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       qs: $.qs
-      downloadLink: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
+      eodag:download_link: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
   products:
     # See Archive Catalog in https://apps.ecmwf.int/archive-catalogue/
     # See available Public Datasets in https://apps.ecmwf.int/datasets/
@@ -1662,7 +1662,7 @@
       on_success:
         need_search: true
         metadata_mapping:
-          downloadLink: $.json.asset.value.href
+          eodag:download_link: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -1834,7 +1834,7 @@
       on_success:
         need_search: true
         metadata_mapping:
-          downloadLink: $.json.asset.value.href
+          eodag:download_link: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -2101,7 +2101,7 @@
       quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.services.download.url'
+      eodag:download_link: '$.properties.services.download.url'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
@@ -2295,7 +2295,7 @@
       collection: '$.queries[0].domain'
       order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       qs: $.qs
-      downloadLink: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
+      eodag:download_link: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
       # Meteoblue specific parameters
       datapoints: '$.datapoints'
       requiresJobQueue: '$.requiresJobQueue'
@@ -2313,7 +2313,7 @@
         - '{{"timeIntervalsAlignment": {timeIntervalsAlignment#to_geojson} }}'
         - '$.timeIntervalsAlignment'
       orderLink: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
-      # orderLink: '{$.downloadLink#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
+      # orderLink: '{$.eodag:download_link#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
   products:
     NEMSGLOBAL_TCDC:
       product:type: NEMSGLOBAL
@@ -2354,7 +2354,7 @@
       on_success:
         metadata_mapping:
           orderId: '$.json.id'
-          downloadLink: 'http://queueresults.meteoblue.com/{orderId}'
+          eodag:download_link: 'http://queueresults.meteoblue.com/{orderId}'
           downloadMethod: '{$.null#replace_str("Not Available","GET")}'
   auth: !plugin
     type: HttpQueryStringAuth
@@ -2597,14 +2597,14 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
+      eodag:download_link: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -3185,7 +3185,7 @@
       end_datetime:
         - '{{"enddate": "{end_datetime}"}}'
         - '$.properties.enddate'
-      downloadLink: '$.properties.location'
+      eodag:download_link: '$.properties.location'
       title: '$.id'
       order:status: 'orderable'
       processing:level:
@@ -3236,7 +3236,7 @@
       product:type: GRD
       metadata_mapping:
         <<: *s1_sar_params
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_RAW:
       _collection: EO:ESA:DAT:SENTINEL-1
       product:type: RAW
@@ -3260,7 +3260,7 @@
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI2A
@@ -3274,7 +3274,7 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_SI
@@ -3311,37 +3311,37 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
     S3_ERR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
     S3_SLSTR_L1RBT:
       _collection: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
       product:type: SL_1_RBT___
@@ -3354,14 +3354,14 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startdate": {id#split_id_into_s3_params}["startDate"], "enddate": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L1B
@@ -3372,7 +3372,7 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     S5P_L2_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L2
@@ -3395,7 +3395,7 @@
         grid:code:
           - '{{"tileId": "{grid:code}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
     EEA_HRL_TCF:
       product:type: EO:EEA:DAT:HRL:TCF
       metadata_mapping:
@@ -3406,12 +3406,12 @@
           resolution:
               - '{{"resolution": "{resolution}"}}'
               - '{$.id#replace_str(r"^.*_R([0-9]+m)_.*$",r"\1")}'
-          orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
+          orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
     COP_DEM_GLO30_DGED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DTE_30
@@ -3429,13 +3429,13 @@
       product:type: NDVI300
       metadata_mapping:
         <<: *id_from_date
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
       product:type: NDVI
       metadata_mapping:
         <<: *id_from_date
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
       product:type: Corine Land Cover 2018
@@ -3451,7 +3451,7 @@
           - '{{"format": "{format}"}}'
           - '{$.id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
       product:type: FCOVER300
@@ -3460,31 +3460,31 @@
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_DMP_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF
       product:type: DMP300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_GDMP_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF
       product:type: GDMP300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_FAPAR_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF
       product:type: FAPAR300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_LAI_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF
       product:type: LAI300
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -3505,7 +3505,7 @@
       metadata_mapping:
         orderId: '$.json.download_id'
         orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
+        eodag:download_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
     order_status:
       request:
         method: GET
@@ -3521,7 +3521,7 @@
       on_success:
         metadata_mapping:
           download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
 
 ---
 !provider  # MARK: wekeo_ecmwf
@@ -3592,11 +3592,11 @@
       product:type:
         - dataset_id
         - $.dataset
-      downloadLink: $.properties.location
+      eodag:download_link: $.properties.location
       dataset:
         - dataset_id
         - $.dataset
-      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "{dataset}"}}'
+      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
@@ -3800,7 +3800,7 @@
       on_success:
         metadata_mapping:
           download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
     products:
       FIRE_HISTORICAL:
         output_extension: .grib
@@ -3869,10 +3869,10 @@
       variable:
         - '{{"variable": "{variable}"}}'
         - '{$.properties.location#get_variables_from_path}'
-      downloadLink: '$.properties.location'
+      eodag:download_link: '$.properties.location'
       title: '$.id'
       order:status: 'orderable'
-      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
+      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -3908,7 +3908,7 @@
       on_success:
         metadata_mapping:
           download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
 
 ---
 !provider # MARK: creodias_s3
@@ -4144,14 +4144,14 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
+      eodag:download_link: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
   download: !plugin
     type: CreodiasS3Download
     s3_endpoint: 'https://eodata.cloudferro.com'
@@ -4616,7 +4616,7 @@
       on_success:
         result_type: json
         metadata_mapping:
-          downloadLink: $.headers.Location
+          eodag:download_link: $.headers.Location
     no_auth_download: True
     products:
       DT_EXTREMES:
@@ -4642,8 +4642,8 @@
   url: https://hda.data.destination-earth.eu/stac/
   # anchors to avoid duplications
   anchor_orderable_mm: &orderable_mm
-    orderLink: '$.assets.downloadLink.href'
-    downloadLink: '$.null'
+    orderLink: '$.assets.eodag:download_link.href'
+    eodag:download_link: '$.null'
     assets: '$.null'
   search: !plugin
     type: StacSearch
@@ -4655,7 +4655,7 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       quicklook: '{thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
-      downloadLink: '$.assets.downloadLink.href'
+      eodag:download_link: '$.assets.eodag:download_link.href'
       assets: '$.null'
     discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
@@ -4704,7 +4704,7 @@
         http_code: 200
       on_success:
         metadata_mapping:
-          downloadLink: '{orderStatusLink}'
+          eodag:download_link: '{orderStatusLink}'
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
@@ -5284,7 +5284,7 @@
       quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.links.data[?(@.title="Product download")].href'
+      eodag:download_link: '$.properties.links.data[?(@.title="Product download")].href'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
@@ -5893,7 +5893,7 @@
         - '{{"query":{{"grid:code":{{"contains":"{grid:code}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
       published: '$.properties.datetime'
-      downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
+      eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # order:status set to succeeded for consistency between providers
@@ -6020,7 +6020,7 @@
         - '{{"query":{{"grid:code":{{"contains":"{grid:code}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
       published: '$.properties.datetime'
-      downloadLink: '$.properties.endpoint_url'
+      eodag:download_link: '$.properties.endpoint_url'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # order:status set to succeeded for consistency between providers
@@ -6160,7 +6160,7 @@
       on_success:
         need_search: true
         metadata_mapping:
-          downloadLink: $.json.asset.value.href
+          eodag:download_link: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true

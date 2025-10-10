@@ -118,7 +118,8 @@ class HTTPDownload(Download):
           default: ``1``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
           flattened; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using downloadLink;
+        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using
+          eodag:download_link;
           default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
@@ -275,9 +276,9 @@ class HTTPDownload(Download):
                 + "_"
                 + product.properties["id"]
             )
-        if "downloadLink" in product.properties:
+        if "eodag:download_link" in product.properties:
             product.remote_location = product.location = product.properties[
-                "downloadLink"
+                "eodag:download_link"
             ]
             logger.debug(f"Product location updated to {product.location}")
 
@@ -576,9 +577,9 @@ class HTTPDownload(Download):
 
         # update product
         product.properties.update(properties_update)
-        if "downloadLink" in properties_update:
+        if "eodag:download_link" in properties_update:
             product.location = product.remote_location = product.properties[
-                "downloadLink"
+                "eodag:download_link"
             ]
         else:
             self.order_response_process(response, product)

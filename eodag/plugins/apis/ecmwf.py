@@ -204,7 +204,7 @@ class EcmwfApi(Api, ECMWFSearch):
             os.makedirs(new_fs_path)
         fs_path = os.path.join(new_fs_path, os.path.basename(fs_path))
 
-        # get download request dict from product.location/downloadLink url query string
+        # get download request dict from product.location/eodag:download_link url query string
         # separate url & parameters
         download_request = geojson.loads(urlsplit(product.location).query)
 
@@ -244,7 +244,7 @@ class EcmwfApi(Api, ECMWFSearch):
             raise DownloadError(e)
 
         with open(record_filename, "w") as fh:
-            fh.write(product.properties["downloadLink"])
+            fh.write(product.properties["eodag:download_link"])
         logger.debug("Download recorded in %s", record_filename)
 
         # do not try to extract a directory

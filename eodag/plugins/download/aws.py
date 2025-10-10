@@ -201,7 +201,7 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure
           should be flattened; default: ``True``
         * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download
-          using ``downloadLink``; default: ``False``
+          using ``eodag:download_link``; default: ``False``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should
           be verified in requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the

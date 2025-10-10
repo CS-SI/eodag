@@ -159,7 +159,7 @@
       quicklook: '$.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '%(base_uri)s({uid})/$value'
+      eodag:download_link: '%(base_uri)s({uid})/$value'
       # storageStatus: must be one of succeeded, ordered, orderable
       storageStatus: '{$.offline#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       # Url used for ordering product if it is offline/archived
@@ -293,7 +293,7 @@
       platform: '{platform}'
   download: !plugin
     type: HTTPDownload
-    # base_uri used to parse downloadLink
+    # base_uri used to parse eodag:download_link
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
     extract: true
     archive_depth: 2

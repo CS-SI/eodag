@@ -108,7 +108,7 @@ class EODagTestCase(unittest.TestCase):
             "platform": self.platform,
             "instruments": self.instrument,
             "title": self.local_filename,
-            "downloadLink": self.download_url,
+            "eodag:download_link": self.download_url,
         }
 
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)

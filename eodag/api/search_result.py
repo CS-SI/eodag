@@ -260,7 +260,7 @@ def _import_stac_item_from_eodag_server(
         assets = {
             k: v["alternate"]["origin"]
             for k, v in feature.get("assets", {}).items()
-            if k not in ("thumbnail", "downloadLink")
+            if k not in ("thumbnail", "downloadLink", "eodag:download_link")
             and "origin" in v.get("alternate", {})
         }
         if assets:
@@ -271,6 +271,12 @@ def _import_stac_item_from_eodag_server(
             download_link = (
                 feature.get("assets", {})
                 .get("downloadLink", {})
+                .get("alternate", {})
+                .get("origin", {})
+                .get("href")
+            ) or (
+                feature.get("assets", {})
+                .get("eodag:download_link", {})
                 .get("alternate", {})
                 .get("origin", {})
                 .get("href")

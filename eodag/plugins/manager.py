@@ -264,7 +264,7 @@ class PluginManager:
             matching_url = next(iter(product.assets.values()))["href"]
         elif product is not None:
             matching_url = product.properties.get(
-                "downloadLink"
+                "eodag:download_link"
             ) or product.properties.get("orderLink")
         else:
             # search auth

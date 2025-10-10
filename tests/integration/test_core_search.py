@@ -600,7 +600,7 @@ class TestCoreSearch(unittest.TestCase):
                         dict(
                             geometry="POINT (0 0)",
                             id="a",
-                            downloadLink="https://somewhere/to/download",
+                            **{"eodag:download_link": "https://somewhere/to/download"},
                         ),
                     )
                 ],
