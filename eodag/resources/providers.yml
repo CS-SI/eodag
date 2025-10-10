@@ -40,8 +40,8 @@
       start_datetime: '$.temporalCoverage.startDate'
       end_datetime: '$.temporalCoverage.endDate'
       published: '$.publishDate'
-      thumbnail: '$.browse[0].thumbnailPath'
-      quicklook: '$.browse[0].browsePath'
+      eodag:thumbnail: '$.browse[0].thumbnailPath'
+      eodag:quicklook: '$.browse[0].browsePath'
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
       # metadata needed for download
@@ -152,8 +152,8 @@
         eodag:download_link: 's3://cbers-pds/{awsPath}'
         eodag:mtd_download_link: 's3://cbers-meta-pds/{awsPath}'
         previewBaseName: '{$.sceneID#replace_str("_L2","")}'
-        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
@@ -165,8 +165,8 @@
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
         previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_PAN5M_L2:
       instruments: PAN5M
       _collection: cbers4
@@ -180,8 +180,8 @@
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
         previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_MUX_L2:
       instruments: MUX
       _collection: cbers4
@@ -195,8 +195,8 @@
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
         previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_AWFI_L2:
       instruments: AWFI
       _collection: cbers4
@@ -210,8 +210,8 @@
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
         previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     L8_OLI_TIRS_C1L1:
       _collection: landsat8
       onAmazon: true
@@ -262,8 +262,8 @@
           - '{{"search":{{"row":"{row}" }} }}'
           - '$.row'
         eodag:download_link: 's3://landsat-pds/c1/L8/{path:03.0f}/{row:03.0f}/{title}/'
-        thumbnail: '$.thumbnail'
-        quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{path:03.0f}/{row:03.0f}/{title}/{title}_thumb_large.jpg'
+        eodag:thumbnail: '$.thumbnail'
+        eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{path:03.0f}/{row:03.0f}/{title}/{title}_thumb_large.jpg'
         id:
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
@@ -299,8 +299,8 @@
           - '$.horizontalTileNumber'
         doyDate: '{$.sceneID#slice_str(9,16,1)}'
         eodag:download_link: 's3://modis-pds/MCD43A4.006/{horizontalTileNumber:02.0f}/{verticalTileNumber:02.0f}/{doyDate}/'
-        thumbnail: '$.thumbnail'
-        quicklook: '$.thumbnail'
+        eodag:thumbnail: '$.thumbnail'
+        eodag:quicklook: '$.thumbnail'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
@@ -369,8 +369,8 @@
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
           - '$.awsPath'
         eodag:download_link: 's3://sentinel-s1-l1c/{awsPath}'
-        thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
-        quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
+        eodag:thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
+        eodag:quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
@@ -405,7 +405,7 @@
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
         originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
           - '$.awsPath'
@@ -474,8 +474,8 @@
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
         originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l2a")}'
-        thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        quicklook: '{thumbnail}'
+        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+        eodag:quicklook: '{eodag:thumbnail}'
         eodag:download_link: 's3://sentinel-s2-l2a/{awsPathL2A}'
         awsPath: '$.null'
         productMetaLink: '$.null'
@@ -648,7 +648,7 @@
         - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
-      quicklook: '$.properties.quicklook'
+      eodag:quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: '$.properties.services.download.url'
@@ -656,7 +656,7 @@
       order:status: '{$.properties.storage.mode#get_group_name((?P<succeeded>disk|tier2)|(?P<ordered>staging)|(?P<orderable>unknown|tape|tier3))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      thumbnail: '$.properties.thumbnail'
+      eodag:thumbnail: '$.properties.thumbnail'
       links: $.null
       services: $.null
   products:
@@ -930,8 +930,8 @@
       collection:
         - null
         - $.null
-      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
-      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -2098,14 +2098,14 @@
         - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
       # The url of the quicklook
-      quicklook: '$.properties.quicklook'
+      eodag:quicklook: '$.properties.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: '$.properties.services.download.url'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      thumbnail: '$.properties.thumbnail'
+      eodag:thumbnail: '$.properties.thumbnail'
   products:
     # Sentinel 1
     S1_SAR_OCN:
@@ -2602,8 +2602,8 @@
       collection:
         - null
         - $.null
-      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
-      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -4149,8 +4149,8 @@
       collection:
         - null
         - $.null
-      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
-      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
   download: !plugin
     type: CreodiasS3Download
     s3_endpoint: 'https://eodata.cloudferro.com'
@@ -4652,7 +4652,7 @@
     asset_key_from_href: false
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      quicklook: '{thumbnail}'
+      eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.eodag:download_link.href'
       assets: '$.null'
@@ -5280,7 +5280,7 @@
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # The url of the quicklook
-      quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
+      eodag:quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: '$.properties.links.data[?(@.title="Product download")].href'
@@ -5893,8 +5893,8 @@
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
       published: '$.properties.datetime'
       eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
-      quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
@@ -6020,8 +6020,8 @@
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
       published: '$.properties.datetime'
       eodag:download_link: '$.properties.endpoint_url'
-      quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
