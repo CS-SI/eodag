@@ -157,13 +157,15 @@ class EOProduct:
                 properties["geometry"] == NOT_AVAILABLE
                 or properties["geometry"] == NOT_MAPPED
             )
-            and "defaultGeometry" not in properties
+            and "eodag:default_geometry" not in properties
         ):
             raise MisconfiguredError(
                 f"No geometry available to build EOProduct(id={properties.get('id')}, provider={provider})"
             )
         elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
+            product_geometry = properties.pop(
+                "eodag:default_geometry", DEFAULT_GEOMETRY
+            )
         else:
             product_geometry = properties["geometry"]
 

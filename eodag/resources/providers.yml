@@ -1599,7 +1599,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       qs: $.qs
@@ -2291,7 +2291,7 @@
       geometry:
         - '{{"geometry": {geometry#to_geojson} }}'
         - '$.geometry'
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       collection: '$.queries[0].domain'
       order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       qs: $.qs
@@ -3174,7 +3174,7 @@
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       id:
         - '{{"productIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
@@ -3449,7 +3449,7 @@
         format:
           - '{{"format": "{format}"}}'
           - '{$.id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}'
-        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
       _collection: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
@@ -4652,7 +4652,7 @@
     timeout: 60
     asset_key_from_href: false
     metadata_mapping:
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.eodag:download_link.href'
@@ -5279,7 +5279,7 @@
       geometry:
         - 'geo={geometry#to_rounded_wkt}'
         - '$.geometry'
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # The url of the quicklook
       eodag:quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
@@ -5682,7 +5682,7 @@
     discover_queryables:
       fetch_url: null
     metadata_mapping:
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
   products:
     MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
       _collection: GLOBAL_ANALYSISFORECAST_PHY_001_024

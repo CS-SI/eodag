@@ -73,13 +73,16 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.geometry, product.search_intersection)
 
     def test_eoproduct_default_geom(self):
-        """EOProduct needs a geometry or can use confired defaultGeometry by default"""
+        """EOProduct needs a geometry or can use confired eodag:default_geometry by default"""
 
         with self.assertRaisesRegex(MisconfiguredError, "No geometry available"):
             self._dummy_product(properties={"geometry": NOT_AVAILABLE})
 
         product = self._dummy_product(
-            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": (0, 0, 1, 1)}
+            properties={
+                "geometry": NOT_AVAILABLE,
+                "eodag:default_geometry": (0, 0, 1, 1),
+            }
         )
         self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
 
