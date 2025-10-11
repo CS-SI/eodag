@@ -78,12 +78,12 @@ def collections_info_to_csv(
             collections_rows[collection_name] = {"collection": collection_name}
             for metadata_param in metadata_params:
                 metadata_string = [
-                    collection[metadata_param]
+                    collection.get(metadata_param)
                     for collection in collections
                     if collection["ID"] == collection_name
                 ][0]
                 if metadata_string is not None:
-                    metadata_string = metadata_string.replace("\n", " ")
+                    metadata_string = str(metadata_string).replace("\n", " ")
                 collections_rows[collection_name][metadata_param] = metadata_string
             for provider in providers:
                 if collection_name in config[provider]:
