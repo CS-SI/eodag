@@ -1997,3 +1997,79 @@ class WekeoSearch(StacSearch, PostJsonSearch):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         return PostJsonSearch.build_query_string(self, product_type, query_dict)
+
+
+class GeodesSearch(StacSearch, PostJsonSearch):
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses
+    generic STAC configuration for queryables (inherited from :class:`~eodag.plugins.search.qssearch.StacSearch`).
+    Perform a second query to retrieve status of the product.
+    """
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        PostJsonSearch.__init__(self, provider, config)
+
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> list[Any]:
+        """
+        Perform a search on an OpenSearch-like interface and then a second query to retrieve status of the product
+        """
+        results = super().do_search(prep, **kwargs)
+
+        # Perform a second query to retrieve status of the product
+        availability_endpoint = "https://geodes-portal.cnes.fr/availability/"
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
+        product_ids = [r["id"] for r in results if "id" in r]
+        try:
+            response = requests.post(
+                availability_endpoint,
+                json={"product_ids": product_ids},
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
+            )
+            response.raise_for_status()
+        except requests.exceptions.Timeout:
+            logger.exception(
+                "Timeout on bulk availability request for %s", self.provider
+            )
+            return results
+        except requests.RequestException:
+            logger.exception("Error on bulk availability request for %s", self.provider)
+            return results
+
+        availability_map = {
+            item["id"]: item for item in response.json().get("products", [])
+        }
+
+        for result in results:
+            pid = result["id"]
+            availability_data = availability_map.get(pid)
+            if not availability_data:
+                result["properties"]["storageStatus"] = "ONLINE"
+                continue
+
+            if availability_data.get("files"):
+                all_available = all(
+                    f.get("available", False) for f in availability_data["files"]
+                )
+                result["properties"]["storageStatus"] = (
+                    "ONLINE" if all_available else "OFFLINE"
+                )
+            else:
+                result["properties"]["storageStatus"] = "ONLINE"
+
+        return results
+
+    def normalize_results(self, results, **kwargs):
+        """
+        Build EOProducts from provider results, adding storageStatus property
+        """
+        normalized = super().normalize_results(results, **kwargs)
+        for result_normalized, result in zip(normalized, results):
+            if "properties" in result and "storageStatus" in result["properties"]:
+                result_normalized.properties["storageStatus"] = result[
+                    "properties"
+                ].get("storageStatus", "ONLINE")
+        return normalized

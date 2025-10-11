@@ -5984,18 +5984,46 @@
   description: French National Space Agency (CNES) Earth Observation portal
   url: https://geodes.cnes.fr
   search: !plugin
-    type: StacSearch
+    type: GeodesSearch
+    results_entry: features
+    pagination:
+      next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+      total_items_nb_key_path: '$.numberMatched'
+      next_page_url_key_path: '$.links[?(@.rel="next")].href'
+      next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
+      next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
     asset_key_from_href: false
+    sort:
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
     discover_product_types:
       fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
       fetch_method: POST
+      result_type: json
+      results_entry: '$.collections[*]'
       fetch_body:
         limit: 10000
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        productType: '$.id'
+      generic_product_type_parsable_metadata:
+        abstract: '$.description'
+        instrument: '{$.summaries.instruments#csv_list}'
+        platform: '{$.summaries.constellation#csv_list}'
+        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
+        processingLevel: '{$.summaries."processing:level"#csv_list}'
+        keywords: '{$.keywords#csv_list}'
+        license: '$.license'
+        title: '$.title'
+        missionStartDate: '$.extent.temporal.interval[0][0]'
+      metadata_path: '$.properties.*'
     pagination:
       total_items_nb_key_path: '$.context.matched'
       # 1000 is ok and 2000 fails
@@ -6024,7 +6052,7 @@
         - '$.properties.instrument'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
-      keyword: '$.properties.keywords'
+      keyword: '{$.properties.keywords#csv_list}'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
         - '{{"query":{{"sat:absolute_orbit":{{"eq":{orbitNumber}}}}}}}'
@@ -6058,8 +6086,63 @@
       downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # storageStatus set to ONLINE for consistency between providers
-      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      processingLevel:
+        - '{{"query":{{"processing:level":{{"eq":"{processingLevel}"}}}}}}'
+        - '$.properties."processing:level"'
+      platform:
+        - '{{"query":{{"constellation":{{"eq":"{platform}"}}}}}}'
+        - '$.properties.constellation'
+      platformSerialIdentifier:
+        - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
+        - '$.properties.platform'
+      abstract: '$.properties.description'
+      resolution:
+        - '{{"query":{{"gsd":{{"eq":"{resolution}"}}}}}}'
+        - '$.properties.gsd'
+      publicationDate:
+        - '{{"query":{{"published":{{"eq":"{publicationDate}"}}}}}}'
+        - '$.properties.published'
+      orbitDirection:
+        - '{{"query":{{"sat:orbit_state":{{"eq":"{orbitDirection}"}}}}}}'
+        - '{$.properties."sat:orbit_state"#to_lower}'
+      sensorMode:
+        - '{{"query":{{"sar:instrument_mode":{{"eq":"{sensorMode}"}}}}}}'
+        - '$.properties."sar:instrument_mode"'
+      creationDate:
+        - '{{"query":{{"created":{{"eq":"{creationDate}"}}}}}}'
+        - '$.properties.created'
+      modificationDate:
+        - '{{"query":{{"updated":{{"eq":"{modificationDate}"}}}}}}'
+        - '$.properties.updated'
+      productVersion:
+        - '{{"query":{{"version":{{"eq":"{productVersion}"}}}}}}'
+        - '$.properties.version'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      availabilityTime:
+        - '{{"query":{{"availabilityTime":{{"eq":"{availabilityTime}"}}}}}}'
+        - '$.properties.availabilityTime'
+      acquisitionStation:
+        - '{{"query":{{"acquisitionStation":{{"eq":"{acquisitionStation}"}}}}}}'
+        - '$.properties.acquisitionStation'
+      acquisitionSubType:
+        - '{{"query":{{"acquisitionSubType":{{"eq":"{acquisitionSubType}"}}}}}}'
+        - '$.properties.acquisitionSubType'
+      illuminationAzimuthAngle:
+        - '{{"query":{{"view:sun_azimuth":{{"eq":"{illuminationAzimuthAngle}"}}}}}}'
+        - '$.properties."view:sun_azimuth"'
+      illuminationElevationAngle:
+        - '{{"query":{{"view:sun_elevation":{{"eq":"{illuminationElevationAngle}"}}}}}}'
+        - '$.properties."view:sun_elevation"'
+      polarizationChannels:
+        - '{{"query":{{"sar:polarizations":{{"eq":"{polarizationChannels}"}}}}}}'
+        - '{$.properties."sar:polarizations"#replace_str(" ","+")}'
+      dopplerFrequency:
+        - '{{"query":{{"sar:frequency_band":{{"eq":"{dopplerFrequency}"}}}}}}'
+        - '$.properties."sar:frequency_band"'
+      geometry:
+        - '{{"intersects":{geometry#to_geojson}}}'
+        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      assets: '$.assets'
   products:
     S1_SAR_OCN:
       providerProductType: OCN
