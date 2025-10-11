@@ -32,9 +32,9 @@ provide the new provider's configuration in a ``YAML`` format. The following exa
          need_auth: false
       products:
          S2_MSI_L1C:
-            productType: sentinel-2-l1c
+            _collection: sentinel-2-l1c
          GENERIC_COLLECTION:
-            productType: '{productType}'
+            _collection: '{collection}'
       download:
          type: AwsDownload
       auth:

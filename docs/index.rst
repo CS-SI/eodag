@@ -51,7 +51,7 @@ downloading *Sentinel 2 Level-1C* products from any provider's catalog is as sim
    dag = EODataAccessGateway()
 
    search_results = dag.search(
-       productType="S2_MSI_L1C",
+       collection="S2_MSI_L1C",
        start="2021-03-01",
        end="2021-03-31",
        geom={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44}
@@ -69,7 +69,7 @@ Or:
 
 .. code-block:: bash
 
-   eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
+   eodag search --collection S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
    eodag download  --search-results search_results.geojson
 
 

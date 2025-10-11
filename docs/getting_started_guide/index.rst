@@ -94,8 +94,8 @@ Each section below gives you a focused entry point with explanations and example
 
       Get ``eodag`` installed and ready to use in minutes.
 
-   .. grid-item-card:: |icon-layers| Product types
-      :link: product_types
+   .. grid-item-card:: |icon-layers| Collections
+      :link: collections
       :link-type: doc
       :text-align: center
 

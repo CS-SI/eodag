@@ -38,7 +38,7 @@ Search
         --conf my_conf.yml \
         --box 1 43 2 44 \
         --start 2018-01-01 --end 2018-01-31 \
-        --productType S2_MSI_L1C \
+        --collection S2_MSI_L1C \
         --all \
         --storage my_search.geojson
 
@@ -112,7 +112,7 @@ Download
 
 .. code-block:: console
 
-        eodag search --productType S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01 download
+        eodag search --collection S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01 download
 
 Collections
 -------------
