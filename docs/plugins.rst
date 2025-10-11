@@ -224,7 +224,7 @@ return a list of mocked EOProducts on search requests.
             provider=self.provider,
             properties={
                **{
-                  "id": f"mock_{kwargs.get('productType')}_{i}"
+                  "id": f"mock_{kwargs.get('collection')}_{i}"
                   },
                **kwargs
             }
