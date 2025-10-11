@@ -56,6 +56,15 @@ cop_dataspace:
         credentials:
             username:
             password:
+cop_dataspace_s3:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        output_dir:
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
 cop_ewds:
     priority: # Lower value means lower priority (Default: 0)
     download:
