@@ -71,12 +71,7 @@ search:
     _collection:
       - '{{"collections":["{_collection}"]}}'
       - '$.collection'
-    sci:doi:
-      - '{{"query":{{"sci:doi":{{"eq":"{sci:doi}"}}}}}}'
-      - '$.properties."sci:doi"'
-    processing:level:
-      - '{{"query":{{"processing:level":{{"eq":"{processing:level}"}}}}}}'
-      - '$.properties."processing:level"'
+    # common metadata
     gsd:
       - '{{"query":{{"gsd":{{"eq":"{gsd}"}}}}}}'
       - '$.properties.gsd'
@@ -89,16 +84,7 @@ search:
     instruments:
       - '{{"query":{{"instruments":{{"in":{instruments}}}}}}}'
       - '$.properties.instruments'
-    sar:polarizations:
-      - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations}}}}}}}'
-      - '$.properties.sar:polarizations'
-    sar:beam_ids:
-      - '{{"query":{{"sar:beam_ids":{{"in":{sar:beam_ids}}}}}}}'
-      - '$.properties.sar:beam_ids'
     title: '$.id'
-    eo:cloud_cover:
-      - '{{"query":{{"eo:cloud_cover":{{"lte":"{eo:cloud_cover}"}}}}}}'
-      - '$.properties."eo:cloud_cover"'
     datetime: '$.properties.datetime'
     start_datetime: '$.properties.start_datetime'
     end_datetime:
@@ -110,6 +96,17 @@ search:
     geometry:
       - '{{"intersects":{geometry#to_geojson}}}'
       - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+    # extensions parameters having specific mapping
+    sar:polarizations:
+      - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations}}}}}}}'
+      - '$.properties.sar:polarizations'
+    sar:beam_ids:
+      - '{{"query":{{"sar:beam_ids":{{"in":{sar:beam_ids}}}}}}}'
+      - '$.properties.sar:beam_ids'
+    eo:cloud_cover:
+      - '{{"query":{{"eo:cloud_cover":{{"lte":"{eo:cloud_cover}"}}}}}}'
+      - '$.properties."eo:cloud_cover"'
+    # eodag metadata
     eodag:download_link: '$.links[?(@.rel="self")].href'
     eodag:quicklook: '$.assets.quicklook.href'
     eodag:thumbnail: '$.assets.thumbnail.href'
