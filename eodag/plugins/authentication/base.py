@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union
 
+from eodag.api.product._assets import Asset
 from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
 
@@ -80,3 +81,19 @@ class Authentication(PluginTopic):
         Authenticates with s3 and retrieves the available objects
         """
         raise NotImplementedError
+
+    def presign_url(
+        self,
+        asset: Asset,
+        expires_in: int = 3600,
+    ) -> str:
+        """This method is used to presign a url to download an asset from S3.
+
+        :param asset: asset for which the url shall be presigned
+        :param expires_in: expiration time of the presigned url in seconds
+        :returns: presigned url
+        :raises: :class:`NotImplementedError`
+        """
+        raise NotImplementedError(
+            f"presign_url is not implemented for plugin {type(self).__name__}"
+        )
