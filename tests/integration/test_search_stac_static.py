@@ -85,7 +85,7 @@ class TestSearchStacStatic(unittest.TestCase):
     def test_search_stac_static(self):
         """Use StaticStacSearch plugin to search all items"""
         # mock on fetch_collections_list not needed with provider specified,
-        #    as product types discovery must be disabled by default for stac static
+        #    as collections discovery must be disabled by default for stac static
         search_result = self.dag.search(
             provider=self.static_stac_provider, count=True, validate=False
         )
@@ -141,7 +141,9 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by property"""
-        search_result = self.dag.search(count=True, **{"sat:relative_orbit": 110}, validate=False)
+        search_result = self.dag.search(
+            count=True, **{"sat:relative_orbit": 110}, validate=False
+        )
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 

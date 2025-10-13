@@ -428,7 +428,7 @@ No credentials are needed
   * Add your WEkEO credentials (``username``, ``password``) to the user configuration file.
   * Depending on which data you want to retrieve, you will then need to accept terms and conditions (for once).
     To do this, follow the
-    `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
+    `tutorial guidelines <notebooks/tutos/tuto_wekeo.html#Registration>`__
     or run the following commands in your terminal.
 
   * First, get a token from your base64-encoded credentials (replace USERNAME and PASSWORD with your credentials):
@@ -575,7 +575,7 @@ No credentials are needed
   <https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`__)
   to be able to authenticate and download. Check
   `Authenticate using an OTP
-  <https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication>`__
+  <getting_started_guide/configure.rst#authenticate-using-an-otp-one-time-password-two-factor-authentication>`__
   to see how to proceed.
 
 ----

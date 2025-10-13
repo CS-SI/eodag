@@ -12,7 +12,7 @@ The journey is structured so you can:
 
 #. Install and configure ``eodag`` quickly.
 #. Discover the **featured providers** available and learn how to register.
-#. Explore the different **product types** and their characteristics.
+#. Explore the different **collections** and their characteristics.
 #. Understand product storage status and ecosystem integration.
 
 Each section below gives you a focused entry point with explanations and examples.
@@ -99,7 +99,7 @@ Each section below gives you a focused entry point with explanations and example
       :link-type: doc
       :text-align: center
 
-      Explore the EO product types available through providers.
+      Explore the EO collections available through providers.
 
    .. grid-item-card:: |icon-database| Product storage status
       :link: product_storage_status

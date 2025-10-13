@@ -691,8 +691,8 @@ class TestEODagEndToEnd(EndToEndBase):
                 ext_collections_conf[provider]["providers_config"],
             )
 
-    def test_end_to_end_discover_product_types_earth_search_gcs(self):
-        """discover_product_types() must return None for earth_search_gcs"""
+    def test_end_to_end_discover_collections_earth_search_gcs(self):
+        """discover_collections() must return None for earth_search_gcs"""
         provider = "earth_search_gcs"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertIsNone(ext_collections_conf[provider])

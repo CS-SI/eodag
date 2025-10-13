@@ -1351,7 +1351,7 @@ class TestCore(TestCoreBase):
         mock_fetch_collections_list: mock.Mock,
         mock_auth_plugin: mock.Mock,
     ) -> None:
-        """list_queryables must return queryables list adapted to provider and product-type"""
+        """list_queryables must return queryables list adapted to provider and collection"""
 
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")

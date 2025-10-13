@@ -114,7 +114,7 @@ class ProviderConfig(yaml.YAMLObject):
                      Lower value means lower priority. (Default: 0)
     :param api: (optional) The configuration of a plugin of type Api
     :param search: (optional) The configuration of a plugin of type Search
-    :param products: (optional) The products types supported by the provider
+    :param products: (optional) The collections supported by the provider
     :param download: (optional) The configuration of a plugin of type Download
     :param auth: (optional) The configuration of a plugin of type Authentication
     :param search_auth: (optional) The configuration of a plugin of type Authentication for search

@@ -155,4 +155,4 @@ This file can then be used in EODAG using the environment variable ``EODAG_EXT_C
 
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
 For more information on the collections discovery mechanism, please see
-`Python API User Guide / Providers and products / Collections discovery <notebooks/api_user_guide/2_providers_products_available.html#Collections-discovery>`_.
+`Python API User Guide / Providers and products / Collections discovery <notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_.

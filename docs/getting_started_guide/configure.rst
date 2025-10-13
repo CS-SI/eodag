@@ -125,7 +125,7 @@ Each configuration parameter can be set with an environment variable.
 .. note::
 
    Setting credentials must be done according to the
-   `provider's plugin <https://eodag.readthedocs.io/en/stable/plugins.html#plugins-available>`_ (auth | api):
+   `provider's plugin <../plugins.rst#plugins-available>`_ (auth | api):
 
    * Authentication plugin: ``EODAG__<PROVIDER>__AUTH__CREDENTIALS__<KEY>``
 
@@ -133,8 +133,7 @@ Each configuration parameter can be set with an environment variable.
 
    ``<KEY>`` should be replaced with the adapted credentials key (``USERNAME``, ``PASSWORD``, ``APIKEY``, ...) according
    to the provider configuration template in
-   `the YAML user configuration file\
-   <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_.
+   `the YAML user configuration file <configure.rst#yaml-user-configuration-file>`_.
 
 
 Core configuration using environment variables
@@ -144,17 +143,17 @@ Some EODAG core settings can be overriden using environment variables:
 
 * ``EODAG_CFG_DIR`` customized configuration directory in place of `~/.config/eodag`.
 * ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\
-  <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_
+  <configure.rst#yaml-user-configuration-file>`_
   in place of `~/.config/eodag/eodag.yml`.
 * ``EODAG_LOCS_CFG_FILE`` for defining the desired path to the
-  `locations <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#Locations-search>`_
+  `locations <../notebooks/api_user_guide/3_search.ipynb#Locations-search>`_
   configuration file in place of `~/.config/eodag/locations.yml`.
 * ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
   `<python-site-packages>/eodag/resources/providers.yml`.
 * ``EODAG_COLLECTIONS_CFG_FILE`` for defining the desired path to the collections configuration file in place of
   `<python-site-packages>/eodag/resources/collections.yml`.
 * ``EODAG_EXT_COLLECTIONS_CFG_FILE`` for defining the desired path to the `external collections configuration file\
-  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
+  <../notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_collections.json.
   If the file is not readable, only user-modified providers will be fetched.
 * ``EODAG_PROVIDERS_WHITELIST`` to restrict EODAG to only use a specific list of providers.
@@ -339,7 +338,7 @@ will be stored and used if further authentication tries fail:
    dag._plugins_manager.get_auth_plugin("creodias").authenticate()
 
 Please note that authentication mechanism is already included in
-`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/8_download.html>`_ , so you could
+`download methods <../notebooks/api_user_guide/7_download.ipynb>`_ , so you could
 also directly execute a download to retrieve the token while the OTP is still valid.
 
 Use OTP through CLI
