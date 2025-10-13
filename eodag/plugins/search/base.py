@@ -434,15 +434,15 @@ class Search(PluginTopic):
         if getattr(self.config, "need_auth", False) and auth:
             self.auth = auth
         try:
-            product_type = search_params.get("productType")
-            if not product_type:
-                raise ValidationError("Field required: productType")
+            collection = search_params.get("collection")
+            if not collection:
+                raise ValidationError("Field required: collection")
             self.list_queryables(
                 filters=search_params,
-                available_product_types=[product_type],
-                product_type_configs={product_type: self.config.product_type_config},
-                product_type=product_type,
-                alias=product_type,
+                available_collections=[collection],
+                collection_configs={collection: self.config.collection_config},
+                collection=collection,
+                alias=collection,
             ).get_model().model_validate(search_params)
         except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
