@@ -2036,12 +2036,16 @@ class EODataAccessGateway:
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register
-        products with the information needed to download itself
+        products with the information needed to download itself.
+
+        This method also sets the internal EODataAccessGateway instance on the products,
+        enabling pagination (e.g. access to next pages) if available.
 
         :param filename: A filename containing a search result encoded as a geojson
-        :returns: The search results encoded in `filename`
+        :returns: The search results encoded in `filename`, ready for download and pagination
         """
         products = self.deserialize(filename)
+        products._dag = self
         for i, product in enumerate(products):
             if product.downloader is None:
                 downloader = self._plugins_manager.get_download_plugin(product)
