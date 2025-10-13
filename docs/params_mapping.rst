@@ -54,7 +54,7 @@ Queryables
 
 The :meth:`~eodag.api.core.EODataAccessGateway.list_queryables` method will help you to dynamically check which
 parameters are queryable for a given provider or collection.
-See `Python API User Guide / Queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#Queryables>`_
+See `Python API User Guide / Queryables <notebooks/api_user_guide/4_queryables.ipynb>`_
 for more information and examples.
 
 The following static tables list the parameters supported by providers, and if they are queryable or not.

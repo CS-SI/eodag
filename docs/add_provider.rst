@@ -101,7 +101,7 @@ The plugin structure is reflected in the internal providers configuration file. 
          # This is a mapping containing all the information required by the search plugin class to perform its job.
          # The mapping is available in the config attribute of the search plugin as config['products']
          S2_MSI_L1C:
-            a-config-key-needed-by-search-plugin-to-search-this-product-type: value
+            a-config-key-needed-by-search-plugin-to-search-this-collection: value
             another-config-key: another-value
             # Whether this collection is partially supported by this provider (the provider does not contain all the
             # products of this type)

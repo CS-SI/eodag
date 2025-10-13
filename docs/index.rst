@@ -30,7 +30,7 @@ EODAG has the following primary features:
 * It is both a `Command Line Tool <cli_user_guide.rst>`_ and a `Python library <api_user_guide.rst>`_
 * It supports `STAC and Static STAC <notebooks/tutos/tuto_stac_client.ipynb>`_ catalogs
 * New providers can be added with a `configuration file <add_provider.rst>`_ or by extending EODAG with `plugins <plugins.rst>`_
-* More than 270 `product types <getting_started_guide/product_types.rst#product-types-information-csv>`_ configured
+* More than 270 `collections <getting_started_guide/collections.rst#collections-information-csv>`_ configured
 
 .. image:: _static/eodag_overview.png
    :width: 800

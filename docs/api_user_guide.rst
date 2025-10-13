@@ -24,13 +24,13 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 .. grid:: 1 2 2 3
    :gutter: 4
 
-   .. grid-item-card:: :octicon:`database;1.5em`  Providers & Products types
+   .. grid-item-card:: :octicon:`database;1.5em`  Providers & Collections
       :link: notebooks/api_user_guide/1_providers_products_available
       :link-type: doc
       :text-align: center
       :shadow: md
 
-      Discover available data providers and explore the different product types accessible through the API.
+      Discover available data providers and explore the different collections accessible through the API.
 
    .. grid-item-card:: :octicon:`gear;1.5em`  Configuration
          :link: notebooks/api_user_guide/2_configuration

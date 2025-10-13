@@ -4,7 +4,7 @@ Add a collection
 ================
 
 A collection in `eodag` represents a specific kind of Earth Observation data product, defined by its characteristics and metadata.
-By following the steps outlined below, you can extend EODAG's capabilities to support additional product types from various providers.
+By following the steps outlined below, you can extend EODAG's capabilities to support additional collections from various providers.
 
 Add collection definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -42,7 +42,7 @@ as ``instrument``, ``processingLevel``, ``platform``, etc.
 Add collection to a provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the file ``eodag/resources/providers.yml``, add the product-type to the ``products``
+In the file ``eodag/resources/providers.yml``, add the collection to the ``products``
 entry of a provider:
 
 .. code-block:: yaml
@@ -55,10 +55,10 @@ entry of a provider:
         # ...
         CBERS4_AWFI_L2:
           # ...
-          # product-type configuration comes here
+          # collection configuration comes here
           # ...
 
-Then for each product-type listed under the ``products`` entry, you may
+Then for each collection listed under the ``products`` entry, you may
 specify default parameters that will be used when searching for products of this
 collection:
 
@@ -81,7 +81,7 @@ collection ``cbers4`` and the processingLevel ``2``.
 Each of those parameters can be overridden when performing an actual search. Note that
 parameters have to be named following the common model used in EODAG (see
 `Parameters mapping <params_mapping.rst>`_). Part of the provider search metadata
-mapping can also be overridden per product-type, by adding a ``metadata_mapping``
+mapping can also be overridden per collection, by adding a ``metadata_mapping``
 section to the collection definition:
 
 .. code-block:: yaml

@@ -226,7 +226,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_xml_distinct_collection_mtd_mapping(
         self, mock__request, mock_count_hits
     ):
-        """The metadata mapping for XML QueryStringSearch should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for XML QueryStringSearch should not mix specific collections metadata-mapping"""
         with open(self.provider_resp_dir / "mundi_search.xml", "rb") as f:
             mundi_resp_search = f.read()
         mock__request.return_value = mock.Mock()
@@ -819,7 +819,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for QueryStringSearch should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for QueryStringSearch should not mix specific collections metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -1119,7 +1119,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for PostJsonSearch should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for PostJsonSearch should not mix specific collections metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -1751,7 +1751,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def test_plugins_search_odatav4search_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for ODataV4Search should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for ODataV4Search should not mix specific collections metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -1969,7 +1969,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
     def test_plugins_search_stacsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for a stac provider should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for a stac provider should not mix specific collections metadata-mapping"""
         mock__request.return_value = mock.Mock()
         result = {
             "features": [
@@ -2627,7 +2627,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ["20", "21"],
         )
 
-    def test_plugins_search_ecmwfsearch_without_producttype(self):
+    def test_plugins_search_ecmwfsearch_without_collection(self):
         """
         ECMWFSearch.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
@@ -2652,7 +2652,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["eodag:order_link"].startswith("http")
         assert NOT_AVAILABLE in eoproduct.location
 
-    def test_plugins_search_ecmwfsearch_with_producttype(self):
+    def test_plugins_search_ecmwfsearch_with_collection(self):
         """ECMWFSearch.query must build a EOProduct from input parameters with predefined collection"""
         results, _ = self.search_plugin.query(
             **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
@@ -2671,7 +2671,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         eoproduct = results[0]
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
 
-    def test_plugins_search_ecmwfsearch_with_custom_producttype(self):
+    def test_plugins_search_ecmwfsearch_with_custom_collection(self):
         """ECMWFSearch.query must build a EOProduct from input parameters with custom collection"""
         results, _ = self.search_plugin.query(
             **self.query_dates,

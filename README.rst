@@ -108,7 +108,7 @@ Example usage for interacting with the api in your Python code:
     dag = EODataAccessGateway()
 
     search_results = dag.search(
-        productType='S2_MSI_L1C',
+        collection='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',
         end='2021-01-15'
@@ -137,7 +137,7 @@ Start playing with the CLI:
 
 - To search for some products::
 
-     eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
+     eodag search --collection S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
   The request above searches for ``S2_MSI_L1C`` collections in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 

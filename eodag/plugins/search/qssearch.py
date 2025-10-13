@@ -385,7 +385,7 @@ class QueryStringSearch(Search):
         for collection in self.config.products.keys():
 
             collection_metadata_mapping = {}
-            # product-type specific metadata-mapping
+            # collection specific metadata-mapping
             if any(
                 mm in self.config.products[collection].keys()
                 for mm in ("metadata_mapping", "metadata_mapping_from_product")
