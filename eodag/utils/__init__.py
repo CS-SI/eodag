@@ -63,6 +63,8 @@ from typing import (
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
+from pydantic import ValidationError as PydanticValidationError
+
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
@@ -1587,3 +1589,18 @@ def parse_le_uint16(data: bytes) -> int:
     65535
     """
     return struct.unpack("<H", data)[0]
+
+
+def format_pydantic_error(e: PydanticValidationError) -> str:
+    """Format Pydantic ValidationError
+
+    :param e: A Pydantic ValidationError object
+    :type e: PydanticValidationError
+    """
+    error_header = f"{e.error_count()} error(s). "
+
+    error_messages = [
+        f'{err["loc"][0]}: {err["msg"]}' if err["loc"] else err["msg"]
+        for err in e.errors()
+    ]
+    return error_header + "; ".join(set(error_messages))

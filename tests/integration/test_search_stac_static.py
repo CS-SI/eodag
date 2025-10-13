@@ -86,7 +86,9 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search all items"""
         # mock on fetch_product_types_list not needed with provider specified,
         #    as product types discovery must be disabled by default for stac static
-        search_result = self.dag.search(provider=self.static_stac_provider, count=True)
+        search_result = self.dag.search(
+            provider=self.static_stac_provider, count=True, validate=False
+        )
         self.assertEqual(len(search_result), self.root_cat_len)
         self.assertEqual(search_result.number_matched, self.root_cat_len)
         for item in search_result:
@@ -103,7 +105,9 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by date"""
-        filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01", count=True)
+        filtered_sr = self.dag.search(
+            start="2018-01-01", end="2019-01-01", count=True, validate=False
+        )
         self.assertEqual(len(filtered_sr), self.child_cat_len)
         self.assertEqual(filtered_sr.number_matched, self.child_cat_len)
         for item in filtered_sr:
@@ -120,7 +124,9 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by geometry"""
-        search_result = self.dag.search(geom=self.extent_big, count=True)
+        search_result = self.dag.search(
+            geom=self.extent_big, count=True, validate=False
+        )
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
@@ -135,7 +141,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by property"""
-        search_result = self.dag.search(orbitNumber=110, count=True)
+        search_result = self.dag.search(orbitNumber=110, count=True, validate=False)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
@@ -150,6 +156,6 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by cloud cover"""
-        search_result = self.dag.search(cloudCover=10, count=True)
+        search_result = self.dag.search(cloudCover=10, count=True, validate=False)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
