@@ -350,6 +350,7 @@ def stac_collections_items(
     filter: Optional[str] = None,
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
+    next_page_token: Optional[str] = None,
 ) -> ORJSONResponse:
     """Fetch collection's features"""
 
@@ -366,6 +367,7 @@ def stac_collections_items(
         filter=filter,
         filter_lang=filter_lang,
         crunch=crunch,
+        next_page_token=next_page_token,
     )
 
 
@@ -514,6 +516,7 @@ def get_search(
     sortby: Optional[str] = None,
     filter: Optional[str] = None,  # pylint: disable=redefined-builtin
     filter_lang: Optional[str] = "cql2-text",
+    next_page_token: Optional[str] = None,
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
@@ -539,6 +542,7 @@ def get_search(
         "page": page,
         "sortby": sortby2list(sortby),
         "crunch": crunch,
+        "next_page_token": next_page_token,
     }
 
     if filter:

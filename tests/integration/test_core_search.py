@@ -22,6 +22,7 @@ import unittest
 
 from requests.exceptions import RequestException
 
+from eodag.api.search_result import SearchResult
 from eodag.utils import MockResponse
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -451,12 +452,13 @@ class TestCoreSearch(unittest.TestCase):
                 "wekeo_main",
             ],
         )
-
         mock_query.side_effect = [
-            ([], 0),
-            ([EOProduct("creodias", dict(geometry="POINT (0 0)", id="a"))], 1),
+            SearchResult([], number_matched=0),
+            SearchResult(
+                [EOProduct("creodias", dict(geometry="POINT (0 0)", id="a"))],
+                number_matched=1,
+            ),
         ]
-
         search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
@@ -581,7 +583,7 @@ class TestCoreSearch(unittest.TestCase):
             "https://foo.bar/baz/search",
         )
         mock_query.side_effect = [
-            (
+            SearchResult(
                 [
                     EOProduct(
                         "provider_matching_download_link",
@@ -597,7 +599,7 @@ class TestCoreSearch(unittest.TestCase):
         ]
         results = self.dag.search(provider="provider_matching_download_link")
         self.assertEqual(
-            results[0].downloader_auth.config.credentials["username"],
+            results.data[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
         )
         mock_query.reset_mock()
@@ -608,7 +610,7 @@ class TestCoreSearch(unittest.TestCase):
             "https://foo.bar/baz/search",
         )
         mock_query.side_effect = [
-            (
+            SearchResult(
                 [
                     EOProduct(
                         "provider_matching_download_link",
@@ -624,7 +626,7 @@ class TestCoreSearch(unittest.TestCase):
         ]
         results = self.dag.search(provider="provider_matching_download_link")
         self.assertEqual(
-            results[0].downloader_auth.config.credentials["username"],
+            results.data[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
         )
         mock_query.reset_mock()
@@ -640,10 +642,10 @@ class TestCoreSearch(unittest.TestCase):
         product_with_assets.assets.update(
             {"aa": {"href": "https://foo.bar/download/asset"}}
         )
-        mock_query.side_effect = [([product_with_assets], 1)]
+        mock_query.side_effect = [SearchResult([product_with_assets], 1)]
         results = self.dag.search(provider="provider_matching_asset")
         self.assertEqual(
-            results[0].downloader_auth.config.credentials["username"], "a-username"
+            results.data[0].downloader_auth.config.credentials["username"], "a-username"
         )
 
     @mock.patch("eodag.plugins.authentication.header.HTTPHeaderAuth.authenticate")

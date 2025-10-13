@@ -30,6 +30,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types.queryables import Queryables
@@ -233,7 +234,7 @@ class DataRequestSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """
         performs the search for a provider where several steps are required to fetch the data
         """
@@ -354,9 +355,11 @@ class DataRequestSearch(Search):
             result = self._apply_additional_filters(
                 result, self.config.products[product_type]["custom_filters"]
             )
-        return self._convert_result_data(
+        convert_result = self._convert_result_data(
             result, data_request_id, product_type or "", **kwargs
         )
+        formated_result = SearchResult(convert_result[0], convert_result[1])
+        return formated_result
 
     def _create_data_request(
         self, product_type: str, eodag_product_type: str, **kwargs: Any

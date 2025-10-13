@@ -180,10 +180,12 @@ class TestStacUtils(unittest.TestCase):
 
     def test_get_next_link_post(self):
         """Verify search next link for POST request"""
-        mr = mock_request(url="http://foo/search", body={"page": 2}, method="POST")
+        mr = mock_request(
+            url="http://foo/search", body={"next_page_token": "2"}, method="POST"
+        )
         sr = SearchPostRequest.model_validate(mr.json.return_value)
 
-        next_link = self.rest_utils.get_next_link(mr, sr, 100, 20)
+        next_link = self.rest_utils.get_next_link(mr, sr, 100, 20, "2")
 
         self.assertEqual(
             next_link,
@@ -192,7 +194,7 @@ class TestStacUtils(unittest.TestCase):
                 "href": "http://foo/search",
                 "title": "Next page",
                 "method": "POST",
-                "body": {"page": 3},
+                "body": {"next_page_token": "2"},
                 "type": "application/geo+json",
             },
         )
@@ -201,14 +203,14 @@ class TestStacUtils(unittest.TestCase):
         """Verify search next link for GET request"""
         mr = mock_request("http://foo/search")
         next_link = self.rest_utils.get_next_link(
-            mr, SearchPostRequest.model_validate({}), 100, 20
+            mr, SearchPostRequest.model_validate({}), 100, 20, "2"
         )
 
         self.assertEqual(
             next_link,
             {
                 "rel": "next",
-                "href": "http://foo/search?page=2",
+                "href": "http://foo/search?next_page_token=2",
                 "title": "Next page",
                 "method": "GET",
                 "type": "application/geo+json",

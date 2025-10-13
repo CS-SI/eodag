@@ -128,6 +128,7 @@ def get_next_link(
     search_request: SearchPostRequest,
     total_results: Optional[int],
     items_per_page: int,
+    next_page_token: Optional[str],
 ) -> Optional[dict[str, Any]]:
     """Generate next link URL and body"""
     body = search_request.model_dump(exclude_none=True)
@@ -139,14 +140,25 @@ def get_next_link(
 
     page = int(body.get("page", 0) or params.get("page", 0)) or 1
 
-    if total_results is None or items_per_page * page >= total_results:
+    if (
+        total_results is None
+        or items_per_page * page >= total_results
+        and not next_page_token
+    ):
         return None
 
     url = str(request.state.url)
     if request.method == "POST":
-        body["page"] = page + 1
-    else:
+        if next_page_token:
+            body["next_page_token"] = next_page_token
+        else:
+            body["page"] = page + 1
+    elif not next_page_token:
         params["page"] = str(page + 1)
+        url += f"?{urlencode(params)}"
+    else:
+        # next_page_token is used to get the next page
+        params["next_page_token"] = next_page_token
         url += f"?{urlencode(params)}"
 
     next: dict[str, Any] = {

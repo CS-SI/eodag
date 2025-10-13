@@ -35,6 +35,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import SearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.utils import (
@@ -60,7 +61,6 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
@@ -140,14 +140,19 @@ class UsgsApi(Api):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Search for data on USGS catalogues"""
-        page = prep.page if prep.page is not None else DEFAULT_PAGE
+        token = (
+            int(prep.next_page_token)
+            if prep.next_page_token is not None
+            else DEFAULT_PAGE
+        )
         items_per_page = (
             prep.items_per_page
-            if prep.items_per_page is not None
-            else DEFAULT_ITEMS_PER_PAGE
+            or kwargs.pop("max_results", None)
+            or DEFAULT_ITEMS_PER_PAGE
         )
+        search_params = {"items_per_page": items_per_page} | kwargs
         product_type = kwargs.get("productType")
         if product_type is None:
             raise NoMatchingProductType(
@@ -196,7 +201,7 @@ class UsgsApi(Api):
                 ll=lower_left,
                 ur=upper_right,
                 max_results=items_per_page,
-                starting_number=(1 + (page - 1) * items_per_page),
+                starting_number=token,
             )
 
             # search by id
@@ -292,7 +297,13 @@ class UsgsApi(Api):
         else:
             total_results = 0
 
-        return final, total_results
+        formated_result = SearchResult(
+            final,
+            total_results,
+            search_params=search_params,
+            next_page_token=results["data"]["nextRecord"],
+        )
+        return formated_result
 
     def download(
         self,
