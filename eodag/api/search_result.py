@@ -173,10 +173,9 @@ class SearchResult(UserList[EOProduct]):
             EOProduct.from_geojson(feature)
             for feature in feature_collection.get("features", [])
         ]
-        props = feature_collection.get("properties", {}) or {}
+        props = feature_collection.get("metadata", {}) or {}
 
         eodag_search_params = props.get("eodag_search_params", {})
-        # wkt to shapely geometry
         if eodag_search_params and eodag_search_params.get("geometry"):
             eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
 
