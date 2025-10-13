@@ -1966,7 +1966,7 @@
       dataset: projections-cmip6
       metadata_mapping:
         <<: *month_year
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       dataset: '{collection}'
 ---
 !provider # MARK: sara
