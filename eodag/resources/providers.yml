@@ -4566,13 +4566,12 @@
       type: fc
       activity: CMIP6
       experiment: hist
-      date: YYYYMMDD
       realization: 1
       model: IFS-NEMO
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000"
-      param: 228246/228247/263000/263001/263003/263004/263008/263009/263021/263022/263100/263101/263121/263122/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228247
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4581,14 +4580,13 @@
       stream: clte
       type: fc
       activity: HighResMIP
-      experiment: const
-      date: YYYYMMDD
+      experiment: cont
       realization: 1
       model: IFS-NEMO
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 228246/228247/263000/263001/263003/263004/263008/263009/263021/263022/263100/263101/263121/263122/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
       dataset: climate-dt
       class: d1
@@ -4598,13 +4596,12 @@
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      date: YYYYMMDD
       realization: 1
       model: ICON
       resolution: high
-      levtype: sfc,o2d,o3d,pl
+      levtype: sfc
       time: "0000/0100/to/2300"
-      param: 263000/263001/263003/263004/263009/263114/263124/263500/263501/263505/263506/263507/129/130/131/132/133/135/157/78/79/130/134/137/151/165/166/167/168/235/228164/260048/146/147/169/175/176/177/178/179/260654/260655
+      param: 263000
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4614,13 +4611,12 @@
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      date: YYYYMMDD
       realization: 1
       model: IFS-NEMO
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 228246/228247/263000/263001/263003/263004/263008/263009/263021/263022/263100/263101/263121/263122/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
@@ -4629,14 +4625,13 @@
       stream: clte
       type: fc
       activity: story-nudging
-      experiment: const
-      date: YYYYMMDD
+      experiment: cont
       realization: 1
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
@@ -4646,13 +4641,12 @@
       type: fc
       activity: story-nudging
       experiment: hist
-      date: YYYYMMDD
       realization: 1
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
@@ -4662,13 +4656,12 @@
       type: fc
       activity: story-nudging
       experiment: Tplus2.0K
-      date: YYYYMMDD
       realization: 1
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       dataset: climate-dt
       class: ng
@@ -4678,13 +4671,12 @@
       type: fc
       activity: CMIP6
       experiment: hist
-      date: YYYYMMDD
       realization: 1
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: /263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/228141
+      param: 132
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
       dataset: climate-dt
       class: d1
@@ -4694,13 +4686,12 @@
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      date: YYYYMMDD
       realization: 2
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 8/9/60/78/79/129/to/135/137/141/144/146/147/148/151/157/159/164/to/169/175/to/182/186/187/188/212/228/235/246/228141/260048/263000/to/263004/263100/263101/263124/263500/to/263507/
+      param: 132
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4768,7 +4759,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
@@ -4788,14 +4779,13 @@
       stream: clte
       type: fc
       activity: HighResMIP
-      experiment: const
-      date: YYYYMMDD
+      experiment: cont
       realization: 1
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
+      levtype: hl
       time: "0000"
-      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
       class: d1
       dataset: climate-dt
@@ -4808,10 +4798,9 @@
       realization: 1
       model: IFS-FESOM
       resolution: standard/high
-      levtype: hl,o2d,o3d,pl,sfc,sol
-      date: YYYYMMDD
+      levtype: hl
       time: "0000/0100/to/2300"
-      param: 228246/228247/263000/263001/263002/263003/263004/263100/263101/263124/263500/263501/263505/263506/263507/60/129/130/131/132/133/135/157/246/78/79/134/137/141/148/151/159/164/165/166/167/168/186/187/188/235/260048/8/9/144/146/147/169/175/176/177/178/179/180/181/182/212/228/129/172/228141
+      param: 228246
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
