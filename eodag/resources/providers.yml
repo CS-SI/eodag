@@ -4732,7 +4732,6 @@
       DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
-
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
