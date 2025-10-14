@@ -66,9 +66,9 @@ def _convert_bbox_to_lonlat_EPSG3035(bbox: list[str]) -> list[float]:
         crs_from=crs_3035, crs_to=crs_wgs84, always_xy=True
     )
     x1, y1 = bbox_int[:2]
-    lat1, lon1 = transformer.transform(x1, y1)
+    lon1, lat1 = transformer.transform(x1, y1)
     x2, y2 = bbox_int[2:]
-    lat2, lon2 = transformer.transform(x2, y2)
+    lon2, lat2 = transformer.transform(x2, y2)
     return [lon1, lat1, lon2, lat2]
 
 
@@ -124,10 +124,13 @@ def _get_available_values_from_constraints(
 
     for constraint in filtered_constraints:
         for key, values in constraint.items():
+            filter_values = values
+            if isinstance(filters[key], list):
+                filter_values = list(set(filters[key]).intersection(set(values)))
             if key in available_values:
-                available_values[key].extend(values)
+                available_values[key].extend(filter_values)
             else:
-                available_values[key] = values
+                available_values[key] = filter_values
 
     return available_values
 

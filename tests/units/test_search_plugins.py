@@ -42,6 +42,12 @@ from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
+from eodag.plugins.search.cop_ghsl import (
+    _convert_bbox_to_lonlat_EPSG3035,
+    _convert_bbox_to_lonlat_mollweide,
+    _get_available_values_from_constraints,
+    _get_years_and_months_from_dates,
+)
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
     PluginImplementationError,
@@ -4053,3 +4059,125 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
                     ((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))
                 )""",
             )
+
+
+class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginCopGhslSearch, self).setUp()
+
+    def test_plugins_search_cop_ghsl_convert_bbox(self):
+        """bboxes given in letres should be converted to degrees"""
+        # Mollweide coordinate system (ESRI:54009)
+        bbox_mollweide = ["-6 041 000", "7 000 000", "-5 041 000", "6 000 000"]
+        bbox_degrees = _convert_bbox_to_lonlat_mollweide(bbox_mollweide)
+        expected_bbox = [-95.57, 61.3, -67.36, 51.21]
+        for i, num in enumerate(bbox_degrees):
+            self.assertEqual(expected_bbox[i], round(num, 2))
+        # Mollweide point outside of map
+        bbox_mollweide = ["-6 041 000", "9 000 000", "-5 041 000", "8 000 000"]
+        bbox_degrees = _convert_bbox_to_lonlat_mollweide(bbox_mollweide)
+        expected_bbox = [-180, 89.09, -108.89, 72.77]
+        for i, num in enumerate(bbox_degrees):
+            self.assertEqual(expected_bbox[i], round(num, 2))
+
+        # ETRS89/LAEA Europe coordinate system (EPSG:3035)
+        bbox_3035 = ["1,944,000", "1,042,000", "2,044,000", "942,000"]
+        bbox_degrees = _convert_bbox_to_lonlat_EPSG3035(bbox_3035)
+        expected_bbox = [-14.34, 28.99, -13.11, 28.39]
+        for i, num in enumerate(bbox_degrees):
+            self.assertEqual(expected_bbox[i], round(num, 2))
+        bbox_3035 = ["4,744,000", "1,542,000", "4,844,000", "1,442,000"]
+        bbox_degrees = _convert_bbox_to_lonlat_EPSG3035(bbox_3035)
+        expected_bbox = [14.7, 36.83, 15.74, 35.86]
+        for i, num in enumerate(bbox_degrees):
+            self.assertEqual(expected_bbox[i], round(num, 2))
+
+    def test_plugins_search_cop_ghsl_get_available_values_from_constraints(self):
+        """get_available_values_from_contraints should return the available values for
+        the given filters based on the given constraints and throw an error if no values are available"""
+        constraints = [
+            {
+                "year": ["2000", "2005", "2010"],
+                "coord_system": ["54009"],
+                "tile_size": ["10m"],
+            },
+            {
+                "year": ["2000", "2005", "2010"],
+                "coord_system": ["4326"],
+                "tile_size": ["3ss"],
+            },
+        ]
+        # invalid parameter in filter
+        with self.assertRaises(ValidationError):
+            _get_available_values_from_constraints(
+                constraints, {"bla": "1", "year": "2000"}, "PT1"
+            )
+        # invalid value for parameter
+        with self.assertRaises(ValidationError):
+            _get_available_values_from_constraints(
+                constraints,
+                {"coord_system": "54009", "year": "2020", "tile_size": "10m"},
+                "PT1",
+            )
+        # invalid combination
+        with self.assertRaises(ValidationError):
+            _get_available_values_from_constraints(
+                constraints,
+                {"coord_system": "54009", "year": "2000", "tile_size": "3ss"},
+                "PT1",
+            )
+        # timespan without valid value for year
+        with self.assertRaises(ValidationError):
+            _get_available_values_from_constraints(
+                constraints,
+                {"coord_system": "54009", "year": ["2011", "2012"], "tile_size": "10m"},
+                "PT1",
+            )
+
+        # valid request for one year
+        available_values = _get_available_values_from_constraints(
+            constraints,
+            {"coord_system": "54009", "year": "2000", "tile_size": "10m"},
+            "PT1",
+        )
+        expected_available = {
+            "year": ["2000", "2005", "2010"],
+            "coord_system": ["54009"],
+            "tile_size": ["10m"],
+        }
+        self.assertDictEqual(expected_available, available_values)
+        # valid request for a time span
+        available_values = _get_available_values_from_constraints(
+            constraints,
+            {
+                "coord_system": "54009",
+                "year": ["1999", "2000", "2001"],
+                "tile_size": "10m",
+            },
+            "PT1",
+        )
+        expected_available = {
+            "year": ["2000"],
+            "coord_system": ["54009"],
+            "tile_size": ["10m"],
+        }
+        self.assertDictEqual(expected_available, available_values)
+
+    def test_plugins_search_cop_ghsl_get_years_and_months_from_dates(self):
+        """should return all year in the given timespan
+        in case the year is the same for start and end, all months should be returned"""
+        # timespan for several years
+        result = _get_years_and_months_from_dates(
+            "2020-01-01T00:00:00Z", "2023-01-01T00:00:00Z"
+        )
+        self.assertDictEqual({"years": ["2020", "2021", "2022", "2023"]}, result)
+        # different date format
+        result = _get_years_and_months_from_dates("2020-01-01", "2023-01-01")
+        self.assertDictEqual({"years": ["2020", "2021", "2022", "2023"]}, result)
+        # one year -> include months
+        result = _get_years_and_months_from_dates(
+            "2020-08-01T00:00:00Z", "2020-11-01T00:00:00Z"
+        )
+        self.assertDictEqual(
+            {"years": ["2020"], "months": ["08", "09", "10", "11"]}, result
+        )
