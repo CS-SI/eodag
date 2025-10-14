@@ -9,7 +9,7 @@ from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
 from typing_extensions import get_args
 
-from eodag.api.product._assets import Asset, AssetsDict
+from eodag.api.product._assets import AssetsDict
 from eodag.api.product._product import EOProduct
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -19,7 +19,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
-from eodag.utils import HTTP_REQ_TIMEOUT, deepcopy
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, HTTP_REQ_TIMEOUT, deepcopy
 from eodag.utils.cache import instance_cached_method
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -76,13 +76,13 @@ def _get_available_values_from_constraints(
     constraints: list[dict[str, Any]], filters: dict[str, Any], product_type: str
 ) -> dict[str, list[Any]]:
     """get the available values for each parameter from the constraints"""
-    available_values = {}
+    available_values: dict[str, list[Any]] = {}
     constraint_keys = set([k for const in constraints for k in const.keys()])
     not_found_keys = set(filters.keys()) - constraint_keys
     if "month" in not_found_keys and isinstance(filters["month"], list):
         # month added from datetime but filter not available
         filters.pop("month")
-        not_found_keys.pop("month")
+        not_found_keys.remove("month")
     if not_found_keys and not_found_keys != {"id"}:
         raise ValidationError(
             f"Parameters {not_found_keys} do not exist for product type {product_type}; "
@@ -221,9 +221,9 @@ class CopGhslSearch(Search):
                 second=59,
             )
         else:
-            start_date = self.get_product_type_cfg_value("missionStartDate")
-            end_date = self.get_product_type_cfg_value("missionEndDate")
-            return {"start_date": start_date, "end_date": end_date}
+            start_date_str = self.get_product_type_cfg_value("missionStartDate")
+            end_date_str = self.get_product_type_cfg_value("missionEndDate")
+            return {"start_date": start_date_str, "end_date": end_date_str}
 
         result = {}
         result["start_date"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -273,7 +273,7 @@ class CopGhslSearch(Search):
             params.update({"add_filter": add_filter_value})
 
         if isinstance(params["year"], int) or isinstance(params["year"], str):
-            list_years = [params["year"]]
+            list_years = [str(params["year"])]
         else:
             list_years = params["year"]
         for year in list_years:
@@ -347,8 +347,10 @@ class CopGhslSearch(Search):
         # product type with assets mapping
         assets_mapping = filters.pop("assets_mapping", None)
         products = []
-        start_index = prep.items_per_page * (prep.page - 1)
-        end_index = start_index + prep.items_per_page - 1
+        per_page = getattr(prep, "items_per_page", DEFAULT_ITEMS_PER_PAGE)
+        page = getattr(prep, "PAGE", 1)
+        start_index = per_page * (page - 1)
+        end_index = start_index + per_page - 1
         grouped_by = filters.pop("grouped_by", None)
         if grouped_by:  # dataset with several files differentiated by one parameter
             format_params = {k: str(v) for k, v in filters.items() if v}
@@ -374,12 +376,14 @@ class CopGhslSearch(Search):
                     assets = AssetsDict(product=product)
                     for key, mapping in assets_mapping.items():
                         download_link = mapping["href"].format(**filters)
-                        assets[key] = Asset(
-                            product=product,
-                            key=key,
-                            href=download_link,
-                            title=mapping["title"],
-                            type=mapping["type"],
+                        assets.update(
+                            {
+                                key: {
+                                    "href": download_link,
+                                    "title": mapping["title"],
+                                    "type": mapping["type"],
+                                }
+                            }
                         )
                     product.assets = assets
                 products.append(product)
@@ -404,7 +408,7 @@ class CopGhslSearch(Search):
 
     def _get_tile_from_product_id(
         self, query_params: dict[str, Any]
-    ) -> Optional[tuple[dict[str, list[dict[str, Any]]], int]]:
+    ) -> Optional[tuple[dict[str, list[dict[str, Any]]], str]]:
         """fetch the tile for a specific product id from the provider
         returns a a dict with a list of length 1 to simplify further processing
         """
@@ -467,7 +471,7 @@ class CopGhslSearch(Search):
         if isinstance(filter_params["year"], int) or isinstance(
             filter_params["year"], str
         ):
-            list_years = [filter_params["year"]]
+            list_years = [str(filter_params["year"])]
         else:
             list_years = filter_params["year"]
         all_tiles = {}
@@ -513,8 +517,8 @@ class CopGhslSearch(Search):
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
-        page = prep.page
-        items_per_page = prep.items_per_page
+        page = getattr(prep, "page", 1)
+        items_per_page = getattr(prep, "items_per_page", DEFAULT_ITEMS_PER_PAGE)
 
         # get year from start/end time if not given separately
         start_time = kwargs.pop("startTimeFromAscendingNode", None)
@@ -533,6 +537,8 @@ class CopGhslSearch(Search):
         product_type = kwargs.get("productType", None)
         if not product_type:
             product_type = kwargs["productType"] = prep.product_type
+        if not isinstance(product_type, str):
+            raise MisconfiguredError("invalid product type %s", product_type)
         product_type_config = deepcopy(self.config.products.get(product_type, {}))
         if "id" in kwargs and "ALL" not in kwargs["id"]:
             tiles_or_none = self._get_tile_from_product_id(kwargs)
