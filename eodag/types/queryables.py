@@ -74,6 +74,7 @@ class Queryables(CommonQueryables):
         Union[str, dict[str, float], BaseGeometry],
         Field(
             None,
+            alias="geometry",
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]
@@ -116,7 +117,7 @@ class Queryables(CommonQueryables):
     sar_beam_ids: Annotated[str, Field(None, alias="sar:beam_ids")]
     sar_frequency_band: Annotated[float, Field(None, alias="sar:frequency_band")]
     sar_instrument_mode: Annotated[str, Field(None, alias="sar:instrument_mode")]
-    sar_polarizations: Annotated[str, Field(None, alias="sar:polarizations")]
+    sar_polarizations: Annotated[list[str], Field(None, alias="sar:polarizations")]
     # sat extension
     sat_absolute_orbit: Annotated[int, Field(None, alias="sat:absolute_orbit")]
     sat_orbit_cycle: Annotated[int, Field(None, alias="sat:orbit_cycle")]

@@ -2679,6 +2679,25 @@ class TestCoreSearch(TestCoreBase):
             )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_params_alias(self, search_plugin):
+        """_do_search must get params alias"""
+        search_plugin.provider = "peps"
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+        search_args = dict(
+            foo="bar", baz=None, eo_cloud_cover=10, **{"eo:snow_cover": 20}
+        )
+
+        self.dag._do_search(search_plugin=search_plugin, **search_args)
+
+        search_plugin.query.assert_called_once_with(
+            mock.ANY, foo="bar", **{"eo:cloud_cover": 10, "eo:snow_cover": 20}
+        )
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_counts(self, search_plugin):
         """_do_search must create a count query if specified"""
         search_plugin.provider = "peps"
