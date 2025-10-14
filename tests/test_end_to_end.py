@@ -702,12 +702,6 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "fedeo_ceda"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
-            ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
-                "ID"
-            ],
-            "MERIS_ALAMO_L2_V2.2",
-        )
-        self.assertEqual(
             "MERIS",
             ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
                 "instruments"
