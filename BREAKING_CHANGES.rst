@@ -160,6 +160,16 @@ All product-types related classes and methods have been renamed with collections
 CLI updates
 ^^^^^^^^^^^
 
+.. list-table::
+  :header-rows: 1
+
+  * - v3.x.x Command and options
+    - v4.x.x Command and options
+  * - ``eodag search -p, --productType TEXT``
+    - ``eodag search -c, --collection TEXT``
+  * - ``eodag search -i, --instruments TEXT``
+    - ``eodag search -i, --instrument TEXT``
+
 Environment variables renamed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
