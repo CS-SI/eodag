@@ -82,7 +82,7 @@ search:
       - '{{"query":{{"platform":{{"eq":"{platform}"}}}}}}'
       - '$.properties.platform'
     instruments:
-      - '{{"query":{{"instruments":{{"in":{instruments}}}}}}}'
+      - '{{"query":{{"instruments":{{"eq":{instruments}}}}}}}'
       - '$.properties.instruments'
     title: '$.id'
     datetime: '$.properties.datetime'
@@ -98,13 +98,13 @@ search:
       - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
     # extensions parameters having specific mapping
     sar:polarizations:
-      - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations}}}}}}}'
+      - '{{"query":{{"sar:polarizations":{{"eq":{sar:polarizations}}}}}}}'
       - '$.properties.sar:polarizations'
     sar:beam_ids:
-      - '{{"query":{{"sar:beam_ids":{{"in":{sar:beam_ids}}}}}}}'
+      - '{{"query":{{"sar:beam_ids":{{"eq":{sar:beam_ids}}}}}}}'
       - '$.properties.sar:beam_ids'
     eo:cloud_cover:
-      - '{{"query":{{"eo:cloud_cover":{{"lte":"{eo:cloud_cover}"}}}}}}'
+      - '{{"query":{{"eo:cloud_cover":{{"lte":{eo:cloud_cover}}}}}}}'
       - '$.properties."eo:cloud_cover"'
     # eodag metadata
     eodag:download_link: '$.links[?(@.rel="self")].href'
