@@ -768,6 +768,84 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             verify=True,
         )
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_with_id_to_rename(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must handle product types that have to be renamed"""
+        # One of the providers that has discover_product_types() configured with QueryStringSearch
+        provider = "wekeo_cmems"
+        search_plugin = self.get_search_plugin(provider=provider)
+        # change configuration for this test to rename the product type id
+        search_plugin.config.discover_product_types[
+            "single_product_type_parsable_metadata"
+        ]["id"] = (None, cached_parse("$.metadata.understandable_id"))
+
+        # case where the name to replace the current id exists in the metadata
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "1a2b3c4d",
+                        "metadata": {"title": "The FOO collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "1a2b3c4d",
+                "metadata": {
+                    "title": "The FOO collection",
+                    "understandable_id": "foo_collection",
+                },
+            },
+        ]
+
+        with self.assertLogs(level="DEBUG") as cm:
+            conf_update_dict = search_plugin.discover_product_types()
+            self.assertIn(
+                "Rename 1a2b3c4d product type to foo_collection", str(cm.output)
+            )
+
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertNotIn("1a2b3c4d", conf_update_dict["providers_config"])
+        self.assertNotIn("1a2b3c4d", conf_update_dict["product_types_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            "1a2b3c4d",
+        )
+        self.assertNotIn(
+            "id", conf_update_dict["product_types_config"]["foo_collection"]
+        )
+
+        # case where the name to replace the current id does not exist in the metadata
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "5e6f7g8h",
+                        "metadata": {"title": "The BAR collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "5e6f7g8h",
+                "metadata": {"title": "The BAR collection"},
+            },
+        ]
+
+        conf_update_dict = search_plugin.discover_product_types()
+
+        self.assertNotIn("5e6f7g8h", conf_update_dict["providers_config"])
+        self.assertNotIn("5e6f7g8h", conf_update_dict["product_types_config"])
+
+        # restore configuration
+        del search_plugin.config.discover_product_types[
+            "single_product_type_parsable_metadata"
+        ]["id"]
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )

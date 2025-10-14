@@ -314,7 +314,7 @@ class PluginConfig(yaml.YAMLObject):
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
-        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``id``
         #: is redefined in this mapping, it will replace ``generic_collection_id`` value
         single_collection_parsable_metadata: dict[str, str]
 

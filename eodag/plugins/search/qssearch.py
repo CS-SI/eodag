@@ -622,29 +622,46 @@ class QueryStringSearch(Search):
                             collection_data = self._get_collection_metadata_from_single_collection_endpoint(
                                 generic_collection_id
                             )
+                            collection_data_id = collection_data.pop("id", None)
+
+                            # remove collection if it must have be renamed but renaming failed
+                            if (
+                                collection_data_id
+                                and collection_data_id == NOT_AVAILABLE
+                            ):
+                                del conf_update_dict["collections_config"][
+                                    generic_collection_id
+                                ]
+                                del conf_update_dict["providers_config"][
+                                    generic_collection_id
+                                ]
+                                return
+
                             conf_update_dict["collections_config"][
                                 generic_collection_id
                             ].update(collection_data)
 
                             # update collection id if needed
-                            if collection_data_id := collection_data.get("ID"):
-                                if generic_collection_id != collection_data_id:
-                                    logger.debug(
-                                        "Rename %s collection to %s",
-                                        generic_collection_id,
-                                        collection_data_id,
-                                    )
-                                    conf_update_dict["providers_config"][
-                                        collection_data_id
-                                    ] = conf_update_dict["providers_config"].pop(
-                                        generic_collection_id
-                                    )
-                                    conf_update_dict["collections_config"][
-                                        collection_data_id
-                                    ] = conf_update_dict["collections_config"].pop(
-                                        generic_collection_id
-                                    )
-                                    generic_collection_id = collection_data_id
+                            if (
+                                collection_data_id
+                                and collection_data_id != generic_collection_id
+                            ):
+                                logger.debug(
+                                    "Rename %s collection to %s",
+                                    generic_collection_id,
+                                    collection_data_id,
+                                )
+                                conf_update_dict["providers_config"][
+                                    collection_data_id
+                                ] = conf_update_dict["providers_config"].pop(
+                                    generic_collection_id
+                                )
+                                conf_update_dict["collections_config"][
+                                    collection_data_id
+                                ] = conf_update_dict["collections_config"].pop(
+                                    generic_collection_id
+                                )
+                                generic_collection_id = collection_data_id
 
                         # update keywords
                         keywords_fields = [
