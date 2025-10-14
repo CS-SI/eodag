@@ -56,7 +56,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, QueryablesDict
+from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -1872,10 +1872,21 @@ class EODataAccessGateway:
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
-            if validate:
-                search_plugin.validate(kwargs, prep.auth)
+            # remove None values and convert param names to their pydantic alias if any
+            search_params = {}
+            for param, value in kwargs.items():
+                if value is None:
+                    continue
+                if param in Queryables.model_fields:
+                    param_alias = Queryables.model_fields[param].alias or param
+                    search_params[param_alias] = value
+                else:
+                    search_params[param] = value
 
-            res, nb_res = search_plugin.query(prep, **kwargs)
+            if validate:
+                search_plugin.validate(search_params, prep.auth)
+
+            res, nb_res = search_plugin.query(prep, **search_params)
 
             if not isinstance(res, list):
                 raise PluginImplementationError(

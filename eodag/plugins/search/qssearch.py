@@ -1838,7 +1838,7 @@ class StacSearch(PostJsonSearch):
 
         collection = kwargs.get("collection")
         provider_collection = (
-            self.config.products.get(collection, {}).get("collection", collection)
+            self.config.products.get(collection, {}).get("_collection", collection)
             if collection
             else None
         )
@@ -1919,36 +1919,38 @@ class StacSearch(PostJsonSearch):
                 return None
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
-            STAC_TO_EODAG_QUERYABLES = {
-                "start_datetime": "start",
-                "end_datetime": "end",
-                "datetime": None,
-                "bbox": "geom",
-            }
+            eodag_queryables_and_defaults: list[tuple[str, Any]] = []
             for json_param, json_mtd in json_queryables.items():
-                param = STAC_TO_EODAG_QUERYABLES.get(
-                    json_param,
-                    get_queryable_from_provider(
-                        json_param, self.get_metadata_mapping(collection)
-                    )
-                    or json_param,
-                )
-                # do not expose internal parameters
-                if param is None or param.startswith("_"):
+                param = get_queryable_from_provider(
+                    json_param, self.get_metadata_mapping(collection)
+                ) or Queryables.get_queryable_from_alias(json_param)
+                # do not expose internal parameters, neither datetime
+                if param == "datetime" or param.startswith("_"):
                     continue
 
+                default = kwargs.get(param, json_mtd.get("default"))
+
+                if param in Queryables.model_fields:
+                    # use eodag queryable as default
+                    eodag_queryables_and_defaults += [(param, default)]
+                    continue
+
+                # convert provider json field definition to python
                 default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
-                field_definitions[param] = get_args(annotated_def)
+                field_definition = get_args(annotated_def)
+                field_definitions[param] = field_definition
 
             python_queryables = create_model("m", **field_definitions).model_fields
-            geom_queryable = python_queryables.pop("geometry", None)
-            if geom_queryable:
-                python_queryables["geom"] = Queryables.model_fields["geom"]
 
             queryables_dict = model_fields_to_annotated(python_queryables)
+
+            # append eodag queryables
+            for param, default in eodag_queryables_and_defaults:
+                queryables_dict[param] = Queryables.get_with_default(param, default)
+
             # append "datetime" as "start" & "end" if needed
             if "datetime" in json_queryables:
                 eodag_queryables = copy_deepcopy(
