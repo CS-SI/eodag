@@ -5045,7 +5045,7 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", null]]}}
 
-# MARK: DE DT Outputs ------------------------------------------------------------------
+# MARK: DT_CLIMATE ------------------------------------------------------------------
 DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5062,6 +5062,7 @@ DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - ICON
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2019-12-31T23:59:59Z"
+
 DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5078,6 +5079,7 @@ DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - IFS-NEMO
   missionStartDate: "1990-01-01T00:00:00Z"
   missionEndDate: "2002-02-28T23:59:59Z"
+
 DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5094,6 +5096,7 @@ DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-FESOM
   missionStartDate: "1990-01-01T00:00:00Z"
   missionEndDate: "2004-12-31T23:59:59Z"
+
 DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5110,6 +5113,7 @@ DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-NEMO
   missionStartDate: "1990-01-01T00:00:00Z"
   missionEndDate: "2007-04-30T23:59:59Z"
+
 DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5126,6 +5130,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - ICON
   missionStartDate: "2020-09-01T00:00:00Z"
   missionEndDate: "2039-12-31T23:59:59Z"
+
 DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5142,6 +5147,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - IFS-FESOM
   missionStartDate: "2020-01-01T00:00:00Z"
   missionEndDate: "2039-12-31T23:59:59Z"
+
 DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5158,6 +5164,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - IFS-NEMO
   missionStartDate: "2020-01-01T00:00:00Z"
   missionEndDate: "2039-12-31T23:59:59Z"
+
 DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5174,6 +5181,7 @@ DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Present Climate - IFS-FESOM
   missionStartDate: "2017-01-01T00:00:00Z"
   missionEndDate: "2024-11-15T23:59:59Z"
+
 DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5190,6 +5198,7 @@ DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Past Climate - IFS-FESOM
   missionStartDate: "2017-01-01T00:00:00Z"
   missionEndDate: "2024-11-15T23:59:59Z"
+
 DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5206,6 +5215,7 @@ DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Future Climate - IFS-FESOM
   missionStartDate: "2017-01-01T00:00:00Z"
   missionEndDate: "2024-11-15T23:59:59Z"
+
 DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
   abstract: |
     The nextGEMS data is aligned with the Climate Change Adaptation Digital Twin. The Climate
@@ -5223,6 +5233,7 @@ DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
   title: nextGEMS - Historical Simulation - IFS-FESOM
   missionStartDate: "1990-01-01T00:00:00Z"
   missionEndDate: "2019-12-31T23:59:59Z"
+
 DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
   abstract: |
     The nextGEMS data is aligned with the Climate Change Adaptation Digital Twin. The
@@ -5255,21 +5266,6 @@ DT_EXTREMES:
   license: other
   title: Weather and Geophysical Extremes Digital Twin (DT)
   extent: {"temporal": {"interval": [["2024-04-04T00:00:00Z", "2024-06-07T00:00:00Z"]]}}
-DT_CLIMATE_ADAPTATION:
-  description: |
-    The Digital Twin on Climate Change Adaptation support the analysis and testing of
-    scenarios. This in turn will support sustainable development and climate adaptation
-    and mitigation policy-making at multi-decadal timescales, at regional and national
-    levels.
-  instruments: []
-  constellation: Digital Twin
-  platform: DT
-  processing:level:
-  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate", "Change", "Adaptation"]
-  eodag:sensor_type: ATMOSPHERIC
-  license: other
-  title: Climate Change Adaptation Digital Twin (DT)
-  extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
 
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:
