@@ -376,7 +376,7 @@ class TestMetadataFormatter(unittest.TestCase):
         )
         self.assertEqual(
             format_metadata(to_format, fieldname="NOT_AVAILABLE"),
-            "NOT_AVAILABLE",
+            NOT_AVAILABLE,
         )
 
     def test_convert_recursive_sub_str(self):

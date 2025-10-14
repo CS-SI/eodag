@@ -664,7 +664,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             match = data_regex.search(value)
             if match:
                 return match.group("name").replace("/", "_").upper()
-            return "NOT_AVAILABLE"
+            return NOT_AVAILABLE
 
         @staticmethod
         def convert_recursive_sub_str(
