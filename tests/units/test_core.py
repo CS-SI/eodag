@@ -37,6 +37,7 @@ from eodag import __version__ as eodag_version
 from eodag.api.product_type import ProductType, ProductTypesList
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,

@@ -6027,7 +6027,7 @@
     type: StacSearch
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
-    timeout: 20
+    timeout: 60
     discover_product_types:
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
       result_type: json
@@ -6038,7 +6038,7 @@
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{productType}'
       single_product_type_parsable_metadata:
-        ID: '{$.assets.enclosure.href#ceda_collection_name}'
+        id: '{$.assets.enclosure.href#ceda_collection_name}'
         abstract: '$.description'
         instrument: '{$.summaries.instruments#csv_list}'
         keywords: '{$.keywords#csv_list}'
