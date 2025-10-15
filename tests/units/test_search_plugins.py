@@ -1831,15 +1831,15 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             **self.search_criteria_s2_msi_l1c,
         )
         self.assertEqual(
-            products[0].properties["productPath"],
+            products[0].properties["eodag:product_path"],
             "products/2020/10/9/S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
         )
         self.assertEqual(
-            products[1].properties["productPath"],
+            products[1].properties["eodag:product_path"],
             "products/2020/9/10/S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
         )
         self.assertEqual(
-            products[2].properties["productPath"],
+            products[2].properties["eodag:product_path"],
             "products/2020/10/10/S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
         )
 

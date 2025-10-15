@@ -1907,8 +1907,8 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and no flatten_top_dirs
         plugin.config.products[self.product.collection]["build_safe"] = False
@@ -1962,8 +1962,8 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and flatten_top_dirs
         plugin.config.products[self.product.collection]["build_safe"] = False
@@ -2097,8 +2097,11 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties["productInfo"] = "http://example.com/productInfo.json"
+        self.product.properties[
+            "eodag:product_info"
+        ] = "http://example.com/productInfo.json"
         execpected_output = os.path.join(
             self.output_dir, self.product.properties["title"]
         )
@@ -2124,7 +2127,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
-            self.product.properties["productInfo"],
+            self.product.properties["eodag:product_info"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
@@ -2180,9 +2183,12 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties["productInfo"] = "http://example.com/productInfo.json"
-        self.product.properties["productPath"] = "http://example.com/productPath"
+        self.product.properties[
+            "eodag:product_info"
+        ] = "http://example.com/productInfo.json"
+        self.product.properties["eodag:product_path"] = "http://example.com/productPath"
         self.product.assets.clear()
         self.product.assets.update(
             {
@@ -2215,7 +2221,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
-            self.product.properties["productInfo"],
+            self.product.properties["eodag:product_info"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
@@ -2258,8 +2264,8 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.s3_resource = mock.Mock()
         self.product.downloader_auth = auth_plugin
-        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
 
         # no SAFE build and flatten_top_dirs
         plugin.config.products[self.product.collection]["build_safe"] = False
@@ -2371,7 +2377,6 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(product)
         auth_plugin = self.get_auth_plugin(associated_plugin=plugin, product=product)
         product.downloader_auth = auth_plugin
-        product.properties["tileInfo"] = "http://example.com/tileInfo.json"
         # authenticated objects mock
         mock_get_authenticated_objects.return_value.keys.return_value = [
             "a1",
@@ -2443,7 +2448,6 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(product)
         auth_plugin = self.get_auth_plugin(associated_plugin=plugin, product=product)
         product.downloader_auth = auth_plugin
-        product.properties["tileInfo"] = "http://example.com/tileInfo.json"
         # authenticated objects mock
         mock_get_authenticated_objects.return_value.keys.return_value = ["a.tar"]
         mock_get_authenticated_objects.return_value.filter.side_effect = (
