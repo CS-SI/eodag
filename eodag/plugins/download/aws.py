@@ -942,6 +942,12 @@ class AwsDownload(Download):
                 else None
             )
 
+        # S1 polarization mode
+        if product_title := product.properties.get("title"):
+            polarization_mode = re.sub(r".{14}([A-Z]{2}).*", r"\1", product_title)
+        else:
+            polarization_mode = None
+
         # S2 L2A Tile files -----------------------------------------------
         if matched := S2L2A_TILE_IMG_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
@@ -1057,7 +1063,7 @@ class AwsDownload(Download):
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
-                S1_IMG_NB_PER_POLAR.get(product.properties["polarizationMode"], {}).get(
+                S1_IMG_NB_PER_POLAR.get(polarization_mode, {}).get(
                     found_dict["file_pol"].upper(), 1
                 ),
             )
@@ -1068,7 +1074,7 @@ class AwsDownload(Download):
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
-                S1_IMG_NB_PER_POLAR.get(product.properties["polarizationMode"], {}).get(
+                S1_IMG_NB_PER_POLAR.get(polarization_mode, {}).get(
                     found_dict["file_pol"].upper(), 1
                 ),
             )
@@ -1079,7 +1085,7 @@ class AwsDownload(Download):
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
-                S1_IMG_NB_PER_POLAR.get(product.properties["polarizationMode"], {}).get(
+                S1_IMG_NB_PER_POLAR.get(polarization_mode, {}).get(
                     found_dict["file_pol"].upper(), 1
                 ),
                 found_dict["file_ext"],

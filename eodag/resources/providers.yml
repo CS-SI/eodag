@@ -1340,7 +1340,6 @@
         eo:cloud_cover: properties.eo:cloud_cover
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
-      awsProductId: '{$.assets.thumbnail.href#replace_str(r".+/([A-Z0-9_]+)/[\w.]+$",r"\1")}'
   products:
     LANDSAT_C2L1:
       _collection: landsat-c2l1
@@ -1421,7 +1420,6 @@
           - '{$.properties."s2:product_uri"#remove_extension}'
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platform: '$.id.`split(_, 0, -1)`'
-        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         eodag:product_path: |
           $.properties."s2:product_uri".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*).SAFE/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
         tilePath: |
@@ -1512,7 +1510,6 @@
       metadata_mapping:
         title: '$.properties."sentinel:product_id"'
         platform: '$.id.`split(_, 0, -1)`'
-        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         mgrs:utm_zone: '$.properties."sentinel:utm_zone"'
         mgrs:latitude_band: '$.properties."sentinel:latitude_band"'
         mgrs:grid_square: '$.properties."sentinel:grid_square"'
