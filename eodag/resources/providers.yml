@@ -361,9 +361,9 @@
         end_datetime:
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.date'
-        polarizationChannels:
-          - '{{"search":{{"polarization":"{polarizationChannels#replace_str_tuple((("HH","SH"),("VV","SV"),("HH+HV", "DH"),("VV+VH","DV")))}" }} }}'
-          - '{$.polarization#replace_str_tuple((("SH","HH"),("SV","VV"),("DH","HH+HV"),("DV","VV+VH")))}'
+        sar:polarizations:
+          - '{{"search":{{"polarization":"{sar:polarizations#replace_tuple(((["HH"],"SH"),(["VV"],"SV"),(["HH","HV"], "DH"),(["VV","VH"],"DV")))}" }} }}'
+          - '{$.polarization#replace_tuple((("SH",["HH"]),("SV",["VV"]),("DH",["HH","HV"]),("DV",["VV","VH"])))}'
         # Custom parameters (not defined in the base document referenced above)
         awsPath:
           - '{{"search":{{"awsPath":"{awsPath}" }} }}'
@@ -582,7 +582,6 @@
 
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
-      topicCategory: '$.properties.topicCategory'
       keywords: '$.properties.keywords'
       description: '$.properties.description'
       gsd:
@@ -596,9 +595,6 @@
       license: '$.properties.license'
 
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier:
-        - 'parentIdentifier'
-        - '$.properties.parentIdentifier'
       product:acquisition_type: '$.properties.acquisitionType'
       sat:absolute_orbit:
         - 'orbitNumber'
@@ -616,9 +612,6 @@
         - 'snowCover=[0,{eo:snow_cover}]'
         - '$.properties.snowCover'
       version: '$.properties.version'
-      productQualityStatus: '$.properties.onlineQualityCheck'
-      processorName: '$.properties.processingName'
-      processingCenter: '$.properties.processingCenter'
       created: '$.properties.dhusIngestDate'
       updated: '$.properties.updated'
       sar:instrument_mode:
@@ -632,9 +625,9 @@
       end_datetime:
         - completionDate
         - '$.properties.completionDate'
-      polarizationChannels:
-        - 'polarisation'
-        - '{$.properties.polarisation#replace_str(" ","+")}'
+      sar:polarizations:
+        - 'polarisation={sar:polarizations#csv_list( )}'
+        - '{$.properties.polarisation#split( )}'
 
       # Custom parameters (not defined in the base document referenced above)
       id:
@@ -2000,19 +1993,6 @@
         ascending: asc
         descending: desc
       max_sort_params: 1
-    free_text_search_operations:
-      orbitDirection:
-        union: '&'
-        wrapper: '{}'
-        operations:
-          and:
-            - '{orbitDirection#to_title}'
-      polarisation:
-        union: '&'
-        wrapper: '{}'
-        operations:
-          and:
-            - '{polarizationChannels#replace_str("\\+",",")}'
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -2038,8 +2018,7 @@
         - '$.properties.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.title'
-      topicCategory: '$.properties.topicCategory'
-      keywords: '$.properties.keywords'
+      keywords: '$.properties.keywords[*].name'
       description: '$.properties.description'
       gsd:
         - 'resolution'
@@ -2051,15 +2030,15 @@
       published: '$.properties.published'
       license: '$.properties.license'
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier:
-        - 'parentIdentifier'
-        - '$.properties.parentIdentifier'
       product:acquisition_type: '$.properties.acquisitionType'
       sat:absolute_orbit:
         - 'orbitNumber'
         - '$.properties.orbitNumber'
+      sat:relative_orbit:
+        - absoluteOrbitNumber'
+        - '$.properties.absoluteOrbitNumber'
       sat:orbit_state:
-        - 'orbitDirection'
+        - 'orbitDirection={sat:orbit_state#to_title}'
         - '{$.properties.orbitDirection#to_lower}'
       sar:instrument_mode:
         - 'swath'
@@ -2071,9 +2050,6 @@
         - 'snowCover=[0,{eo:snow_cover}]'
         - '$.properties.snowCover'
       version: '$.properties.version'
-      productQualityStatus: '$.properties.onlineQualityCheck'
-      processorName: '$.properties.processingName'
-      processingCenter: '$.properties.processingCenter'
       created: '$.properties.dhusIngestDate'
       updated: '$.properties.updated'
       sar:instrument_mode:
@@ -2086,9 +2062,9 @@
       end_datetime:
         - completionDate
         - '$.properties.completionDate'
-      polarizationChannels:
-        - null
-        - '{$.properties.polarisation#replace_str(",","+")}'
+      sar:polarizations:
+        - 'polarisation={sar:polarizations#csv_list(,)}'
+        - '{$.properties.polarisation#split(,)}'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier={id#remove_extension}'
@@ -5236,7 +5212,7 @@
       results_entry: '$.links[*]'
       generic_collection_id: '$.title'
       generic_collection_parsable_properties:
-        parentIdentifier: '$.title'
+        _collection: '$.title'
       generic_collection_parsable_metadata:
         description: '$.null'
         instruments: '$.null'
@@ -5260,7 +5236,7 @@
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.properties.title#sanitize}'
       # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier:
+      _collection:
         - pi
         - '$.properties.parentIdentifier'
       updated: '$.properties.updated'
@@ -5299,165 +5275,165 @@
     # S3 SRAL
     S3_SRA:
       product:type: SR_1_SRA___
-      parentIdentifier: EO:EUM:DAT:0406
+      _collection: EO:EUM:DAT:0406
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_A:
       product:type: SR_1_SRA_A_
-      parentIdentifier: EO:EUM:DAT:0413
+      _collection: EO:EUM:DAT:0413
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_1A_BC004:
       product:type: SR_1_SRA_A_
-      parentIdentifier: EO:EUM:DAT:0583
+      _collection: EO:EUM:DAT:0583
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_1A_BC005:
       product:type: SR_1_SRA_A_
-      parentIdentifier: EO:EUM:DAT:0836
+      _collection: EO:EUM:DAT:0836
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_1B_BC004:
       product:type: SR_1_SRA___
-      parentIdentifier: EO:EUM:DAT:0584
+      _collection: EO:EUM:DAT:0584
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_1B_BC005:
       product:type: SR_1_SRA___
-      parentIdentifier: EO:EUM:DAT:0833
+      _collection: EO:EUM:DAT:0833
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_BS:
       product:type: SR_1_SRA_BS
-      parentIdentifier: EO:EUM:DAT:0414
+      _collection: EO:EUM:DAT:0414
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_BS_BC004:
       product:type: SR_1_SRA_BS
-      parentIdentifier: EO:EUM:DAT:0585
+      _collection: EO:EUM:DAT:0585
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SRA_BS_BC005:
       product:type: SR_1_SRA_BS
-      parentIdentifier: EO:EUM:DAT:0835
+      _collection: EO:EUM:DAT:0835
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_WAT:
       product:type: SR_2_WAT___
-      parentIdentifier: EO:EUM:DAT:0415
+      _collection: EO:EUM:DAT:0415
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_WAT_BC004:
       product:type: SR_2_WAT___
-      parentIdentifier: EO:EUM:DAT:0586
+      _collection: EO:EUM:DAT:0586
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_WAT_BC005:
       product:type: SR_2_WAT___
-      parentIdentifier: EO:EUM:DAT:0834
+      _collection: EO:EUM:DAT:0834
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     # S3 OLCI
     S3_EFR:
       product:type: OL_1_EFR___
-      parentIdentifier: EO:EUM:DAT:0409
+      _collection: EO:EUM:DAT:0409
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_EFR_BC002:
       product:type: OL_1_EFR___
-      parentIdentifier: EO:EUM:DAT:0577
+      _collection: EO:EUM:DAT:0577
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_ERR:
       product:type: OL_1_ERR___
-      parentIdentifier: EO:EUM:DAT:0410
+      _collection: EO:EUM:DAT:0410
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_ERR_BC002:
       product:type: OL_1_ERR___
-      parentIdentifier: EO:EUM:DAT:0578
+      _collection: EO:EUM:DAT:0578
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_OLCI_L2WRR:
       product:type: OL_2_WRR___
-      parentIdentifier: EO:EUM:DAT:0408
+      _collection: EO:EUM:DAT:0408
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_OLCI_L2WRR_BC003:
       product:type: OL_2_WRR___
-      parentIdentifier: EO:EUM:DAT:0557
+      _collection: EO:EUM:DAT:0557
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_OLCI_L2WFR:
       product:type: OL_2_WFR___
-      parentIdentifier: EO:EUM:DAT:0407
+      _collection: EO:EUM:DAT:0407
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_OLCI_L2WFR_BC003:
       product:type: OL_2_WFR___
-      parentIdentifier: EO:EUM:DAT:0556
+      _collection: EO:EUM:DAT:0556
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       product:type: SL_1_RBT___
-      parentIdentifier: EO:EUM:DAT:0411
+      _collection: EO:EUM:DAT:0411
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SLSTR_L1RBT_BC003:
       product:type: SL_1_RBT___
-      parentIdentifier: EO:EUM:DAT:0581
+      _collection: EO:EUM:DAT:0581
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SLSTR_L1RBT_BC004:
       product:type: SL_1_RBT___
-      parentIdentifier: EO:EUM:DAT:0615
+      _collection: EO:EUM:DAT:0615
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SLSTR_L2WST:
       product:type: SL_2_WST___
-      parentIdentifier: EO:EUM:DAT:0412
+      _collection: EO:EUM:DAT:0412
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SLSTR_L2WST_BC003:
       product:type: SL_2_WST___
-      parentIdentifier: EO:EUM:DAT:0582
+      _collection: EO:EUM:DAT:0582
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SLSTR_L2AOD:
       product:type: SL_2_AOD___
-      parentIdentifier: EO:EUM:DAT:0416
+      _collection: EO:EUM:DAT:0416
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_SLSTR_L2FRP:
       product:type: SL_2_FRP___
-      parentIdentifier: EO:EUM:DAT:0417
+      _collection: EO:EUM:DAT:0417
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
@@ -5466,165 +5442,164 @@
           - '$.properties.extraInformation.fireDetected'
     # METOP
     METOP_AMSU_L1:
-      parentIdentifier: EO:EUM:DAT:METOP:AMSUL1
+      _collection: EO:EUM:DAT:METOP:AMSUL1
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_OSI_104:
-      parentIdentifier: EO:EUM:DAT:METOP:OSI-104
+      _collection: EO:EUM:DAT:METOP:OSI-104
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_OSI_150A:
-      parentIdentifier: EO:EUM:DAT:METOP:OSI-150-A
+      _collection: EO:EUM:DAT:METOP:OSI-150-A
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_OSI_150B:
-      parentIdentifier: EO:EUM:DAT:METOP:OSI-150-B
+      _collection: EO:EUM:DAT:METOP:OSI-150-B
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_ASCSZF1B:
-      parentIdentifier: EO:EUM:DAT:METOP:ASCSZF1B
+      _collection: EO:EUM:DAT:METOP:ASCSZF1B
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_ASCSZR1B:
-      parentIdentifier: EO:EUM:DAT:METOP:ASCSZR1B
+      _collection: EO:EUM:DAT:METOP:ASCSZR1B
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_ASCSZO1B:
-      parentIdentifier: EO:EUM:DAT:METOP:ASCSZO1B
+      _collection: EO:EUM:DAT:METOP:ASCSZO1B
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_ASCSZFR02:
-      parentIdentifier: EO:EUM:CM:METOP:ASCSZFR02
+      _collection: EO:EUM:CM:METOP:ASCSZFR02
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_ASCSZOR02:
-      parentIdentifier: EO:EUM:CM:METOP:ASCSZOR02
+      _collection: EO:EUM:CM:METOP:ASCSZOR02
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_ASCSZRR02:
-      parentIdentifier: EO:EUM:CM:METOP:ASCSZRR02
+      _collection: EO:EUM:CM:METOP:ASCSZRR02
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_AVHRRL1:
-      parentIdentifier: EO:EUM:DAT:METOP:AVHRRL1
+      _collection: EO:EUM:DAT:METOP:AVHRRL1
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_SOMO12:
-      parentIdentifier: EO:EUM:DAT:METOP:SOMO12
+      _collection: EO:EUM:DAT:METOP:SOMO12
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_SOMO25:
-      parentIdentifier: EO:EUM:DAT:METOP:SOMO25
+      _collection: EO:EUM:DAT:METOP:SOMO25
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_AVHRRGACR02:
-      parentIdentifier: EO:EUM:DAT:0558
+      _collection: EO:EUM:DAT:0558
     METOP_LSA_002:
-      parentIdentifier: EO:EUM:DAT:METOP:LSA-002
+      _collection: EO:EUM:DAT:METOP:LSA-002
     METOP_GLB_SST_NC:
-      parentIdentifier: EO:EUM:DAT:METOP:GLB-SST-NC
+      _collection: EO:EUM:DAT:METOP:GLB-SST-NC
     METOP_GOMEL1:
-      parentIdentifier: EO:EUM:DAT:METOP:GOMEL1
+      _collection: EO:EUM:DAT:METOP:GOMEL1
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_GOMEL1R03:
-      parentIdentifier: EO:EUM:DAT:0533
+      _collection: EO:EUM:DAT:0533
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_IASTHR011:
-      parentIdentifier: EO:EUM:DAT:0576
+      _collection: EO:EUM:DAT:0576
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_IASSND02:
-      parentIdentifier: EO:EUM:DAT:METOP:IASSND02
+      _collection: EO:EUM:DAT:METOP:IASSND02
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_IASIL1C_ALL:
-      parentIdentifier: EO:EUM:DAT:METOP:IASIL1C-ALL
+      _collection: EO:EUM:DAT:METOP:IASIL1C-ALL
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_MHSL1:
-      parentIdentifier: EO:EUM:DAT:METOP:MHSL1
+      _collection: EO:EUM:DAT:METOP:MHSL1
       metadata_mapping:
         <<: *orbit_zone_tile
     METOP_HIRSL1:
-      parentIdentifier: EO:EUM:DAT:MULT:HIRSL1
+      _collection: EO:EUM:DAT:MULT:HIRSL1
       metadata_mapping:
         <<: *orbit_zone_tile
     # MSG
     MSG_CLM:
-      parentIdentifier: EO:EUM:DAT:MSG:CLM
+      _collection: EO:EUM:DAT:MSG:CLM
     MSG_CLM_IODC:
-      parentIdentifier: EO:EUM:DAT:MSG:CLM-IODC
+      _collection: EO:EUM:DAT:MSG:CLM-IODC
     MSG_GSAL2R02:
-      parentIdentifier: EO:EUM:DAT:0300
+      _collection: EO:EUM:DAT:0300
     MSG_HRSEVIRI:
-      parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI
+      _collection: EO:EUM:DAT:MSG:HRSEVIRI
     MSG_HRSEVIRI_IODC:
-      parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI-IODC
+      _collection: EO:EUM:DAT:MSG:HRSEVIRI-IODC
     MSG_RSS_CLM:
-      parentIdentifier: EO:EUM:DAT:MSG:RSS-CLM
+      _collection: EO:EUM:DAT:MSG:RSS-CLM
     MSG_MSG15_RSS:
-      parentIdentifier: EO:EUM:DAT:MSG:MSG15-RSS
+      _collection: EO:EUM:DAT:MSG:MSG15-RSS
     MSG_LSA_FRM:
-      parentIdentifier: EO:EUM:DAT:0398
+      _collection: EO:EUM:DAT:0398
     MSG_LSA_LST_CDR:
-      parentIdentifier: EO:EUM:DAT:0088
+      _collection: EO:EUM:DAT:0088
     MSG_LSA_LSTDE:
-      parentIdentifier: EO:EUM:DAT:0394
+      _collection: EO:EUM:DAT:0394
     MSG_AMVR02:
-      parentIdentifier: EO:EUM:DAT:0405
+      _collection: EO:EUM:DAT:0405
     MFG_GSA_57:
-      parentIdentifier: EO:EUM:DAT:0301
+      _collection: EO:EUM:DAT:0301
     MFG_GSA_63:
-      parentIdentifier: EO:EUM:DAT:0302
+      _collection: EO:EUM:DAT:0302
     MSG_MFG_GSA_0:
-      parentIdentifier: EO:EUM:DAT:0300
+      _collection: EO:EUM:DAT:0300
     MSG_CTH:
-      parentIdentifier: EO:EUM:DAT:MSG:CTH
+      _collection: EO:EUM:DAT:MSG:CTH
     MSG_CTH_IODC:
-      parentIdentifier: EO:EUM:DAT:MSG:CTH-IODC
+      _collection: EO:EUM:DAT:MSG:CTH-IODC
     HIRS_FDR_1_MULTI:
-      parentIdentifier: EO:EUM:DAT:0647
+      _collection: EO:EUM:DAT:0647
     MSG_OCA_CDR:
-      parentIdentifier: EO:EUM:DAT:0617
+      _collection: EO:EUM:DAT:0617
     S6_RADIO_OCCULTATION:
-      parentIdentifier: EO:EUM:DAT:0853
+      _collection: EO:EUM:DAT:0853
     MTG_LI_AF:
-      parentIdentifier: EO:EUM:DAT:0686
+      _collection: EO:EUM:DAT:0686
     MTG_LI_LFL:
-      parentIdentifier: EO:EUM:DAT:0691
+      _collection: EO:EUM:DAT:0691
     MTG_LI_LGR:
-      parentIdentifier: EO:EUM:DAT:0782
+      _collection: EO:EUM:DAT:0782
     MTG_LI_AFA:
-      parentIdentifier: EO:EUM:DAT:0687
+      _collection: EO:EUM:DAT:0687
     MTG_LI_AFR:
-      parentIdentifier: EO:EUM:DAT:0688
+      _collection: EO:EUM:DAT:0688
     MTG_LI_LEF:
-      parentIdentifier: EO:EUM:DAT:0690
+      _collection: EO:EUM:DAT:0690
     MTG_FCI_FDHSI:
-      parentIdentifier: EO:EUM:DAT:0662
+      _collection: EO:EUM:DAT:0662
     MTG_FCI_HRFI:
-      parentIdentifier: EO:EUM:DAT:0665
+      _collection: EO:EUM:DAT:0665
     MTG_FCI_ASR_BUFR:
-      parentIdentifier: EO:EUM:DAT:0799
+      _collection: EO:EUM:DAT:0799
     MTG_FCI_ASR_NETCDF:
-      parentIdentifier: EO:EUM:DAT:0677
+      _collection: EO:EUM:DAT:0677
     MTG_FCI_AMV_BUFR:
-      parentIdentifier: EO:EUM:DAT:0998
+      _collection: EO:EUM:DAT:0998
     MTG_FCI_AMV_NETCDF:
-      parentIdentifier: EO:EUM:DAT:0676
+      _collection: EO:EUM:DAT:0676
     MTG_FCI_CLM:
-      parentIdentifier: EO:EUM:DAT:0678
+      _collection: EO:EUM:DAT:0678
     MTG_FCI_GII:
-      parentIdentifier: EO:EUM:DAT:0683
+      _collection: EO:EUM:DAT:0683
     MTG_FCI_OCA:
-      parentIdentifier: EO:EUM:DAT:0684
+      _collection: EO:EUM:DAT:0684
     MTG_FCI_OLR:
-      parentIdentifier: EO:EUM:DAT:0685
+      _collection: EO:EUM:DAT:0685
     GENERIC_COLLECTION:
       _collection: '{collection}'
-      parentIdentifier: '{parentIdentifier}'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -5879,7 +5854,7 @@
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
       sar:polarizations:
-        - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations#csv_list( )}}}}}}}'
+        - '{{"query":{{"sar:polarizations":{{"eq":"{sar:polarizations#csv_list( )}"}}}}}}'
         - '{$.properties.sar:polarizations#split( )}'
       sar:instrument_mode: '$.null'
       sar:beam_ids:
@@ -6006,7 +5981,7 @@
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
       sar:polarizations:
-        - '{{"query":{{"sar:polarizations":{{"in":{sar:polarizations#csv_list( )}}}}}}}'
+        - '{{"query":{{"sar:polarizations":{{"eq":"{sar:polarizations#csv_list( )}"}}}}}}'
         - '{$.properties.sar:polarizations#split( )}'
       sar:instrument_mode: '$.null'
       sar:beam_ids:
