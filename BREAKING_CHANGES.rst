@@ -125,6 +125,10 @@ properties.
     - ``eodag:status_link``
   * - ``percent``
     - ``eodag:percent``
+  * - ``productInfo``
+    - ``eodag:product_info``
+  * - ``productPath``
+    - ``eodag:product_path``
   * - ``requestParams``
     - ``eodag:request_params``
   * - ``searchLink``

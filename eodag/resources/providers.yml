@@ -146,14 +146,12 @@
           - '{{"search":{{"sunElevation":"{view:sun_elevation}" }} }}'
           - '$.sunElevation'
         # Custom parameters (not defined in the base document referenced above)
-        awsPath:
-          - '{{"search":{{"downloadUrl":"{awsPath}" }} }}'
-          - '$.downloadUrl'
-        eodag:download_link: 's3://cbers-pds/{awsPath}'
-        eodag:mtd_download_link: 's3://cbers-meta-pds/{awsPath}'
-        previewBaseName: '{$.sceneID#replace_str("_L2","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        _aws_path: '$.downloadUrl'
+        eodag:download_link: 's3://cbers-pds/{_aws_path}'
+        eodag:mtd_download_link: 's3://cbers-meta-pds/{_aws_path}'
+        _preview_basename: '{$.sceneID#replace_str("_L2","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
@@ -164,9 +162,9 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
     CBERS4_PAN5M_L2:
       instruments: PAN5M
       _collection: cbers4
@@ -179,9 +177,9 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
     CBERS4_MUX_L2:
       instruments: MUX
       _collection: cbers4
@@ -194,9 +192,9 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
     CBERS4_AWFI_L2:
       instruments: AWFI
       _collection: cbers4
@@ -209,12 +207,12 @@
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
         # Custom parameters (not defined in the base document referenced above)
-        previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
     L8_OLI_TIRS_C1L1:
       _collection: landsat8
-      onAmazon: true
+      _on_amazon: true
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         product:type: '$.null'
@@ -232,13 +230,6 @@
         eo:cloud_cover:
           - '{{"search":{{"cloudCoverage":"{eo:cloud_cover}" }} }}'
           - '$.cloudCoverage'
-        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-        availabilityTime:
-          - '{{"search":{{"IndexingTime":{{"from":"{availabilityTime}"}} }} }}'
-          - '$.IndexingTime'
-        acquisitionStation:
-          - '{{"search":{{"receivingStation":{{"from":"{acquisitionStation}"}} }} }}'
-          - '$.receivingStation'
         start_datetime:
           - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
           - '$.sceneStartTime'
@@ -252,18 +243,14 @@
           - '{{"search":{{"sunElevation":"{view:sun_elevation}" }} }}'
           - '$.sunElevation'
         # Custom parameters (not defined in the base document referenced above)
-        onAmazon:
-          - '{{"search":{{"onAmazon":"{onAmazon}" }} }}'
+        _on_amazon:
+          - '{{"search":{{"onAmazon":"{_on_amazon}" }} }}'
           - '$.onAmazon'
-        path:
-          - '{{"search":{{"path":"{path}" }} }}'
-          - '$.path'
-        row:
-          - '{{"search":{{"row":"{row}" }} }}'
-          - '$.row'
-        eodag:download_link: 's3://landsat-pds/c1/L8/{path:03.0f}/{row:03.0f}/{title}/'
+        _path: '$.path'
+        _row: '$.row'
+        eodag:download_link: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
         eodag:thumbnail: '$.thumbnail'
-        eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{path:03.0f}/{row:03.0f}/{title}/{title}_thumb_large.jpg'
+        eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
         id:
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
@@ -291,14 +278,10 @@
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.EndingDateTime'
         # Custom parameters (not defined in the base document referenced above)
-        verticalTileNumber:
-          - '{{"search":{{"verticalTileNumber":"{verticalTileNumber}" }} }}'
-          - '$.verticalTileNumber'
-        horizontalTileNumber:
-          - '{{"search":{{"horizontalTileNumber":"{horizontalTileNumber}" }} }}'
-          - '$.horizontalTileNumber'
-        doyDate: '{$.sceneID#slice_str(9,16,1)}'
-        eodag:download_link: 's3://modis-pds/MCD43A4.006/{horizontalTileNumber:02.0f}/{verticalTileNumber:02.0f}/{doyDate}/'
+        _vertical_tile_nb: '$.verticalTileNumber'
+        _horizontal_tile_nb: '$.horizontalTileNumber'
+        _doy_date: '{$.sceneID#slice_str(9,16,1)}'
+        eodag:download_link: 's3://modis-pds/MCD43A4.006/{_horizontal_tile_nb:02.0f}/{_vertical_tile_nb:02.0f}/{_doy_date}/'
         eodag:thumbnail: '$.thumbnail'
         eodag:quicklook: '$.thumbnail'
         id:
@@ -324,10 +307,8 @@
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.date'
         # Custom parameters (not defined in the base document referenced above)
-        awsPath:
-          - '{{"search":{{"awsPath":"{awsPath}" }} }}'
-          - '$.awsPath'
-        eodag:download_link: 's3://naip-analytic/{awsPath}'
+        _aws_path: '$.awsPath'
+        eodag:download_link: 's3://naip-analytic/{_aws_path}'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
@@ -365,10 +346,8 @@
           - '{{"search":{{"polarization":"{sar:polarizations#replace_tuple(((["HH"],"SH"),(["VV"],"SV"),(["HH","HV"], "DH"),(["VV","VH"],"DV")))}" }} }}'
           - '{$.polarization#replace_tuple((("SH",["HH"]),("SV",["VV"]),("DH",["HH","HV"]),("DV",["VV","VH"])))}'
         # Custom parameters (not defined in the base document referenced above)
-        awsPath:
-          - '{{"search":{{"awsPath":"{awsPath}" }} }}'
-          - '$.awsPath'
-        eodag:download_link: 's3://sentinel-s1-l1c/{awsPath}'
+        _aws_path: '$.awsPath'
+        eodag:download_link: 's3://sentinel-s1-l1c/{_aws_path}'
         eodag:thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
         eodag:quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
         id:
@@ -404,24 +383,18 @@
           - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        awsPath:
-          - '{{"search":{{"awsPath":"{awsPath}" }} }}'
-          - '$.awsPath'
-        eodag:download_link: 's3://sentinel-s2-l1c/{awsPath}'
-        productMetaLink: '{$.productMetaLink#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        productPath:
-          - '{{"search":{{"productPath":"{productPath}" }} }}'
-          - '$.productPath'
+        _aws_path: '$.awsPath'
+        eodag:download_link: 's3://sentinel-s2-l1c/{_aws_path}'
+        eodag:product_path: '$.productPath'
         id:
           - '{{"search":{{"productName":"{id}" }} }}'
           - '{title}'
-        processedL2A: '$.null'
-        awsPathL2A: '$.null'
+        _processed_l2a: '$.null'
+        _aws_path_l2a: '$.null'
     S2_MSI_L2A:
       _collection: sentinel2
-      processedL2A: true
+      _processed_l2a: true
       # specific QueryStringSearch usage for these parameters (replaces current query)
       specific_qssearch:
         parameters:
@@ -439,13 +412,13 @@
           id:
             - 'title'
             - '{title}'
-          awsPathL2A: '$.tiles[0].path'
-          eodag:download_link: 's3://sentinel-s2-l2a/{awsPathL2A}'
-          productPath: '$.path'
+          _aws_path_l2a: '$.tiles[0].path'
+          eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
+          eodag:product_path: '$.path'
           start_datetime: '$.timestamp'
           end_datetime: '$.timestamp'
           geometry: '$.tileDataGeometry'
-          productInfo: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{awsPathL2A}/productInfo.json'
+          eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
           originalSceneID: '$.tiles[0].datastrip.id'
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
@@ -473,23 +446,19 @@
           - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        originalTileMeta: '{$.originalTileMeta#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l2a")}'
         eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         eodag:quicklook: '{eodag:thumbnail}'
-        eodag:download_link: 's3://sentinel-s2-l2a/{awsPathL2A}'
-        awsPath: '$.null'
-        productMetaLink: '$.null'
-        productPath: '$.null'
-        productInfo: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{awsPathL2A}/productInfo.json'
+        eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
+        _aws_path: '$.null'
+        eodag:product_path: '$.null'
+        eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
         id:
           - '{id#s2msil2a_title_to_aws_productinfo}'
           - '{title}'
-        processedL2A:
-          - '{{"search":{{"processedL2A":"{processedL2A}" }} }}'
+        _processed_l2a:
+          - '{{"search":{{"processedL2A":"{_processed_l2a}" }} }}'
           - '$.processedL2A'
-        awsPathL2A:
-          - '{{"search":{{"awsPathL2A":"{awsPathL2A}" }} }}'
-          - '$.awsPathL2A'
+        _aws_path_l2a: '$.awsPathL2A'
 
   download: !plugin
     type: AwsDownload
@@ -515,19 +484,19 @@
         default_bucket: 'sentinel-s2-l1c'
         build_safe: true
         complementary_url_key:
-          - productPath
+          - eodag:product_path
       S2_MSI_L2A:
         default_bucket: 'sentinel-s2-l2a'
         build_safe: true
         fetch_metadata:
-          fetch_url: '{productInfo}'
+          fetch_url: '{eodag:product_info}'
           fetch_format: json
           update_metadata:
             title: '$.name'
             id: '{title}'
-            productPath: '$.path'
+            eodag:product_path: '$.path'
         complementary_url_key:
-          - productPath
+          - eodag:product_path
   download_auth: !plugin
     type: AwsAuth
     matching_url: s3://
@@ -1453,7 +1422,7 @@
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platform: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
-        productPath: |
+        eodag:product_path: |
           $.properties."s2:product_uri".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*).SAFE/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
         tilePath: |
           $.assets.tileinfo_metadata.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
@@ -1491,7 +1460,7 @@
         default_bucket: 'sentinel-s2-l1c'
         build_safe: true
         complementary_url_key:
-          - productPath
+          - eodag:product_path
           - tilePath
   auth: !plugin
     type: AwsAuth

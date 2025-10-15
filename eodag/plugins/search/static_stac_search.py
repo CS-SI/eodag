@@ -177,12 +177,12 @@ class StaticStacSearch(StacSearch):
             else {}
         )
 
-        for collection in self.get_provider_collections(prep, **kwargs):
+        for provider_collections in self.get_provider_collections(prep, **kwargs):
             # skip empty collection if one is required in api_endpoint
-            if "{collection}" in self.config.api_endpoint and not collection:
+            if "{_collection}" in self.config.api_endpoint and not provider_collections:
                 continue
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
-                collection=collection
+                _collection=provider_collections
             )
 
         features = fetch_stac_items(
