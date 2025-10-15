@@ -165,6 +165,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
           splitting the string on dots
         - ``replace_str``: execute "string".replace(old, new)
+        - ``replace_str_tuple``: apply multiple replacements on a string (parts or complete)
+        - ``replace_tuple``: apply multiple replacements matching whole value
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``sanitize``: sanitize string
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
@@ -569,11 +571,15 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
-        def convert_replace_str_tuple(value: Any, args: str) -> str:
+        def convert_replace_str_tuple(
+            value: Union[str, dict[Any, Any]], args: str
+        ) -> str:
             """
-            Apply multiple replacements on a string.
-            args should be a string representing a list/tuple of (old, new) pairs.
-            Example: '(("old1", "new1"), ("old2", "new2"))'
+            Apply multiple replacements on a string (parts or complete).
+
+            :param value: input string or dict.
+            :param args: string representing a list/tuple of (old, new) pairs, like
+                         ``'(("old1", "new1"), ("old2", "new2"))'``
             """
             if isinstance(value, dict):
                 value = MetadataFormatter.convert_to_geojson(value)
@@ -594,6 +600,30 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
             for old, new in replacements:
                 value = re.sub(old, new, value)
+
+            return value
+
+        @staticmethod
+        def convert_replace_tuple(value: Any, args: str) -> Any:
+            """
+            Apply multiple replacements matching whole value.
+
+            :param value: input to replace
+            :param args: string representing a list/tuple of (old, new) pairs, like
+                         ``'((["old1"], "new1"), ("old2", ["new2"]))'``
+            """
+            # args sera une chaîne représentant une liste/tuple de tuples
+            replacements = ast.literal_eval(args)
+
+            if not isinstance(replacements, (list, tuple)):
+                raise TypeError(
+                    f"convert_replace_str_tuple expects a list/tuple of (old,new) pairs. "
+                    f"Got {type(replacements)}: {replacements}"
+                )
+
+            for old, new in replacements:
+                if old == value:
+                    return new
 
             return value
 
@@ -1049,10 +1079,13 @@ def properties_from_json(
                              `discovery_path` (String representation of jsonpath)
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     """
+    extracted_value: Any
     properties: dict[str, Any] = {}
     templates = {}
     used_jsonpaths = []
     for metadata, value in mapping.items():
+        if metadata == "keywords":
+            print(0)
         # Treat the case when the value is from a queryable metadata
         if isinstance(value, list):
             conversion_or_none, path_or_text = value[1]
@@ -1068,11 +1101,13 @@ def properties_from_json(
                 match = path_or_text.find(json)
             except KeyError:
                 match = []
-            if len(match) == 1:
+            if len(match) == 0:
+                extracted_value = NOT_AVAILABLE
+            elif len(match) == 1:
                 extracted_value = match[0].value
                 used_jsonpaths.append(match[0].full_path)
             else:
-                extracted_value = NOT_AVAILABLE
+                extracted_value = [m.value for m in match]
             if extracted_value is None:
                 properties[metadata] = None
             else:
