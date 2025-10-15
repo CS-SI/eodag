@@ -6687,6 +6687,39 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   missionStartDate: "1997-09-01T00:00:00Z"
   missionEndDate: "2024-04-01T00:00:00Z"
 
+# MARK: user-generated --------------------------------------------------------------------------
+VITO_URBAN_HEAT:
+  abstract: |
+    DE_370e_VITO - Destination Earth Urban Heat Use Case output data
+  instrument:
+  platform: ERA5
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: UrbClim,ERA5,ClimateDT,IFS-NEMO,SSP3-7.0,CORINE,Land"
+  sensorType: multi
+  license: other
+  title: Urban heat maps for Prague and Lisbon
+  missionStartDate: "2011-01-01T07:00:00Z"
+  missionEndDate: "2040-12-31T22:00:00Z"
+
+DWD_HYDROMET_EXTREMES:
+  abstract: |
+    The HydroMet application provides statistics of extreme rainfall from the DestinE ClimateDT simulations.
+    The output consists of extreme event statistics in the form of depth-duration-frequency curves for different
+    return periods, parameters used to model the Generalized Extreme Value distribution, and the intensity annual
+    maximum series of the precipitation. Furthermore, the dataset consists of event catalogs listing all extreme
+    precipitation events that occurred in ClimateDT simulations with their characteristics like affected area and duration.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ClimateDT,Extremes,Precipitation,Rainfall,netcdf
+  sensorType: multi
+  license: other
+  title: "HydroMet: Extreme precipitation"
+  missionStartDate: "1990-01-01T00:00:00Z"
+  missionEndDate: "2049-12-31T00:00:00Z"
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:
