@@ -6687,6 +6687,92 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   missionStartDate: "1997-09-01T00:00:00Z"
   missionEndDate: "2024-04-01T00:00:00Z"
 
+# MARK: spacenet ------------------------------------------------------------------------
+SPACENET_BUILDINGS_DETECTION_V1:
+  abstract: |
+    The first SpaceNet challenge focused on large-scale building detection. It provided 2,544 km² of high-resolution WorldView satellite imagery over Rio de Janeiro, Brazil, along with 382,534 building footprint labels. Both 3-band and 8-band imagery were included to support algorithm development for automated building extraction.
+  instrument:
+  platform: SpaceNet
+  platformSerialIdentifier: SN1
+  processingLevel:
+  keywords: Rio,Building,Building Detection v1,Building Detection,v1,SpaceNet,Chipped Training Dataset
+  sensorType:
+  license: CC-BY-4.0
+  title: "SpaceNet 1: Building Detection v1"
+  missionStartDate: "2016-02-29T00:00:00Z"
+  missionEndDate:
+
+SPACENET_BUILDINGS_DETECTION_V2:
+  abstract: |
+    The SpaceNet 2 dataset expands the building detection challenge to multiple cities worldwide, including Las Vegas, Paris, Shanghai, and Khartoum. It consists of high-resolution WorldView satellite imagery with annotations for more than 300,000 building footprints across 665 km². The dataset is designed to evaluate model generalization and robustness in detecting buildings across diverse urban landscapes.
+  instrument:
+  platform: SpaceNet
+  platformSerialIdentifier: SN2
+  processingLevel:
+  keywords: Vegas,Paris,Shanghai,Khartoum,Building,Building Detection v2,Building Detection,v2,SpaceNet,Chipped Training Dataset
+  sensorType:
+  license: CC-BY-4.0
+  title: "SpaceNet 2: Building Detection v2"
+  missionStartDate: "2015-04-13T00:00:00Z"
+  missionEndDate:
+
+SPACENET_ROADS_NETWORK_DETECTION:
+  abstract: |
+    The SpaceNet 3 dataset was created for the Road Detection and Routing Challenge. It contains more than 8,000 km of road centerlines with detailed attributes, including road type, surface type, and number of lanes. All annotations were digitized from 30 cm GSD WorldView-3 imagery across four cities: Las Vegas, Paris, Shanghai, and Khartoum. This dataset enables the development of algorithms not only for road extraction but also for generating usable routing networks from satellite imagery.
+  instrument:
+  platform: SpaceNet
+  platformSerialIdentifier: SN3
+  processingLevel:
+  keywords: Vegas,Paris,Shanghai,Khartoum,Road,Road Network Detection,SpaceNet,Chipped Training Dataset
+  sensorType:
+  license: CC-BY-4.0
+  title: "SpaceNet 3: Road Network Detection"
+  missionStartDate: "2015-04-13T00:00:00Z"
+  missionEndDate:
+
+SPACENET_OFF_NADIR_BUILDING:
+  abstract: |
+    SpaceNet 4 introduced imagery collected at multiple viewing angles (off-nadir), making building footprint extraction significantly more challenging due to distortions, shadows, and perspective changes. The dataset focused on Atlanta, USA, with labeled building footprints provided across different look angles.
+  instrument:
+  platform: SpaceNet
+  platformSerialIdentifier: SN4
+  processingLevel:
+  keywords: Atlanta,Buildings,Chipped Training Dataset,Off-Nadir Buildings,Off-Nadir,v1,SpaceNet
+  sensorType:
+  license: CC-BY-4.0
+  title: "SpaceNet 4: Off-Nadir Buildings"
+  missionStartDate: "2016-02-29T00:00:00Z"
+  missionEndDate:
+
+SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
+  abstract: |
+    SpaceNet 5 focuses on automated road network extraction and route travel time estimation from satellite imagery. The publicly available dataset includes high-resolution imagery and road labels for two cities: Moscow, Russia, and Mumbai, India. These annotations enable development of algorithms for extracting road networks and generating connected graphs suitable for routing applications.
+  instrument:
+  platform: SpaceNet
+  platformSerialIdentifier: SN5
+  processingLevel:
+  keywords: Moscow,Road,Road Network Extraction,Road Network,Route Travel Time Estimation,Route Travel,SpaceNet
+  sensorType:
+  license: CC-BY-4.0
+  title: "SpaceNet 5: Automated Road Network Extraction and Route Travel Time Estimation from Satellite Imagery"
+  missionStartDate: "2016-02-29T00:00:00Z"
+  missionEndDate:
+
+SPACENET_ALL_WEATHER_MAPPING:
+  abstract: |
+    SpaceNet 6 (MSAW) introduced multi-sensor data for the first time, combining Synthetic Aperture Radar (SAR) imagery from Capella Space with optical WorldView-2 imagery. The dataset, centered on Atlanta, provides over 48,000 building footprint labels. Training data includes both SAR and optical images, while testing is SAR-only, encouraging robust building detection under all-weather conditions.
+  instrument: Capella-SAR, WorldView-2
+  platform: SpaceNet
+  platformSerialIdentifier: SN6
+  processingLevel:
+  keywords: Rotterdam,Buildings,Building Detection,SpaceNet,Multi-Sensor,All-Weather Mapping,SAR,Optical
+  sensorType:
+  license: CC-BY-4.0
+  title: "SpaceNet 6: All-Weather Mapping"
+  missionStartDate: "2019-08-04T00:00:00Z"
+  missionEndDate:  "2019-08-23T00:00:00Z"
+
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:
