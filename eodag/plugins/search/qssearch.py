@@ -86,6 +86,7 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
+    format_string,
     get_ssl_context,
     string_to_jsonpath,
     update_nested_dict,
@@ -520,9 +521,11 @@ class QueryStringSearch(Search):
             fetch_qs_dict = {}
             if "single_collection_fetch_qs" in self.config.discover_collections:
                 try:
-                    fetch_qs = self.config.discover_collections[
-                        "single_collection_fetch_qs"
-                    ].format(**kwargs)
+                    fetch_qs = format_string(
+                        None,
+                        self.config.discover_collections["single_collection_fetch_qs"],
+                        **kwargs,
+                    )
                     fetch_qs_dict = dict(parse_qsl(fetch_qs))
                 except KeyError:
                     pass

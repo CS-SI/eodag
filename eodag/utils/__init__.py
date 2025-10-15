@@ -960,7 +960,9 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
         return path_str
 
 
-def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
+def format_string(
+    key: Optional[str], str_to_format: Any, **format_variables: Any
+) -> Any:
     """Format ``"{foo}"``-like string
 
     >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})

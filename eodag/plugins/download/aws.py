@@ -44,6 +44,7 @@ from eodag.utils import (
     ProgressCallback,
     StreamResponse,
     flatten_top_directories,
+    format_string,
     get_bucket_name_and_prefix,
     path_to_uri,
     rename_subfolder,
@@ -483,8 +484,8 @@ class AwsDownload(Download):
         if build_safe and "fetch_metadata" in product_conf.keys():
             fetch_format = product_conf["fetch_metadata"]["fetch_format"]
             update_metadata = product_conf["fetch_metadata"]["update_metadata"]
-            fetch_url = product_conf["fetch_metadata"]["fetch_url"].format(
-                **product.properties
+            fetch_url = format_string(
+                None, product_conf["fetch_metadata"]["fetch_url"], **product.properties
             )
             logger.info("Fetching extra metadata from %s" % fetch_url)
             try:

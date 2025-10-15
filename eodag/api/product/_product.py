@@ -51,6 +51,7 @@ from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
+    format_string,
     get_geometry_from_various,
 )
 from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
@@ -493,12 +494,14 @@ class EOProduct:
             formatting with the properties of the product."""
             fstrmatch = re.match(r".*{.+}*.*", self.properties["eodag:quicklook"])
             if fstrmatch:
-                self.properties["eodag:quicklook"].format(
-                    {
+                self.properties["eodag:quicklook"] = format_string(
+                    None,
+                    self.properties["eodag:quicklook"],
+                    **{
                         prop_key: prop_val
                         for prop_key, prop_val in self.properties.items()
                         if prop_key != "eodag:quicklook"
-                    }
+                    },
                 )
 
         if self.properties.get("eodag:quicklook") is None:

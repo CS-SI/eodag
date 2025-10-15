@@ -57,6 +57,7 @@ from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
+    format_string,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
@@ -761,7 +762,7 @@ class ECMWFSearch(PostJsonSearch):
             if not values_url:
                 return self.queryables_from_metadata_mapping(collection)
             if "{" in values_url:
-                values_url = values_url.format(**filters)
+                values_url = format_string(None, values_url, **filters)
             data = self._fetch_data(values_url)
             available_values = data["constraints"]
             required_keywords = data.get("required", [])
