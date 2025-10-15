@@ -4064,9 +4064,21 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
 class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginCopGhslSearch, self).setUp()
+        self.constraints = [
+            {
+                "year": ["2000", "2005", "2010"],
+                "coord_system": ["54009"],
+                "tile_size": ["10m"],
+            },
+            {
+                "year": ["2000", "2005", "2010"],
+                "coord_system": ["4326"],
+                "tile_size": ["3ss"],
+            },
+        ]
 
     def test_plugins_search_cop_ghsl_convert_bbox(self):
-        """bboxes given in letres should be converted to degrees"""
+        """test if bboxes given in letres are converted correctly to degrees"""
         # Mollweide coordinate system (ESRI:54009)
         bbox_mollweide = ["-6 041 000", "7 000 000", "-5 041 000", "6 000 000"]
         bbox_degrees = _convert_bbox_to_lonlat_mollweide(bbox_mollweide)
@@ -4093,50 +4105,38 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             self.assertEqual(expected_bbox[i], round(num, 2))
 
     def test_plugins_search_cop_ghsl_get_available_values_from_constraints(self):
-        """get_available_values_from_contraints should return the available values for
-        the given filters based on the given constraints and throw an error if no values are available"""
-        constraints = [
-            {
-                "year": ["2000", "2005", "2010"],
-                "coord_system": ["54009"],
-                "tile_size": ["10m"],
-            },
-            {
-                "year": ["2000", "2005", "2010"],
-                "coord_system": ["4326"],
-                "tile_size": ["3ss"],
-            },
-        ]
+        """test if get_available_values_from_contraints returns the available values for
+        the given filters based on the given constraints and throws an error if no values are available"""
         # invalid parameter in filter
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
-                constraints, {"bla": "1", "year": "2000"}, "PT1"
+                self.constraints, {"bla": "1", "year": "2000"}, "PT1"
             )
         # invalid value for parameter
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
-                constraints,
+                self.constraints,
                 {"coord_system": "54009", "year": "2020", "tile_size": "10m"},
                 "PT1",
             )
         # invalid combination
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
-                constraints,
+                self.constraints,
                 {"coord_system": "54009", "year": "2000", "tile_size": "3ss"},
                 "PT1",
             )
         # timespan without valid value for year
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
-                constraints,
+                self.constraints,
                 {"coord_system": "54009", "year": ["2011", "2012"], "tile_size": "10m"},
                 "PT1",
             )
 
         # valid request for one year
         available_values = _get_available_values_from_constraints(
-            constraints,
+            self.constraints,
             {"coord_system": "54009", "year": "2000", "tile_size": "10m"},
             "PT1",
         )
@@ -4148,7 +4148,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertDictEqual(expected_available, available_values)
         # valid request for a time span
         available_values = _get_available_values_from_constraints(
-            constraints,
+            self.constraints,
             {
                 "coord_system": "54009",
                 "year": ["1999", "2000", "2001"],
@@ -4164,8 +4164,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertDictEqual(expected_available, available_values)
 
     def test_plugins_search_cop_ghsl_get_years_and_months_from_dates(self):
-        """should return all year in the given timespan
-        in case the year is the same for start and end, all months should be returned"""
+        """test creation of list of years and months from date: should return all years in the
+        given timespan; in case the year is the same for start and end, all months should be returned"""
         # timespan for several years
         result = _get_years_and_months_from_dates(
             "2020-01-01T00:00:00Z", "2023-01-01T00:00:00Z"
@@ -4181,3 +4181,224 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertDictEqual(
             {"years": ["2020"], "months": ["08", "09", "10", "11"]}, result
         )
+
+    @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
+    def test_plugins_search_cop_ghsl_check_input_parameters_valid(
+        self, mock_fetch_constraints
+    ):
+        """test if the input parameters are correctly validated"""
+        mock_fetch_constraints.return_value = {"constraints": self.constraints}
+        plugin = next(self.plugins_manager.get_search_plugins(provider="cop_ghsl"))
+        # missing parameter
+        input_params = {"year": "2020", "coord_system": "54009"}
+        with self.assertRaises(ValidationError):
+            plugin._check_input_parameters_valid("PT1", input_params)
+
+        # valid input with one year
+        input_params = {"year": "2000", "coord_system": "54009", "tile_size": "10m"}
+        plugin._check_input_parameters_valid(
+            "PT1", input_params
+        )  # nothing should be raised
+        # valid input several years
+        input_params = {
+            "year": ["1999", "2000", "2001"],
+            "coord_system": "54009",
+            "tile_size": "10m",
+        }
+        plugin._check_input_parameters_valid("PT1", input_params)
+        expected_params = {
+            "year": ["2000"],
+            "coord_system": "54009",
+            "tile_size": "10m",
+        }
+        # year in input params should be updated
+        self.assertDictEqual(expected_params, input_params)
+
+        # valid input with grouped_by param
+        constraints = [
+            {
+                "year": ["2000", "2005", "2010"],
+                "month": ["01", "02", "03"],
+                "coord_system": ["54009"],
+                "tile_size": ["10m"],
+            },
+            {
+                "year": ["2000", "2005", "2010"],
+                "month": ["01", "02", "03"],
+                "coord_system": ["4326"],
+                "tile_size": ["3ss"],
+            },
+        ]
+        mock_fetch_constraints.return_value = {"constraints": constraints}
+        input_params = {
+            "year": "2000",
+            "month": ["02", "03", "04"],
+            "coord_system": "54009",
+            "tile_size": "10m",
+            "grouped_by": "month",
+        }
+        plugin._check_input_parameters_valid("PT1", input_params)
+        expected_params = {
+            "year": "2000",
+            "month": ["02", "03"],
+            "coord_system": "54009",
+            "tile_size": "10m",
+        }
+        self.assertDictEqual(expected_params, input_params)
+        # valid input with grouped_by param, grouping param not given
+        input_params = {
+            "year": "2000",
+            "coord_system": "54009",
+            "tile_size": "10m",
+            "grouped_by": "month",
+        }
+        plugin._check_input_parameters_valid("PT1", input_params)
+        expected_params = {
+            "year": "2000",
+            "month": ["01", "02", "03"],
+            "coord_system": "54009",
+            "tile_size": "10m",
+        }
+        self.assertDictEqual(expected_params, input_params)
+
+    @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
+    @mock.patch("eodag.plugins.search.cop_ghsl.requests.get")
+    def test_plugins_search_cop_ghs_get_tiles_for_filters(
+        self, mock_requests_get, mock_fetch_constraints
+    ):
+        mock_fetch_constraints.return_value = {"constraints": self.constraints}
+        provider_tiles = {
+            "grid": [
+                {
+                    "tileID": "R3_C3",
+                    "BBox": ["-160.008", "69.100", "-150.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C4",
+                    "BBox": ["-150.008", "69.100", "-140.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C5",
+                    "BBox": ["-140.008", "69.100", "-130.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C6",
+                    "BBox": ["-130.008", "69.100", "-120.008", "59.100"],
+                },
+            ],
+            "unit": "lat/lon",
+        }
+        mock_requests_get.return_value = MockResponse(
+            json_data=provider_tiles, status_code=200
+        )
+        product_type = "GHS_BUILT_S"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider="cop_ghsl"
+            )
+        )
+        product_type_config = deepcopy(plugin.config.products.get(product_type, {}))
+        input_params = {
+            "year": ["2000", "2005"],
+            "coord_system": "4326",
+            "tile_size": "3ss",
+            "productType": product_type,
+        }
+        tiles, unit = plugin._get_tiles_for_filters(product_type_config, input_params)
+        self.assertEqual("lat/lon", unit)
+        self.assertEqual(2, len(tiles))
+        self.assertIn("2000", tiles)
+        self.assertIn("2005", tiles)
+        self.assertEqual(mock_requests_get.call_count, 2)
+        mock_requests_get.assert_has_calls(
+            [
+                mock.call(
+                    "https://human-settlement.emergency.copernicus.eu/data/tilesDLD/tilesDLD_BUILT_2000_3ss_4326.json",
+                    verify=True,
+                    timeout=5,
+                ),
+                mock.call(
+                    "https://human-settlement.emergency.copernicus.eu/data/tilesDLD/tilesDLD_BUILT_2005_3ss_4326.json",
+                    verify=True,
+                    timeout=5,
+                ),
+            ]
+        )
+
+    def test_plugins_search_cop_ghs_create_products_from_tiles(self):
+        """test the creation of products based on tiles returned by the provider"""
+        tiles = {
+            "2000": [
+                {
+                    "tileID": "R3_C3",
+                    "BBox": ["-160.008", "69.100", "-150.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C4",
+                    "BBox": ["-150.008", "69.100", "-140.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C5",
+                    "BBox": ["-140.008", "69.100", "-130.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C6",
+                    "BBox": ["-130.008", "69.100", "-120.008", "59.100"],
+                },
+            ],
+            "2005": [
+                {
+                    "tileID": "R3_C3",
+                    "BBox": ["-160.008", "69.100", "-150.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C4",
+                    "BBox": ["-150.008", "69.100", "-140.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C5",
+                    "BBox": ["-140.008", "69.100", "-130.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C6",
+                    "BBox": ["-130.008", "69.100", "-120.008", "59.100"],
+                },
+            ],
+        }
+        product_type = "GHS_BUILT_S"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider="cop_ghsl"
+            )
+        )
+        product_type_config = deepcopy(plugin.config.products.get(product_type, {}))
+        params = product_type_config
+        params["year"] = ["2000", "2005"]
+        params["coord_system"] = "4326"
+        params["tile_size"] = "3ss"
+        params["classification"] = "TOTAL"
+        params["per_page"] = 5
+        params["page"] = 1
+        products, count = plugin._create_products_from_tiles(
+            tiles, "lat/lon", product_type, params, "classification"
+        )
+        self.assertEqual(8, count)
+        self.assertEqual(5, len(products))
+        properties = products[0].properties
+        self.assertEqual(
+            "2000-01-01T00:00:00Z", properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2000-12-31T23:59:59Z", properties["completionTimeFromAscendingNode"]
+        )
+        self.assertEqual("2000", properties["year"])
+        self.assertEqual("4326", properties["coord_system"])
+        self.assertEqual(
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
+            "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R3_C3.zip",
+            properties["downloadLink"],
+        )
+        geometry = get_geometry_from_various(
+            geometry=["-160.008", "69.100", "-150.008", "59.100"]
+        )
+        self.assertEqual(geometry, products[0].geometry)
