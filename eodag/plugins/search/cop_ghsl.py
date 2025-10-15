@@ -125,7 +125,7 @@ def _get_available_values_from_constraints(
     for constraint in filtered_constraints:
         for key, values in constraint.items():
             filter_values = values
-            if isinstance(filters[key], list):
+            if key in filters and isinstance(filters[key], list):
                 filter_values = list(set(filters[key]).intersection(set(values)))
             if key in available_values:
                 available_values[key].extend(filter_values)
@@ -180,14 +180,10 @@ class CopGhslSearch(Search):
             raise ValidationError(
                 f"parameter(s) {missing_params} missing in the request"
             )
-        if "year" in available_values and isinstance(params["year"], list):
-            params["year"] = set(params["year"]).intersection(
-                set(available_values["year"])
-            )
-        if "month" in available_values and isinstance(params["month"], list):
-            params["month"] = set(params["month"]).intersection(
-                set(available_values["month"])
-            )
+        # update lists in params with available values
+        for param in params:
+            if isinstance(params[param], list):
+                params[param] = sorted(available_values[param])
 
     def _get_start_and_end_from_properties(
         self, properties: dict[str, Any]
@@ -279,13 +275,14 @@ class CopGhslSearch(Search):
             list_years = [str(params["year"])]
         else:
             list_years = params["year"]
+        current_index = 0
         for year in list_years:
             properties = deepcopy(params)
             properties["startTimeFromAscendingNode"] = datetime.datetime(
                 year=int(year), month=1, day=1
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
             properties["completionTimeFromAscendingNode"] = datetime.datetime(
-                year=int(year), month=12, day=31
+                year=int(year), month=12, day=31, hour=23, minute=59, second=59
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
             properties["year"] = year
 
@@ -301,7 +298,6 @@ class CopGhslSearch(Search):
             )  # in case additional filter value is empty
 
             # create items from tiles
-            current_index = 0
             for tile in tiles[year]:
                 if not tile:  # empty grid position
                     continue
@@ -329,7 +325,7 @@ class CopGhslSearch(Search):
                         products.append(product)
                     current_index += 1
 
-        return products, current_index + 1
+        return products, current_index
 
     def _create_products_without_tiles(
         self, product_type: str, prep: PreparedSearch, filter_params: dict[str, Any]
