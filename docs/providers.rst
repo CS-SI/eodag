@@ -976,6 +976,97 @@ No credentials are needed
 
 ----
 
+**NASA**
+=========
+
+**EARTH SEARCH**
+-----------------
+
+**earthdata_lars_asdc**
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      NASA Earthdata search for ASDC (Atmospheric Science Data Center) data.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://search.earthdata.nasa.gov/
+        :color: primary
+        :outline:
+        :tooltip: Earthdata search website
+
+        :fas:`external-link-alt`
+
+No credentials are needed.
+
+----
+
+**earthdata_obdaac**
+^^^^^^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      NASA Earthdata search for OBDAAC (Ocean Biology Distributed Active Archive Center) data.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://search.earthdata.nasa.gov/
+        :color: primary
+        :outline:
+        :tooltip: Earthdata search website
+
+        :fas:`external-link-alt`
+
+No credentials are needed.
+
+----
+
+**earthdata_podaac**
+^^^^^^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      NASA Earthdata search for PODAAC (Physical Oceanography Distributed Active Archive Center) data.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://search.earthdata.nasa.gov/
+        :color: primary
+        :outline:
+        :tooltip: Earthdata search website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account `here <https://urs.earthdata.nasa.gov/users/new>`__, then use your ``username``, ``password`` in eodag credentials.
+
+----
+
 **Planetary Computer**
 =======================
 
