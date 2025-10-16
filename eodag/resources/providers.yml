@@ -1436,7 +1436,7 @@
         platform: '$.id.`split(_, 0, -1)`'
         eodag:product_path: |
           $.properties."s2:product_uri".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*).SAFE/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
-        tilePath: |
+        eodag:tile_path: |
           $.assets.tileinfo_metadata.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
         <<: *mgrs
     S2_MSI_L2A_COG:
@@ -1463,7 +1463,7 @@
         build_safe: true
         complementary_url_key:
           - eodag:product_path
-          - tilePath
+          - eodag:tile_path
   auth: !plugin
     type: AwsAuth
     matching_url: s3://

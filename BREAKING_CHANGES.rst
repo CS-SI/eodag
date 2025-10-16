@@ -133,6 +133,8 @@ properties.
     - ``eodag:request_params``
   * - ``searchLink``
     - ``eodag:search_link``
+  * - ``tilePath``
+    - ``eodag:tile_path``
   * - ``providerProductType``
     - ``_collection`` or ``provider_collection``
 
