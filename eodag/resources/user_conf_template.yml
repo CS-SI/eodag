@@ -63,6 +63,12 @@ cop_ewds:
     auth:
         credentials:
             apikey:
+cop_ghsl:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
 cop_marine:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration

@@ -42,6 +42,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_dataspace``      | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_ghsl``           | |CopGhslSearch|                    | ``None``                        | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_marine``         | |CopMarineSearch|                  | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``creodias``           | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
@@ -112,6 +114,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |MeteoblueSearch| replace:: :class:`~eodag.plugins.search.build_search_result.MeteoblueSearch`
 .. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
+.. |CopGhslSearch| replace:: :class:`~eodag.plugins.search.cop_ghsl.CopGhslSearch`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
 .. |StacListAssets| replace:: :class:`~eodag.plugins.search.stac_list_assets.StacListAssets`
 
