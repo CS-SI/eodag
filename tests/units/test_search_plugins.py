@@ -4172,7 +4172,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
     @mock.patch("eodag.plugins.search.cop_ghsl.requests.get")
-    def test_plugins_search_cop_ghs_get_tiles_for_filters(
+    def test_plugins_search_cop_ghsl_get_tiles_for_filters(
         self, mock_requests_get, mock_fetch_constraints
     ):
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
@@ -4234,7 +4234,54 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             ]
         )
 
-    def test_plugins_search_cop_ghs_create_products_from_tiles(self):
+    @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
+    @mock.patch("eodag.plugins.search.cop_ghsl.requests.get")
+    def test_plugins_search_cop_ghsl_get_tile_from_product_id(
+        self, mock_requests_get, mock_fetch_constraints
+    ):
+        """test fetching a tile for a product id"""
+        mock_fetch_constraints.return_value = {"constraints": self.constraints}
+        provider_tiles = {
+            "grid": [
+                {
+                    "tileID": "R3_C3",
+                    "BBox": ["-160.008", "69.100", "-150.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C4",
+                    "BBox": ["-150.008", "69.100", "-140.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C5",
+                    "BBox": ["-140.008", "69.100", "-130.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C6",
+                    "BBox": ["-130.008", "69.100", "-120.008", "59.100"],
+                },
+            ],
+            "unit": "lat/lon",
+        }
+        mock_requests_get.return_value = MockResponse(
+            json_data=provider_tiles, status_code=200
+        )
+        product_type = "GHS_BUILT_S"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider="cop_ghsl"
+            )
+        )
+        params = {
+            "productType": product_type,
+            "id": "GHS_BUILT_S__4326_3ss_2000_NRES__R3_C4",
+        }
+        tile, unit = plugin._get_tile_from_product_id(params)
+        self.assertEqual("lat/lon", unit)
+        self.assertEqual(1, len(tile))
+        self.assertEqual(1, len(tile["2000"]))
+        self.assertEqual("R3_C4", tile["2000"][0]["tileID"])
+
+    def test_plugins_search_cop_ghsl_create_products_from_tiles(self):
         """test the creation of products based on tiles returned by the provider"""
         tiles = {
             "2000": [
@@ -4311,3 +4358,134 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
         )
         self.assertEqual(geometry, products[0].geometry)
+
+    def test_plugins_search_cop_ghsl_create_products_without_tiles(self):
+        """test if products are created correctly for product types without tiles"""
+
+        prep = PreparedSearch(items_per_page=5)
+        # product type with one file
+        product_type = "GHS_FUA"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider="cop_ghsl"
+            )
+        )
+        plugin.config.product_type_config = {
+            "productType": product_type,
+            "missionStartDate": "2015-01-01T00:00:00Z",
+            "missionEndDate": "2015-12-31T00:00:00Z",
+        }
+        products, count = plugin._create_products_without_tiles(product_type, prep, {})
+        self.assertEqual(1, count)
+        self.assertEqual(1, len(products))
+        properties = products[0].properties
+        self.assertEqual(
+            "2015-01-01T00:00:00Z", properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2015-12-31T00:00:00Z", properties["completionTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A"
+            "/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip",
+            properties["downloadLink"],
+        )
+        # product type with several files
+        product_type = "GHS_UCDB_REGION"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider="cop_ghsl"
+            )
+        )
+        plugin.config.product_type_config = {
+            "productType": product_type,
+            "missionStartDate": "1975-01-01T00:00:00Z",
+            "missionEndDate": "2030-12-31T00:00:00Z",
+        }
+        # with filter for region
+        products, count = plugin._create_products_without_tiles(
+            product_type, prep, {"region": "EUROPE", "grouped_by": "region"}
+        )
+        self.assertEqual(1, count)
+        self.assertEqual(1, len(products))
+        properties = products[0].properties
+        self.assertEqual(
+            "1975-01-01T00:00:00Z", properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2030-12-31T00:00:00Z", properties["completionTimeFromAscendingNode"]
+        )
+        self.assertEqual("EUROPE", properties["region"])
+        self.assertEqual(
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A"
+            "/GHS_UCDB_REGION_EUROPE_R2024A/V1-1/GHS_UCDB_REGION_EUROPE_R2024A_V1_1.zip",
+            properties["downloadLink"],
+        )
+
+        # product type with several files and assets
+        product_type = "GHS_ENACT_POP"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider="cop_ghsl"
+            )
+        )
+        filters = {
+            "grouped_by": "month",
+            "month": "02",
+            "tile_size": "30ss",
+            "coord_system": "4326",
+        }
+        product_type_mapping = deepcopy(plugin.config.products.get(product_type, {}))
+        filters.update(product_type_mapping)
+        products, count = plugin._create_products_without_tiles(
+            product_type, prep, filters
+        )
+        self.assertEqual(1, count)
+        self.assertEqual(1, len(products))
+        properties = products[0].properties
+        self.assertEqual(
+            "2011-02-01T00:00:00Z", properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2011-02-28T23:59:59Z", properties["completionTimeFromAscendingNode"]
+        )
+        self.assertEqual("2011", properties["year"])
+        self.assertEqual("02", properties["month"])
+        assets = products[0].assets
+        self.assertEqual(2, len(assets))
+        self.assertIn("day", assets)
+        self.assertEqual(
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A"
+            "/ENACT_POP_D022011_EU28_R2020A_4326_30ss/V1-0/ENACT_POP_D022011_EU28_R2020A_4326_30ss_V1_0.zip",
+            assets["day"]["href"],
+        )
+        self.assertIn("night", assets)
+
+    @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
+    def test_plugins_search_cop_ghsl_discover_queryables(self, mock_fetch_constraints):
+        """test that the correct queryables are returned"""
+        mock_fetch_constraints.return_value = {"constraints": self.constraints}
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                product_type="GHS_BUILT_S", provider="cop_ghsl"
+            )
+        )
+        kwargs = {"productType": "GHS_BUILT_S"}
+        queryables = plugin.discover_queryables(**kwargs)
+        self.assertEqual(6, len(queryables))
+        expected_queryables = [
+            "year",
+            "tile_size",
+            "coord_system",
+            "start",
+            "end",
+            "geom",
+        ]
+        for qu in expected_queryables:
+            self.assertIn(qu, queryables)
+        kwargs = {"productType": "GHS_ENACT_POP"}
+        queryables = plugin.discover_queryables(**kwargs)
+        self.assertEqual(6, len(queryables))
+        expected_queryables = ["year", "tile_size", "coord_system", "start", "end"]
+        for qu in expected_queryables:
+            self.assertIn(qu, queryables)
