@@ -4542,6 +4542,17 @@
       qs: $.qs
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
+    DT_EXTREMES:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      dataset: extremes-dt
+      class: d1
+      expver: "0001"
+      stream: oper
+      type: fc
+      levtype: sfc
+      step: 0
+      param: 31
     DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
       dataset: climate-dt
       class: d1
@@ -4722,6 +4733,7 @@
           eodag:download_link: $.headers.Location
     no_auth_download: True
     products:
+      DT_EXTREMES:
       DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
       DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
       DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:

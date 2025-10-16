@@ -141,6 +141,7 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
+        "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1": ["dedt_mn5"],
         "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1": ["dedt_mn5"],
         "DT_CLIMATE_G1_CMIP6_HIST_ICON_R1": ["dedt_lumi"],
