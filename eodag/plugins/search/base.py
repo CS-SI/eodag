@@ -353,6 +353,7 @@ class Search(PluginTopic):
             getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
+        default_values.pop("assets_mapping", None)
         try:
             filters["collection"] = collection
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
