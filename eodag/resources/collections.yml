@@ -5045,7 +5045,23 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   extent: {"temporal": {"interval": [["1984-01-01T00:00:00Z", null]]}}
 
-# MARK: DT_CLIMATE ------------------------------------------------------------------
+# MARK: DE DT Outputs ------------------------------------------------------------------
+DT_EXTREMES:
+  abstract: |
+    The Digital Twin on Weather-Induced and Geophysical Extremes provides capabilities
+    for the assessment and prediction of environmental extremes in support of risk
+    assessment and management.
+  instrument:
+  platform: Digital Twin
+  platformSerialIdentifier: DT
+  processingLevel:
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Weather,Geophysical,Extremes
+  sensorType: ATMOSPHERIC
+  license: other
+  title: Weather and Geophysical Extremes Digital Twin (DT)
+  missionStartDate: "2024-04-04T00:00:00Z"
+  missionEndDate: "2024-06-07T00:00:00Z"
+
 DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   abstract: |
     The Climate Change Adaptation Digital Twin provides global climate projections and
@@ -5056,7 +5072,7 @@ DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,Meteorology,class:d1","dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:CMIP6,realization:1,model:ICON,resolution:high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,CMIP6,ICON,Historical Simulation
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - ICON
@@ -5073,7 +5089,7 @@ DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:CMIP6,realization:1,model:IFS-NEMO,resolution:standard/high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,CMIP6,IFS-NEMO,Historical Simulation
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - IFS-NEMO
@@ -5090,7 +5106,7 @@ DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:HighResMIP,realization:1,model:IFS-FESOM,resolution:standard/high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,HIGHRESMIP,IFS-FESOM,Control Simulation
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-FESOM
@@ -5107,7 +5123,7 @@ DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:HighResMIP,realization:1,model:IFS-NEMO,resolution:standard/high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,HIGHRESMIP,IFS-NEMO,Control Simulation
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-NEMO
@@ -5124,7 +5140,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:ScenarioMIP,realization:1,model:ICON,resolution:high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,SCENARIOMIP,ICON,Future Projection,SSP3-7.0
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - ICON
@@ -5141,7 +5157,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:ScenarioMIP,realization:1,model:IFS-FESOM,resolution:high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,SCENARIOMIP,IFS-FESOM,Future Projection,SSP3-7.0
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - IFS-FESOM
@@ -5158,7 +5174,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:ScenarioMIP,realization:1,model:IFS-NEMO,resolution:standard/high
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,SCENARIOMIP,IFS-NEMO,Future Projection,SSP3-7.0
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - IFS-NEMO
@@ -5175,7 +5191,7 @@ DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:story-nudging,realization:1,model:IFS-FESOM,resolution:standard/high,experiment:const
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,story nudging,IFS-FESOM,Control Simulation,Storyline Simulation Present Climate
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Present Climate - IFS-FESOM
@@ -5192,7 +5208,7 @@ DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:story-nudging,realization:1,model:IFS-FESOM,resolution:standard/high,experiment:hist
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,story nudging,IFS-FESOM,Historical Simulation,Storyline Simulation Present Climate
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Past Climate - IFS-FESOM
@@ -5209,7 +5225,7 @@ DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:story-nudging,realization:1,model:IFS-FESOM,resolution:standard/high,experiment:tplus2.0K
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,story nudging,IFS-FESOM,Tplus2.0K,Storyline Simulation Present Climate
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Future Climate - IFS-FESOM
@@ -5227,7 +5243,7 @@ DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:ng,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:CMIP6,realization:1,model:IFS-FESOM,resolution:standard/high,experiment:hist
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,CMIP6,IFS-FESOM,Historical Simulation,nextGEMS
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: nextGEMS - Historical Simulation - IFS-FESOM
@@ -5245,7 +5261,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,LUMI,Destination-Earth,Digital Twins,Climate Change,Atmosphere,Ocean,Land,Sea Ice,Snow,Soil,Earth,High Performance Computing,Decision Making,Europe,Meteorology,class:d1,dataset:climate-dt,generation:1,expver:0001,stream:clte,type:fc,activity:ScenarioMIP,realization:2,model:IFS-FESOM,resolution:standard/high,experiment:SSP3-7.0
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate Change,SCENARIOMIP,IFS-FESOM,Future Projection,nextGEMS,SSP3-7.0
   sensorType: ATMOSPHERIC
   license: CC-BY-4.0
   title: nextGEMS - Future Projection - IFS-FESOM
