@@ -16,7 +16,6 @@ This table lists all the download plugins currently available:
 
    http.HTTPDownload
    aws.AwsDownload
-   s3rest.S3RestDownload
    creodias_s3.CreodiasS3Download
 
 ---------------------------

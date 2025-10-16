@@ -71,16 +71,6 @@ class TestStacReader(unittest.TestCase):
         self.assertEqual(item[0]["type"], "Feature")
         self.assertEqual(item[0]["collection"], "S2_MSI_L1C")
 
-    @unittest.skip(
-        "skipped as single-file-stac has been removed and is being rethought"
-    )
-    def test_stact_reader_fetch_singlefile_catalog(self):
-        """fetch_stact_items must return all the items from a single file catalog"""
-        items = fetch_stac_items(self.singlefile_cat)
-        self.assertIsInstance(items, list)
-        self.assertEqual(len(items), self.singlefile_cat_len)
-        self.assertEqual(items[0]["type"], "Feature")
-
     def test_stact_reader_invalid_local_json(self):
         """read_local_json must raise a STACOpenerError on invalid local file path"""
         self.assertRaises(

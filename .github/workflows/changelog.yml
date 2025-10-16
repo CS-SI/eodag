@@ -47,10 +47,6 @@ jobs:
         NEXT_DEV_VERSION=$(python -c "from packaging.version import Version; v=Version('$EXPECTED_VERSION'); print(f'{v.major}.{v.minor}.{v.micro +1}.dev0')")
 
         sed -i "s/fallback_version = \".*\"/fallback_version = \"$NEXT_DEV_VERSION\"/" pyproject.toml
-        sed -i "s|csspace/eodag-server:.*|csspace/eodag-server:$EXPECTED_VERSION|" README.rst
-        sed -i "s|csspace/eodag-server:.*|csspace/eodag-server:$EXPECTED_VERSION|" docs/stac_rest.rst
-        sed -i "s/^appVersion:.*/appVersion: $EXPECTED_VERSION/" charts/eodag-server/Chart.yaml
-        sed -i "s/^version:.*/version: $EXPECTED_VERSION/" charts/eodag-server/Chart.yaml
 
         echo "EXPECTED_TAG=$EXPECTED_TAG" >> $GITHUB_ENV
 
@@ -68,9 +64,5 @@ jobs:
 
           [CHANGES.rst](https://github.com/CS-SI/eodag/blob/new-release/CHANGES.rst), and version updated in:
           - [pyproject.toml](https://github.com/CS-SI/eodag/blob/new-release/pyproject.toml?plain=1#L6)
-          - [README.rst](https://github.com/CS-SI/eodag/blob/new-release/README.rst?plain=1#L190)
-          - [charts/eodag-server/Chart.yml#appVersion](https://github.com/CS-SI/eodag/blob/new-release/charts/eodag-server/Chart.yaml?plain=1#L2)
-          - [charts/eodag-server/Chart.yml#version](https://github.com/CS-SI/eodag/blob/new-release/charts/eodag-server/Chart.yaml?plain=1#L18)
-          - [docs/stac_rest.rst](https://github.com/CS-SI/eodag/blob/new-release/docs/stac_rest.rst?plain=1#L118)
         labels: |
           automated pr

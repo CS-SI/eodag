@@ -21,6 +21,7 @@ import logging
 from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
+from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
@@ -39,6 +40,7 @@ from eodag.utils import (
     copy_deepcopy,
     deepcopy,
     format_dict_items,
+    format_pydantic_error,
     string_to_jsonpath,
     update_nested_dict,
 )
@@ -52,7 +54,6 @@ if TYPE_CHECKING:
 
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
-    from eodag.types import S3SessionKwargs
 
 logger = logging.getLogger("eodag.search.base")
 
@@ -64,12 +65,11 @@ class Search(PluginTopic):
     :param config: An EODAG plugin configuration
     """
 
-    auth: Union[AuthBase, S3SessionKwargs, S3ServiceResource]
+    auth: Union[AuthBase, S3ServiceResource]
     next_page_url: Optional[str]
     next_page_query_obj: Optional[dict[str, Any]]
     total_items_nb: int
     need_count: bool
-    _request: Any  # needed by deprecated load_stac_items
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Search, self).__init__(provider, config)
@@ -398,6 +398,35 @@ class Search(PluginTopic):
                 additional_information=additional_info,
                 **all_queryables,
             )
+
+    def validate(
+        self,
+        search_params: dict[str, Any],
+        auth: Optional[Union[AuthBase, S3ServiceResource]],
+    ) -> None:
+        """Validate a search request.
+
+        :param search_params: Arguments of the search request
+        :param auth: Authentication object
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        logger.debug("Validate request")
+        # attach authentication if required
+        if getattr(self.config, "need_auth", False) and auth:
+            self.auth = auth
+        try:
+            product_type = search_params.get("productType")
+            if not product_type:
+                raise ValidationError("Field required: productType")
+            self.list_queryables(
+                filters=search_params,
+                available_product_types=[product_type],
+                product_type_configs={product_type: self.config.product_type_config},
+                product_type=product_type,
+                alias=product_type,
+            ).get_model().model_validate(search_params)
+        except PydanticValidationError as e:
+            raise ValidationError(format_pydantic_error(e)) from e
 
     def queryables_from_metadata_mapping(
         self, product_type: Optional[str] = None, alias: Optional[str] = None

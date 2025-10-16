@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from requests.auth import AuthBase
 
     from eodag.plugins.authentication.base import Authentication
-    from eodag.types import S3SessionKwargs
 
 
 @dataclass
@@ -40,7 +39,7 @@ class PreparedSearch:
     product_type: Optional[str] = None
     page: Optional[int] = DEFAULT_PAGE
     items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
-    auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None
+    auth: Optional[Union[AuthBase, S3ServiceResource]] = None
     auth_plugin: Optional[Authentication] = None
     count: bool = True
     url: Optional[str] = None

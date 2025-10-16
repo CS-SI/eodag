@@ -25,16 +25,17 @@ import shutil
 import tempfile
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.api.product_type import ProductType, ProductTypesDict, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -65,9 +66,6 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     GENERIC_STAC_PROVIDER,
-    HTTP_REQ_TIMEOUT,
-    MockResponse,
-    _deprecated,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -83,6 +81,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
@@ -117,7 +116,12 @@ class EODataAccessGateway:
         product_types_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
             res_files("eodag") / "resources" / "product_types.yml"
         )
-        self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
+        product_types_config_dict = SimpleYamlProxyConfig(
+            product_types_config_path
+        ).source
+        self.product_types_config = self._product_types_config_init(
+            product_types_config_dict
+        )
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -170,7 +174,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
-        available_product_types = set(self.product_types_config.source.keys())
+        available_product_types = set(self.product_types_config.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -181,8 +185,6 @@ class EODataAccessGateway:
             self._sync_provider_product_types(
                 provider, available_product_types, strict_mode
             )
-        # init product types configuration
-        self._product_types_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -225,10 +227,19 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
 
-    def _product_types_config_init(self) -> None:
-        """Initialize product types configuration."""
-        for pt_id, pd_dict in self.product_types_config.source.items():
-            self.product_types_config.source[pt_id].setdefault("_id", pt_id)
+    def _product_types_config_init(
+        self, product_types_config_dict: dict[str, Any]
+    ) -> ProductTypesDict:
+        """Initialize product types configuration.
+
+        :param product_types_config_dict: The product types config as a dictionary
+        """
+        # Turn the product types config from a dict into a ProductTypesDict() object
+        product_types = [
+            ProductType(dag=self, id=pt, **pt_f)
+            for pt, pt_f in product_types_config_dict.items()
+        ]
+        return ProductTypesDict(product_types)
 
     def _sync_provider_product_types(
         self,
@@ -260,11 +271,10 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = {
-                    "title": product_id,
-                    "abstract": NOT_AVAILABLE,
-                }
-                self.product_types_config.source[
+                empty_product = ProductType(
+                    dag=self, id=product_id, title=product_id, abstract=NOT_AVAILABLE
+                )
+                self.product_types_config[
                     product_id
                 ] = empty_product  # will update available_product_types
                 products_to_add.append(product_id)
@@ -543,7 +553,7 @@ class EODataAccessGateway:
 
     def list_product_types(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> list[dict[str, Any]]:
+    ) -> ProductTypesList:
         """Lists supported product types.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -557,7 +567,7 @@ class EODataAccessGateway:
             # First, update product types list if possible
             self.fetch_product_types_list(provider=provider)
 
-        product_types: list[dict[str, Any]] = []
+        product_types: ProductTypesList = ProductTypesList([])
 
         providers_configs = (
             list(self.providers_config.values())
@@ -579,16 +589,14 @@ class EODataAccessGateway:
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
 
-                config = self.product_types_config[product_type_id]
-                if "alias" in config:
-                    product_type_id = config["alias"]
-                product_type = {"ID": product_type_id, **config}
-
-                if product_type not in product_types:
+                if (
+                    product_type := self.product_types_config[product_type_id]
+                ) not in product_types:
                     product_types.append(product_type)
 
-        # Return the product_types sorted in lexicographic order of their ID
-        return sorted(product_types, key=itemgetter("ID"))
+        # Return the product_types sorted in lexicographic order of their id
+        product_types.sort(key=attrgetter("id"))
+        return product_types
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed.
@@ -847,6 +855,7 @@ class EODataAccessGateway:
                     )
                     continue
                 new_product_types: list[str] = []
+                bad_formatted_pt_count = 0
                 for (
                     new_product_type,
                     new_product_type_conf,
@@ -873,26 +882,55 @@ class EODataAccessGateway:
                                 # new_product_types_conf is a subset on an existing conf
                                 break
                         else:
-                            # new_product_type_conf does not already exist, append it
-                            # to provider_products_config
-                            provider_products_config[
-                                new_product_type
-                            ] = new_product_type_conf
-                            # to self.product_types_config
-                            self.product_types_config.source.update(
-                                {
-                                    new_product_type: {"_id": new_product_type}
-                                    | new_product_types_conf["product_types_config"][
+                            try:
+                                # new_product_type_conf does not already exist, append it
+                                # to self.product_types_config
+                                self.product_types_config.update(
+                                    {
+                                        new_product_type: ProductType(
+                                            dag=self,
+                                            id=new_product_type,
+                                            **new_product_types_conf[
+                                                "product_types_config"
+                                            ][new_product_type],
+                                        )
+                                    }
+                                )
+                                # to provider_products_config
+                                provider_products_config[
+                                    new_product_type
+                                ] = new_product_type_conf
+                                ext_product_types_conf[
+                                    provider
+                                ] = new_product_types_conf
+                                new_product_types.append(new_product_type)
+                                # increase the increment if the new product type had
+                                # bad formatted attributes in the external config
+                                dumped_product_type = self.product_types_config[
+                                    new_product_type
+                                ].model_dump()
+                                dumped_ext_conf_pt = {
+                                    **dumped_product_type,
+                                    **new_product_types_conf["product_types_config"][
                                         new_product_type
-                                    ]
+                                    ],
                                 }
-                            )
-                            ext_product_types_conf[provider] = new_product_types_conf
-                            new_product_types.append(new_product_type)
+                                if dumped_ext_conf_pt != dumped_product_type:
+                                    bad_formatted_pt_count += 1
+                            except ValidationError:
+                                # skip product type if there is a problem with its id (missing or not a string)
+                                logger.debug(
+                                    f"Product type {new_product_type} has been pruned on provider "
+                                    f"{provider} because its id was incorrectly parsed for eodag"
+                                )
                 if new_product_types:
                     logger.debug(
                         f"Added {len(new_product_types)} product types for {provider}"
                     )
+                    if bad_formatted_pt_count > 0:
+                        logger.debug(
+                            f"bad formatted attributes skipped for {bad_formatted_pt_count} collection(s) on {provider}"
+                        )
 
             elif provider not in self.providers_config:
                 # unknown provider
@@ -944,16 +982,14 @@ class EODataAccessGateway:
         return [name for name, _ in providers]
 
     def get_product_type_from_alias(self, alias_or_id: str) -> str:
-        """Return the ID of a product type by either its ID or alias
+        """Return the id of a product type by either its id or alias
 
-        :param alias_or_id: Alias of the product type. If an existing ID is given, this
+        :param alias_or_id: Alias of the product type. If an existing id is given, this
                             method will directly return the given value.
         :returns: Internal name of the product type.
         """
         product_types = [
-            k
-            for k, v in self.product_types_config.items()
-            if v.get("alias") == alias_or_id
+            k for k, v in self.product_types_config.items() if v.alias == alias_or_id
         ]
 
         if len(product_types) > 1:
@@ -966,22 +1002,24 @@ class EODataAccessGateway:
                 return alias_or_id
             else:
                 raise NoMatchingProductType(
-                    f"Could not find product type from alias or ID {alias_or_id}"
+                    f"Could not find product type from alias or id {alias_or_id}"
                 )
 
         return product_types[0]
 
     def get_alias_from_product_type(self, product_type: str) -> str:
-        """Return the alias of a product type by its ID. If no alias was defined for the
-        given product type, its ID is returned instead.
+        """Return the alias of a product type by its id. If no alias was defined for the
+        given product type, its id is returned instead.
 
-        :param product_type: product type ID
-        :returns: Alias of the product type or its ID if no alias has been defined for it.
+        :param product_type: product type id
+        :returns: Alias of the product type or its id if no alias has been defined for it.
         """
         if product_type not in self.product_types_config:
             raise NoMatchingProductType(product_type)
 
-        return self.product_types_config[product_type].get("alias", product_type)
+        if alias := self.product_types_config[product_type].alias:
+            return alias
+        return product_type
 
     def guess_product_type(
         self,
@@ -998,7 +1036,7 @@ class EODataAccessGateway:
         missionStartDate: Optional[str] = None,
         missionEndDate: Optional[str] = None,
         **kwargs: Any,
-    ) -> list[str]:
+    ) -> ProductTypesList:
         """
         Find EODAG product type IDs that best match a set of search parameters.
 
@@ -1021,8 +1059,12 @@ class EODataAccessGateway:
         :returns: The best match for the given parameters.
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
         """
-        if productType := kwargs.get("productType"):
-            return [productType]
+        if product_type := kwargs.get("productType"):
+            try:
+                product_type = self.get_product_type_from_alias(product_type)
+                return ProductTypesList([self.product_types_config[product_type]])
+            except NoMatchingProductType:
+                return ProductTypesList([ProductType(dag=self, id=product_type)])
 
         filters: dict[str, str] = {
             k: v
@@ -1051,11 +1093,10 @@ class EODataAccessGateway:
 
         guesses_with_score: list[tuple[str, int]] = []
 
-        for pt_id, pt_dict in self.product_types_config.source.items():
+        for pt, pt_f in self.product_types_config.items():
             if (
-                pt_id == GENERIC_PRODUCT_TYPE
-                or pt_id
-                not in self._plugins_manager.product_type_to_provider_config_map
+                pt == GENERIC_PRODUCT_TYPE
+                or pt not in self._plugins_manager.product_type_to_provider_config_map
             ):
                 continue
 
@@ -1063,7 +1104,7 @@ class EODataAccessGateway:
 
             # free text search
             if free_text:
-                match = free_text_evaluator(pt_dict)
+                match = free_text_evaluator(pt_f.model_dump())
                 if match:
                     score += 1
                 elif intersect:
@@ -1079,9 +1120,11 @@ class EODataAccessGateway:
                 }
 
                 filter_matches = [
-                    filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
+                    filters_evaluators[filter_name](
+                        {filter_name: pt_f.__dict__[filter_name]}
+                    )
                     for filter_name, value in filters.items()
-                    if filter_name in pt_dict
+                    if filter_name in pt_f.__dict__
                 ]
 
                 if filters_matching_method(filter_matches):
@@ -1102,28 +1145,29 @@ class EODataAccessGateway:
                     rfc3339_str_to_datetime(missionStartDate)
                     if missionStartDate
                     else min_aware,
-                    rfc3339_str_to_datetime(pt_dict["missionStartDate"])
-                    if pt_dict.get("missionStartDate")
+                    rfc3339_str_to_datetime(pt_f.missionStartDate)
+                    if pt_f.missionStartDate
                     else min_aware,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(missionEndDate)
                     if missionEndDate
                     else max_aware,
-                    rfc3339_str_to_datetime(pt_dict["missionEndDate"])
-                    if pt_dict.get("missionEndDate")
+                    rfc3339_str_to_datetime(pt_f.missionEndDate)
+                    if pt_f.missionEndDate
                     else max_aware,
                 )
                 if not (max_start <= min_end):
                     continue
 
-            pt_alias = pt_dict.get("alias", pt_id)
-            guesses_with_score.append((pt_alias, score))
+            guesses_with_score.append((pt_f._id, score))
 
         if guesses_with_score:
-            # sort by score descending, then pt_id for stability
+            # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt_id for pt_id, _ in guesses_with_score]
+            return ProductTypesList(
+                [self.product_types_config[pt] for pt, _ in guesses_with_score]
+            )
 
         raise NoMatchingProductType()
 
@@ -1138,6 +1182,7 @@ class EODataAccessGateway:
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         count: bool = False,
+        validate: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1178,6 +1223,8 @@ class EODataAccessGateway:
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
         :param count: (optional) Whether to run a query with a count request or not
+        :param validate: (optional) Set to True to validate search parameters
+                         before sending the query to the provider
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria
@@ -1200,10 +1247,12 @@ class EODataAccessGateway:
             **kwargs,
         )
         if search_kwargs.get("id"):
+            # Don't validate requests by ID. "id" is not queryable.
             return self._search_by_id(
                 search_kwargs.pop("id"),
                 provider=provider,
                 raise_errors=raise_errors,
+                validate=False,
                 **search_kwargs,
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
@@ -1222,6 +1271,7 @@ class EODataAccessGateway:
                 search_plugin,
                 count=count,
                 raise_errors=raise_errors,
+                validate=validate,
                 **search_kwargs,
             )
             errors.extend(search_results.errors)
@@ -1478,7 +1528,7 @@ class EODataAccessGateway:
         # of items_per_page if defined for the provider used.
         try:
             product_type = self.get_product_type_from_alias(
-                self.guess_product_type(**kwargs)[0]
+                self.guess_product_type(**kwargs)[0].id
             )
         except NoMatchingProductType:
             product_type = GENERIC_PRODUCT_TYPE
@@ -1635,7 +1685,7 @@ class EODataAccessGateway:
                 if not results[0].product_type:
                     # guess product type from properties
                     guesses = self.guess_product_type(**results[0].properties)
-                    results[0].product_type = guesses[0]
+                    results[0].product_type = guesses[0].id
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1726,7 +1776,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                product_type = guesses[0]
+                product_type = guesses[0].id
             except NoMatchingProductType:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
@@ -1827,6 +1877,7 @@ class EODataAccessGateway:
         search_plugin: Union[Search, Api],
         count: bool = False,
         raise_errors: bool = False,
+        validate: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Internal method that performs a search on a given provider.
@@ -1836,6 +1887,8 @@ class EODataAccessGateway:
         :param raise_errors: (optional) When an error occurs when searching, if this is set to
                              True, the error is raised
         :param kwargs: Some other criteria that will be used to do the search
+        :param validate: (optional) Set to True to validate search parameters
+                         before sending the query to the provider
         :returns: A collection of EO products matching the criteria
         """
         logger.info("Searching on provider %s", search_plugin.provider)
@@ -1875,6 +1928,9 @@ class EODataAccessGateway:
 
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
+
+            if validate:
+                search_plugin.validate(kwargs, prep.auth)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 
@@ -1918,7 +1974,7 @@ class EODataAccessGateway:
                     except NoMatchingProductType:
                         pass
                     else:
-                        eo_product.product_type = guesses[0]
+                        eo_product.product_type = guesses[0].id
 
                 try:
                     if eo_product.product_type is not None:
@@ -2095,69 +2151,6 @@ class EODataAccessGateway:
 
         return products
 
-    @_deprecated(
-        reason="Use the StaticStacSearch search plugin instead", version="2.2.1"
-    )
-    def load_stac_items(
-        self,
-        filename: str,
-        recursive: bool = False,
-        max_connections: int = 100,
-        provider: Optional[str] = None,
-        productType: Optional[str] = None,
-        timeout: int = HTTP_REQ_TIMEOUT,
-        ssl_verify: bool = True,
-        **kwargs: Any,
-    ) -> SearchResult:
-        """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
-
-        Features are parsed using eodag provider configuration, as if they were
-        the response content to an API request.
-
-        :param filename: A filename containing features encoded as a geojson
-        :param recursive: (optional) Browse recursively in child nodes if True
-        :param max_connections: (optional) Maximum number of connections for concurrent HTTP requests
-        :param provider: (optional) Data provider
-        :param productType: (optional) Data product type
-        :param timeout: (optional) Timeout in seconds for each internal HTTP request
-        :param kwargs: Parameters that will be stored in the result as
-                       search criteria
-        :returns: The search results encoded in `filename`
-
-        .. deprecated:: 2.2.1
-           Use the :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` search plugin instead.
-        """
-        features = fetch_stac_items(
-            filename,
-            recursive=recursive,
-            max_connections=max_connections,
-            timeout=timeout,
-            ssl_verify=ssl_verify,
-        )
-        feature_collection = geojson.FeatureCollection(features)
-
-        plugin = next(
-            self._plugins_manager.get_search_plugins(
-                product_type=productType, provider=provider
-            )
-        )
-        # save plugin._request and mock it to make return loaded static results
-        plugin_request = plugin._request
-        plugin._request = (
-            lambda url, info_message=None, exception_message=None: MockResponse(
-                feature_collection, 200
-            )
-        )
-
-        search_result = self.search(
-            productType=productType, provider=provider, **kwargs
-        )
-
-        # restore plugin._request
-        plugin._request = plugin_request
-
-        return search_result
-
     def download(
         self,
         product: EOProduct,
@@ -2261,7 +2254,7 @@ class EODataAccessGateway:
         """
         # only fetch providers if product type is not found
         available_product_types: list[str] = [
-            pt["ID"]
+            pt.id
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
         product_type: Optional[str] = kwargs.get("productType")
@@ -2272,7 +2265,7 @@ class EODataAccessGateway:
                 if fetch_providers:
                     # fetch providers and try again
                     available_product_types = [
-                        pt["ID"]
+                        pt.id
                         for pt in self.list_product_types(
                             provider=provider, fetch_providers=True
                         )
@@ -2385,7 +2378,7 @@ class EODataAccessGateway:
                     for p in self.list_product_types(
                         plugin.provider, fetch_providers=False
                     )
-                    if p["_id"] == product_type
+                    if p._id == product_type
                 ][0],
                 **{"productType": product_type},
             )
@@ -2393,12 +2386,11 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_PRODUCT_TYPE metadata
             plugin.config.product_type_config = dict(
-                ID=GENERIC_PRODUCT_TYPE,
-                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                **self.product_types_config[GENERIC_PRODUCT_TYPE].model_dump(),
                 productType=product_type,
             )
-        # Remove the ID since this is equal to productType.
-        plugin.config.product_type_config.pop("ID", None)
+        # Remove the id since this is equal to productType.
+        plugin.config.product_type_config.pop("id", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.

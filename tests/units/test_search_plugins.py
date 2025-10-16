@@ -22,7 +22,7 @@ import re
 import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Literal, Union, get_origin
 from unittest import mock
@@ -30,11 +30,9 @@ from unittest.mock import call
 
 import boto3
 import botocore
-import dateutil
 import pytest
 import requests
 import responses
-import yaml
 from botocore.stub import Stubber
 from jsonpath_ng import JSONPath, parse
 from pydantic_core import PydanticUndefined
@@ -72,7 +70,6 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     merge_configs,
-    override_config_from_mapping,
 )
 
 
@@ -773,6 +770,84 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             verify=True,
         )
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_with_id_to_rename(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must handle product types that have to be renamed"""
+        # One of the providers that has discover_product_types() configured with QueryStringSearch
+        provider = "wekeo_cmems"
+        search_plugin = self.get_search_plugin(provider=provider)
+        # change configuration for this test to rename the product type id
+        search_plugin.config.discover_product_types[
+            "single_product_type_parsable_metadata"
+        ]["id"] = (None, cached_parse("$.metadata.understandable_id"))
+
+        # case where the name to replace the current id exists in the metadata
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "1a2b3c4d",
+                        "metadata": {"title": "The FOO collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "1a2b3c4d",
+                "metadata": {
+                    "title": "The FOO collection",
+                    "understandable_id": "foo_collection",
+                },
+            },
+        ]
+
+        with self.assertLogs(level="DEBUG") as cm:
+            conf_update_dict = search_plugin.discover_product_types()
+            self.assertIn(
+                "Rename 1a2b3c4d product type to foo_collection", str(cm.output)
+            )
+
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertNotIn("1a2b3c4d", conf_update_dict["providers_config"])
+        self.assertNotIn("1a2b3c4d", conf_update_dict["product_types_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            "1a2b3c4d",
+        )
+        self.assertNotIn(
+            "id", conf_update_dict["product_types_config"]["foo_collection"]
+        )
+
+        # case where the name to replace the current id does not exist in the metadata
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "5e6f7g8h",
+                        "metadata": {"title": "The BAR collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "5e6f7g8h",
+                "metadata": {"title": "The BAR collection"},
+            },
+        ]
+
+        conf_update_dict = search_plugin.discover_product_types()
+
+        self.assertNotIn("5e6f7g8h", conf_update_dict["providers_config"])
+        self.assertNotIn("5e6f7g8h", conf_update_dict["product_types_config"])
+
+        # restore configuration
+        del search_plugin.config.discover_product_types[
+            "single_product_type_parsable_metadata"
+        ]["id"]
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
@@ -1193,10 +1268,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "day": ["20", "21"],
                 "time": ["01:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "product_type": "ensemble_mean",
-                "variable": "10m_u_component_of_wind",
-                "download_format": "unarchived",
-                "data_format": "grib",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1218,10 +1289,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "day": ["01"],
                 "time": ["03:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "product_type": "ensemble_mean",
-                "variable": "10m_u_component_of_wind",
-                "download_format": "unarchived",
-                "data_format": "grib",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1231,7 +1298,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
         pt_conf = {
-            "ID": "ERA5_SL",
+            "id": "ERA5_SL",
             "abstract": "ERA5 abstract",
             "instrument": None,
             "platform": "ERA5",
@@ -1257,10 +1324,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "day": ["01"],
                 "time": ["00:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "product_type": "ensemble_mean",
-                "variable": "10m_u_component_of_wind",
-                "download_format": "unarchived",
-                "data_format": "grib",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1270,7 +1333,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         # product type with dates are query params -> use missionStartDate and today
         pt_conf = {
-            "ID": "CAMS_EAC4",
+            "id": "CAMS_EAC4",
             "abstract": "CAMS_EAC4 abstract",
             "instrument": None,
             "platform": "CAMS",
@@ -1294,9 +1357,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "startdate": "2003-01-01T00:00:00.000Z",
                 "enddate": "2003-01-01T00:00:00.000Z",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
-                "data_format": "grib",
-                "variable": "2m_dewpoint_temperature",
-                "time": "00:00",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -2338,432 +2398,6 @@ class MockResponse:
             raise RequestError
 
 
-class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
-    )
-    def setUp(self, mock_requests_get):
-        super(TestSearchPluginDataRequestSearch, self).setUp()
-        providers_config = self.plugins_manager.providers_config
-        wekeo_old_config_file = os.path.join(
-            TEST_RESOURCES_PATH, "wekeo_old_config.yml"
-        )
-        with open(wekeo_old_config_file, "r") as file:
-            wekeo_old_config_dict = yaml.safe_load(file)
-        override_config_from_mapping(providers_config, wekeo_old_config_dict)
-        self.plugins_manager = PluginManager(providers_config)
-        provider = "wekeo_old"
-        self.search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
-        self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
-        mock_requests_get.return_value = MockResponse({"access_token": "token"}, 200)
-        self.search_plugin.auth = self.auth_plugin.authenticate()
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_create_data_request(self, mock_requests_get, mock_requests_post):
-        self.search_plugin._create_data_request(
-            "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1",
-            "COP_DEM_GLO30",
-            productType="EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1",
-        )
-        mock_requests_post.assert_called_with(
-            self.search_plugin.config.data_request_url,
-            json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-        keywords = {
-            "format": "GeoTiff100mt",
-            "providerProductType": "Corine Land Cover 2018",
-        }
-        self.search_plugin._create_data_request(
-            "EO:EEA:DAT:CORINE",
-            "CLMS_CORINE",
-            productType="EO:EEA:DAT:CORINE",
-            **keywords,
-        )
-        mock_requests_post.assert_called_with(
-            self.search_plugin.config.data_request_url,
-            json={
-                "datasetId": "EO:EEA:DAT:CORINE",
-                "stringChoiceValues": [
-                    {"name": "format", "value": "GeoTiff100mt"},
-                    {"name": "product_type", "value": "Corine Land Cover 2018"},
-                ],
-            },
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-
-    @mock.patch("eodag.plugins.search.data_request_search.format_query_params")
-    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
-    def test_create_data_request_validation_error(
-        self, mock_post, mock_format_query_params
-    ):
-        mock_format_query_params.side_effect = ValidationError("Invalid: bad_param")
-
-        with self.assertRaises(ValidationError) as cm:
-            self.search_plugin._create_data_request("PRODUCT", "TYPE", bad_param="XXX")
-
-        self.assertIn("not queryable", str(cm.exception))
-
-        mock_post.assert_not_called()
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
-    def test_create_data_request_timeout(self, mock_post):
-        mock_post.side_effect = requests.exceptions.Timeout("Request timed out")
-
-        with self.assertRaises(TimeOutError):
-            self.search_plugin._create_data_request("PRODUCT", "TYPE")
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
-    def test_create_data_request_request_exception(self, mock_post):
-        mock_post.side_effect = requests.RequestException("Boom")
-
-        with self.assertRaises(RequestError) as cm:
-            self.search_plugin._create_data_request("PRODUCT", "TYPE")
-
-        self.assertIn("could not be created", str(cm.exception))
-
-    @mock.patch(
-        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
-    )
-    def test_cancel_request_success(self, mock_delete):
-        self.search_plugin.config.data_request_url = "http://fake-url.com"
-        mock_delete.return_value = MockResponse(json_data={}, status_code=200)
-
-        self.search_plugin._cancel_request("123")
-
-        mock_delete.assert_called_with(
-            "http://fake-url.com/123",
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-        )
-
-    @mock.patch(
-        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
-    )
-    def test_cancel_request_timeout(self, mock_delete):
-        mock_delete.side_effect = requests.exceptions.Timeout("Request timed out")
-
-        with self.assertRaises(TimeOutError):
-            self.search_plugin._cancel_request("123")
-
-    @mock.patch(
-        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
-    )
-    def test_cancel_request_request_exception(self, mock_delete):
-        mock_delete.side_effect = requests.RequestException("Boom")
-
-        with self.assertRaises(RequestError) as cm:
-            self.search_plugin._cancel_request("123")
-
-        self.assertIn("_cancel_request failed", str(cm.exception))
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status(self, mock_requests_get):
-        mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
-        successful = self.search_plugin._check_request_status("123")
-        mock_requests_get.assert_called_with(
-            self.search_plugin.config.status_url + "123",
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-        assert successful
-        mock_requests_get.return_value = MockResponse(
-            {"status": "failed", "message": "failed"}, 500
-        )
-        with self.assertRaises(RequestError):
-            self.search_plugin._check_request_status("123")
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status_timeout(self, mock_requests_get):
-        mock_requests_get.side_effect = requests.exceptions.Timeout("Request timed out")
-
-        with pytest.raises(TimeOutError):
-            self.search_plugin._check_request_status("123")
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status_request_exception(self, mock_requests_get):
-        mock_requests_get.side_effect = requests.RequestException("boom")
-
-        with pytest.raises(RequestError) as excinfo:
-            self.search_plugin._check_request_status("123")
-        assert "_check_request_status failed" in str(excinfo.value)
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status_auth_expired(self, mock_requests_get):
-        mock_requests_get.return_value = MockResponse({"status_code": 403}, 200)
-
-        with pytest.raises(RequestError) as excinfo:
-            self.search_plugin._check_request_status("123")
-
-        assert getattr(excinfo.value, "status_code", None) == 403
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status_failed_status(self, mock_requests_get):
-        mock_requests_get.return_value = MockResponse(
-            {"status": "failed", "message": "something wrong"}, 200
-        )
-
-        with pytest.raises(RequestError) as excinfo:
-            self.search_plugin._check_request_status("123")
-
-        assert "data request job has failed" in str(excinfo.value)
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status_completed(self, mock_requests_get):
-        mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
-
-        result = self.search_plugin._check_request_status("123")
-        assert result is True
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_get_result_data(self, mock_requests_get):
-        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
-        mock_requests_get.assert_called_with(
-            self.search_plugin.config.result_url.format(
-                jobId="123", items_per_page=5, page=0
-            ),
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_get_result_data_timeout(self, mock_requests_get):
-        mock_requests_get.side_effect = requests.exceptions.Timeout("Request timed out")
-
-        with pytest.raises(TimeOutError) as excinfo:
-            self.search_plugin._get_result_data("123", items_per_page=5, page=1)
-
-        assert "Request timed out" in str(excinfo.value)
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_get_result_data_request_exception(self, mock_requests_get):
-        mock_requests_get.side_effect = requests.RequestException("Boom")
-
-        with self.assertLogs(level="ERROR") as cm:
-            result = self.search_plugin._get_result_data(
-                "123", items_per_page=5, page=1
-            )
-
-        self.assertEqual(result, {})
-        self.assertIn("Result could not be retrieved", "".join(cm.output))
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_get_result_data_ssl_verify_false(self, mock_requests_get):
-        self.search_plugin.config.ssl_verify = False
-        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
-        mock_requests_get.assert_called_with(
-            self.search_plugin.config.result_url.format(
-                jobId="123", items_per_page=5, page=0
-            ),
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=False,
-        )
-
-        del self.search_plugin.config.ssl_verify
-
-    def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
-        """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
-        result = {
-            "totItems": 1,
-            "content": [
-                {
-                    "productInfo": {"product": "FOO_BAR_BAZ_QUX_QUUX_CORGE"},
-                    "extraInformation": {"footprint": geojson_geometry},
-                    "url": "http://foo.bar",
-                },
-            ],
-        }
-
-        @responses.activate(registry=responses.registries.FirstMatchRegistry)
-        def run():
-            responses.add(
-                responses.POST,
-                self.search_plugin.config.data_request_url,
-                status=200,
-                json={"jobId": "123"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.status_url + "123",
-                json={"status": "completed"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.result_url.format(
-                    jobId=123, items_per_page=20, page=0
-                ),
-                json=result,
-            )
-
-            # update metadata_mapping only for S1_SAR_GRD
-            self.search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"][
-                "bar"
-            ] = (
-                None,
-                "baz",
-            )
-            products, estimate = self.search_plugin.query(
-                productType="S1_SAR_GRD",
-            )
-            self.assertIn("bar", products[0].properties)
-            self.assertEqual(products[0].properties["bar"], "baz")
-
-            # search with another product type
-            self.assertNotIn(
-                "bar",
-                self.search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"],
-            )
-            products, estimate = self.search_plugin.query(
-                productType="S1_SAR_SLC",
-            )
-            self.assertNotIn("bar", products[0].properties)
-
-        run()
-
-    def test_plugins_search_datareq_dates_required(self):
-        """data_request_search query should use default dates if required"""
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
-        result = {
-            "totItems": 1,
-            "content": [
-                {
-                    "productInfo": {"product": "FOO_BAR_BAZ_QUX_QUUX_CORGE"},
-                    "extraInformation": {"footprint": geojson_geometry},
-                    "url": "http://foo.bar",
-                },
-            ],
-        }
-
-        @responses.activate(registry=responses.registries.FirstMatchRegistry)
-        def run():
-            responses.add(
-                responses.POST,
-                self.search_plugin.config.data_request_url,
-                status=200,
-                json={"jobId": "123"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.status_url + "123",
-                json={"status": "completed"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.result_url.format(
-                    jobId=123, items_per_page=20, page=0
-                ),
-                json=result,
-            )
-
-            self.assertTrue(self.search_plugin.config.dates_required)
-
-            products, estimate = self.search_plugin.query(
-                productType="S1_SAR_GRD",
-            )
-
-            request_dict = json.loads(responses.calls[0].request.body)
-
-            self.assertEqual(request_dict["datasetId"], "EO:ESA:DAT:SENTINEL-1:SAR")
-            self.assertEqual(
-                dateutil.parser.parse(
-                    request_dict["dateRangeSelectValues"][0]["start"]
-                ),
-                dateutil.parser.parse(DEFAULT_MISSION_START_DATE),
-            )
-            self.assertLess(
-                datetime.now(timezone.utc)
-                - dateutil.parser.parse(
-                    request_dict["dateRangeSelectValues"][0]["end"]
-                ),
-                timedelta(minutes=1),
-            )
-
-        run()
-
-    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
-    def test_apply_additional_filters_match(self, mock_jsonpath):
-        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
-        custom_filters = {
-            "filter_attribute": "attr",
-            "indexes": "0-3",
-            "filter_clause": "== 'ABC'",
-        }
-
-        mock_jsonpath.return_value.find.side_effect = lambda rec: [
-            mock.Mock(value=rec["attr"])
-        ]
-
-        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
-
-        self.assertEqual(len(filtered["content"]), 1)
-        self.assertEqual(filtered["content"][0]["id"], "record1")
-
-    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
-    def test_apply_additional_filters_no_match(self, mock_jsonpath):
-        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
-        custom_filters = {
-            "filter_attribute": "attr",
-            "indexes": "0-3",
-            "filter_clause": "== 'ZZZ'",
-        }
-
-        mock_jsonpath.return_value.find.side_effect = lambda rec: [
-            mock.Mock(value=rec["attr"])
-        ]
-
-        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
-
-        self.assertEqual(filtered["content"], [])
-
-    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
-    def test_apply_additional_filters_empty_path(self, mock_jsonpath):
-        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
-        custom_filters = {
-            "filter_attribute": "attr",
-            "indexes": "0-3",
-            "filter_clause": "== 'ABC'",
-        }
-
-        mock_jsonpath.return_value.find.return_value = []
-
-        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
-
-        self.assertEqual(filtered["content"], [])
-
-    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
-    def test_apply_additional_filters_multiple_records(self, mock_jsonpath):
-        result = {
-            "content": [
-                {"id": "record1", "attr": "ABCDEFG"},
-                {"id": "record2", "attr": "ZZZZZZZ"},
-            ]
-        }
-        custom_filters = {
-            "filter_attribute": "attr",
-            "indexes": "0-3",
-            "filter_clause": "== 'ABC'",
-        }
-
-        mock_jsonpath.return_value.find.side_effect = lambda rec: [
-            mock.Mock(value=rec["attr"])
-        ]
-
-        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
-
-        self.assertEqual(len(filtered["content"]), 1)
-        self.assertEqual(filtered["content"][0]["id"], "record1")
-
-
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginCreodiasS3Search, self).setUp()
@@ -2887,9 +2521,6 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.product_dataset = "cams-global-reanalysis-eac4"
         self.product_type_params = {
             "ecmwf:dataset": self.product_dataset,
-            "ecmwf:data_format": "grib",
-            "ecmwf:variable": "2m_dewpoint_temperature",
-            "ecmwf:time": "00:00",
         }
         self.custom_query_params = {
             "ecmwf:dataset": "cams-global-ghg-reanalysis-egg4",
@@ -3230,6 +2861,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             )
         )
         default_values.pop("metadata_mapping", None)
+        # ECMWF-like providers don't have default values anymore: override a default value
+        default_values["data_format"] = "grib"
         params = deepcopy(default_values)
         params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
         # set a parameter among the required ones of the form file with a default value in this form but not among the
@@ -3256,6 +2889,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         for constraint in constraints:
             self.assertNotIn(provider_data_format, constraint)
         params[eodag_formatted_download_format] = "foo"
+        # create parameters matching the first constraint
+        params["variable"] = "nitrogen_dioxide"
 
         queryables = self.search_plugin.discover_queryables(**params)
         # no error was raised, as expected

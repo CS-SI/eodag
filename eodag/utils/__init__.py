@@ -63,6 +63,8 @@ from typing import (
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
+from pydantic import ValidationError as PydanticValidationError
+
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
@@ -473,20 +475,6 @@ class ProgressCallback(tqdm):
         """
 
         return ProgressCallback(*args, **dict(self.kwargs, **kwargs))
-
-
-@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-class NotebookProgressCallback(tqdm):
-    """A custom progress bar to be used inside Jupyter notebooks"""
-
-    pass
-
-
-@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-def get_progress_callback() -> tqdm:
-    """Get progress_callback"""
-
-    return tqdm()
 
 
 def repeatfunc(func: Callable[..., Any], n: int, *args: Any) -> starmap:
@@ -1601,3 +1589,18 @@ def parse_le_uint16(data: bytes) -> int:
     65535
     """
     return struct.unpack("<H", data)[0]
+
+
+def format_pydantic_error(e: PydanticValidationError) -> str:
+    """Format Pydantic ValidationError
+
+    :param e: A Pydantic ValidationError object
+    :type e: PydanticValidationError
+    """
+    error_header = f"{e.error_count()} error(s). "
+
+    error_messages = [
+        f'{err["loc"][0]}: {err["msg"]}' if err["loc"] else err["msg"]
+        for err in e.errors()
+    ]
+    return error_header + "; ".join(set(error_messages))

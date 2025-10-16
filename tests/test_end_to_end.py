@@ -704,12 +704,6 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "fedeo_ceda"
         ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
         self.assertEqual(
-            ext_product_types_conf[provider]["product_types_config"][
-                "MERIS_ALAMO_L2_V2.2"
-            ]["ID"],
-            "MERIS_ALAMO_L2_V2.2",
-        )
-        self.assertEqual(
             "MERIS",
             ext_product_types_conf[provider]["product_types_config"][
                 "MERIS_ALAMO_L2_V2.2"

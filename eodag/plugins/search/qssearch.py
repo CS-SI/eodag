@@ -82,7 +82,6 @@ from eodag.utils import (
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
     USER_AGENT,
-    _deprecated,
     copy_deepcopy,
     deepcopy,
     dict_items_recursive_apply,
@@ -623,29 +622,46 @@ class QueryStringSearch(Search):
                             collection_data = self._get_product_type_metadata_from_single_collection_endpoint(
                                 generic_product_type_id
                             )
+                            collection_data_id = collection_data.pop("id", None)
+
+                            # remove product type if it must have be renamed but renaming failed
+                            if (
+                                collection_data_id
+                                and collection_data_id == NOT_AVAILABLE
+                            ):
+                                del conf_update_dict["product_types_config"][
+                                    generic_product_type_id
+                                ]
+                                del conf_update_dict["providers_config"][
+                                    generic_product_type_id
+                                ]
+                                return
+
                             conf_update_dict["product_types_config"][
                                 generic_product_type_id
                             ].update(collection_data)
 
                             # update product type id if needed
-                            if collection_data_id := collection_data.get("ID"):
-                                if generic_product_type_id != collection_data_id:
-                                    logger.debug(
-                                        "Rename %s product type to %s",
-                                        generic_product_type_id,
-                                        collection_data_id,
-                                    )
-                                    conf_update_dict["providers_config"][
-                                        collection_data_id
-                                    ] = conf_update_dict["providers_config"].pop(
-                                        generic_product_type_id
-                                    )
-                                    conf_update_dict["product_types_config"][
-                                        collection_data_id
-                                    ] = conf_update_dict["product_types_config"].pop(
-                                        generic_product_type_id
-                                    )
-                                    generic_product_type_id = collection_data_id
+                            if (
+                                collection_data_id
+                                and collection_data_id != generic_product_type_id
+                            ):
+                                logger.debug(
+                                    "Rename %s product type to %s",
+                                    generic_product_type_id,
+                                    collection_data_id,
+                                )
+                                conf_update_dict["providers_config"][
+                                    collection_data_id
+                                ] = conf_update_dict["providers_config"].pop(
+                                    generic_product_type_id
+                                )
+                                conf_update_dict["product_types_config"][
+                                    collection_data_id
+                                ] = conf_update_dict["product_types_config"].pop(
+                                    generic_product_type_id
+                                )
+                                generic_product_type_id = collection_data_id
 
                         # update keywords
                         keywords_fields = [
@@ -829,15 +845,6 @@ class QueryStringSearch(Search):
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
         return eo_products, total_items
-
-    @_deprecated(
-        reason="Simply run `self.config.metadata_mapping.update(metadata_mapping)` instead",
-        version="2.10.0",
-    )
-    def update_metadata_mapping(self, metadata_mapping: dict[str, Any]) -> None:
-        """Update plugin metadata_mapping with input metadata_mapping configuration"""
-        if self.config.metadata_mapping:
-            self.config.metadata_mapping.update(metadata_mapping)
 
     def build_query_string(
         self, product_type: str, query_dict: dict[str, Any]

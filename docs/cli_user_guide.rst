@@ -156,22 +156,3 @@ This file can then be used in EODAG using the environment variable ``EODAG_EXT_P
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
 For more information on the product types discovery mechanism, please see
 `Python API User Guide / Providers and products / Product types discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.
-
-Server mode
------------
-
-EODAG has a STAC compliant REST API. It can serve configured providers data through
-this STAC API.
-
-.. command-output:: eodag serve-rest --help
-
-And for advanced configuration:
-
-.. command-output:: eodag deploy-wsgi-app --help
-
-See server mode usage examples in `STAC REST API Server <stac_rest.rst>`_.
-
-.. toctree::
-   :maxdepth: 2
-
-   stac_rest

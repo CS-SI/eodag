@@ -157,19 +157,23 @@ Some EODAG core settings can be overriden using environment variables:
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
   If the file is not readable, only user-modified providers will be fetched.
-* ``EODAG_PROVIDERS_WHITELIST`` to restrict EODAG to only use a specific list of providers.
+* ``EODAG_PROVIDERS_WHITELIST`` to restrict ``eodag`` to only use a specific list of providers.
 
-  If this environment variable is set (as a comma-separated list of provider names), EODAG will only load and use the specified providers.
+  If this environment variable is set (as a comma-separated list of provider names), ``eodag`` will only load and use the specified providers.
   All other providers will be ignored, regardless of their presence in configuration files.
 
-  This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
+  This is useful for restricting ``eodag`` to a subset of providers, for example in controlled or production environments.
 * ``EODAG_STRICT_PRODUCT_TYPES`` to control how product types are listed.
 
-  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list product types that are present in the main product types configuration file.
+  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), ``eodag`` will only list product types that are present in the main product types configuration file.
   Product types defined only in provider configurations (but not in the main product types configuration) will be ignored.
-  If not set, EODAG will also include product types defined only in provider configurations, with minimal metadata.
+  If not set, ``eodag`` will also include product types defined only in provider configurations, with minimal metadata.
 
   This is useful if you want to strictly control which product types are available, for example to ensure consistency across environments.
+* ``EODAG_VALIDATE_PRODUCT_TYPES`` to control whether product types validation will log a warning if it fails.
+
+  Mostly created for ensuring ``eodag`` internal and external product types configuration is still correct, this environment variable
+  will allow to log a warning when a product type does not follow the right schema of its model if set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``).
 
 Example usage:
 
@@ -177,6 +181,7 @@ Example usage:
 
    export EODAG_PROVIDERS_WHITELIST=peps,creodias,cop_dataspace
    export EODAG_STRICT_PRODUCT_TYPES=true
+   export EODAG_VALIDATE_PRODUCT_TYPES=true
 
 CLI configuration
 ^^^^^^^^^^^^^^^^^

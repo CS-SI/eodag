@@ -94,18 +94,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         }
         self.product_type = "TIGGE_CF_SFC"
         self.product_type_params = {
-            "ecmwf:class": "ti",
             "ecmwf:dataset": "tigge",
-            "ecmwf:expver": "prod",
-            "ecmwf:type": "cf",
-            "ecmwf:levtype": "sfc",
-            "ecmwf:origin": "ecmwf",
-            "ecmwf:grid": "0.5/0.5",
-            "ecmwf:param": "59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/"
-            + "228002/228039/228139/228141/228144/228164/228228",
-            "ecmwf:step": 0,
-            "ecmwf:time": "00:00",
-            "ecmwf:target": "output",
         }
         self.custom_query_params = {
             "ecmwf:origin": "ecmwf",
@@ -297,6 +286,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         results = dag.search(
             **self.query_dates,
             **self.custom_query_params,
+            validate=False,
         )
         eoproduct = results[0]
         expected_path = os.path.join(
@@ -333,6 +323,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         results = dag.search(
             **self.query_dates,
             **operation_archive_custom_query_params,
+            validate=False,
         )
         eoproduct = results[0]
         expected_path = os.path.join(
@@ -392,6 +383,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         params = deepcopy(self.query_dates)
         params.update(self.custom_query_params)
         params["ecmwf:accuracy"] = "bar"
+        params["validate"] = False
         results = dag.search(**params)
         eoproducts.extend(results)
         params["ecmwf:accuracy"] = "baz"

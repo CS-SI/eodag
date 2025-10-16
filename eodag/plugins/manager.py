@@ -50,7 +50,6 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig, ProviderConfig
     from eodag.plugins.base import PluginTopic
-    from eodag.types import S3SessionKwargs
 
 
 logger = logging.getLogger("eodag.plugins.manager")
@@ -362,7 +361,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
-    ) -> Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]]:
+    ) -> Optional[Union[AuthBase, S3ServiceResource]]:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 
