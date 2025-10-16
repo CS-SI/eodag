@@ -97,7 +97,7 @@ class Queryables(CommonQueryables):
     eo_snow_cover: Annotated[Percentage, Field(None, alias="eo:snow_cover")]
     # grid extension
     grid_code: Annotated[
-        str, Field(None, alias="grid:code", pattern=r"[0-9]{2}[A-Z]{3}")
+        str, Field(None, alias="grid:code", pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$")
     ]
     # mgrs extension
     mgrs_grid_square: Annotated[str, Field(None, alias="mgrs:grid_square")]

@@ -2034,7 +2034,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertIn("grid:code", products[0].properties)
         self.assertEqual(
             products[0].properties["grid:code"],
-            "31TCJ",
+            "MGRS-31TCJ",
         )
 
     @mock.patch(
