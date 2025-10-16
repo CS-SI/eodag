@@ -364,10 +364,12 @@ class CopGhslSearch(Search):
                 filters[grouped_by] = format_params[grouped_by] = str(value)
                 product_id = product_type + "__" + "_".join(format_params.values())
                 properties["id"] = properties["title"] = product_id
+                properties.update(format_params)
                 properties["downloadLink"] = download_link.format(**format_params)
                 datetimes = self._get_start_and_end_from_properties(format_params)
                 properties["startTimeFromAscendingNode"] = datetimes["start_date"]
                 properties["completionTimeFromAscendingNode"] = datetimes["end_date"]
+                properties[grouped_by] = value
                 product = EOProduct(
                     provider="cop_ghsl", properties=properties, productType=product_type
                 )
@@ -604,6 +606,7 @@ class CopGhslSearch(Search):
         """
 
         product_type = kwargs.pop("productType")
+        grouped_by = kwargs.pop("grouped_by", None)
         constraints_values = self._fetch_constraints(product_type)["constraints"]
         available_values = _get_available_values_from_constraints(
             constraints_values, kwargs, product_type
@@ -633,7 +636,7 @@ class CopGhslSearch(Search):
                 }
             )
         # add geometry queryable if there are tiles
-        if "tile_size" in available_values:
+        if "tile_size" in available_values and not grouped_by:
             queryables.update(
                 {
                     "geom": Queryables.get_with_default("geom", None),
