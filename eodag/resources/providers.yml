@@ -6039,7 +6039,7 @@
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{productType}'
       single_product_type_parsable_metadata:
         id: '{$.assets.enclosure.href#ceda_collection_name}'
-        abstract: '$.description'
+        abstract: '{$.description#decode_ceda_abstract}'
         instrument: '{$.summaries.instruments#csv_list}'
         keywords: '{$.keywords#csv_list}'
         license: '$.license'
