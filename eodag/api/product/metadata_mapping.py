@@ -238,7 +238,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             """
             if isinstance(key, str):
                 original_key = key.replace("__", ":")
-                return kwargs[original_key]
+                key_with_COLON = key.replace("__", "_COLON_")
+                return kwargs.get(original_key) or kwargs.get(key_with_COLON)
             return super().get_value(key, args, kwargs)
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
@@ -750,7 +751,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 int(x.strip()) if x.strip().lstrip("-").isdigit() else None
                 for x in args.split(",")
             ]
-            return string[cmin:cmax:cstep]
+            return string[cmin:cmax:cstep] or NOT_AVAILABLE
 
         @staticmethod
         def convert_to_lower(string: str) -> str:
@@ -1084,8 +1085,6 @@ def properties_from_json(
     templates = {}
     used_jsonpaths = []
     for metadata, value in mapping.items():
-        if metadata == "keywords":
-            print(0)
         # Treat the case when the value is from a queryable metadata
         if isinstance(value, list):
             conversion_or_none, path_or_text = value[1]
@@ -1500,6 +1499,11 @@ def format_query_params(
                     formatted_query_param = remove_str_array_quotes(
                         formatted_query_param
                     )
+                    if NOT_AVAILABLE in formatted_query_param:
+                        raise ValidationError(
+                            "Could not parse %s query parameter, got %s"
+                            % (eodag_search_key, formatted_query_param)
+                        )
 
                     # json query string (for POST request)
                     update_nested_dict(
