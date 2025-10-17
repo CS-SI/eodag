@@ -1055,7 +1055,9 @@ class AwsDownload(Download):
             found_dict = matched.groupdict()
             product_path = "%s" % found_dict["file"]
         # S1 --------------------------------------------------------------
-        elif matched := S1_CALIB_REGEX.match(chunk.key):
+        elif (
+            matched := S1_CALIB_REGEX.match(chunk.key)
+        ) and polarization_mode is not None:
             found_dict = matched.groupdict()
             product_path = "annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml" % (
                 found_dict["file_prefix"],
@@ -1067,7 +1069,9 @@ class AwsDownload(Download):
                     found_dict["file_pol"].upper(), 1
                 ),
             )
-        elif matched := S1_ANNOT_REGEX.match(chunk.key):
+        elif (
+            matched := S1_ANNOT_REGEX.match(chunk.key)
+        ) and polarization_mode is not None:
             found_dict = matched.groupdict()
             product_path = "annotation/%s-%s-grd-%s-%s-%03d.xml" % (
                 product.properties["platform"].lower(),
@@ -1078,7 +1082,9 @@ class AwsDownload(Download):
                     found_dict["file_pol"].upper(), 1
                 ),
             )
-        elif matched := S1_MEAS_REGEX.match(chunk.key):
+        elif (
+            matched := S1_MEAS_REGEX.match(chunk.key)
+        ) and polarization_mode is not None:
             found_dict = matched.groupdict()
             product_path = "measurement/%s-%s-grd-%s-%s-%03d.%s" % (
                 product.properties["platform"].lower(),
