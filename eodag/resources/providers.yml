@@ -4565,6 +4565,7 @@
       model: ICON
       resolution: high
       levtype: sfc
+      levelist: "1000"
       experiment: hist
       param: 130
       time: "0000"
@@ -4579,10 +4580,11 @@
       experiment: hist
       realization: 1
       model: IFS-NEMO
-      resolution: standard/high
+      resolution: standard
       levtype: hl
+      levelist: "100"
       time: "0000"
-      param: 228247
+      param: 228246
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4594,9 +4596,10 @@
       experiment: cont
       realization: 1
       model: IFS-NEMO
-      resolution: standard/high
+      resolution: high
       levtype: hl
-      time: "0000/0100/to/2300"
+      levelist: "100"
+      time: "0000"
       param: 228246
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
       dataset: climate-dt
@@ -4611,8 +4614,8 @@
       model: ICON
       resolution: high
       levtype: sfc
-      time: "0000/0100/to/2300"
-      param: 263000
+      time: "0000"
+      param: 78
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4624,9 +4627,10 @@
       experiment: SSP3-7.0
       realization: 1
       model: IFS-NEMO
-      resolution: standard/high
+      resolution: standard
+      levelist: "100"
       levtype: hl
-      time: "0000/0100/to/2300"
+      time: "0000"
       param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
       dataset: climate-dt
@@ -4639,9 +4643,10 @@
       experiment: cont
       realization: 1
       model: IFS-FESOM
-      resolution: standard/high
+      resolution: standard
+      levelist: "100"
       levtype: hl
-      time: "0000/0100/to/2300"
+      time: "0000"
       param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
       dataset: climate-dt
@@ -4654,9 +4659,10 @@
       experiment: hist
       realization: 1
       model: IFS-FESOM
-      resolution: standard/high
+      resolution: standard
+      levelist: "100"
       levtype: hl
-      time: "0000/0100/to/2300"
+      time: "0000"
       param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       dataset: climate-dt
@@ -4669,9 +4675,10 @@
       experiment: Tplus2.0K
       realization: 1
       model: IFS-FESOM
-      resolution: standard/high
+      resolution: standard
       levtype: hl
-      time: "0000/0100/to/2300"
+      levelist: "100"
+      time: "0000"
       param: 228246
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       dataset: climate-dt
@@ -4684,10 +4691,11 @@
       experiment: hist
       realization: 1
       model: IFS-FESOM
-      resolution: standard/high
+      resolution: standard
       levtype: hl
-      time: "0000/0100/to/2300"
-      param: 132
+      levelist: "100"
+      time: "0000"
+      param: 131
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
       dataset: climate-dt
       class: d1
@@ -4699,10 +4707,11 @@
       experiment: SSP3-7.0
       realization: 2
       model: IFS-FESOM
-      resolution: standard/high
-      levtype: hl
-      time: "0000/0100/to/2300"
-      param: 132
+      resolution: high
+      levelist: "100"
+      levtype: pl
+      time: "0000"
+      param: 131
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4793,7 +4802,8 @@
       experiment: cont
       realization: 1
       model: IFS-FESOM
-      resolution: standard/high
+      resolution: standard
+      levelist: "100"
       levtype: hl
       time: "0000"
       param: 228246
@@ -4808,9 +4818,10 @@
       experiment: SSP3-7.0
       realization: 1
       model: IFS-FESOM
-      resolution: standard/high
+      resolution: standard
+      levelist: "100"
       levtype: hl
-      time: "0000/0100/to/2300"
+      time: "0000"
       param: 228246
   download: !plugin
     type: HTTPDownload
@@ -4847,7 +4858,7 @@
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
-    redirect_uri: https://polytope.mn5.apps.dte.destination-earth.eu/
+    redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
     client_id: polytope-api-public
     user_consent_needed: false
     token_exchange_post_data_method: data
