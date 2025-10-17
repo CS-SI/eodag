@@ -51,11 +51,11 @@ which takes ``minimum_overlap`` as argument):
 
 .. code-block:: console
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --all \
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c S2_MSI_L1C --all \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
 
-The request above means : "Give me all the products of type `S2_MSI_L1C`, use ``FilterOverlap`` to keep only those
+The request above means : "Give me all the products from `S2_MSI_L1C` collection, use ``FilterOverlap`` to keep only those
 products that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (``minimum_overlap``)
 of the surface of this bbox".
 
@@ -64,7 +64,7 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
 
 .. code-block:: console
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c S2_MSI_L1C \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10 \
                      --query "foo=1&bar=2"
@@ -72,11 +72,11 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
 * If the collection is not known, it can also be guessed by EODAG during the search based on parameters in the search
   request. The possible parameters are:
 
-  - `instrument` (e.g. MSI)
-  - `platform` (e.g. SENTINEL2)
-  - `platformSerialIdentifier` (e.g. S2A)
-  - `processingLevel` (e.g. L1)
-  - `sensorType` (e.g. OPTICAL)
+  - `instruments` (e.g. MSI)
+  - `constellation` (e.g. SENTINEL2)
+  - `platform` (e.g. S2A)
+  - `processing-level` (e.g. L1)
+  - `sensor-type` (e.g. OPTICAL)
   - `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
 
 For example, the following search request will first search for a collection for platform SENTINEL2 and
@@ -86,8 +86,8 @@ collection to execute the actual search.
 .. code-block:: console
 
         eodag search \
-        --platform SENTINEL2 \
-        --processingLevel L1 \
+        --constellation SENTINEL2 \
+        --processing-level L1 \
         --box 1 43 2 44 \
         --start 2021-03-01 --end 2021-03-31
 

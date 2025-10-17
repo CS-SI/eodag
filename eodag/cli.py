@@ -190,21 +190,13 @@ def version() -> None:
     help="End sensing time in ISO8601 format (e.g. '1990-11-26', '1990-11-26T14:30:10'). UTC is assumed",
 )
 @click.option("-c", "--collection", help="The collection to search")
+@click.option("--instruments", help="Search for products matching these instruments")
+@click.option("--platform", help="Search for products matching this platform")
+@click.option("--constellation", help="Search for products matching this constellation")
 @click.option(
-    "-i", "--instruments", help="Search for products matching these instruments"
+    "--processing-level", help="Search for products matching this processing level"
 )
-@click.option("-P", "--platform", help="Search for products matching this platform")
-@click.option(
-    "-C", "--constellation", help="Search for products matching this constellation"
-)
-@click.option(
-    "-L",
-    "--processing-level",
-    help="Search for products matching this processing level",
-)
-@click.option(
-    "-S", "--sensor-type", help="Search for products matching this type of sensor"
-)
+@click.option("--sensor-type", help="Search for products matching this type of sensor")
 @click.option(
     "--cloud-cover",
     type=click.IntRange(0, 100),
@@ -416,19 +408,16 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 @eodag.command(name="list", help="List supported collections")
 @click.option("-p", "--provider", help="List collections supported by this provider")
 @click.option(
-    "-i", "--instruments", help="List collections originating from these instruments"
+    "--instruments", help="List collections originating from these instruments"
 )
+@click.option("--platform", help="List collections originating from this platform")
 @click.option(
-    "-P", "--platform", help="List collections originating from this platform"
-)
-@click.option(
-    "-C",
     "--constellation",
     help="List collections originating from this constellation",
 )
-@click.option("-L", "--processing-level", help="List collections of processing level")
+@click.option("--processing-level", help="List collections of processing level")
 @click.option(
-    "-S", "--sensor-type", help="List collections originating from this type of sensor"
+    "--sensor-type", help="List collections originating from this type of sensor"
 )
 @click.option(
     "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"

@@ -166,6 +166,8 @@ All product-types related classes and methods have been renamed with collections
 CLI updates
 ^^^^^^^^^^^
 
+Check latest `CLI User Guide <cli_user_guide.rst>`_ for complete guidelines.
+
 .. list-table::
   :header-rows: 1
 
@@ -173,8 +175,31 @@ CLI updates
     - v4.x.x Command and options
   * - ``eodag search -p, --productType TEXT``
     - ``eodag search -c, --collection TEXT``
-  * - ``eodag search -i, --instruments TEXT``
-    - ``eodag search -i, --instrument TEXT``
+  * - ``eodag search --query provider=TEXT``
+    - ``eodag search -p, --provider TEXT``
+  * - ``eodag search -i, --instrument TEXT``
+    - ``eodag search --instruments TEXT``
+  * - ``eodag search -P, --platform TEXT``
+    - ``eodag search --constellation TEXT``
+  * - ``eodag search -t, --platformSerialIdentifier TEXT``
+    - ``eodag search --platform TEXT``
+  * - ``eodag search -c, --cloudCover INTEGER RANGE``
+    - ``eodag search --cloud-cover INTEGER RANGE``
+  * - ``eodag search -L, --processingLevel TEXT``
+    - ``eodag search --processing-level TEXT``
+  * - ``eodag search -S, --sensorType TEXT``
+    - ``eodag search --sensor-type TEXT``
+  * - ``eodag list -i, --instrument TEXT``
+    - ``eodag list --instruments TEXT``
+  * - ``eodag list -P, --platform TEXT``
+    - ``eodag list --constellation TEXT``
+  * - ``eodag list -t, --platformSerialIdentifier TEXT``
+    - ``eodag list --platform TEXT``
+  * - ``eodag list -L, --processingLevel TEXT``
+    - ``eodag list --processing-level TEXT``
+  * - ``eodag list -S, --sensorType TEXT``
+    - ``eodag list --sensor-type TEXT``
+
 
 Environment variables renamed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
