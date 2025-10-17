@@ -49,6 +49,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_tabs.tabs",
     "sphinx_autodoc_typehints",
+    "sphinxcontrib.autodoc_pydantic",
     "sphinxcontrib.programoutput",
     "sphinxemoji.sphinxemoji",
     "sphinx_design",
@@ -181,6 +182,16 @@ html_js_files: list[Any] = []
 html_show_sourcelink = False
 
 html_last_updated_fmt = today_fmt
+
+# -- Options for autodoc_pydantic ------------------------------------------
+
+autodoc_pydantic_field_list_validators = False
+autodoc_pydantic_field_list_constraints = True
+autodoc_pydantic_field_show_alias = True
+autodoc_pydantic_field_show_default = False
+autodoc_pydantic_field_show_required = True
+autodoc_pydantic_model_show_field_summary = False
+autodoc_pydantic_model_show_field_list = False
 
 # -- Options for HTMLHelp output ------------------------------------------
 
