@@ -572,6 +572,9 @@
       sat:orbit_state:
         - 'orbitDirection'
         - '$.properties.orbitDirection'
+      sat:relative_orbit:
+        - 'relativeOrbitNumber'
+        - '$.properties.relativeOrbitNumber'
       sar:instrument_mode:
         - 'swath'
         - '$.properties.swath'
