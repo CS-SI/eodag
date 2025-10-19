@@ -893,8 +893,8 @@
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -2548,8 +2548,8 @@
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -3131,6 +3131,8 @@
         - '{{"enddate": "{end_datetime}"}}'
         - '$.properties.enddate'
       eodag:download_link: '$.properties.location'
+      eodag:quicklook: '$.properties.thumbnail'
+      eodag:thumbnail: '$.properties.thumbnail'
       title: '$.id'
       order:status: 'orderable'
       processing:level:
@@ -4096,8 +4098,8 @@
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].eodag:download_link'
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
   download: !plugin
     type: CreodiasS3Download
     s3_endpoint: 'https://eodata.cloudferro.com'
