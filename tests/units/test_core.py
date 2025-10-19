@@ -2680,7 +2680,7 @@ class TestCoreSearch(TestCoreBase):
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_params_alias(self, search_plugin):
-        """_do_search must get params alias"""
+        """_do_search must get params alias and remove provider prefix"""
         search_plugin.provider = "peps"
 
         class DummyConfig:
@@ -2688,13 +2688,25 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
         search_args = dict(
-            foo="bar", baz=None, eo_cloud_cover=10, **{"eo:snow_cover": 20}
+            foo="bar",
+            baz=None,
+            eo_cloud_cover=10,
+            **{"eo:snow_cover": 20},
+            peps_custom_1=30,
+            **{"peps:custom_2": 40},
         )
 
         self.dag._do_search(search_plugin=search_plugin, **search_args)
 
         search_plugin.query.assert_called_once_with(
-            mock.ANY, foo="bar", **{"eo:cloud_cover": 10, "eo:snow_cover": 20}
+            mock.ANY,
+            foo="bar",
+            **{
+                "eo:cloud_cover": 10,
+                "eo:snow_cover": 20,
+                "custom_1": 30,
+                "custom_2": 40,
+            },
         )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)

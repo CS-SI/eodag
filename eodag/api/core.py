@@ -1881,7 +1881,10 @@ class EODataAccessGateway:
                     param_alias = Queryables.model_fields[param].alias or param
                     search_params[param_alias] = value
                 else:
-                    search_params[param] = value
+                    # remove `provider:` or `provider_` prefix if any
+                    search_params[
+                        re.sub(r"^" + search_plugin.provider + r"[_:]", "", param)
+                    ] = value
 
             if validate:
                 search_plugin.validate(search_params, prep.auth)
