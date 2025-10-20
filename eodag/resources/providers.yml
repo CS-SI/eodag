@@ -6201,6 +6201,9 @@
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
     timeout: 20
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
     discover_collections:
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
       result_type: json
