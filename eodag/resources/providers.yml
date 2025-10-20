@@ -4553,32 +4553,32 @@
       levtype: sfc
       step: 0
       param: 31
+      time: "0000"
     DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: CMIP6
-      realization: 1
+      realization: "1"
       model: ICON
       resolution: high
       levtype: sfc
-      levelist: "1000"
       experiment: hist
-      param: 130
+      param: 78
       time: "0000"
     DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: CMIP6
       experiment: hist
-      realization: 1
+      realization: "1"
       model: IFS-NEMO
       resolution: standard
       levtype: hl
@@ -4588,13 +4588,13 @@
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: HighResMIP
       experiment: cont
-      realization: 1
+      realization: "1"
       model: IFS-NEMO
       resolution: high
       levtype: hl
@@ -4604,13 +4604,13 @@
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      realization: 1
+      realization: "1"
       model: ICON
       resolution: high
       levtype: sfc
@@ -4619,13 +4619,13 @@
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      realization: 1
+      realization: "1"
       model: IFS-NEMO
       resolution: standard
       levelist: "100"
@@ -4635,13 +4635,13 @@
     DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: story-nudging
       experiment: cont
-      realization: 1
+      realization: "1"
       model: IFS-FESOM
       resolution: standard
       levelist: "100"
@@ -4651,13 +4651,13 @@
     DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: story-nudging
       experiment: hist
-      realization: 1
+      realization: "1"
       model: IFS-FESOM
       resolution: standard
       levelist: "100"
@@ -4667,13 +4667,13 @@
     DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: story-nudging
       experiment: Tplus2.0K
-      realization: 1
+      realization: "1"
       model: IFS-FESOM
       resolution: standard
       levtype: hl
@@ -4683,13 +4683,13 @@
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       dataset: climate-dt
       class: ng
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: CMIP6
       experiment: hist
-      realization: 1
+      realization: "1"
       model: IFS-FESOM
       resolution: standard
       levtype: hl
@@ -4699,13 +4699,13 @@
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      realization: 2
+      realization: "2"
       model: IFS-FESOM
       resolution: high
       levelist: "100"
@@ -4781,6 +4781,9 @@
       product_type_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
+      geometry:
+        - '{{"feature": {geometry#to_geojson_polytope}}}'
+        - "$.geometry"
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
@@ -4794,13 +4797,13 @@
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: HighResMIP
       experiment: cont
-      realization: 1
+      realization: "1"
       model: IFS-FESOM
       resolution: standard
       levelist: "100"
@@ -4810,13 +4813,13 @@
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
       class: d1
       dataset: climate-dt
-      generation: 1
+      generation: "1"
       expver: "0001"
       stream: clte
       type: fc
       activity: ScenarioMIP
       experiment: SSP3-7.0
-      realization: 1
+      realization: "1"
       model: IFS-FESOM
       resolution: standard
       levelist: "100"
