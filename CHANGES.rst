@@ -3,6 +3,40 @@ Release history
 ===============
 
 
+v3.10.0 (2025-10-20)
+====================
+
+Features
+--------
+
+* **plugins**: Possibility to create presigned urls (`#1845`_, `d002c38`_)
+
+Bug Fixes
+---------
+
+* **providers**: Added month/year mapping and default values for CMIP6_CLIMATE_PROJECT (`#1872`_,
+  `dcdca60`_)
+
+Build System
+------------
+
+* Pin pydantic < 2.12.0 to prevent sphinx failures (`#1873`_, `1b17b4a`_)
+
+Refactoring
+-----------
+
+* **plugins**: Deprecate CreodiasS3Download (`#1884`_, `5f6966b`_)
+
+.. _#1845: https://github.com/CS-SI/eodag/pull/1845
+.. _#1872: https://github.com/CS-SI/eodag/pull/1872
+.. _#1873: https://github.com/CS-SI/eodag/pull/1873
+.. _#1884: https://github.com/CS-SI/eodag/pull/1884
+.. _1b17b4a: https://github.com/CS-SI/eodag/commit/1b17b4af5f898ed608dd132e49477d28466f9451
+.. _5f6966b: https://github.com/CS-SI/eodag/commit/5f6966bc52db1e19ad3f959bab41aca25804c3e5
+.. _d002c38: https://github.com/CS-SI/eodag/commit/d002c38126f566f52903fb0e5012a22e771c3200
+.. _dcdca60: https://github.com/CS-SI/eodag/commit/dcdca6012736f751418725312da736f61767ec36
+
+
 v3.9.1 (2025-10-07)
 ===================
 

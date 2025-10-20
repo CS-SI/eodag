@@ -185,7 +185,7 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
 
 .. code-block:: bash
 
-    docker run -p 5000:5000 --rm csspace/eodag-server:3.9.1
+    docker run -p 5000:5000 --rm csspace/eodag-server:3.10.0
 
 You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
 Simply run:
