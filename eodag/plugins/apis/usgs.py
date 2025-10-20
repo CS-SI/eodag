@@ -31,7 +31,6 @@ from usgs import USGSAuthExpiredError, USGSError, api
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
-    DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
@@ -42,7 +41,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     USER_AGENT,
     ProgressCallback,
     format_dict_items,
@@ -50,7 +49,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     NotAvailableError,
     RequestError,
     ValidationError,
@@ -100,7 +99,7 @@ class UsgsApi(Api):
         # Same method as in base.py, Search.__init__()
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas: dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
+        metas: dict[str, Any] = {}
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata.
         metas.update(self.config.metadata_mapping)
@@ -147,23 +146,25 @@ class UsgsApi(Api):
             if prep.items_per_page is not None
             else DEFAULT_ITEMS_PER_PAGE
         )
-        product_type = kwargs.get("productType")
-        if product_type is None:
-            raise NoMatchingProductType(
-                "Cannot search on USGS without productType specified"
+        collection = kwargs.get("collection")
+        if collection is None:
+            raise NoMatchingCollection(
+                "Cannot search on USGS without collection specified"
             )
         if kwargs.get("sort_by"):
             raise ValidationError("USGS does not support sorting feature")
 
         self.authenticate()
 
-        product_type_def_params = self.config.products.get(  # type: ignore
-            product_type,
-            self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
+        collection_def_params = self.config.products.get(  # type: ignore
+            collection,
+            self.config.products[GENERIC_COLLECTION],  # type: ignore
         )
-        usgs_dataset = format_dict_items(product_type_def_params, **kwargs)["dataset"]
-        start_date = kwargs.pop("startTimeFromAscendingNode", None)
-        end_date = kwargs.pop("completionTimeFromAscendingNode", None)
+        usgs_collection = format_dict_items(collection_def_params, **kwargs)[
+            "_collection"
+        ]
+        start_date = kwargs.pop("start_datetime", None)
+        end_date = kwargs.pop("end_datetime", None)
         geom = kwargs.pop("geometry", None)
         footprint: dict[str, str] = {}
         if hasattr(geom, "bounds"):
@@ -200,14 +201,16 @@ class UsgsApi(Api):
 
             # search by id
             if searched_id := kwargs.get("id"):
-                dataset_filters = api.dataset_filters(usgs_dataset)
+                dataset_filters = api.dataset_filters(usgs_collection)
                 # ip pattern set as parameter queryable (first element of param conf list)
                 id_pattern = self.config.metadata_mapping["id"][0]
                 # loop on matching dataset_filters until one returns expected results
                 for dataset_filter in dataset_filters["data"]:
                     if id_pattern in dataset_filter["searchSql"]:
                         logger.debug(
-                            f"Try using {dataset_filter['searchSql']} dataset filter to search by id on {usgs_dataset}"
+                            "Try using %s dataset filter to search by id on %s",
+                            dataset_filter["searchSql"],
+                            usgs_collection,
                         )
                         full_api_search_kwargs = {
                             "where": {
@@ -217,19 +220,19 @@ class UsgsApi(Api):
                             **api_search_kwargs,
                         }
                         logger.info(
-                            f"Sending search request for {usgs_dataset} with {full_api_search_kwargs}"
+                            f"Sending search request for {usgs_collection} with {full_api_search_kwargs}"
                         )
                         results = api.scene_search(
-                            usgs_dataset, **full_api_search_kwargs
+                            usgs_collection, **full_api_search_kwargs
                         )
                         if len(results["data"]["results"]) == 1:
                             # search by id using this dataset_filter succeeded
                             break
             else:
                 logger.info(
-                    f"Sending search request for {usgs_dataset} with {api_search_kwargs}"
+                    f"Sending search request for {usgs_collection} with {api_search_kwargs}"
                 )
-                results = api.scene_search(usgs_dataset, **api_search_kwargs)
+                results = api.scene_search(usgs_collection, **api_search_kwargs)
 
             # update results with storage info from download_options()
             results_by_entity_id = {
@@ -239,7 +242,7 @@ class UsgsApi(Api):
                 f"Adapting {len(results_by_entity_id)} plugin results to eodag product representation"
             )
             download_options = api.download_options(
-                usgs_dataset, list(results_by_entity_id.keys())
+                usgs_collection, list(results_by_entity_id.keys())
             )
             if download_options.get("data") is not None:
                 for download_option in download_options["data"]:
@@ -261,7 +264,7 @@ class UsgsApi(Api):
             results["data"]["results"] = list(results_by_entity_id.values())
 
             for result in results["data"]["results"]:
-                result["productType"] = usgs_dataset
+                result["collection"] = usgs_collection
 
                 product_properties = properties_from_json(
                     result, self.config.metadata_mapping
@@ -269,7 +272,7 @@ class UsgsApi(Api):
 
                 final.append(
                     EOProduct(
-                        productType=product_type,
+                        collection=collection,
                         provider=self.provider,
                         properties=product_properties,
                         geometry=footprint,
@@ -277,7 +280,7 @@ class UsgsApi(Api):
                 )
         except USGSError as e:
             logger.warning(
-                f"Product type {usgs_dataset} may not exist on USGS EE catalog"
+                f"Collection {usgs_collection} may not exist on USGS EE catalog"
             )
             api.logout()
             raise RequestError.from_error(e) from e
@@ -313,7 +316,7 @@ class UsgsApi(Api):
         output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+                product.collection, self.config.products[GENERIC_COLLECTION]  # type: ignore
             ).get("output_extension", ".tar.gz"),
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
@@ -334,11 +337,13 @@ class UsgsApi(Api):
             raise NotAvailableError(
                 f"No USGS products found for {product.properties['id']}"
             )
-
+        usgs_dataset = self.config.products.get(product.collection, {}).get(
+            "_collection", GENERIC_COLLECTION
+        )
         download_request_results = api.download_request(
-            product.properties["productType"],
-            product.properties["entityId"],
-            product.properties["productId"],
+            usgs_dataset,
+            product.properties["usgs:entityId"],
+            product.properties["usgs:productId"],
         )
 
         req_urls: list[str] = []
@@ -421,7 +426,7 @@ class UsgsApi(Api):
         download_request(product, fs_path, progress_callback, **kwargs)
 
         with open(record_filename, "w") as fh:
-            fh.write(product.properties["downloadLink"])
+            fh.write(product.properties["eodag:download_link"])
         logger.debug(f"Download recorded in {record_filename}")
 
         api.logout()

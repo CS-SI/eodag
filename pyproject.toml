@@ -45,7 +45,7 @@ match = "(master|develop)"
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = [
-    '''chore: update external product types reference.+''',
+    '''chore: update external collections reference.+''',
     '''build: bump version.+''',
 ]
 mode = "update"

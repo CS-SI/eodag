@@ -55,7 +55,7 @@ class StacListAssets(StacSearch):
     """``StacListAssets`` is an extension of :class:`~eodag.plugins.search.qssearch.StacSearch`.
 
     It executes a Search on given STAC API endpoint and updates assets with content listed by the plugin using
-    ``downloadLink`` :class:`~eodag.api.product._product.EOProduct` property.
+    ``eodag:download_link`` :class:`~eodag.api.product._product.EOProduct` property.
 
     :param provider: provider name
     :param config: It has the same Search plugin configuration as :class:`~eodag.plugins.search.qssearch.StacSearch` and

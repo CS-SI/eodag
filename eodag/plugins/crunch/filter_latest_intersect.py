@@ -46,7 +46,7 @@ class FilterLatestIntersect(Crunch):
     @staticmethod
     def sort_product_by_start_date(product: EOProduct) -> dt:
         """Get product start date"""
-        start_date = product.properties.get("startTimeFromAscendingNode")
+        start_date = product.properties.get("start_datetime")
         if not start_date:
             # Retrieve year, month, day, hour, minute, second of EPOCH start
             epoch = time.gmtime(0)[:-3]
@@ -67,7 +67,7 @@ class FilterLatestIntersect(Crunch):
         logger.debug("Start filtering for latest products")
         if not products:
             return []
-        # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
+        # Warning: May crash if start_datetime is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered: list[EOProduct] = []
         add_to_filtered = filtered.append

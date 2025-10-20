@@ -28,10 +28,10 @@ Options:
   --help         Show this message and exit.
 
 Commands:
-  discover         Fetch providers to discover product types
+  discover         Fetch providers to discover collections
   download         Download a list of products from a serialized search...
-  list             List supported product types
-  search           Search satellite images by their product types,...
+  list             List supported collections
+  search           Search satellite images by their collections,...
   version          Print eodag version and exit
 
   noqa: D103
@@ -51,7 +51,7 @@ import click
 
 from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
-from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
+from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
 if TYPE_CHECKING:
@@ -142,7 +142,7 @@ def version() -> None:
 
 @eodag.command(
     name="search",
-    help="Search satellite images by their product types, instrument, platform, "
+    help="Search satellite images by their collections, instrument, platform, "
     "platform identifier, processing level or sensor type. It is mandatory to provide "
     "at least one of the previous criteria for eodag to perform a search. "
     "Optionally crunch the search results before storing them in a geojson file",
@@ -159,6 +159,7 @@ def version() -> None:
     help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml",
     type=click.Path(exists=True),
 )
+@click.option("-p", "--provider", help="Search on this provider")
 @click.option(
     "-b",
     "--box",
@@ -188,25 +189,18 @@ def version() -> None:
     type=click.DateTime(),
     help="End sensing time in ISO8601 format (e.g. '1990-11-26', '1990-11-26T14:30:10'). UTC is assumed",
 )
+@click.option("-c", "--collection", help="The collection to search")
+@click.option("--instruments", help="Search for products matching these instruments")
+@click.option("--platform", help="Search for products matching this platform")
+@click.option("--constellation", help="Search for products matching this constellation")
 @click.option(
-    "-c",
-    "--cloudCover",
+    "--processing-level", help="Search for products matching this processing level"
+)
+@click.option("--sensor-type", help="Search for products matching this type of sensor")
+@click.option(
+    "--cloud-cover",
     type=click.IntRange(0, 100),
     help="Maximum cloud cover percentage needed for the product",
-)
-@click.option("-p", "--productType", help="The product type to search")
-@click.option("-i", "--instrument", help="Search for products matching this instrument")
-@click.option("-P", "--platform", help="Search for products matching this platform")
-@click.option(
-    "-t",
-    "--platformSerialIdentifier",
-    help="Search for products originating from the satellite identified by this keyword",
-)
-@click.option(
-    "-L", "--processingLevel", help="Search for products matching this processing level"
-)
-@click.option(
-    "-S", "--sensorType", help="Search for products matching this type of sensor"
 )
 @click.option("--id", help="Search for the product identified by this id")
 @click.option(
@@ -277,23 +271,24 @@ def version() -> None:
 )
 @click.pass_context
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
-    """Search product types and optionnaly apply crunchers to search results"""
+    """Search collections and optionnaly apply crunchers to search results"""
     # Process inputs for search
-    product_type = kwargs.pop("producttype")
-    instrument = kwargs.pop("instrument")
+    provider = kwargs.pop("provider")
+    collection = kwargs.pop("collection")
+    instruments = kwargs.pop("instruments")
     platform = kwargs.pop("platform")
-    platform_identifier = kwargs.pop("platformserialidentifier")
-    processing_level = kwargs.pop("processinglevel")
-    sensor_type = kwargs.pop("sensortype")
+    constellation = kwargs.pop("constellation")
+    processing_level = kwargs.pop("processing_level")
+    sensor_type = kwargs.pop("sensor_type")
     id_ = kwargs.pop("id")
     locations_qs = kwargs.pop("locations")
     custom = kwargs.pop("query")
     if not any(
         [
-            product_type,
-            instrument,
+            collection,
+            instruments,
             platform,
-            platform_identifier,
+            constellation,
             processing_level,
             sensor_type,
             id_,
@@ -320,16 +315,17 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     start_date = kwargs.pop("start")
     stop_date = kwargs.pop("end")
     criteria = {
+        "provider": provider,
         "geometry": footprint,
-        "startTimeFromAscendingNode": None,
-        "completionTimeFromAscendingNode": None,
-        "cloudCover": kwargs.pop("cloudcover"),
-        "productType": product_type,
-        "instrument": instrument,
+        "start_datetime": None,
+        "end_datetime": None,
+        "eo:cloud_cover": kwargs.pop("cloud_cover"),
+        "collection": collection,
+        "instruments": instruments,
+        "constellation": constellation,
         "platform": platform,
-        "platformSerialIdentifier": platform_identifier,
-        "processingLevel": processing_level,
-        "sensorType": sensor_type,
+        "processing:level": processing_level,
+        "eodag:sensor_type": sensor_type,
         "id": id_,
     }
     if custom:
@@ -345,9 +341,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         locations = None
     criteria["locations"] = locations
     if start_date:
-        criteria["startTimeFromAscendingNode"] = start_date.isoformat()
+        criteria["start_datetime"] = start_date.isoformat()
     if stop_date:
-        criteria["completionTimeFromAscendingNode"] = stop_date.isoformat()
+        criteria["end_datetime"] = stop_date.isoformat()
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
@@ -409,54 +405,48 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     ctx.obj["search_results"] = results
 
 
-@eodag.command(name="list", help="List supported product types")
-@click.option("-p", "--provider", help="List product types supported by this provider")
+@eodag.command(name="list", help="List supported collections")
+@click.option("-p", "--provider", help="List collections supported by this provider")
 @click.option(
-    "-i", "--instrument", help="List product types originating from this instrument"
+    "--instruments", help="List collections originating from these instruments"
+)
+@click.option("--platform", help="List collections originating from this platform")
+@click.option(
+    "--constellation",
+    help="List collections originating from this constellation",
+)
+@click.option("--processing-level", help="List collections of processing level")
+@click.option(
+    "--sensor-type", help="List collections originating from this type of sensor"
 )
 @click.option(
-    "-P", "--platform", help="List product types originating from this platform"
-)
-@click.option(
-    "-t",
-    "--platformSerialIdentifier",
-    help="List product types originating from the satellite identified by this keyword",
-)
-@click.option("-L", "--processingLevel", help="List product types of processing level")
-@click.option(
-    "-S", "--sensorType", help="List product types originating from this type of sensor"
-)
-@click.option(
-    "--no-fetch", is_flag=True, help="Do not fetch providers for new product types"
+    "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
 )
 @click.pass_context
 def list_pt(ctx: Context, **kwargs: Any) -> None:
-    """Print the list of supported product types"""
+    """Print the list of supported collections"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_product_types = []
+    guessed_collections = []
     try:
-        guessed_product_types = dag.guess_product_type(
-            platformSerialIdentifier=kwargs.get("platformserialidentifier"),
-            processingLevel=kwargs.get("processinglevel"),
-            sensorType=kwargs.get("sensortype"),
+        guessed_collections = dag.guess_collection(
             **kwargs,
         )
-    except NoMatchingProductType:
+    except NoMatchingCollection:
         if any(
             kwargs[arg]
             for arg in [
-                "instrument",
+                "instruments",
+                "constellation",
                 "platform",
-                "platformserialidentifier",
-                "processinglevel",
-                "sensortype",
+                "processing_level",
+                "sensor_type",
             ]
         ):
-            click.echo("No product type match the following criteria you provided:")
+            click.echo("No collection match the following criteria you provided:")
             click.echo(
                 "\n".join(
                     "-{param}={value}".format(**locals())
@@ -466,22 +456,22 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             )
             sys.exit(1)
     try:
-        if guessed_product_types:
-            product_types = [
+        if guessed_collections:
+            collections = [
                 pt
-                for pt in dag.list_product_types(
+                for pt in dag.list_collections(
                     provider=provider, fetch_providers=fetch_providers
                 )
-                if pt["ID"] in guessed_product_types
+                if pt["ID"] in guessed_collections
             ]
         else:
-            product_types = dag.list_product_types(
+            collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
-        click.echo("Listing available product types:")
-        for product_type in product_types:
-            click.echo("\n* {}: ".format(product_type["ID"]))
-            for prop, value in product_type.items():
+        click.echo("Listing available collections:")
+        for collection in collections:
+            click.echo("\n* {}: ".format(collection["ID"]))
+            for prop, value in collection.items():
                 if prop != "ID":
                     text_wrapper.initial_indent = "    - {}: ".format(prop)
                     text_wrapper.subsequent_indent = " " * len(
@@ -497,34 +487,34 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
         sys.exit(1)
 
 
-@eodag.command(name="discover", help="Fetch providers to discover product types")
+@eodag.command(name="discover", help="Fetch providers to discover collections")
 @click.option("-p", "--provider", help="Fetch only the given provider")
 @click.option(
     "--storage",
     type=click.Path(dir_okay=False, writable=True, readable=False),
-    default="ext_product_types.json",
-    help="Path to the file where to store external product types configuration "
+    default="ext_collections.json",
+    help="Path to the file where to store external collections configuration "
     "(.json extension will be automatically appended to the filename). "
-    "DEFAULT: ext_product_types.json",
+    "DEFAULT: ext_collections.json",
 )
 @click.pass_context
 def discover_pt(ctx: Context, **kwargs: Any) -> None:
-    """Fetch external product types configuration and save result"""
+    """Fetch external collections configuration and save result"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
 
-    ext_product_types_conf = (
-        dag.discover_product_types(provider=provider)
+    ext_collections_conf = (
+        dag.discover_collections(provider=provider)
         if provider
-        else dag.discover_product_types()
+        else dag.discover_collections()
     )
 
     storage_filepath = kwargs.pop("storage")
     if not storage_filepath.endswith(".json"):
         storage_filepath += ".json"
     with open(storage_filepath, "w") as f:
-        json.dump(ext_product_types_conf, f)
+        json.dump(ext_collections_conf, f)
     click.echo("Results stored at '{}'".format(storage_filepath))
 
 

@@ -76,10 +76,10 @@ class BaseApisPluginTest(unittest.TestCase):
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
 
-    def get_search_plugin(self, product_type=None, provider=None):
+    def get_search_plugin(self, collection=None, provider=None):
         return next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider=provider
+                collection=collection, provider=provider
             )
         )
 
@@ -89,11 +89,11 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self.provider = "ecmwf"
         self.api_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
-            "startTimeFromAscendingNode": "2022-01-01T00:00:00.000Z",
-            "completionTimeFromAscendingNode": "2022-01-02T00:00:00.000Z",
+            "start_datetime": "2022-01-01T00:00:00.000Z",
+            "end_datetime": "2022-01-02T00:00:00.000Z",
         }
-        self.product_type = "TIGGE_CF_SFC"
-        self.product_type_params = {
+        self.collection = "TIGGE_CF_SFC"
+        self.collection_params = {
             "ecmwf:dataset": "tigge",
         }
         self.custom_query_params = {
@@ -114,59 +114,57 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
         results, _ = self.api_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            collection=self.collection,
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "2020-01-01T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2020-01-02T00:00:00.000Z",
         )
 
         # missing start & stop
         results, _ = self.api_plugin.query(
-            productType=self.product_type,
+            collection=self.collection,
         )
         eoproduct = results[0]
         self.assertIn(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             DEFAULT_MISSION_START_DATE,
         )
         # less than 10 seconds should have passed since the product was created
         self.assertLess(
-            datetime.now(timezone.utc)
-            - isoparse(eoproduct.properties["completionTimeFromAscendingNode"]),
+            datetime.now(timezone.utc) - isoparse(eoproduct.properties["end_datetime"]),
             timedelta(seconds=10),
             "stop date should have been created from datetime.now",
         )
 
-        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
-        self.api_plugin.config.product_type_config = {
-            "productType": self.product_type,
-            "missionStartDate": "1985-10-26",
-            "missionEndDate": "2015-10-21",
+        # missing start & stop and plugin.collection_config set (set in core._prepare_search)
+        self.api_plugin.config.collection_config = {
+            "_collection": self.collection,
+            "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
         }
         results, _ = self.api_plugin.query(
-            productType=self.product_type,
+            collection=self.collection,
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2015-10-21T00:00:00.000Z",
         )
 
-    def test_plugins_apis_ecmwf_query_without_producttype(self):
+    def test_plugins_apis_ecmwf_query_without_collection(self):
         """
-        EcmwfApi.query must build a EOProduct from input parameters without product type.
+        EcmwfApi.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
         """
         results, count = self.api_plugin.query(**self.query_dates)
@@ -174,38 +172,34 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert (
-            eoproduct.properties["startTimeFromAscendingNode"]
-            == self.query_dates["startTimeFromAscendingNode"]
+            eoproduct.properties["start_datetime"] == self.query_dates["start_datetime"]
         )
-        assert (
-            eoproduct.properties["completionTimeFromAscendingNode"]
-            == self.query_dates["completionTimeFromAscendingNode"]
-        )
+        assert eoproduct.properties["end_datetime"] == self.query_dates["end_datetime"]
         assert eoproduct.properties["title"] == eoproduct.properties["id"]
         assert eoproduct.properties["title"].startswith("MARS___")
         assert eoproduct.location.startswith("http")
 
-    def test_plugins_apis_ecmwf_query_with_producttype(self):
-        """EcmwfApi.query must build a EOProduct from input parameters with predefined product type"""
+    def test_plugins_apis_ecmwf_query_with_collection(self):
+        """EcmwfApi.query must build a EOProduct from input parameters with predefined collection"""
         results, _ = self.api_plugin.query(
-            **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
+            **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
         eoproduct = results[0]
-        assert eoproduct.properties["title"].startswith(self.product_type)
+        assert eoproduct.properties["title"].startswith(self.collection)
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
-        # check if product_type_params is a subset of eoproduct.properties
-        assert self.product_type_params.items() <= eoproduct.properties.items()
+        # check if collection_params is a subset of eoproduct.properties
+        assert self.collection_params.items() <= eoproduct.properties.items()
         params = deepcopy(self.query_dates)
-        params["productType"] = self.product_type
+        params["collection"] = self.collection
         params["ecmwf:param"] = "tcc"
 
-        # product type default settings can be overwritten using search kwargs
+        # collection default settings can be overwritten using search kwargs
         results, _ = self.api_plugin.query(**params)
         eoproduct = results[0]
         assert eoproduct.properties["ecmwf:param"] == "tcc"
 
-    def test_plugins_apis_ecmwf_query_with_custom_producttype(self):
-        """EcmwfApi.query must build a EOProduct from input parameters with custom product type"""
+    def test_plugins_apis_ecmwf_query_with_custom_collection(self):
+        """EcmwfApi.query must build a EOProduct from input parameters with custom collection"""
         results, _ = self.api_plugin.query(
             **self.query_dates,
             **self.custom_query_params,
@@ -258,7 +252,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
@@ -268,7 +262,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_auth_session_request,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
@@ -361,7 +355,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
@@ -369,7 +363,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self,
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_auth_session_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
@@ -540,9 +534,9 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         """UsgsApi.query must search using usgs api"""
 
         search_kwargs = {
-            "productType": "LANDSAT_C2L1",
-            "startTimeFromAscendingNode": "2020-02-01",
-            "completionTimeFromAscendingNode": "2020-02-10",
+            "collection": "LANDSAT_C2L1",
+            "start_datetime": "2020-02-01",
+            "end_datetime": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
             "prep": PreparedSearch(
                 items_per_page=5,
@@ -560,7 +554,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             starting_number=6,
         )
         self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].product_type, "LANDSAT_C2L1")
+        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
         self.assertEqual(
             search_results[0].geometry,
             shape(
@@ -574,12 +568,12 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             mock_api_scene_search.return_value["data"]["results"][0]["displayId"],
         )
         self.assertEqual(
-            search_results[0].properties["cloudCover"],
+            search_results[0].properties["eo:cloud_cover"],
             float(
                 mock_api_scene_search.return_value["data"]["results"][0]["cloudCover"]
             ),
         )
-        self.assertEqual(search_results[0].properties["storageStatus"], ONLINE_STATUS)
+        self.assertEqual(search_results[0].properties["order:status"], ONLINE_STATUS)
         self.assertEqual(
             total_count, mock_api_scene_search.return_value["data"]["totalHits"]
         )
@@ -617,7 +611,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         """UsgsApi.query by id must search using usgs api"""
 
         search_kwargs = {
-            "productType": "LANDSAT_C2L1",
+            "collection": "LANDSAT_C2L1",
             "id": "SOME_PRODUCT_ID",
             "prep": PreparedSearch(
                 items_per_page=500,
@@ -636,7 +630,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             starting_number=1,
         )
         self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].product_type, "LANDSAT_C2L1")
+        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
         self.assertEqual(len(search_results), 1)
 
     @mock.patch("usgs.api.login", autospec=True)
@@ -658,13 +652,15 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                     geometry="POINT (0 0)",
                     title="dummy_product",
                     id="dummy",
-                    entityId="dummyEntityId",
-                    productId="dummyProductId",
-                    productType="L8_OLI_TIRS_C1L1",
+                    collection="L8_OLI_TIRS_C1L1",
+                    **{
+                        "usgs:entityId": "dummyEntityId",
+                        "usgs:productId": "dummyProductId",
+                    },
                 ),
             )
             product.location = product.remote_location = product.properties[
-                "downloadLink"
+                "eodag:download_link"
             ] = "http://somewhere"
             product.properties["id"] = "someproduct"
 
@@ -716,7 +712,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 )
             # zip
             os.remove(path)
-            product.product_type = "S2_MSI_L1C"
+            product.collection = "S2_MSI_L1C"
             with mock.patch("zipfile.is_zipfile", return_value=True, autospec=True):
                 path = self.api_plugin.download(
                     product, output_dir=self.tmp_home_dir.name, extract=False

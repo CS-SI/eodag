@@ -26,14 +26,14 @@ from tempfile import TemporaryDirectory
 import yaml.parser
 
 from tests.context import (
-    EXT_PRODUCT_TYPES_CONF_URI,
+    EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     EODataAccessGateway,
     ValidationError,
     config,
-    get_ext_product_types_conf,
+    get_ext_collections_conf,
     load_stac_provider_config,
     merge_configs,
 )
@@ -52,7 +52,7 @@ class TestProviderConfig(unittest.TestCase):
             api: !plugin
                 type: MyPluginClass
             products:
-                EODAG_PRODUCT_TYPE: provider_product_type
+                EODAG_COLLECTION: provider_collection
             """.format(
                 unslugified_provider_name
             )
@@ -295,9 +295,9 @@ class TestConfigFunctions(unittest.TestCase):
                     api_endpoint: https://api.my_new_provider/search
                 products:
                     S2_MSI_L1C:
-                        productType: sentinel2_l1c
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                        _collection: sentinel2_l1c
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
                 download:
                     type: AwsDownload
                     s3_endpoint: https://api.my_new_provider
@@ -314,7 +314,7 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(my_new_provider_conf.priority, 4)
         self.assertIsInstance(my_new_provider_conf.search, config.PluginConfig)
         self.assertEqual(
-            my_new_provider_conf.products["S2_MSI_L1C"]["productType"], "sentinel2_l1c"
+            my_new_provider_conf.products["S2_MSI_L1C"]["_collection"], "sentinel2_l1c"
         )
         self.assertEqual(
             my_new_provider_conf.auth.credentials["aws_secret_access_key"],
@@ -356,9 +356,9 @@ class TestConfigFunctions(unittest.TestCase):
                 api_endpoint: https://api.my_new_provider/search
             products:
                 S2_MSI_L1C:
-                  productType: sentinel2_l1c
-                GENERIC_PRODUCT_TYPE:
-                  productType: '{productType}'
+                  _collection: sentinel2_l1c
+                GENERIC_COLLECTION:
+                  _collection: '{collection}'
             download:
                 type: AwsDownload
                 s3_endpoint: https://api.my_new_provider
@@ -405,11 +405,11 @@ class TestConfigFunctions(unittest.TestCase):
         )
         self.assertIsInstance(my_new_provider_conf.products, dict)
         self.assertEqual(
-            my_new_provider_conf.products["S2_MSI_L1C"]["productType"], "sentinel2_l1c"
+            my_new_provider_conf.products["S2_MSI_L1C"]["_collection"], "sentinel2_l1c"
         )
         self.assertEqual(
-            my_new_provider_conf.products["GENERIC_PRODUCT_TYPE"]["productType"],
-            "{productType}",
+            my_new_provider_conf.products["GENERIC_COLLECTION"]["_collection"],
+            "{collection}",
         )
         self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
         self.assertEqual(my_new_provider_conf.download.type, "AwsDownload")
@@ -473,26 +473,24 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(peps_conf.search.pagination["start_page"], 2)
 
     @mock.patch("requests.get", autospec=True)
-    def test_get_ext_product_types_conf(self, mock_get):
-        """External product types configuration must be loadable from remote or local file"""
-        ext_product_types_path = os.path.join(
-            TEST_RESOURCES_PATH, "ext_product_types.json"
-        )
+    def test_get_ext_collections_conf(self, mock_get):
+        """External collections configuration must be loadable from remote or local file"""
+        ext_collections_path = os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")
 
         # mock get request response for remote conf file (default value)
         mock_get.return_value = mock.Mock()
         mock_get.return_value.json.return_value = {"some_parameter": "a_value"}
 
-        ext_product_types_conf = get_ext_product_types_conf()
+        ext_collections_conf = get_ext_collections_conf()
         mock_get.assert_called_once_with(
-            EXT_PRODUCT_TYPES_CONF_URI, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            EXT_COLLECTIONS_CONF_URI, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
         )
-        self.assertEqual(ext_product_types_conf, {"some_parameter": "a_value"})
+        self.assertEqual(ext_collections_conf, {"some_parameter": "a_value"})
 
         # local conf file
-        ext_product_types_conf = get_ext_product_types_conf(ext_product_types_path)
-        self.assertIsInstance(ext_product_types_conf, dict)
-        self.assertIn("foo", ext_product_types_conf["earth_search"]["providers_config"])
+        ext_collections_conf = get_ext_collections_conf(ext_collections_path)
+        self.assertIsInstance(ext_collections_conf, dict)
+        self.assertIn("foo", ext_collections_conf["earth_search"]["providers_config"])
 
 
 class TestStacProviderConfig(unittest.TestCase):
@@ -527,11 +525,9 @@ class TestStacProviderConfig(unittest.TestCase):
         ].search.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
-        self.assertIn(
-            "resolution", common_stac_provider_search_conf["metadata_mapping"]
-        )
-        self.assertNotIn("resolution", raw_provider_search_conf["metadata_mapping"])
-        self.assertIn("resolution", provider_search_conf["metadata_mapping"])
+        self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])
+        self.assertNotIn("gsd", raw_provider_search_conf["metadata_mapping"])
+        self.assertIn("gsd", provider_search_conf["metadata_mapping"])
 
         self.assertIn("discover_metadata", common_stac_provider_search_conf)
         self.assertNotIn("discover_metadata", raw_provider_search_conf)
@@ -567,8 +563,8 @@ class TestStacProviderConfig(unittest.TestCase):
                     metadata_mapping:
                         title: '$.properties."foo:bar_baz"'
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
                 download:
                     type: HTTPDownload
                     base_uri: https://foo.bar
@@ -582,11 +578,9 @@ class TestStacProviderConfig(unittest.TestCase):
         provider_search_conf = self.dag.providers_config["foo"].search.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
-        self.assertIn(
-            "resolution", common_stac_provider_search_conf["metadata_mapping"]
-        )
-        self.assertNotIn("resolution", custom_stac_provider_conf["metadata_mapping"])
-        self.assertIn("resolution", provider_search_conf["metadata_mapping"])
+        self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])
+        self.assertNotIn("gsd", custom_stac_provider_conf["metadata_mapping"])
+        self.assertIn("gsd", provider_search_conf["metadata_mapping"])
 
         self.assertIn("discover_metadata", common_stac_provider_search_conf)
         self.assertNotIn("discover_metadata", custom_stac_provider_conf)

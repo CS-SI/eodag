@@ -355,6 +355,19 @@ class TestMetadataFormatter(unittest.TestCase):
         with self.assertRaises(TypeError):
             format_metadata(to_format, fieldname=123)
 
+    def test_convert_replace_tuple(self):
+        to_format = r"{fieldname#replace_tuple(((['foo','bar'],'Foo+BAR'),('something',['this','that'])))}"
+
+        self.assertEqual(
+            format_metadata(to_format, fieldname=["foo", "bar"]),
+            "Foo+BAR",
+        )
+
+        self.assertEqual(
+            format_metadata(to_format, fieldname="something"),
+            "['this', 'that']",
+        )
+
     def test_convert_ceda_collection_name(self):
         to_format = r"{fieldname#ceda_collection_name}"
         self.assertEqual(
@@ -513,7 +526,7 @@ class TestMetadataFormatter(unittest.TestCase):
                 to_format,
                 fieldname="S2A_MSIL2A_20201201T100401_N0214_R122_T32SNA_20201201T114520",
             ),
-            "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/32/S/NA/2020/12/1/0/{collection}.json",
+            "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/32/S/NA/2020/12/1/0/{_collection}.json",
         )
 
     def test_convert_s2msil2a_title_to_aws_productinfo_not_available(self):
@@ -565,10 +578,10 @@ class TestMetadataFormatter(unittest.TestCase):
             properties,
             {
                 "fooProperty": "foo-val",
-                "bar": "bar-val",
-                "baz": {"baaz": "baz-val"},
                 "missingProperty": NOT_AVAILABLE,
-                "qux": [
+                "provider:bar": "bar-val",
+                "provider:baz": {"baaz": "baz-val"},
+                "provider:qux": [
                     {"somekey": "a", "someval": "a-val"},
                     {"somekey": "b", "someval": "b-val", "some": "thing"},
                     {"somekey": "c"},
@@ -592,16 +605,16 @@ class TestMetadataFormatter(unittest.TestCase):
             {
                 "fooProperty": "foo-val",
                 "missingProperty": NOT_AVAILABLE,
-                "a": "a-val",
-                "b": "b-val",
-                "c": NOT_AVAILABLE,
+                "provider:a": "a-val",
+                "provider:b": "b-val",
+                "provider:c": NOT_AVAILABLE,
             },
         )
 
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
-            "productType": "OL_2_LRR___",
+            "collection": "OL_2_LRR___",
             "startDate": "2021-06-01T22:38:21Z",
             "endDate": "2021-06-01T23:22:48Z",
             "timeliness": "NT",
@@ -897,30 +910,30 @@ class TestMetadataMappingFunctions(unittest.TestCase):
     def test_get_provider_queryable_key(self):
         metadata_mapping = {
             "id": "id",
-            "startTimeFromAscendingNode": [
-                "datetime: {startTimeFromAscendingNode}",
+            "start_datetime": [
+                "datetime: {start_datetime}",
                 "$.datetime",
             ],
-            "api_product_type": ["productType", "$.properties.productType"],
+            "api_collection": ["collection", "$.properties.collection"],
             "variable": ["variable", "$.variable"],
             "variable_type": ["variable_type", "$.variable_type"],
         }
         provider_queryables = {
             "datetime": {"type": "str", "description": "datetime"},
             "id": {"type": "str"},
-            "productType": {"type": "str"},
+            "collection": {"type": "str"},
             "level": {"type": int},
             "variable": {"type": "str"},
             "variable_type": {"type": "str"},
         }
         provider_key = get_provider_queryable_key(
-            "startTimeFromAscendingNode", provider_queryables, metadata_mapping
+            "start_datetime", provider_queryables, metadata_mapping
         )
         self.assertEqual("datetime", provider_key)
         provider_key = get_provider_queryable_key(
-            "api_product_type", provider_queryables, metadata_mapping
+            "api_collection", provider_queryables, metadata_mapping
         )
-        self.assertEqual("productType", provider_key)
+        self.assertEqual("collection", provider_key)
         provider_key = get_provider_queryable_key(
             "id", provider_queryables, metadata_mapping
         )
@@ -946,4 +959,14 @@ class TestMetadataMappingFunctions(unittest.TestCase):
                 path="replaçe,  pônctuation:;sïgns!?byunderscorekeeping-hyphen.dot_and_underscore",
             ),
             "replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore",
+        )
+
+    def test_convert_not_available(self):
+        to_format = "{value#not_available}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                value="any value",
+            ),
+            NOT_AVAILABLE,
         )

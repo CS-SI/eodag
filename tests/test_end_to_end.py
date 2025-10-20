@@ -32,7 +32,7 @@ import pytest
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     AuthenticationError,
     EODataAccessGateway,
     SearchResult,
@@ -222,7 +222,7 @@ class EndToEndBase(unittest.TestCase):
     def execute_search(
         self,
         provider,
-        product_type,
+        collection,
         start,
         end,
         geom,
@@ -240,7 +240,7 @@ class EndToEndBase(unittest.TestCase):
         - Return one product to be downloaded
         """
         search_criteria = {
-            "productType": product_type,
+            "collection": collection,
             "start": start,
             "end": end,
             "geom": geom,
@@ -256,7 +256,7 @@ class EndToEndBase(unittest.TestCase):
             results = [
                 prod
                 for prod in results
-                if prod.properties.get("storageStatus", "") != ONLINE_STATUS
+                if prod.properties.get("order:status", "") != ONLINE_STATUS
             ]
         if check_product:
             self.assertGreater(len(results), 0)
@@ -269,7 +269,7 @@ class EndToEndBase(unittest.TestCase):
     def execute_search_all(
         self,
         provider,
-        product_type,
+        collection,
         start,
         end,
         geom,
@@ -290,7 +290,7 @@ class EndToEndBase(unittest.TestCase):
         }
         self.eodag.set_preferred_provider(provider)
         results = self.eodag.search_all(
-            productType=product_type, items_per_page=items_per_page, **search_criteria
+            collection=collection, items_per_page=items_per_page, **search_criteria
         )
         if check_products:
             self.assertGreater(len(results), 0)
@@ -454,7 +454,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_fedeo_ceda(self):
-        self.eodag.discover_product_types(provider="fedeo_ceda")
+        self.eodag.discover_collections(provider="fedeo_ceda")
         products = self.execute_search(*FEDEO_CEDA_SEARCH_ARGS, check_product=False)
         expected_filename = "{}".format(products[2].properties["title"])
         self.execute_download(products[2], expected_filename)
@@ -564,17 +564,17 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "creodias"
 
         products = self.eodag._search_by_id(
-            uid=uid, provider=provider, productType="S2_MSI_L1C"
+            uid=uid, provider=provider, collection="S2_MSI_L1C"
         )
         product = products[0]
 
         self.assertEqual(product.properties["id"], uid)
-        self.assertIsNotNone(product.product_type)
+        self.assertIsNotNone(product.collection)
 
     def test_search_by_tile(self):
         """Search by tileIdentifier should find results and correctly map found metadata"""
         # providers supporting search-by-tile
-        supported_providers_product_types = [
+        supported_providers_collections = [
             ("peps", "S2_MSI_L1C"),
             ("planetary_computer", "S2_MSI_L2A"),
             ("earth_search", "S2_MSI_L1C"),
@@ -582,9 +582,9 @@ class TestEODagEndToEnd(EndToEndBase):
 
         tile_id = "31TCJ"
 
-        for provider, product_type in supported_providers_product_types:
+        for provider, collection in supported_providers_collections:
             products = self.eodag.search(
-                productType=product_type,
+                collection=collection,
                 start="2021-06-01",
                 end="2021-06-30",
                 tileIdentifier=tile_id,
@@ -597,129 +597,127 @@ class TestEODagEndToEnd(EndToEndBase):
                 msg=f"tileIdentifier not mapped for {provider}",
             )
 
-    def test_end_to_end_discover_product_types_creodias(self):
-        """discover_product_types() must return an external product types configuration for creodias"""
+    def test_end_to_end_discover_collections_creodias(self):
+        """discover_collections() must return an external collections configuration for creodias"""
         provider = "creodias"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
             "SENTINEL-1",
-            ext_product_types_conf[provider]["providers_config"]["SENTINEL-1"][
+            ext_collections_conf[provider]["providers_config"]["SENTINEL-1"][
                 "collection"
             ],
         )
         self.assertEqual(
             "SENTINEL-1",
-            ext_product_types_conf[provider]["product_types_config"]["SENTINEL-1"][
-                "title"
-            ],
+            ext_collections_conf[provider]["collections_config"]["SENTINEL-1"]["title"],
         )
-        # check that all pre-configured product types are listed by provider
-        provider_product_types = [
+        # check that all pre-configured collections are listed by provider
+        provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
+            if k != GENERIC_COLLECTION
         ]
-        for provider_product_type in provider_product_types:
+        for provider_collection in provider_collections:
             self.assertIn(
-                provider_product_type,
-                ext_product_types_conf[provider]["providers_config"],
+                provider_collection,
+                ext_collections_conf[provider]["providers_config"],
             )
 
-    def test_end_to_end_discover_product_types_usgs_satapi_aws(self):
-        """discover_product_types() must return an external product types configuration for usgs_satapi_aws"""
+    def test_end_to_end_discover_collections_usgs_satapi_aws(self):
+        """discover_collections() must return an external collections configuration for usgs_satapi_aws"""
         provider = "usgs_satapi_aws"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
             "landsat-c2l1",
-            ext_product_types_conf[provider]["providers_config"]["landsat-c2l1"][
-                "productType"
+            ext_collections_conf[provider]["providers_config"]["landsat-c2l1"][
+                "_collection"
             ],
         )
         self.assertEqual(
             "Landsat Collection 2 Level-1 Product",
-            ext_product_types_conf[provider]["product_types_config"]["landsat-c2l1"][
+            ext_collections_conf[provider]["collections_config"]["landsat-c2l1"][
                 "title"
             ],
         )
         self.assertEqual(
             "1972-07-25T00:00:00.000Z",
-            ext_product_types_conf[provider]["product_types_config"]["landsat-c2l1"][
-                "missionStartDate"
-            ],
+            ext_collections_conf[provider]["collections_config"]["landsat-c2l1"][
+                "extent"
+            ]["temporal"]["interval"][0][0],
         )
-        # check that all pre-configured product types are listed by provider
-        provider_product_types = [
-            v["productType"]
+        # check that all pre-configured collections are listed by provider
+        provider_collections = [
+            v["_collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
+            if k != GENERIC_COLLECTION
         ]
-        for provider_product_type in provider_product_types:
+        for provider_collection in provider_collections:
             self.assertIn(
-                provider_product_type,
-                ext_product_types_conf[provider]["providers_config"],
+                provider_collection,
+                ext_collections_conf[provider]["providers_config"],
             )
 
-    def test_end_to_end_discover_product_types_earth_search(self):
-        """discover_product_types() must return an external product types configuration for earth_search"""
+    def test_end_to_end_discover_collections_earth_search(self):
+        """discover_collections() must return an external collections configuration for earth_search"""
         provider = "earth_search"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
             "sentinel-2-l1c",
-            ext_product_types_conf[provider]["providers_config"]["sentinel-2-l1c"][
-                "productType"
+            ext_collections_conf[provider]["providers_config"]["sentinel-2-l1c"][
+                "collection"
             ],
         )
         self.assertEqual(
             "Sentinel-2 Level-1C",
-            ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
+            ext_collections_conf[provider]["collections_config"]["sentinel-2-l1c"][
                 "title"
             ],
         )
         self.assertEqual(
             "other",
-            ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
+            ext_collections_conf[provider]["collections_config"]["sentinel-2-l1c"][
                 "license"
             ],
         )
-        # check that all pre-configured product types are listed by provider
-        provider_product_types = [
-            v["productType"]
+        # check that all pre-configured collections are listed by provider
+        provider_collections = [
+            v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
+            if k != GENERIC_COLLECTION
         ]
-        for provider_product_type in provider_product_types:
+        for provider_collection in provider_collections:
             self.assertIn(
-                provider_product_type,
-                ext_product_types_conf[provider]["providers_config"],
+                provider_collection,
+                ext_collections_conf[provider]["providers_config"],
             )
 
-    def test_end_to_end_discover_product_types_earth_search_gcs(self):
-        """discover_product_types() must return None for earth_search_gcs"""
+    def test_end_to_end_discover_collections_earth_search_gcs(self):
+        """discover_collections() must return None for earth_search_gcs"""
         provider = "earth_search_gcs"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
-        self.assertIsNone(ext_product_types_conf[provider])
+        ext_collections_conf = self.eodag.discover_collections(provider=provider)
+        self.assertIsNone(ext_collections_conf[provider])
 
-    def test_end_to_end_discover_product_types_fedeo_ceda(self):
-        """discover_product_types() must return an external product types configuration for fedeo ceda"""
+    def test_end_to_end_discover_collections_fedeo_ceda(self):
+        """discover_collections() must return an external collections configuration for fedeo ceda"""
         provider = "fedeo_ceda"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
-            ext_product_types_conf[provider]["product_types_config"][
-                "MERIS_ALAMO_L2_V2.2"
-            ]["ID"],
+            ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
+                "ID"
+            ],
             "MERIS_ALAMO_L2_V2.2",
         )
         self.assertEqual(
             "MERIS",
-            ext_product_types_conf[provider]["product_types_config"][
-                "MERIS_ALAMO_L2_V2.2"
-            ]["instrument"],
+            ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
+                "instruments"
+            ],
         )
         self.assertEqual(
             "other",
-            ext_product_types_conf[provider]["product_types_config"][
-                "MERIS_ALAMO_L2_V2.2"
-            ]["license"],
+            ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
+                "license"
+            ],
         )
 
 
@@ -771,11 +769,11 @@ class TestEODagEndToEndComplete(EndToEndBase):
 
     def test_end_to_end_complete_peps(self):
         """Complete end-to-end test with PEPS for download and download_all"""
-        # Search for products that are ONLINE and as small as possible
+        # Search for products that are succeeded and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
         search_results = self.eodag.search(
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
@@ -786,11 +784,13 @@ class TestEODagEndToEndComplete(EndToEndBase):
             sorted(search_results, key=lambda p: p.properties["resourceSize"])
         )
         prods_online = [
-            p for p in prods_sorted_by_size if p.properties["storageStatus"] == "ONLINE"
+            p
+            for p in prods_sorted_by_size
+            if p.properties["order:status"] == "succeeded"
         ]
         if len(prods_online) < 2:
             unittest.skip(
-                "Not enough ONLINE products found, update the search criteria."
+                "Not enough succeeded products found, update the search criteria."
             )
 
         # Retrieve one product to work with
@@ -825,8 +825,8 @@ class TestEODagEndToEndComplete(EndToEndBase):
         record_dir = os.path.join(self.tmp_download_path, ".downloaded")
         self.assertTrue(os.path.isdir(record_dir))
         # It must contain a file per product downloade, whose name is
-        # the MD5 hash of the product's ``product_type`` and ``properties['id']``
-        expected_hash = product.product_type + "-" + product.properties["id"]
+        # the MD5 hash of the product's ``collection`` and ``properties['id']``
+        expected_hash = product.collection + "-" + product.properties["id"]
         expected_hash = hashlib.md5(expected_hash.encode("utf-8")).hexdigest()
         record_file = os.path.join(record_dir, expected_hash)
         self.assertTrue(os.path.isfile(record_file))
@@ -958,7 +958,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
                 ),
             )
 
@@ -986,7 +986,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             results = eodag.search(
                 raise_errors=True,
                 **dict(
-                    zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
+                    zip(["collection", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
                 ),
             )
             self.assertGreater(len(results), 0)
@@ -1018,7 +1018,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         USGS_RECENT_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1032,7 +1032,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         METEOBLUE_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1046,7 +1046,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         HYDROWBEB_NEXT_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1060,7 +1060,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         WEKEO_MAIN_SEARCH_ARGS[1:],
                     )
                 ),
@@ -1074,7 +1074,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 raise_errors=True,
                 **dict(
                     zip(
-                        ["productType", "start", "end", "geom"],
+                        ["collection", "start", "end", "geom"],
                         WEKEO_ECMWF_SEARCH_ARGS[1:],
                     )
                 ),

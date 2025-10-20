@@ -1,14 +1,14 @@
-.. _product_types:
+.. collections:
 
-Product types
-================
+Collections
+===========
 
-``eodag`` maintains a catalog of EO product types including some of their metadata. Each product type is
+``eodag`` maintains a catalog of EO collections including some of their metadata. Each collection is
 given an identifier (e.g. ``S2_MSI_L2A``) that should then be used by users to search for this kind
 of product.
 
-This catalog is saved as a YAML file that can be viewed `here <https://github.com/CS-SI/eodag/blob/develop/eodag/resources/product_types.yml>`_.
-The example below shows the catalog entry for the product type *Sentinel 2 Level-2A*.
+This catalog is saved as a YAML file that can be viewed `here <https://github.com/CS-SI/eodag/blob/develop/eodag/resources/collections.yml>`_.
+The example below shows the catalog entry for the collection *Sentinel 2 Level-2A*.
 
 .. code-block:: yaml
 
@@ -25,13 +25,13 @@ The example below shows the catalog entry for the product type *Sentinel 2 Level
      title: SENTINEL2 Level-2A
      missionStartDate: "2015-06-23T00:00:00Z"
 
-This product type catalog can be obtained from the API:
+This collection catalog can be obtained from the API:
 
 .. code-block:: python
 
    from eodag import EODataAccessGateway
    dag = EODataAccessGateway()
-   dag.list_product_types()
+   dag.list_collections()
 
 Or from the CLI:
 
@@ -41,8 +41,8 @@ Or from the CLI:
 
 The catalog is used in different ways by ``eodag``:
 
-* Product types made available for a given provider (search/download) are listed in its configuration.
-  This allows to unify the product type identifier among the providers.
+* Collections made available for a given provider (search/download) are listed in its configuration.
+  This allows to unify the collection identifier among the providers.
 
   .. code-block:: console
 
@@ -52,7 +52,7 @@ The catalog is used in different ways by ``eodag``:
 * Some of the metadata mapped can be used to search for products without specifying any identifier.
   In other terms, this catalog can be queried.
   When a search is made, the search criteria provided by the user are first used to search for the
-  product type that best matches the criteria. The actual search is then performed with this product type.
+  collection that best matches the criteria. The actual search is then performed with this collection.
 
   .. code-block:: console
 
@@ -74,9 +74,9 @@ Click on the link below to display its full content.
 .. raw:: html
 
    <details>
-   <summary><a>product_types.yml</a></summary>
+   <summary><a>collections.yml</a></summary>
 
-.. include:: ../../eodag/resources/product_types.yml
+.. include:: ../../eodag/resources/collections.yml
    :start-line: 19
    :code: yaml
 
@@ -85,10 +85,10 @@ Click on the link below to display its full content.
    </details>
    </br>
 
-The following table lists the metadata parameters of the product types, and shows whether these product types are
+The following table lists the metadata parameters of the collections, and shows whether these collections are
 available for providers or not.
 
-Product types information (`CSV <../_static/product_types_information.csv>`__)
+Collections information (`CSV <../_static/collections_information.csv>`__)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. raw:: html
@@ -97,7 +97,7 @@ Product types information (`CSV <../_static/product_types_information.csv>`__)
    <span id="table_0_span">
 
 .. csv-table::
-   :file: ../_static/product_types_information.csv
+   :file: ../_static/collections_information.csv
    :header-rows: 1
    :stub-columns: 1
    :class: datatable

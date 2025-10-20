@@ -17,7 +17,7 @@ Constructor
 
       .. autoattribute:: provider
       .. autoattribute:: properties
-      .. autoattribute:: product_type
+      .. autoattribute:: collection
       .. autoattribute:: geometry
       .. autoattribute:: search_intersection
       .. autoattribute:: location

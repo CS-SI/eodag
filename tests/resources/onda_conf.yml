@@ -48,8 +48,8 @@
             - 'productType:{productType}'
             - 'platformName:{platform}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
-            - 'beginPosition:[{startTimeFromAscendingNode#to_iso_utc_datetime} TO *]'
-            - 'endPosition:[* TO {completionTimeFromAscendingNode#to_iso_utc_datetime}]'
+            - 'beginPosition:[{start_datetime#to_iso_utc_datetime} TO *]'
+            - 'endPosition:[* TO {end_datetime#to_iso_utc_datetime}]'
             - '{id#remove_extension}'
             - 'platformSerialIdentifier:{platformSerialIdentifier}'
             - 'instrumentShortName:{instrument}'
@@ -129,17 +129,17 @@
       productQualityStatus:
         - null
         - '$.Metadata.generalQualityFlag'
-      creationDate: '$.Metadata.creationDate'
+      created: '$.Metadata.created'
       processingDate: '$.Metadata.processingDate'
       sensorMode:
         - null
         - '$.Metadata.sensorOperationalMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      startTimeFromAscendingNode:
+      start_datetime:
         - null
         - '$.beginPosition'
-      completionTimeFromAscendingNode:
+      end_datetime:
         - null
         - '$.endPosition'
       polarizationChannels: '{$.Metadata.polarisationChannels#replace_str(","," ")}'
@@ -159,11 +159,11 @@
       quicklook: '$.quicklook'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '%(base_uri)s({uid})/$value'
-      # storageStatus: must be one of ONLINE, STAGING, OFFLINE
-      storageStatus: '{$.offline#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
+      eodag:download_link: '%(base_uri)s({uid})/$value'
+      # storageStatus: must be one of succeeded, ordered, orderable
+      storageStatus: '{$.offline#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       # Url used for ordering product if it is offline/archived
-      orderLink: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
+      eodag:order_link: 'https://catalogue.onda-dias.eu/dias-catalogue/Products({uid})/Ens.Order'
   products:
     # S1
     S1_SAR_OCN:
@@ -288,12 +288,12 @@
     # Landsat
     L8_OLI_TIRS_C1L1:
       platform: 'Landsat-*'
-    GENERIC_PRODUCT_TYPE:
+    GENERIC_COLLECTION:
       productType: '{productType}'
       platform: '{platform}'
   download: !plugin
     type: HTTPDownload
-    # base_uri used to parse downloadLink
+    # base_uri used to parse eodag:download_link
     base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
     extract: true
     archive_depth: 2

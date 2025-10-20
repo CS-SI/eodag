@@ -26,7 +26,7 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
     def setUp(self):
         super(TestEOProductDriverSentinel1Driver, self).setUp()
         self.product = EOProduct(
-            self.provider, self.eoproduct_props, productType="S1_SAR_OCN"
+            self.provider, self.eoproduct_props, collection="S1_SAR_OCN"
         )
         self.product.properties["title"] = os.path.join(
             TEST_RESOURCES_PATH,

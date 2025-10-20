@@ -37,27 +37,27 @@ search:
       - filter
       - query
     metadata_path: '$.properties.*'
-  discover_product_types:
+  discover_collections:
     fetch_url: '{api_endpoint}/../collections'
     result_type: json
     results_entry: '$.collections[*]'
-    generic_product_type_id: '$.id'
-    generic_product_type_parsable_properties:
-      productType: '$.id'
-    generic_product_type_parsable_metadata:
-      abstract: '$.description'
-      instrument: '{$.summaries.instruments#csv_list}'
-      platform: '{$.summaries.constellation#csv_list}'
-      platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-      processingLevel: '{$.summaries."processing:level"#csv_list}'
+    generic_collection_id: '$.id'
+    generic_collection_parsable_properties:
+      _collection: '$.id'
+    generic_collection_parsable_metadata:
+      description: '$.description'
+      instruments: '$.summaries.instruments'
+      constellation: '{$.summaries.constellation#csv_list}'
+      platform: '{$.summaries.platform#csv_list}'
+      processing:level: '{$.summaries."processing:level"#csv_list}'
       keywords: '{$.keywords#csv_list}'
       license: '$.license'
       title: '$.title'
-      missionStartDate: '$.extent.temporal.interval[0][0]'
+      extent: '$.extent'
     metadata_path: '$.properties.*'
   discover_queryables:
     fetch_url: '{api_endpoint}/../queryables'
-    product_type_fetch_url: '{api_endpoint}/../collections/{provider_product_type}/queryables'
+    collection_fetch_url: '{api_endpoint}/../collections/{provider_collection}/queryables'
     result_type: json
     results_entry: '$.properties[*]'
     queryable_parsable_metadata:
@@ -67,94 +67,50 @@ search:
       pattern: '$.pattern'
   common_metadata_mapping_path: '$'
   metadata_mapping:
-    # OpenSearch Parameters for Collection Search (Table 3)
-    productType:
-      - '{{"collections":["{productType}"]}}'
+    productType: '$.null'
+    _collection:
+      - '{{"collections":["{_collection}"]}}'
       - '$.collection'
-    doi:
-      - '{{"query":{{"sci:doi":{{"eq":"{doi}"}}}}}}'
-      - '$.properties."sci:doi"'
-    processingLevel:
-      - '{{"query":{{"processing:level":{{"eq":"{processingLevel}"}}}}}}'
-      - '$.properties."processing:level"'
-    platform:
-      - '{{"query":{{"constellation":{{"eq":"{platform}"}}}}}}'
-      - '$.properties.constellation'
-    platformSerialIdentifier:
-      - '{{"query":{{"platform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
-      - '$.properties.platform'
-    instrument:
-    # to test
-      - '{{"query":{{"instruments":{{"eq":"{instrument}"}}}}}}'
-      - '{$.properties.instruments#csv_list}'
-    # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-    title: '$.id'
-    abstract: '$.properties.description'
-    resolution:
-      - '{{"query":{{"gsd":{{"eq":"{resolution}"}}}}}}'
+    # common metadata
+    gsd:
+      - '{{"query":{{"gsd":{{"eq":"{gsd}"}}}}}}'
       - '$.properties.gsd'
-    publicationDate:
-      - '{{"query":{{"published":{{"eq":"{publicationDate}"}}}}}}'
-      - '$.properties.published'
-    # OpenSearch Parameters for Product Search (Table 5)
-    orbitNumber:
-      - '{{"query":{{"sat:relative_orbit":{{"eq":"{orbitNumber}"}}}}}}'
-      - '$.properties."sat:relative_orbit"'
-    orbitDirection:
-      - '{{"query":{{"sat:orbit_state":{{"eq":"{orbitDirection}"}}}}}}'
-      - '{$.properties."sat:orbit_state"#to_lower}'
-    cloudCover:
-      - '{{"query":{{"eo:cloud_cover":{{"lte":"{cloudCover}"}}}}}}'
-      - '$.properties."eo:cloud_cover"'
-    sensorMode:
-      - '{{"query":{{"sar:instrument_mode":{{"eq":"{sensorMode}"}}}}}}'
-      - '$.properties."sar:instrument_mode"'
-    creationDate:
-      - '{{"query":{{"created":{{"eq":"{creationDate}"}}}}}}'
-      - '$.properties.created'
-    modificationDate:
-      - '{{"query":{{"updated":{{"eq":"{modificationDate}"}}}}}}'
-      - '$.properties.updated'
-    productVersion:
-      - '{{"query":{{"version":{{"eq":"{productVersion}"}}}}}}'
-      - '$.properties.version'
-    # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-    availabilityTime:
-      - '{{"query":{{"availabilityTime":{{"eq":"{availabilityTime}"}}}}}}'
-      - '$.properties.availabilityTime'
-    acquisitionStation:
-      - '{{"query":{{"acquisitionStation":{{"eq":"{acquisitionStation}"}}}}}}'
-      - '$.properties.acquisitionStation'
-    acquisitionSubType:
-      - '{{"query":{{"acquisitionSubType":{{"eq":"{acquisitionSubType}"}}}}}}'
-      - '$.properties.acquisitionSubType'
-    startTimeFromAscendingNode: '$.properties.datetime'
-    completionTimeFromAscendingNode:
-      - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+    constellation:
+      - '{{"query":{{"constellation":{{"eq":"{constellation}"}}}}}}'
+      - '$.properties.constellation'
+    platform:
+      - '{{"query":{{"platform":{{"eq":"{platform}"}}}}}}'
+      - '$.properties.platform'
+    instruments:
+      - '{{"query":{{"instruments":{{"eq":{instruments}}}}}}}'
+      - '$.properties.instruments'
+    title: '$.id'
+    datetime: '$.properties.datetime'
+    start_datetime: '$.properties.start_datetime'
+    end_datetime:
+      - '{{"datetime":"{start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
-    illuminationAzimuthAngle:
-      - '{{"query":{{"view:sun_azimuth":{{"eq":"{illuminationAzimuthAngle}"}}}}}}'
-      - '$.properties."view:sun_azimuth"'
-    illuminationElevationAngle:
-      - '{{"query":{{"view:sun_elevation":{{"eq":"{illuminationElevationAngle}"}}}}}}'
-      - '$.properties."view:sun_elevation"'
-    polarizationChannels:
-      - '{{"query":{{"sar:polarizations":{{"eq":"{polarizationChannels}"}}}}}}'
-      - '{$.properties.sar:polarizations#csv_list(+)}'
-    dopplerFrequency:
-      - '{{"query":{{"sar:frequency_band":{{"eq":"{dopplerFrequency}"}}}}}}'
-      - '$.properties."sar:frequency_band"'
-    # Custom parameters (not defined in the base document referenced above)
     id:
       - '{{"ids":["{id}"]}}'
       - '$.id'
     geometry:
       - '{{"intersects":{geometry#to_geojson}}}'
       - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
-    downloadLink: '$.links[?(@.rel="self")].href'
-    quicklook: '$.assets.quicklook.href'
-    thumbnail: '$.assets.thumbnail.href'
-    # storageStatus set to ONLINE for consistency between providers
-    storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+    # extensions parameters having specific mapping
+    sar:polarizations:
+      - '{{"query":{{"sar:polarizations":{{"eq":{sar:polarizations}}}}}}}'
+      - '$.properties.sar:polarizations'
+    sar:beam_ids:
+      - '{{"query":{{"sar:beam_ids":{{"eq":{sar:beam_ids}}}}}}}'
+      - '$.properties.sar:beam_ids'
+    eo:cloud_cover:
+      - '{{"query":{{"eo:cloud_cover":{{"lte":{eo:cloud_cover}}}}}}}'
+      - '$.properties."eo:cloud_cover"'
+    # eodag metadata
+    eodag:download_link: '$.links[?(@.rel="self")].href'
+    eodag:quicklook: '$.assets.quicklook.href'
+    eodag:thumbnail: '$.assets.thumbnail.href'
+    # order:status set to succeeded for consistency between providers
+    order:status: '{$.null#replace_str("Not Available","succeeded")}'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'

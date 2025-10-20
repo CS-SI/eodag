@@ -58,11 +58,11 @@
         "oseo:instrument": "MSI",
         "oseo:sensorType": "OPTICAL",
         "oseo:processingLevel": "LEVEL1C",
-        "oseo:publicationDate": "2017-12-31T21:28:04.574Z",
+        "oseo:published": "2017-12-31T21:28:04.574Z",
         "oseo:parentIdentifier": "urn:ogc:def:EOP:ESA::SENTINEL-2:",
         "oseo:orbitNumber": 4283,
-        "oseo:creationDate": "2017-12-31T21:22:16.562Z",
-        "oseo:modificationDate": "2017-12-31T21:28:04.574Z",
+        "oseo:created": "2017-12-31T21:22:16.562Z",
+        "oseo:updated": "2017-12-31T21:28:04.574Z",
         "oseo:sensorMode": "INS-NOBS"
     },
     "links": [

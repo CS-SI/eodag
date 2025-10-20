@@ -87,11 +87,11 @@
         "oseo:sensorType": "OPTICAL",
         "oseo:processingLevel": "LEVEL1C",
         "oseo:organisationName": "ESA",
-        "oseo:publicationDate": "2019-12-31T15:57:11.553Z",
+        "oseo:published": "2019-12-31T15:57:11.553Z",
         "oseo:parentIdentifier": "urn:ogc:def:EOP:ESA::SENTINEL-2:",
         "oseo:orbitNumber": 23629,
-        "oseo:creationDate": "2019-12-31T15:54:49.708Z",
-        "oseo:modificationDate": "2019-12-31T15:57:11.553Z",
+        "oseo:created": "2019-12-31T15:54:49.708Z",
+        "oseo:updated": "2019-12-31T15:57:11.553Z",
         "oseo:sensorMode": "INS-NOBS"
     },
     "links": [
