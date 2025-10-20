@@ -45,7 +45,7 @@ from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
     PluginImplementationError,
-    UnsupportedProductType,
+    UnsupportedCollection,
     ValidationError,
 )
 from tests.context import (
@@ -78,21 +78,21 @@ class BaseSearchPluginTest(unittest.TestCase):
         super(BaseSearchPluginTest, self).setUp()
         providers_config = load_default_config()
         self.plugins_manager = PluginManager(providers_config)
-        self.product_type = "S2_MSI_L1C"
+        self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
         geometry = get_geometry_from_various([], geometry=geom)
         self.search_criteria_s2_msi_l1c = {
-            "productType": self.product_type,
-            "startTimeFromAscendingNode": "2020-08-08",
-            "completionTimeFromAscendingNode": "2020-08-16",
+            "collection": self.collection,
+            "start_datetime": "2020-08-08",
+            "end_datetime": "2020-08-16",
             "geometry": geometry,
         }
         self.provider_resp_dir = Path(TEST_RESOURCES_PATH) / "provider_responses"
 
-    def get_search_plugin(self, product_type=None, provider=None):
+    def get_search_plugin(self, collection=None, provider=None):
         return next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider=provider
+                collection=collection, provider=provider
             )
         )
 
@@ -134,7 +134,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         provider = "mundi"
-        self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.mundi_search_plugin = self.get_search_plugin(self.collection, provider)
         self.mundi_auth_plugin = self.get_auth_plugin(self.mundi_search_plugin)
 
     @mock.patch(
@@ -223,16 +223,16 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_xml_distinct_product_type_mtd_mapping(
+    def test_plugins_search_querystringsearch_xml_distinct_collection_mtd_mapping(
         self, mock__request, mock_count_hits
     ):
-        """The metadata mapping for XML QueryStringSearch should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for XML QueryStringSearch should not mix specific collections metadata-mapping"""
         with open(self.provider_resp_dir / "mundi_search.xml", "rb") as f:
             mundi_resp_search = f.read()
         mock__request.return_value = mock.Mock()
         mock__request.return_value.content = mundi_resp_search
 
-        search_plugin = self.get_search_plugin(self.product_type, "mundi")
+        search_plugin = self.get_search_plugin(self.collection, "mundi")
 
         # update metadata_mapping only for S1_SAR_GRD
         search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
@@ -240,17 +240,17 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             "dc:creator/text()",
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
         )
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "dhus")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_SLC",
+            collection="S1_SAR_SLC",
         )
         self.assertNotIn("bar", products[0].properties)
 
@@ -260,7 +260,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         super(TestSearchPluginQueryStringSearch, self).setUp()
         # One of the providers that has a QueryStringSearch Search plugin
         provider = "peps"
-        self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.peps_search_plugin = self.get_search_plugin(self.collection, provider)
         self.peps_auth_plugin = self.get_auth_plugin(self.peps_search_plugin)
 
     @mock.patch(
@@ -352,14 +352,14 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_search_cloudcover_peps(
         self, mock__request, mock_normalize_results
     ):
-        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar product types"""  # noqa
+        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar collections"""
 
-        self.peps_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        self.peps_search_plugin.query(collection="S2_MSI_L1C", **{"eo:cloud_cover": 50})
         mock__request.assert_called()
         self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
         mock__request.reset_mock()
 
-        self.peps_search_plugin.query(productType="S1_SAR_GRD", cloudCover=50)
+        self.peps_search_plugin.query(collection="S1_SAR_GRD", **{"eo:cloud_cover": 50})
         mock__request.assert_called()
         self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
@@ -382,13 +382,13 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
-            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.peps_search_plugin.provider}",
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
+            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.peps_search_plugin.provider}",
             context.exception.message,
         )
 
-        # with raised error parameter set to True in the config of the product type of the provider
+        # with raised error parameter set to True in the config of the collection of the provider
 
         # first, update this parameter to False in the global config
         # to show that it is going to be taken over by this new config
@@ -397,7 +397,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         ] = False
 
         self.peps_search_plugin.config.products[
-            self.search_criteria_s2_msi_l1c["productType"]
+            self.search_criteria_s2_msi_l1c["collection"]
         ]["discover_metadata"] = {"raise_mtd_discovery_error": True}
 
         with self.assertRaises(ValidationError) as context:
@@ -410,9 +410,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
-            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.peps_search_plugin.provider}",
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
+            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.peps_search_plugin.provider}",
             context.exception.message,
         )
 
@@ -422,17 +422,15 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_discover_product_types(
-        self, mock__request
-    ):
-        """QueryStringSearch.discover_product_types must return a well formatted dict"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+    def test_plugins_search_querystringsearch_discover_collections(self, mock__request):
+        """QueryStringSearch.discover_collections must return a well formatted dict"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_collections configured
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
         # change onfiguration for this test to filter out some collections
-        results_entry = search_plugin.config.discover_product_types["results_entry"]
-        search_plugin.config.discover_product_types["results_entry"] = cached_parse(
+        results_entry = search_plugin.config.discover_collections["results_entry"]
+        search_plugin.config.discover_collections["results_entry"] = cached_parse(
             'collections[?billing=="free"]'
         )
 
@@ -451,37 +449,37 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 },
             ]
         }
-        conf_update_dict = search_plugin.discover_product_types()
+        conf_update_dict = search_plugin.discover_collections()
         self.assertIn("foo_collection", conf_update_dict["providers_config"])
-        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertIn("foo_collection", conf_update_dict["collections_config"])
         self.assertNotIn("bar_collection", conf_update_dict["providers_config"])
-        self.assertNotIn("bar_collection", conf_update_dict["product_types_config"])
+        self.assertNotIn("bar_collection", conf_update_dict["collections_config"])
         self.assertEqual(
-            conf_update_dict["providers_config"]["foo_collection"]["productType"],
+            conf_update_dict["providers_config"]["foo_collection"]["_collection"],
             "foo_collection",
         )
         self.assertEqual(
-            conf_update_dict["product_types_config"]["foo_collection"]["title"],
+            conf_update_dict["collections_config"]["foo_collection"]["title"],
             "The FOO collection",
         )
         # restore configuration
-        search_plugin.config.discover_product_types["results_entry"] = results_entry
+        search_plugin.config.discover_collections["results_entry"] = results_entry
 
-    def test_plugins_search_querystringsearch_discover_product_types_paginated(self):
-        """QueryStringSearch.discover_product_types must handle pagination"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+    def test_plugins_search_querystringsearch_discover_collections_paginated(self):
+        """QueryStringSearch.discover_collections must handle pagination"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_collections configured
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
         # change configuration for this test to filter out some collections
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types[
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections[
             "fetch_url"
         ] = "https://foo.bar/collections"
-        search_plugin.config.discover_product_types[
+        search_plugin.config.discover_collections[
             "next_page_url_tpl"
         ] = "{url}?page={page}"
-        search_plugin.config.discover_product_types["start_page"] = 0
+        search_plugin.config.discover_collections["start_page"] = 0
 
         with responses.RequestsMock(
             assert_all_requests_are_fired=True
@@ -517,57 +515,57 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 "https://foo.bar/collections?page=2",
                 json={"collections": []},
             )
-            conf_update_dict = search_plugin.discover_product_types()
+            conf_update_dict = search_plugin.discover_collections()
             self.assertIn("foo_collection", conf_update_dict["providers_config"])
-            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("foo_collection", conf_update_dict["collections_config"])
             self.assertIn("bar_collection", conf_update_dict["providers_config"])
-            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["collections_config"])
             self.assertEqual(
-                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                conf_update_dict["providers_config"]["foo_collection"]["_collection"],
                 "foo_collection",
             )
             self.assertEqual(
-                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                conf_update_dict["collections_config"]["foo_collection"]["title"],
                 "The FOO collection",
             )
 
         # restore configuration
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_without_fetch_url(
+    def test_plugins_search_querystringsearch_discover_collections_without_fetch_url(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle missing fetch_url"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        """QueryStringSearch.discover_collections must handle missing fetch_url"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_collections configured
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types.pop("fetch_url", None)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections.pop("fetch_url", None)
 
-        response = search_plugin.discover_product_types()
+        response = search_plugin.discover_collections()
         self.assertIsNone(response)
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_paginated_qs_dict(
+    def test_plugins_search_querystringsearch_discover_collections_paginated_qs_dict(
         self,
     ):
         """
-        QueryStringSearch.discover_product_types must handle paginated responses with query string parameters
+        QueryStringSearch.discover_collections must handle paginated responses with query string parameters
         """
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
         # change configuration for this test to filter out some collections
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types[
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections[
             "fetch_url"
         ] = "https://foo.bar/collections"
-        search_plugin.config.discover_product_types[
+        search_plugin.config.discover_collections[
             "next_page_url_tpl"
         ] = "{url}?page={page}"
-        search_plugin.config.discover_product_types["start_page"] = 0
-        search_plugin.config.discover_product_types[
+        search_plugin.config.discover_collections["start_page"] = 0
+        search_plugin.config.discover_collections[
             "single_collection_fetch_qs"
         ] = "foo=bar"
 
@@ -605,47 +603,47 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 "https://foo.bar/collections?page=2&foo=bar",
                 json={"collections": []},
             )
-            conf_update_dict = search_plugin.discover_product_types()
+            conf_update_dict = search_plugin.discover_collections()
             self.assertIn("foo_collection", conf_update_dict["providers_config"])
-            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("foo_collection", conf_update_dict["collections_config"])
             self.assertIn("bar_collection", conf_update_dict["providers_config"])
-            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["collections_config"])
             self.assertEqual(
-                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                conf_update_dict["providers_config"]["foo_collection"]["_collection"],
                 "foo_collection",
             )
             self.assertEqual(
-                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                conf_update_dict["collections_config"]["foo_collection"]["title"],
                 "The FOO collection",
             )
 
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_per_page_no_fetch_url(
+    def test_plugins_search_querystringsearch_discover_collections_per_page_no_fetch_url(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle paginated responses with query string parameters"""
+        """QueryStringSearch.discover_collections must handle paginated responses with query string parameters"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types.pop("fetch_url")
-        search_plugin.config.discover_product_types[
+        search_plugin = self.get_search_plugin(self.collection, provider)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections.pop("fetch_url")
+        search_plugin.config.discover_collections[
             "next_page_url_tpl"
         ] = "{url}?page={page}"
-        search_plugin.config.discover_product_types["start_page"] = 0
-        result = search_plugin.discover_product_types_per_page()
+        search_plugin.config.discover_collections["start_page"] = 0
+        result = search_plugin.discover_collections_per_page()
         assert result is None
 
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_per_page_keyerror(
+    def test_plugins_search_querystringsearch_discover_collections_per_page_keyerror(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle missing keys in the response"""
+        """QueryStringSearch.discover_collections must handle missing keys in the response"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types = {
+        search_plugin = self.get_search_plugin(self.collection, provider)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections = {
             "result_type": "json",
             "results_entry": parse("$.collections"),
         }
@@ -658,21 +656,21 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             QueryStringSearch, "_request", return_value=DummyResponse()
         ):
             with self.assertLogs(level="WARNING") as log:
-                result = search_plugin.discover_product_types_per_page(
+                result = search_plugin.discover_collections_per_page(
                     fetch_url="https://foo.bar/collections"
                 )
                 assert result is None
                 assert any("Incomplete" in m for m in log.output)
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
-    def test_plugins_search_querystringsearch_discover_product_types_per_page_request_exception(
+    def test_plugins_search_querystringsearch_discover_collections_per_page_request_exception(
         self,
     ):
-        """QueryStringSearch.discover_product_types must handle request exceptions"""
+        """QueryStringSearch.discover_collections must handle request exceptions"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
-        discover_product_types_conf = search_plugin.config.discover_product_types
-        search_plugin.config.discover_product_types = {
+        search_plugin = self.get_search_plugin(self.collection, provider)
+        discover_collections_conf = search_plugin.config.discover_collections
+        search_plugin.config.discover_collections = {
             "result_type": "json",
             "results_entry": JSONPath(),
         }
@@ -685,25 +683,25 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             QueryStringSearch, "_request", return_value=DummyResponse()
         ):
             with self.assertLogs(level="DEBUG") as log:
-                result = search_plugin.discover_product_types_per_page(
+                result = search_plugin.discover_collections_per_page(
                     fetch_url="https://foo.bar/collections"
                 )
                 assert result is None
                 assert any(
-                    "Could not parse discovered product types response" in m
+                    "Could not parse discovered collections response" in m
                     for m in log.output
                 )
 
-        search_plugin.config.discover_product_types = discover_product_types_conf
+        search_plugin.config.discover_collections = discover_collections_conf
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
-    def test_plugins_search_querystringsearch_discover_product_types_post(
+    def test_plugins_search_querystringsearch_discover_collections_post(
         self, mock__request
     ):
-        """QueryStringSearch.discover_product_types must be able to query using POST requests"""
-        # One of the providers that has a QueryStringSearch.discover_product_types configured with POST requests
+        """QueryStringSearch.discover_collections must be able to query using POST requests"""
+        # One of the providers that has a QueryStringSearch.discover_collections configured with POST requests
         provider = "geodes"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {
@@ -718,32 +716,32 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 },
             ]
         }
-        conf_update_dict = search_plugin.discover_product_types()
+        conf_update_dict = search_plugin.discover_collections()
         self.assertIn("foo_collection", conf_update_dict["providers_config"])
-        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertIn("foo_collection", conf_update_dict["collections_config"])
         self.assertIn("bar_collection", conf_update_dict["providers_config"])
-        self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+        self.assertIn("bar_collection", conf_update_dict["collections_config"])
         self.assertEqual(
-            conf_update_dict["providers_config"]["foo_collection"]["productType"],
+            conf_update_dict["providers_config"]["foo_collection"]["_collection"],
             "foo_collection",
         )
         self.assertEqual(
-            conf_update_dict["product_types_config"]["foo_collection"]["title"],
+            conf_update_dict["collections_config"]["foo_collection"]["title"],
             "The FOO collection",
         )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
-    def test_plugins_search_querystringsearch_discover_product_types_with_query_param(
+    def test_plugins_search_querystringsearch_discover_collections_with_query_param(
         self, mock__request
     ):
-        """QueryStringSearch.discover_product_types must return a well formatted dict"""
-        # One of the providers that has discover_product_types() configured with QueryStringSearch
+        """QueryStringSearch.discover_collections must return a well formatted dict"""
+        # One of the providers that has discover_collections() configured with QueryStringSearch
         provider = "wekeo_cmems"
         search_plugin = self.get_search_plugin(provider=provider)
         self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
         self.assertEqual(
             "QueryStringSearch",
-            search_plugin.discover_product_types.__func__.__qualname__.split(".")[0],
+            search_plugin.discover_collections.__func__.__qualname__.split(".")[0],
         )
 
         mock__request.return_value = mock.Mock()
@@ -761,7 +759,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 "metadata": {"title": "The FOO collection"},
             },
         ]
-        search_plugin.discover_product_types()
+        search_plugin.discover_collections()
         mock__request.assert_called_with(
             mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
@@ -773,13 +771,13 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_discover_product_types_keywords(
+    def test_plugins_search_querystringsearch_discover_collections_keywords(
         self, mock__request
     ):
-        """QueryStringSearch.discover_product_types must return a dict with well formatted keywords"""
+        """QueryStringSearch.discover_collections must return a dict with well formatted keywords"""
         # One of the providers that has a QueryStringSearch Search plugin and keywords configured
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {
@@ -796,8 +794,8 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 },
             ]
         }
-        conf_update_dict = search_plugin.discover_product_types()
-        keywords_list = conf_update_dict["product_types_config"]["foo_collection"][
+        conf_update_dict = search_plugin.discover_collections()
+        keywords_list = conf_update_dict["collections_config"]["foo_collection"][
             "keywords"
         ].split(",")
 
@@ -818,10 +816,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_distinct_product_type_mtd_mapping(
+    def test_plugins_search_querystringsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for QueryStringSearch should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for QueryStringSearch should not mix specific collections metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -834,7 +832,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin(self.product_type, "peps")
+        search_plugin = self.get_search_plugin(self.collection, "peps")
 
         # update metadata_mapping only for S1_SAR_GRD
         search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
@@ -842,18 +840,18 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "baz",
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
             auth=None,
         )
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_SLC",
+            collection="S1_SAR_SLC",
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
@@ -864,17 +862,17 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         side_effect=requests.exceptions.Timeout(),
     )
     def test_plugins_search_querystringseach_timeout(self, mock__request):
-        search_plugin = self.get_search_plugin(self.product_type, "peps")
+        search_plugin = self.get_search_plugin(self.collection, "peps")
         with self.assertRaises(TimeOutError):
             search_plugin.query(
-                productType="S1_SAR_SLC",
+                collection="S1_SAR_SLC",
                 auth=None,
             )
 
     def test_plugins_search_querystringsearch_count_hits_xml(self):
         """Test QueryStringSearch.count_hits() with XML response and XPath key path"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {
             "total_items_nb_key_path": "string(//ns:TotalResults)"
         }
@@ -892,7 +890,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_count_hits_json_dict_ok(self):
         """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {"total_items_nb_key_path": parse("$.total")}
 
         mock_response = mock.Mock()
@@ -905,7 +903,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_count_hits_json_dict_not_jsonpath(self):
         """Test QueryStringSearch.count_hits() with JSON response and non-JSONPath key path"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {"total_items_nb_key_path": "$.total"}
 
         mock_response = mock.Mock()
@@ -920,7 +918,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """Test QueryStringSearch.count_hits() with JSON response and JSONPath key path not found in the response"""
         provider = "earth_search"
-        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin = self.get_search_plugin(self.collection, provider)
         search_plugin.config.pagination = {
             "total_items_nb_key_path": parse("$.missing")
         }
@@ -938,7 +936,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         super(TestSearchPluginPostJsonSearch, self).setUp()
         # One of the providers that has a PostJsonSearch Search plugin
         provider = "aws_eos"
-        self.awseos_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.awseos_search_plugin = self.get_search_plugin(self.collection, provider)
         self.awseos_auth_plugin = self.get_auth_plugin(self.awseos_search_plugin)
         self.awseos_auth_plugin.config.credentials = dict(apikey="dummyapikey")
         self.awseos_url = "https://gate.eos.com/api/lms/search/v2/sentinel2"
@@ -1034,7 +1032,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         products, estimate = self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin, count=True),
             **{
-                "productType": "S2_MSI_L2A",
+                "collection": "S2_MSI_L2A",
                 "id": "S2B_MSIL2A_20220101T000459_N0301_R130_T53DMB_20220101T012649",
             },
         )
@@ -1096,12 +1094,12 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearch_search_cloudcover_awseos(
         self, mock_requests_post, mock_normalize_results
     ):
-        """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar product types"""  # noqa
+        """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar collections"""  # noqa
 
         self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
-            productType="S2_MSI_L1C",
-            cloudCover=50,
+            collection="S2_MSI_L1C",
+            **{"eo:cloud_cover": 50},
         )
         mock_requests_post.assert_called()
         self.assertIn("cloudCoverage", str(mock_requests_post.call_args_list[-1][1]))
@@ -1109,8 +1107,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
         self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
-            productType="S1_SAR_GRD",
-            cloudCover=50,
+            collection="S1_SAR_GRD",
+            **{"eo:cloud_cover": 50},
         )
         mock_requests_post.assert_called()
         self.assertNotIn(
@@ -1118,10 +1116,10 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
-    def test_plugins_search_postjsonsearch_distinct_product_type_mtd_mapping(
+    def test_plugins_search_postjsonsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for PostJsonSearch should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for PostJsonSearch should not mix specific collections metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -1144,19 +1142,19 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         products, estimate = self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
         )
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar",
             self.awseos_search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"],
         )
         products, estimate = self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
         )
         self.assertNotIn("bar", products[0].properties)
 
@@ -1174,7 +1172,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
             prep=PreparedSearch(),
-            productType="ERA5_SL",
+            collection="ERA5_SL",
             **{
                 "ecmwf:year": "2020",
                 "ecmwf:month": ["02"],
@@ -1200,8 +1198,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # start date given and converted to year, month, day, time
         search_plugin.query(
             prep=PreparedSearch(),
-            productType="ERA5_SL",
-            startTimeFromAscendingNode="2021-02-01T03:00:00Z",
+            collection="ERA5_SL",
+            start_datetime="2021-02-01T03:00:00Z",
         )
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
@@ -1221,23 +1219,34 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
         pt_conf = {
             "ID": "ERA5_SL",
-            "abstract": "ERA5 abstract",
-            "instrument": None,
+            "description": "ERA5 abstract",
+            "instruments": [],
+            "constellation": "ERA5",
             "platform": "ERA5",
-            "platformSerialIdentifier": "ERA5",
-            "processingLevel": None,
-            "keywords": "ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels",
-            "sensorType": "ATMOSPHERIC",
+            "processing:level": None,
+            "keywords": [
+                "ECMWF",
+                "Reanalysis",
+                "ERA5",
+                "CDS",
+                "Atmospheric",
+                "land",
+                "sea",
+                "hourly",
+                "single",
+                "levels",
+            ],
+            "eodag:sensor_type": "ATMOSPHERIC",
             "license": "other",
             "title": "ERA5 hourly data on single levels from 1940 to present",
-            "missionStartDate": "1940-01-01T00:00:00Z",
+            "extent": {"temporal": {"interval": [["1940-01-01T00:00:00Z", None]]}},
             "_id": "ERA5_SL",
         }
-        search_plugin.config.product_type_config = dict(
+        search_plugin.config.collection_config = dict(
             pt_conf,
-            **{"productType": "ERA5_SL"},
+            **{"_collection": "ERA5_SL"},
         )
-        search_plugin.query(productType="ERA5_SL", prep=PreparedSearch())
+        search_plugin.query(collection="ERA5_SL", prep=PreparedSearch())
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
@@ -1253,26 +1262,34 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
-        # product type with dates are query params -> use missionStartDate and today
+        # collection with dates are query params -> use missionStartDate and today
         pt_conf = {
             "ID": "CAMS_EAC4",
-            "abstract": "CAMS_EAC4 abstract",
-            "instrument": None,
+            "description": "CAMS_EAC4 abstract",
+            "instruments": [],
+            "constellation": "CAMS",
             "platform": "CAMS",
-            "platformSerialIdentifier": "CAMS",
-            "processingLevel": None,
-            "keywords": "Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4",
-            "sensorType": "ATMOSPHERIC",
+            "processing:level": None,
+            "keywords": [
+                "Copernicus",
+                "ADS",
+                "CAMS",
+                "Atmosphere",
+                "Atmospheric",
+                "EWMCF",
+                "EAC4",
+            ],
+            "eodag:sensor_type": "ATMOSPHERIC",
             "license": "other",
             "title": "CAMS global reanalysis (EAC4)",
-            "missionStartDate": "2003-01-01T00:00:00Z",
+            "extent": {"temporal": {"interval": [["2003-01-01T00:00:00Z", None]]}},
             "_id": "CAMS_EAC4",
         }
-        search_plugin.config.product_type_config = dict(
+        search_plugin.config.collection_config = dict(
             pt_conf,
-            **{"productType": "CAMS_EAC4"},
+            **{"_collection": "CAMS_EAC4"},
         )
-        search_plugin.query(productType="CAMS_EAC4", prep=PreparedSearch())
+        search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
@@ -1292,8 +1309,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         """A query with PostJsonSearch (here wekeo) must generate query params corresponding to the
         search criteria"""
         provider = "wekeo_ecmwf"
-        product_type = "GRIDDED_GLACIERS_MASS_CHANGE"
-        search_plugin = self.get_search_plugin(product_type, provider)
+        collection = "GRIDDED_GLACIERS_MASS_CHANGE"
+        search_plugin = self.get_search_plugin(collection, provider)
         auth_plugin = self.get_auth_plugin(search_plugin)
 
         mock__request.return_value = mock.Mock()
@@ -1330,9 +1347,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
         # Test #1: using the datetime
         search_criteria = {
-            "productType": product_type,
-            "startTimeFromAscendingNode": "1980-01-01",
-            "completionTimeFromAscendingNode": "1981-12-31",
+            "collection": collection,
+            "start_datetime": "1980-01-01",
+            "end_datetime": "1981-12-31",
             "ecmwf:variable": "glacier_mass_change",
             "ecmwf:data_format": "zip",
             "ecmwf:product_version": "wgms_fog_2022_09",
@@ -1350,7 +1367,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
         # Test #2: using parameter hydrological_year (single value)
         search_criteria = {
-            "productType": product_type,
+            "collection": collection,
             "ecmwf:variable": "glacier_mass_change",
             "ecmwf:data_format": "zip",
             "ecmwf:product_version": "wgms_fog_2022_09",
@@ -1369,7 +1386,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
         # Test #3: using parameter hydrological_year (multiple values)
         search_criteria = {
-            "productType": product_type,
+            "collection": collection,
             "ecmwf:variable": "glacier_mass_change",
             "ecmwf:data_format": "zip",
             "ecmwf:product_version": "wgms_fog_2022_09",
@@ -1401,7 +1418,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
-        self.onda_search_plugin = self.get_search_plugin(self.product_type, provider)
+        self.onda_search_plugin = self.get_search_plugin(self.collection, provider)
         self.onda_auth_plugin = self.get_auth_plugin(self.onda_search_plugin)
         # Some expected results
         with open(self.provider_resp_dir / "onda_count.json") as f:
@@ -1436,7 +1453,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         ]
         products = self.onda_search_plugin.normalize_results(raw_results)
 
-        self.assertEqual(products[0].properties["foo"], "bar")
+        self.assertEqual(products[0].properties["onda:foo"], "bar")
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
@@ -1698,7 +1715,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def test_plugins_search_odatav4search_search_cloudcover_onda(
         self, mock__request, mock_normalize_results
     ):
-        """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar product types"""
+        """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar collections"""
         # per_product_metadata_query parameter is updated to False if it is necessary
         per_product_metadata_query = (
             self.onda_search_plugin.config.per_product_metadata_query
@@ -1706,7 +1723,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         if per_product_metadata_query:
             self.onda_search_plugin.config.per_product_metadata_query = False
 
-        self.onda_search_plugin.query(productType="S2_MSI_L1C", cloudCover=50)
+        self.onda_search_plugin.query(collection="S2_MSI_L1C", cloudCover=50)
         # restore per_product_metadata_query initial value if it is necessary
         if (
             self.onda_search_plugin.config.per_product_metadata_query
@@ -1722,7 +1739,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         mock__request.reset_mock()
 
-        self.onda_search_plugin.query(productType="S1_SAR_GRD", cloudCover=50)
+        self.onda_search_plugin.query(collection="S1_SAR_GRD", cloudCover=50)
         mock__request.assert_called()
         self.assertNotIn(
             "cloudCoverPercentage", mock__request.call_args_list[-1][0][1].url
@@ -1731,10 +1748,10 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_odatav4search_distinct_product_type_mtd_mapping(
+    def test_plugins_search_odatav4search_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for ODataV4Search should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for ODataV4Search should not mix specific collections metadata-mapping"""
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -1754,18 +1771,18 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             "baz",
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
             auth=None,
         )
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_SLC",
+            collection="S1_SAR_SLC",
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
@@ -1807,22 +1824,22 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             },
         ]
 
-        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
 
         products, estimate = search_plugin.query(
             prep=PreparedSearch(page=1, items_per_page=2),
             **self.search_criteria_s2_msi_l1c,
         )
         self.assertEqual(
-            products[0].properties["productPath"],
+            products[0].properties["eodag:product_path"],
             "products/2020/10/9/S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
         )
         self.assertEqual(
-            products[1].properties["productPath"],
+            products[1].properties["eodag:product_path"],
             "products/2020/9/10/S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
         )
         self.assertEqual(
-            products[2].properties["productPath"],
+            products[2].properties["eodag:product_path"],
             "products/2020/10/10/S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
         )
 
@@ -1848,7 +1865,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             },
         ]
 
-        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
 
         products, estimate = search_plugin.query(
             prep=PreparedSearch(
@@ -1884,7 +1901,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock_guess_asset_key_and_roles.return_value = ("normalized_key", ["some_role"])
 
         # guess asset key from href
-        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
         self.assertFalse(hasattr(search_plugin.config, "asset_key_from_href"))
         products = search_plugin.normalize_results([{}])
         mock_guess_asset_key_and_roles.assert_called_once_with(
@@ -1895,7 +1912,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
 
         mock_guess_asset_key_and_roles.reset_mock()
         # guess asset key from origin key
-        search_plugin = self.get_search_plugin(self.product_type, "geodes")
+        search_plugin = self.get_search_plugin(self.collection, "geodes")
         self.assertEqual(search_plugin.config.asset_key_from_href, False)
         products = search_plugin.normalize_results([{}])
         mock_guess_asset_key_and_roles.assert_called_once_with(
@@ -1922,24 +1939,24 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                 ],
             },
         ] * 4
-        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
 
         search_plugin.query(
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         self.assertEqual(
             mock_requests_post.call_args.kwargs["json"]["datetime"],
             "2020-01-01T00:00:00.000Z/2020-01-02T00:00:00.000Z",
         )
 
-        search_plugin.query(startTimeFromAscendingNode="2020-01-01")
+        search_plugin.query(start_datetime="2020-01-01")
         self.assertEqual(
             mock_requests_post.call_args.kwargs["json"]["datetime"],
             "2020-01-01T00:00:00.000Z/..",
         )
 
-        search_plugin.query(completionTimeFromAscendingNode="2020-01-02")
+        search_plugin.query(end_datetime="2020-01-02")
         self.assertEqual(
             mock_requests_post.call_args.kwargs["json"]["datetime"],
             "../2020-01-02T00:00:00.000Z",
@@ -1949,10 +1966,10 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertNotIn("datetime", mock_requests_post.call_args.kwargs["json"])
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
-    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping(
+    def test_plugins_search_stacsearch_distinct_collection_mtd_mapping(
         self, mock__request
     ):
-        """The metadata mapping for a stac provider should not mix specific product-types metadata-mapping"""
+        """The metadata mapping for a stac provider should not mix specific collections metadata-mapping"""
         mock__request.return_value = mock.Mock()
         result = {
             "features": [
@@ -1963,7 +1980,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
 
         # update metadata_mapping only for S2_MSI_L1C
         search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"]["bar"] = (
@@ -1971,24 +1988,24 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             "baz",
         )
         products, estimate = search_plugin.query(
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             auth=None,
         )
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "metadata_mapping", search_plugin.config.products["S1_SAR_GRD"]
         )
         products, estimate = search_plugin.query(
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
-    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_earth_search(
+    def test_plugins_search_stacsearch_distinct_collection_mtd_mapping_earth_search(
         self, mock__request
     ):
         """The metadata mapping for a earth_search should correctly build tileIdentifier"""
@@ -2006,18 +2023,18 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                 },
             ],
         }
-        product_type = "S2_MSI_L1C"
+        collection = "S2_MSI_L1C"
         mock__request.return_value.json.side_effect = [result]
-        search_plugin = self.get_search_plugin(product_type, "earth_search")
+        search_plugin = self.get_search_plugin(collection, "earth_search")
 
         products, _ = search_plugin.query(
-            productType=product_type,
+            collection=collection,
             auth=None,
         )
-        self.assertIn("tileIdentifier", products[0].properties)
+        self.assertIn("grid:code", products[0].properties)
         self.assertEqual(
-            products[0].properties["tileIdentifier"],
-            "31TCJ",
+            products[0].properties["grid:code"],
+            "MGRS-31TCJ",
         )
 
     @mock.patch(
@@ -2089,10 +2106,9 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock_request.return_value.json.side_effect = [provider_queryables]
         plugin = self.get_search_plugin(provider="wekeo_main")
         queryables = plugin.discover_queryables(
-            productType="COP_DEM_GLO90_DGED", provider="wekeo_main"
+            collection="COP_DEM_GLO90_DGED", provider="wekeo_main"
         )
-        self.assertIn("productType", queryables)
-        self.assertIn("providerProductType", queryables)
+        self.assertIn("product_type", queryables)
         self.assertIn("geom", queryables)
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)
@@ -2205,7 +2221,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock_request.return_value.json.side_effect = [provider_queryables]
         plugin = self.get_search_plugin(provider="dedl")
         queryables_dedl = plugin.discover_queryables(
-            productType="CAMS_GAC_FORECAST", provider="dedl"
+            collection="CAMS_GAC_FORECAST", provider="dedl"
         )
 
         # Check that "ecmwf:time" has type Annotated[list[Literal['00:00']], ...]
@@ -2262,8 +2278,6 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
 
         # custom query for meteoblue
         custom_query = {"queries": {"foo": "bar"}}
-        product_type_config = {"platform": "NEMSGLOBAL", "alias": "THE.ALIAS"}
-        setattr(self.search_plugin.config, "product_type_config", product_type_config)
         products, estimate = self.search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.auth_plugin, auth=self.auth),
             **custom_query,
@@ -2286,14 +2300,14 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             ],
             "type": "Polygon",
         }
-        # check downloadLink
+        # check eodag:download_link
         self.assertEqual(
-            products[0].properties["downloadLink"],
+            products[0].properties["eodag:download_link"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
-        # check orderLink
+        # check eodag:order_link
         self.assertEqual(
-            products[0].properties["orderLink"],
+            products[0].properties["eodag:order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -2303,8 +2317,6 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
                 }
             ),
         )
-        self.assertEqual(products[0].properties["platform"], "NEMSGLOBAL")
-        self.assertEqual(products[0].properties["alias"], "THE.ALIAS")
 
 
 class MockResponse:
@@ -2349,7 +2361,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             creodias_search_result = json.load(f)
         mock_request.return_value = MockResponse(creodias_search_result, 200)
 
-        res = search_plugin.query(productType="S1_SAR_GRD")
+        res = search_plugin.query(collection="S1_SAR_GRD")
         for product in res[0]:
             download_plugin = self.plugins_manager.get_download_plugin(product)
             auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
@@ -2410,7 +2422,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         mock_request.return_value = MockResponse(creodias_search_result, 200)
 
         with self.assertRaises(NotAvailableError):
-            res = search_plugin.query(productType="S1_SAR_GRD")
+            res = search_plugin.query(collection="S1_SAR_GRD")
             for product in res[0]:
                 download_plugin = self.plugins_manager.get_download_plugin(product)
                 auth_plugin = self.plugins_manager.get_auth_plugin(
@@ -2436,12 +2448,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.provider = "cop_ads"
         self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
-            "startTimeFromAscendingNode": "2020-01-01",
-            "completionTimeFromAscendingNode": "2020-01-02",
+            "start_datetime": "2020-01-01",
+            "end_datetime": "2020-01-02",
         }
-        self.product_type = "CAMS_EAC4"
+        self.collection = "CAMS_EAC4"
         self.product_dataset = "cams-global-reanalysis-eac4"
-        self.product_type_params = {
+        self.collection_params = {
             "ecmwf:dataset": self.product_dataset,
         }
         self.custom_query_params = {
@@ -2454,10 +2466,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "ecmwf:data_format": "grib",
         }
 
-    def get_search_plugin(self, product_type=None, provider=None):
+    def get_search_plugin(self, collection=None, provider=None):
         return next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider=provider
+                collection=collection, provider=provider
             )
         )
 
@@ -2465,127 +2477,126 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         """ECMWFSearch.query must adapt end date in certain cases"""
         # start & stop as dates -> keep end date as it is
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            collection=self.collection,
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-02T00:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
         # start & stop as datetimes, not midnight -> keep and dates as it is
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01T02:00:00Z",
-            completionTimeFromAscendingNode="2020-01-02T03:00:00Z",
+            collection=self.collection,
+            start_datetime="2020-01-01T02:00:00Z",
+            end_datetime="2020-01-02T03:00:00Z",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T02:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-02T03:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
         # start & stop as datetimes, midnight -> exclude end date
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
-            completionTimeFromAscendingNode="2020-01-02T00:00:00Z",
+            collection=self.collection,
+            start_datetime="2020-01-01T00:00:00Z",
+            end_datetime="2020-01-02T00:00:00Z",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
         # start & stop same date -> keep end date
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
-            completionTimeFromAscendingNode="2020-01-01T00:00:00Z",
+            collection=self.collection,
+            start_datetime="2020-01-01T00:00:00Z",
+            end_datetime="2020-01-01T00:00:00Z",
         )
         eoproduct = results[0]
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
         )
         self.assertEqual(
             "2020-01-01T00:00:00.000Z",
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
         )
 
     def test_plugins_search_ecmwfsearch_dates_missing(self):
         """ECMWFSearch.query must use default dates if missing"""
         # given start & stop
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
+            collection=self.collection,
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "2020-01-01T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2020-01-02T00:00:00.000Z",
         )
 
         # missing start & stop
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
+            collection=self.collection,
         )
         eoproduct = results[0]
         self.assertIn(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             DEFAULT_MISSION_START_DATE,
         )
         exp_end_date = datetime.strptime(
             DEFAULT_MISSION_START_DATE, "%Y-%m-%dT%H:%M:%S.%fZ"
         )
         self.assertIn(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             exp_end_date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-4] + "Z",
         )
 
-        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
-        self.search_plugin.config.product_type_config = {
-            "productType": self.product_type,
-            "missionStartDate": "1985-10-26",
-            "missionEndDate": "2015-10-21",
+        # missing start & stop and plugin.collection_config set (set in core._prepare_search)
+        self.search_plugin.config.collection_config = {
+            "_collection": self.collection,
+            "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
             "alias": "THE.ALIAS",
         }
         results, _ = self.search_plugin.query(
-            productType="THE.ALIAS",
+            collection="THE.ALIAS",
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
-        self.assertEqual("THE.ALIAS", eoproduct.properties["alias"])
+        self.assertEqual("THE.ALIAS", eoproduct.properties["eodag:alias"])
 
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
 
         results, _ = self.search_plugin.query(
             prep=PreparedSearch(),
-            productType="ERA5_SL",
+            collection="ERA5_SL",
             **{
                 "ecmwf:year": "2020",
                 "ecmwf:month": ["02"],
@@ -2596,11 +2607,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         eoproduct = results[0]
 
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"],
+            eoproduct.properties["start_datetime"],
             "2020-02-20T01:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"],
+            eoproduct.properties["end_datetime"],
             "2020-02-21T01:00:00.000Z",
         )
         self.assertEqual(
@@ -2616,58 +2627,52 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ["20", "21"],
         )
 
-    def test_plugins_search_ecmwfsearch_without_producttype(self):
+    def test_plugins_search_ecmwfsearch_without_collection(self):
         """
-        ECMWFSearch.query must build a EOProduct from input parameters without product type.
+        ECMWFSearch.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
         """
         results, count = self.search_plugin.query(
             PreparedSearch(count=True),
             **{
                 "ecmwf:dataset": self.product_dataset,
-                "startTimeFromAscendingNode": "2020-01-01",
-                "completionTimeFromAscendingNode": "2020-01-02",
+                "start_datetime": "2020-01-01",
+                "end_datetime": "2020-01-02",
             },
         )
         assert count == 1
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
-        assert (
-            eoproduct.properties["startTimeFromAscendingNode"]
-            == "2020-01-01T00:00:00.000Z"
-        )
-        assert (
-            eoproduct.properties["completionTimeFromAscendingNode"]
-            == "2020-01-02T00:00:00.000Z"
-        )
+        assert eoproduct.properties["start_datetime"] == "2020-01-01T00:00:00.000Z"
+        assert eoproduct.properties["end_datetime"] == "2020-01-02T00:00:00.000Z"
         assert eoproduct.properties["title"] == eoproduct.properties["id"]
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.properties["orderLink"].startswith("http")
+        assert eoproduct.properties["eodag:order_link"].startswith("http")
         assert NOT_AVAILABLE in eoproduct.location
 
-    def test_plugins_search_ecmwfsearch_with_producttype(self):
-        """ECMWFSearch.query must build a EOProduct from input parameters with predefined product type"""
+    def test_plugins_search_ecmwfsearch_with_collection(self):
+        """ECMWFSearch.query must build a EOProduct from input parameters with predefined collection"""
         results, _ = self.search_plugin.query(
-            **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
+            **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
         eoproduct = results[0]
-        assert eoproduct.properties["title"].startswith(self.product_type)
+        assert eoproduct.properties["title"].startswith(self.collection)
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
-        # check if product_type_params is a subset of eoproduct.properties
-        assert self.product_type_params.items() <= eoproduct.properties.items()
+        # check if collection_params is a subset of eoproduct.properties
+        assert self.collection_params.items() <= eoproduct.properties.items()
 
-        # product type default settings can be overwritten using search kwargs
+        # collection default settings can be overwritten using search kwargs
         results, _ = self.search_plugin.query(
             **self.query_dates,
-            **{"productType": self.product_type, "ecmwf:variable": "temperature"},
+            **{"collection": self.collection, "ecmwf:variable": "temperature"},
         )
         eoproduct = results[0]
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
 
-    def test_plugins_search_ecmwfsearch_with_custom_producttype(self):
-        """ECMWFSearch.query must build a EOProduct from input parameters with custom product type"""
+    def test_plugins_search_ecmwfsearch_with_custom_collection(self):
+        """ECMWFSearch.query must build a EOProduct from input parameters with custom collection"""
         results, _ = self.search_plugin.query(
             **self.query_dates,
             **self.custom_query_params,
@@ -2764,8 +2769,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         with open(form_path) as f:
             form = json.load(f)
         mock__fetch_data.side_effect = [constraints, form]
-        product_type_config = {"missionStartDate": "2001-01-01T00:00:00Z"}
-        setattr(self.search_plugin.config, "product_type_config", product_type_config)
+        collection_config = {
+            "extent": {"temporal": {"interval": [["2001-01-01T00:00:00Z", None]]}}
+        }
+        setattr(self.search_plugin.config, "collection_config", collection_config)
 
         provider_queryables_from_constraints_file = [
             "ecmwf:year",
@@ -2786,7 +2793,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # ECMWF-like providers don't have default values anymore: override a default value
         default_values["data_format"] = "grib"
         params = deepcopy(default_values)
-        params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
         # set a parameter among the required ones of the form file with a default value in this form but not among the
         # ones of the constraints file to an empty value to check if its associated queryable has no default value
         eodag_formatted_data_format = "ecmwf:data_format"
@@ -2883,7 +2890,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         mock__fetch_data.side_effect = [constraints, form]
         # with additional param
         params = deepcopy(default_values)
-        params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
         params["ecmwf:variable"] = "a"
         queryables = self.search_plugin.discover_queryables(**params)
         self.assertIsNotNone(queryables)
@@ -2931,7 +2938,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         default_values.pop("metadata_mapping", None)
         params = deepcopy(default_values)
-        params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
 
         # use a wrong parameter, e.g. it is not among the ones of the form file, not among
         # the ones of the constraints file and not among the ones of default provider configuration
@@ -2981,8 +2988,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "ecmwf:product_type",
         ]
 
-        queryables = search_plugin._get_product_type_queryables(
-            product_type="ERA5_SL_MONTHLY", alias=None, filters={}
+        queryables = search_plugin._get_collection_queryables(
+            collection="ERA5_SL_MONTHLY", alias=None, filters={}
         )
         self.assertIsNotNone(queryables)
 
@@ -3040,7 +3047,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # with additional param
         queryables = search_plugin.discover_queryables(
-            productType="ERA5_SL_MONTHLY",
+            collection="ERA5_SL_MONTHLY",
             **{"ecmwf:variable": "a"},
         )
         self.assertIsNotNone(queryables)
@@ -3130,7 +3137,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             },
             "properties": {
                 "altId": "450bf368-2407-4c2c-8535-f215a4cda963",
-                "creationDate": "2021-04-23",
+                "created": "2021-04-23",
                 "modifiedDate": "2021-04-23",
                 "contacts": [
                     {
@@ -3268,10 +3275,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.dataset1_data,
             self.dataset2_data,
         ]
-
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        product_type_config = {"platform": "P1"}
-        setattr(search_plugin.config, "product_type_config", product_type_config)
 
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
             s3_stub.return_value = self.s3
@@ -3288,9 +3292,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
             stubber.activate()
             result, num_total = search_plugin.query(
-                productType="PRODUCT_A",
-                startTimeFromAscendingNode="2020-01-01T01:00:00Z",
-                completionTimeFromAscendingNode="2020-02-01T01:00:00Z",
+                collection="PRODUCT_A",
+                start_datetime="2020-01-01T01:00:00Z",
+                end_datetime="2020-02-01T01:00:00Z",
             )
             mock_requests_get.assert_has_calls(
                 calls=[
@@ -3323,13 +3327,12 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(1, len(products_dataset2))
             self.assertEqual(
                 "2020-01-02T00:00:00Z",
-                products_dataset2[0].properties["startTimeFromAscendingNode"],
+                products_dataset2[0].properties["start_datetime"],
             )
             self.assertEqual(
                 "2020-01-03T00:00:00Z",
-                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+                products_dataset2[0].properties["end_datetime"],
             )
-            self.assertEqual("P1", products_dataset2[0].properties["platform"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_no_dates_in_id(self, mock_requests_get):
@@ -3342,8 +3345,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
         search_plugin.config.products = {
             "PRODUCT_A": {
-                "productType": "PRODUCT_A",
-                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+                "_collection": "PRODUCT_A",
+                "code_mapping": {"param": "platform", "index": 1},
             }
         }
 
@@ -3371,9 +3374,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
             stubber.activate()
             result, num_total = search_plugin.query(
-                productType="PRODUCT_A",
-                startTimeFromAscendingNode="1969-01-01T01:00:00Z",
-                completionTimeFromAscendingNode="1970-02-01T01:00:00Z",
+                collection="PRODUCT_A",
+                start_datetime="1969-01-01T01:00:00Z",
+                end_datetime="1970-02-01T01:00:00Z",
             )
             mock_requests_get.assert_has_calls(
                 calls=[
@@ -3400,15 +3403,15 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(2, len(products_dataset2))
             self.assertEqual(
                 "1970-01-01T00:00:00.000000Z",
-                products_dataset2[0].properties["startTimeFromAscendingNode"],
+                products_dataset2[0].properties["start_datetime"],
             )
             self.assertEqual(
                 "1970-01-01T00:00:00.000000Z",
-                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+                products_dataset2[0].properties["end_datetime"],
             )
             self.assertEqual(
                 "15325642",
-                products_dataset2[0].properties["platformSerialIdentifier"],
+                products_dataset2[0].properties["platform"],
             )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
@@ -3458,7 +3461,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 )
             stubber.activate()
             result, num_total = search_plugin.query(
-                productType="PRODUCT_A",
+                collection="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
             self.assertEqual(1, num_total)
@@ -3467,7 +3470,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 result[0].properties["id"],
             )
             result, num_total = search_plugin.query(
-                productType="PRODUCT_A",
+                collection="PRODUCT_A",
                 id="item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
             )
             self.assertEqual(1, num_total)
@@ -3489,8 +3492,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
         search_plugin.config.products = {
             "PRODUCT_A": {
-                "productType": "PRODUCT_A",
-                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+                "_collection": "PRODUCT_A",
+                "code_mapping": {"param": "platform", "index": 1},
             }
         }
 
@@ -3527,7 +3530,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
             stubber.activate()
             result, num_total = search_plugin.query(
-                productType="PRODUCT_A", id="item_846282_niznjvnqkrf"
+                collection="PRODUCT_A", id="item_846282_niznjvnqkrf"
             )
             mock_requests_get.assert_has_calls(
                 calls=[
@@ -3576,7 +3579,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
 
         result, num_total = search_plugin.query(
-            productType="PRODUCT_A",
+            collection="PRODUCT_A",
             geometry=geometry,
         )
 
@@ -3607,30 +3610,30 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         exc.errno = 404
         mock_requests_get.side_effect = exc
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        with self.assertRaises(UnsupportedProductType):
+        with self.assertRaises(UnsupportedCollection):
             search_plugin.query(
-                productType="PRODUCT_AX",
+                collection="PRODUCT_AX",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
         mock_requests_get.reset()
         mock_requests_get.side_effect = requests.exceptions.ConnectionError()
         with self.assertRaises(RequestError):
             search_plugin.query(
-                productType="PRODUCT_A",
+                collection="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
 
     def test_plugins_search_postjsonsearch_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        kwargs = {"productType": "PRODUCT_A", "provider": self.provider}
+        kwargs = {"collection": "PRODUCT_A", "provider": self.provider}
 
         queryables = search_plugin.discover_queryables(**kwargs)
 
         self.assertIsNotNone(queryables)
         # check that the queryables are the ones expected (they are always the same ones)
         self.assertListEqual(
-            list(queryables.keys()), ["productType", "id", "start", "end", "geom"]
+            list(queryables.keys()), ["collection", "id", "start", "end", "geom"]
         )
         # check that each queryable does not have a default value except the one set in the kwargs
         for key, queryable in queryables.items():
@@ -3645,9 +3648,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         super(TestSearchPluginWekeoSearch, self).setUp()
         # One of the providers that has a WekeoSearch Search plugin
         provider = "wekeo_main"
-        self.wekeomain_search_plugin = self.get_search_plugin(
-            self.product_type, provider
-        )
+        self.wekeomain_search_plugin = self.get_search_plugin(self.collection, provider)
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
     def test_plugins_search_wekeosearch_init_wekeomain(self):
@@ -3655,10 +3656,11 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
 
         default_providers_config = load_default_config()
         default_config = default_providers_config["wekeo_main"]
-        # "orderLink" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
-        self.assertNotIn("orderLink", default_config.search.metadata_mapping)
+        # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
+        self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
         self.assertIn(
-            "orderLink", default_config.products["S1_SAR_GRD"]["metadata_mapping"]
+            "eodag:order_link",
+            default_config.products["S1_SAR_GRD"]["metadata_mapping"],
         )
         self.assertNotIn("metadata_mapping", default_config.products["S1_SAR_SLC"])
 
@@ -3681,11 +3683,11 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         # CLMS_GLO_LAI_333M has both metadata_mapping_from_product and metadata_mapping
         # "metadata_mapping" must override "metadata_mapping_from_product"
         self.assertIn(
-            "orderLink",
+            "eodag:order_link",
             default_config.products["CLMS_GLO_LAI_333M"]["metadata_mapping"],
         )
         self.assertIn(
-            "orderLink",
+            "eodag:order_link",
             default_config.products["CLMS_GLO_FCOVER_333M"]["metadata_mapping"],
         )
         self.assertEqual(
@@ -3697,10 +3699,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.assertNotEqual(
             self.wekeomain_search_plugin.config.products["CLMS_GLO_LAI_333M"][
                 "metadata_mapping"
-            ]["orderLink"],
+            ]["eodag:order_link"],
             self.wekeomain_search_plugin.config.products["CLMS_GLO_FCOVER_333M"][
                 "metadata_mapping"
-            ]["orderLink"],
+            ]["eodag:order_link"],
         )
 
     @mock.patch(
@@ -3733,7 +3735,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
                 "startDate": "2020-08-08",
                 "completionDate": "2020-08-16",
                 "bbox": [137.772897, 13.134202, 153.749135, 23.885986],
-                "processingLevel": "S2MSI1C",
+                "processing:level": "S2MSI1C",
             },
             mock.ANY,
         )
@@ -3772,13 +3774,13 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
-            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.wekeomain_search_plugin.provider}",
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
+            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.wekeomain_search_plugin.provider}",
             context.exception.message,
         )
 
-        # with raised error parameter set to True in the config of the product type of the provider
+        # with raised error parameter set to True in the config of the collection of the provider
 
         # first, update this parameter to False in the global config
         # to show that it is going to be taken over by this new config
@@ -3787,7 +3789,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         ] = False
 
         self.wekeomain_search_plugin.config.products[
-            self.search_criteria_s2_msi_l1c["productType"]
+            self.search_criteria_s2_msi_l1c["collection"]
         ]["discover_metadata"] = {"raise_mtd_discovery_error": True}
 
         with self.assertRaises(ValidationError) as context:
@@ -3800,9 +3802,9 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
-            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.wekeomain_search_plugin.provider}",
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
+            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.wekeomain_search_plugin.provider}",
             context.exception.message,
         )
 
@@ -3821,8 +3823,8 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         mock_stacsearch_discover_queryables,
         mock_postjsonsearch_discover_queryables,
     ):
-        """Queryables discovery with a WekeoSearch (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
-        self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
+        """Queryables discovery with a PostJsonSearchWithStacQueryables (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
+        self.wekeomain_search_plugin.discover_queryables(collection=self.collection)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
 
@@ -3832,7 +3834,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         super(TestSearchPluginDedtLumi, self).setUp()
         self.provider = "dedt_lumi"
         self.search_plugin = self.get_search_plugin(provider=self.provider)
-        self.product_type = "DT_CLIMATE_ADAPTATION"
+        self.collection = "DT_CLIMATE_ADAPTATION"
 
     def test_plugins_apis_dedt_lumi_query_feature(self):
         """Test the proper handling of geom into ecmwf:feature"""
@@ -3843,7 +3845,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
             "type": "polygon",
         }
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
+            collection=self.collection,
             start="2021-01-01",
             geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
         )
@@ -3854,7 +3856,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         # Unsupported multi-polygon
         with self.assertRaises(ValidationError):
             self.search_plugin.query(
-                productType=self.product_type,
+                collection=self.collection,
                 start="2021-01-01",
                 geometry="""MULTIPOLYGON (
                     ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)),

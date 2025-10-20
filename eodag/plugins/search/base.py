@@ -25,7 +25,6 @@ from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
-    DEFAULT_METADATA_MAPPING,
     NOT_AVAILABLE,
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
@@ -36,11 +35,12 @@ from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    GENERIC_PRODUCT_TYPE,
+    GENERIC_COLLECTION,
     copy_deepcopy,
     deepcopy,
     format_dict_items,
     format_pydantic_error,
+    get_collection_dates,
     string_to_jsonpath,
     update_nested_dict,
 )
@@ -75,7 +75,7 @@ class Search(PluginTopic):
         super(Search, self).__init__(provider, config)
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas: dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
+        metas: dict[str, Any] = {}
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata
         if self.config.metadata_mapping:
@@ -85,6 +85,9 @@ class Search(PluginTopic):
             self.config.metadata_mapping,
             result_type=getattr(self.config, "result_type", "json"),
         )
+        # set default metadata prefix for discover_metadata if not already set
+        if hasattr(self.config, "discover_metadata"):
+            self.config.discover_metadata.setdefault("metadata_prefix", provider)
 
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
@@ -103,8 +106,8 @@ class Search(PluginTopic):
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
-        """Fetch product types list from provider using `discover_product_types` conf"""
+    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Fetch collections list from provider using `discover_collections` conf"""
         return None
 
     def discover_queryables(
@@ -112,7 +115,7 @@ class Search(PluginTopic):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using :attr:`~eodag.config.PluginConfig.discover_queryables` conf
 
-        :param kwargs: additional filters for queryables (``productType`` and other search
+        :param kwargs: additional filters for queryables (``collection`` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
@@ -121,15 +124,15 @@ class Search(PluginTopic):
         )
 
     def _get_defaults_as_queryables(
-        self, product_type: str
+        self, collection: str
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
-        Return given product type default settings as queryables
+        Return given collection default settings as queryables
 
-        :param product_type: given product type
+        :param collection: given collection
         :returns: queryable parameters dict
         """
-        defaults = deepcopy(self.config.products.get(product_type, {}))
+        defaults = deepcopy(self.config.products.get(collection, {}))
         defaults.pop("metadata_mapping", None)
 
         queryables: dict[str, Annotated[Any, FieldInfo]] = {}
@@ -137,53 +140,51 @@ class Search(PluginTopic):
             queryables[parameter] = Annotated[type(value), Field(default=value)]
         return queryables
 
-    def map_product_type(
-        self, product_type: Optional[str], **kwargs: Any
-    ) -> Optional[str]:
-        """Get the provider product type from eodag product type
+    def map_collection(self, collection: Optional[str], **kwargs: Any) -> Optional[str]:
+        """Get the provider collection from eodag collection
 
-        :param product_type: eodag product type
-        :returns: provider product type
+        :param collection: eodag collection
+        :returns: provider collection
         """
-        if product_type is None:
+        if collection is None:
             return None
-        logger.debug("Mapping eodag product type to provider product type")
-        return self.config.products.get(product_type, {}).get(
-            "productType", GENERIC_PRODUCT_TYPE
+        logger.debug("Mapping eodag collection to provider collection")
+        return self.config.products.get(collection, {}).get(
+            "_collection", GENERIC_COLLECTION
         )
 
-    def get_product_type_def_params(
-        self, product_type: str, format_variables: Optional[dict[str, Any]] = None
+    def get_collection_def_params(
+        self, collection: str, format_variables: Optional[dict[str, Any]] = None
     ) -> dict[str, Any]:
-        """Get the provider product type definition parameters and specific settings
+        """Get the provider collection definition parameters and specific settings
 
-        :param product_type: the desired product type
-        :returns: The product type definition parameters
+        :param collection: the desired collection
+        :returns: The collection definition parameters
         """
-        if product_type in self.config.products.keys():
-            return self.config.products[product_type]
-        elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
+        if collection in self.config.products.keys():
+            return self.config.products[collection]
+        elif GENERIC_COLLECTION in self.config.products.keys():
             logger.debug(
-                "Getting generic provider product type definition parameters for %s",
-                product_type,
+                "Getting generic provider collection definition parameters for %s",
+                collection,
             )
             return {
                 k: v
                 for k, v in format_dict_items(
-                    self.config.products[GENERIC_PRODUCT_TYPE],
-                    **(format_variables or {}),
+                    self.config.products[GENERIC_COLLECTION],
+                    **({"collection": collection} | (format_variables or {})),
                 ).items()
                 if v
             }
         else:
             return {}
 
-    def get_product_type_cfg_value(self, key: str, default: Any = None) -> Any:
+    def get_collection_cfg_value(self, key: str, default: Any = None) -> Any:
         """
-        Get the value of a configuration option specific to the current product type.
+        Get the value of a configuration option specific to the current collection.
 
         This method retrieves the value of a configuration option from the
-        ``product_type_config`` attribute. If the option is not found, the provided
+        ``collection_config`` attribute. If the option is not found, the provided
         default value is returned.
 
         :param key: The configuration option key.
@@ -194,21 +195,39 @@ class Search(PluginTopic):
         :return: The value of the specified configuration option or the default value.
         :rtype: Any
         """
-        product_type_cfg = getattr(self.config, "product_type_config", {})
-        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
+        collection_cfg = getattr(self.config, "collection_config", {})
+        non_none_cfg = {k: v for k, v in collection_cfg.items() if v}
 
         return non_none_cfg.get(key, default)
 
-    def get_metadata_mapping(
-        self, product_type: Optional[str] = None
-    ) -> dict[str, Union[str, list[str]]]:
-        """Get the plugin metadata mapping configuration (product type specific if exists)
-
-        :param product_type: the desired product type
-        :returns: The product type specific metadata-mapping
+    def get_collection_cfg_dates(
+        self, start_default: Optional[str] = None, end_default: Optional[str] = None
+    ) -> tuple[Optional[str], Optional[str]]:
         """
-        if product_type:
-            return self.config.products.get(product_type, {}).get(
+        Get start and end dates from the collection configuration.
+
+        Extracts dates from the extent.temporal.interval structure in the collection
+        configuration, falling back to provided defaults if dates are not available.
+
+        :param start_default: Default value to return for start date if not found in config
+        :param end_default: Default value to return for end date if not found in config
+        :returns: Tuple of (mission_start_date, mission_end_date) as ISO strings or defaults
+        """
+        collection_cfg = getattr(self.config, "collection_config", {})
+        col_start, col_end = get_collection_dates(collection_cfg)
+
+        return col_start or start_default, col_end or end_default
+
+    def get_metadata_mapping(
+        self, collection: Optional[str] = None
+    ) -> dict[str, Union[str, list[str]]]:
+        """Get the plugin metadata mapping configuration (collection specific if exists)
+
+        :param collection: the desired collection
+        :returns: The collection specific metadata-mapping
+        """
+        if collection:
+            return self.config.products.get(collection, {}).get(
                 "metadata_mapping", self.config.metadata_mapping
             )
         return self.config.metadata_mapping
@@ -327,68 +346,68 @@ class Search(PluginTopic):
                 sort_by_qs += parsed_sort_by_tpl
         return (sort_by_qs, sort_by_qp)
 
-    def _get_product_type_queryables(
-        self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
+    def _get_collection_queryables(
+        self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
     ) -> QueryablesDict:
         default_values: dict[str, Any] = deepcopy(
-            getattr(self.config, "products", {}).get(product_type, {})
+            getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
         try:
-            filters["productType"] = product_type
+            filters["collection"] = collection
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError as e:
             if str(e):
                 logger.debug(str(e))
-            queryables = self.queryables_from_metadata_mapping(product_type, alias)
+            queryables = self.queryables_from_metadata_mapping(collection, alias)
 
         return QueryablesDict(**queryables)
 
     def list_queryables(
         self,
         filters: dict[str, Any],
-        available_product_types: list[Any],
-        product_type_configs: dict[str, dict[str, Any]],
-        product_type: Optional[str] = None,
+        available_collections: list[Any],
+        collection_configs: dict[str, dict[str, Any]],
+        collection: Optional[str] = None,
         alias: Optional[str] = None,
     ) -> QueryablesDict:
         """
         Get queryables
 
         :param filters: Additional filters for queryables.
-        :param available_product_types: list of available product types
-        :param product_type_configs: dict containing the product type information for all used product types
-        :param product_type: (optional) The product type.
-        :param alias: (optional) alias of the product type
+        :param available_collections: list of available collections
+        :param collection_configs: dict containing the collection information for all used collections
+        :param collection: (optional) The collection.
+        :param alias: (optional) alias of the collection
 
         :return: A dictionary containing the queryable properties, associating parameters to their
                 annotated type.
         """
         additional_info = (
-            "Please select a product type to get the possible values of the parameters!"
-            if not product_type
+            "Please select a collection to get the possible values of the parameters!"
+            if not collection
             else ""
         )
         discover_metadata = getattr(self.config, "discover_metadata", {})
         auto_discovery = discover_metadata.get("auto_discovery", False)
 
-        if product_type or getattr(self.config, "discover_queryables", {}).get(
+        if collection or getattr(self.config, "discover_queryables", {}).get(
             "fetch_url", ""
         ):
-            if product_type:
-                self.config.product_type_config = product_type_configs[product_type]
-            queryables = self._get_product_type_queryables(product_type, alias, filters)
+            if collection:
+                self.config.collection_config = collection_configs[collection]
+            queryables = self._get_collection_queryables(collection, alias, filters)
             queryables.additional_information = additional_info
             queryables.additional_properties = auto_discovery
 
             return queryables
         else:
             all_queryables: dict[str, Any] = {}
-            for pt in available_product_types:
-                self.config.product_type_config = product_type_configs[pt]
-                pt_queryables = self._get_product_type_queryables(pt, None, filters)
+            for pt in available_collections:
+                self.config.collection_config = collection_configs[pt]
+                pt_queryables = self._get_collection_queryables(pt, None, filters)
                 all_queryables.update(pt_queryables)
-            # reset defaults because they may vary between product types
+            # reset defaults because they may vary between collections
             for k, v in all_queryables.items():
                 v.__metadata__[0].default = getattr(
                     Queryables.model_fields.get(k, Field(None)), "default", None
@@ -415,30 +434,30 @@ class Search(PluginTopic):
         if getattr(self.config, "need_auth", False) and auth:
             self.auth = auth
         try:
-            product_type = search_params.get("productType")
-            if not product_type:
-                raise ValidationError("Field required: productType")
+            collection = search_params.get("collection")
+            if not collection:
+                raise ValidationError("Field required: collection")
             self.list_queryables(
                 filters=search_params,
-                available_product_types=[product_type],
-                product_type_configs={product_type: self.config.product_type_config},
-                product_type=product_type,
-                alias=product_type,
+                available_collections=[collection],
+                collection_configs={collection: self.config.collection_config},
+                collection=collection,
+                alias=collection,
             ).get_model().model_validate(search_params)
         except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
 
     def queryables_from_metadata_mapping(
-        self, product_type: Optional[str] = None, alias: Optional[str] = None
+        self, collection: Optional[str] = None, alias: Optional[str] = None
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
-        Extract queryable parameters from product type metadata mapping.
-        :param product_type: product type id (optional)
-        :param alias: (optional) alias of the product type
+        Extract queryable parameters from collection metadata mapping.
+        :param collection: collection id (optional)
+        :param alias: (optional) alias of the collection
         :returns: dict of annotated queryables
         """
         metadata_mapping: dict[str, Any] = deepcopy(
-            self.get_metadata_mapping(product_type)
+            self.get_metadata_mapping(collection)
         )
 
         queryables: dict[str, Annotated[Any, FieldInfo]] = {}
@@ -452,10 +471,13 @@ class Search(PluginTopic):
         eodag_queryables = copy_deepcopy(
             model_fields_to_annotated(Queryables.model_fields)
         )
-        # add default value for product type
-        if alias:
-            eodag_queryables.pop("productType")
-            eodag_queryables["productType"] = Annotated[str, Field(default=alias)]
+        queryables["collection"] = eodag_queryables.pop("collection")
+        # add default value for collection
+        if collection_or_alias := alias or collection:
+            queryables["collection"] = Annotated[
+                str, Field(default=collection_or_alias)
+            ]
+
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None

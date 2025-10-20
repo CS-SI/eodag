@@ -42,9 +42,9 @@ EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugi
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
 data provider. The EODAG SDK is structured around three functions:
 
-* List product types: list of supported products and their description
+* List collections: list of supported products and their description
 
-* Search products (by product type or uid): searches products according to the search criteria provided
+* Search products (by collection or uid): searches products according to the search criteria provided
 
 * Download products: download product “as is"
 
@@ -108,7 +108,7 @@ Example usage for interacting with the api in your Python code:
     dag = EODataAccessGateway()
 
     search_results = dag.search(
-        productType='S2_MSI_L1C',
+        collection='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',
         end='2021-01-15'
@@ -137,9 +137,9 @@ Start playing with the CLI:
 
 - To search for some products::
 
-     eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
+     eodag search --collection S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
-  The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
+  The request above searches for ``S2_MSI_L1C`` collections in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 
   Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
 
@@ -153,11 +153,11 @@ Start playing with the CLI:
 
      eodag download --quicklooks --search-results search_results.geojson
 
-- To list all available product types and supported providers::
+- To list all available collections and supported providers::
 
      eodag list
 
-- To list available product types on a specified supported provider::
+- To list available collections on a specified supported provider::
 
      eodag list -p creodias
 

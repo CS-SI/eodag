@@ -83,7 +83,7 @@ class DatasetDriver(metaclass=type):
 
 class NoDriver(DatasetDriver):
     """A default :attr:`~eodag.api.product.drivers.base.DatasetDriver.legacy` driver that does not implement any of the
-    methods it should implement, used for all product types for  which the deprecated
+    methods it should implement, used for all collections for  which the deprecated
     :meth:`~eodag_cube.api.product._product.EOProduct.get_data` method is not implemented. Expect a
     :exc:`NotImplementedError` when trying to get the data in that case.
     """

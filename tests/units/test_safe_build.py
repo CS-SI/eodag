@@ -51,7 +51,7 @@ class TestSafeBuild(unittest.TestCase):
         prod = EOProduct(
             provider="some_provider",
             properties=self.aws_sentinel_chunks["S1_SAR_GRD"]["properties"],
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
         )
 
         def chunk():
@@ -73,7 +73,7 @@ class TestSafeBuild(unittest.TestCase):
         prod = EOProduct(
             provider="some_provider",
             properties=self.aws_sentinel_chunks["S1_SAR_GRD"]["properties"],
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
         )
 
         def chunk():
@@ -98,7 +98,7 @@ class TestSafeBuild(unittest.TestCase):
         prod = EOProduct(
             provider="some_provider",
             properties=self.aws_sentinel_chunks["S1_SAR_GRD"]["properties"],
-            productType="S1_SAR_GRD",
+            collection="S1_SAR_GRD",
         )
 
         product_path = os.path.join(self.tmp_download_path, prod.properties["title"])
@@ -140,7 +140,7 @@ class TestSafeBuild(unittest.TestCase):
         prod = EOProduct(
             provider="some_provider",
             properties=self.aws_sentinel_chunks["S2_MSI_L2A"]["properties"],
-            productType="S2_MSI_L2A",
+            collection="S2_MSI_L2A",
         )
 
         product_path = os.path.join(self.tmp_download_path, prod.properties["title"])
@@ -184,7 +184,7 @@ class TestSafeBuild(unittest.TestCase):
         prod = EOProduct(
             provider="some_provider",
             properties=self.aws_sentinel_chunks["S2_MSI_L1C"]["properties"],
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
         )
 
         product_path = os.path.join(self.tmp_download_path, prod.properties["title"])

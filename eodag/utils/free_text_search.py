@@ -197,17 +197,17 @@ def compile_free_text_query(query: str) -> Callable[[dict[str, str]], bool]:
     >>> evaluator = compile_free_text_query('("FooAndBar" OR BAR) AND "FOOBAR collection"')
     >>> evaluator({
     ...     "title": "titleFOOBAR - Lorem FOOBAR collection",
-    ...     "abstract": "abstract FOOBAR - This is FOOBAR. FooAndBar"
+    ...     "description": "abstract FOOBAR - This is FOOBAR. FooAndBar"
     ... })
     True
     >>> evaluator({
     ...     "title": "collection FOOBAR",
-    ...     "abstract": "abstract FOOBAR - This is FOOBAR. FooAndBar"
+    ...     "description": "abstract FOOBAR - This is FOOBAR. FooAndBar"
     ... })
     False
     >>> evaluator({
     ...     "title": "titleFOOBAR - Lorem FOOBAR ",
-    ...     "abstract": "abstract FOOBAR - This is FOOBAR."
+    ...     "description": "abstract FOOBAR - This is FOOBAR."
     ... })
     False
     >>> evaluator({"title": "Only Bar here"})

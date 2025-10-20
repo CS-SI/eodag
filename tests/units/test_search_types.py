@@ -30,13 +30,13 @@ class TestStacSearch(unittest.TestCase):
         # "sort_by" argument must be a list of tuples of two elements and the second element must be "ASC" or "DESC"
         search_args.SearchArgs.model_validate(
             {
-                "productType": "dummy_product_type",
+                "collection": "dummy_collection",
                 "sort_by": [("eodagSortParam", "ASC")],
             }
         )
         search_args.SearchArgs.model_validate(
             {
-                "productType": "dummy_product_type",
+                "collection": "dummy_collection",
                 "sort_by": [("eodagSortParam", "DESC")],
             }
         )
@@ -46,7 +46,7 @@ class TestStacSearch(unittest.TestCase):
         # raise a Pydantic error with an empty list
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
-                {"productType": "dummy_product_type", "sort_by": []}
+                {"collection": "dummy_collection", "sort_by": []}
             )
         self.assertIn(
             "List should have at least 1 item after validation, not 0",
@@ -55,7 +55,7 @@ class TestStacSearch(unittest.TestCase):
         # raise a Pydantic error with syntax errors
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
-                {"productType": "dummy_product_type", "sort_by": "eodagSortParam ASC"}
+                {"collection": "dummy_collection", "sort_by": "eodagSortParam ASC"}
             )
         self.assertIn(
             "Sort argument must be a list of tuple(s), got a '<class 'str'>' instead",
@@ -63,7 +63,7 @@ class TestStacSearch(unittest.TestCase):
         )
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
-                {"productType": "dummy_product_type", "sort_by": ["eodagSortParam ASC"]}
+                {"collection": "dummy_collection", "sort_by": ["eodagSortParam ASC"]}
             )
         self.assertIn(
             "Sort argument must be a list of tuple(s), got a list of '<class 'str'>' instead",
@@ -73,7 +73,7 @@ class TestStacSearch(unittest.TestCase):
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
                 {
-                    "productType": "dummy_product_type",
+                    "collection": "dummy_collection",
                     "sort_by": [("eodagSortParam", " wrong_order ")],
                 }
             )
@@ -86,7 +86,7 @@ class TestStacSearch(unittest.TestCase):
         with self.assertRaises(EodagValidationError) as e:
             search_args.SearchArgs.model_validate(
                 {
-                    "productType": "dummy_product_type",
+                    "collection": "dummy_collection",
                     "sort_by": [("eodagSortParam", "ASC"), ("eodagSortParam", "DESC")],
                 }
             )

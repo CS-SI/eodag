@@ -125,7 +125,7 @@ Each configuration parameter can be set with an environment variable.
 .. note::
 
    Setting credentials must be done according to the
-   `provider's plugin <https://eodag.readthedocs.io/en/stable/plugins.html#plugins-available>`_ (auth | api):
+   `provider's plugin <../plugins.rst#plugins-available>`_ (auth | api):
 
    * Authentication plugin: ``EODAG__<PROVIDER>__AUTH__CREDENTIALS__<KEY>``
 
@@ -133,8 +133,7 @@ Each configuration parameter can be set with an environment variable.
 
    ``<KEY>`` should be replaced with the adapted credentials key (``USERNAME``, ``PASSWORD``, ``APIKEY``, ...) according
    to the provider configuration template in
-   `the YAML user configuration file\
-   <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_.
+   `the YAML user configuration file <configure.rst#yaml-user-configuration-file>`_.
 
 
 Core configuration using environment variables
@@ -144,18 +143,18 @@ Some EODAG core settings can be overriden using environment variables:
 
 * ``EODAG_CFG_DIR`` customized configuration directory in place of `~/.config/eodag`.
 * ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\
-  <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_
+  <configure.rst#yaml-user-configuration-file>`_
   in place of `~/.config/eodag/eodag.yml`.
 * ``EODAG_LOCS_CFG_FILE`` for defining the desired path to the
-  `locations <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#Locations-search>`_
+  `locations <../notebooks/api_user_guide/3_search.ipynb#Locations-search>`_
   configuration file in place of `~/.config/eodag/locations.yml`.
 * ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
   `<python-site-packages>/eodag/resources/providers.yml`.
-* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the product types configuration file in place of
-  `<python-site-packages>/eodag/resources/product_types.yml`.
-* ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external product types configuration file\
-  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
-  in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
+* ``EODAG_COLLECTIONS_CFG_FILE`` for defining the desired path to the collections configuration file in place of
+  `<python-site-packages>/eodag/resources/collections.yml`.
+* ``EODAG_EXT_COLLECTIONS_CFG_FILE`` for defining the desired path to the `external collections configuration file\
+  <../notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_
+  in place of https://cs-si.github.io/eodag/eodag/resources/ext_collections.json.
   If the file is not readable, only user-modified providers will be fetched.
 * ``EODAG_PROVIDERS_WHITELIST`` to restrict EODAG to only use a specific list of providers.
 
@@ -163,20 +162,20 @@ Some EODAG core settings can be overriden using environment variables:
   All other providers will be ignored, regardless of their presence in configuration files.
 
   This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
-* ``EODAG_STRICT_PRODUCT_TYPES`` to control how product types are listed.
+* ``EODAG_STRICT_COLLECTIONS`` to control how collections are listed.
 
-  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list product types that are present in the main product types configuration file.
-  Product types defined only in provider configurations (but not in the main product types configuration) will be ignored.
-  If not set, EODAG will also include product types defined only in provider configurations, with minimal metadata.
+  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list collections that are present in the main collections configuration file.
+  Collections defined only in provider configurations (but not in the main collections configuration) will be ignored.
+  If not set, EODAG will also include collections defined only in provider configurations, with minimal metadata.
 
-  This is useful if you want to strictly control which product types are available, for example to ensure consistency across environments.
+  This is useful if you want to strictly control which collections are available, for example to ensure consistency across environments.
 
 Example usage:
 
 .. code-block:: bash
 
    export EODAG_PROVIDERS_WHITELIST=peps,creodias,cop_dataspace
-   export EODAG_STRICT_PRODUCT_TYPES=true
+   export EODAG_STRICT_COLLECTIONS=true
 
 CLI configuration
 ^^^^^^^^^^^^^^^^^
@@ -195,8 +194,8 @@ API: Dynamic configuration
 Priority setting
 ^^^^^^^^^^^^^^^^
 
-Some product types are available from multiple providers, for instance
-*Sentinel 2 Level-1C* products. When a search is made for such product types,
+Some collections are available from multiple providers, for instance
+*Sentinel 2 Level-1C* products. When a search is made for such collections,
 ``eodag`` would use its pre-configured preferred/prioritary provider, which is *PEPS*
 currently.
 
@@ -211,10 +210,10 @@ an integer value that is higher than the priority of all the other providers.
 
 .. warning::
 
-   If the priority is set to a provider, and a search is made for a product type
-   available in ``eodag``'s catalog with a provider that doesn't offer this product type,
+   If the priority is set to a provider, and a search is made for a collection
+   available in ``eodag``'s catalog with a provider that doesn't offer this collection,
    then the search will still be done. The provider used would be the one with the
-   highest priority among those which offer this product type.
+   highest priority among those which offer this collection.
 
 Download settings
 ^^^^^^^^^^^^^^^^^
@@ -282,7 +281,7 @@ This file can be used to download products with the API:
    from eodag import EODataAccessGateway
    dag = EODataAccessGateway()
    products = dag.search(
-      productType="S2_MSI_L1C",
+      collection="S2_MSI_L1C",
       start="2018-01-01",
       end="2018-01-31",
       geom=(1, 43, 2, 44)
@@ -297,7 +296,7 @@ Or with the CLI:
    eodag search -b 1 43 2 44 \
                 -s 2018-01-01 \
                 -e 2018-01-31 \
-                -p S2_MSI_L1C \
+                -c S2_MSI_L1C \
                 --storage my_search.geojson
    eodag download -f my_config.yml --search-results my_search.geojson
 
@@ -339,7 +338,7 @@ will be stored and used if further authentication tries fail:
    dag._plugins_manager.get_auth_plugin("creodias").authenticate()
 
 Please note that authentication mechanism is already included in
-`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/8_download.html>`_ , so you could
+`download methods <../notebooks/api_user_guide/7_download.ipynb>`_ , so you could
 also directly execute a download to retrieve the token while the OTP is still valid.
 
 Use OTP through CLI

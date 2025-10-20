@@ -51,9 +51,10 @@ from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
+    format_string,
     get_geometry_from_various,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError
+from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
@@ -104,8 +105,8 @@ class EOProduct:
     provider: str
     #: The metadata of the product
     properties: dict[str, Any]
-    #: The product type
-    product_type: Optional[str]
+    #: The collection
+    collection: Optional[str]
     #: The geometry of the product
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
@@ -127,8 +128,12 @@ class EOProduct:
         self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
         self.provider = provider
-        self.product_type = kwargs.get("productType")
-        self.location = self.remote_location = properties.get("downloadLink", "")
+        self.collection = (
+            kwargs.get("collection")
+            or properties.pop("collection", None)
+            or properties.get("_collection")
+        )
+        self.location = self.remote_location = properties.get("eodag:download_link", "")
         self.assets = AssetsDict(self)
         self.properties = {
             key: value
@@ -136,19 +141,32 @@ class EOProduct:
             if key != "geometry"
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
+            and not key.startswith("_")
         }
+        common_stac_properties = {
+            key: self.properties[key]
+            for key in sorted(self.properties)
+            if ":" not in key
+        }
+        extensions_stac_properties = {
+            key: self.properties[key] for key in sorted(self.properties) if ":" in key
+        }
+        self.properties = common_stac_properties | extensions_stac_properties
+
         if "geometry" not in properties or (
             (
                 properties["geometry"] == NOT_AVAILABLE
                 or properties["geometry"] == NOT_MAPPED
             )
-            and "defaultGeometry" not in properties
+            and "eodag:default_geometry" not in properties
         ):
             raise MisconfiguredError(
                 f"No geometry available to build EOProduct(id={properties.get('id')}, provider={provider})"
             )
         elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
+            product_geometry = properties.pop(
+                "eodag:default_geometry", DEFAULT_GEOMETRY
+            )
         else:
             product_geometry = properties["geometry"]
 
@@ -192,9 +210,9 @@ class EOProduct:
             "id": self.properties["id"],
             "assets": self.assets.as_dict(),
             "properties": {
-                "eodag_product_type": self.product_type,
-                "eodag_provider": self.provider,
-                "eodag_search_intersection": search_intersection,
+                "eodag:collection": self.collection,
+                "eodag:provider": self.provider,
+                "eodag:search_intersection": search_intersection,
                 **{
                     key: value
                     for key, value in self.properties.items()
@@ -213,16 +231,22 @@ class EOProduct:
         :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
                         as a Python dict
         :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
-        properties = feature["properties"]
-        properties["geometry"] = feature["geometry"]
-        properties["id"] = feature["id"]
-        provider = feature["properties"]["eodag_provider"]
-        product_type = feature["properties"]["eodag_product_type"]
-        obj = cls(provider, properties, productType=product_type)
-        obj.search_intersection = geometry.shape(
-            feature["properties"]["eodag_search_intersection"]
-        )
+        try:
+            properties = feature["properties"]
+            properties["geometry"] = feature["geometry"]
+            properties["id"] = feature["id"]
+            provider = properties.pop("eodag:provider")
+            collection = properties.pop("eodag:collection")
+            search_intersection = properties.pop("eodag:search_intersection")
+        except KeyError as e:
+            raise ValidationError(
+                "Key %s not found in geojson, make sure it comes from a serialized SearchResult"
+                % e.args[0]
+            ) from e
+        obj = cls(provider, properties, collection=collection)
+        obj.search_intersection = geometry.shape(search_intersection)
         obj.assets = AssetsDict(obj, feature.get("assets", {}))
         return obj
 
@@ -252,12 +276,12 @@ class EOProduct:
         download_plugin = plugins_manager.get_download_plugin(self)
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("storageStatus") != ONLINE_STATUS:
-            matching_url = self.properties.get("orderLink") or self.properties.get(
-                "downloadLink"
-            )
+        elif self.properties.get("order:status") != ONLINE_STATUS:
+            matching_url = self.properties.get(
+                "eodag:order_link"
+            ) or self.properties.get("eodag:download_link")
         else:
-            matching_url = self.properties.get("downloadLink")
+            matching_url = self.properties.get("eodag:download_link")
 
         try:
             auth_plugin = next(
@@ -424,7 +448,7 @@ class EOProduct:
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
         with requests.get(
-            self.properties["quicklook"],
+            self.properties["eodag:quicklook"],
             stream=True,
             auth=auth,
             headers=USER_AGENT,
@@ -468,17 +492,19 @@ class EOProduct:
         def format_quicklook_address() -> None:
             """If the quicklook address is a Python format string, resolve the
             formatting with the properties of the product."""
-            fstrmatch = re.match(r".*{.+}*.*", self.properties["quicklook"])
+            fstrmatch = re.match(r".*{.+}*.*", self.properties["eodag:quicklook"])
             if fstrmatch:
-                self.properties["quicklook"].format(
-                    {
+                self.properties["eodag:quicklook"] = format_string(
+                    None,
+                    self.properties["eodag:quicklook"],
+                    **{
                         prop_key: prop_val
                         for prop_key, prop_val in self.properties.items()
-                        if prop_key != "quicklook"
-                    }
+                        if prop_key != "eodag:quicklook"
+                    },
                 )
 
-        if self.properties.get("quicklook") is None:
+        if self.properties.get("eodag:quicklook") is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
@@ -521,11 +547,11 @@ class EOProduct:
             # it is a HTTP URL. If not, we assume it is a base64 string, in which case
             # we just decode the content, write it into the quicklook_file and return it.
             if not (
-                self.properties["quicklook"].startswith("http")
-                or self.properties["quicklook"].startswith("https")
+                self.properties["eodag:quicklook"].startswith("http")
+                or self.properties["eodag:quicklook"].startswith("https")
             ):
                 with open(quicklook_file, "wb") as fd:
-                    img = self.properties["quicklook"].encode("ascii")
+                    img = self.properties["eodag:quicklook"].encode("ascii")
                     fd.write(base64.b64decode(img))
                 return quicklook_file
 
@@ -588,7 +614,9 @@ class EOProduct:
         return NoDriver()
 
     def _repr_html_(self):
-        thumbnail = self.properties.get("thumbnail")
+        thumbnail = self.properties.get("eodag:thumbnail") or self.properties.get(
+            "eodag:quicklook"
+        )
         thumbnail_html = (
             f"<img src='{thumbnail}' width=100 alt='thumbnail'/>"
             if thumbnail and not thumbnail.startswith("s3")
@@ -608,13 +636,13 @@ class EOProduct:
                     <td style='text-align: left; vertical-align: top;'>
                         {dict_to_html_table({
                          "provider": self.provider,
-                         "product_type": self.product_type,
+                         "collection": self.collection,
                          "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
-                             'startTimeFromAscendingNode'
+                         "properties[&quot;start_datetime&quot;]": self.properties.get(
+                             'start_datetime'
                          ),
-                         "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
-                             'completionTimeFromAscendingNode'
+                         "properties[&quot;end_datetime&quot;]": self.properties.get(
+                             'end_datetime'
                          ),
                          }, brackets=False)}
                         <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(

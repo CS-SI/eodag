@@ -69,12 +69,12 @@ class StaticStacSearch(StacSearch):
         # prevent search parameters from being queried when they are known in the configuration or not
         for param, mapping in config.metadata_mapping.items():
             # only keep one queryable to allow the mock search request
-            if param != "productType":
+            if param != "collection":
                 config.metadata_mapping[param] = get_metadata_path_value(mapping)
         config.discover_metadata["auto_discovery"] = False
         # there is no endpoint for fetching queryables with a static search
         config.discover_queryables["fetch_url"] = None
-        config.discover_queryables["product_type_fetch_url"] = None
+        config.discover_queryables["collection_fetch_url"] = None
 
         super(StaticStacSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault("max_connections", 100)
@@ -85,19 +85,19 @@ class StaticStacSearch(StacSearch):
             "total_items_nb_key_path", "$.null"
         )
         self.config.__dict__["pagination"].setdefault("max_items_per_page", -1)
-        # disable product types discovery by default (if endpoints equals to STAC API default)
+        # disable collections discovery by default (if endpoints equals to STAC API default)
         if (
-            getattr(self.config, "discover_product_types", {}).get("fetch_url")
+            getattr(self.config, "discover_collections", {}).get("fetch_url")
             == "{api_endpoint}/../collections"
         ):
-            self.config.discover_product_types = {}
+            self.config.discover_collections = {}
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
-        """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
+    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Fetch collections list from a static STAC Catalog provider using `discover_collections` conf
 
-        :returns: configuration dict containing fetched product types information
+        :returns: configuration dict containing fetched collections information
         """
-        unformatted_fetch_url = self.config.discover_product_types.get("fetch_url")
+        unformatted_fetch_url = self.config.discover_collections.get("fetch_url")
         if unformatted_fetch_url is None:
             return None
         fetch_url = unformatted_fetch_url.format(**self.config.__dict__)
@@ -113,13 +113,13 @@ class StaticStacSearch(StacSearch):
             collections = [c for c in collections if c["id"] == kwargs["q"]]
         collections_mock_response = {"collections": collections}
 
-        # discover_product_types on mocked QueryStringSearch._request
+        # discover_collections on mocked QueryStringSearch._request
         with mock.patch(
             "eodag.plugins.search.qssearch.QueryStringSearch._request",
             autospec=True,
             return_value=MockResponse(collections_mock_response, 200),
         ):
-            conf_update_dict = super(StaticStacSearch, self).discover_product_types(
+            conf_update_dict = super(StaticStacSearch, self).discover_collections(
                 **kwargs
             )
 
@@ -131,21 +131,21 @@ class StaticStacSearch(StacSearch):
         """Set static available queryables for :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
         search plugin
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: queryable parameters dict
         """
         return {
-            "productType": Queryables.get_with_default(
-                "productType", kwargs.get("productType")
+            "collection": Queryables.get_with_default(
+                "collection", kwargs.get("collection")
             ),
             "id": Queryables.get_with_default("id", kwargs.get("id")),
             "start": Queryables.get_with_default(
-                "start", kwargs.get("start") or kwargs.get("startTimeFromAscendingNode")
+                "start", kwargs.get("start") or kwargs.get("start_datetime")
             ),
             "end": Queryables.get_with_default(
                 "end",
-                kwargs.get("end") or kwargs.get("completionTimeFromAscendingNode"),
+                kwargs.get("end") or kwargs.get("end_datetime"),
             ),
             "geom": Queryables.get_with_default(
                 "geom",
@@ -169,20 +169,20 @@ class StaticStacSearch(StacSearch):
         ):
             return ([], 0) if prep.count else ([], None)
 
-        product_type = kwargs.get("productType", prep.product_type)
-        # provider product type specific conf
-        self.product_type_def_params = (
-            self.get_product_type_def_params(product_type, format_variables=kwargs)
-            if product_type is not None
+        collection = kwargs.get("collection", prep.collection)
+        # provider collection specific conf
+        self.collection_def_params = (
+            self.get_collection_def_params(collection, format_variables=kwargs)
+            if collection is not None
             else {}
         )
 
-        for collection in self.get_collections(prep, **kwargs):
+        for provider_collections in self.get_provider_collections(prep, **kwargs):
             # skip empty collection if one is required in api_endpoint
-            if "{collection}" in self.config.api_endpoint and not collection:
+            if "{_collection}" in self.config.api_endpoint and not provider_collections:
                 continue
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
-                collection=collection
+                _collection=provider_collections
             )
 
         features = fetch_stac_items(
@@ -207,10 +207,10 @@ class StaticStacSearch(StacSearch):
         # filter using query params
         search_result = SearchResult(eo_products)
         # Filter by date
-        if "startTimeFromAscendingNode" in kwargs:
-            kwargs["start"] = kwargs.pop("startTimeFromAscendingNode")
-        if "completionTimeFromAscendingNode" in kwargs:
-            kwargs["end"] = kwargs.pop("completionTimeFromAscendingNode")
+        if "start_datetime" in kwargs:
+            kwargs["start"] = kwargs.pop("start_datetime")
+        if "end_datetime" in kwargs:
+            kwargs["end"] = kwargs.pop("end_datetime")
         if any(k in ["start", "end"] for k in kwargs.keys()):
             search_result = search_result.crunch(
                 FilterDate({k: kwargs[k] for k in ["start", "end"] if k in kwargs})
@@ -223,17 +223,17 @@ class StaticStacSearch(StacSearch):
                 FilterOverlap({"intersects": True}), geometry=geometry
             )
         # Filter by cloudCover
-        if "cloudCover" in kwargs.keys():
+        if "eo:cloud_cover" in kwargs.keys():
             search_result = search_result.crunch(
                 FilterProperty(
-                    {"cloudCover": kwargs.pop("cloudCover"), "operator": "lt"}
+                    {"eo:cloud_cover": kwargs.pop("eo:cloud_cover"), "operator": "lt"}
                 )
             )
         # Filter by other properties
         skip_eodag_internal_parameters = [
             "auth",
             "raise_errors",
-            "productType",
+            "collection",
             "locations",
             "start",
             "end",

@@ -140,7 +140,7 @@ class SearchResult(UserList[EOProduct]):
         Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
         filter for online products.
         """
-        return self.filter_property(storageStatus="ONLINE")
+        return self.filter_property(**{"order:status": "succeeded"})
 
     @staticmethod
     def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:
@@ -260,7 +260,7 @@ def _import_stac_item_from_eodag_server(
         assets = {
             k: v["alternate"]["origin"]
             for k, v in feature.get("assets", {}).items()
-            if k not in ("thumbnail", "downloadLink")
+            if k not in ("thumbnail", "downloadLink", "eodag:download_link")
             and "origin" in v.get("alternate", {})
         }
         if assets:
@@ -271,6 +271,12 @@ def _import_stac_item_from_eodag_server(
             download_link = (
                 feature.get("assets", {})
                 .get("downloadLink", {})
+                .get("alternate", {})
+                .get("origin", {})
+                .get("href")
+            ) or (
+                feature.get("assets", {})
+                .get("eodag:download_link", {})
                 .get("alternate", {})
                 .get("origin", {})
                 .get("href")
@@ -328,12 +334,12 @@ def _import_stac_item_from_known_provider(
                 configured_pts = [
                     k
                     for k, v in search_plugin.config.products.items()
-                    if v.get("productType") == feature.get("collection")
+                    if v.get("_collection") == feature.get("collection")
                 ]
                 if len(configured_pts) > 0:
-                    eo_product.product_type = configured_pts[0]
+                    eo_product.collection = configured_pts[0]
                 else:
-                    eo_product.product_type = feature.get("collection")
+                    eo_product.collection = feature.get("collection")
 
                 eo_product._register_downloader_from_manager(plugins_manager)
                 imported_products.append(eo_product)
@@ -359,7 +365,7 @@ def _import_stac_item_from_unknown_provider(
     except MisconfiguredError:
         pass
     if eo_product is not None:
-        eo_product.product_type = feature.get("collection")
+        eo_product.collection = feature.get("collection")
         eo_product._register_downloader_from_manager(plugins_manager)
         return SearchResult([eo_product])
     else:
@@ -373,7 +379,7 @@ class RawSearchResult(UserList[dict[str, Any]]):
     """
 
     query_params: dict[str, Any]
-    product_type_def_params: dict[str, Any]
+    collection_def_params: dict[str, Any]
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

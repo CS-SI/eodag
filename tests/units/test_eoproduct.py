@@ -46,7 +46,7 @@ from tests.utils import mock
 
 
 class TestEOProduct(EODagTestCase):
-    NOT_ASSOCIATED_PRODUCT_TYPE = "EODAG_DOES_NOT_SUPPORT_THIS_PRODUCT_TYPE"
+    NOT_ASSOCIATED_COLLECTION = "EODAG_DOES_NOT_SUPPORT_THIS_COLLECTION"
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
@@ -73,13 +73,16 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.geometry, product.search_intersection)
 
     def test_eoproduct_default_geom(self):
-        """EOProduct needs a geometry or can use confired defaultGeometry by default"""
+        """EOProduct needs a geometry or can use confired eodag:default_geometry by default"""
 
         with self.assertRaisesRegex(MisconfiguredError, "No geometry available"):
             self._dummy_product(properties={"geometry": NOT_AVAILABLE})
 
         product = self._dummy_product(
-            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": (0, 0, 1, 1)}
+            properties={
+                "geometry": NOT_AVAILABLE,
+                "eodag:default_geometry": (0, 0, 1, 1),
+            }
         )
         self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
 
@@ -110,9 +113,9 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertIsNone(product.search_intersection)
 
-    def test_eoproduct_default_driver_unsupported_product_type(self):
-        """EOProduct driver attr must be set even if its product type is not supported"""
-        product = self._dummy_product(productType=self.NOT_ASSOCIATED_PRODUCT_TYPE)
+    def test_eoproduct_default_driver_unsupported_collection(self):
+        """EOProduct driver attr must be set even if its collection is not supported"""
+        product = self._dummy_product(collection=self.NOT_ASSOCIATED_COLLECTION)
         self.assertIsInstance(product.driver, DatasetDriver)
 
     def test_eoproduct_geointerface(self):
@@ -125,12 +128,12 @@ class TestEOProduct(EODagTestCase):
             self._tuples_to_lists(geometry.mapping(self.geometry)),
         )
         properties = geo_interface["properties"]
-        self.assertEqual(properties["eodag_provider"], self.provider)
+        self.assertEqual(properties["eodag:provider"], self.provider)
         self.assertEqual(
-            properties["eodag_search_intersection"],
+            properties["eodag:search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag_product_type"], self.product_type)
+        self.assertEqual(properties["eodag:collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
@@ -141,32 +144,32 @@ class TestEOProduct(EODagTestCase):
                 product.provider,
                 product.location,
                 product.properties["title"],
-                product.properties["instrument"],
+                product.properties["instruments"],
                 self._tuples_to_lists(geometry.mapping(product.geometry)),
                 self._tuples_to_lists(geometry.mapping(product.search_intersection)),
-                product.product_type,
-                product.properties["productType"],
-                product.properties["platformSerialIdentifier"],
+                product.collection,
+                product.properties["collection"],
+                product.properties["platform"],
             ],
             [
                 same_product.provider,
                 same_product.location,
                 same_product.properties["title"],
-                same_product.properties["instrument"],
+                same_product.properties["instruments"],
                 self._tuples_to_lists(geometry.mapping(same_product.geometry)),
                 self._tuples_to_lists(
                     geometry.mapping(same_product.search_intersection)
                 ),
-                same_product.product_type,
-                same_product.properties["productType"],
-                same_product.properties["platformSerialIdentifier"],
+                same_product.collection,
+                same_product.properties["collection"],
+                same_product.properties["platform"],
             ],
         )
 
     def test_eoproduct_get_quicklook_no_quicklook_url(self):
         """EOProduct.get_quicklook must return an empty string if no quicklook property"""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = None
+        product.properties["eodag:quicklook"] = None
 
         quicklook_file_path = product.get_quicklook()
         self.assertEqual(quicklook_file_path, "")
@@ -174,7 +177,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_http_error(self):
         """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
             requests.HTTPError
@@ -196,7 +199,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_ok_without_auth(self):
         """EOProduct.get_quicklook must retrieve the quicklook without authentication."""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
             requests.HTTPError,
@@ -219,7 +222,7 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_get_quicklook_ok(self):
         """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""  # noqa
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value = self._quicklook_response()
         product.register_downloader(self.get_mock_downloader(), None)
@@ -273,7 +276,7 @@ class TestEOProduct(EODagTestCase):
         with open(existing_quicklook_file_path, "wb") as fh:
             fh.write(b"content")
         product = self._dummy_product()
-        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook(filename=quicklook_basename)
@@ -491,7 +494,7 @@ class TestEOProduct(EODagTestCase):
                 properties=dict(
                     self.eoproduct_props,
                     **{
-                        "downloadLink": "%(base_uri)s/is/resolved",
+                        "eodag:download_link": "%(base_uri)s/is/resolved",
                         "otherProperty": "%(output_dir)s/also/resolved",
                     },
                 )
@@ -506,7 +509,7 @@ class TestEOProduct(EODagTestCase):
             f"{downloadable_product.downloader.config.base_uri}/is/resolved",
         )
         self.assertEqual(
-            downloadable_product.properties["downloadLink"],
+            downloadable_product.properties["eodag:download_link"],
             f"{downloadable_product.downloader.config.base_uri}/is/resolved",
         )
         self.assertEqual(
@@ -525,7 +528,7 @@ class TestEOProduct(EODagTestCase):
                     properties=dict(
                         self.eoproduct_props,
                         **{
-                            "downloadLink": "%(257B/cannot/be/resolved",
+                            "eodag:download_link": "%(257B/cannot/be/resolved",
                             "otherProperty": "%(/%s/neither/resolved",
                         },
                     )
@@ -536,7 +539,7 @@ class TestEOProduct(EODagTestCase):
                 downloadable_product.remote_location, "%(257B/cannot/be/resolved"
             )
             self.assertEqual(
-                downloadable_product.properties["downloadLink"],
+                downloadable_product.properties["eodag:download_link"],
                 "%(257B/cannot/be/resolved",
             )
             self.assertEqual(
@@ -547,7 +550,8 @@ class TestEOProduct(EODagTestCase):
             needed_logs = [
                 f"Could not resolve product.location ({downloadable_product.location})",
                 f"Could not resolve product.remote_location ({downloadable_product.remote_location})",
-                f"Could not resolve downloadLink property ({downloadable_product.properties['downloadLink']})",
+                "Could not resolve eodag:download_link property (%s)"
+                % downloadable_product.properties["eodag:download_link"],
                 f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
             ]
             for needed_log in needed_logs:
