@@ -521,6 +521,8 @@ class PluginConfig(yaml.YAMLObject):
     ignore_assets: bool
     #: :class:`~eodag.plugins.download.base.Download` Collection specific configuration
     products: dict[str, dict[str, Any]]
+    #: :class:`~eodag.plugins.download.base.Download` Number of maximum workers allowed for parallel downloads
+    max_workers: int
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
