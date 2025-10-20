@@ -1766,9 +1766,18 @@ class EODataAccessGateway:
             not in self._plugins_manager.collection_to_provider_config_map.keys()
         ):
             if provider and collection:
-                # Try to get specific collection from external provider
-                logger.debug(f"Fetching {provider} to find {collection} collection")
-                self._fetch_external_collection(provider, collection)
+                # fetch ref for given provider and collection
+                logger.debug(
+                    f"Fetching external collections sources to find {provider} {collection} collection"
+                )
+                self.fetch_collections_list(provider)
+                if (
+                    collection
+                    not in self._plugins_manager.collection_to_provider_config_map.keys()
+                ):
+                    # Try to get specific collection from external provider
+                    logger.debug(f"Fetching {provider} to find {collection} collection")
+                    self._fetch_external_collection(provider, collection)
             if not provider:
                 # no provider or still not found -> fetch all external collections
                 logger.debug(
