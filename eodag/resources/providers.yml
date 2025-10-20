@@ -4304,7 +4304,7 @@
       quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
   download: !plugin
-    type: CreodiasS3Download
+    type: AwsDownload
     s3_endpoint: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
     ssl_verify: true
