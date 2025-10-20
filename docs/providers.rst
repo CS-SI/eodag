@@ -834,6 +834,38 @@ No credentials are needed
 
 ----
 
+**DEDT MareNostrum**
+-------------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Destination Earth Digital Twin output on MareNostrum.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://polytope.mn5.apps.dte.destination-earth.eu/openapi
+        :color: primary
+        :outline:
+        :tooltip: DEDT MareNostrum OpenAPI
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
+  credentials.
+
+----
+
 **ECMWF**
 ==========
 
