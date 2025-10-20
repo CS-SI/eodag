@@ -61,7 +61,7 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
       with:
-        branch: external-product-types-ref-update
+        branch: external-collections-ref-update
         delete-branch: true
         title: 'chore: update external collections reference'
         body: ${{ env.UPDATE_SUMMARY }}

@@ -6200,7 +6200,7 @@
     type: StacSearch
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
-    timeout: 20
+    timeout: 60
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
@@ -6210,7 +6210,7 @@
       results_entry: '$.links[?(@.rel=="child")]'
       generic_collection_id: '{$.href#replace_str(r".*/", "")}'
       generic_collection_parsable_properties:
-        collection: '{$.href#replace_str(r".*/", "")}'
+        _collection: '{$.href#replace_str(r".*/", "")}'
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_collection_parsable_metadata:
