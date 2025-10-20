@@ -15,12 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 from typing import Optional
 
 from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
+from eodag.utils import _deprecated
 
 
+@_deprecated(
+    reason="Plugin that was used in creodias_s3 provider configuration, but not anymore",
+    version="3.10.0",
+)
 class CreodiasS3Download(AwsDownload):
     """
     Download on creodias s3 from their VMs (extension of :class:`~eodag.plugins.download.aws.AwsDownload`)

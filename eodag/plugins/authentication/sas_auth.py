@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Optional
 import requests
 from requests.auth import AuthBase
 
+from eodag.api.product._assets import Asset
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_items
 from eodag.utils.exceptions import AuthenticationError, TimeOutError
@@ -143,3 +144,17 @@ class SASAuth(Authentication):
             ssl_verify=ssl_verify,
             matching_url=matching_url,
         )
+
+    def presign_url(
+        self,
+        asset: Asset,
+        expires_in: int = 3600,
+    ) -> str:
+        """This method is used to presign a url to download an asset.
+
+        :param asset: asset for which the url shall be presigned
+        :param expires_in: expiration time of the presigned url in seconds
+        :returns: presigned url
+        """
+        url = asset["href"]
+        return self.config.auth_uri.format(url=url)

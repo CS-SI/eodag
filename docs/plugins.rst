@@ -46,6 +46,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``creodias``           | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``creodias_s3``        | |QueryStringSearch|                | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``dedl``               | |StacSearch|                       | |OIDCTokenExchangeAuth|         | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``dedt_lumi``          | |ECMWFSearch|                      | |OIDCAuthorizationCodeFlowAuth| | |HTTPDownload|   |
@@ -98,7 +100,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 
 .. |AwsDownload| replace:: :class:`~eodag.plugins.download.aws.AwsDownload`
 .. |HTTPDownload| replace:: :class:`~eodag.plugins.download.http.HTTPDownload`
-.. |CreodiasS3Download| replace:: :class:`~eodag.plugins.download.creodias_s3.CreodiasS3Download`
 
 .. |QueryStringSearch| replace:: :class:`~eodag.plugins.search.qssearch.QueryStringSearch`
 .. |ODataV4Search| replace:: :class:`~eodag.plugins.search.qssearch.ODataV4Search`

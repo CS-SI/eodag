@@ -21,6 +21,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest import mock
 
+import boto3
 import responses
 from mypy_boto3_s3.service_resource import BucketObjectsCollection
 from pystac.utils import now_in_utc
@@ -28,6 +29,7 @@ from requests import Request, Response, Timeout
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
+from eodag.api.product._product import EOProduct
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
@@ -587,6 +589,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
                             "aws_access_key_id": cls.aws_access_key_id,
                             "aws_secret_access_key": cls.aws_secret_access_key,
                         },
+                        "s3_endpoint": "https://s3.abc.test.com",
                     },
                 },
                 "provider_with_auth_keys_session": {
@@ -727,6 +730,40 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         mock_get_authenticated_objects.side_effect = [auth_objects_a, auth_objects_b]
         auth_objects = plugin.authenticate_objects(buckets_prefixes)
         self.assertDictEqual({"a": auth_objects_a, "b": auth_objects_b}, auth_objects)
+
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._create_s3_resource",
+        autospec=True,
+    )
+    def test_plugins_download_aws_presigned_url(self, mock_s3_resource):
+        """should create a presigned url to download from S3"""
+        # provider with no credentials required
+        provider = "provider_with_auth_keys"
+        product_type = "foo_product"
+        product = EOProduct(
+            provider,
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+            productType=product_type,
+        )
+        product.assets.update({"a1": {"href": "https://s3.abc.test.com/b1/a1/a1.json"}})
+        product.assets.update({"a2": {"href": "https://s3.abc.test.com/b1/a2/a2.json"}})
+        mock_s3_resource.return_value = boto3.resource(
+            service_name="s3",
+            endpoint_url="https://s3.abc.test.com",
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+        )
+
+        auth_plugin = self.get_auth_plugin("provider_with_auth_keys")
+        auth_plugin.authenticate()
+        url = auth_plugin.presign_url(product.assets["a1"])
+        self.assertIn("https://s3.abc.test.com/b1/a1/a1.json", url)
+        self.assertIn("AWSAccessKeyId=my_access_key", url)
+        self.assertIn("Expires", url)
 
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
@@ -992,6 +1029,29 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         req = mock.Mock(headers={}, url="url")
         with self.assertRaises(AuthenticationError):
             auth(req)
+
+    def test_plugins_download_http_presign_url(self):
+        """should create a presigned url to download via HTTP"""
+        provider = "foo_provider"
+        product_type = "LANDSAT_C2_L1"
+        product = EOProduct(
+            provider,
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+            productType=product_type,
+        )
+        product.assets.update({"a1": {"href": "http://foo.bar.com/b1/a1/a1.json"}})
+        product.assets.update({"a2": {"href": "http://foo.bar.com/b1/a2/a2.json"}})
+
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        url = auth_plugin.presign_url(product.assets["a1"])
+        expected_url = "http://foo.bar?href={url}".format(
+            url="http://foo.bar.com/b1/a1/a1.json"
+        )
+        self.assertEqual(expected_url, url)
 
 
 class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):

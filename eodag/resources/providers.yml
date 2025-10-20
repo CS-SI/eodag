@@ -1498,6 +1498,7 @@
     type: AwsAuth
     matching_url: s3://
     s3_endpoint: https://storage.googleapis.com
+    support_presign_url: False
     matching_conf:
       s3_endpoint: https://storage.googleapis.com
 ---
@@ -2078,6 +2079,14 @@
       period: 1_5_c
     CMIP6_CLIMATE_PROJECTIONS:
       dataset: projections-cmip6
+      experiment: historical
+      variable: air_temperature
+      model: access_cm2
+      level: ["1"]
+      year: ["1850"]
+      month: ["01"]
+      metadata_mapping:
+        <<: *month_year
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---
@@ -4295,7 +4304,7 @@
       quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
   download: !plugin
-    type: CreodiasS3Download
+    type: AwsDownload
     s3_endpoint: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
     ssl_verify: true
@@ -4303,6 +4312,7 @@
     type: AwsAuth
     auth_error_code: 403
     s3_endpoint: 'https://eodata.cloudferro.com'
+    support_presign_url: False
     matching_conf:
       s3_endpoint: 'https://eodata.cloudferro.com'
   products:
