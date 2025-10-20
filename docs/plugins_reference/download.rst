@@ -16,7 +16,6 @@ This table lists all the download plugins currently available:
 
    http.HTTPDownload
    aws.AwsDownload
-   creodias_s3.CreodiasS3Download
 
 ---------------------------
 Download methods call graph
