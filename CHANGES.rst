@@ -6,6 +6,11 @@ Release history
 v3.10.0 (2025-10-20)
 ====================
 
+Features
+--------
+
+* **plugins**: Possibility to create presigned urls (`#1845`_, `d002c38`_)
+
 Bug Fixes
 ---------
 
@@ -17,16 +22,6 @@ Build System
 
 * Pin pydantic < 2.12.0 to prevent sphinx failures (`#1873`_, `1b17b4a`_)
 
-Chores
-------
-
-* V4 ext collections (`#1878`_, `43ab2c0`_)
-
-Features
---------
-
-* **plugins**: Possibility to create presigned urls (`#1845`_, `d002c38`_)
-
 Refactoring
 -----------
 
@@ -35,10 +30,8 @@ Refactoring
 .. _#1845: https://github.com/CS-SI/eodag/pull/1845
 .. _#1872: https://github.com/CS-SI/eodag/pull/1872
 .. _#1873: https://github.com/CS-SI/eodag/pull/1873
-.. _#1878: https://github.com/CS-SI/eodag/pull/1878
 .. _#1884: https://github.com/CS-SI/eodag/pull/1884
 .. _1b17b4a: https://github.com/CS-SI/eodag/commit/1b17b4af5f898ed608dd132e49477d28466f9451
-.. _43ab2c0: https://github.com/CS-SI/eodag/commit/43ab2c0ff070ea049d77db82e5048c83a869ce6e
 .. _5f6966b: https://github.com/CS-SI/eodag/commit/5f6966bc52db1e19ad3f959bab41aca25804c3e5
 .. _d002c38: https://github.com/CS-SI/eodag/commit/d002c38126f566f52903fb0e5012a22e771c3200
 .. _dcdca60: https://github.com/CS-SI/eodag/commit/dcdca6012736f751418725312da736f61767ec36
