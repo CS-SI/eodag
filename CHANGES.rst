@@ -3,8 +3,15 @@ Release history
 ===============
 
 
-v4.0.0 (2025-10-20)
-===================
+v4.0.0a1 (2025-10-20)
+=====================
+
+Features
+--------
+
+* **core: STAC formatted properties** (`#1730`_, `743d7b5`_)
+
+* **core**: Search validation (`#1877`_, `a157358`_)
 
 Bug Fixes
 ---------
@@ -16,13 +23,6 @@ Continuous Integration
 
 * Run tests for v4 branch and associated PRs (`#1868`_, `a944aab`_)
 
-Features
---------
-
-* **core**: Search validation (`#1877`_, `a157358`_)
-
-* **core**: STAC formatted properties (`#1730`_, `743d7b5`_)
-
 Refactoring
 -----------
 
@@ -30,9 +30,9 @@ Refactoring
 
 * Remove deprecated converters and plugins (`#1789`_, `edff5fe`_)
 
-* Remove deprecated OAuth (`#1839`_, `3b749e2`_)
-
 * Remove deprecated server-mode (`#1840`_, `266471b`_)
+
+* **plugins**: Remove deprecated OAuth (`#1839`_, `3b749e2`_)
 
 * **plugins**: Remove deprecated CreodiasS3Download (`#1886`_, `ea0a817`_)
 
