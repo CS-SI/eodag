@@ -835,7 +835,7 @@ No credentials are needed
 ----
 
 **DEDT MareNostrum**
--------------
+--------------------
 
 .. grid:: 2
    :gutter: 2
