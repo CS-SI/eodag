@@ -306,9 +306,17 @@ class AwsDownload(Download):
 
         # create executor if not given
         if executor is None:
-            executor = ThreadPoolExecutor()
+            executor = ThreadPoolExecutor(
+                max_workers=getattr(self.config, "max_workers", None)
+            )
             shutdown_executor = True
         else:
+            if (
+                max_workers := getattr(
+                    self.config, "max_workers", executor._max_workers
+                )
+            ) < executor._max_workers:
+                executor._max_workers = max_workers
             shutdown_executor = False
 
         # files in zip

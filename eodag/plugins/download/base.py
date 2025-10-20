@@ -496,6 +496,10 @@ class Download(PluginTopic):
 
         # initialize an executor if not given
         executor = ThreadPoolExecutor() if executor is None else executor
+        if (
+            max_workers := getattr(self.config, "max_workers", executor._max_workers)
+        ) < executor._max_workers:
+            executor._max_workers = max_workers
 
         for product in products:
             product.next_try = start_time
