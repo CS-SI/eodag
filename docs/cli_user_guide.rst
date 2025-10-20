@@ -38,11 +38,11 @@ Search
         --conf my_conf.yml \
         --box 1 43 2 44 \
         --start 2018-01-01 --end 2018-01-31 \
-        --productType S2_MSI_L1C \
+        --collection S2_MSI_L1C \
         --all \
         --storage my_search.geojson
 
-The request above searches for `S2_MSI_L1C` product types in a given bounding box, in January 2018. The command fetches
+The request above searches for `S2_MSI_L1C` collections in a given bounding box, in January 2018. The command fetches
 internally all the products that match these criteria. Without ``--all``, it would only fetch the products found on the
 first result page. It finally saves the results in a GeoJSON file.
 
@@ -51,11 +51,11 @@ which takes ``minimum_overlap`` as argument):
 
 .. code-block:: console
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C --all \
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c S2_MSI_L1C --all \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10
 
-The request above means : "Give me all the products of type `S2_MSI_L1C`, use ``FilterOverlap`` to keep only those
+The request above means : "Give me all the products from `S2_MSI_L1C` collection, use ``FilterOverlap`` to keep only those
 products that are contained in the bbox I gave you, or whose spatial extent overlaps at least 10% (``minimum_overlap``)
 of the surface of this bbox".
 
@@ -64,30 +64,30 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
 
 .. code-block:: console
 
-        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -p S2_MSI_L1C \
+        eodag search -f my_conf.yml -b 1 43 2 44 -s 2018-01-01 -e 2018-01-31 -c S2_MSI_L1C \
                      --cruncher FilterOverlap \
                      --cruncher-args FilterOverlap minimum_overlap 10 \
                      --query "foo=1&bar=2"
 
-* If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search
+* If the collection is not known, it can also be guessed by EODAG during the search based on parameters in the search
   request. The possible parameters are:
 
-  - `instrument` (e.g. MSI)
-  - `platform` (e.g. SENTINEL2)
-  - `platformSerialIdentifier` (e.g. S2A)
-  - `processingLevel` (e.g. L1)
-  - `sensorType` (e.g. OPTICAL)
+  - `instruments` (e.g. MSI)
+  - `constellation` (e.g. SENTINEL2)
+  - `platform` (e.g. S2A)
+  - `processing-level` (e.g. L1)
+  - `sensor-type` (e.g. OPTICAL)
   - `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
 
-For example, the following search request will first search for a product type for platform SENTINEL2 and
-processingLevel L1 (there are several product types matching these criteria, e.g., `S2_MSI_L1C`) and then use this
-product type to execute the actual search.
+For example, the following search request will first search for a collection for platform SENTINEL2 and
+processingLevel L1 (there are several collections matching these criteria, e.g., `S2_MSI_L1C`) and then use this
+collection to execute the actual search.
 
 .. code-block:: console
 
         eodag search \
-        --platform SENTINEL2 \
-        --processingLevel L1 \
+        --constellation SENTINEL2 \
+        --processing-level L1 \
         --box 1 43 2 44 \
         --start 2021-03-01 --end 2021-03-31
 
@@ -112,34 +112,34 @@ Download
 
 .. code-block:: console
 
-        eodag search --productType S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01 download
+        eodag search --collection S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01 download
 
-Product Types
+Collections
 -------------
 
 .. command-output:: eodag list --help
 
-* To list all available product types and supported providers:
+* To list all available collections and supported providers:
 
 .. code-block:: console
 
         eodag list
 
-* To list available product types on a specified supported provider:
+* To list available collections on a specified supported provider:
 
 .. code-block:: console
 
         eodag list -p creodias
 
-* By default, ``list`` command will also fetch for new product types, which may be slow depending on the network status.
+* By default, ``list`` command will also fetch for new collections, which may be slow depending on the network status.
   To skip fetching, use the following option:
 
 .. code-block:: console
 
         eodag list --no-fetch
 
-* EODAG can fetch providers (all or only a given one) to discover available product types, using the following command.
-  It will store result in a JSON file (defaults to `ext_product_types.json`):
+* EODAG can fetch providers (all or only a given one) to discover available collections, using the following command.
+  It will store result in a JSON file (defaults to `ext_collections.json`):
 
 .. command-output:: eodag discover --help
 
@@ -149,29 +149,10 @@ Examples:
 
         eodag discover
         eodag discover -p planetary_computer
-        eodag discover -p planetary_computer --storage my_product_types_conf.json
+        eodag discover -p planetary_computer --storage my_collections_conf.json
 
-This file can then be used in EODAG using the environment variable ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE``.
+This file can then be used in EODAG using the environment variable ``EODAG_EXT_COLLECTIONS_CFG_FILE``.
 
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
-For more information on the product types discovery mechanism, please see
-`Python API User Guide / Providers and products / Product types discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.
-
-Server mode
------------
-
-EODAG has a STAC compliant REST API. It can serve configured providers data through
-this STAC API.
-
-.. command-output:: eodag serve-rest --help
-
-And for advanced configuration:
-
-.. command-output:: eodag deploy-wsgi-app --help
-
-See server mode usage examples in `STAC REST API Server <stac_rest.rst>`_.
-
-.. toctree::
-   :maxdepth: 2
-
-   stac_rest
+For more information on the collections discovery mechanism, please see
+`Python API User Guide / Providers and products / Collections discovery <notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_.

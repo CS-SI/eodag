@@ -43,7 +43,7 @@ class SearchArgs(BaseModel):
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
     provider: Optional[str] = Field(None)
-    productType: str = Field()
+    collection: str = Field()
     id: Optional[str] = Field(None)
     start: Optional[str] = Field(None)
     end: Optional[str] = Field(None)

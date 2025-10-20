@@ -75,7 +75,7 @@ class FilterLatestByName(Crunch):
                     logger.debug(
                         "Latest product found for tileid=%s: date=%s",
                         tileid,
-                        product.properties["startTimeFromAscendingNode"],
+                        product.properties["start_datetime"],
                     )
                     filtered.append(product)
                     processed.append(tileid)

@@ -28,13 +28,10 @@ Options:
   --help         Show this message and exit.
 
 Commands:
-  deploy-wsgi-app  Configure the settings of the HTTP web app (the
-                   providers...
-  discover         Fetch providers to discover product types
+  discover         Fetch providers to discover collections
   download         Download a list of products from a serialized search...
-  list             List supported product types
-  search           Search satellite images by their product types,...
-  serve-rest       Start eodag HTTP server
+  list             List supported collections
+  search           Search satellite images by their collections,...
   version          Print eodag version and exit
 
   noqa: D103
@@ -44,8 +41,6 @@ from __future__ import annotations
 
 import functools
 import json
-import os
-import shutil
 import sys
 import textwrap
 from importlib.metadata import metadata
@@ -56,13 +51,8 @@ import click
 
 from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
-from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
+from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
-
-try:
-    from eodag.rest.utils import LIVENESS_PROBE_PATH
-except ImportError:
-    pass
 
 if TYPE_CHECKING:
     from click import Context
@@ -75,18 +65,6 @@ CRUNCHERS = [
     "FilterProperty",
     "FilterDate",
 ]
-
-
-class LivenessFilter:
-    """
-    Filter out requests to the liveness probe endpoint
-    """
-
-    def filter(self, record):
-        """
-        Filter method required by the Python logging API.
-        """
-        return LIVENESS_PROBE_PATH not in record.getMessage()
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -164,7 +142,7 @@ def version() -> None:
 
 @eodag.command(
     name="search",
-    help="Search satellite images by their product types, instrument, platform, "
+    help="Search satellite images by their collections, instrument, platform, "
     "platform identifier, processing level or sensor type. It is mandatory to provide "
     "at least one of the previous criteria for eodag to perform a search. "
     "Optionally crunch the search results before storing them in a geojson file",
@@ -181,6 +159,7 @@ def version() -> None:
     help="File path to the user locations configuration file, default is ~/.config/eodag/locations.yml",
     type=click.Path(exists=True),
 )
+@click.option("-p", "--provider", help="Search on this provider")
 @click.option(
     "-b",
     "--box",
@@ -210,25 +189,18 @@ def version() -> None:
     type=click.DateTime(),
     help="End sensing time in ISO8601 format (e.g. '1990-11-26', '1990-11-26T14:30:10'). UTC is assumed",
 )
+@click.option("-c", "--collection", help="The collection to search")
+@click.option("--instruments", help="Search for products matching these instruments")
+@click.option("--platform", help="Search for products matching this platform")
+@click.option("--constellation", help="Search for products matching this constellation")
 @click.option(
-    "-c",
-    "--cloudCover",
+    "--processing-level", help="Search for products matching this processing level"
+)
+@click.option("--sensor-type", help="Search for products matching this type of sensor")
+@click.option(
+    "--cloud-cover",
     type=click.IntRange(0, 100),
     help="Maximum cloud cover percentage needed for the product",
-)
-@click.option("-p", "--productType", help="The product type to search")
-@click.option("-i", "--instrument", help="Search for products matching this instrument")
-@click.option("-P", "--platform", help="Search for products matching this platform")
-@click.option(
-    "-t",
-    "--platformSerialIdentifier",
-    help="Search for products originating from the satellite identified by this keyword",
-)
-@click.option(
-    "-L", "--processingLevel", help="Search for products matching this processing level"
-)
-@click.option(
-    "-S", "--sensorType", help="Search for products matching this type of sensor"
 )
 @click.option("--id", help="Search for the product identified by this id")
 @click.option(
@@ -299,23 +271,24 @@ def version() -> None:
 )
 @click.pass_context
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
-    """Search product types and optionnaly apply crunchers to search results"""
+    """Search collections and optionnaly apply crunchers to search results"""
     # Process inputs for search
-    product_type = kwargs.pop("producttype")
-    instrument = kwargs.pop("instrument")
+    provider = kwargs.pop("provider")
+    collection = kwargs.pop("collection")
+    instruments = kwargs.pop("instruments")
     platform = kwargs.pop("platform")
-    platform_identifier = kwargs.pop("platformserialidentifier")
-    processing_level = kwargs.pop("processinglevel")
-    sensor_type = kwargs.pop("sensortype")
+    constellation = kwargs.pop("constellation")
+    processing_level = kwargs.pop("processing_level")
+    sensor_type = kwargs.pop("sensor_type")
     id_ = kwargs.pop("id")
     locations_qs = kwargs.pop("locations")
     custom = kwargs.pop("query")
     if not any(
         [
-            product_type,
-            instrument,
+            collection,
+            instruments,
             platform,
-            platform_identifier,
+            constellation,
             processing_level,
             sensor_type,
             id_,
@@ -342,16 +315,17 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     start_date = kwargs.pop("start")
     stop_date = kwargs.pop("end")
     criteria = {
+        "provider": provider,
         "geometry": footprint,
-        "startTimeFromAscendingNode": None,
-        "completionTimeFromAscendingNode": None,
-        "cloudCover": kwargs.pop("cloudcover"),
-        "productType": product_type,
-        "instrument": instrument,
+        "start_datetime": None,
+        "end_datetime": None,
+        "eo:cloud_cover": kwargs.pop("cloud_cover"),
+        "collection": collection,
+        "instruments": instruments,
+        "constellation": constellation,
         "platform": platform,
-        "platformSerialIdentifier": platform_identifier,
-        "processingLevel": processing_level,
-        "sensorType": sensor_type,
+        "processing:level": processing_level,
+        "eodag:sensor_type": sensor_type,
         "id": id_,
     }
     if custom:
@@ -367,9 +341,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         locations = None
     criteria["locations"] = locations
     if start_date:
-        criteria["startTimeFromAscendingNode"] = start_date.isoformat()
+        criteria["start_datetime"] = start_date.isoformat()
     if stop_date:
-        criteria["completionTimeFromAscendingNode"] = stop_date.isoformat()
+        criteria["end_datetime"] = stop_date.isoformat()
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)
@@ -431,54 +405,48 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     ctx.obj["search_results"] = results
 
 
-@eodag.command(name="list", help="List supported product types")
-@click.option("-p", "--provider", help="List product types supported by this provider")
+@eodag.command(name="list", help="List supported collections")
+@click.option("-p", "--provider", help="List collections supported by this provider")
 @click.option(
-    "-i", "--instrument", help="List product types originating from this instrument"
+    "--instruments", help="List collections originating from these instruments"
+)
+@click.option("--platform", help="List collections originating from this platform")
+@click.option(
+    "--constellation",
+    help="List collections originating from this constellation",
+)
+@click.option("--processing-level", help="List collections of processing level")
+@click.option(
+    "--sensor-type", help="List collections originating from this type of sensor"
 )
 @click.option(
-    "-P", "--platform", help="List product types originating from this platform"
-)
-@click.option(
-    "-t",
-    "--platformSerialIdentifier",
-    help="List product types originating from the satellite identified by this keyword",
-)
-@click.option("-L", "--processingLevel", help="List product types of processing level")
-@click.option(
-    "-S", "--sensorType", help="List product types originating from this type of sensor"
-)
-@click.option(
-    "--no-fetch", is_flag=True, help="Do not fetch providers for new product types"
+    "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
 )
 @click.pass_context
 def list_pt(ctx: Context, **kwargs: Any) -> None:
-    """Print the list of supported product types"""
+    """Print the list of supported collections"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_product_types = []
+    guessed_collections = []
     try:
-        guessed_product_types = dag.guess_product_type(
-            platformSerialIdentifier=kwargs.get("platformserialidentifier"),
-            processingLevel=kwargs.get("processinglevel"),
-            sensorType=kwargs.get("sensortype"),
+        guessed_collections = dag.guess_collection(
             **kwargs,
         )
-    except NoMatchingProductType:
+    except NoMatchingCollection:
         if any(
             kwargs[arg]
             for arg in [
-                "instrument",
+                "instruments",
+                "constellation",
                 "platform",
-                "platformserialidentifier",
-                "processinglevel",
-                "sensortype",
+                "processing_level",
+                "sensor_type",
             ]
         ):
-            click.echo("No product type match the following criteria you provided:")
+            click.echo("No collection match the following criteria you provided:")
             click.echo(
                 "\n".join(
                     "-{param}={value}".format(**locals())
@@ -488,22 +456,22 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             )
             sys.exit(1)
     try:
-        if guessed_product_types:
-            product_types = [
+        if guessed_collections:
+            collections = [
                 pt
-                for pt in dag.list_product_types(
+                for pt in dag.list_collections(
                     provider=provider, fetch_providers=fetch_providers
                 )
-                if pt["ID"] in guessed_product_types
+                if pt["ID"] in guessed_collections
             ]
         else:
-            product_types = dag.list_product_types(
+            collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
-        click.echo("Listing available product types:")
-        for product_type in product_types:
-            click.echo("\n* {}: ".format(product_type["ID"]))
-            for prop, value in product_type.items():
+        click.echo("Listing available collections:")
+        for collection in collections:
+            click.echo("\n* {}: ".format(collection["ID"]))
+            for prop, value in collection.items():
                 if prop != "ID":
                     text_wrapper.initial_indent = "    - {}: ".format(prop)
                     text_wrapper.subsequent_indent = " " * len(
@@ -519,34 +487,34 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
         sys.exit(1)
 
 
-@eodag.command(name="discover", help="Fetch providers to discover product types")
+@eodag.command(name="discover", help="Fetch providers to discover collections")
 @click.option("-p", "--provider", help="Fetch only the given provider")
 @click.option(
     "--storage",
     type=click.Path(dir_okay=False, writable=True, readable=False),
-    default="ext_product_types.json",
-    help="Path to the file where to store external product types configuration "
+    default="ext_collections.json",
+    help="Path to the file where to store external collections configuration "
     "(.json extension will be automatically appended to the filename). "
-    "DEFAULT: ext_product_types.json",
+    "DEFAULT: ext_collections.json",
 )
 @click.pass_context
 def discover_pt(ctx: Context, **kwargs: Any) -> None:
-    """Fetch external product types configuration and save result"""
+    """Fetch external collections configuration and save result"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
 
-    ext_product_types_conf = (
-        dag.discover_product_types(provider=provider)
+    ext_collections_conf = (
+        dag.discover_collections(provider=provider)
         if provider
-        else dag.discover_product_types()
+        else dag.discover_collections()
     )
 
     storage_filepath = kwargs.pop("storage")
     if not storage_filepath.endswith(".json"):
         storage_filepath += ".json"
     with open(storage_filepath, "w") as f:
-        json.dump(ext_product_types_conf, f)
+        json.dump(ext_collections_conf, f)
     click.echo("Results stored at '{}'".format(storage_filepath))
 
 
@@ -645,297 +613,6 @@ def download(ctx: Context, **kwargs: Any) -> None:
             click.echo(
                 "Error during download, a file may have been downloaded but we cannot locate it"
             )
-
-
-@eodag.command(
-    help="(deprecated) Start eodag HTTP server\n\n"
-    + (
-        click.style(
-            "Running a web server from the CLI is deprecated and will be removed in a future version.\n"
-            "This feature has been moved to its own repository: https://github.com/CS-SI/stac-fastapi-eodag\n\n",
-            fg="yellow",
-            bold=True,
-        )
-        + "Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-Origin Resource Sharing allowed "
-        "origins as comma-separated URLs (e.g. 'http://somewhere,http://somewhere.else')."
-    )
-)
-@click.option(
-    "-f",
-    "--config",
-    type=click.Path(exists=True, resolve_path=True),
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
-)
-@click.option(
-    "-l",
-    "--locs",
-    type=click.Path(exists=True, resolve_path=True),
-    required=False,
-    help="File path to the location shapefiles configuration file",
-)
-@click.option(
-    "-d", "--daemon", is_flag=True, show_default=True, help="run in daemon mode"
-)
-@click.option(
-    "-w",
-    "--world",
-    is_flag=True,
-    show_default=True,
-    help=(
-        "run uvicorn using IPv4 0.0.0.0 (all network interfaces), "
-        "otherwise bind to 127.0.0.1 (localhost). "
-    ),
-)
-@click.option(
-    "-p",
-    "--port",
-    type=int,
-    default=5000,
-    show_default=True,
-    help="The port on which to listen",
-)
-@click.option(
-    "--debug",
-    is_flag=True,
-    show_default=True,
-    help="Run in debug mode (for development purpose)",
-)
-@click.pass_context
-@_deprecated_cli(
-    message=(
-        "Running a web server from the CLI is deprecated and will be removed in a future version. "
-        "This feature has been moved to its own repository: https://github.com/CS-SI/stac-fastapi-eodag"
-    ),
-    version="3.9.0",
-)
-def serve_rest(
-    ctx: Context,
-    daemon: bool,
-    world: bool,
-    port: int,
-    config: str,
-    locs: str,
-    debug: bool,
-) -> None:
-    """Serve EODAG functionalities through a WEB interface"""
-    setup_logging(verbose=ctx.obj["verbosity"])
-    try:
-        import uvicorn
-        import uvicorn.config
-    except ImportError:
-        raise ImportError(
-            "Feature not available, please install eodag[server] or eodag[all]"
-        )
-
-    # Set the settings of the app
-    # IMPORTANT: the order of imports counts here (first we override the settings,
-    # then we import the app so that the updated settings is taken into account in
-    # the app initialization)
-    if config:
-        os.environ["EODAG_CFG_FILE"] = config
-
-    if locs:
-        os.environ["EODAG_LOCS_CFG_FILE"] = locs
-
-    bind_host = "127.0.0.1"
-    if world:
-        bind_host = "0.0.0.0"
-    if daemon:
-        try:
-            pid = os.fork()
-        except OSError as e:
-            raise Exception(
-                "%s [%d]" % (e.strerror, e.errno) if e.errno is not None else e.strerror
-            )
-
-        if pid == 0:
-            os.setsid()
-            uvicorn.run("eodag.rest.server:app", host=bind_host, port=port)
-        else:
-            sys.exit(0)
-    else:
-        import logging
-
-        logging_config = uvicorn.config.LOGGING_CONFIG
-        uvicorn_fmt = "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
-        logging_config["filters"] = {"liveness": {"()": LivenessFilter}}
-        logging_config["formatters"]["access"]["fmt"] = uvicorn_fmt
-        logging_config["formatters"]["default"]["fmt"] = uvicorn_fmt
-        logging_config["loggers"]["uvicorn.access"]["filters"] = ["liveness"]
-
-        eodag_formatter = logging.Formatter(
-            "%(asctime)-15s %(name)-32s [%(levelname)-8s] (tid=%(thread)d) %(message)s"
-        )
-        logging.getLogger("eodag").handlers[0].setFormatter(eodag_formatter)
-
-        if ctx.obj["verbosity"] <= 1:
-            logging_config["handlers"]["null"] = {
-                "level": "DEBUG",
-                "class": "logging.NullHandler",
-            }
-            logging_config["loggers"]["uvicorn"]["handlers"] = ["null"]
-            logging_config["loggers"]["uvicorn.error"]["handlers"] = ["null"]
-            logging_config["loggers"]["uvicorn.access"]["handlers"] = ["null"]
-        else:
-            log_level = "INFO" if ctx.obj["verbosity"] == 2 else "DEBUG"
-            logging_config["loggers"]["uvicorn"]["level"] = log_level
-            logging_config["loggers"]["uvicorn.error"]["level"] = log_level
-            logging_config["loggers"]["uvicorn.access"]["level"] = log_level
-
-        uvicorn.run(
-            "eodag.rest.server:app",
-            host=bind_host,
-            port=port,
-            reload=debug,
-            log_config=logging_config,
-        )
-
-
-@eodag.command(
-    help="Configure the settings of the HTTP web app (the providers credential "
-    "files essentially) and copy the web app source directory into the "
-    "specified directory"
-)
-@click.option(
-    "--root",
-    type=click.Path(exists=True, resolve_path=True),
-    default="/var/www/",
-    show_default=True,
-    help="The directory where to deploy the webapp (a subdirectory with the name "
-    "from --name option will be created there)",
-)
-@click.option(
-    "-f",
-    "--config",
-    type=click.Path(exists=True, resolve_path=True),
-    required=True,
-    help="File path to the user configuration file with its credentials",
-)
-@click.option(
-    "--webserver",
-    type=click.Choice(["apache"]),
-    default="apache",
-    show_default=True,
-    help="The webserver for which to generate sample configuration",
-)
-@click.option(
-    "--threads",
-    type=int,
-    default=5,
-    show_default=True,
-    help="Number of threads for apache webserver config (ignored if not apache "
-    "webserver)",
-)
-@click.option(
-    "--user",
-    type=str,
-    default="www-data",
-    show_default=True,
-    help="The user of the webserver",
-)
-@click.option(
-    "--group",
-    type=str,
-    default="www-data",
-    show_default=True,
-    help="The group of the webserver",
-)
-@click.option(
-    "--server-name",
-    type=str,
-    default="localhost",
-    show_default=True,
-    help="The name to give to the server",
-)
-@click.option(
-    "--wsgi-process-group",
-    type=str,
-    default="eodag-server",
-    show_default=True,
-    help="The name of the wsgi process group (ignored if not apache webserver",
-)
-@click.option(
-    "--wsgi-daemon-process",
-    type=str,
-    default="eodag-server",
-    show_default=True,
-    help="The name of the wsgi daemon process (ignored if not apache webserver",
-)
-@click.option(
-    "--name",
-    type=str,
-    default="eodag_server",
-    show_default=True,
-    help="The name of the directory that will be created in the webserver root "
-    "directory to host the WSGI app",
-)
-@click.pass_context
-def deploy_wsgi_app(
-    ctx: Context,
-    root: str,
-    config: str,
-    webserver: str,
-    threads: int,
-    user: str,
-    group: str,
-    server_name: str,
-    wsgi_process_group: str,
-    wsgi_daemon_process: str,
-    name: str,
-) -> None:
-    """Deploy the WEB interface of eodag behind a web server"""
-    setup_logging(verbose=ctx.obj["verbosity"])
-    import eodag as eodag_package
-
-    server_config = {"EODAG_CFG_FILE": config}
-    eodag_package_path = eodag_package.__path__[0]
-    webapp_src_path = os.path.join(eodag_package_path, "rest")
-    webapp_dst_path = os.path.join(root, name)
-    if not os.path.exists(webapp_dst_path):
-        os.mkdir(webapp_dst_path)
-    wsgi_path = os.path.join(webapp_dst_path, "server.wsgi")
-    click.echo(
-        "Moving eodag HTTP web app from {} to {}".format(
-            webapp_src_path, webapp_dst_path
-        )
-    )
-    shutil.copy(os.path.join(webapp_src_path, "server.wsgi"), wsgi_path)
-
-    click.echo(
-        "Overriding eodag HTTP server config with values: {}".format(server_config)
-    )
-    with open(os.path.join(webapp_dst_path, "eodag_server_settings.json"), "w") as fd:
-        json.dump(server_config, fd)
-
-    click.echo("Finished ! The WSGI file is in {}".format(wsgi_path))
-    if webserver == "apache":
-        application_group = "%{GLOBAL}"
-        apache_config_sample = (
-            """
-<VirtualHost *>
-    ServerName %(server_name)s
-
-    WSGIDaemonProcess %(wsgi_daemon_process)s user=%(user)s group=%(group)s \
-    threads=%(threads)s
-    WSGIScriptAlias / %(wsgi_path)s
-
-    <Directory %(webapp_dst_path)s>
-        WSGIProcessGroup %(wsgi_process_group)s
-        WSGIApplicationGroup %(application_group)s
-        <IfVersion < 2.4>
-            Order allow,deny
-            Allow from all
-        </IfVersion>
-        <IfVersion >= 2.4>
-            Require all granted
-        </IfVersion>
-    </Directory>
-</VirtualHost>
-        """
-            % locals()
-        )
-        click.echo("Sample Apache2 config to add in a your virtual host:")
-        click.echo(apache_config_sample)
 
 
 if __name__ == "__main__":

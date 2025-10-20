@@ -56,7 +56,7 @@ DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
             lambda prod: True
-            if (prod.product_type or "").startswith("S2_MSI_")
+            if (prod.collection or "").startswith("S2_MSI_")
             else False
         ],
         "driver": Sentinel2Driver(),
@@ -64,7 +64,7 @@ DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
             lambda prod: True
-            if (prod.product_type or "").startswith("S1_SAR_")
+            if (prod.collection or "").startswith("S1_SAR_")
             else False
         ],
         "driver": Sentinel1Driver(),
@@ -90,9 +90,7 @@ LEGACY_DRIVERS: list[DriverCriteria] = [
     },
     {
         "criteria": [
-            lambda prod: True
-            if getattr(prod, "product_type") == "S2_MSI_L1C"
-            else False
+            lambda prod: True if getattr(prod, "collection") == "S2_MSI_L1C" else False
         ],
         "driver": Sentinel2L1C_cube(),
     },

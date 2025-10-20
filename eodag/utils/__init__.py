@@ -63,6 +63,8 @@ from typing import (
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
+from pydantic import ValidationError as PydanticValidationError
+
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
@@ -94,7 +96,7 @@ logger = py_logging.getLogger("eodag.utils")
 
 DEFAULT_PROJ = "EPSG:4326"
 
-GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+GENERIC_COLLECTION = "GENERIC_COLLECTION"
 GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
 STAC_SEARCH_PLUGINS = [
@@ -129,7 +131,7 @@ DEFAULT_ITEMS_PER_PAGE = 20
 # (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
-# default product-types start date
+# default collections start date
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
 
 # default token expiration margin in seconds
@@ -337,11 +339,11 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
 
     Do its best to detect the key in ``mapping1`` to override. For example:
 
-    >>> mapping2 = {"keya": "new"}
-    >>> mapping1 = {"keyA": "obsolete"}
+    >>> mapping2 = {"ext_keya": "new"}
+    >>> mapping1 = {"ext:keyA": "obsolete"}
     >>> merge_mappings(mapping1, mapping2)
     >>> mapping1
-    {'keyA': 'new'}
+    {'ext:keyA': 'new'}
 
     If ``mapping2`` has a key that cannot be detected in ``mapping1``, this new key is
     added to ``mapping1`` as is.
@@ -350,7 +352,7 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
     :param mapping2: The mapping containing values that will override the first mapping
     """
     # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
-    m1_keys_lowercase = {key.lower(): key for key in mapping1}
+    m1_keys_lowercase = {key.lower().replace(":", "_"): key for key in mapping1}
     for key, value in mapping2.items():
         if isinstance(value, dict):
             try:
@@ -473,20 +475,6 @@ class ProgressCallback(tqdm):
         """
 
         return ProgressCallback(*args, **dict(self.kwargs, **kwargs))
-
-
-@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-class NotebookProgressCallback(tqdm):
-    """A custom progress bar to be used inside Jupyter notebooks"""
-
-    pass
-
-
-@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-def get_progress_callback() -> tqdm:
-    """Get progress_callback"""
-
-    return tqdm()
 
 
 def repeatfunc(func: Callable[..., Any], n: int, *args: Any) -> starmap:
@@ -972,7 +960,9 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
         return path_str
 
 
-def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
+def format_string(
+    key: Optional[str], str_to_format: Any, **format_variables: Any
+) -> Any:
     """Format ``"{foo}"``-like string
 
     >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
@@ -996,6 +986,27 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
         # defaultdict usage will return "" for missing keys in format_args
         try:
             result = str_to_format.format_map(defaultdict(str, **format_variables))
+        except (ValueError, TypeError) as e:
+            if not re.search(r"{[\w-]*:[\w-]*}", str_to_format):
+                raise MisconfiguredError(
+                    f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
+                )
+        # retry parsing colons
+        try:
+            str_without_colons = re.sub(
+                r"{([\w-]*):([\w-]*)}",
+                r"{\1_COLON_\2}",
+                str_to_format,
+            )
+            result = str_without_colons.format_map(
+                defaultdict(
+                    str,
+                    **{
+                        k.replace(":", "_COLON_"): v
+                        for k, v in format_variables.items()
+                    },
+                )
+            )
         except (ValueError, TypeError) as e:
             raise MisconfiguredError(
                 f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
@@ -1601,3 +1612,65 @@ def parse_le_uint16(data: bytes) -> int:
     65535
     """
     return struct.unpack("<H", data)[0]
+
+
+def format_pydantic_error(e: PydanticValidationError) -> str:
+    """Format Pydantic ValidationError
+
+    :param e: A Pydantic ValidationError object
+    :type e: PydanticValidationError
+    """
+    error_header = f"{e.error_count()} error(s). "
+
+    error_messages = [
+        f'{err["loc"][0]}: {err["msg"]}' if err["loc"] else err["msg"]
+        for err in e.errors()
+    ]
+    return error_header + "; ".join(set(error_messages))
+
+
+def get_collection_dates(
+    collection_dict: dict[str, Any]
+) -> tuple[Optional[str], Optional[str]]:
+    """Extract mission start and end dates from collection configuration.
+
+    Extracts dates from the extent.temporal.interval structure.
+
+    :param collection_dict: Collection configuration dictionary
+    :returns: Tuple of (mission_start_date, mission_end_date) as ISO strings or None
+
+    Example:
+    >>> get_collection_dates({
+    ...     "extent": {"temporal": {"interval": [["2017-10-13T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
+    ... })
+    ('2017-10-13T00:00:00Z', '2023-12-31T23:59:59Z')
+
+    >>> get_collection_dates({
+    ...     "extent": {"temporal": {"interval": [["2017-10-13T00:00:00Z", None]]}}
+    ... })
+    ('2017-10-13T00:00:00Z', None)
+
+    >>> get_collection_dates({})
+    (None, None)
+    """
+    extent_interval = (
+        collection_dict.get("extent", {})
+        .get("temporal", {})
+        .get("interval", [[None, None]])
+    )
+
+    if not extent_interval or len(extent_interval) == 0:
+        return None, None
+
+    mission_start = (
+        extent_interval[0][0]
+        if len(extent_interval) > 0 and len(extent_interval[0]) > 0
+        else None
+    )
+    mission_end = (
+        extent_interval[0][1]
+        if len(extent_interval) > 0 and len(extent_interval[0]) > 1
+        else None
+    )
+
+    return mission_start, mission_end

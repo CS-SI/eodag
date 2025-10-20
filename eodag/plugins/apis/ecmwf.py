@@ -35,6 +35,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
+    get_collection_dates,
     get_geometry_from_various,
     path_to_uri,
     sanitize,
@@ -52,7 +53,6 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
@@ -114,25 +114,24 @@ class EcmwfApi(Api, ECMWFSearch):
     ) -> tuple[list[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
-        # check productType, dates, geometry, use defaults if not specified
-        # productType
-        if not kwargs.get("productType"):
-            kwargs["productType"] = "%s_%s_%s" % (
+        # check collection, dates, geometry, use defaults if not specified
+        # collection
+        if not kwargs.get("collection"):
+            kwargs["collection"] = "%s_%s_%s" % (
                 kwargs.get("ecmwf:dataset", "mars"),
                 kwargs.get("ecmwf:type", ""),
                 kwargs.get("ecmwf:levtype", ""),
             )
+
+        col_start, col_end = get_collection_dates(
+            getattr(self.config, "collection_config", {})
+        )
         # start date
-        if "startTimeFromAscendingNode" not in kwargs:
-            kwargs["startTimeFromAscendingNode"] = (
-                getattr(self.config, "product_type_config", {}).get("missionStartDate")
-                or DEFAULT_MISSION_START_DATE
-            )
+        if "start_datetime" not in kwargs:
+            kwargs["start_datetime"] = col_start or DEFAULT_MISSION_START_DATE
         # end date
-        if "completionTimeFromAscendingNode" not in kwargs:
-            kwargs["completionTimeFromAscendingNode"] = getattr(
-                self.config, "product_type_config", {}
-            ).get("missionEndDate") or datetime.now(timezone.utc).isoformat(
+        if "end_datetime" not in kwargs:
+            kwargs["end_datetime"] = col_end or datetime.now(timezone.utc).isoformat(
                 timespec="seconds"
             )
 
@@ -173,7 +172,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -205,7 +204,7 @@ class EcmwfApi(Api, ECMWFSearch):
             os.makedirs(new_fs_path)
         fs_path = os.path.join(new_fs_path, os.path.basename(fs_path))
 
-        # get download request dict from product.location/downloadLink url query string
+        # get download request dict from product.location/eodag:download_link url query string
         # separate url & parameters
         download_request = geojson.loads(urlsplit(product.location).query)
 
@@ -245,7 +244,7 @@ class EcmwfApi(Api, ECMWFSearch):
             raise DownloadError(e)
 
         with open(record_filename, "w") as fh:
-            fh.write(product.properties["downloadLink"])
+            fh.write(product.properties["eodag:download_link"])
         logger.debug("Download recorded in %s", record_filename)
 
         # do not try to extract a directory
@@ -262,7 +261,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -291,9 +290,9 @@ class EcmwfApi(Api, ECMWFSearch):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using metadata mapping
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        product_type = kwargs.get("productType")
-        return self.queryables_from_metadata_mapping(product_type)
+        collection = kwargs.get("collection")
+        return self.queryables_from_metadata_mapping(collection)

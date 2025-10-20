@@ -34,7 +34,6 @@ from shapely import wkt
 
 from eodag import config
 from eodag.api.product import EOProduct
-from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.plugins.download.http import HTTPDownload
 
 jp = os.path.join
@@ -85,7 +84,7 @@ class EODagTestCase(unittest.TestCase):
             "lonmax": 1.6754150390625007,
             "latmax": 43.699651229671446,
         }
-        self.product_type = "S2_MSI_L1C"
+        self.collection = "S2_MSI_L1C"
         self.platform = "S2A"
         self.instrument = "MSI"
         self.provider_id = "9deb7e78-9341-5530-8fe8-f81fd99c9f0f"
@@ -104,22 +103,13 @@ class EODagTestCase(unittest.TestCase):
                     ]
                 ],
             },
-            "productType": self.product_type,
-            "platform": "Sentinel-2",
-            "platformSerialIdentifier": self.platform,
-            "instrument": self.instrument,
+            "collection": self.collection,
+            "constellation": "Sentinel-2",
+            "platform": self.platform,
+            "instruments": self.instrument,
             "title": self.local_filename,
-            "downloadLink": self.download_url,
+            "eodag:download_link": self.download_url,
         }
-        # Put an empty string as value of properties which are not relevant for the
-        # tests
-        self.eoproduct_props.update(
-            {
-                key: ""
-                for key in DEFAULT_METADATA_MAPPING
-                if key not in self.eoproduct_props
-            }
-        )
 
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
         self.requests_request_patcher = mock.patch(
@@ -222,7 +212,7 @@ class EODagTestCase(unittest.TestCase):
                 "title",
                 "creator",
                 "publisher",
-                "abstract",
+                "description",
                 "subjects",
                 "date",
                 "references",
@@ -285,13 +275,11 @@ class EODagTestCase(unittest.TestCase):
         )
         return mock.DEFAULT
 
-    def _dummy_product(
-        self, provider=None, properties=None, productType=None, **kwargs
-    ):
+    def _dummy_product(self, provider=None, properties=None, collection=None, **kwargs):
         return EOProduct(
             self.provider if provider is None else provider,
             self.eoproduct_props if properties is None else properties,
-            productType=self.product_type if productType is None else productType,
+            collection=self.collection if collection is None else collection,
             **kwargs,
         )
 

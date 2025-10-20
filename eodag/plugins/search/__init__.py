@@ -30,17 +30,16 @@ if TYPE_CHECKING:
     from requests.auth import AuthBase
 
     from eodag.plugins.authentication.base import Authentication
-    from eodag.types import S3SessionKwargs
 
 
 @dataclass
 class PreparedSearch:
     """An object collecting needed information for search."""
 
-    product_type: Optional[str] = None
+    collection: Optional[str] = None
     page: Optional[int] = DEFAULT_PAGE
     items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
-    auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None
+    auth: Optional[Union[AuthBase, S3ServiceResource]] = None
     auth_plugin: Optional[Authentication] = None
     count: bool = True
     url: Optional[str] = None
@@ -51,6 +50,6 @@ class PreparedSearch:
     query_params: dict[str, Any] = field(init=False, repr=False)
     query_string: str = field(init=False, repr=False)
     search_urls: list[str] = field(init=False, repr=False)
-    product_type_def_params: dict[str, Any] = field(init=False, repr=False)
+    collection_def_params: dict[str, Any] = field(init=False, repr=False)
     total_items_nb: int = field(init=False, repr=False)
     sort_by_qs: str = field(init=False, repr=False)

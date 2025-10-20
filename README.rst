@@ -42,9 +42,9 @@ EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugi
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
 data provider. The EODAG SDK is structured around three functions:
 
-* List product types: list of supported products and their description
+* List collections: list of supported products and their description
 
-* Search products (by product type or uid): searches products according to the search criteria provided
+* Search products (by collection or uid): searches products according to the search criteria provided
 
 * Download products: download product “as is"
 
@@ -57,7 +57,7 @@ integrate new data providers. Three types of plugins compose the tool:
 * Download plugins, allowing to download and retrieve data locally (via HTTP, S3, ...), always with the same directory
   organization
 
-* Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
+* Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OIDC, ...).
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
@@ -108,7 +108,7 @@ Example usage for interacting with the api in your Python code:
     dag = EODataAccessGateway()
 
     search_results = dag.search(
-        productType='S2_MSI_L1C',
+        collection='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',
         end='2021-01-15'
@@ -129,84 +129,6 @@ check the `Python API User Guide <https://eodag.readthedocs.io/en/latest/api_use
   `search() <https://eodag.readthedocs.io/en/latest/api_reference/core.html#eodag.api.core.EODataAccessGateway.search>`_ method now returns
   only a single ``SearchResult`` instead of a 2 values tuple.
 
-STAC REST API
--------------
-
-An eodag instance can be exposed through a STAC compliant REST api from the command line (``eodag[server]`` needed):
-
-.. code-block:: bash
-
-    $ eodag serve-rest --help
-    Usage: eodag serve-rest [OPTIONS]
-
-      Start eodag HTTP server
-
-      Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-
-      Origin Resource Sharing allowed origins as comma-separated URLs (e.g.
-      'http://somewhere,htttp://somewhere.else').
-
-    Options:
-      -f, --config PATH   File path to the user configuration file with its
-                          credentials, default is ~/.config/eodag/eodag.yml
-      -l, --locs PATH     File path to the location shapefiles configuration file
-      -d, --daemon        run in daemon mode
-      -w, --world         run uvicorn using IPv4 0.0.0.0 (all network interfaces),
-                          otherwise bind to 127.0.0.1 (localhost).
-      -p, --port INTEGER  The port on which to listen  [default: 5000]
-      --debug             Run in debug mode (for development purpose)
-      --help              Show this message and exit.
-
-    # run server
-    $ eodag serve-rest
-
-    # list available product types for ``peps`` provider:
-    $ curl "http://127.0.0.1:5000/collections?provider=peps" | jq ".collections[].id"
-    "S1_SAR_GRD"
-    "S1_SAR_OCN"
-    "S1_SAR_SLC"
-    "S2_MSI_L1C"
-    "S2_MSI_L2A"
-
-    # search for items
-    $ curl "http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25" \
-    | jq ".numberMatched"
-    6
-
-    # get download link
-    $ curl "http://127.0.0.1:5000/collections/S2_MSI_L1C/items" \
-    | jq ".features[0].assets.downloadLink.href"
-    "http://127.0.0.1:5002/collections/S2_MSI_L1C/items/S2B_MSIL1C_20240917T115259_N0511_R137_T21CWS_20240917T145134/download"
-
-    # download
-    $ wget "http://127.0.0.1:5002/collections/S2_MSI_L1C/items/S2B_MSIL1C_20240917T115259_N0511_R137_T21CWS_20240917T145134/download"
-
-
-``eodag-server`` is available on `https://hub.docker.com/r/csspace/eodag-server <https://hub.docker.com/r/csspace/eodag-server>`_:
-
-.. code-block:: bash
-
-    docker run -p 5000:5000 --rm csspace/eodag-server:3.10.0
-
-You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
-Simply run:
-
-.. code-block:: bash
-
-    git clone https://github.com/CS-SI/eodag.git
-    cd eodag
-    docker-compose up
-    # or for a more verbose logging:
-    EODAG_LOGGING=3 docker-compose up
-
-And browse http://127.0.0.1:5001:
-
-.. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/stac_browser_example_600.png
-   :target: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/stac_browser_example.png
-   :alt: STAC browser example
-   :width: 600px
-
-
-For more information, see `STAC REST API usage <https://eodag.readthedocs.io/en/latest/stac_rest.html>`_.
 
 Command line interface
 ----------------------
@@ -215,9 +137,9 @@ Start playing with the CLI:
 
 - To search for some products::
 
-     eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
+     eodag search --collection S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
 
-  The request above searches for ``S2_MSI_L1C`` product types in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
+  The request above searches for ``S2_MSI_L1C`` collections in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 
   Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
 
@@ -231,11 +153,11 @@ Start playing with the CLI:
 
      eodag download --quicklooks --search-results search_results.geojson
 
-- To list all available product types and supported providers::
+- To list all available collections and supported providers::
 
      eodag list
 
-- To list available product types on a specified supported provider::
+- To list available collections on a specified supported provider::
 
      eodag list -p creodias
 

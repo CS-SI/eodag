@@ -1,4 +1,4 @@
-name: Fetch product types
+name: Fetch collections
 
 on:
   workflow_dispatch:
@@ -8,8 +8,8 @@ on:
     - cron: "0 6 * * *"
 
 jobs:
-  fetch-product-types:
-    name: Fetch providers for new product types
+  fetch-collections:
+    name: Fetch providers for new collections
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repo
@@ -28,22 +28,22 @@ jobs:
         uv venv
         source .venv/bin/activate
         uv pip install ".[all-providers]"
-    - name: Fetch and update external product types reference
+    - name: Fetch and update external collections reference
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
       run: |
         source .venv/bin/activate
-        export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
-        export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
+        export JSON_OUTPUT_FILE="eodag/resources/ext_collections.json"
+        export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_COLLECTIONS_CONF_URI)")
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
         # add empty line at end of file
         sed -i -e '$a\' ${JSON_OUTPUT_FILE}
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
         git add "${JSON_OUTPUT_FILE}"
-        git commit -m "chore: update external product types reference" || exit 0
-        echo "Update external product types reference from daily fetch. See [Python API User Guide / Product types discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery)" >> $GITHUB_STEP_SUMMARY
+        git commit -m "chore: update external collections reference" || exit 0
+        echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
         echo '### Changed files' >> $GITHUB_STEP_SUMMARY
         echo 'May be truncated.' >> $GITHUB_STEP_SUMMARY
         COMMIT_SHA=$(git rev-parse HEAD)
@@ -61,9 +61,9 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
       with:
-        branch: external-product-types-ref-update
+        branch: external-collections-ref-update
         delete-branch: true
-        title: 'chore: update external product types reference'
+        title: 'chore: update external collections reference'
         body: ${{ env.UPDATE_SUMMARY }}
         labels: |
           automated pr

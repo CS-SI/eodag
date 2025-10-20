@@ -4,87 +4,86 @@
       "foo": {
         "productType": "foo",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       },
       "bar": {
         "productType": "bar",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       },
       "foobar": {
         "productType": "foobar",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       },
       "interval_start": {
         "productType": "interval_start",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       },
       "interval_end": {
         "productType": "interval_end",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       },
       "interval_start_end": {
         "productType": "interval_start_end",
         "metadata_mapping": {
-          "cloudCover": "$.null"
+          "eo:cloud_cover": "$.null"
         }
       }
     },
-    "product_types_config": {
+    "collections_config": {
       "foo": {
-        "abstract": "abstractFOO - This is FOO. FooAndBar",
-        "instrument": "Not Available",
+        "description": "abstractFOO - This is FOO. FooAndBar",
+        "instruments": "Not Available",
+        "constellation": "Not Available",
         "platform": "Not Available",
-        "platformSerialIdentifier": "Not Available",
-        "processingLevel": "Not Available",
+        "processing:level": "Not Available",
         "keywords": "suspendisse",
         "license": "WTFPL",
         "title": "titleFOO - Lorem FOO collection",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "bar": {
-        "abstract": "abstractBAR - This is BAR",
-        "instrument": "Not Available",
+        "description": "abstractBAR - This is BAR",
+        "instruments": "Not Available",
+        "constellation": "Not Available",
         "platform": "Not Available",
-        "platformSerialIdentifier": "Not Available",
-        "processingLevel": "Not Available",
+        "processing:level": "Not Available",
         "keywords": "lectus,lectus_bar_key",
         "license": "WTFPL",
         "title": "titleBAR - Lorem BAR collection (FooAndBar)",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "foobar": {
-        "abstract": "abstract FOOBAR - This is FOOBAR",
+        "description": "abstract FOOBAR - This is FOOBAR",
         "alias": "foobar_alias",
-        "instrument": "Not Available",
+        "instruments": "Not Available",
+        "constellation": "Not Available",
         "platform": "Not Available",
-        "platformSerialIdentifier": "Not Available",
-        "processingLevel": "Not Available",
+        "processing:level": "Not Available",
         "keywords": "tortor",
         "license": "WTFPL",
         "title": "titleFOOBAR - Lorem FOOBAR collection",
-        "missionStartDate": "2012-12-12T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "interval_start": {
         "title": "TEST DATES [start; end)",
-        "missionStartDate": "2013-02-10T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2013-02-10T00:00:00.000Z", null]]}}
       },
       "interval_end": {
         "title": "TEST DATES (start; end]",
-        "missionEndDate": "2013-02-20T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [[null, "2013-02-20T00:00:00.000Z"]]}}
       },
       "interval_start_end": {
         "title": "TEST DATES [start; end]",
-        "missionStartDate": "2013-02-10T00:00:00.000Z",
-        "missionEndDate": "2013-02-20T00:00:00.000Z"
+        "extent": {"temporal": {"interval": [["2013-02-10T00:00:00.000Z", "2013-02-20T00:00:00.000Z"]]}}
       }
     }
   }

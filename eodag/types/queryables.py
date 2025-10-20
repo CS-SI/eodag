@@ -1,20 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright 2024, CS GROUP - France, https://www.csgroup.eu/
-#
-# This file is part of EODAG project
-#     https://www.github.com/CS-SI/EODAG
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 from __future__ import annotations
 
 from collections import UserDict
@@ -36,14 +19,14 @@ Percentage = Annotated[PositiveInt, Lt(100)]
 class CommonQueryables(BaseModel):
     """A class representing search common queryable properties."""
 
-    productType: Annotated[str, Field()]
+    collection: Annotated[str, Field()]
 
     @classmethod
     def get_queryable_from_alias(cls, value: str) -> str:
         """Get queryable parameter from alias
 
-        >>> CommonQueryables.get_queryable_from_alias('productType')
-        'productType'
+        >>> CommonQueryables.get_queryable_from_alias('collection')
+        'collection'
         """
         alias_map = {
             field_info.alias: name
@@ -75,7 +58,7 @@ class Queryables(CommonQueryables):
         str,
         Field(
             None,
-            alias="startTimeFromAscendingNode",
+            alias="start_datetime",
             description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
         ),
     ]
@@ -83,7 +66,7 @@ class Queryables(CommonQueryables):
         str,
         Field(
             None,
-            alias="completionTimeFromAscendingNode",
+            alias="end_datetime",
             description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
         ),
     ]
@@ -91,80 +74,61 @@ class Queryables(CommonQueryables):
         Union[str, dict[str, float], BaseGeometry],
         Field(
             None,
+            alias="geometry",
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]
-    uid: Annotated[str, Field(None)]
-    # OpenSearch Parameters for Collection Search (Table 3)
-    doi: Annotated[str, Field(None)]
-    platform: Annotated[str, Field(None)]
-    platformSerialIdentifier: Annotated[str, Field(None)]
-    instrument: Annotated[str, Field(None)]
-    sensorType: Annotated[str, Field(None)]
-    compositeType: Annotated[str, Field(None)]
-    processingLevel: Annotated[str, Field(None)]
-    orbitType: Annotated[str, Field(None)]
-    spectralRange: Annotated[str, Field(None)]
-    wavelengths: Annotated[str, Field(None)]
-    hasSecurityConstraints: Annotated[str, Field(None)]
-    dissemination: Annotated[str, Field(None)]
-    # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-    title: Annotated[str, Field(None)]
-    topicCategory: Annotated[str, Field(None)]
-    keyword: Annotated[str, Field(None)]
-    abstract: Annotated[str, Field(None)]
-    resolution: Annotated[int, Field(None)]
-    organisationName: Annotated[str, Field(None)]
-    organisationRole: Annotated[str, Field(None)]
-    publicationDate: Annotated[str, Field(None)]
-    lineage: Annotated[str, Field(None)]
-    useLimitation: Annotated[str, Field(None)]
-    accessConstraint: Annotated[str, Field(None)]
-    otherConstraint: Annotated[str, Field(None)]
-    classification: Annotated[str, Field(None)]
-    language: Annotated[str, Field(None)]
-    specification: Annotated[str, Field(None)]
-    # OpenSearch Parameters for Product Search (Table 5)
-    parentIdentifier: Annotated[str, Field(None)]
-    productionStatus: Annotated[str, Field(None)]
-    acquisitionType: Annotated[str, Field(None)]
-    orbitNumber: Annotated[int, Field(None)]
-    orbitDirection: Annotated[str, Field(None)]
-    track: Annotated[str, Field(None)]
-    frame: Annotated[str, Field(None)]
-    swathIdentifier: Annotated[str, Field(None)]
-    cloudCover: Annotated[Percentage, Field(None)]
-    snowCover: Annotated[Percentage, Field(None)]
-    lowestLocation: Annotated[str, Field(None)]
-    highestLocation: Annotated[str, Field(None)]
-    productVersion: Annotated[str, Field(None)]
-    productQualityStatus: Annotated[str, Field(None)]
-    productQualityDegradationTag: Annotated[str, Field(None)]
-    processorName: Annotated[str, Field(None)]
-    processingCenter: Annotated[str, Field(None)]
-    creationDate: Annotated[str, Field(None)]
-    modificationDate: Annotated[str, Field(None)]
-    processingDate: Annotated[str, Field(None)]
-    sensorMode: Annotated[str, Field(None)]
-    archivingCenter: Annotated[str, Field(None)]
-    processingMode: Annotated[str, Field(None)]
-    # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-    availabilityTime: Annotated[str, Field(None)]
-    acquisitionStation: Annotated[str, Field(None)]
-    acquisitionSubType: Annotated[str, Field(None)]
-    illuminationAzimuthAngle: Annotated[str, Field(None)]
-    illuminationZenithAngle: Annotated[str, Field(None)]
-    illuminationElevationAngle: Annotated[str, Field(None)]
-    polarizationMode: Annotated[str, Field(None)]
-    polarizationChannels: Annotated[str, Field(None)]
-    antennaLookDirection: Annotated[str, Field(None)]
-    minimumIncidenceAngle: Annotated[float, Field(None)]
-    maximumIncidenceAngle: Annotated[float, Field(None)]
-    dopplerFrequency: Annotated[float, Field(None)]
-    incidenceAngleVariation: Annotated[float, Field(None)]
-    # Custom parameters (not defined in the base document referenced above)
+    # common metadata
+    constellation: Annotated[str, Field(None)]
+    created: Annotated[str, Field(None)]
+    description: Annotated[str, Field(None)]
+    gsd: Annotated[int, Field(None)]
     id: Annotated[str, Field(None)]
-    tileIdentifier: Annotated[str, Field(None, pattern=r"[0-9]{2}[A-Z]{3}")]
+    instruments: Annotated[str, Field(None)]
+    keywords: Annotated[str, Field(None)]
+    license: Annotated[str, Field(None)]
+    platform: Annotated[str, Field(None)]
+    providers: Annotated[str, Field(None)]
+    title: Annotated[str, Field(None)]
+    uid: Annotated[str, Field(None)]
+    updated: Annotated[str, Field(None)]
+    # eo extension
+    eo_cloud_cover: Annotated[Percentage, Field(None, alias="eo:cloud_cover")]
+    eo_snow_cover: Annotated[Percentage, Field(None, alias="eo:snow_cover")]
+    # grid extension
+    grid_code: Annotated[
+        str, Field(None, alias="grid:code", pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$")
+    ]
+    # mgrs extension
+    mgrs_grid_square: Annotated[str, Field(None, alias="mgrs:grid_square")]
+    mgrs_latitude_band: Annotated[str, Field(None, alias="mgrs:latitude_band")]
+    mgrs_utm_zone: Annotated[str, Field(None, alias="mgrs:utm_zone")]
+    # order extension
+    order_status: Annotated[str, Field(None, alias="order:status")]
+    # processing extension
+    processing_level: Annotated[str, Field(None, alias="processing:level")]
+    # product extension
+    product_acquisition_type: Annotated[
+        str, Field(None, alias="product:acquisition_type")
+    ]
+    product_timeliness: Annotated[str, Field(None, alias="product:timeliness")]
+    product_type: Annotated[str, Field(None, alias="product:type")]
+    # sar extension
+    sar_beam_ids: Annotated[str, Field(None, alias="sar:beam_ids")]
+    sar_frequency_band: Annotated[float, Field(None, alias="sar:frequency_band")]
+    sar_instrument_mode: Annotated[str, Field(None, alias="sar:instrument_mode")]
+    sar_polarizations: Annotated[list[str], Field(None, alias="sar:polarizations")]
+    # sat extension
+    sat_absolute_orbit: Annotated[int, Field(None, alias="sat:absolute_orbit")]
+    sat_orbit_cycle: Annotated[int, Field(None, alias="sat:orbit_cycle")]
+    sat_orbit_state: Annotated[str, Field(None, alias="sat:orbit_state")]
+    sat_relative_orbit: Annotated[int, Field(None, alias="sat:relative_orbit")]
+    # sci extension
+    sci_doi: Annotated[str, Field(None, alias="sci:doi")]
+    # view extension
+    view_incidence_angle: Annotated[str, Field(None, alias="view:incidence_angle")]
+    view_sun_azimuth: Annotated[str, Field(None, alias="view:sun_azimuth")]
+    view_sun_elevation: Annotated[str, Field(None, alias="view:sun_elevation")]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

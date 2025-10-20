@@ -29,9 +29,8 @@ EODAG has the following primary features:
 * Search and download Earth Observation products from different providers with **a unified API**
 * It is both a `Command Line Tool <cli_user_guide.rst>`_ and a `Python library <api_user_guide.rst>`_
 * It supports `STAC and Static STAC <notebooks/tutos/tuto_stac_client.ipynb>`_ catalogs
-* It can run as a `STAC API REST server <stac_rest.rst>`_ to give access to a provider's catalog
 * New providers can be added with a `configuration file <add_provider.rst>`_ or by extending EODAG with `plugins <plugins.rst>`_
-* More than 270 `product types <getting_started_guide/product_types.rst#product-types-information-csv>`_ configured
+* More than 270 `collections <getting_started_guide/collections.rst#collections-information-csv>`_ configured
 
 .. image:: _static/eodag_overview.png
    :width: 800
@@ -52,7 +51,7 @@ downloading *Sentinel 2 Level-1C* products from any provider's catalog is as sim
    dag = EODataAccessGateway()
 
    search_results = dag.search(
-       productType="S2_MSI_L1C",
+       collection="S2_MSI_L1C",
        start="2021-03-01",
        end="2021-03-31",
        geom={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44}
@@ -70,7 +69,7 @@ Or:
 
 .. code-block:: bash
 
-   eodag search --productType S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
+   eodag search --collection S2_MSI_L1C --box 1 43 2 44 --start 2021-03-01 --end 2021-03-31
    eodag download  --search-results search_results.geojson
 
 
@@ -102,7 +101,7 @@ __ https://www.apache.org/licenses/LICENSE-2.0.html
    :caption: For Developers/Contributors
 
    add_provider
-   add_product_type
+   add_collection
    plugins
    drivers
    params_mapping

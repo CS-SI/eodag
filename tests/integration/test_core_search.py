@@ -30,7 +30,7 @@ from tests.context import (
     EODataAccessGateway,
     EOProduct,
     HeaderAuth,
-    NoMatchingProductType,
+    NoMatchingCollection,
     RequestError,
     USGSError,
 )
@@ -62,23 +62,23 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
         autospec=True,
     )
     def test_core_search_errors_qssearch(
-        self, mock_authenticate, mock_fetch_product_types_list, mock_get
+        self, mock_authenticate, mock_fetch_collections_list, mock_get
     ):
         # QueryStringSearch / peps
         self.dag.set_preferred_provider("peps")
         self.assertRaises(
-            RequestError, self.dag.search, productType="foo", raise_errors=True
+            RequestError, self.dag.search, collection="foo", raise_errors=True
         )
         # search iterator
         self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
+            RequestError, next, self.dag.search_iter_page(collection="foo")
         )
 
     @mock.patch(
@@ -91,7 +91,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
@@ -100,16 +100,18 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_stacsearch(
         self,
         mock_query,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_post,
         mock_auth_session_request,
     ):
         mock_query.return_value = ([], 0)
         # StacSearch / earth_search
         self.dag.set_preferred_provider("earth_search")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, raise_errors=True, validate=False
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
@@ -121,7 +123,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
@@ -130,16 +132,18 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_postjson(
         self,
         mock_request,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_post,
         mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # PostJsonSearch / aws_eos
         self.dag.set_preferred_provider("aws_eos")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, raise_errors=True, validate=False
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
@@ -156,19 +160,19 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_core_search_errors_odata(
-        self, mock_fetch_product_types_list, mock_get, mock_urlopen, mock_authenticate
+        self, mock_fetch_collections_list, mock_get, mock_urlopen, mock_authenticate
     ):
         # ODataV4Search / creodias
         self.dag.set_preferred_provider("creodias")
         self.assertRaises(
-            RequestError, self.dag.search, productType="foo", raise_errors=True
+            RequestError, self.dag.search, collection="foo", raise_errors=True
         )
         # search iterator
         self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
+            RequestError, next, self.dag.search_iter_page(collection="foo")
         )
 
     @mock.patch(
@@ -180,24 +184,32 @@ class TestCoreSearch(unittest.TestCase):
     )
     @mock.patch("eodag.plugins.apis.usgs.api.login", autospec=True)
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_core_search_errors_usgs(
         self,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_login,
         mock_scene_search,
         mock_auth_session_request,
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
-        self.assertRaises(NoMatchingProductType, self.dag.search, raise_errors=True)
         self.assertRaises(
-            RequestError, self.dag.search, raise_errors=True, productType="foo"
+            NoMatchingCollection, self.dag.search, raise_errors=True, validate=False
+        )
+        self.assertRaises(
+            RequestError,
+            self.dag.search,
+            raise_errors=True,
+            collection="foo",
+            validate=False,
         )
         # search iterator
         self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
+            RequestError,
+            next,
+            self.dag.search_iter_page(collection="foo", validate=False),
         )
 
     @mock.patch(
@@ -218,11 +230,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_core_search_errors_buildpost(
         self,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_authenticate,
         mock_post,
         mock_request,
@@ -231,9 +243,11 @@ class TestCoreSearch(unittest.TestCase):
         mock_request.return_value = MockResponse({"results": []})
         # MeteoblueSearch / meteoblue
         self.dag.set_preferred_provider("meteoblue")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, raise_errors=True, validate=False
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get",
@@ -262,22 +276,22 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_get, mock_post, mock_request, mock_auth_token, mock_auth_oidc
     ):
         """Core search must loop over providers until finding a non empty result"""
-        product_type = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(product_type)
+        collection = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(collection)
         self.assertListEqual(
             available_providers,
             [
-                "peps",
-                "cop_dataspace",
-                "creodias",
-                "dedl",
-                "geodes",
-                "sara",
-                "wekeo_main",
+                "peps",  # requests.get
+                "cop_dataspace",  # requests.Request
+                "creodias",  # requests.Request
+                "dedl",  # requests.get
+                "geodes",  # requests.post
+                "sara",  # requests.get
+                "wekeo_main",  # requests.post
             ],
         )
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.number_matched, 0)
         self.assertEqual(
@@ -298,8 +312,8 @@ class TestCoreSearch(unittest.TestCase):
     )
     def test_core_search_fallback_raise_errors(self, mock_get, mock_request):
         """Core search fallback mechanism must halt loop on error if raise_errors is set"""
-        product_type = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(product_type)
+        collection = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(collection)
         self.assertListEqual(
             available_providers,
             [
@@ -314,7 +328,7 @@ class TestCoreSearch(unittest.TestCase):
         )
 
         self.assertRaises(
-            RequestError, self.dag.search, productType="S1_SAR_SLC", raise_errors=True
+            RequestError, self.dag.search, collection="S1_SAR_SLC", raise_errors=True
         )
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -333,8 +347,8 @@ class TestCoreSearch(unittest.TestCase):
     )
     def test_core_search_fallback_find_on_first(self, mock_get, mock_request):
         """Core search must loop over providers until finding a non empty result"""
-        product_type = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(product_type)
+        collection = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(collection)
         self.assertListEqual(
             available_providers,
             [
@@ -358,7 +372,7 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_get.return_value.json.return_value = peps_resp_search_file_content
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), peps_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -393,8 +407,8 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_get, mock_request, mock_urlopen, mock_httpadapter, mock_auth_get
     ):
         """Core search must loop over providers until finding a non empty result"""
-        product_type = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(product_type)
+        collection = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(collection)
         self.assertListEqual(
             available_providers,
             [
@@ -423,7 +437,7 @@ class TestCoreSearch(unittest.TestCase):
             creodias_resp_search_file_content,
         ]
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), creodias_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -437,8 +451,8 @@ class TestCoreSearch(unittest.TestCase):
     )
     def test_core_search_fallback_find_on_second_empty_results(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
-        product_type = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(product_type)
+        collection = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(collection)
         self.assertListEqual(
             available_providers,
             [
@@ -457,7 +471,7 @@ class TestCoreSearch(unittest.TestCase):
             ([EOProduct("creodias", dict(geometry="POINT (0 0)", id="a"))], 1),
         ]
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
@@ -472,8 +486,8 @@ class TestCoreSearch(unittest.TestCase):
     )
     def test_core_search_fallback_given_provider(self, mock_query):
         """Core search must not loop over providers if a provider is specified"""
-        product_type = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(product_type)
+        collection = "S1_SAR_SLC"
+        available_providers = self.dag.available_providers(collection)
         self.assertListEqual(
             available_providers,
             [
@@ -490,7 +504,7 @@ class TestCoreSearch(unittest.TestCase):
         mock_query.return_value = ([], 0)
 
         search_result = self.dag.search(
-            productType="S1_SAR_SLC", provider="creodias", count=True
+            collection="S1_SAR_SLC", provider="creodias", count=True
         )
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.number_matched, 0)
@@ -505,11 +519,9 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_core_search_auths_matching(
-        self, mock_fetch_product_types_list, mock_query
-    ):
+    def test_core_search_auths_matching(self, mock_fetch_collections_list, mock_query):
         """Core search must set and use appropriate auth plugins"""
 
         self.dag.add_provider(
@@ -551,7 +563,7 @@ class TestCoreSearch(unittest.TestCase):
                 },
             },
         )
-        self.dag.search(provider="provider_without_match_configured")
+        self.dag.search(provider="provider_without_match_configured", validate=False)
         self.assertEqual(mock_query.call_args[0][1].auth.username, "some-username")
         mock_query.reset_mock()
 
@@ -561,7 +573,7 @@ class TestCoreSearch(unittest.TestCase):
             "https://foo.bar/baz/search",
             search={"need_auth": True},
         )
-        self.dag.search(provider="provider_matching_search_api")
+        self.dag.search(provider="provider_matching_search_api", validate=False)
         self.assertEqual(mock_query.call_args[0][1].auth.username, "a-username")
         mock_query.reset_mock()
 
@@ -571,7 +583,7 @@ class TestCoreSearch(unittest.TestCase):
             "https://fooooo.bar/search",
             search={"need_auth": True, "something": "special"},
         )
-        self.dag.search(provider="provider_matching_another_search_api")
+        self.dag.search(provider="provider_matching_another_search_api", validate=False)
         self.assertEqual(mock_query.call_args[0][1].auth.username, "another-username")
         mock_query.reset_mock()
 
@@ -588,14 +600,16 @@ class TestCoreSearch(unittest.TestCase):
                         dict(
                             geometry="POINT (0 0)",
                             id="a",
-                            downloadLink="https://somewhere/to/download",
+                            **{"eodag:download_link": "https://somewhere/to/download"},
                         ),
                     )
                 ],
                 1,
             ),
         ]
-        results = self.dag.search(provider="provider_matching_download_link")
+        results = self.dag.search(
+            provider="provider_matching_download_link", validate=False
+        )
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
@@ -615,14 +629,16 @@ class TestCoreSearch(unittest.TestCase):
                         dict(
                             geometry="POINT (0 0)",
                             id="a",
-                            orderLink="https://somewhere/to/download",
+                            **{"eodag:order_link": "https://somewhere/to/download"},
                         ),
                     )
                 ],
                 1,
             ),
         ]
-        results = self.dag.search(provider="provider_matching_download_link")
+        results = self.dag.search(
+            provider="provider_matching_download_link", validate=False
+        )
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
@@ -641,7 +657,7 @@ class TestCoreSearch(unittest.TestCase):
             {"aa": {"href": "https://foo.bar/download/asset"}}
         )
         mock_query.side_effect = [([product_with_assets], 1)]
-        results = self.dag.search(provider="provider_matching_asset")
+        results = self.dag.search(provider="provider_matching_asset", validate=False)
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"], "a-username"
         )
@@ -684,12 +700,12 @@ class TestCoreSearch(unittest.TestCase):
                         "dataset": "reanalysis-era5-single-levels",
                         "variable": "10m_u_component_of_wind",
                         "data_format": "grib",
-                        "product_type": "reanalysis",
+                        "collection": "reanalysis",
                         "download_format": "zip",
                     },
                     "labels": {
                         "dataset": "reanalysis-era5-single-levels",
-                        "Product type": ["Reanalysis"],
+                        "Collection": ["Reanalysis"],
                         "Variable": ["10m u-component of wind"],
                         "Year": ["1940"],
                         "Month": ["January"],
@@ -749,9 +765,9 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             "REANALYSIS-ERA5-SINGLE-LEVELS_123456", result[0].properties["title"]
         )
-        self.assertEqual("successful", result[0].properties["orderStatus"])
-        self.assertIn("request_params", result[0].properties)
-        req_params = result[0].properties["request_params"]
+        self.assertEqual("successful", result[0].properties["eodag:order_status"])
+        self.assertIn("eodag:request_params", result[0].properties)
+        req_params = result[0].properties["eodag:request_params"]
         for k, v in status_response["metadata"]["request"]["ids"].items():
             self.assertIn(k, req_params)
             self.assertEqual(v, req_params[k])

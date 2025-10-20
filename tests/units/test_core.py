@@ -29,13 +29,14 @@ from tempfile import TemporaryDirectory
 
 import yaml
 from lxml import html
-from pydantic import ValidationError
+from pydantic import ValidationError as PydanticValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
+from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -43,13 +44,13 @@ from tests.context import (
     CommonQueryables,
     EODataAccessGateway,
     EOProduct,
-    NoMatchingProductType,
+    NoMatchingCollection,
     PluginImplementationError,
     ProviderConfig,
     Queryables,
     RequestError,
     SearchResult,
-    UnsupportedProductType,
+    UnsupportedCollection,
     UnsupportedProvider,
     get_geometry_from_various,
     load_default_config,
@@ -92,7 +93,7 @@ class TestCoreBase(unittest.TestCase):
 
 
 class TestCore(TestCoreBase):
-    SUPPORTED_PRODUCT_TYPES = {
+    SUPPORTED_COLLECTIONS = {
         "AERIS_IAGOS": ["dedl"],
         "AG_ERA5": ["cop_cds", "wekeo_ecmwf"],
         "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
@@ -589,7 +590,7 @@ class TestCore(TestCoreBase):
         "CMIP6_CLIMATE_PROJECTIONS": ["cop_cds"],
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        GENERIC_PRODUCT_TYPE: [
+        GENERIC_COLLECTION: [
             "peps",
             "usgs",
             "creodias",
@@ -655,353 +656,343 @@ class TestCore(TestCoreBase):
         for provider in self.dag.available_providers():
             self.assertIn(provider, self.SUPPORTED_PROVIDERS)
 
-    def test_supported_product_types_in_unit_test(self):
-        """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
-        for product_type in self.dag.list_product_types(fetch_providers=False):
+    def test_supported_collections_in_unit_test(self):
+        """Every collection must be referenced in the core unit test SUPPORTED_COLLECTIONS class attribute"""
+        for collection in self.dag.list_collections(fetch_providers=False):
             assert (
-                product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-                or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                collection["ID"] in self.SUPPORTED_COLLECTIONS.keys()
+                or collection["_id"] in self.SUPPORTED_COLLECTIONS.keys()
             )
 
-    def test_list_product_types_ok(self):
-        """Core api must correctly return the list of supported product types"""
-        product_types = self.dag.list_product_types(fetch_providers=False)
-        self.assertIsInstance(product_types, list)
-        for product_type in product_types:
-            self.assertListProductTypesRightStructure(product_type)
-        # There should be no repeated product type in the output
-        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
-        # add alias for product type - should still work
-        products = self.dag.product_types_config
+    def test_list_collections_ok(self):
+        """Core api must correctly return the list of supported collections"""
+        collections = self.dag.list_collections(fetch_providers=False)
+        self.assertIsInstance(collections, list)
+        for collection in collections:
+            self.assertListCollectionsRightStructure(collection)
+        # There should be no repeated collection in the output
+        self.assertEqual(len(collections), len(set(pt["ID"] for pt in collections)))
+        # add alias for collection - should still work
+        products = self.dag.collections_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
-        product_types = self.dag.list_product_types(fetch_providers=False)
-        for product_type in product_types:
-            self.assertListProductTypesRightStructure(product_type)
-        # There should be no repeated product type in the output
-        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        collections = self.dag.list_collections(fetch_providers=False)
+        for collection in collections:
+            self.assertListCollectionsRightStructure(collection)
+        # There should be no repeated collection in the output
+        self.assertEqual(len(collections), len(set(pt["ID"] for pt in collections)))
         # use alias as id
-        self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in product_types])
+        self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in collections])
 
-    def test_list_product_types_for_provider_ok(self):
-        """Core api must correctly return the list of supported product types for a given provider"""
+    def test_list_collections_for_provider_ok(self):
+        """Core api must correctly return the list of supported collections for a given provider"""
         for provider in self.SUPPORTED_PROVIDERS:
-            product_types = self.dag.list_product_types(
+            collections = self.dag.list_collections(
                 provider=provider, fetch_providers=False
             )
-            self.assertIsInstance(product_types, list)
-            for product_type in product_types:
-                self.assertListProductTypesRightStructure(product_type)
-                if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
+            self.assertIsInstance(collections, list)
+            for collection in collections:
+                self.assertListCollectionsRightStructure(collection)
+                if collection["ID"] in self.SUPPORTED_COLLECTIONS:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]],
-                        f"missing in supported providers for {product_type['ID']}",
+                        self.SUPPORTED_COLLECTIONS[collection["ID"]],
+                        f"missing in supported providers for {collection['ID']}",
                     )
                 else:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]],
-                        f"missing in supported providers for {product_type['_id']}",
+                        self.SUPPORTED_COLLECTIONS[collection["_id"]],
+                        f"missing in supported providers for {collection['_id']}",
                     )
 
-    def test_list_product_types_for_unsupported_provider(self):
-        """Core api must raise UnsupportedProvider error for list_product_types with unsupported provider"""
+    def test_list_collections_for_unsupported_provider(self):
+        """Core api must raise UnsupportedProvider error for list_collections with unsupported provider"""
         unsupported_provider = "a"
         self.assertRaises(
             UnsupportedProvider,
-            self.dag.list_product_types,
+            self.dag.list_collections,
             provider=unsupported_provider,
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_list_product_types_fetch_providers(self, mock_fetch_product_types_list):
-        """Core api must fetch providers for new product types if option is passed to list_product_types"""
-        self.dag.list_product_types(fetch_providers=False)
-        assert not mock_fetch_product_types_list.called
-        self.dag.list_product_types(provider="peps", fetch_providers=True)
-        mock_fetch_product_types_list.assert_called_once_with(self.dag, provider="peps")
+    def test_list_collections_fetch_providers(self, mock_fetch_collections_list):
+        """Core api must fetch providers for new collections if option is passed to list_collections"""
+        self.dag.list_collections(fetch_providers=False)
+        assert not mock_fetch_collections_list.called
+        self.dag.list_collections(provider="peps", fetch_providers=True)
+        mock_fetch_collections_list.assert_called_once_with(self.dag, provider="peps")
 
-    def test_guess_product_type_with_filter(self):
+    def test_guess_collection_with_filter(self):
         """Testing the search terms"""
 
         with open(
-            os.path.join(TEST_RESOURCES_PATH, "ext_product_types_free_text_search.json")
+            os.path.join(TEST_RESOURCES_PATH, "ext_collections_free_text_search.json")
         ) as f:
-            ext_product_types_conf = json.load(f)
-        self.dag.update_product_types_list(ext_product_types_conf)
+            ext_collections_conf = json.load(f)
+        self.dag.update_collections_list(ext_collections_conf)
 
         # Search any filter contains filter value
         filter = "ABSTRACTFOO"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foo"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(collections_ids, ["foo"])
         # Search the exact phrase. Search is case insensitive
         filter = '"THIS IS FOO. fooandbar"'
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foo"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(collections_ids, ["foo"])
 
         # Free text search: match in the keywords
         filter = "LECTUS_BAR_KEY"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["bar"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(collections_ids, ["bar"])
 
         # Free text search: match the phrase in title
         filter = '"FOOBAR COLLECTION"'
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foobar_alias"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(collections_ids, ["foobar_alias"])
 
         # Free text search: Using OR term match
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar_alias"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(sorted(collections_ids), ["bar", "foobar_alias"])
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(filter, title="FOO")
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar_alias"])
+        collections_ids = self.dag.guess_collection(filter, title="FOO")
+        self.assertListEqual(sorted(collections_ids), ["bar", "foo", "foobar_alias"])
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foo"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(collections_ids, ["foo"])
 
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foobar_alias"])
+        collections_ids = self.dag.guess_collection(filter)
+        self.assertListEqual(collections_ids, ["foobar_alias"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(
+        collections_ids = self.dag.guess_collection(
             filter, intersect=True, title="titleFOO*"
         )
-        self.assertListEqual(product_types_ids, ["foobar_alias"])
+        self.assertListEqual(collections_ids, ["foobar_alias"])
 
-    def test_guess_product_type_with_mission_dates(self):
+    def test_guess_collection_with_mission_dates(self):
         """Testing the datetime interval"""
 
         with open(
-            os.path.join(TEST_RESOURCES_PATH, "ext_product_types_free_text_search.json")
+            os.path.join(TEST_RESOURCES_PATH, "ext_collections_free_text_search.json")
         ) as f:
-            ext_product_types_conf = json.load(f)
-        self.dag.update_product_types_list(ext_product_types_conf)
+            ext_collections_conf = json.load(f)
+        self.dag.update_collections_list(ext_collections_conf)
 
-        product_types_ids = self.dag.guess_product_type(
+        collections_ids = self.dag.guess_collection(
             title="TEST DATES",
-            missionStartDate="2013-02-01",
-            missionEndDate="2013-02-05",
+            start_date="2013-02-01",
+            end_date="2013-02-05",
         )
-        self.assertListEqual(product_types_ids, ["interval_end"])
-        product_types_ids = self.dag.guess_product_type(
+        self.assertListEqual(collections_ids, ["interval_end"])
+        collections_ids = self.dag.guess_collection(
             title="TEST DATES",
-            missionStartDate="2013-02-01",
-            missionEndDate="2013-02-15",
+            start_date="2013-02-01",
+            end_date="2013-02-15",
         )
         self.assertListEqual(
-            sorted(product_types_ids),
+            sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
-        product_types_ids = self.dag.guess_product_type(
-            title="TEST DATES", missionStartDate="2013-02-01"
+        collections_ids = self.dag.guess_collection(
+            title="TEST DATES", start_date="2013-02-01"
         )
         self.assertListEqual(
-            sorted(product_types_ids),
+            sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
-        product_types_ids = self.dag.guess_product_type(
-            title="TEST DATES", missionEndDate="2013-02-20"
+        collections_ids = self.dag.guess_collection(
+            title="TEST DATES", end_date="2013-02-20"
         )
         self.assertListEqual(
-            sorted(product_types_ids),
+            sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
 
-    def test_update_product_types_list(self):
-        """Core api.update_product_types_list must update eodag product types list"""
-        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
-            ext_product_types_conf = json.load(f)
+    def test_update_collections_list(self):
+        """Core api.update_collections_list must update eodag collections list"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
+            ext_collections_conf = json.load(f)
 
         self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
         self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
-        self.assertNotIn("foo", self.dag.product_types_config)
-        self.assertNotIn("bar", self.dag.product_types_config)
+        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertNotIn("bar", self.dag.collections_config)
 
-        self.dag.update_product_types_list(ext_product_types_conf)
+        self.dag.update_collections_list(ext_collections_conf)
 
         self.assertIn("foo", self.dag.providers_config["earth_search"].products)
         self.assertIn("bar", self.dag.providers_config["earth_search"].products)
-        self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
-        self.assertEqual(
-            self.dag.product_types_config["bar"]["title"], "Bar collection"
-        )
+        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
+        self.assertEqual(self.dag.collections_config["bar"]["title"], "Bar collection")
 
-    def test_update_product_types_list_unknown_provider(self):
-        """Core api.update_product_types_list on unkwnown provider must not crash and not update conf"""
-        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
-            ext_product_types_conf = json.load(f)
+    def test_update_collections_list_unknown_provider(self):
+        """Core api.update_collections_list on unkwnown provider must not crash and not update conf"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
+            ext_collections_conf = json.load(f)
         self.dag.providers_config.pop("earth_search")
 
-        self.dag.update_product_types_list(ext_product_types_conf)
+        self.dag.update_collections_list(ext_collections_conf)
         self.assertNotIn("earth_search", self.dag.providers_config)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
         autospec=True,
     )
-    def test_update_product_types_list_with_api_plugin(
-        self, mock_plugin_discover_product_types
+    def test_update_collections_list_with_api_plugin(
+        self, mock_plugin_discover_collections
     ):
-        """Core api.update_product_types_list with the api plugin must update eodag product types list"""
-        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
-            ext_product_types_conf = json.load(f)
+        """Core api.update_collections_list with the api plugin must update eodag collections list"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
+            ext_collections_conf = json.load(f)
 
         # we keep the existing ext-conf to use it for a provider with an api plugin
-        ext_product_types_conf["ecmwf"] = ext_product_types_conf.pop("earth_search")
+        ext_collections_conf["ecmwf"] = ext_collections_conf.pop("earth_search")
 
         self.assertNotIn("foo", self.dag.providers_config["ecmwf"].products)
         self.assertNotIn("bar", self.dag.providers_config["ecmwf"].products)
-        self.assertNotIn("foo", self.dag.product_types_config)
-        self.assertNotIn("bar", self.dag.product_types_config)
+        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertNotIn("bar", self.dag.collections_config)
 
-        # update existing provider conf and check that update_product_types_list() is launched for it
+        # update existing provider conf and check that update_collections_list() is launched for it
         self.dag.update_providers_config(
             """
             ecmwf:
                 api:
-                    discover_product_types:
+                    discover_collections:
                         fetch_url: 'http://new-endpoint'
                     need_auth: False
             """
         )
 
-        self.dag.update_product_types_list(ext_product_types_conf)
+        self.dag.update_collections_list(ext_collections_conf)
 
         self.assertIn("foo", self.dag.providers_config["ecmwf"].products)
         self.assertIn("bar", self.dag.providers_config["ecmwf"].products)
-        self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
-        self.assertEqual(
-            self.dag.product_types_config["bar"]["title"], "Bar collection"
-        )
+        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
+        self.assertEqual(self.dag.collections_config["bar"]["title"], "Bar collection")
 
-    def test_update_product_types_list_without_plugin(self):
-        """Core api.update_product_types_list without search and api plugin do nothing"""
-        with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
-            ext_product_types_conf = json.load(f)
+    def test_update_collections_list_without_plugin(self):
+        """Core api.update_collections_list without search and api plugin do nothing"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
+            ext_collections_conf = json.load(f)
 
         self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
         self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
-        self.assertNotIn("foo", self.dag.product_types_config)
-        self.assertNotIn("bar", self.dag.product_types_config)
+        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertNotIn("bar", self.dag.collections_config)
 
         delattr(self.dag.providers_config["earth_search"], "search")
 
-        self.dag.update_product_types_list(ext_product_types_conf)
+        self.dag.update_collections_list(ext_collections_conf)
 
         self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
         self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
-        self.assertNotIn("foo", self.dag.product_types_config)
-        self.assertNotIn("bar", self.dag.product_types_config)
+        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertNotIn("bar", self.dag.collections_config)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
         autospec=True,
         return_value={
-            "providers_config": {"foo": {"productType": "foo"}},
-            "product_types_config": {"foo": {"title": "Foo collection"}},
+            "providers_config": {"foo": {"_collection": "foo"}},
+            "collections_config": {"foo": {"title": "Foo collection"}},
         },
     )
-    def test_discover_product_types(self, mock_plugin_discover_product_types):
-        """Core api must fetch providers for product types"""
-        ext_product_types_conf = self.dag.discover_product_types(
-            provider="earth_search"
-        )
+    def test_discover_collections(self, mock_plugin_discover_collections):
+        """Core api must fetch providers for collections"""
+        ext_collections_conf = self.dag.discover_collections(provider="earth_search")
         self.assertEqual(
-            ext_product_types_conf["earth_search"]["providers_config"]["foo"][
-                "productType"
+            ext_collections_conf["earth_search"]["providers_config"]["foo"][
+                "_collection"
             ],
             "foo",
         )
         self.assertEqual(
-            ext_product_types_conf["earth_search"]["product_types_config"]["foo"][
-                "title"
-            ],
+            ext_collections_conf["earth_search"]["collections_config"]["foo"]["title"],
             "Foo collection",
         )
 
     @mock.patch(
-        "eodag.plugins.apis.ecmwf.EcmwfApi.discover_product_types",
+        "eodag.plugins.apis.ecmwf.EcmwfApi.discover_collections",
         autospec=True,
         return_value={
-            "providers_config": {"foo": {"productType": "foo"}},
-            "product_types_config": {"foo": {"title": "Foo collection"}},
+            "providers_config": {"foo": {"_collection": "foo"}},
+            "collections_config": {"foo": {"title": "Foo collection"}},
         },
     )
-    def test_discover_product_types_with_api_plugin(
-        self, mock_plugin_discover_product_types
+    def test_discover_collections_with_api_plugin(
+        self, mock_plugin_discover_collections
     ):
-        """Core api must fetch providers with api plugin for product types"""
+        """Core api must fetch providers with api plugin for collections"""
         self.dag.update_providers_config(
             """
             ecmwf:
                 api:
-                    discover_product_types:
+                    discover_collections:
                         fetch_url: 'http://new-endpoint'
                     need_auth: False
             """
         )
-        ext_product_types_conf = self.dag.discover_product_types(provider="ecmwf")
+        ext_collections_conf = self.dag.discover_collections(provider="ecmwf")
         self.assertEqual(
-            ext_product_types_conf["ecmwf"]["providers_config"]["foo"]["productType"],
+            ext_collections_conf["ecmwf"]["providers_config"]["foo"]["_collection"],
             "foo",
         )
         self.assertEqual(
-            ext_product_types_conf["ecmwf"]["product_types_config"]["foo"]["title"],
+            ext_collections_conf["ecmwf"]["collections_config"]["foo"]["title"],
             "Foo collection",
         )
 
-    def test_discover_product_types_without_plugin(self):
+    def test_discover_collections_without_plugin(self):
         """Core api must not fetch providers without search and api plugins"""
         delattr(self.dag.providers_config["earth_search"], "search")
-        ext_product_types_conf = self.dag.discover_product_types(
-            provider="earth_search"
-        )
+        ext_collections_conf = self.dag.discover_collections(provider="earth_search")
         self.assertEqual(
-            ext_product_types_conf,
+            ext_collections_conf,
             None,
         )
 
-    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+        "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
-    def test_fetch_product_types_list(
-        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    def test_fetch_collections_list(
+        self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """Core api must fetch product types list and update if needed"""
+        """Core api must fetch collections list and update if needed"""
         # check that no provider has already been fetched
         for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+            self.assertFalse(getattr(provider_config, "collections_fetched", False))
 
-        # check that by default get_ext_product_types_conf() is called without args
-        self.dag.fetch_product_types_list()
-        mock_get_ext_product_types_conf.assert_called_with()
+        # check that by default get_ext_collections_conf() is called without args
+        self.dag.fetch_collections_list()
+        mock_get_ext_collections_conf.assert_called_with()
 
         # check that with an empty/mocked ext-conf, no provider has been fetched
         for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+            self.assertFalse(getattr(provider_config, "collections_fetched", False))
 
-        # check that EODAG_EXT_PRODUCT_TYPES_CFG_FILE env var will be used as get_ext_product_types_conf() arg
-        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = "some/file"
-        self.dag.fetch_product_types_list()
-        mock_get_ext_product_types_conf.assert_called_with("some/file")
-        os.environ.pop("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+        # check that EODAG_EXT_COLLECTIONS_CFG_FILE env var will be used as get_ext_collections_conf() arg
+        os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = "some/file"
+        self.dag.fetch_collections_list()
+        mock_get_ext_collections_conf.assert_called_with("some/file")
+        os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
 
         # check that with a non-empty ext-conf, a provider will be marked as fetched, and eodag conf updated
-        mock_get_ext_product_types_conf.return_value = {
+        mock_get_ext_collections_conf.return_value = {
             "earth_search": {
-                "providers_config": {"foo": {"productType": "foo"}},
-                "product_types_config": {"foo": {"title": "Foo collection"}},
+                "providers_config": {"foo": {"_collection": "foo"}},
+                "collections_config": {"foo": {"title": "Foo collection"}},
             }
         }
         # add an empty ext-conf for other providers to prevent them to be fetched
@@ -1013,37 +1004,37 @@ class TestCore(TestCoreBase):
             else:
                 continue
             if hasattr(
-                provider_search_config, "discover_product_types"
-            ) and provider_search_config.discover_product_types.get("fetch_url"):
-                mock_get_ext_product_types_conf.return_value[provider] = {}
-        self.dag.fetch_product_types_list()
-        self.assertTrue(self.dag.providers_config["earth_search"].product_types_fetched)
+                provider_search_config, "discover_collections"
+            ) and provider_search_config.discover_collections.get("fetch_url"):
+                mock_get_ext_collections_conf.return_value[provider] = {}
+        self.dag.fetch_collections_list()
+        self.assertTrue(self.dag.providers_config["earth_search"].collections_fetched)
         self.assertEqual(
             self.dag.providers_config["earth_search"].products["foo"],
-            {"productType": "foo"},
+            {"_collection": "foo"},
         )
         self.assertEqual(
-            self.dag.product_types_config.source["foo"],
+            self.dag.collections_config.source["foo"],
             {"_id": "foo", "title": "Foo collection"},
         )
 
-        # update existing provider conf and check that discover_product_types() is launched for it
-        self.assertEqual(mock_discover_product_types.call_count, 0)
+        # update existing provider conf and check that discover_collections() is launched for it
+        self.assertEqual(mock_discover_collections.call_count, 0)
         self.dag.update_providers_config(
             """
             earth_search:
                 search:
-                    discover_product_types:
+                    discover_collections:
                         fetch_url: 'http://new-endpoint'
             """
         )
-        self.dag.fetch_product_types_list()
-        mock_discover_product_types.assert_called_once_with(
+        self.dag.fetch_collections_list()
+        mock_discover_collections.assert_called_once_with(
             self.dag, provider="earth_search"
         )
 
-        # add new provider conf and check that discover_product_types() is launched for it
-        self.assertEqual(mock_discover_product_types.call_count, 1)
+        # add new provider conf and check that discover_collections() is launched for it
+        self.assertEqual(mock_discover_collections.call_count, 1)
         self.dag.update_providers_config(
             """
             foo_provider:
@@ -1051,54 +1042,52 @@ class TestCore(TestCoreBase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
             """
         )
-        self.dag.fetch_product_types_list()
-        mock_discover_product_types.assert_called_with(
-            self.dag, provider="foo_provider"
-        )
-        # discover_product_types() should have been called 2 more times
+        self.dag.fetch_collections_list()
+        mock_discover_collections.assert_called_with(self.dag, provider="foo_provider")
+        # discover_collections() should have been called 2 more times
         # (once per dynamically configured provider)
-        self.assertEqual(mock_discover_product_types.call_count, 3)
+        self.assertEqual(mock_discover_collections.call_count, 3)
 
         # now check that if provider is specified, only this one is fetched
-        mock_discover_product_types.reset_mock()
-        self.dag.fetch_product_types_list(provider="foo_provider")
-        mock_discover_product_types.assert_called_once_with(
+        mock_discover_collections.reset_mock()
+        self.dag.fetch_collections_list(provider="foo_provider")
+        mock_discover_collections.assert_called_once_with(
             self.dag, provider="foo_provider"
         )
 
-    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+        "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
-    def test_fetch_product_types_list_without_ext_conf(
-        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    def test_fetch_collections_list_without_ext_conf(
+        self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """Core api must not fetch product types list and must discover product types without ext-conf"""
+        """Core api must not fetch collections list and must discover collections without ext-conf"""
         # check that no provider has already been fetched
         for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+            self.assertFalse(getattr(provider_config, "collections_fetched", False))
 
-        # check that without an ext-conf, discover_product_types() is launched for it
-        mock_get_ext_product_types_conf.return_value = {}
-        self.dag.fetch_product_types_list()
-        self.assertEqual(mock_discover_product_types.call_count, 1)
+        # check that without an ext-conf, discover_collections() is launched for it
+        mock_get_ext_collections_conf.return_value = {}
+        self.dag.fetch_collections_list()
+        self.assertEqual(mock_discover_collections.call_count, 1)
 
         # check that without an ext-conf, no provider has been fetched
         for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+            self.assertFalse(getattr(provider_config, "collections_fetched", False))
 
-    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+        "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
-    def test_fetch_product_types_list_updated_system_conf(
-        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    def test_fetch_collections_list_updated_system_conf(
+        self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """fetch_product_types_list must launch product types discovery for new system-wide providers"""
+        """fetch_collections_list must launch collections discovery for new system-wide providers"""
         # add a new system-wide provider not listed in ext-conf
         new_default_conf = load_default_config()
         new_default_conf["new_provider"] = new_default_conf["earth_search"]
@@ -1110,13 +1099,13 @@ class TestCore(TestCoreBase):
         ):
             self.dag = EODataAccessGateway()
 
-            mock_get_ext_product_types_conf.return_value = {}
+            mock_get_ext_collections_conf.return_value = {}
 
-            # disabled product types discovery
-            os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
-            self.dag.fetch_product_types_list()
-            mock_discover_product_types.assert_not_called()
-            os.environ.pop("EODAG_EXT_PRODUCT_TYPES_CFG_FILE")
+            # disabled collections discovery
+            os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = ""
+            self.dag.fetch_collections_list()
+            mock_discover_collections.assert_not_called()
+            os.environ.pop("EODAG_EXT_COLLECTIONS_CFG_FILE")
 
             # add an empty ext-conf for other providers to prevent them to be fetched
             for provider, provider_config in self.dag.providers_config.items():
@@ -1127,62 +1116,62 @@ class TestCore(TestCoreBase):
                 else:
                     continue
                 if hasattr(
-                    provider_search_config, "discover_product_types"
-                ) and provider_search_config.discover_product_types.get("fetch_url"):
-                    mock_get_ext_product_types_conf.return_value[provider] = {}
+                    provider_search_config, "discover_collections"
+                ) and provider_search_config.discover_collections.get("fetch_url"):
+                    mock_get_ext_collections_conf.return_value[provider] = {}
 
-            self.dag.fetch_product_types_list()
-            mock_discover_product_types.assert_called_once_with(
+            self.dag.fetch_collections_list()
+            mock_discover_collections.assert_called_once_with(
                 self.dag, provider="new_provider"
             )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+        "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
-    def test_fetch_product_types_list_disabled(self, mock_discover_product_types):
-        """fetch_product_types_list must not launch product types discovery if disabled"""
+    def test_fetch_collections_list_disabled(self, mock_discover_collections):
+        """fetch_collections_list must not launch collections discovery if disabled"""
 
-        # disable product types discovery
-        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+        # disable collections discovery
+        os.environ["EODAG_EXT_COLLECTIONS_CFG_FILE"] = ""
 
         # default settings
-        self.dag.fetch_product_types_list()
-        mock_discover_product_types.assert_not_called()
+        self.dag.fetch_collections_list()
+        mock_discover_collections.assert_not_called()
 
         # only user-defined providers must be fetched
         self.dag.update_providers_config(
             """
             earth_search:
                 search:
-                    discover_product_types:
+                    discover_collections:
                         fetch_url: 'http://new-endpoint'
             foo_provider:
                 search:
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
             """
         )
-        self.dag.fetch_product_types_list()
-        self.assertEqual(mock_discover_product_types.call_count, 2)
+        self.dag.fetch_collections_list()
+        self.assertEqual(mock_discover_collections.call_count, 2)
 
-    def assertListProductTypesRightStructure(self, structure):
+    def assertListCollectionsRightStructure(self, structure):
         """Helper method to verify that the structure given is a good result of
-        EODataAccessGateway.list_product_types
+        EODataAccessGateway.list_collections
         """
         self.assertIsInstance(structure, dict)
         self.assertIn("ID", structure)
-        self.assertIn("abstract", structure)
-        self.assertIn("instrument", structure)
+        self.assertIn("description", structure)
+        self.assertIn("instruments", structure)
+        self.assertIn("constellation", structure)
         self.assertIn("platform", structure)
-        self.assertIn("platformSerialIdentifier", structure)
-        self.assertIn("processingLevel", structure)
-        self.assertIn("sensorType", structure)
+        self.assertIn("processing:level", structure)
+        self.assertIn("eodag:sensor_type", structure)
         self.assertTrue(
-            structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
-            or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
+            structure["ID"] in self.SUPPORTED_COLLECTIONS
+            or structure["_id"] in self.SUPPORTED_COLLECTIONS
         )
 
     def test_core_object_set_default_locations_config(self):
@@ -1330,8 +1319,8 @@ class TestCore(TestCoreBase):
                     type: StacSearch
                     api_endpoint: https://api.my_new_provider/search
                 products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
             """
         # add new provider
         self.dag.update_providers_config(new_config)
@@ -1349,7 +1338,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
@@ -1359,18 +1348,18 @@ class TestCore(TestCoreBase):
     def test_list_queryables(
         self,
         mock_stacsearch_discover_queryables: mock.Mock,
-        mock_fetch_product_types_list: mock.Mock,
+        mock_fetch_collections_list: mock.Mock,
         mock_auth_plugin: mock.Mock,
     ) -> None:
-        """list_queryables must return queryables list adapted to provider and product-type"""
+        """list_queryables must return queryables list adapted to provider and collection"""
 
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
 
-        with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(productType="not_supported_product_type")
+        with self.assertRaises(UnsupportedCollection):
+            self.dag.list_queryables(collection="not_supported_collection")
 
-        # No provider & no product type
+        # No provider & no collection
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
         self.assertEqual(len(queryables_none_none), len(expected_result))
@@ -1380,7 +1369,7 @@ class TestCore(TestCoreBase):
         self.assertTrue(queryables_none_none.additional_properties)
 
         # Only provider
-        # when only a provider is specified, return the union of the queryables for all product types
+        # when only a provider is specified, return the union of the queryables for all collections
         queryables_peps_none = self.dag.list_queryables(provider="peps")
         expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
         self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
@@ -1390,38 +1379,38 @@ class TestCore(TestCoreBase):
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_none.additional_properties)
 
-        # provider & product type
+        # provider & collection
         queryables_peps_s1grd = self.dag.list_queryables(
-            provider="peps", productType="S1_SAR_GRD"
+            provider="peps", collection="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
-            if key == "productType":
+            if key == "collection":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 # compare obj.__repr__
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_s1grd.additional_properties)
 
-        # provider & product type alias
+        # provider & collection alias
         # result should be the same if alias is used
-        products = self.dag.product_types_config
+        products = self.dag.collections_config
         products["S1_SAR_GRD"]["alias"] = "S1_SG"
         queryables_peps_s1grd_alias = self.dag.list_queryables(
-            provider="peps", productType="S1_SG"
+            provider="peps", collection="S1_SG"
         )
         self.assertEqual(len(queryables_peps_s1grd), len(queryables_peps_s1grd_alias))
         self.assertEqual(
             "S1_SG",
-            queryables_peps_s1grd_alias["productType"].__metadata__[0].get_default(),
+            queryables_peps_s1grd_alias["collection"].__metadata__[0].get_default(),
         )
         products["S1_SAR_GRD"].pop("alias")
 
-        # Only product type
-        # when a product type is specified but not the provider, the union of the queryables of all providers
-        # having the product type in its config is returned
-        queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
+        # Only collection
+        # when a collection is specified but not the provider, the union of the queryables of all providers
+        # having the collection in its config is returned
+        queryables_none_s1grd = self.dag.list_queryables(collection="S1_SAR_GRD")
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
         self.assertGreater(len(queryables_none_s1grd), len(queryables_peps_none))
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
@@ -1429,7 +1418,7 @@ class TestCore(TestCoreBase):
         # check that peps gets the highest priority
         self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
         for key, queryable in queryables_peps_s1grd.items():
-            if key == "productType":
+            if key == "collection":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 # compare obj.__repr__
@@ -1440,12 +1429,12 @@ class TestCore(TestCoreBase):
 
         # model_validate should validate input parameters using the queryables result
         queryables_validated = queryables_peps_s1grd.get_model().model_validate(
-            {"productType": "S1_SAR_GRD", "snowCover": 50}
+            {"collection": "S1_SAR_GRD", "eo:snow_cover": 50}
         )
-        self.assertIn("snowCover", queryables_validated.__dict__)
-        with self.assertRaises(ValidationError):
+        self.assertIn("eo_snow_cover", queryables_validated.__dict__)
+        with self.assertRaises(PydanticValidationError):
             queryables_peps_s1grd.get_model().model_validate(
-                {"productType": "S1_SAR_GRD", "snowCover": 500}
+                {"collection": "S1_SAR_GRD", "eo:snow_cover": 500}
             )
 
     @mock.patch(
@@ -1466,7 +1455,7 @@ class TestCore(TestCoreBase):
         self.assertFalse(cop_marine_queryables.additional_properties)
 
         item_cop_marine_queryables = self.dag.list_queryables(
-            productType="MO_INSITU_GLO_PHY_TS_OA_NRT_013_002", provider="cop_marine"
+            collection="MO_INSITU_GLO_PHY_TS_OA_NRT_013_002", provider="cop_marine"
         )
         self.assertFalse(item_cop_marine_queryables.additional_properties)
 
@@ -1478,7 +1467,7 @@ class TestCore(TestCoreBase):
         self.assertTrue(peps_queryables.additional_properties)
 
         item_peps_queryables = self.dag.list_queryables(
-            productType="S2_MSI_L1C", provider="peps"
+            collection="S2_MSI_L1C", provider="peps"
         )
         self.assertTrue(item_peps_queryables.additional_properties)
 
@@ -1495,32 +1484,24 @@ class TestCore(TestCoreBase):
     ):
         plugin = next(
             self.dag._plugins_manager.get_search_plugins(
-                provider="cop_cds", product_type="ERA5_SL"
+                provider="cop_cds", collection="ERA5_SL"
             )
         )
         # default values should be added to params
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
+        self.dag.list_queryables(provider="cop_cds", collection="ERA5_SL")
         defaults = {
-            "productType": "ERA5_SL",
-            "product_type": "reanalysis",
+            "collection": "ERA5_SL",
             "dataset": "reanalysis-era5-single-levels",
-            "data_format": "grib",
-            "download_format": "zip",
-            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
         res = self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "month": "02"}
+            provider="cop_cds", **{"collection": "ERA5_SL", "month": "02"}
         )
         params = {
-            "productType": "ERA5_SL",
-            "product_type": "reanalysis",
+            "collection": "ERA5_SL",
             "dataset": "reanalysis-era5-single-levels",
-            "data_format": "grib",
-            "download_format": "zip",
-            "variable": "10m_u_component_of_wind",
             "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
@@ -1529,15 +1510,12 @@ class TestCore(TestCoreBase):
 
         # unset default values
         self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "data_format": ""}
+            provider="cop_cds", **{"collection": "ERA5_SL", "data_format": ""}
         )
         defaults = {
-            "productType": "ERA5_SL",
-            "product_type": "reanalysis",
+            "collection": "ERA5_SL",
             "dataset": "reanalysis-era5-single-levels",
-            "variable": "10m_u_component_of_wind",
             "data_format": "",
-            "download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
@@ -1558,11 +1536,11 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_list_queryables_priority_sorted(
         self,
-        mock_fetch_product_types_list: mock.Mock,
+        mock_fetch_collections_list: mock.Mock,
         get_auth_plugin: mock.Mock,
         mock_wekeo_list_queryables: mock.Mock,
         mock_ecmwf_list_queryables: mock.Mock,
@@ -1591,7 +1569,7 @@ class TestCore(TestCoreBase):
 
         self.dag.set_preferred_provider("wekeo_ecmwf")
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables["property1"], "value_from_wekeo")
         self.assertEqual(queryables["property2"], "value_cds2")
@@ -1599,7 +1577,7 @@ class TestCore(TestCoreBase):
 
         self.dag.set_preferred_provider("cop_cds")
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables["property1"], "value_cds1")
         self.assertEqual(queryables["property2"], "value_cds2")
@@ -1607,7 +1585,7 @@ class TestCore(TestCoreBase):
 
         self.dag.set_preferred_provider("dedl")
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables["property1"], "value_dedl1")
         self.assertEqual(queryables["property2"], "value_dedl2")
@@ -1630,11 +1608,11 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_list_queryables_additional(
         self,
-        mock_fetch_product_types_list: mock.Mock,
+        mock_fetch_collections_list: mock.Mock,
         get_auth_plugin: mock.Mock,
         mock_wekeo_list_queryables: mock.Mock,
         mock_ecmwf_list_queryables: mock.Mock,
@@ -1655,7 +1633,7 @@ class TestCore(TestCoreBase):
             additional_information="Mocked STAC queryables for dedl",
         )
 
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(
             queryables.additional_information,
@@ -1671,22 +1649,22 @@ class TestCore(TestCoreBase):
             additional_properties=True,
             additional_information="Mocked STAC queryables for dedl",
         )
-        queryables = self.dag.list_queryables(productType="ERA5_SL")
+        queryables = self.dag.list_queryables(collection="ERA5_SL")
 
         self.assertEqual(queryables.additional_properties, True)
 
     def test_queryables_repr(self):
-        queryables = self.dag.list_queryables(provider="peps", productType="S1_SAR_GRD")
+        queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
         self.assertIsInstance(queryables, QueryablesDict)
         queryables_repr = html.fromstring(queryables._repr_html_())
         self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
-        product_type_present = False
+        id_present = False
         for i, span in enumerate(spans):
-            if "productType" in span.text:
-                product_type_present = True
+            if "id" in span.text:
+                id_present = True
                 self.assertIn("str", spans[i + 1].text)
-        self.assertTrue(product_type_present)
+        self.assertTrue(id_present)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
@@ -1703,29 +1681,29 @@ class TestCore(TestCoreBase):
             "cop_cds": None,
             "cop_dataspace": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                    "modificationDate",
+                    "start_datetime",
+                    "end_datetime",
+                    "published",
+                    "updated",
                 ],
                 "max_sort_params": 1,
             },
             "cop_ewds": None,
             "creodias": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                    "modificationDate",
+                    "start_datetime",
+                    "end_datetime",
+                    "published",
+                    "updated",
                 ],
                 "max_sort_params": 1,
             },
             "creodias_s3": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                    "modificationDate",
+                    "start_datetime",
+                    "end_datetime",
+                    "published",
+                    "updated",
                 ],
                 "max_sort_params": 1,
             },
@@ -1733,44 +1711,44 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "creationDate",
-                    "modificationDate",
-                    "platformSerialIdentifier",
-                    "resolution",
-                    "cloudCover",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "platform",
+                    "gsd",
+                    "eo:cloud_cover",
                 ],
             },
             "dedt_lumi": None,
             "earth_search": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "creationDate",
-                    "modificationDate",
-                    "platformSerialIdentifier",
-                    "resolution",
-                    "cloudCover",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "platform",
+                    "gsd",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
             "earth_search_gcs": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "creationDate",
-                    "modificationDate",
-                    "platformSerialIdentifier",
-                    "resolution",
-                    "cloudCover",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "platform",
+                    "gsd",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
             "ecmwf": None,
             "eumetsat_ds": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "publicationDate",
+                    "start_datetime",
+                    "published",
                 ],
                 "max_sort_params": 1,
             },
@@ -1780,29 +1758,29 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "platformSerialIdentifier",
-                    "cloudCover",
+                    "start_datetime",
+                    "end_datetime",
+                    "platform",
+                    "eo:cloud_cover",
                 ],
             },
             "geodes_s3": {
                 "max_sort_params": None,
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "platformSerialIdentifier",
-                    "cloudCover",
+                    "start_datetime",
+                    "end_datetime",
+                    "platform",
+                    "eo:cloud_cover",
                 ],
             },
             "hydroweb_next": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "productVersion",
-                    "processingLevel",
+                    "start_datetime",
+                    "end_datetime",
+                    "version",
+                    "processing:level",
                 ],
                 "max_sort_params": None,
             },
@@ -1810,16 +1788,16 @@ class TestCore(TestCoreBase):
             "planetary_computer": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "platformSerialIdentifier",
+                    "start_datetime",
+                    "platform",
                 ],
                 "max_sort_params": None,
             },
             "sara": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "sensorMode",
+                    "start_datetime",
+                    "end_datetime",
+                    "sar:instrument_mode",
                 ],
                 "max_sort_params": 1,
             },
@@ -1827,13 +1805,13 @@ class TestCore(TestCoreBase):
             "usgs_satapi_aws": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "creationDate",
-                    "modificationDate",
-                    "platformSerialIdentifier",
-                    "illuminationElevationAngle",
-                    "illuminationAzimuthAngle",
-                    "cloudCover",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "platform",
+                    "view:sun_elevation",
+                    "view:sun_azimuth",
+                    "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
             },
@@ -1842,7 +1820,18 @@ class TestCore(TestCoreBase):
             "wekeo_main": None,
         }
         sortables = self.dag.available_sortables()
-        self.assertDictEqual(sortables, expected_result)
+        self.assertListEqual(
+            sorted(list(sortables.keys())), sorted(list(expected_result.keys()))
+        )
+        for provider, sortable in sortables.items():
+            if sortable is None:
+                self.assertIsNone(expected_result[provider])
+            else:
+                self.assertDictEqual(
+                    sortable,
+                    expected_result[provider],
+                    f"Expected sortables differ for provider {provider}",
+                )
 
         # check if sortables are set to None when the provider does not support the sorting feature
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
@@ -1869,6 +1858,76 @@ class TestCore(TestCoreBase):
         )
         if sortables["planetary_computer"]:
             self.assertIsNone(sortables["planetary_computer"]["max_sort_params"])
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.search.base.Search.validate", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+        return_value=([], 0),
+    )
+    def test_search_validate(
+        self,
+        mock_query: mock.Mock,
+        mock_validate: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ) -> None:
+        """Search filter must be validated if requested"""
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "lorem": "ipsum",
+        }
+        # Validation by default
+        self.dag.search(**filter)
+        mock_validate.assert_called_once()
+        args, kwargs = mock_validate.call_args
+        # Some other default keyword may be added to the kwargs (e.g. geometry)
+        self.assertEqual("S1_SAR_GRD", args[1].get("productType"))
+        self.assertEqual("ipsum", args[1].get("lorem"))
+        mock_validate.reset_mock()
+
+        self.dag.search(validate=True, **filter)
+        mock_validate.assert_called_once()
+        mock_validate.reset_mock()
+
+        # Don't validate request
+        self.dag.search(validate=False, **filter)
+        mock_validate.assert_not_called()
+        mock_validate.reset_mock()
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+        return_value=([], 0),
+    )
+    def test_search_validate_invalid_filter(
+        self,
+        mock_query: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ) -> None:
+        """Search must fail if validation is enabled and the filter is not valid"""
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "orbitNumber": "dolorem",
+        }
+        # Validation by default: fails cause orbitNumber
+        with self.assertRaises(ValidationError):
+            self.dag.search(raise_errors=True, **filter)
+
+        with self.assertRaises(ValidationError):
+            self.dag.search(validate=True, raise_errors=True, **filter)
+
+        # No validation, no exception
+        self.dag.search(validate=False, raise_errors=True, **filter)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
@@ -1923,13 +1982,13 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
 
-    def test_core_product_types_config_envvar(self):
-        """product types should be loaded from file defined in env var"""
+    def test_core_collections_config_envvar(self):
+        """collections should be loaded from file defined in env var"""
         # setup providers config
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
         providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
-        providers_config[0].products["TEST_PRODUCT_1"] = {"productType": "TP1"}
-        providers_config[0].products["TEST_PRODUCT_2"] = {"productType": "TP2"}
+        providers_config[0].products["TEST_PRODUCT_1"] = {"_collection": "TP1"}
+        providers_config[0].products["TEST_PRODUCT_2"] = {"_collection": "TP2"}
         with open(
             os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
         ) as f:
@@ -1938,21 +1997,21 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
             self.tmp_home_dir.name, "file_providers_override2.yml"
         )
-        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_product_types_override.yml"
+        os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_collections_override.yml"
         )
 
-        # check product types
+        # check collections
         try:
             self.dag = EODataAccessGateway()
-            pt = self.dag.list_product_types(fetch_providers=False)
+            pt = self.dag.list_collections(fetch_providers=False)
             self.assertEqual(2, len(pt))
             self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
             self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
         finally:
             # remove env variables
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
-            os.environ.pop("EODAG_PRODUCT_TYPES_CFG_FILE", None)
+            os.environ.pop("EODAG_COLLECTIONS_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
@@ -2205,6 +2264,7 @@ class TestCoreSearch(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreSearch, cls).setUpClass()
         cls.dag = EODataAccessGateway()
+        cls.dag.validate_search_request = mock.MagicMock()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
@@ -2220,14 +2280,14 @@ class TestCoreSearch(TestCoreBase):
         cls.search_results_2 = SearchResult(search_results_data_2)
         cls.search_results_size_2 = len(cls.search_results_2)
 
-    def test_guess_product_type_with_kwargs(self):
-        """guess_product_type must return the products matching the given kwargs"""
+    def test_guess_collection_with_kwargs(self):
+        """guess_collection must return the products matching the given kwargs"""
         kwargs = dict(
-            instrument="MSI",
-            platform="SENTINEL2",
-            platformSerialIdentifier="S2A",
+            instruments="MSI",
+            constellation="SENTINEL2",
+            platform="S2A",
         )
-        actual = self.dag.guess_product_type(**kwargs)
+        actual = self.dag.guess_collection(**kwargs)
         expected = [
             "S2_MSI_L1C",
             "S2_MSI_L2A",
@@ -2240,65 +2300,65 @@ class TestCoreSearch(TestCoreBase):
         ]
         self.assertListEqual(actual, expected)
 
-        # with product type specified
-        actual = self.dag.guess_product_type(productType="foo")
+        # with collection specified
+        actual = self.dag.guess_collection(collection="foo")
         self.assertListEqual(actual, ["foo"])
 
         # with dates
         self.assertEqual(
-            self.dag.product_types_config.source["S2_MSI_L1C"]["missionStartDate"],
+            self.dag.collections_config.source["S2_MSI_L1C"]["extent"]["temporal"][
+                "interval"
+            ][0][0],
             "2015-06-23T00:00:00Z",
         )
-        self.assertNotIn(
-            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-06-01")
-        )
-        self.assertIn(
-            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
-        )
+        self.assertNotIn("S2_MSI_L1C", self.dag.guess_collection(end_date="2015-06-01"))
+        self.assertIn("S2_MSI_L1C", self.dag.guess_collection(end_date="2015-07-01"))
 
         # with individual filters
-        actual = self.dag.guess_product_type(
-            platform="SENTINEL1", processingLevel="L2", intersect=True
+        actual = self.dag.guess_collection(
+            constellation="SENTINEL1", processing_level="L2", intersect=True
         )
         self.assertListEqual(actual, ["S1_SAR_OCN"])
-        # without intersect, the most appropriate product type must be at first position
-        actual = self.dag.guess_product_type(platform="SENTINEL1", processingLevel="L2")
+        # without intersect, the most appropriate collection must be at first position
+        actual = self.dag.guess_collection(
+            constellation="SENTINEL1", processing_level="L2"
+        )
         self.assertGreater(len(actual), 1)
         self.assertEqual(actual[0], "S1_SAR_OCN")
 
-    def test_guess_product_type_without_kwargs(self):
-        """guess_product_type must raise an exception when no kwargs are provided"""
-        with self.assertRaises(NoMatchingProductType):
-            self.dag.guess_product_type()
+    def test_guess_collection_without_kwargs(self):
+        """guess_collection must raise an exception when no kwargs are provided"""
+        with self.assertRaises(NoMatchingCollection):
+            self.dag.guess_collection()
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
         autospec=True,
     )
     def test__prepare_search_no_parameters(
-        self, mock_auth_session_request, mock_fetch_product_types_list
+        self, mock_auth_session_request, mock_fetch_collections_list
     ):
         """_prepare_search must create some kwargs even when no parameter has been provided"""
         _, prepared_search = self.dag._prepare_search()
         expected = {
             "geometry": None,
-            "productType": None,
+            "collection": None,
         }
-        expected = set(["geometry", "productType"])
+        expected = set(["geometry", "collection"])
         self.assertSetEqual(expected, set(prepared_search))
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
         autospec=True,
     )
     def test__prepare_search_dates(
-        self, mock_auth_session_request, mock_fetch_product_types_list
+        self, mock_auth_session_request, mock_fetch_collections_list
     ):
         """_prepare_search must handle start & end dates"""
         base = {
@@ -2306,20 +2366,18 @@ class TestCoreSearch(TestCoreBase):
             "end": "2020-02-01",
         }
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["startTimeFromAscendingNode"], base["start"])
-        self.assertEqual(
-            prepared_search["completionTimeFromAscendingNode"], base["end"]
-        )
+        self.assertEqual(prepared_search["start_datetime"], base["start"])
+        self.assertEqual(prepared_search["end_datetime"], base["end"])
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
         autospec=True,
     )
     def test__prepare_search_geom(
-        self, mock_auth_session_request, mock_fetch_product_types_list
+        self, mock_auth_session_request, mock_fetch_collections_list
     ):
         """_prepare_search must handle geom, box and bbox"""
         # The default way to provide a geom is through the 'geom' argument.
@@ -2347,14 +2405,14 @@ class TestCoreSearch(TestCoreBase):
         self.assertIsInstance(prepared_search["geometry"], Polygon)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
         autospec=True,
     )
     def test__prepare_search_locations(
-        self, mock_auth_session_request, mock_fetch_product_types_list
+        self, mock_auth_session_request, mock_fetch_collections_list
     ):
         """_prepare_search must handle a location search"""
         # When locations where introduced they could be passed
@@ -2370,32 +2428,32 @@ class TestCoreSearch(TestCoreBase):
         self.assertIn("geometry", prepared_search)
         self.assertNotIn("country", prepared_search)
 
-    def test__prepare_search_product_type_provided(self):
-        """_prepare_search must handle when a product type is given"""
-        base = {"productType": "S2_MSI_L1C"}
+    def test__prepare_search_collection_provided(self):
+        """_prepare_search must handle when a collection is given"""
+        base = {"collection": "S2_MSI_L1C"}
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["productType"], base["productType"])
+        self.assertEqual(prepared_search["collection"], base["collection"])
 
-    def test__prepare_search_product_type_guess_it(self):
-        """_prepare_search must guess a product type when required to"""
-        # Uses guess_product_type to find the product matching
+    def test__prepare_search_collection_guess_it(self):
+        """_prepare_search must guess a collection when required to"""
+        # Uses guess_collection to find the product matching
         # the best the given params.
         base = dict(
-            instrument="MSI",
-            platform="SENTINEL2",
-            platformSerialIdentifier="S2A",
+            instruments="MSI",
+            constellation="SENTINEL2",
+            platform="S2A",
         )
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["productType"], "S2_MSI_L1C")
+        self.assertEqual(prepared_search["collection"], "S2_MSI_L1C")
 
     def test__prepare_search_remove_guess_kwargs(self):
         """_prepare_search must remove the guess kwargs"""
-        # Uses guess_product_type to find the product matching
+        # Uses guess_collection to find the product matching
         # the best the given params.
         base = dict(
-            instrument="MSI",
-            platform="SENTINEL2",
-            platformSerialIdentifier="S2A",
+            instruments="MSI",
+            constellation="SENTINEL2",
+            platform="S2A",
         )
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(len(base.keys() & prepared_search.keys()), 0)
@@ -2410,69 +2468,69 @@ class TestCoreSearch(TestCoreBase):
     def test__prepare_search_preserve_additional_kwargs(self):
         """_prepare_search must preserve additional kwargs"""
         base = {
-            "productType": "S2_MSI_L1C",
-            "cloudCover": 10,
+            "collection": "S2_MSI_L1C",
+            "eo:cloud_cover": 10,
         }
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["productType"], base["productType"])
-        self.assertEqual(prepared_search["cloudCover"], base["cloudCover"])
+        self.assertEqual(prepared_search["collection"], base["collection"])
+        self.assertEqual(prepared_search["eo:cloud_cover"], base["eo:cloud_cover"])
 
     def test__prepare_search_search_plugin_has_known_product_properties(self):
         """_prepare_search must attach the product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "S2_MSI_L1C"}
+            base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # Just check that the title has been set correctly. There are more (e.g.
             # abstract, platform, etc.) but this is sufficient to check that the
-            # product_type_config dict has been created and populated.
+            # collection_config dict has been created and populated.
             self.assertEqual(
-                search_plugins[0].config.product_type_config["title"],
+                search_plugins[0].config.collection_config["title"],
                 "SENTINEL2 Level-1C",
             )
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test__prepare_search_search_plugin_has_generic_product_properties(
-        self, mock_fetch_product_types_list
+        self, mock_fetch_collections_list
     ):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "product_unknown_to_eodag"}
+            base = {"collection": "product_unknown_to_eodag"}
             search_plugins, _ = self.dag._prepare_search(**base)
-            # product_type_config is still created if the product is not known to eodag
+            # collection_config is still created if the product is not known to eodag
             # however it contains no data.
             self.assertIsNone(
-                search_plugins[0].config.product_type_config["title"],
+                search_plugins[0].config.collection_config["title"],
             )
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available(self):
-        """_prepare_search must return the search plugins when productType is defined"""
+        """_prepare_search must return the search plugins when collection is defined"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "S2_MSI_L1C"}
+            base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available_with_alias(self):
-        """_prepare_search must return the search plugins when productType is defined and alias is used"""
-        products = self.dag.product_types_config
+        """_prepare_search must return the search plugins when collection is defined and alias is used"""
+        products = self.dag.collections_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
-            base = {"productType": "S2_MSI_ALIAS"}
+            base = {"collection": "S2_MSI_ALIAS"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
@@ -2496,19 +2554,19 @@ class TestCoreSearch(TestCoreBase):
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("cop_cds")
-            base = {"productType": "S2_MSI_L1C"}
+            base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test__prepare_search_unknown_product_type(self, mock_fetch_product_types_list):
-        """_prepare_search must fetch product types if product_type is unknown"""
-        self.dag._prepare_search(product_type="foo")
-        mock_fetch_product_types_list.assert_called_once_with(self.dag)
+    def test__prepare_search_unknown_collection(self, mock_fetch_collections_list):
+        """_prepare_search must fetch collections if collection is unknown"""
+        self.dag._prepare_search(collection="foo")
+        mock_fetch_collections_list.assert_called_once_with(self.dag)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
@@ -2541,14 +2599,14 @@ class TestCoreSearch(TestCoreBase):
             return_value={"id": "foo"}
         )
 
-        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
 
         from eodag.utils.logging import get_logging_verbose
 
         _ = get_logging_verbose()
         # get_search_plugins
         mock_get_search_plugins.assert_called_once_with(
-            self.dag._plugins_manager, product_type="bar", provider="baz"
+            self.dag._plugins_manager, collection="bar", provider="baz"
         )
 
         # search plugin clear
@@ -2559,7 +2617,7 @@ class TestCoreSearch(TestCoreBase):
             self.dag,
             mock_get_search_plugins.return_value[0],
             id="foo",
-            productType="bar",
+            collection="bar",
             raise_errors=True,
             page=1,
             items_per_page=100,
@@ -2576,7 +2634,7 @@ class TestCoreSearch(TestCoreBase):
             return_value={"id": "foo"}
         )
         with self.assertLogs(level="INFO") as cm:
-            found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+            found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
             self.assertEqual(found, SearchResult([], 0))
             self.assertIn("Several products found for this id", str(cm.output))
 
@@ -2589,7 +2647,7 @@ class TestCoreSearch(TestCoreBase):
         type(mock__do_search.return_value[1]).properties = mock.PropertyMock(
             return_value={"id": "foooooo"}
         )
-        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
         self.assertEqual(found.number_matched, 1)
         self.assertEqual(len(found), 1)
 
@@ -2619,6 +2677,37 @@ class TestCoreSearch(TestCoreBase):
                 "Try to lower the value of 'items_per_page'",
                 str(cm.output),
             )
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_params_alias(self, search_plugin):
+        """_do_search must get params alias and remove provider prefix"""
+        search_plugin.provider = "peps"
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+        search_args = dict(
+            foo="bar",
+            baz=None,
+            eo_cloud_cover=10,
+            **{"eo:snow_cover": 20},
+            peps_custom_1=30,
+            **{"peps:custom_2": 40},
+        )
+
+        self.dag._do_search(search_plugin=search_plugin, **search_args)
+
+        search_plugin.query.assert_called_once_with(
+            mock.ANY,
+            foo="bar",
+            **{
+                "eo:cloud_cover": 10,
+                "eo:snow_cover": 20,
+                "custom_1": 30,
+                "custom_2": 40,
+            },
+        )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_counts(self, search_plugin):
@@ -2805,10 +2894,10 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(len(second_result_page), self.search_results_size_2)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
-    def test_search_iter_page_count(self, mock_do_seach, mock_fetch_product_types_list):
+    def test_search_iter_page_count(self, mock_do_seach, mock_fetch_collections_list):
         """search_iter_page must return an iterator"""
         mock_do_seach.side_effect = [
             self.search_results,
@@ -2816,12 +2905,12 @@ class TestCoreSearch(TestCoreBase):
         ]
 
         # no count by default
-        page_iterator = self.dag.search_iter_page(productType="S2_MSI_L1C")
+        page_iterator = self.dag.search_iter_page(collection="S2_MSI_L1C")
         next(page_iterator)
         mock_do_seach.assert_called_once_with(
             mock.ANY,
             mock.ANY,
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             geometry=None,
             raise_errors=True,
             page=1,
@@ -2835,13 +2924,13 @@ class TestCoreSearch(TestCoreBase):
             self.search_results_2,
         ]
         page_iterator = self.dag.search_iter_page(
-            productType="S2_MSI_L1C", count=True, items_per_page=2
+            collection="S2_MSI_L1C", count=True, items_per_page=2
         )
         next(page_iterator)
         mock_do_seach.assert_called_once_with(
             mock.ANY,
             mock.ANY,
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             geometry=None,
             count=True,
             raise_errors=True,
@@ -2854,7 +2943,7 @@ class TestCoreSearch(TestCoreBase):
         mock_do_seach.assert_called_with(
             mock.ANY,
             mock.ANY,
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             geometry=None,
             count=False,
             raise_errors=True,
@@ -2873,12 +2962,12 @@ class TestCoreSearch(TestCoreBase):
 
         mock_prepare_search.return_value = (
             [plugin1, plugin2],
-            {"productType": "S2_MSI_L1C"},
+            {"collection": "S2_MSI_L1C"},
         )
         mock_search_plugin.side_effect = [RequestError("fail"), iter([1, 2, 3])]
 
         page_iterator = self.dag.search_iter_page(
-            items_per_page=2, productType="S2_MSI_L1C"
+            items_per_page=2, collection="S2_MSI_L1C"
         )
         results = list(page_iterator)
         self.assertEqual(results, [1, 2, 3])
@@ -2896,12 +2985,12 @@ class TestCoreSearch(TestCoreBase):
 
         mock_prepare_search.return_value = (
             [plugin1, plugin2],
-            {"productType": "S2_MSI_L1C"},
+            {"collection": "S2_MSI_L1C"},
         )
         mock_search_plugin.side_effect = [RequestError("fail1"), RequestError("fail2")]
 
         with self.assertRaises(RequestError):
-            list(self.dag.search_iter_page(items_per_page=2, productType="S2_MSI_L1C"))
+            list(self.dag.search_iter_page(items_per_page=2, collection="S2_MSI_L1C"))
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -3048,13 +3137,13 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
 
         search_plugin = next(
-            dag._plugins_manager.get_search_plugins(product_type="S2_MSI_L1C")
+            dag._plugins_manager.get_search_plugins(collection="S2_MSI_L1C")
         )
         self.assertIsNone(search_plugin.next_page_url)
         self.assertEqual(
@@ -3121,13 +3210,13 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
 
         dag.search(
             provider="dummy_provider",
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             sort_by=[("eodagSortParam", "DESC")],
         )
 
@@ -3157,12 +3246,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         dag.search(
             provider="other_dummy_provider",
-            productType="S2_MSI_L1C",
+            collection="S2_MSI_L1C",
             sort_by=[("eodagSortParam", "DESC")],
         )
 
@@ -3194,14 +3283,14 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         # raise an error with a provider which does not support sorting feature
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
                 provider="dummy_provider",
-                productType="S2_MSI_L1C",
+                collection="S2_MSI_L1C",
                 sort_by=[("eodagSortParam", "ASC")],
             )
             self.assertIn(
@@ -3227,14 +3316,14 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         # raise an error with a parameter not sortable with a provider
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
                 provider="dummy_provider",
-                productType="S2_MSI_L1C",
+                collection="S2_MSI_L1C",
                 sort_by=[("otherEodagSortParam", "ASC")],
             )
             self.assertIn(
@@ -3264,14 +3353,14 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         dag.update_providers_config(dummy_provider_config)
         # raise an error with more sorting parameters than supported by the provider
         with self.assertLogs(level="ERROR") as cm_logs:
             dag.search(
                 provider="dummy_provider",
-                productType="S2_MSI_L1C",
+                collection="S2_MSI_L1C",
                 sort_by=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],
             )
             self.assertIn(
@@ -3324,12 +3413,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(productType="S2_MSI_L1C")
+        dag.search_all(collection="S2_MSI_L1C")
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
 
     @mock.patch(
@@ -3347,12 +3436,12 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(productType="S2_MSI_L1C")
+        dag.search_all(collection="S2_MSI_L1C")
         self.assertEqual(
             mocked_search_iter_page.call_args[1]["items_per_page"],
             DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -3373,72 +3462,70 @@ class TestCoreSearch(TestCoreBase):
                     dummy: 'dummy'
             products:
                 S2_MSI_L1C:
-                    productType: '{productType}'
+                    _collection: '{collection}'
         """
         mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(productType="S2_MSI_L1C", items_per_page=7)
+        dag.search_all(collection="S2_MSI_L1C", items_per_page=7)
         self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
 
     @unittest.skip("Disable until fixed")
     def test_search_all_request_error(self):
         """search_all must stop iteration and move to next provider when error occurs"""
 
-        product_type = "S2_MSI_L1C"
+        collection = "S2_MSI_L1C"
         dag = EODataAccessGateway()
 
-        for plugin in dag._plugins_manager.get_search_plugins(
-            product_type=product_type
-        ):
+        for plugin in dag._plugins_manager.get_search_plugins(collection=collection):
             plugin.query = mock.MagicMock()
             plugin.query.side_effect = RequestError
 
-        dag.search_all(productType="S2_MSI_L1C")
+        dag.search_all(collection="S2_MSI_L1C")
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_search_all_unknown_product_type(
-        self, mock_fetch_product_types_list, mock_search_iter_page_plugin
+    def test_search_all_unknown_collection(
+        self, mock_fetch_collections_list, mock_search_iter_page_plugin
     ):
-        """search_all must fetch product types if product_type is unknown"""
-        self.dag.search_all(productType="foo")
-        mock_fetch_product_types_list.assert_called_with(self.dag)
+        """search_all must fetch collections if collection is unknown"""
+        self.dag.search_all(collection="foo")
+        mock_fetch_collections_list.assert_called_with(self.dag)
         mock_search_iter_page_plugin.assert_called_once()
 
-    def test_fetch_external_product_type_with_auth(self):
-        """test _fetch_external_product_type when the plugin needs authentication"""
+    def test_fetch_external_collection_with_auth(self):
+        """test _fetch_external_collection when the plugin needs authentication"""
         provider = "peps"
-        product_type = "S2_MSI_L1C"
+        collection = "S2_MSI_L1C"
 
         plugin = mock.Mock()
         plugin.config = mock.Mock()
-        plugin.config.discover_product_types = {"fetch_url": "http://fake-fetch-url"}
+        plugin.config.discover_collections = {"fetch_url": "http://fake-fetch-url"}
         plugin.config.need_auth = True
         plugin.config.api_endpoint = "http://fake-api"
         plugin.provider = provider
 
-        plugin.discover_product_types = mock.Mock(return_value={"product1": {}})
+        plugin.discover_collections = mock.Mock(return_value={"product1": {}})
 
         dag = EODataAccessGateway()
         dag._plugins_manager = mock.Mock()
         dag._plugins_manager.get_search_plugins.return_value = iter([plugin])
         auth_mock = mock.Mock()
         dag._plugins_manager.get_auth.return_value = auth_mock
-        dag.update_product_types_list = mock.Mock()
-        dag._fetch_external_product_type(provider, product_type)
+        dag.update_collections_list = mock.Mock()
+        dag._fetch_external_collection(provider, collection)
 
         dag._plugins_manager.get_auth.assert_called_once_with(
             plugin.provider, plugin.config.api_endpoint, plugin.config
         )
-        plugin.discover_product_types.assert_called_once_with(
-            productType=product_type, auth=auth_mock
+        plugin.discover_collections.assert_called_once_with(
+            collection=collection, auth=auth_mock
         )
-        dag.update_product_types_list.assert_called_once_with(
+        dag.update_collections_list.assert_called_once_with(
             {provider: {"product1": {}}}
         )
 
@@ -3579,38 +3666,34 @@ class TestCoreProductAlias(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreProductAlias, cls).setUpClass()
         cls.dag = EODataAccessGateway()
-        products = cls.dag.product_types_config
+        products = cls.dag.collections_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
 
-    def test_get_alias_from_product_type(self):
+    def test_get_alias_from_collection(self):
         # return product alias
         self.assertEqual(
-            "S2_MSI_ALIAS", self.dag.get_alias_from_product_type("S2_MSI_L1C")
+            "S2_MSI_ALIAS", self.dag.get_alias_from_collection("S2_MSI_L1C")
         )
-        # product type without alias
-        self.assertEqual(
-            "S1_SAR_GRD", self.dag.get_alias_from_product_type("S1_SAR_GRD")
-        )
-        # not existing product type
-        with self.assertRaises(NoMatchingProductType):
-            self.dag.get_alias_from_product_type("JUST_A_TYPE")
+        # collection without alias
+        self.assertEqual("S1_SAR_GRD", self.dag.get_alias_from_collection("S1_SAR_GRD"))
+        # not existing collection
+        with self.assertRaises(NoMatchingCollection):
+            self.dag.get_alias_from_collection("JUST_A_TYPE")
 
-    def test_get_product_type_from_alias(self):
+    def test_get_collection_from_alias(self):
         # return product id
         self.assertEqual(
-            "S2_MSI_L1C", self.dag.get_product_type_from_alias("S2_MSI_ALIAS")
+            "S2_MSI_L1C", self.dag.get_collection_from_alias("S2_MSI_ALIAS")
         )
-        # product type without alias
-        self.assertEqual(
-            "S1_SAR_GRD", self.dag.get_product_type_from_alias("S1_SAR_GRD")
-        )
-        # not existing product type
-        with self.assertRaises(NoMatchingProductType):
-            self.dag.get_product_type_from_alias("JUST_A_TYPE")
+        # collection without alias
+        self.assertEqual("S1_SAR_GRD", self.dag.get_collection_from_alias("S1_SAR_GRD"))
+        # not existing collection
+        with self.assertRaises(NoMatchingCollection):
+            self.dag.get_collection_from_alias("JUST_A_TYPE")
 
 
 class TestCoreProviderGroup(TestCoreBase):
-    # create a group with a provider which has product type discovery mechanism
+    # create a group with a provider which has collection discovery mechanism
     # and the other one which has not it to test different cases
     group = ("creodias", "earth_search")
     group_name = "testgroup"
@@ -3642,44 +3725,44 @@ class TestCoreProviderGroup(TestCoreBase):
 
         self.assertCountEqual(self.dag.available_providers(by_group=True), providers)
 
-    def test_list_product_types(self) -> None:
+    def test_list_collections(self) -> None:
         """
-        List the product types for the provider group.
-        EODAG return the merged list of product types from both providers of the group.
+        List the collections for the provider group.
+        EODAG return the merged list of collections from both providers of the group.
         """
 
         search_products = []
         for provider in self.group:
             search_products.extend(
-                self.dag.list_product_types(provider, fetch_providers=False)
+                self.dag.list_collections(provider, fetch_providers=False)
             )
 
         merged_list = list({d["ID"]: d for d in search_products}.values())
 
         self.assertCountEqual(
-            self.dag.list_product_types(self.group_name, fetch_providers=False),
+            self.dag.list_collections(self.group_name, fetch_providers=False),
             merged_list,
         )
 
-    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+        "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
     )
-    def test_fetch_product_types_list_grouped_providers(
-        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    def test_fetch_collections_list_grouped_providers(
+        self, mock_discover_collections, mock_get_ext_collections_conf
     ):
-        """Core api must fetch product types list and update if needed"""
+        """Core api must fetch collections list and update if needed"""
         # store providers config
         tmp_providers_config = copy.deepcopy(self.dag.providers_config)
 
         # check that no provider has already been fetched
         for provider_config in self.dag.providers_config.values():
-            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+            self.assertFalse(getattr(provider_config, "collections_fetched", False))
 
-        mock_get_ext_product_types_conf.return_value = {
+        mock_get_ext_collections_conf.return_value = {
             provider: {
-                "providers_config": {"foo": {"productType": "foo"}},
-                "product_types_config": {"foo": {"title": "Foo collection"}},
+                "providers_config": {"foo": {"collection": "foo"}},
+                "collections_config": {"foo": {"title": "Foo collection"}},
             }
             for provider in self.group
         }
@@ -3693,13 +3776,13 @@ class TestCoreProviderGroup(TestCoreBase):
                 continue
             if (
                 provider not in self.group
-                and hasattr(provider_search_config, "discover_product_types")
-                and provider_search_config.discover_product_types.get("fetch_url")
+                and hasattr(provider_search_config, "discover_collections")
+                and provider_search_config.discover_collections.get("fetch_url")
             ):
-                mock_get_ext_product_types_conf.return_value[provider] = {}
-            # update grouped providers conf and check that discover_product_types() is launched for them
+                mock_get_ext_collections_conf.return_value[provider] = {}
+            # update grouped providers conf and check that discover_collections() is launched for them
             if provider in self.group and getattr(
-                provider_search_config, "discover_product_types", {}
+                provider_search_config, "discover_collections", {}
             ).get("fetch_url"):
                 provider_search_config_key = (
                     "search" if hasattr(provider_config, "search") else "api"
@@ -3708,44 +3791,44 @@ class TestCoreProviderGroup(TestCoreBase):
                     f"""
                     {provider}:
                         {provider_search_config_key}:
-                            discover_product_types:
+                            discover_collections:
                                 fetch_url: 'http://new-{provider}-endpoint'
                             """
                 )
 
         # now check that if provider is specified, only this one is fetched
         with self.assertLogs(level="INFO") as cm:
-            self.dag.fetch_product_types_list(provider=self.group_name)
+            self.dag.fetch_collections_list(provider=self.group_name)
             self.assertIn(
-                f"Fetch product types for {self.group_name} group: {', '.join(self.group)}",
+                f"Fetch collections for {self.group_name} group: {', '.join(self.group)}",
                 str(cm.output),
             )
 
-        # discover_product_types() should have been called one time per each provider of the group
-        # which has product type discovery mechanism. dag configuration of these providers should have been updated
+        # discover_collections() should have been called one time per each provider of the group
+        # which has collection discovery mechanism. dag configuration of these providers should have been updated
         for provider in self.group:
             if getattr(
-                self.dag.providers_config[provider].search, "discover_product_types", {}
+                self.dag.providers_config[provider].search, "discover_collections", {}
             ).get("fetch_url", False):
                 self.assertTrue(
                     getattr(
                         self.dag.providers_config[provider],
-                        "product_types_fetched",
+                        "collections_fetched",
                         False,
                     )
                 )
                 self.assertEqual(
                     self.dag.providers_config[provider].products["foo"],
-                    {"productType": "foo"},
+                    {"collection": "foo"},
                 )
-                mock_discover_product_types.assert_called_with(
+                mock_discover_collections.assert_called_with(
                     self.dag, provider=provider
                 )
             else:
                 self.assertFalse(
                     getattr(
                         self.dag.providers_config[provider],
-                        "product_types_fetched",
+                        "collections_fetched",
                         False,
                     )
                 )
@@ -3754,7 +3837,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 )
 
         self.assertEqual(
-            self.dag.product_types_config.source["foo"],
+            self.dag.collections_config.source["foo"],
             {"_id": "foo", "title": "Foo collection"},
         )
 
@@ -3762,58 +3845,58 @@ class TestCoreProviderGroup(TestCoreBase):
         self.dag.providers_config = tmp_providers_config
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
         autospec=True,
         return_value={
-            "providers_config": {"foo": {"productType": "foo"}},
-            "product_types_config": {"foo": {"title": "Foo collection"}},
+            "providers_config": {"foo": {"collection": "foo"}},
+            "collections_config": {"foo": {"title": "Foo collection"}},
         },
     )
-    def test_discover_product_types_grouped_providers(
-        self, mock_plugin_discover_product_types
+    def test_discover_collections_grouped_providers(
+        self, mock_plugin_discover_collections
     ):
-        """Core api must fetch grouped providers for product types"""
+        """Core api must fetch grouped providers for collections"""
         with self.assertLogs(level="INFO") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
+            ext_collections_conf = self.dag.discover_collections(
                 provider=self.group_name
             )
             self.assertIn(
-                f"Discover product types for {self.group_name} group: {', '.join(self.group)}",
+                f"Discover collections for {self.group_name} group: {', '.join(self.group)}",
                 str(cm.output),
             )
 
-        self.assertIsNotNone(ext_product_types_conf)
+        self.assertIsNotNone(ext_collections_conf)
 
-        # discover_product_types() of providers search plugin should have been called one time per each provider
-        # of the group which has product type discovery mechanism. Only config of these providers should have been
+        # discover_collections() of providers search plugin should have been called one time per each provider
+        # of the group which has collection discovery mechanism. Only config of these providers should have been
         # added in the external config
         mock_call_args_list = [
-            mock_plugin_discover_product_types.call_args_list[i].args[0]
-            for i in range(len(mock_plugin_discover_product_types.call_args_list))
+            mock_plugin_discover_collections.call_args_list[i].args[0]
+            for i in range(len(mock_plugin_discover_collections.call_args_list))
         ]
         for provider in self.group:
             provider_search_plugin = next(
                 self.dag._plugins_manager.get_search_plugins(provider=provider)
             )
             if getattr(
-                self.dag.providers_config[provider].search, "discover_product_types", {}
+                self.dag.providers_config[provider].search, "discover_collections", {}
             ).get("fetch_url", False):
                 self.assertIn(provider_search_plugin, mock_call_args_list)
                 self.assertEqual(
-                    ext_product_types_conf[provider]["providers_config"]["foo"][
-                        "productType"
+                    ext_collections_conf[provider]["providers_config"]["foo"][
+                        "collection"
                     ],
                     "foo",
                 )
                 self.assertEqual(
-                    ext_product_types_conf[provider]["product_types_config"]["foo"][
+                    ext_collections_conf[provider]["collections_config"]["foo"][
                         "title"
                     ],
                     "Foo collection",
                 )
             else:
                 self.assertNotIn(provider_search_plugin, mock_call_args_list)
-                self.assertNotIn(provider, list(ext_product_types_conf.keys()))
+                self.assertNotIn(provider, list(ext_collections_conf.keys()))
 
     def test_get_search_plugins(
         self,
@@ -3844,8 +3927,8 @@ class TestCoreStrictMode(TestCoreBase):
         self.mock_os_environ.start()
 
         # This file removes TEST_PRODUCT_2 from the main config, in order to test strict and permissive behavior
-        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_product_types_modes.yml"
+        os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_collections_modes.yml"
         )
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_providers_override.yml"
@@ -3855,28 +3938,28 @@ class TestCoreStrictMode(TestCoreBase):
         self.mock_os_environ.stop()
         super().tearDown()
 
-    def test_list_product_types_strict_mode(self):
-        """list_product_types must only return product types from the main config in strict mode"""
+    def test_list_collections_strict_mode(self):
+        """list_collections must only return collections from the main config in strict mode"""
         try:
-            os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
+            os.environ["EODAG_STRICT_COLLECTIONS"] = "true"
             dag = EODataAccessGateway()
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
-            product_types = dag.list_product_types(fetch_providers=False)
-            ids = [pt["ID"] for pt in product_types]
+            collections = dag.list_collections(fetch_providers=False)
+            ids = [pt["ID"] for pt in collections]
             self.assertNotIn("TEST_PRODUCT_2", ids)
 
         finally:
-            os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
+            os.environ.pop("EODAG_STRICT_COLLECTIONS", None)
 
-    def test_list_product_types_permissive_mode(self):
-        """list_product_types must include provider-only product types in permissive mode"""
-        if "EODAG_STRICT_PRODUCT_TYPES" in os.environ:
-            del os.environ["EODAG_STRICT_PRODUCT_TYPES"]
+    def test_list_collections_permissive_mode(self):
+        """list_collections must include provider-only collections in permissive mode"""
+        if "EODAG_STRICT_COLLECTIONS" in os.environ:
+            del os.environ["EODAG_STRICT_COLLECTIONS"]
 
         dag = EODataAccessGateway()
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
-        product_types = dag.list_product_types(fetch_providers=False)
-        ids = [pt["ID"] for pt in product_types]
+        collections = dag.list_collections(fetch_providers=False)
+        ids = [pt["ID"] for pt in collections]
         self.assertIn("TEST_PRODUCT_2", ids)

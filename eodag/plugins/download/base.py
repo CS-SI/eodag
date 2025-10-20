@@ -53,7 +53,6 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -84,8 +83,8 @@ class Download(PluginTopic):
       (e.g. ``file:///tmp/product_folder`` on Linux or
       ``file:///C:/Users/username/AppData/Local/Temp`` on Windows)
     - save a *record* file in the directory ``{output_dir}/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
-      attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
+      attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an
       existing file/directory
@@ -104,7 +103,7 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -134,7 +133,7 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -279,14 +278,14 @@ class Download(PluginTopic):
     def generate_record_hash(self, product: EOProduct) -> str:
         """Generate the record hash of the given product.
 
-        The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
-        (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+        The MD5 hash is built from the product's ``collection`` and ``properties['id']`` attributes
+        (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
 
         :param product: The product to calculate the record hash
         :returns: The MD5 hash
         """
-        # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
-        product_hash = str(product.product_type) + "-" + str(product.properties["id"])
+        # In some unit tests, `product.collection` is `None` and `product.properties["id"]` is `ìnt`
+        product_hash = str(product.collection) + "-" + str(product.properties["id"])
         return hashlib.md5(product_hash.encode("utf-8")).hexdigest()
 
     def _resolve_archive_depth(self, product_path: str) -> str:
@@ -445,7 +444,7 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -620,7 +619,7 @@ class Download(PluginTopic):
                             not_available_info = str(e)
                         else:
                             if (
-                                product.properties.get("storageStatus", ONLINE_STATUS)
+                                product.properties.get("order:status", ONLINE_STATUS)
                                 == ONLINE_STATUS
                             ) or timeout <= 0:
                                 return download
@@ -676,11 +675,11 @@ class Download(PluginTopic):
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:
-                        if "storageStatus" not in product.properties:
-                            product.properties["storageStatus"] = "N/A status"
+                        if "order:status" not in product.properties:
+                            product.properties["order:status"] = "N/A status"
                         logger.info(not_available_info)
                         raise NotAvailableError(
-                            f"{product.properties['title']} is not available ({product.properties['storageStatus']})"
+                            f"{product.properties['title']} is not available ({product.properties['order:status']})"
                             f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:

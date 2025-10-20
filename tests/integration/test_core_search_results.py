@@ -52,23 +52,22 @@ class TestCoreSearchResults(EODagTestCase):
                     "properties": {
                         "snowCover": None,
                         "resolution": None,
-                        "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
+                        "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
-                        "productType": "OCN",
-                        "downloadLink": (
+                        "product:type": "OCN",
+                        "eodag:download_link": (
                             "https://peps.cnes.fr/resto/collections/S1/"
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                         ),
-                        "eodag_provider": "peps",
-                        "eodag_product_type": "S1_SAR_OCN",
-                        "platformSerialIdentifier": "S1A",
-                        "cloudCover": 0,
-                        "title": "S1A_WV_OCN__2SSV_20180215T235323_"
-                        "20180216T001213_020624_023501_0FD3",
+                        "eodag:provider": "peps",
+                        "eodag:collection": "S1_SAR_OCN",
+                        "platform": "S1A",
+                        "eo:cloud_cover": 0,
+                        "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
-                        "instrument": "SAR-C SAR",
-                        "abstract": None,
-                        "eodag_search_intersection": {
+                        "instruments": "SAR-C SAR",
+                        "description": None,
+                        "eodag:search_intersection": {
                             "coordinates": [
                                 [
                                     [89.590721, 2.614019],
@@ -81,16 +80,16 @@ class TestCoreSearchResults(EODagTestCase):
                             "type": "Polygon",
                         },
                         "organisationName": None,
-                        "startTimeFromAscendingNode": "2018-02-15T23:53:22.871Z",
-                        "platform": None,
-                        "sensorType": None,
-                        "processingLevel": None,
+                        "start_datetime": "2018-02-15T23:53:22.871Z",
+                        "constellation": None,
+                        "eodag:sensor_type": None,
+                        "processing:level": None,
                         "orbitType": None,
                         "topicCategory": None,
                         "orbitDirection": None,
                         "parentIdentifier": None,
                         "sensorMode": None,
-                        "quicklook": None,
+                        "eodag:quicklook": None,
                     },
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
@@ -178,9 +177,9 @@ class TestCoreSearchResults(EODagTestCase):
     def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
         return {
             "properties": {
-                "eodag_provider": "peps",
-                "eodag_product_type": "S1_SAR_OCN",
-                "eodag_search_intersection": {
+                "eodag:provider": "peps",
+                "eodag:collection": "S1_SAR_OCN",
+                "eodag:search_intersection": {
                     "coordinates": geom_coords,
                     "type": geom_type,
                 },
@@ -296,7 +295,7 @@ class TestCoreSearchResults(EODagTestCase):
 
         mock_query.return_value = (products.data, len(products))
 
-        search_results = self.dag.search(productType="S2_MSI_L1C")
+        search_results = self.dag.search(collection="S2_MSI_L1C")
 
         for search_result in search_results:
             self.assertIsInstance(search_result.downloader, PluginTopic)
@@ -316,7 +315,7 @@ class TestCoreSearchResults(EODagTestCase):
             search_results_peps = json.load(f)
 
         mock_query.return_value = search_results_peps["features"]
-        search_results = self.dag.search(productType="S2_MSI_L1C", provider="peps")
+        search_results = self.dag.search(collection="S2_MSI_L1C", provider="peps")
         # use given provider and not preferred provider
         self.assertEqual("peps", search_results[0].provider)
 
@@ -325,7 +324,7 @@ class TestCoreSearchResults(EODagTestCase):
         """The core search must use the count parameter"""
 
         # count disabled by default
-        search_results = self.dag.search(productType="S2_MSI_L1C", provider="creodias")
+        search_results = self.dag.search(collection="S2_MSI_L1C", provider="creodias")
         self.assertNotIn(
             self.dag.providers_config["creodias"].search.pagination["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
@@ -334,7 +333,7 @@ class TestCoreSearchResults(EODagTestCase):
 
         # count enabled
         search_results = self.dag.search(
-            productType="S2_MSI_L1C", provider="creodias", count=True
+            collection="S2_MSI_L1C", provider="creodias", count=True
         )
         self.assertIn(
             self.dag.providers_config["creodias"].search.pagination["count_tpl"],
@@ -394,7 +393,7 @@ class TestCoreSearchResults(EODagTestCase):
                     },
                     "collection": "bar-collection",
                     "assets": {
-                        "downloadLink": {
+                        "eodag:download_link": {
                             "title": "Download link",
                             "href": "https://legacy-server/download-link",
                             "type": "application/zip",
@@ -447,14 +446,14 @@ class TestCoreSearchResults(EODagTestCase):
 
         self.assertEqual(results[0].provider, "cop_dataspace")
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
-        self.assertEqual(results[0].product_type, "foo-collection")
+        self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
         self.assertEqual(results[0].location, "https://provider-url/origin-link")
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")
         self.assertEqual(results[1].properties["id"], "legacy-server-id")
-        self.assertEqual(results[1].product_type, "bar-collection")
+        self.assertEqual(results[1].collection, "bar-collection")
         self.assertEqual(len(results[1].assets), 2)
         self.assertEqual(
             results[1].assets["asset-1-link"]["href"],
@@ -487,7 +486,7 @@ class TestCoreSearchResults(EODagTestCase):
 
         self.assertEqual(results[0].provider, "earth_search")
         self.assertEqual(results[0].properties["id"], "S2B_27VWK_20240206_0_L1C")
-        self.assertEqual(results[0].product_type, "S2_MSI_L1C")
+        self.assertEqual(results[0].collection, "S2_MSI_L1C")
         self.assertEqual(len(results[0].assets), 17)
         self.assertTrue(
             all(v["href"].startswith("s3://") for v in results[0].assets.values())
@@ -510,6 +509,6 @@ class TestCoreSearchResults(EODagTestCase):
 
         self.assertEqual(results[0].provider, GENERIC_STAC_PROVIDER)
         self.assertEqual(results[0].properties["id"], "S2B_9VXK_20171013_0")
-        self.assertEqual(results[0].product_type, "sentinel-2-l1c")
+        self.assertEqual(results[0].collection, "sentinel-2-l1c")
         self.assertEqual(len(results[0].assets), 1)
         self.assertIsInstance(results[0].downloader, Download)
