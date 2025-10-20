@@ -172,7 +172,7 @@ class Search(PluginTopic):
                 k: v
                 for k, v in format_dict_items(
                     self.config.products[GENERIC_COLLECTION],
-                    **(format_variables or {}),
+                    **({"collection": collection} | (format_variables or {})),
                 ).items()
                 if v
             }
