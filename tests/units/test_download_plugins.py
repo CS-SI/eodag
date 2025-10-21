@@ -1195,7 +1195,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             {
                 "foo": {
                     "href": path_to_uri(
-                        os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
+                        os.path.abspath(os.path.join(os.sep, "somewhere", "onething"))
                     )
                 },
                 "bar": {
