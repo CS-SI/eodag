@@ -339,7 +339,6 @@ class EOProduct:
         self,
         progress_callback: Optional[ProgressCallback] = None,
         executor: Optional[ThreadPoolExecutor] = None,
-        in_parallel: bool = False,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -357,8 +356,6 @@ class EOProduct:
                                   creation and update to give the user a
                                   feedback on the download progress
         :param executor: (optional) An executor to download assets of the product in parallel if it has any
-        :param in_parallel: (optional) Whether this download is called from
-                            :meth:`eodag.plugins.download.base.Download.download_all` method
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
@@ -396,7 +393,11 @@ class EOProduct:
             **kwargs,
         )
 
-        if executor is not None and not in_parallel:
+        # shutdown executor if it was not created during parallel product downloads
+        if (
+            executor is not None
+            and executor._thread_name_prefix != "eodag-download-all"
+        ):
             executor.shutdown(wait=True)
 
         # close progress bar if needed
