@@ -55,7 +55,7 @@ sar:instrument_mode,:green:`queryable metadata`,,:green:`queryable metadata`,,,,
 sar:polarizations,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 sat:absolute_orbit,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
 sat:orbit_state,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,:green:`queryable metadata`,,:green:`queryable metadata`,
-sat:relative_orbit,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,:green:`queryable metadata`,,,:green:`queryable metadata`,
+sat:relative_orbit,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
 services,,,,,,,,,,metadata only,,,
 size,,,,,,,metadata only,,,,,,
 start_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,metadata only,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only

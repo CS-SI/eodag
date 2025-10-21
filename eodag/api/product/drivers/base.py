@@ -44,9 +44,6 @@ class DatasetDriver(metaclass=type):
     criteria.
     """
 
-    #: legacy driver for deprecated :meth:`~eodag_cube.api.product._product.EOProduct.get_data` method usage
-    legacy: DatasetDriver
-
     #: list of patterns to match asset keys and roles
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = []
 
@@ -79,11 +76,3 @@ class DatasetDriver(metaclass=type):
                 return normalized_key or extracted_key, roles
         logger.debug(f"No key & roles could be guessed for {href}")
         return None, None
-
-
-class NoDriver(DatasetDriver):
-    """A default :attr:`~eodag.api.product.drivers.base.DatasetDriver.legacy` driver that does not implement any of the
-    methods it should implement, used for all collections for  which the deprecated
-    :meth:`~eodag_cube.api.product._product.EOProduct.get_data` method is not implemented. Expect a
-    :exc:`NotImplementedError` when trying to get the data in that case.
-    """
