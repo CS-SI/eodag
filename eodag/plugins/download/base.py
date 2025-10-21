@@ -496,6 +496,9 @@ class Download(PluginTopic):
 
         # initialize an executor if not given
         executor = ThreadPoolExecutor() if executor is None else executor
+        # set thread name prefix so that the EOProduct download() method can identify
+        # whether the executor was created during parallel product downloads or not
+        executor._thread_name_prefix = "eodag-download-all"
         if (
             max_workers := getattr(self.config, "max_workers", executor._max_workers)
         ) < executor._max_workers:
@@ -536,7 +539,6 @@ class Download(PluginTopic):
                                 wait=wait,
                                 timeout=-1,
                                 executor=executor,
-                                in_parallel=True,
                                 **kwargs,
                             )
                             futures[future] = product
