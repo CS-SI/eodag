@@ -4548,11 +4548,7 @@
       dataset: extremes-dt
       class: d1
       expver: "0001"
-      stream: oper
       type: fc
-      levtype: sfc
-      step: 0
-      param: 31
       time: "0000"
     DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
       dataset: climate-dt
@@ -4565,10 +4561,7 @@
       realization: "1"
       model: ICON
       resolution: high
-      levtype: sfc
       experiment: hist
-      param: 78
-      time: "0000"
     DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4580,11 +4573,6 @@
       experiment: hist
       realization: "1"
       model: IFS-NEMO
-      resolution: standard
-      levtype: hl
-      levelist: "100"
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4597,10 +4585,6 @@
       realization: "1"
       model: IFS-NEMO
       resolution: high
-      levtype: hl
-      levelist: "100"
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
       dataset: climate-dt
       class: d1
@@ -4613,9 +4597,6 @@
       realization: "1"
       model: ICON
       resolution: high
-      levtype: sfc
-      time: "0000"
-      param: 78
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
       dataset: climate-dt
       class: d1
@@ -4627,11 +4608,6 @@
       experiment: SSP3-7.0
       realization: "1"
       model: IFS-NEMO
-      resolution: standard
-      levelist: "100"
-      levtype: hl
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
@@ -4643,11 +4619,6 @@
       experiment: cont
       realization: "1"
       model: IFS-FESOM
-      resolution: standard
-      levelist: "100"
-      levtype: hl
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
@@ -4659,11 +4630,6 @@
       experiment: hist
       realization: "1"
       model: IFS-FESOM
-      resolution: standard
-      levelist: "100"
-      levtype: hl
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       dataset: climate-dt
       class: d1
@@ -4675,11 +4641,6 @@
       experiment: Tplus2.0K
       realization: "1"
       model: IFS-FESOM
-      resolution: standard
-      levtype: hl
-      levelist: "100"
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       dataset: climate-dt
       class: ng
@@ -4691,11 +4652,6 @@
       experiment: hist
       realization: "1"
       model: IFS-FESOM
-      resolution: standard
-      levtype: hl
-      levelist: "100"
-      time: "0000"
-      param: 131
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
       dataset: climate-dt
       class: d1
@@ -4707,11 +4663,6 @@
       experiment: SSP3-7.0
       realization: "2"
       model: IFS-FESOM
-      resolution: high
-      levelist: "100"
-      levtype: pl
-      time: "0000"
-      param: 131
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4784,15 +4735,15 @@
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
         - "$.geometry"
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
-      completionTimeFromAscendingNode:
-        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
-      productType:
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
+      end_datetime:
+        - '{{"date": "{start_datetime#to_non_separated_date}/to/{end_datetime#to_non_separated_date}"}}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
+      product:type:
         - dataset
         - $.dataset
       qs: $.qs
-      orderLink: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+      eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
       dataset: climate-dt
@@ -4805,11 +4756,6 @@
       experiment: cont
       realization: "1"
       model: IFS-FESOM
-      resolution: standard
-      levelist: "100"
-      levtype: hl
-      time: "0000"
-      param: 228246
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
       class: d1
       dataset: climate-dt
@@ -4821,11 +4767,6 @@
       experiment: SSP3-7.0
       realization: "1"
       model: IFS-FESOM
-      resolution: standard
-      levelist: "100"
-      levtype: hl
-      time: "0000"
-      param: 228246
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4834,26 +4775,26 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: '{$.headers.Location#slice_str(-36,,1)}'
-        _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
-        combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
-        orderStatusLink: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
+        eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
+        _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
+        eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
+        eodag:status_link: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
         headers:
       metadata_mapping:
-        status: $.json.status
-        message: $.json.message
+        eodag:order_status: $.json.status
+        eodag:order_message: $.json.message
         error_message: $.null
       success:
         http_code: 303
       error:
-        status: failed
+        eodag:order_status: failed
       on_success:
         result_type: json
         metadata_mapping:
-          downloadLink: $.headers.Location
+          eodag:download_link: $.headers.Location
     no_auth_download: True
     products:
       DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
