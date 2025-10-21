@@ -19,7 +19,7 @@
 import os
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import EOProduct, NoDriver, Sentinel2Driver
+from tests.context import EOProduct, Sentinel2Driver
 
 
 class TestEOProductDriverSentinel2Driver(EODagTestCase):
@@ -37,16 +37,6 @@ class TestEOProductDriverSentinel2Driver(EODagTestCase):
     def test_driver_s2_init(self):
         """The appropriate driver must have been set"""
         self.assertIsInstance(self.product.driver, Sentinel2Driver)
-        self.assertTrue(hasattr(self.product.driver, "legacy"))
-        try:
-            # import from eodag-cube if installed
-            from eodag_cube.api.product.drivers.base import (  # pyright: ignore[reportMissingImports]; isort: skip
-                DatasetDriver as DatasetDriver_cube,
-            )
-
-            self.assertIsInstance(self.product.driver.legacy, DatasetDriver_cube)
-        except ImportError:
-            self.assertIsInstance(self.product.driver.legacy, NoDriver)
 
     def test_driver_s2_guess_asset_key_and_roles(self):
         """The driver must guess appropriate asset key and roles"""

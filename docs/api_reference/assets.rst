@@ -33,4 +33,3 @@ Pixel access
 .. automethod:: eodag_cube.api.product._assets.Asset.to_xarray
 .. automethod:: eodag_cube.api.product._assets.Asset.get_file_obj
 .. automethod:: eodag_cube.api.product._assets.Asset.rio_env
-.. automethod:: eodag_cube.api.product._assets.Asset.get_data
