@@ -52,6 +52,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``dedt_lumi``          | |ECMWFSearch|                      | |OIDCAuthorizationCodeFlowAuth| | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``dedt_mn5``          | |ECMWFSearch|                      | |OIDCAuthorizationCodeFlowAuth| | |HTTPDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``earth_search``       | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``earth_search_gcs``   | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
