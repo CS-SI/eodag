@@ -4997,7 +4997,7 @@ ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
     group II simulations are based on climate change according to the CMIP6 future projections
     combined with socio-economic forcings fixed at 2015 levels. ISIMIP3b group III simulations
     additionally account for future changes in socio-economic forcing. This collection contains
-    fishing, lake fraction, land use, land transition, water descriptionion and wood harvesting input
+    fishing, lake fraction, land use, land transition, water abstraction and wood harvesting input
     data as well as information about crops and fertilizers
   instruments: []
   constellation: ISIMIP
