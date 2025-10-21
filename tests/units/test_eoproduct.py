@@ -588,3 +588,44 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.assets.get_values("foo")[0]["href"], "foo.href")
         self.assertEqual(len(product.assets.get_values("foo?o,o")), 1)
         self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")
+
+    def test_eoproduct_sorted_properties(self):
+        """eoproduct.properties must be sorted"""
+        product = self._dummy_product(
+            properties={
+                "geometry": "POINT (0 0)",
+                "b_property": "b_value",
+                "a_property": "a_value",
+                "c_property": "c_value",
+                "foo:property": "foo_value",
+                "eodag:z_property": "z_value",
+                "eodag:y_property": "y_value",
+            }
+        )
+        self.assertListEqual(
+            list(product.properties.keys()),
+            [
+                "a_property",
+                "b_property",
+                "c_property",
+                "eodag:y_property",
+                "eodag:z_property",
+                "foo:property",
+            ],
+        )
+
+    def test_eoproduct_none_properties(self):
+        """eoproduct none properties must skipped"""
+        product = self._dummy_product(
+            properties={
+                "geometry": "POINT (0 0)",
+                "b_property": "b_value",
+                "a_property": None,
+            }
+        )
+        self.assertDictEqual(
+            product.properties,
+            {
+                "b_property": "b_value",
+            },
+        )
