@@ -383,7 +383,7 @@ class EOProduct:
         )
 
         progress_callback, close_progress_callback = self._init_progress_bar(
-            progress_callback
+            progress_callback, executor
         )
 
         fs_path = self.downloader.download(
@@ -419,15 +419,22 @@ class EOProduct:
         return fs_path
 
     def _init_progress_bar(
-        self, progress_callback: Optional[ProgressCallback]
+        self,
+        progress_callback: Optional[ProgressCallback],
+        executor: Optional[ThreadPoolExecutor],
     ) -> tuple[ProgressCallback, bool]:
+        # determine position of the progress bar with a counter of executor passings
+        # to avoid bar overwriting in case of parallel downloads
+        count = executor._counter() if executor is not None else 1  # type: ignore
+
         # progress bar init
         if progress_callback is None:
-            progress_callback = ProgressCallback(position=1)
+            progress_callback = ProgressCallback(position=count)
             # one shot progress callback to close after download
             close_progress_callback = True
         else:
             close_progress_callback = False
+            progress_callback.pos = count
             # update units as bar may have been previously used for extraction
             progress_callback.unit = "B"
             progress_callback.unit_scale = True
