@@ -3528,7 +3528,15 @@
       max_items_per_page: 200
     discover_collections:
       fetch_url: null
-    available_values_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+    dynamic_discover_queryables:
+      - collection_selector:
+          - field: dataset
+            prefix: EO:ECMWF:DAT:CEMS # EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1 -> cems-fire-historical-v1
+        discover_queryables:
+          fetch_url: null
+          product_type_fetch_url: null
+          constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#to_cop_ewds_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#to_cop_ewds_collection(EO:ECMWF:DAT:)}/form.json
     metadata_mapping:
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'

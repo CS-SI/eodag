@@ -700,6 +700,20 @@ class ECMWFSearch(PostJsonSearch):
 
         default_values = deepcopy(pt_config)
         default_values.pop("metadata_mapping", None)
+
+        queryables_config = None
+        dynamic_config = getattr(self.config, "dynamic_discover_queryables", [])
+        for dc in dynamic_config:
+            for cs in dc["collection_selector"]:
+                field = cs["field"]
+                if kwargs[field].startswith(cs["prefix"]):
+                    queryables_config = dc["discover_queryables"]
+                    break
+            if queryables_config:
+                break
+        if not queryables_config:
+            queryables_config = getattr(self.config, "discover_queryables", {})
+
         filters = {**default_values, **kwargs}
 
         if "start" in filters:
@@ -713,13 +727,13 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         constraints_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
+            queryables_config.get("constraints_url", ""),
             **filters,
         )
         constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
         form_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("form_url", ""),
+            queryables_config.get("form_url", ""),
             **filters,
         )
         form: list[dict[str, Any]] = self._fetch_data(form_url)
