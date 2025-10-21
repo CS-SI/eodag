@@ -679,6 +679,8 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
+        default_values.pop("discover_queryables", None)
+        default_values.pop("queryables_dataset", None)
 
         filters["collection"] = collection
         queryables = self.discover_queryables(**{**default_values, **filters}) or {}
@@ -700,6 +702,20 @@ class ECMWFSearch(PostJsonSearch):
 
         default_values = deepcopy(pt_config)
         default_values.pop("metadata_mapping", None)
+
+        # get per product type queryables configuration and filter
+        queryables_config = default_values.get("discover_queryables", {})
+        if not queryables_config:
+            queryables_config = getattr(self.config, "discover_queryables", {})
+        if "queryables_dataset" in default_values:
+            queryables_filters = {
+                "queryables_dataset": default_values.get("queryables_dataset")
+            }
+        else:
+            queryables_filters = {}
+        default_values.pop("queryables_dataset", None)
+        default_values.pop("discover_queryables", None)
+
         filters = {**default_values, **kwargs}
 
         if "start" in filters:
@@ -713,14 +729,16 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         constraints_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
+            queryables_config.get("constraints_url", ""),
             **filters,
+            **queryables_filters,
         )
         constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
         form_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("form_url", ""),
+            queryables_config.get("form_url", ""),
             **filters,
+            **queryables_filters,
         )
         form: list[dict[str, Any]] = self._fetch_data(form_url)
 
