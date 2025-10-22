@@ -56,7 +56,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, QueryablesDict
+from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -2318,8 +2318,14 @@ class EODataAccessGateway:
                         plugin.provider,
                     )
 
+            # use queryables aliases
+            kwargs_alias = {**kwargs}
+            for search_param, field_info in Queryables.model_fields.items():
+                if search_param in kwargs and field_info.alias:
+                    kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+
             plugin_queryables = plugin.list_queryables(
-                kwargs,
+                kwargs_alias,
                 available_product_types,
                 product_type_configs,
                 product_type,
