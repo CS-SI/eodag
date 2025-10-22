@@ -1763,23 +1763,6 @@ class EODataAccessGateway:
             kwargs.pop(arg, None)
         del kwargs["locations"]
 
-        # remove None values and convert param names to their pydantic alias if any
-        search_kwargs = {}
-        ecmwf_queryables = [f"{ECMWF_PREFIX}_{k}" for k in ECMWF_ALLOWED_KEYWORDS]
-        for param, value in kwargs.items():
-            if value is None:
-                continue
-            if param in Queryables.model_fields:
-                param_alias = Queryables.model_fields[param].alias or param
-                search_kwargs[param_alias] = value
-            elif param in ecmwf_queryables:
-                # alias equivalent for ECMWF queryables
-                search_kwargs[
-                    re.sub(rf"^{ECMWF_PREFIX}_", f"{ECMWF_PREFIX}:", param)
-                ] = value
-            else:
-                search_kwargs[param] = value
-
         # fetch collections list if collection is unknown
         if (
             collection
@@ -1842,7 +1825,7 @@ class EODataAccessGateway:
             if collection is not None:
                 self._attach_collection_config(search_plugin, collection)
 
-        return search_plugins, search_kwargs
+        return search_plugins, kwargs
 
     def _do_search(
         self,
@@ -1901,10 +1884,32 @@ class EODataAccessGateway:
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
-            if validate:
-                search_plugin.validate(kwargs, prep.auth)
+            # remove None values and convert param names to their pydantic alias if any
+            search_params = {}
+            ecmwf_queryables = [
+                f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
+            ]
+            for param, value in kwargs.items():
+                if value is None:
+                    continue
+                if param in Queryables.model_fields:
+                    param_alias = Queryables.model_fields[param].alias or param
+                    search_params[param_alias] = value
+                elif param in ecmwf_queryables:
+                    # alias equivalent for ECMWF queryables
+                    search_params[
+                        re.sub(rf"^{ECMWF_PREFIX[:-1]}_", f"{ECMWF_PREFIX}", param)
+                    ] = value
+                else:
+                    # remove `provider:` or `provider_` prefix if any
+                    search_params[
+                        re.sub(r"^" + search_plugin.provider + r"[_:]", "", param)
+                    ] = value
 
-            res, nb_res = search_plugin.query(prep, **kwargs)
+            if validate:
+                search_plugin.validate(search_params, prep.auth)
+
+            res, nb_res = search_plugin.query(prep, **search_params)
 
             if not isinstance(res, list):
                 raise PluginImplementationError(

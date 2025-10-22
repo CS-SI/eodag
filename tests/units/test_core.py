@@ -2732,6 +2732,8 @@ class TestCoreSearch(TestCoreBase):
             **{"eo:snow_cover": 20},
             peps_custom_1=30,
             **{"peps:custom_2": 40},
+            **{"ecmwf:variable": "aaa"},
+            **{"ecmwf_format": "grib"},
         )
 
         self.dag._do_search(search_plugin=search_plugin, **search_args)
@@ -2740,6 +2742,8 @@ class TestCoreSearch(TestCoreBase):
             mock.ANY,
             foo="bar",
             **{
+                "ecmwf:format": "grib",
+                "ecmwf:variable": "aaa",
                 "eo:cloud_cover": 10,
                 "eo:snow_cover": 20,
                 "custom_1": 30,
