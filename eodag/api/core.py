@@ -53,7 +53,10 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import MeteoblueSearch
+from eodag.plugins.search.build_search_result import (
+    ALLOWED_KEYWORDS as ECMWF_ALLOWED_KEYWORDS,
+)
+from eodag.plugins.search.build_search_result import ECMWF_PREFIX, MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
@@ -1002,7 +1005,7 @@ class EODataAccessGateway:
                           operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
                           ``*`` and ``?`` wildcards.
         :param intersect: Join results for each parameter using INTERSECT instead of UNION.
-        :param instrument: Instrument parameter.
+        :param instruments: Instruments parameter.
         :param platform: Platform parameter.
         :param constellation: Constellation parameter.
         :param processing_level: Processing level parameter.
@@ -1883,12 +1886,20 @@ class EODataAccessGateway:
 
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
+            ecmwf_queryables = [
+                f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
+            ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
                 if param in Queryables.model_fields:
                     param_alias = Queryables.model_fields[param].alias or param
                     search_params[param_alias] = value
+                elif param in ecmwf_queryables:
+                    # alias equivalent for ECMWF queryables
+                    search_params[
+                        re.sub(rf"^{ECMWF_PREFIX[:-1]}_", f"{ECMWF_PREFIX}", param)
+                    ] = value
                 else:
                     # remove `provider:` or `provider_` prefix if any
                     search_params[
@@ -2277,8 +2288,14 @@ class EODataAccessGateway:
                         plugin.provider,
                     )
 
+            # use queryables aliases
+            kwargs_alias = {**kwargs}
+            for search_param, field_info in Queryables.model_fields.items():
+                if search_param in kwargs and field_info.alias:
+                    kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+
             plugin_queryables = plugin.list_queryables(
-                kwargs,
+                kwargs_alias,
                 available_collections,
                 collection_configs,
                 collection,
