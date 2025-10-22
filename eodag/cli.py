@@ -48,6 +48,7 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
+from concurrent.futures import ThreadPoolExecutor
 
 from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
@@ -555,6 +556,11 @@ Examples:
     type=click.Path(dir_okay=True, file_okay=False),
     help="Products or quicklooks download directory (Default: local temporary directory)",
 )
+@click.option(
+    "--max-workers",
+    type=int,
+    help="The maximum number of workers to use for downloading products in parallel",
+)
 @click.pass_context
 def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
@@ -600,7 +606,10 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     else:
         # Download products
-        downloaded_files = satim_api.download_all(search_results, output_dir=output_dir)
+        executor = ThreadPoolExecutor(max_workers=kwargs.pop("max_workers"))
+        downloaded_files = satim_api.download_all(
+            search_results, output_dir=output_dir, executor=executor
+        )
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
                 if downloaded_file is None:
