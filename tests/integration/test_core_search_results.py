@@ -50,8 +50,6 @@ class TestCoreSearchResults(EODagTestCase):
             "features": [
                 {
                     "properties": {
-                        "snowCover": None,
-                        "resolution": None,
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "product:type": "OCN",
@@ -66,7 +64,6 @@ class TestCoreSearchResults(EODagTestCase):
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
                         "instruments": "SAR-C SAR",
-                        "description": None,
                         "eodag:search_intersection": {
                             "coordinates": [
                                 [
@@ -79,17 +76,7 @@ class TestCoreSearchResults(EODagTestCase):
                             ],
                             "type": "Polygon",
                         },
-                        "organisationName": None,
                         "start_datetime": "2018-02-15T23:53:22.871Z",
-                        "constellation": None,
-                        "eodag:sensor_type": None,
-                        "processing:level": None,
-                        "orbitType": None,
-                        "topicCategory": None,
-                        "orbitDirection": None,
-                        "parentIdentifier": None,
-                        "sensorMode": None,
-                        "eodag:quicklook": None,
                     },
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
