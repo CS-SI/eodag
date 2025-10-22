@@ -153,6 +153,7 @@ def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
     default_value: Optional[Any] = None,
     required: Optional[bool] = False,
+    alias: Optional[str] = None,
 ) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object
 
@@ -180,6 +181,7 @@ def json_field_definition_to_python(
         pattern=json_field_definition.get("pattern", PydanticUndefined),
         le=json_field_definition.get("maximum", PydanticUndefined),
         ge=json_field_definition.get("minimum", PydanticUndefined),
+        alias=alias or PydanticUndefined,
     )
 
     enum = json_field_definition.get("enum")

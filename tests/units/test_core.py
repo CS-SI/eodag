@@ -1438,6 +1438,44 @@ class TestCore(TestCoreBase):
             )
 
     @mock.patch(
+        "eodag.plugins.search.base.Search.list_queryables",
+        autospec=True,
+    )
+    def test_alias_in_list_queryables(self, mock_list_queryables: mock.Mock):
+        """queryables alias must be resolved in list_queryables"""
+        self.dag.list_queryables(
+            provider="peps",
+            collection="S2_MSI_L1C",
+            start="2025-01-01",
+            end="2025-01-31",
+            geom=[-10, 35, 10, 45],
+        )
+        search_plugin = next(
+            self.dag._plugins_manager.get_search_plugins(provider="peps")
+        )
+        mock_list_queryables.assert_called_with(
+            search_plugin,
+            dict(
+                collection="S2_MSI_L1C",
+                start_datetime="2025-01-01",
+                end_datetime="2025-01-31",
+                geometry=[-10, 35, 10, 45],
+            ),
+            [
+                pt["ID"]
+                for pt in self.dag.list_collections("peps", fetch_providers=False)
+            ],
+            {
+                "S2_MSI_L1C": {
+                    "collection": "S2_MSI_L1C",
+                    **self.dag.collections_config["S2_MSI_L1C"],
+                }
+            },
+            "S2_MSI_L1C",
+            "S2_MSI_L1C",
+        )
+
+    @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
         autospec=True,
     )
@@ -2694,6 +2732,8 @@ class TestCoreSearch(TestCoreBase):
             **{"eo:snow_cover": 20},
             peps_custom_1=30,
             **{"peps:custom_2": 40},
+            **{"ecmwf:variable": "aaa"},
+            **{"ecmwf_format": "grib"},
         )
 
         self.dag._do_search(search_plugin=search_plugin, **search_args)
@@ -2702,6 +2742,8 @@ class TestCoreSearch(TestCoreBase):
             mock.ANY,
             foo="bar",
             **{
+                "ecmwf:format": "grib",
+                "ecmwf:variable": "aaa",
                 "eo:cloud_cover": 10,
                 "eo:snow_cover": 20,
                 "custom_1": 30,

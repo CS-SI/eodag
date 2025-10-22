@@ -2775,14 +2775,14 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         setattr(self.search_plugin.config, "collection_config", collection_config)
 
         provider_queryables_from_constraints_file = [
-            "ecmwf:year",
-            "ecmwf:month",
-            "ecmwf:day",
-            "ecmwf:time",
-            "ecmwf:variable",
-            "ecmwf:leadtime_hour",
-            "ecmwf:type",
-            "ecmwf:product_type",
+            "ecmwf_year",
+            "ecmwf_month",
+            "ecmwf_day",
+            "ecmwf_time",
+            "ecmwf_variable",
+            "ecmwf_leadtime_hour",
+            "ecmwf_type",
+            "ecmwf_product_type",
         ]
         default_values = deepcopy(
             getattr(self.search_plugin.config, "products", {}).get(
@@ -2978,14 +2978,14 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
 
         provider_queryables_from_constraints_file = [
-            "ecmwf:year",
-            "ecmwf:month",
-            "ecmwf:day",
-            "ecmwf:time",
-            "ecmwf:variable",
-            "ecmwf:leadtime_hour",
-            "ecmwf:type",
-            "ecmwf:product_type",
+            "ecmwf_year",
+            "ecmwf_month",
+            "ecmwf_day",
+            "ecmwf_time",
+            "ecmwf_variable",
+            "ecmwf_leadtime_hour",
+            "ecmwf_type",
+            "ecmwf_product_type",
         ]
 
         queryables = search_plugin._get_collection_queryables(
