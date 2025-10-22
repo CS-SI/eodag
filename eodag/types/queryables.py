@@ -153,6 +153,22 @@ class QueryablesDict(UserDict[str, Any]):
         self.additional_properties = additional_properties
         self.additional_information = additional_information
         super().__init__(kwargs)
+        # sort queryables: first without then with extension prefix
+        no_prefix_queryables = {
+            key: self.data[key]
+            for key in sorted(self.data)
+            if ":"
+            not in str(
+                getattr(self.data[key], "__metadata__", [Field()])[0].alias or key
+            )
+        }
+        with_prefix_queryables = {
+            key: self.data[key]
+            for key in sorted(self.data)
+            if ":"
+            in str(getattr(self.data[key], "__metadata__", [Field()])[0].alias or key)
+        }
+        self.data = no_prefix_queryables | with_prefix_queryables
 
     def _repr_html_(self, embedded: bool = False) -> str:
         add_info = (

@@ -53,7 +53,10 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import MeteoblueSearch
+from eodag.plugins.search.build_search_result import (
+    ALLOWED_KEYWORDS as ECMWF_ALLOWED_KEYWORDS,
+)
+from eodag.plugins.search.build_search_result import ECMWF_PREFIX, MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
@@ -1002,7 +1005,7 @@ class EODataAccessGateway:
                           operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
                           ``*`` and ``?`` wildcards.
         :param intersect: Join results for each parameter using INTERSECT instead of UNION.
-        :param instrument: Instrument parameter.
+        :param instruments: Instruments parameter.
         :param platform: Platform parameter.
         :param constellation: Constellation parameter.
         :param processing_level: Processing level parameter.
@@ -1760,6 +1763,23 @@ class EODataAccessGateway:
             kwargs.pop(arg, None)
         del kwargs["locations"]
 
+        # remove None values and convert param names to their pydantic alias if any
+        search_kwargs = {}
+        ecmwf_queryables = [f"{ECMWF_PREFIX}_{k}" for k in ECMWF_ALLOWED_KEYWORDS]
+        for param, value in kwargs.items():
+            if value is None:
+                continue
+            if param in Queryables.model_fields:
+                param_alias = Queryables.model_fields[param].alias or param
+                search_kwargs[param_alias] = value
+            elif param in ecmwf_queryables:
+                # alias equivalent for ECMWF queryables
+                search_kwargs[
+                    re.sub(rf"^{ECMWF_PREFIX}_", f"{ECMWF_PREFIX}:", param)
+                ] = value
+            else:
+                search_kwargs[param] = value
+
         # fetch collections list if collection is unknown
         if (
             collection
@@ -1822,7 +1842,7 @@ class EODataAccessGateway:
             if collection is not None:
                 self._attach_collection_config(search_plugin, collection)
 
-        return search_plugins, kwargs
+        return search_plugins, search_kwargs
 
     def _do_search(
         self,
@@ -1881,24 +1901,10 @@ class EODataAccessGateway:
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
-            # remove None values and convert param names to their pydantic alias if any
-            search_params = {}
-            for param, value in kwargs.items():
-                if value is None:
-                    continue
-                if param in Queryables.model_fields:
-                    param_alias = Queryables.model_fields[param].alias or param
-                    search_params[param_alias] = value
-                else:
-                    # remove `provider:` or `provider_` prefix if any
-                    search_params[
-                        re.sub(r"^" + search_plugin.provider + r"[_:]", "", param)
-                    ] = value
-
             if validate:
-                search_plugin.validate(search_params, prep.auth)
+                search_plugin.validate(kwargs, prep.auth)
 
-            res, nb_res = search_plugin.query(prep, **search_params)
+            res, nb_res = search_plugin.query(prep, **kwargs)
 
             if not isinstance(res, list):
                 raise PluginImplementationError(
