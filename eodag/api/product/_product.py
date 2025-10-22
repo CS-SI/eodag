@@ -144,6 +144,7 @@ class EOProduct:
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
             and not key.startswith("_")
+            and value is not None
         }
         common_stac_properties = {
             key: self.properties[key]
