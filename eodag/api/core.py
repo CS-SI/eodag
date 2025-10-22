@@ -2277,8 +2277,14 @@ class EODataAccessGateway:
                         plugin.provider,
                     )
 
+            # use queryables aliases
+            kwargs_alias = {**kwargs}
+            for search_param, field_info in Queryables.model_fields.items():
+                if search_param in kwargs and field_info.alias:
+                    kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+
             plugin_queryables = plugin.list_queryables(
-                kwargs,
+                kwargs_alias,
                 available_collections,
                 collection_configs,
                 collection,

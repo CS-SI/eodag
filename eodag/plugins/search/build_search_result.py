@@ -721,7 +721,6 @@ class ECMWFSearch(PostJsonSearch):
             if key not in ALLOWED_KEYWORDS | {
                 START,
                 END,
-                "geom",
                 "geometry",
             }:
                 raise ValidationError(
@@ -778,7 +777,6 @@ class ECMWFSearch(PostJsonSearch):
                 | {
                     START,
                     END,
-                    "geom",
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
