@@ -91,6 +91,7 @@ class Queryables(CommonQueryables):
         Union[str, dict[str, float], BaseGeometry],
         Field(
             None,
+            alias="geometry",
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]
