@@ -135,9 +135,18 @@ def _get_available_values_from_constraints(
     return available_values
 
 
-def _get_years_and_months_from_dates(
-    start_date_str: str, end_date_str: str
-) -> dict[str, list[str]]:
+def _replace_datetimes(params: dict[str, Any]):
+    """replace datetimes by year/month"""
+    start_date_str = params.pop("start_datetime", None)
+    end_date_str = params.pop("end_datetime", None)
+    if start_date_str and not end_date_str:
+        end_date_str = start_date_str
+    if end_date_str and not start_date_str:
+        start_date_str = end_date_str
+
+    if not start_date_str:
+        return
+
     try:
         start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%dT%H:%M:%SZ")
         end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%SZ")
@@ -147,13 +156,15 @@ def _get_years_and_months_from_dates(
     start_year = start_date.year
     end_year = end_date.year
     years = [str(y) for y in range(start_year, end_year + 1)]
-    result = {"years": years}
-    if start_year == end_year:
+    if "year" not in params:
+        params["year"] = years
+
+    if start_year == end_year and "month" not in params:
         # month is only used for collection where only one year is available
         start_month = start_date.month
         end_month = end_date.month
-        result["months"] = [f"{m:02}" for m in range(start_month, end_month + 1)]
-    return result
+        months = [f"{m:02}" for m in range(start_month, end_month + 1)]
+        params["month"] = months
 
 
 class CopGhslSearch(Search):
@@ -220,8 +231,9 @@ class CopGhslSearch(Search):
                 second=59,
             )
         else:
-            start_date_str = self.get_product_type_cfg_value("missionStartDate")
-            end_date_str = self.get_product_type_cfg_value("missionEndDate")
+            interval = self.get_collection_cfg_value("extent")["temporal"]["interval"]
+            start_date_str = interval[0][0]
+            end_date_str = interval[0][1]
             return {"start_date": start_date_str, "end_date": end_date_str}
 
         result = {}
@@ -257,6 +269,7 @@ class CopGhslSearch(Search):
             raise MisconfiguredError(
                 f"dataset mapping not available for {product_type}"
             )
+        id_params = deepcopy(params)
         if "tile_size" in parsed_metadata_mapping:
             # format tile_size
             tile_size = properties_from_json(
@@ -268,8 +281,9 @@ class CopGhslSearch(Search):
         if additional_filter:
             add_filter_value = params.pop(additional_filter)
             if add_filter_value == "TOTAL":
-                add_filter_value = ""
-            params.update({"add_filter": add_filter_value})
+                params.update({"add_filter": ""})
+            else:
+                params.update({"add_filter": add_filter_value})
 
         if isinstance(params["year"], int) or isinstance(params["year"], str):
             list_years = [str(params["year"])]
@@ -278,21 +292,22 @@ class CopGhslSearch(Search):
         current_index = 0
         for year in list_years:
             properties = deepcopy(params)
-            properties["startTimeFromAscendingNode"] = datetime.datetime(
+            properties["start_datetime"] = datetime.datetime(
                 year=int(year), month=1, day=1
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
-            properties["completionTimeFromAscendingNode"] = datetime.datetime(
+            properties["end_datetime"] = datetime.datetime(
                 year=int(year), month=12, day=31, hour=23, minute=59, second=59
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
             properties["year"] = year
 
             # information for id and download path
-            format_params = deepcopy(params)
-            format_params["year"] = year
-            format_params = {k: str(v) for k, v in format_params.items()}
-            product_id_base = product_type + "__" + "_".join(format_params.values())
+            id_params["year"] = year
+            id_params = {k: str(v) for k, v in id_params.items()}
+            product_id_base = (
+                product_type + "__" + "_".join(v for v in id_params.values() if v)
+            )
 
-            dataset = dataset.format(**format_params)
+            dataset = dataset.format(**params)
             dataset = dataset.replace(
                 "__", "_"
             )  # in case additional filter value is empty
@@ -313,12 +328,12 @@ class CopGhslSearch(Search):
                 # create id
                 product_id = f"{product_id_base}__{tile['tileID']}"
                 properties["id"] = properties["title"] = product_id
-                downloadLink = metadata_mapping.get("downloadLink").format(
+                download_link = metadata_mapping.get("eodag:download_link").format(
                     dataset=dataset, tile_id=tile["tileID"]
                 )
-                properties["downloadLink"] = downloadLink
+                properties["eodag:download_link"] = download_link
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, productType=product_type
+                    provider="cop_ghsl", properties=properties, collection=product_type
                 )
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
@@ -328,19 +343,21 @@ class CopGhslSearch(Search):
         return products, current_index
 
     def _create_products_without_tiles(
-        self, product_type: str, prep: PreparedSearch, filter_params: dict[str, Any]
+        self, collection: str, prep: PreparedSearch, filter_params: dict[str, Any]
     ) -> tuple[list[EOProduct], Optional[int]]:
         filters = deepcopy(filter_params)
-        default_geometry = getattr(self.config, "metadata_mapping")["defaultGeometry"]
+        default_geometry = getattr(self.config, "metadata_mapping")[
+            "eodag:default_geometry"
+        ]
         properties = {}
         properties["geometry"] = default_geometry[1]
-        product_type_config = self.config.products.get(product_type, {})
+        product_type_config = self.config.products.get(collection, {})
         download_link = product_type_config.get("metadata_mapping", {}).get(
-            "downloadLink", None
+            "eodag:download_link", None
         )
         if not download_link:
             raise MisconfiguredError(
-                f"Download link configuration missing for product type {product_type}"
+                f"Download link configuration missing for product type {collection}"
             )
 
         # product type with assets mapping
@@ -362,16 +379,18 @@ class CopGhslSearch(Search):
                 if i < start_index:
                     continue
                 filters[grouped_by] = format_params[grouped_by] = str(value)
-                product_id = product_type + "__" + "_".join(format_params.values())
+                product_id = collection + "__" + "_".join(format_params.values())
                 properties["id"] = properties["title"] = product_id
                 properties.update(format_params)
-                properties["downloadLink"] = download_link.format(**format_params)
+                properties["eodag:download_link"] = download_link.format(
+                    **format_params
+                )
                 datetimes = self._get_start_and_end_from_properties(format_params)
-                properties["startTimeFromAscendingNode"] = datetimes["start_date"]
-                properties["completionTimeFromAscendingNode"] = datetimes["end_date"]
+                properties["start_datetime"] = datetimes["start_date"]
+                properties["end_datetime"] = datetimes["end_date"]
                 properties[grouped_by] = value
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, productType=product_type
+                    provider="cop_ghsl", properties=properties, collection=collection
                 )
                 if assets_mapping:  # item with several assets
                     assets = AssetsDict(product=product)
@@ -391,14 +410,14 @@ class CopGhslSearch(Search):
                 if i == end_index:
                     break
         else:  # product type with only one file to download
-            product_id = f"{product_type}_ALL"
+            product_id = f"{collection}_ALL"
             properties["id"] = properties["title"] = product_id
             datetimes = self._get_start_and_end_from_properties(properties)
-            properties["startTimeFromAscendingNode"] = datetimes["start_date"]
-            properties["completionTimeFromAscendingNode"] = datetimes["end_date"]
-            properties["downloadLink"] = download_link
+            properties["start_datetime"] = datetimes["start_date"]
+            properties["end_datetime"] = datetimes["end_date"]
+            properties["eodag:download_link"] = download_link
             product = EOProduct(
-                provider="cop_ghsl", properties=properties, productType=product_type
+                provider="cop_ghsl", properties=properties, collection=collection
             )
             products.append(product)
             num_products = 1
@@ -414,14 +433,14 @@ class CopGhslSearch(Search):
         returns a a dict with a list of length 1 to simplify further processing
         """
         product_id = query_params.pop("id")
-        product_type = query_params["productType"]
+        collection = query_params["collection"]
         tile_id = product_id.split("__")[-1]
         filter_part = product_id.split("__")[1]
-        constraints_values = self._fetch_constraints(product_type)["constraints"]
+        constraints_values = self._fetch_constraints(collection)["constraints"]
         available_values = _get_available_values_from_constraints(
-            constraints_values, {}, product_type
+            constraints_values, {}, collection
         )
-        product_type_config = deepcopy(self.config.products.get(product_type, {}))
+        product_type_config = deepcopy(self.config.products.get(collection, {}))
         for key, values in available_values.items():
             for value in values:
                 if value in filter_part:
@@ -440,34 +459,34 @@ class CopGhslSearch(Search):
             return None
 
     def _get_tiles_for_filters(
-        self, product_type_config: dict[str, Any], params: dict[str, Any]
+        self, collection_config: dict[str, Any], params: dict[str, Any]
     ) -> Optional[tuple[dict[str, list[dict[str, Any]]], str]]:
         """fetch the tiles matching the given filters from the provider"""
 
         logger.debug(f"get tiles for filter parameters {params}")
-        product_type = params.pop("productType")
+        collection = params.pop("collection")
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
         # update filters with values from product type mapping
-        provider_product_type = product_type_config.pop("productType", None)
+        provider_product_type = collection_config.pop("product:type", None)
         if not provider_product_type:
             raise MisconfiguredError(
-                f"provider productType mapping not available for {product_type}"
+                f"provider product type mapping not available for {collection}"
             )
         filter_params = deepcopy(params)
         filter_params.pop("geometry", None)
-        filter_params.update(product_type_config)
+        filter_params.update(collection_config)
         filter_params.pop("metadata_mapping", None)
         filter_params.pop("assets_mapping", None)
 
-        self._check_input_parameters_valid(product_type, filter_params)
+        self._check_input_parameters_valid(collection, filter_params)
         # update parameters based on changes during validation
         params.update(filter_params)
 
         # fetch available tiles based on filters
         if "year" not in filter_params:
-            logger.warning(f"no tiles available for {product_type}")
+            logger.warning(f"no tiles available for {collection}")
             return None
         if isinstance(filter_params["year"], int) or isinstance(
             filter_params["year"], str
@@ -483,7 +502,7 @@ class CopGhslSearch(Search):
                     f"{filter_params['tile_size']}_{filter_params['coord_system']}"
                 )
             except KeyError:
-                logger.warning(f"no tiles available for {product_type}")
+                logger.warning(f"no tiles available for {collection}")
                 return None
             tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
             try:
@@ -521,53 +540,42 @@ class CopGhslSearch(Search):
         page = getattr(prep, "page", 1)
         items_per_page = getattr(prep, "items_per_page", DEFAULT_ITEMS_PER_PAGE)
 
-        # get year from start/end time if not given separately
-        start_time = kwargs.pop("startTimeFromAscendingNode", None)
-        end_time = kwargs.pop("completionTimeFromAscendingNode", None)
-        if start_time and not end_time:
-            end_time = start_time
-        if end_time and not start_time:
-            start_time = end_time
-        if start_time:
-            years_months = _get_years_and_months_from_dates(start_time, end_time)
-            if "year" not in kwargs:
-                kwargs["year"] = years_months["years"]
-            if "month" not in kwargs and "months" in years_months:
-                kwargs["month"] = years_months["months"]
+        # get year/month from start/end time if not given separately
+        _replace_datetimes(kwargs)
 
-        product_type = kwargs.get("productType", None)
-        if not product_type:
-            product_type = kwargs["productType"] = prep.product_type
-        if not isinstance(product_type, str):
-            raise MisconfiguredError("invalid product type %s", product_type)
-        product_type_config = deepcopy(self.config.products.get(product_type, {}))
+        collection = kwargs.get("collection", None)
+        if not collection:
+            collection = kwargs["collection"] = prep.collection
+        if not isinstance(collection, str):
+            raise MisconfiguredError("invalid product type %s", collection)
+        collection_config = deepcopy(self.config.products.get(collection, {}))
         if "id" in kwargs and "ALL" not in kwargs["id"]:
             tiles_or_none = self._get_tile_from_product_id(kwargs)
         else:
-            tiles_or_none = self._get_tiles_for_filters(product_type_config, kwargs)
+            tiles_or_none = self._get_tiles_for_filters(collection_config, kwargs)
         if tiles_or_none:
             tiles, unit = tiles_or_none
         else:
-            kwargs.update(product_type_config)
-            return self._create_products_without_tiles(product_type, prep, kwargs)
+            kwargs.update(collection_config)
+            return self._create_products_without_tiles(collection, prep, kwargs)
 
         # create products from tiles
-        kwargs.update(product_type_config)
+        kwargs.update(collection_config)
         kwargs["page"] = page
         kwargs["per_page"] = items_per_page
-        constraints_filters = self._fetch_constraints(product_type)
+        constraints_filters = self._fetch_constraints(collection)
         additional_filter = constraints_filters.get("additional_filter", None)
         if additional_filter:
             products, count = self._create_products_from_tiles(
                 tiles,
                 unit,
-                product_type,
+                collection,
                 kwargs,
                 additional_filter=additional_filter,
             )
         else:
             products, count = self._create_products_from_tiles(
-                tiles, unit, product_type, kwargs
+                tiles, unit, collection, kwargs
             )
         if prep.count:
             return products, count
@@ -600,25 +608,30 @@ class CopGhslSearch(Search):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Create queryables list based on constraints
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: queryable parameters dict
         """
 
-        product_type = kwargs.pop("productType")
+        collection = kwargs.pop("collection")
+        kwargs.pop("product:type")
         grouped_by = kwargs.pop("grouped_by", None)
-        constraints_values = self._fetch_constraints(product_type)["constraints"]
+        _replace_datetimes(kwargs)
+        constraints_values = self._fetch_constraints(collection)["constraints"]
         available_values = _get_available_values_from_constraints(
-            constraints_values, kwargs, product_type
+            constraints_values, kwargs, collection
         )
         queryables = {}
         for name, values in available_values.items():
+            required = True
+            if name == grouped_by:
+                required = False
             queryables[name] = Annotated[
                 get_args(
                     json_field_definition_to_python(
                         {"type": "string", "title": name, "enum": values},
                         default_value=kwargs.get(name, None),
-                        required=True,
+                        required=required,
                     )
                 )
             ]
@@ -627,11 +640,11 @@ class CopGhslSearch(Search):
             queryables.update(
                 {
                     "start": Queryables.get_with_default(
-                        "start", kwargs.get("startTimeFromAscendingNode")
+                        "start", kwargs.get("start_datetime")
                     ),
                     "end": Queryables.get_with_default(
                         "end",
-                        kwargs.get("completionTimeFromAscendingNode"),
+                        kwargs.get("end_datetime"),
                     ),
                 }
             )
