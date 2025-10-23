@@ -4200,18 +4200,18 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         mock_requests_get.return_value = MockResponse(
             json_data=provider_tiles, status_code=200
         )
-        product_type = "GHS_BUILT_S"
+        collection = "GHS_BUILT_S"
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider="cop_ghsl"
+                collection=collection, provider="cop_ghsl"
             )
         )
-        product_type_config = deepcopy(plugin.config.products.get(product_type, {}))
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         input_params = {
             "year": ["2000", "2005"],
             "coord_system": "4326",
             "tile_size": "3ss",
-            "productType": product_type,
+            "collection": collection,
         }
         tiles, unit = plugin._get_tiles_for_filters(product_type_config, input_params)
         self.assertEqual("lat/lon", unit)
@@ -4265,14 +4265,14 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         mock_requests_get.return_value = MockResponse(
             json_data=provider_tiles, status_code=200
         )
-        product_type = "GHS_BUILT_S"
+        collection = "GHS_BUILT_S"
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider="cop_ghsl"
+                collection=collection, provider="cop_ghsl"
             )
         )
         params = {
-            "productType": product_type,
+            "collection": collection,
             "id": "GHS_BUILT_S__4326_3ss_2000_NRES__R3_C4",
         }
         tile, unit = plugin._get_tile_from_product_id(params)
@@ -4321,13 +4321,13 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
                 },
             ],
         }
-        product_type = "GHS_BUILT_S"
+        collection = "GHS_BUILT_S"
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider="cop_ghsl"
+                collection=collection, provider="cop_ghsl"
             )
         )
-        product_type_config = deepcopy(plugin.config.products.get(product_type, {}))
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         params = product_type_config
         params["year"] = ["2000", "2005"]
         params["coord_system"] = "4326"
@@ -4336,23 +4336,19 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         params["per_page"] = 5
         params["page"] = 1
         products, count = plugin._create_products_from_tiles(
-            tiles, "lat/lon", product_type, params, "classification"
+            tiles, "lat/lon", collection, params, "classification"
         )
         self.assertEqual(8, count)
         self.assertEqual(5, len(products))
         properties = products[0].properties
-        self.assertEqual(
-            "2000-01-01T00:00:00Z", properties["startTimeFromAscendingNode"]
-        )
-        self.assertEqual(
-            "2000-12-31T23:59:59Z", properties["completionTimeFromAscendingNode"]
-        )
+        self.assertEqual("2000-01-01T00:00:00Z", properties["start_datetime"])
+        self.assertEqual("2000-12-31T23:59:59Z", properties["end_datetime"])
         self.assertEqual("2000", properties["year"])
         self.assertEqual("4326", properties["coord_system"])
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
             "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R3_C3.zip",
-            properties["downloadLink"],
+            properties["eodag:download_link"],
         )
         geometry = get_geometry_from_various(
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
@@ -4364,69 +4360,67 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 
         prep = PreparedSearch(items_per_page=5)
         # product type with one file
-        product_type = "GHS_FUA"
+        collection = "GHS_FUA"
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider="cop_ghsl"
+                collection=collection, provider="cop_ghsl"
             )
         )
-        plugin.config.product_type_config = {
-            "productType": product_type,
-            "missionStartDate": "2015-01-01T00:00:00Z",
-            "missionEndDate": "2015-12-31T00:00:00Z",
+        plugin.config.collection_config = {
+            "collection": collection,
+            "extent": {
+                "temporal": {
+                    "interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]
+                }
+            },
         }
-        products, count = plugin._create_products_without_tiles(product_type, prep, {})
+        products, count = plugin._create_products_without_tiles(collection, prep, {})
         self.assertEqual(1, count)
         self.assertEqual(1, len(products))
         properties = products[0].properties
-        self.assertEqual(
-            "2015-01-01T00:00:00Z", properties["startTimeFromAscendingNode"]
-        )
-        self.assertEqual(
-            "2015-12-31T00:00:00Z", properties["completionTimeFromAscendingNode"]
-        )
+        self.assertEqual("2015-01-01T00:00:00Z", properties["start_datetime"])
+        self.assertEqual("2015-12-31T00:00:00Z", properties["end_datetime"])
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A"
             "/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip",
-            properties["downloadLink"],
+            properties["eodag:download_link"],
         )
         # product type with several files
-        product_type = "GHS_UCDB_REGION"
+        collection = "GHS_UCDB_REGION"
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider="cop_ghsl"
+                collection=collection, provider="cop_ghsl"
             )
         )
-        plugin.config.product_type_config = {
-            "productType": product_type,
-            "missionStartDate": "1975-01-01T00:00:00Z",
-            "missionEndDate": "2030-12-31T00:00:00Z",
+        plugin.config.collection_config = {
+            "collection": collection,
+            "extent": {
+                "temporal": {
+                    "interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]
+                }
+            },
         }
         # with filter for region
         products, count = plugin._create_products_without_tiles(
-            product_type, prep, {"region": "EUROPE", "grouped_by": "region"}
+            collection, prep, {"region": "EUROPE", "grouped_by": "region"}
         )
         self.assertEqual(1, count)
         self.assertEqual(1, len(products))
         properties = products[0].properties
-        self.assertEqual(
-            "1975-01-01T00:00:00Z", properties["startTimeFromAscendingNode"]
-        )
-        self.assertEqual(
-            "2030-12-31T00:00:00Z", properties["completionTimeFromAscendingNode"]
-        )
+        self.assertEqual("1975-01-01T00:00:00Z", properties["start_datetime"])
+        self.assertEqual("2030-12-31T00:00:00Z", properties["end_datetime"])
         self.assertEqual("EUROPE", properties["region"])
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A"
             "/GHS_UCDB_REGION_EUROPE_R2024A/V1-1/GHS_UCDB_REGION_EUROPE_R2024A_V1_1.zip",
-            properties["downloadLink"],
+            properties["eodag:download_link"],
         )
 
         # product type with several files and assets
-        product_type = "GHS_ENACT_POP"
+        collection = "GHS_ENACT_POP"
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider="cop_ghsl"
+                collection=collection, provider="cop_ghsl"
             )
         )
         filters = {
@@ -4435,20 +4429,16 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             "tile_size": "30ss",
             "coord_system": "4326",
         }
-        product_type_mapping = deepcopy(plugin.config.products.get(product_type, {}))
+        product_type_mapping = deepcopy(plugin.config.products.get(collection, {}))
         filters.update(product_type_mapping)
         products, count = plugin._create_products_without_tiles(
-            product_type, prep, filters
+            collection, prep, filters
         )
         self.assertEqual(1, count)
         self.assertEqual(1, len(products))
         properties = products[0].properties
-        self.assertEqual(
-            "2011-02-01T00:00:00Z", properties["startTimeFromAscendingNode"]
-        )
-        self.assertEqual(
-            "2011-02-28T23:59:59Z", properties["completionTimeFromAscendingNode"]
-        )
+        self.assertEqual("2011-02-01T00:00:00Z", properties["start_datetime"])
+        self.assertEqual("2011-02-28T23:59:59Z", properties["end_datetime"])
         self.assertEqual("2011", properties["year"])
         self.assertEqual("02", properties["month"])
         assets = products[0].assets
@@ -4467,10 +4457,13 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
         plugin = next(
             self.plugins_manager.get_search_plugins(
-                product_type="GHS_BUILT_S", provider="cop_ghsl"
+                collection="GHS_BUILT_S", provider="cop_ghsl"
             )
         )
-        kwargs = {"productType": "GHS_BUILT_S"}
+        kwargs = {"collection": "GHS_BUILT_S"}
+        collection_config = plugin.config.products.get("GHS_BUILT_S", {})
+        kwargs.update(collection_config)
+        kwargs.pop("metadata_mapping")
         queryables = plugin.discover_queryables(**kwargs)
         self.assertEqual(6, len(queryables))
         expected_queryables = [
@@ -4483,9 +4476,27 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         ]
         for qu in expected_queryables:
             self.assertIn(qu, queryables)
-        kwargs = {"productType": "GHS_ENACT_POP"}
+
+        # product type without geometry filter
+        constraints = deepcopy(self.constraints)
+        for constraint in constraints:
+            constraint["year"] = ["2011"]
+            constraint["month"] = ["01", "02"]
+        mock_fetch_constraints.return_value = {"constraints": constraints}
+        kwargs = {"collection": "GHS_ENACT_POP"}
+        collection_config = plugin.config.products.get("GHS_ENACT_POP", {})
+        kwargs.update(collection_config)
+        kwargs.pop("metadata_mapping")
+        kwargs.pop("assets_mapping")
         queryables = plugin.discover_queryables(**kwargs)
         self.assertEqual(6, len(queryables))
-        expected_queryables = ["year", "tile_size", "coord_system", "start", "end"]
+        expected_queryables = [
+            "year",
+            "tile_size",
+            "coord_system",
+            "month",
+            "start",
+            "end",
+        ]
         for qu in expected_queryables:
             self.assertIn(qu, queryables)

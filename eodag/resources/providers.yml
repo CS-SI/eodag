@@ -6486,7 +6486,7 @@
     need_auth: false
     ssl_verify: true
     metadata_mapping:
-      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     pagination:
       max_items_per_page: 10000
     discover_queryables:
@@ -6496,83 +6496,83 @@
   products:
     # product types with tiles
     GHS_BUILT_S:
-      productType: BUILT
+      product:type: BUILT
       metadata_mapping:
-        resolution: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_BUILT_S_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_BUILT_H:
-      productType: builtH
+      product:type: builtH
       year: 2018
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_H_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_BUILT_V:
-      productType: builtV
+      product:type: builtV
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_BUILT_V_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_BUILT_C:
-      productType: builtC
+      product:type: builtC
       year: 2018
       tile_size: 10m
       coord_system: 54009
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_C_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_LAND:
-      productType: land
+      product:type: land
       year: 2018
       coord_system: 54009
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_LAND_E2018_GLOBE_R2022A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_POP:
-      productType: POP
+      product:type: POP
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_POP_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_SMOD:
-      productType: SMOD
+      product:type: SMOD
       tile_size: 1k
       coord_system: 54009
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("k", "000")}'
         dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
     GHS_ESM:
-      productType: ESM
+      product:type: ESM
       year: 2015
       coord_system: 3035
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
     # produc types with one file
     GHS_DUC:
-      productType: DUC
+      product:type: DUC
       metadata_mapping:
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_DUC_GLOBE_R2023A/V2-0/GHS_DUC_MT_GLOBE_R2023A_V2_0.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_DUC_GLOBE_R2023A/V2-0/GHS_DUC_MT_GLOBE_R2023A_V2_0.zip'
     GHS_FUA:
-      productType: FUA
+      product:type: FUA
       metadata_mapping:
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip'
     GHS_BUILT_LAUSTAT:
-      productType: BUILT_LAUSTAT
+      product:type: BUILT_LAUSTAT
       metadata_mapping:
-        downloadLink: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
     # products with several files
     GHS_ENACT_POP:
-      productType: ENACT_POP
+      product:type: ENACT_POP
       grouped_by: month
       year: 2011
       metadata_mapping:
-        downloadLink: https://jeodpp.jrc.ec.europa.eu
+        eodag:download_link: https://jeodpp.jrc.ec.europa.eu
       assets_mapping:
         day:
           href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{coord_system}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{coord_system}_{tile_size}_V1_0.zip'
@@ -6583,15 +6583,15 @@
           type: "application/zip"
           title: Nightime grid
     GHS_UCDB_DOMAIN:
-      productType: UCDB
+      product:type: UCDB
       grouped_by: thematic_domain
       metadata_mapping:
-        downloadLink: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_THEME_GLOBE_R2024A/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A/V1-1/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A_V1_1.zip
+        eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_THEME_GLOBE_R2024A/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A/V1-1/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A_V1_1.zip
     GHS_UCDB_REGION:
-      productType: UCDB
+      product:type: UCDB
       grouped_by: region
       metadata_mapping:
-        downloadLink: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A/GHS_UCDB_REGION_{region}_R2024A/V1-1/GHS_UCDB_REGION_{region}_R2024A_V1_1.zip
+        eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A/GHS_UCDB_REGION_{region}_R2024A/V1-1/GHS_UCDB_REGION_{region}_R2024A_V1_1.zip
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
