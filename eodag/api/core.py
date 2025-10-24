@@ -1248,6 +1248,12 @@ class EODataAccessGateway:
                 )
             elif len(search_results) > 0:
                 search_results.errors = errors
+                if count and search_results.number_matched:
+                    logger.info(
+                        "Found %s result(s) on provider '%s'",
+                        search_results.number_matched,
+                        search_results[0].provider,
+                    )
                 return search_results
 
         if i > 1:
