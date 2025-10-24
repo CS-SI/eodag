@@ -333,6 +333,33 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
 
 ----
 
+**cop_ghsl**
+^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Global Human Settlement Layer.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://human-settlement.emergency.copernicus.eu/
+        :color: primary
+        :outline:
+        :tooltip: Copernicus Global Human Settlement Layer website
+
+        :fas:`external-link-alt`
+
+No credentials are needed
+
+----
+
 **cop_marine**
 ^^^^^^^^^^^^^^^^
 
