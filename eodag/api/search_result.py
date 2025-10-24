@@ -303,6 +303,8 @@ class SearchResult(UserList[EOProduct]):
                 return current._dag._do_search(
                     search_plugin,
                     raise_errors=self.raise_errors,
+                    # validate no needed for next pages
+                    validate=False,
                     **search_kwargs,
                 )
 

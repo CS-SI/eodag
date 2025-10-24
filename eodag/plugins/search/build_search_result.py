@@ -506,10 +506,8 @@ class ECMWFSearch(PostJsonSearch):
         raw_search_results.query_params = (
             prep.query_params if hasattr(prep, "query_params") else {}
         )
-        raw_search_results.product_type_def_params = (
-            prep.product_type_def_params
-            if hasattr(prep, "product_type_def_params")
-            else {}
+        raw_search_results.collection_def_params = (
+            prep.collection_def_params if hasattr(prep, "collection_def_params") else {}
         )
         return raw_search_results
 
@@ -1390,7 +1388,7 @@ class MeteoblueSearch(ECMWFSearch):
         raw_search_results.search_params = kwargs
 
         raw_search_results.query_params = prep.query_params
-        raw_search_results.product_type_def_params = prep.product_type_def_params
+        raw_search_results.collection_def_params = prep.collection_def_params
         return raw_search_results
 
     def build_query_string(
@@ -1585,9 +1583,9 @@ class WekeoECMWFSearch(ECMWFSearch):
             raw_search_results.query_params = (
                 prep.query_params if hasattr(prep, "query_params") else {}
             )
-            raw_search_results.product_type_def_params = (
-                prep.product_type_def_params
-                if hasattr(prep, "product_type_def_params")
+            raw_search_results.collection_def_params = (
+                prep.collection_def_params
+                if hasattr(prep, "collection_def_params")
                 else {}
             )
             return raw_search_results

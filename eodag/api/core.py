@@ -70,6 +70,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
+    _deprecated,
     get_collection_dates,
     get_geometry_from_various,
     makedirs,
@@ -1857,22 +1858,22 @@ class EODataAccessGateway:
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
             for eo_product in search_result.data:
-                # if product_type is not defined, try to guess using properties
-                if eo_product.product_type is None:
+                # if collection is not defined, try to guess using properties
+                if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")
                     try:
-                        guesses = self.guess_product_type(
+                        guesses = self.guess_collection(
                             intersect=False,
                             **{
                                 k: pattern.sub("", str(v).upper())
                                 for k, v in eo_product.properties.items()
                                 if k
                                 in [
-                                    "instrument",
+                                    "instruments",
+                                    "constellation",
                                     "platform",
-                                    "platformSerialIdentifier",
-                                    "processingLevel",
-                                    "sensorType",
+                                    "processing:level",
+                                    "eodag:sensor_type",
                                     "keywords",
                                 ]
                                 and v is not None
@@ -1881,15 +1882,15 @@ class EODataAccessGateway:
                     except NoMatchingCollection:
                         pass
                     else:
-                        eo_product.product_type = guesses[0]
+                        eo_product.collection = guesses[0]
 
                 try:
-                    if eo_product.product_type is not None:
-                        eo_product.product_type = self.get_product_type_from_alias(
-                            eo_product.product_type
+                    if eo_product.collection is not None:
+                        eo_product.collection = self.get_collection_from_alias(
+                            eo_product.collection
                         )
                 except NoMatchingCollection:
-                    logger.debug("product type %s not found", eo_product.product_type)
+                    logger.debug("collection %s not found", eo_product.collection)
 
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)

@@ -492,7 +492,7 @@ class CopMarineSearch(StaticStacSearch):
 
         search_params = (
             {"items_per_page": prep.items_per_page}
-            | {"productType": product_type}
+            | {"collection": collection}
             | {"provider": self.provider}
         )
 

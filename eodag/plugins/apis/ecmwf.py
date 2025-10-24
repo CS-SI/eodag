@@ -113,10 +113,8 @@ class EcmwfApi(Api, ECMWFSearch):
         raw_search_results.query_params = (
             prep.query_params if hasattr(prep, "query_params") else {}
         )
-        raw_search_results.product_type_def_params = (
-            prep.product_type_def_params
-            if hasattr(prep, "product_type_def_params")
-            else {}
+        raw_search_results.collection_def_params = (
+            prep.collection_def_params if hasattr(prep, "collection_def_params") else {}
         )
         return raw_search_results
 

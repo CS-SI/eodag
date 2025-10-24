@@ -1904,7 +1904,7 @@ class TestCore(TestCoreBase):
         """Search filter must be validated if requested"""
         filter = {
             "provider": "peps",
-            "productType": "S1_SAR_GRD",
+            "collection": "S1_SAR_GRD",
             "lorem": "ipsum",
         }
         # Validation by default
@@ -1912,7 +1912,7 @@ class TestCore(TestCoreBase):
         mock_validate.assert_called_once()
         args, kwargs = mock_validate.call_args
         # Some other default keyword may be added to the kwargs (e.g. geometry)
-        self.assertEqual("S1_SAR_GRD", args[1].get("productType"))
+        self.assertEqual("S1_SAR_GRD", args[1].get("collection"))
         self.assertEqual("ipsum", args[1].get("lorem"))
         mock_validate.reset_mock()
 
@@ -1932,7 +1932,7 @@ class TestCore(TestCoreBase):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
-        return_value=([], 0),
+        return_value=SearchResult([]),
     )
     def test_search_validate_invalid_filter(
         self,
@@ -1942,8 +1942,8 @@ class TestCore(TestCoreBase):
         """Search must fail if validation is enabled and the filter is not valid"""
         filter = {
             "provider": "peps",
-            "productType": "S1_SAR_GRD",
-            "orbitNumber": "dolorem",
+            "collection": "S1_SAR_GRD",
+            "sat:absolute_orbit": "dolorem",
         }
         # Validation by default: fails cause orbitNumber
         with self.assertRaises(ValidationError):
@@ -3578,7 +3578,7 @@ class TestCoreSearch(TestCoreBase):
     def test_search_all_unknown_collection(
         self, mock_fetch_collections_list, mock__do_search
     ):
-        """search_all must fetch product types if product_type is unknown"""
+        """search_all must fetch collections if collection is unknown"""
         self.dag.search_all(collection="foo")
         mock_fetch_collections_list.assert_called_with(self.dag)
         mock__do_search.assert_called_once()

@@ -1139,7 +1139,7 @@ class QueryStringSearch(Search):
             "items_per_page": items_per_page
         }
         raw_search_results.query_params = prep.query_params
-        raw_search_results.product_type_def_params = prep.product_type_def_params
+        raw_search_results.collection_def_params = prep.collection_def_params
 
         # If no JSON response is available, return the result as is
         if resp_as_json is None:
@@ -1537,9 +1537,9 @@ class ODataV4Search(QueryStringSearch):
             raw_search_results.query_params = (
                 prep.query_params if hasattr(prep, "query_params") else {}
             )
-            raw_search_results.product_type_def_params = (
-                prep.product_type_def_params
-                if hasattr(prep, "product_type_def_params")
+            raw_search_results.collection_def_params = (
+                prep.collection_def_params
+                if hasattr(prep, "collection_def_params")
                 else {}
             )
             return raw_search_results
@@ -1620,8 +1620,6 @@ class PostJsonSearch(QueryStringSearch):
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
         number_matched = kwargs.pop("number_matched", None)
-        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
-        kwargs.pop("collection", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         _, sort_by_qp = (
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)

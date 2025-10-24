@@ -200,7 +200,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
     def test_plugins_apis_ecmwf_query_with_custom_collection(self):
         """EcmwfApi.query must build a EOProduct from input parameters with custom collection"""
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             **self.query_dates,
             **self.custom_query_params,
         )
