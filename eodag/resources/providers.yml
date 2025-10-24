@@ -6503,7 +6503,7 @@
         eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_BUILT_H:
       product:type: builtH
-      year: 2018
+      year: '2018'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_H_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
@@ -6516,17 +6516,17 @@
         eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_BUILT_C:
       product:type: builtC
-      year: 2018
+      year: '2018'
       tile_size: 10m
-      coord_system: 54009
+      coord_system: '54009'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_C_{add_filter}_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
         eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
     GHS_LAND:
       product:type: land
-      year: 2018
-      coord_system: 54009
+      year: '2018'
+      coord_system: '54009'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_LAND_E2018_GLOBE_R2022A_{coord_system}_{tile_size}
@@ -6540,15 +6540,15 @@
     GHS_SMOD:
       product:type: SMOD
       tile_size: 1k
-      coord_system: 54009
+      coord_system: '54009'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("k", "000")}'
         dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{coord_system}_{tile_size}
         eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
     GHS_ESM:
       product:type: ESM
-      year: 2015
-      coord_system: 3035
+      year: '2015'
+      coord_system: '3035'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}
@@ -6570,7 +6570,7 @@
     GHS_ENACT_POP:
       product:type: ENACT_POP
       grouped_by: month
-      year: 2011
+      year: '2011'
       metadata_mapping:
         eodag:download_link: https://jeodpp.jrc.ec.europa.eu
       assets_mapping:
