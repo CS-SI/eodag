@@ -307,6 +307,7 @@ class CopGhslSearch(Search):
                 product_type + "__" + "_".join(v for v in id_params.values() if v)
             )
 
+            params["year"] = year
             dataset = dataset.format(**params)
             dataset = dataset.replace(
                 "__", "_"
