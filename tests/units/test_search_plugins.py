@@ -46,7 +46,7 @@ from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
     _convert_bbox_to_lonlat_mollweide,
     _get_available_values_from_constraints,
-    _get_years_and_months_from_dates,
+    _replace_datetimes,
 )
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
@@ -4072,24 +4072,43 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         }
         self.assertDictEqual(expected_available, available_values)
 
-    def test_plugins_search_cop_ghsl_get_years_and_months_from_dates(self):
-        """test creation of list of years and months from date: should return all years in the
-        given timespan; in case the year is the same for start and end, all months should be returned"""
-        # timespan for several years
-        result = _get_years_and_months_from_dates(
-            "2020-01-01T00:00:00Z", "2023-01-01T00:00:00Z"
-        )
-        self.assertDictEqual({"years": ["2020", "2021", "2022", "2023"]}, result)
+    def test_plugins_search_cop_ghsl_replace_datetimes(self):
+        """test replacement of datetime parameters in the request by year/month
+        months should only be calculated if start year and end year are the same
+        """
+        # no year given, timespan for several years
+        params = {
+            "start_datetime": "2020-01-01T00:00:00Z",
+            "end_datetime": "2023-01-01T00:00:00Z",
+        }
+        _replace_datetimes(params)
+        self.assertIn("year", params)
+        self.assertListEqual(["2020", "2021", "2022", "2023"], params["year"])
         # different date format
-        result = _get_years_and_months_from_dates("2020-01-01", "2023-01-01")
-        self.assertDictEqual({"years": ["2020", "2021", "2022", "2023"]}, result)
+        params = {"start_datetime": "2020-01-01", "end_datetime": "2023-01-01"}
+        _replace_datetimes(params)
+        self.assertIn("year", params)
+        self.assertListEqual(["2020", "2021", "2022", "2023"], params["year"])
+        # datetimes and year given -> keep year
+        params = {
+            "start_datetime": "2020-01-01T00:00:00Z",
+            "end_datetime": "2023-01-01T00:00:00Z",
+            "year": "2019",
+        }
+        _replace_datetimes(params)
+        self.assertIn("year", params)
+        self.assertEqual("2019", params["year"])
+
         # one year -> include months
-        result = _get_years_and_months_from_dates(
-            "2020-08-01T00:00:00Z", "2020-11-01T00:00:00Z"
-        )
-        self.assertDictEqual(
-            {"years": ["2020"], "months": ["08", "09", "10", "11"]}, result
-        )
+        params = {
+            "start_datetime": "2020-08-01T00:00:00Z",
+            "end_datetime": "2020-11-01T00:00:00Z",
+        }
+        _replace_datetimes(params)
+        self.assertIn("year", params)
+        self.assertListEqual(["2020"], params["year"])
+        self.assertIn("month", params)
+        self.assertListEqual(["08", "09", "10", "11"], params["month"])
 
     @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
     def test_plugins_search_cop_ghsl_check_input_parameters_valid(

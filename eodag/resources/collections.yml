@@ -6871,60 +6871,57 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
 
 # Copernicus Global Human Settlement
 GHS_BUILT_S:
-  abstract: |
+  description: |
     The GHS-BUILT-S spatial raster dataset depicts the distribution of the built-up (BU) surfaces estimates between
     1975 and 2030 in 5 year intervals and two functional use components a) the total BU surface and b) the non-
     residential (NRES) BU surface. The data is made by spatial-temporal interpolation of five observed collections
     of multiple-sensor, multiple-platform satellite imageries: Landsat (MSS, TM, ETM sensor) data supports the
     1975, 1990, 2000, and 2014 epochs, while a Sentinel-2 (S2) image composite (GHS-composite-S2 R2020A)
     supports the 2018 epoch.
-  instrument:
-  platform: Sentinel-2, LANDSAT
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Built-up,Surface,GHS-BUILT-S,Landsat,Sentinel-2
-  sensorType: multi
+  instruments:
+  constellation: Sentinel-2, LANDSAT
+  platform:
+  processing:level:
+  keywords: ["GHS", "Settlement", "Built-up", "Surface", "GHS-BUILT-S", "Landsat", "Sentinel-2"]
+  eodag:sensor_type: multi
   license: other
   title: GHS built-up surface spatial raster dataset, derived from Sentinel-2 composite and Landsat, multi-temporal (1975-2030)
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_H:
-  abstract: |
+  description: |
     The spatial raster dataset depicts the spatial distribution of the building heights as extracted from the filtering of a composite
     of global digital elevation models (DEM) and the filtering of satellite imagery using linear regression techniques.
     The used input DEMs are the ALOS World 3D - 30m (AW3D30, 2006-2011) and the Shuttle Radar Topography Mission 30m (SRTM30, 2000).
     The building heights extracted from these sources are updated using the support of the shadow markers extracted from the Sentinel2 image
     data composite of the year 2018 (GHS-composite-S2 R2020A).
-  instrument:
-  platform: Sentinel-2
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Built-up,Height,GHS-BUILT-H,Sentinel-2,AW3D30,SRTM30
-  sensorType: multi
+  instruments:
+  constellation: Sentinel-2
+  platform:
+  processing:level:
+  keywords: ["GHS", "Settlement", "Built-up", "Height", "GHS-BUILT-H", "AW3D3", "SRTM30", "Sentinel-2"]
+  eodag:sensor_type: multi
   license: other
   title: GHS-BUILT-H R2023A - GHS building height, derived from AW3D30, SRTM30, and Sentinel2 composite (2018)
-  missionStartDate: "2018-01-01T00:00:00Z"
-  missionEndDate: "2018-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_V:
-  abstract: |
+  description: |
     The spatial raster dataset depicts the distribution of built-up volumes, expressed as number of cubic metres.
     The data report about the total built-up volume and the built-up volume allocated to dominant non-residential (NRES) uses.
     Data are spatial-temporal interpolated or extrapolated from 1975 to 2030 in 5 years intervals.
-  instrument:
-  platform: Sentinel-2, LANDSAT, TanDEM-X
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Built-up,Volume,GHS-BUILT-V,Landsat,Sentinel-2,TanDEM-X
-  sensorType: multi
+  instruments:
+  constellation: Sentinel-2, LANDSAT, TanDEM-X
+  platform:
+  processing:level:
+  keywords: ["GHS", "Settlement", "Built-up", "Volume", "GHS-BUILT-V", "TanDEM-X", "Landsat", "Sentinel-2"]
+  eodag:sensor_type: multi
   license: other
   title: GHS built-up volume grids derived from joint assessment of Sentinel2, Landsat, and global DEM data, multitemporal (1975-2030)
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_C:
-  abstract: |
+  description: |
     The spatial raster dataset delineates the boundaries of the human settlements at 10m resolution, and describe
     their inner characteristics in terms of the morphology of the built environment and the functional use.
     The Morphological Settlement Zone (MSZ) delineates the spatial domain of all the human settlements at the neighboring
@@ -6932,86 +6929,81 @@ GHS_BUILT_C:
     The objective is to fill the open spaces that are surrounded by large patches of built space.
     MSZ, open spaces, and built spaces basic class abstractions are derived by mathematical morphology spatial filtering
     (opening, closing, regional maxima) from the BUFRAC function.
-  instrument:
-  platform: Sentinel-2
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Built,Boundaries,GHS-BUILT-C,Sentinel-2,MSZ,BUFRAC
-  sensorType: multi
+  instruments:
+  constellation: Sentinel-2
+  platform:
+  processing:level:
+  keywords: ["GHS", "Settlement", "Built-up", "Boundaries", "GHS-BUILT-C", "MSZ", "BUFRAC", "Sentinel-2"]
+  eodag:sensor_type: multi
   license: other
   title: GHS Settlement Characteristics, derived from Sentinel2 composite (2018) and other GHS R2023A data
-  missionStartDate: "2018-01-01T00:00:00Z"
-  missionEndDate: "2018-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
 
 GHS_LAND:
-  abstract: |
+  description: |
     Land fraction per pixel as derived from Sentinel2 data composite and OpenStreetMap (OSM) data.
-  instrument:
-  platform: Sentinel-2, Landsat
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Land,Sentinel-2,Landsat,OSM
-  sensorType: multi
+  instruments:
+  constellation: Sentinel-2, Landsat
+  platform:
+  processing:level:
+  keywords: ["GHS", "Settlement", "Land", "OSM", "Sentinel-2", "Landsat"]
+  eodag:sensor_type: multi
   license: other
   title: Land fraction as derived from Sentinel2 image composite (2018) and OSM data
-  missionStartDate: "2018-01-01T00:00:00Z"
-  missionEndDate: "2018-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
 
 GHS_POP:
-  abstract: |
+  description: |
     The spatial raster dataset depicts the distribution of residential population, expressed as the number of people per cell.
     Residential population estimates between 1975 and 2020 in 5-year intervals and projections to 2025 and 2030 derived from CIESIN GPWv4.11
     were disaggregated from census or administrative units to grid cells, informed by the distribution, volume, and classification of
     built-up as mapped in the Global Human Settlement Layer (GHSL) global layer per corresponding epoch.
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Population,residential,CIESIN,GPW
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "Population", "residential", "CIESIN", "GPW"]
+  eodag:sensor_type: multi
   license: other
   title: GHS population grid multitemporal (1975-2030)
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_SMOD:
-  abstract: |
+  description: |
     The layers present the application of the Degree of Urbanisation stage I methodology recommended by UN Statistical Commission to
     the global population grid generated by the JRC in the epochs 1975-2030 (5 years timestep).
     They have been generated by integration of built-up surface extracted from Landsat and Sentinel-2 image data processing (GHS-BUILT-S R2023),
     and population data derived from the CIESIN GPW v4.11 (GHS-POP R2023).
     This product (v2) is an update of the data released in 2023 (v1) based on GHS-BUILT-S, GHS-POP and uses an updated definition of
     Semi-Dennse Urban Clusters. The Settlement Model is provided at the detailed level (Second Level - L2). First level can be obtained aggregating L2.
-  instrument:
-  platform: Landsat, Sentinel-2
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Urbanisation,Landsat,Sentinel-2,CIESIN,GPW
-  sensorType: multi
+  instruments:
+  constellation: Landsat, Sentinel-2
+  platform:
+  processing:level:
+  keywords: ["GHS", "Settlement", "Urbanisation", "Sentinel-2", "Landsat", "CIESIN", "GPW"]
+  eodag:sensor_type: multi
   license: other
   title: GHS settlement layers, application of the Degree of Urbanisation methodology (stage I) to GHS-POP R2023A and GHS-BUILT-S R2023A, multitemporal (1975-2030)
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_ESM:
-  abstract: |
+  description: |
      The European Settlement Map is a spatial raster dataset that is mapping human settlements in Europe based on
      Copernicus Very High Resolution optical coverage for reference year 2015 (VHR_IMAGE_2015).The ESM_2015 product
      exploits the Copernicus VHR_IMAGE_2015 dataset made of satellite images Pleiades, Deimos-02, WorldView-2,
      WorldView-3, GeoEye-01 and Spot 6/7 ranging from 2014 to 2016.
-  instrument:
-  platform: Pleiades, Deimos-02, WorldView-2, WorldView-3, GeoEye-01, Spot 6/7
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,ESM,Europe,VHR_IMAGE_2015
-  sensorType: multi
+  instruments:
+  constellation: Deimos, Pleiades, WorldView, SPOT
+  platform: Deimos-02, Pleiades-1A, Pleiades-1B, WorldView-2, WorldView-3, GeoEye-01, Spot 6, Spot 7
+  processing:level:
+  keywords: ["GHS", "Settlement", "ESM", "Europe", "VHR_IMAGE_2015"]
+  eodag:sensor_type: multi
   license: other
   title: European Settlement Map from Copernicus Very High Resolution data for reference year 2015
-  missionStartDate: "2015-01-01T00:00:00Z"
-  missionEndDate: "2015-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
 
 GHS_DUC:
-  abstract: |
+  description: |
     This dataset contains the Global Degree of Urbanisation Classification of administrative units delineated by the Global ADMinistrative layer version 4.1 (GADM41)
     according to the application of stage II of the Degree of Urbanisation.
     The classification is based on the Global Human Settlement Layer (GHSL) global datasets GHS R2023: the settlement classification GHS-SMOD (GHS-SMOD_GLOBE_R2023A) and
@@ -7021,19 +7013,18 @@ GHS_DUC:
     The spatial delineation of GADM 4.1 administrative units is available on the GADM official website. Please select the whole world shapefile as six separate
     layers (one for each level of subdivision/aggregation). The vector layers can be used to join each classification table (csv) with the actual spatial units.
     Version 2 includes the improvement of the classification of small spatial units by Degree of Urbanisation level 2 as described in the updated (EUROSTAT manual).
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,Urbanisation,Classification,GADM
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "Urbanisation", "Classification", "GADM"]
+  eodag:sensor_type: multi
   license: other
   title: GHS Degree of Urbanisation Classification, application of the Degree of Urbanisation methodology (stage II) to GADM 4.1 layer, multitemporal (1975-2030)
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_FUA:
-  abstract: |
+  description: |
     The GHS Functional Urban Areas (GHS-FUA) delineate the spatial entities representing the commuting area of the Urban Centres of 2015.
     The Functional Urban Areas for the epoch 2015 are estimated through an automated classification procedure developed in collaboration
     with the OECD, based on objective characteristics (i.e. travel time to the Urban Centres, area of the Urban Centres, local population and country GDP per capita).
@@ -7041,83 +7032,78 @@ GHS_FUA:
     are calculated from the 2015 GHS-POP R2019A dataset (GHS_POP_E2015_GLOBE_R2019A_V1_0); travel time from each cell towards the edge of
     the closest (in time) Urban Centre is estimated by using the global friction matrix; the Urban Centre GDP is inherited from the
     country GDP per capita (World Development Indicators: NY.GDP.PCAP.CD), as provided by The World Bank.
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,FUA,Functional,Areas,Centres
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "FUA", "functional areas", "Centres"]
+  eodag:sensor_type: multi
   license: other
   title: GHS functional urban areas, derived from GHS-UCDB R2019A, (2015), R2019A
-  missionStartDate: "2015-01-01T00:00:00Z"
-  missionEndDate: "2015-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_LAUSTAT:
-  abstract: |
+  description: |
      This product contains the summary statistics of GHS-BUILT-S multi-temporal (1975-2020) at Local Administrative Unit Level (LAU)
      from the 2020 layer provided by GISCO. For each LAU the table contains the sum of built-up surface (GHS-BUILT-S) between
      1975 and 2020 in 5 years interval, expressed in square kilometres.
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,BUILT,LAU,GISCO,surface
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "BUILT", "LAU", "GISCO", "Surface"]
+  eodag:sensor_type: multi
   license: other
   title: GHS built-up surface statistics in European LAU, multitemporal (1975-2020)
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2020-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2020-12-31T00:00:00Z"]]}}
 
 GHS_ENACT_POP:
-  abstract: |
+  description: |
       This spatial raster dataset depicts the seasonal nighttime and daytime population grids for 2011 (coverage: EU28-2013) produced in the ENACT project.
       Values are expressed as decimals (Float) representing the number of people per cell. The data is published at 1 km resolution in
       Lambert Azimuthal Equal Area (EPSG:3035, 12 monthly nighttime grids and 12 daytime grids), and at 30 arc-seconds in WGS-84 (EPSG:4326, 12 monthly
       nighttime grids and 12 daytime grids). The compressed ZIP files contain TIF files and short documentation.
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,ENACT,Population,grid
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "ENACT", "Population", "grid"]
+  eodag:sensor_type: multi
   license: other
   title: ENACT-POP R2020A - ENACT 2011 Population Grid
-  missionStartDate: "2011-01-01T00:00:00Z"
-  missionEndDate: "2011-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["2011-01-01T00:00:00Z", "2011-12-31T00:00:00Z"]]}}
 
 GHS_UCDB_DOMAIN:
-  abstract: |
+  description: |
        The GHS Urban Centre Database (GHS-UCDB) describes spatial entities called “Urban Centres” described through a set of multi-temporal thematic
        attributes from the GHSL data combined with other free and open data sets. The Urban Centres are defined by specific cut-off values on
        resident population and built-up surface share in a 1x1 km uniform global grid. The input data is generated by the GHSL, and the
        operating parameters are set in the frame of the “Degree of Urbanisation” (DEGURBA) methodology. The data is grouped by thematic domain.
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,UCDB,Urbanisation,thematic,domain,DEGURBA
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "UCDB", "Urbanisation", "thematic domain", "DEGURBA"]
+  eodag:sensor_type: multi
   license: other
   title: Stats in the City - the GHS Urban Centre Database UCDB R2024A by Thematic Domain
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_UCDB_REGION:
-  abstract: |
+  description: |
        The GHS Urban Centre Database (GHS-UCDB) describes spatial entities called “Urban Centres” described through a set of multi-temporal thematic
        attributes from the GHSL data combined with other free and open data sets. The Urban Centres are defined by specific cut-off values on
        resident population and built-up surface share in a 1x1 km uniform global grid. The input data is generated by the GHSL, and the
        operating parameters are set in the frame of the “Degree of Urbanisation” (DEGURBA) methodology. The data is grouped by region.
-  instrument:
+  instruments:
+  constellation:
   platform:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: GHS,Settlement,UCDB,Urbanisation,region,DEGURBA
-  sensorType: multi
+  processing:level:
+  keywords: ["GHS", "Settlement", "UCDB", "Urbanisation", "region", "DEGURBA"]
+  eodag:sensor_type: multi
   license: other
   title: Stats in the City - the GHS Urban Centre Database UCDB R2024A by Region
-  missionStartDate: "1975-01-01T00:00:00Z"
-  missionEndDate: "2030-12-31T00:00:00Z"
+  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
