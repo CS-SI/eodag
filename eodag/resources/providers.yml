@@ -685,6 +685,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
@@ -2331,6 +2332,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
@@ -3110,6 +3112,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
       max_items_per_page: 200
+      next_page_token_key: skip
     discover_collections:
       fetch_url: null
     discover_queryables:
@@ -3526,6 +3529,7 @@
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_token_key: skip
       max_items_per_page: 200
     discover_collections:
       fetch_url: null
@@ -3775,6 +3779,7 @@
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_token_key: skip
     discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
       single_collection_fetch_qs: q={_collection}
@@ -3890,6 +3895,7 @@
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
       parse_url_key: $skip
       max_items_per_page: 1_000
     sort:
@@ -6205,6 +6211,8 @@
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
     timeout: 60
+    pagination:
+      next_page_query_obj_key_path: '$.queries.request[0]'
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
