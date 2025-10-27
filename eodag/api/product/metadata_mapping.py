@@ -253,6 +253,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 field_name = conversion_func_spec.groupdict()["field_name"]
                 converter = conversion_func_spec.groupdict()["converter"]
                 self.custom_args = conversion_func_spec.groupdict()["args"]
+                # converts back "_COLON_" to ":"
+                if self.custom_args is not None and "_COLON_" in self.custom_args:
+                    self.custom_args = self.custom_args.replace("_COLON_", ":")
                 self.custom_converter = getattr(self, "convert_{}".format(converter))
 
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
@@ -1069,6 +1072,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             search_param,
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
+    # convert colons `:` in the parameters passed to the converter (e.g. 'foo#boo(fun:with:colons)')
+    if re.search(r"{[\w-]*#[\w-]*\([^)]*:.*}", search_param):
+        search_param = re.sub(
+            r"({[\w-]*#[\w-]*)\(([^)]*)(.*})",
+            lambda m: m.group(1)
+            + "("
+            + m.group(2).replace(":", "_COLON_")
+            + m.group(3),
+            search_param,
+        )
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
