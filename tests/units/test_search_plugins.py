@@ -3153,17 +3153,24 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
         self.assertEqual("WekeoECMWFSearch", search_plugin.__class__.__name__)
         self.assertEqual(
-            "ECMWFSearch",
+            "WekeoECMWFSearch",
             search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
         )
 
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        wekeo_ecmwf_constraints = {"constraints": constraints[0]}
-        mock_requests_get.return_value = MockResponse(
-            wekeo_ecmwf_constraints, status_code=200
-        )
+        wekeo_ecmwf_constraints = [constraints[0]]
+
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        wekeo_ecmwf_form = form
+
+        mock_requests_get.side_effect = [
+            MockResponse(wekeo_ecmwf_constraints, status_code=200),
+            MockResponse(wekeo_ecmwf_form, status_code=200),
+        ]
 
         provider_queryables_from_constraints_file = [
             "ecmwf_year",
@@ -3181,10 +3188,19 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        mock_requests_get.assert_called_once_with(
+        self.assertEqual(len(mock_requests_get.call_args), 2)
+        mock_requests_get.assert_any_call(
             mock.ANY,
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
-            "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
+            "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
+            "reanalysis-era5-single-levels-monthly-means/constraints.json",
+            headers=USER_AGENT,
+            auth=None,
+            timeout=60,
+        )
+        mock_requests_get.assert_any_call(
+            mock.ANY,
+            "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
+            "reanalysis-era5-single-levels-monthly-means/form.json",
             headers=USER_AGENT,
             auth=None,
             timeout=60,
@@ -3236,11 +3252,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # with additional param
         queryables = search_plugin.discover_queryables(
             collection="ERA5_SL_MONTHLY",
+            dataset="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             **{"ecmwf:variable": "a"},
         )
         self.assertIsNotNone(queryables)
 
-        self.assertEqual(10, len(queryables))
+        self.assertEqual(12, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:
