@@ -241,6 +241,8 @@ class PluginConfig(yaml.YAMLObject):
         next_page_url_tpl: str
         #: The query-object for POST pagination requests.
         next_page_query_obj: str
+        #: Next page token key used in pagination
+        next_page_token_key: str
         #: The endpoint for counting the number of items satisfying a request
         count_endpoint: str
         #: Index of the starting page

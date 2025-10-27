@@ -60,6 +60,11 @@ class SearchResult(UserList[EOProduct]):
 
     :param products: A list of products resulting from a search
     :param number_matched: (optional) the estimated total number of matching results
+    :param errors: (optional) stored errors encountered during the search. Tuple of (provider name, exception)
+    :param search_params: (optional) search parameters stored to use in pagination
+    :param next_page_token: (optional) next page token value to use in pagination
+    :param next_page_token_key: (optional) next page token key to use in pagination
+    :param raise_errors: (optional) whether to raise errors encountered during the search
 
     :cvar data: List of products
     :ivar number_matched: Estimated total number of matching results
@@ -76,6 +81,7 @@ class SearchResult(UserList[EOProduct]):
         errors: Optional[list[tuple[str, Exception]]] = None,
         search_params: Optional[dict[str, Any]] = None,
         next_page_token: Optional[str] = None,
+        next_page_token_key: Optional[str] = None,
         raise_errors: Optional[bool] = False,
     ) -> None:
         super().__init__(products)
@@ -83,8 +89,9 @@ class SearchResult(UserList[EOProduct]):
         self.errors = errors if errors is not None else []
         self.search_params = search_params
         self.next_page_token = next_page_token
-        self._dag: Optional["EODataAccessGateway"] = None
+        self.next_page_token_key = next_page_token_key
         self.raise_errors = raise_errors
+        self._dag: Optional["EODataAccessGateway"] = None
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -285,6 +292,7 @@ class SearchResult(UserList[EOProduct]):
                 current.search_params = {}
             # Update the next_page_token in the search params
             current.search_params["next_page_token"] = current.next_page_token
+            current.search_params["next_page_token_key"] = current.next_page_token_key
             # Ensure the provider is in the search params
             if "provider" in current.search_params:
                 current.search_params["provider"] = current.search_params.get(
@@ -299,7 +307,6 @@ class SearchResult(UserList[EOProduct]):
             if current.number_matched:
                 search_kwargs["number_matched"] = current.number_matched
             for i, search_plugin in enumerate(search_plugins):
-                current.search_params["next_page_token"] = current.next_page_token
                 return current._dag._do_search(
                     search_plugin,
                     raise_errors=self.raise_errors,
@@ -338,6 +345,7 @@ class SearchResult(UserList[EOProduct]):
                 self.data += new_results.data
                 self.search_params = new_results.search_params
                 self.next_page_token = new_results.next_page_token
+                self.next_page_token_key = new_results.next_page_token_key
             yield new_results
             # Stop iterating if there is no next page token
             #  or if the current one returned less than the maximum number of items asked for.
@@ -516,6 +524,7 @@ class RawSearchResult(UserList[dict[str, Any]]):
     collection_def_params: dict[str, Any]
     search_params: dict[str, Any]
     next_page_token: Optional[str] = None
+    next_page_token_key: Optional[str] = None
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

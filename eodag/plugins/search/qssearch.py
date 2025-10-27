@@ -81,6 +81,7 @@ from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_COLLECTION,
     HTTP_REQ_TIMEOUT,
+    KNOWN_NEXT_PAGE_TOKEN_KEYS,
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
@@ -1156,21 +1157,44 @@ class QueryStringSearch(Search):
 
         # Handle pagination
         if self.config.pagination.get("next_page_query_obj_key_path") is not None:
+            # Use next_page_query_obj_key_path to find the next page token in the response
             jsonpath_expr = string_to_jsonpath(
                 self.config.pagination["next_page_query_obj_key_path"]
             )
+            if isinstance(jsonpath_expr, str):
+                raise PluginImplementationError(
+                    "next_page_query_obj_key_path must be parsed to JSONPath on plugin init"
+                )
+            jsonpath_match = jsonpath_expr.find(resp_as_json)
+            if jsonpath_match:
+                next_page_query_obj = jsonpath_match[0].value
+                next_page_token_key = self.config.pagination.get("next_page_token_key")
+                if next_page_token_key and next_page_token_key in next_page_query_obj:
+                    raw_search_results.next_page_token = next_page_query_obj[
+                        next_page_token_key
+                    ]
+                else:
+                    for token_key in KNOWN_NEXT_PAGE_TOKEN_KEYS:
+                        if token_key in next_page_query_obj:
+                            raw_search_results.next_page_token = next_page_query_obj[
+                                token_key
+                            ]
+                            raw_search_results.next_page_token_key = token_key
+                            logger.debug(
+                                "Using '%s' as next_page_token_key for the next search",
+                                token_key,
+                            )
+                            break
+            else:
+                raw_search_results.next_page_token = None
         elif self.config.pagination.get("next_page_url_key_path") is not None:
             jsonpath_expr = string_to_jsonpath(
                 self.config.pagination["next_page_url_key_path"]
             )
-        else:
-            jsonpath_expr = None
-
-        if jsonpath_expr:
-            # Use next_page_query_obj_key_path to find the next page token in the response
+            # Use next_page_url_key_path to find the next page token in the response
             if isinstance(jsonpath_expr, str):
                 raise PluginImplementationError(
-                    "next_page_query_obj_key_path must be parsed to JSONPath on plugin init"
+                    "next_page_url_key_path must be parsed to JSONPath on plugin init"
                 )
             href = jsonpath_expr.find(resp_as_json)
             if href:
@@ -1195,20 +1219,6 @@ class QueryStringSearch(Search):
                     raw_search_results.next_page_token = href_value
             else:
                 # No token found: set to empty string
-                raw_search_results.next_page_token = None
-        elif self.config.pagination.get("next_page_url_key_path") is not None:
-            # Use next_page_url_key_path to find the next page token in the response
-            jsonpath_expr = string_to_jsonpath(
-                self.config.pagination["next_page_query_obj_key_path"]
-            )
-            if isinstance(jsonpath_expr, str):
-                raise PluginImplementationError(
-                    "next_page_query_obj_key_path must be parsed to JSONPath on plugin init"
-                )
-            token = jsonpath_expr.find(resp_as_json)
-            if token:
-                raw_search_results.next_page_token = token[0].value
-            else:
                 raw_search_results.next_page_token = None
         else:
             # pagination using next_page_token_key
@@ -1754,6 +1764,7 @@ class PostJsonSearch(QueryStringSearch):
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
+            next_page_token_key=getattr(provider_results, "next_page_token_key", None),
             raise_errors=raise_errors,
         )
         return formated_result
@@ -1802,9 +1813,6 @@ class PostJsonSearch(QueryStringSearch):
         count = prep.count
         urls: list[str] = []
         total_results = 0 if count else None
-        next_page_token_key = str(
-            self.config.pagination.get("next_page_token_key", "page")
-        )
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
@@ -1828,9 +1836,9 @@ class PostJsonSearch(QueryStringSearch):
                 )
             # numeric page token
             if (
-                next_page_token_key == "page" or next_page_token_key == "skip"
+                prep.next_page_token_key == "page" or prep.next_page_token_key == "skip"
             ) and items_per_page is not None:
-                if token is None and next_page_token_key == "skip":
+                if token is None and prep.next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = 0
                 elif token is None:
@@ -1855,20 +1863,36 @@ class PostJsonSearch(QueryStringSearch):
                                 if total_results is None
                                 else total_results + (_total_results or 0)
                             )
-                if "next_page_query_obj" in self.config.pagination and isinstance(
-                    self.config.pagination["next_page_query_obj"], str
-                ):
-                    # next_page_query_obj needs to be parsed
-                    next_page_query_obj = self.config.pagination[
-                        "next_page_query_obj"
-                    ].format(
-                        items_per_page=items_per_page,
-                        next_page_token=token,
-                        skip=token,
-                    )
-                    update_nested_dict(
-                        prep.query_params, orjson.loads(next_page_query_obj)
-                    )
+
+            if "next_page_query_obj" in self.config.pagination and isinstance(
+                self.config.pagination["next_page_query_obj"], str
+            ):
+                if prep.next_page_token_key is None or token is None:
+                    next_page_token_kwargs = {
+                        "next_page_token": -1,
+                        "next_page_token_key": NOT_AVAILABLE,
+                    }
+                else:
+                    next_page_token_kwargs = {
+                        "next_page_token": token,
+                        "next_page_token_key": prep.next_page_token_key,
+                    }
+                next_page_token_kwargs["next_page_token_key"] = (
+                    prep.next_page_token_key or NOT_AVAILABLE
+                )
+                next_page_token_kwargs["next_page_token"] = (
+                    token if token is not None else -1
+                )
+
+                # next_page_query_obj needs to be parsed
+                next_page_query_obj_str = self.config.pagination[
+                    "next_page_query_obj"
+                ].format(items_per_page=items_per_page, **next_page_token_kwargs)
+                next_page_query_obj = orjson.loads(next_page_query_obj_str)
+                # remove NOT_AVAILABLE entries
+                next_page_query_obj.pop(NOT_AVAILABLE, None)
+                # update prep query_params with pagination info
+                update_nested_dict(prep.query_params, next_page_query_obj)
 
             if token is not None:
                 prep.next_page_token = token

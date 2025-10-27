@@ -1807,11 +1807,13 @@ class EODataAccessGateway:
 
             prep.items_per_page = kwargs.pop("items_per_page", None)
             prep.next_page_token = kwargs.pop("next_page_token", None)
+            prep.next_page_token_key = kwargs.pop(
+                "next_page_token_key", None
+            ) or search_plugin.config.pagination.get("next_page_token_key", "page")
             prep.page = kwargs.pop("page", None)
 
             if (
-                search_plugin.config.pagination.get("next_page_token_key", "page")
-                == "page"
+                prep.next_page_token_key == "page"
                 and prep.items_per_page is not None
                 and prep.next_page_token is None
                 and prep.page is not None
