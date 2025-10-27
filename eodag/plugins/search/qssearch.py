@@ -1840,7 +1840,9 @@ class PostJsonSearch(QueryStringSearch):
             ) and items_per_page is not None:
                 if token is None and prep.next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
-                    token = 0
+                    token = max(
+                        0, self.config.pagination.get("start_page", DEFAULT_PAGE) - 1
+                    )
                 elif token is None:
                     # first page & next_page_token_key == page
                     token = self.config.pagination.get("start_page", DEFAULT_PAGE)
@@ -1863,7 +1865,15 @@ class PostJsonSearch(QueryStringSearch):
                                 if total_results is None
                                 else total_results + (_total_results or 0)
                             )
+            # parse next page url if needed
+            if "next_page_url_tpl" in self.config.pagination:
+                search_endpoint = self.config.pagination["next_page_url_tpl"].format(
+                    url=search_endpoint,
+                    items_per_page=items_per_page,
+                    next_page_token=token,
+                )
 
+            # parse next page body / query-obj if needed
             if "next_page_query_obj" in self.config.pagination and isinstance(
                 self.config.pagination["next_page_query_obj"], str
             ):

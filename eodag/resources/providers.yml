@@ -6208,7 +6208,13 @@
     ssl_verify: true
     timeout: 60
     pagination:
-      next_page_query_obj_key_path: '$.queries.request[0]'
+      next_page_url_tpl: '{url}?startRecord={next_page_token}'
+      next_page_query_obj: '{{"limit":{items_per_page}}}'
+      next_page_token_key: skip
+      # startRecord is equivalent to skip + 1, so make skip start at page 2
+      start_page: 2
+      next_page_query_obj_key_path: null
+      next_page_url_key_path: null
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
