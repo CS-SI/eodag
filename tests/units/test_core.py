@@ -1844,6 +1844,45 @@ class TestCore(TestCoreBase):
 
         self.assertEqual(queryables.additional_properties, True)
 
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
+        autospec=True,
+    )
+    def test_list_queryables_dynamic_discover_queryables(
+        self,
+        mock_discover_queryables: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ):
+        """WekeoECMWFSearch must dynamically get the discover queryables configuration"""
+        provider = "wekeo_ecmwf"
+        # get the original cop_* provider for each wekeo_ecmwf product
+        original_cop_providers = {
+            pt: next(p for p in providers if p.startswith("cop_"))
+            for pt, providers in self.SUPPORTED_COLLECTIONS.items()
+            if provider in providers
+        }
+        copernicus_urls = {
+            "cop_ads": "ads.atmosphere.copernicus.eu",
+            "cop_cds": "cds.climate.copernicus.eu",
+            "cop_ewds": "ewds.climate.copernicus.eu",
+        }
+        for product, original_provider in original_cop_providers.items():
+            self.dag.list_queryables(provider=provider, collection=product)
+            mock_discover_queryables.assert_called_once()
+            args, kwargs = mock_discover_queryables.call_args
+            queryables_config = args[1]
+            # check if URLs in queryables_config are the copernicus ones
+            original_url = copernicus_urls[original_provider]
+            self.assertIn("constraints_url", queryables_config)
+            self.assertIn(original_url, queryables_config["constraints_url"])
+            self.assertIn("form_url", queryables_config)
+            self.assertIn(original_url, queryables_config["form_url"])
+            mock_discover_queryables.reset_mock()
+
     def test_queryables_repr(self):
         queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
         self.assertIsInstance(queryables, QueryablesDict)
