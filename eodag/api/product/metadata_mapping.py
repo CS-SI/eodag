@@ -1055,7 +1055,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return assets_dict
 
         @staticmethod
-        def convert_to_cop_ewds_collection(val: str, prefix: str) -> str:
+        def convert_wekeo_to_cop_collection(val: str, prefix: str) -> str:
             return val.removeprefix(prefix).lower().replace("_", "-")
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
