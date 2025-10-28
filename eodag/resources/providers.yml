@@ -4527,7 +4527,7 @@
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4543,9 +4543,126 @@
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
     DT_EXTREMES:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
       dataset: extremes-dt
-    DT_CLIMATE_ADAPTATION:
+      class: d1
+      expver: "0001"
+      type: fc
+      time: "0000"
+    DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
       dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      realization: "1"
+      model: ICON
+      resolution: high
+      experiment: hist
+    DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      experiment: hist
+      realization: "1"
+      model: IFS-NEMO
+    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: HighResMIP
+      experiment: cont
+      realization: "1"
+      model: IFS-NEMO
+      resolution: high
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "1"
+      model: ICON
+      resolution: high
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "1"
+      model: IFS-NEMO
+    DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: cont
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: Tplus2.0K
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: ng
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      experiment: hist
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "2"
+      model: IFS-FESOM
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4575,9 +4692,6 @@
         metadata_mapping:
           eodag:download_link: $.headers.Location
     no_auth_download: True
-    products:
-      DT_EXTREMES:
-      DT_CLIMATE_ADAPTATION:
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
@@ -4589,7 +4703,98 @@
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
 ---
-
+!provider # MARK: dedt_mn5
+  name: dedt_mn5
+  priority: 0
+  roles:
+    - host
+  description: Destination Earth Digital Twin Outputs from marenostrum through Polytope API
+  url: https://polytope.mn5.apps.dte.destination-earth.eu/openapi
+  search: !plugin
+    type: ECMWFSearch
+    need_auth: true
+    ssl_verify: true
+    dates_required: True
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
+    metadata_mapping:
+      geometry:
+        - '{{"feature": {geometry#to_geojson_polytope}}}'
+        - "$.geometry"
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
+      end_datetime:
+        - '{{"date": "{start_datetime#to_non_separated_date}/to/{end_datetime#to_non_separated_date}"}}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
+      product:type:
+        - dataset
+        - $.dataset
+      qs: $.qs
+      eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+  products:
+    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: HighResMIP
+      experiment: cont
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
+      class: d1
+      dataset: climate-dt
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "1"
+      model: IFS-FESOM
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
+    auth_error_code: 401
+    order_enabled: True
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
+        _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
+        eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
+        eodag:status_link: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
+    order_status:
+      request:
+        method: GET
+        headers:
+      metadata_mapping:
+        eodag:order_status: $.json.status
+        eodag:order_message: $.json.message
+        error_message: $.null
+      success:
+        http_code: 303
+      error:
+        eodag:order_status: failed
+      on_success:
+        result_type: json
+        metadata_mapping:
+          eodag:download_link: $.headers.Location
+    no_auth_download: True
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
+    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
+    redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
+    client_id: polytope-api-public
+    user_consent_needed: false
+    token_exchange_post_data_method: data
+    token_provision: header
+    login_form_xpath: //form[@id='kc-form-login']
+    authentication_uri_source: login-form
+---
 !provider # MARK: dedl
   name: dedl
   priority: 0
@@ -5014,11 +5219,6 @@
     # DT Output
     DT_EXTREMES:
       _collection: EO.ECMWF.DAT.DT_EXTREMES
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
-    DT_CLIMATE_ADAPTATION:
-      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
