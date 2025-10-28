@@ -686,10 +686,13 @@ class ECMWFSearch(PostJsonSearch):
         return QueryablesDict(additional_properties=False, **queryables)
 
     def discover_queryables(
-        self, **kwargs: Any
+        self,
+        queryables_config: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using its constraints file
 
+        :param queryables_config discover queryables configuration
         :param kwargs: additional filters for queryables (`collection` and other search
                        arguments)
         :returns: fetched queryable parameters dict
@@ -700,6 +703,10 @@ class ECMWFSearch(PostJsonSearch):
 
         default_values = deepcopy(pt_config)
         default_values.pop("metadata_mapping", None)
+
+        if queryables_config is None:
+            queryables_config = getattr(self.config, "discover_queryables", {})
+
         filters = {**default_values, **kwargs}
 
         if "start" in filters:
@@ -713,13 +720,13 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         constraints_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
+            queryables_config.get("constraints_url", ""),
             **filters,
         )
         constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
         form_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("form_url", ""),
+            queryables_config.get("form_url", ""),
             **filters,
         )
         form: list[dict[str, Any]] = self._fetch_data(form_url)
@@ -1565,3 +1572,29 @@ class WekeoECMWFSearch(ECMWFSearch):
             return [{}]
         else:
             return QueryStringSearch.do_search(self, *args, **kwargs)
+
+    def discover_queryables(
+        self,
+        queryables_config: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
+        """Fetch queryables list from provider using its constraints file
+
+        Dynamically get the discover queryables configuration if no one is given.
+
+        :param queryables_config discover queryables configuration
+        :param kwargs: additional filters for queryables (`collection` and other search
+                       arguments)
+        :returns: fetched queryable parameters dict
+        """
+        if queryables_config is None:
+            dynamic_config = getattr(self.config, "dynamic_discover_queryables", [])
+            for dc in dynamic_config:
+                for cs in dc["collection_selector"]:
+                    field = cs["field"]
+                    if kwargs[field].startswith(cs["prefix"]):
+                        queryables_config = dc["discover_queryables"]
+                        break
+                if queryables_config:
+                    break
+        return super().discover_queryables(queryables_config, **kwargs)
