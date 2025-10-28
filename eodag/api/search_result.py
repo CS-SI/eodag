@@ -182,16 +182,17 @@ class SearchResult(UserList[EOProduct]):
         ]
         props = feature_collection.get("metadata", {}) or {}
 
-        eodag_search_params = props.get("eodag_search_params", {})
+        eodag_search_params = props.get("eodag:search_params", {})
         if eodag_search_params and eodag_search_params.get("geometry"):
             eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
 
         return SearchResult(
             products=products,
-            number_matched=props.get("eodag_number_matched"),
-            next_page_token=props.get("eodag_next_page_token"),
+            number_matched=props.get("eodag:number_matched"),
+            next_page_token=props.get("eodag:next_page_token"),
+            next_page_token_key=props.get("eodag:next_page_token_key"),
             search_params=eodag_search_params or None,
-            raise_errors=props.get("eodag_raise_errors"),
+            raise_errors=props.get("eodag:raise_errors"),
         )
 
     def as_geojson_object(self) -> dict[str, Any]:
@@ -208,10 +209,11 @@ class SearchResult(UserList[EOProduct]):
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
             "metadata": {
-                "eodag_number_matched": self.number_matched,
-                "eodag_next_page_token": self.next_page_token,
-                "eodag_search_params": geojson_search_params or None,
-                "eodag_raise_errors": self.raise_errors,
+                "eodag:number_matched": self.number_matched,
+                "eodag:next_page_token": self.next_page_token,
+                "eodag:next_page_token_key": self.next_page_token_key,
+                "eodag:search_params": geojson_search_params or None,
+                "eodag:raise_errors": self.raise_errors,
             },
         }
 
@@ -282,6 +284,7 @@ class SearchResult(UserList[EOProduct]):
         :returns: An iterator yielding ``SearchResult`` objects for each subsequent page.
 
         Example:
+
         >>> first_page = SearchResult([])  # result of a search
         >>> for new_results in first_page.next_page():
         ...     continue  # do something with new_results
