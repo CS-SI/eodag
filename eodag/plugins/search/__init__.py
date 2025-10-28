@@ -45,6 +45,8 @@ class PreparedSearch:
     url: Optional[str] = None
     info_message: Optional[str] = None
     exception_message: Optional[str] = None
+    next_page_token: Optional[str] = None
+    next_page_token_key: Optional[str] = None
 
     need_count: bool = field(init=False, repr=False)
     query_params: dict[str, Any] = field(init=False, repr=False)
@@ -53,6 +55,4 @@ class PreparedSearch:
     collection_def_params: dict[str, Any] = field(init=False, repr=False)
     total_items_nb: int = field(init=False, repr=False)
     sort_by_qs: str = field(init=False, repr=False)
-    next_page_token: Optional[str] = field(init=False, repr=False)
-    next_page_token_key: Optional[str] = field(init=False, repr=False)
     raise_errors: Optional[bool] = field(init=False, repr=False)

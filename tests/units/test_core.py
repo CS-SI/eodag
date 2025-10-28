@@ -2943,6 +2943,7 @@ class TestCoreSearch(TestCoreBase):
         """search_iter_page must return an iterator"""
         first_page = self.search_results
         first_page.next_page_token = "token_for_page_2"
+        first_page.next_page_token_key = "next_key"
         second_page = self.search_results_2
         mock_do_seach.side_effect = [
             first_page,
@@ -2993,7 +2994,9 @@ class TestCoreSearch(TestCoreBase):
             count=False,
             raise_errors=True,
             next_page_token="token_for_page_2",
+            next_page_token_key="next_key",
             items_per_page=2,
+            validate=False,
         )
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")

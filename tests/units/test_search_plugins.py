@@ -1190,8 +1190,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "itemsPerPage": 20,
                 "startIndex": 0,
-                "page": 1,
-                "limit": 20,
             },
             headers=USER_AGENT,
             timeout=60,
@@ -1213,8 +1211,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "itemsPerPage": 20,
                 "startIndex": 0,
-                "page": 1,
-                "limit": 20,
             },
             headers=USER_AGENT,
             timeout=60,
@@ -1261,8 +1257,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "itemsPerPage": 20,
                 "startIndex": 0,
-                "page": 1,
-                "limit": 20,
             },
             headers=USER_AGENT,
             timeout=60,
@@ -1304,8 +1298,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "itemsPerPage": 20,
                 "startIndex": 0,
-                "page": 1,
-                "limit": 20,
             },
             headers=USER_AGENT,
             timeout=60,
@@ -1370,8 +1362,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "product_version": "wgms_fog_2022_09",
             "itemsPerPage": 10,
             "startIndex": 0,
-            "page": 1,
-            "limit": 10,
         }
         _test_query_params(search_criteria, raw_result, expected_query_params)
 
@@ -1391,8 +1381,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "product_version": "wgms_fog_2022_09",
             "itemsPerPage": 10,
             "startIndex": 0,
-            "page": 1,
-            "limit": 10,
         }
         _test_query_params(search_criteria, raw_result, expected_query_params)
 
@@ -1412,8 +1400,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "product_version": "wgms_fog_2022_09",
             "itemsPerPage": 10,
             "startIndex": 0,
-            "page": 1,
-            "limit": 10,
         }
         _test_query_params(search_criteria, raw_result, expected_query_params)
 
@@ -2319,10 +2305,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         # check eodag:download_link
         self.assertEqual(
             products.data[0].properties["eodag:download_link"],
-            f"{endpoint}?"
-            + json.dumps(
-                {"geometry": default_geom, "limit": 20, "page": 1, **custom_query}
-            ),
+            f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
         # check eodag:order_link
         self.assertEqual(
@@ -2331,8 +2314,6 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             + json.dumps(
                 {
                     "geometry": default_geom,
-                    "limit": 20,
-                    "page": 1,
                     "runOnJobQueue": True,
                     **custom_query,
                 }
@@ -2497,7 +2478,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""
         # start & stop as dates -> keep end date as it is
-        results= self.search_plugin.query(
+        results = self.search_plugin.query(
             collection=self.collection,
             start_datetime="2020-01-01",
             end_datetime="2020-01-02",

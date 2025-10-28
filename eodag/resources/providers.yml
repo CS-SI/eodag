@@ -1335,7 +1335,6 @@
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
       max_items_per_page: 500
-      next_page_token_key: next
     # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
@@ -3108,7 +3107,7 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
       max_items_per_page: 200
       next_page_token_key: skip
     discover_collections:
@@ -3526,7 +3525,7 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
       max_items_per_page: 200
     discover_collections:
@@ -3776,7 +3775,7 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
     discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
@@ -5790,6 +5789,9 @@
         limit: 10000
     pagination:
       total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 1000 is ok and 2000 fails
       max_items_per_page: 1000
     sort:
@@ -5917,6 +5919,9 @@
         limit: 10000
     pagination:
       total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 1000 is ok and 2000 fails
       max_items_per_page: 1000
     sort:

@@ -1813,6 +1813,9 @@ class PostJsonSearch(QueryStringSearch):
         count = prep.count
         urls: list[str] = []
         total_results = 0 if count else None
+        next_page_token_key = prep.next_page_token_key or self.config.pagination.get(
+            "next_page_token_key"
+        )
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
@@ -1836,9 +1839,9 @@ class PostJsonSearch(QueryStringSearch):
                 )
             # numeric page token
             if (
-                prep.next_page_token_key == "page" or prep.next_page_token_key == "skip"
+                next_page_token_key == "page" or next_page_token_key == "skip"
             ) and items_per_page is not None:
-                if token is None and prep.next_page_token_key == "skip":
+                if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = max(
                         0, self.config.pagination.get("start_page", DEFAULT_PAGE) - 1
@@ -1877,7 +1880,7 @@ class PostJsonSearch(QueryStringSearch):
             if "next_page_query_obj" in self.config.pagination and isinstance(
                 self.config.pagination["next_page_query_obj"], str
             ):
-                if prep.next_page_token_key is None or token is None:
+                if next_page_token_key is None or token is None:
                     next_page_token_kwargs = {
                         "next_page_token": -1,
                         "next_page_token_key": NOT_AVAILABLE,
@@ -1885,10 +1888,10 @@ class PostJsonSearch(QueryStringSearch):
                 else:
                     next_page_token_kwargs = {
                         "next_page_token": token,
-                        "next_page_token_key": prep.next_page_token_key,
+                        "next_page_token_key": next_page_token_key,
                     }
                 next_page_token_kwargs["next_page_token_key"] = (
-                    prep.next_page_token_key or NOT_AVAILABLE
+                    next_page_token_key or NOT_AVAILABLE
                 )
                 next_page_token_kwargs["next_page_token"] = (
                     token if token is not None else -1
@@ -1901,6 +1904,11 @@ class PostJsonSearch(QueryStringSearch):
                 next_page_query_obj = orjson.loads(next_page_query_obj_str)
                 # remove NOT_AVAILABLE entries
                 next_page_query_obj.pop(NOT_AVAILABLE, None)
+                if (
+                    next_page_token_key
+                    and next_page_query_obj.get(next_page_token_key) == "-1"
+                ):
+                    next_page_query_obj.pop(next_page_token_key, None)
                 # update prep query_params with pagination info
                 update_nested_dict(prep.query_params, next_page_query_obj)
 
