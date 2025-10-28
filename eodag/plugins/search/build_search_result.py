@@ -188,6 +188,7 @@ COP_DS_KEYWORDS = {
     "statistic",
     "system_version",
     "temporal_aggregation",
+    "temporal_resolution",
     "time_aggregation",
     "time_reference",
     "time_step",
