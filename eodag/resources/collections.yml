@@ -5060,21 +5060,200 @@ DT_EXTREMES:
   license: other
   title: Weather and Geophysical Extremes Digital Twin (DT)
   extent: {"temporal": {"interval": [["2024-04-04T00:00:00Z", "2024-06-07T00:00:00Z"]]}}
-DT_CLIMATE_ADAPTATION:
+
+DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   description: |
-    The Digital Twin on Climate Change Adaptation support the analysis and testing of
-    scenarios. This in turn will support sustainable development and climate adaptation
-    and mitigation policy-making at multi-decadal timescales, at regional and national
-    levels.
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Historical Simulation' data based on the 'ICON' model.
   instruments: []
   constellation: Digital Twin
   platform: DT
   processing:level:
-  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate", "Change", "Adaptation"]
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "CMIP6", "ICON", "Historical Simulation"]
   eodag:sensor_type: ATMOSPHERIC
-  license: other
-  title: Climate Change Adaptation Digital Twin (DT)
-  extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - ICON
+  extent: {"temporal": {"interval": [["1993-01-01T00:00:00Z", "2019-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Historical Simulation' data based on the 'IFS-NEMO' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "CMIP6", "IFS-NEMO","Historical Simulation"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - IFS-NEMO
+  extent: {"temporal": {"interval": [["1990-01-01T00:00:00Z", "2002-02-28T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Control Simulation' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "HIGHRESMIP", "IFS-FESOM","Control Simulation"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-FESOM
+  extent: {"temporal": {"interval": [["1990-01-01T00:00:00Z", "2004-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+     This Collection gives access to 'Control Simulation' data based on the 'IFS-NEMO' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "HIGHRESMIP", "IFS-NEMO","Control Simulation"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-NEMO
+  extent: {"temporal": {"interval": [["1990-01-01T00:00:00Z", "2007-04-30T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Future Projection' data based on the 'ICON' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "SCENARIOMIP", "ICON","Future Projection", "SSP3-7.0"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - ICON
+  extent: {"temporal": {"interval": [["2020-09-01T00:00:00Z", "2039-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Future Projection' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "SCENARIOMIP", "IFS-FESOM","Future Projection", "SSP3-7.0"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - IFS-FESOM
+  extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", "2039-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Future Projection' data based on the 'IFS-NEMO' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "SCENARIOMIP", "IFS-NEMO","Future Projection", "SSP3-7.0"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Future Projection - IFS-NEMO
+  extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", "2039-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Storyline Simulation Present Climate' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "story nudging", "IFS-FESOM","Control Simulation", "Storyline Simulation Present Climate"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Present Climate - IFS-FESOM
+  extent: {"temporal": {"interval": [["2017-01-01T00:00:00Z", "2024-11-15T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Storyline Simulation Past Climate' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "story nudging", "IFS-FESOM","Historical Simulation", "Storyline Simulation Present Climate"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Past Climate - IFS-FESOM
+  extent: {"temporal": {"interval": [["2017-01-01T00:00:00Z", "2024-11-15T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
+  description: |
+    The Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This Collection gives access to 'Storyline Simulation Future Climate' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "story nudging", "IFS-FESOM","Tplus2.0K", "Storyline Simulation Present Climate"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Storyline Simulation Future Climate - IFS-FESOM
+  extent: {"temporal": {"interval": [["2017-01-01T00:00:00Z", "2024-11-15T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
+  description: |
+    The nextGEMS data is aligned with the Climate Change Adaptation Digital Twin. The Climate
+    Change Adaptation Digital Twin provides global climate projections and sector-specific
+    information over multiple decades at high resolution via a unified framework combining
+    advanced Earth system models, impact assessments, and observations. This nextGEMS Collection
+    gives access to 'Historical Simulation' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "CMIP6", "IFS-FESOM","Historical Simulation", "nextGEMS"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: nextGEMS - Historical Simulation - IFS-FESOM
+  extent: {"temporal": {"interval": [["1990-01-01T00:00:00Z", "2019-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
+  description: |
+    The nextGEMS data is aligned with the Climate Change Adaptation Digital Twin. The
+    Climate Change Adaptation Digital Twin provides global climate projections and
+    sector-specific information over multiple decades at high resolution via a unified
+    framework combining advanced Earth system models, impact assessments, and observations.
+    This nextGEMS Collection gives access to 'Future Projection' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "SCENARIOMIP", "IFS-FESOM","Future Projection", "nextGEMS", "SSP3-7.0"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: nextGEMS - Future Projection - IFS-FESOM
+  extent: {"temporal": {"interval": [["2021-01-01T00:00:00Z", "2049-12-31T23:59:59Z"]]}}
 
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:
