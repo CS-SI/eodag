@@ -91,7 +91,7 @@
     results_entry: 'results'
     ssl_verify: true
     pagination:
-      next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+      next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
       total_items_nb_key_path: '$.meta.found'
       # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
       # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
@@ -521,8 +521,10 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
+      next_page_token_key: page
+
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     discover_metadata:
@@ -682,6 +684,9 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
@@ -1330,18 +1335,7 @@
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
       max_items_per_page: 500
-    sort:
-      sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
-      sort_param_mapping:
-        id: id
-        start_datetime: properties.datetime
-        created: properties.created
-        updated: properties.updated
-        platform: properties.platform
-        view:sun_elevation: properties.view:sun_elevation
-        view:sun_azimuth: properties.view:sun_azimuth
-        eo:cloud_cover: properties.eo:cloud_cover
+    # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
   products:
@@ -1406,6 +1400,8 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1471,7 +1467,6 @@
     type: AwsAuth
     matching_url: s3://
     requester_pays: True
-
 ---
 !provider # MARK: earth_search_gcs
   name: earth_search_gcs
@@ -1496,6 +1491,7 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
+      next_page_query_obj_key_path: null
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1950,8 +1946,9 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_token_key: page
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     sort:
@@ -2333,6 +2330,9 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
@@ -3108,8 +3108,9 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
       max_items_per_page: 200
+      next_page_token_key: skip
     discover_collections:
       fetch_url: null
     discover_queryables:
@@ -3525,7 +3526,8 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_token_key: skip
       max_items_per_page: 200
     discover_collections:
       fetch_url: null
@@ -3774,7 +3776,8 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_token_key: skip
     discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
       single_collection_fetch_qs: q={_collection}
@@ -3889,6 +3892,9 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       max_items_per_page: 1_000
     sort:
       sort_by_default:
@@ -4623,7 +4629,6 @@
         title: '$.title'
         extent: '$.extent'
     pagination:
-      next_page_url_key_path: null
       max_items_per_page: 100
     sort:
       sort_param_mapping:
@@ -5159,7 +5164,7 @@
       - '&'
     asset_key_from_href: false
     pagination:
-      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
+      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={next_page_token}'
       start_page: 0
       total_items_nb_key_path: '$.totalResults'
       # 2024/02/01: 500 is the max, no error if greater
@@ -5785,6 +5790,9 @@
         limit: 10000
     pagination:
       total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 1000 is ok and 2000 fails
       max_items_per_page: 1000
     sort:
@@ -5912,6 +5920,9 @@
         limit: 10000
     pagination:
       total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 1000 is ok and 2000 fails
       max_items_per_page: 1000
     sort:
@@ -6202,6 +6213,14 @@
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
     timeout: 60
+    pagination:
+      next_page_url_tpl: '{url}?startRecord={next_page_token}'
+      next_page_query_obj: '{{"limit":{items_per_page}}}'
+      next_page_token_key: skip
+      # startRecord is equivalent to skip + 1, so make skip start at page 2
+      start_page: 2
+      next_page_query_obj_key_path: null
+      next_page_url_key_path: null
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null

@@ -10,7 +10,8 @@
         format: atom
         relation: intersects
     pagination:
-        next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
+        next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip}'
+        start_page: 1
         total_items_nb_key_path: '//os:totalResults/text()'
         max_items_per_page: 50
     discover_metadata:

@@ -21,6 +21,7 @@
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Metadata'
+      next_page_token_key: skip
       # 2021/03/19: 2000 is the max, if greater 200 response but contains an error message
       max_items_per_page: 2_000
     sort:

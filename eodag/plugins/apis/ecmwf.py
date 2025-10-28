@@ -27,6 +27,7 @@ from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 from pydantic.fields import FieldInfo
 
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
@@ -103,15 +104,25 @@ class EcmwfApi(Api, ECMWFSearch):
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
         self.config.__dict__.setdefault("api_endpoint", "")
 
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> RawSearchResult:
         """Should perform the actual search request."""
-        return [{}]
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = kwargs
+        raw_search_results.query_params = (
+            prep.query_params if hasattr(prep, "query_params") else {}
+        )
+        raw_search_results.collection_def_params = (
+            prep.collection_def_params if hasattr(prep, "collection_def_params") else {}
+        )
+        return raw_search_results
 
     def query(
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Build ready-to-download SearchResult"""
 
         # check collection, dates, geometry, use defaults if not specified

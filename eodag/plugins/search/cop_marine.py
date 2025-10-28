@@ -34,6 +34,7 @@ from dateutil.utils import today
 
 from eodag import EOProduct
 from eodag.api.product import AssetsDict
+from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
@@ -294,19 +295,29 @@ class CopMarineSearch(StaticStacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """
         Implementation of search for the Copernicus Marine provider
         :param prep: object containing search parameterds
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
-        page = prep.page
         items_per_page = prep.items_per_page
+        token_value = getattr(prep, "next_page_token") or prep.page
 
         # only return 1 page if pagination is disabled
-        if page is None or items_per_page is None or page > 1 and items_per_page <= 0:
-            return ([], 0) if prep.count else ([], None)
+        if (
+            token_value is None
+            or items_per_page is None
+            or int(token_value) > 1
+            and items_per_page <= 0
+        ):
+            result = SearchResult([])
+            if prep.count:
+                result.number_matched = 0
+            return result
+
+        token = int(token_value)
 
         collection = kwargs.get("collection", prep.collection)
         if not collection:
@@ -316,7 +327,7 @@ class CopMarineSearch(StaticStacSearch):
         collection_dict, datasets_items_list = self._get_collection_info(collection)
         geometry = kwargs.pop("geometry", None)
         products: list[EOProduct] = []
-        start_index = items_per_page * (page - 1) + 1
+        start_index = items_per_page * (token - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
             # Filter by geometry
@@ -394,7 +405,10 @@ class CopMarineSearch(StaticStacSearch):
                     )
                 if "Contents" not in s3_objects:
                     if len(products) == 0 and i == len(datasets_items_list) - 1:
-                        return ([], 0) if prep.count else ([], None)
+                        result = SearchResult([])
+                        if prep.count:
+                            result.number_matched = 0
+                        return result
                     else:
                         break
 
@@ -408,7 +422,11 @@ class CopMarineSearch(StaticStacSearch):
                         collection_dict,
                     )
                     if product:
-                        return [product], 1
+                        formated_result = SearchResult(
+                            [product],
+                            1,
+                        )
+                        return formated_result
                     current_object = s3_objects["Contents"][-1]["Key"]
                     continue
 
@@ -478,4 +496,20 @@ class CopMarineSearch(StaticStacSearch):
                                 products.append(product)
                     current_object = item_key
 
-        return products, num_total
+        search_params = (
+            kwargs
+            | {"items_per_page": prep.items_per_page}
+            | {"collection": collection}
+            | {"provider": self.provider}
+            | {"geometry": geometry}
+            if geometry
+            else {}
+        )
+
+        formated_result = SearchResult(
+            products,
+            num_total,
+            search_params=search_params,
+            next_page_token=str(start_index + 1),
+        )
+        return formated_result
