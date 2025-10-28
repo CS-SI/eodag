@@ -4692,18 +4692,6 @@
         metadata_mapping:
           eodag:download_link: $.headers.Location
     no_auth_download: True
-    products:
-      DT_EXTREMES:
-      DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
-      DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
-      DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
-      DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
-      DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
-      DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
-      DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
-      DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
-      DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
-      DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
@@ -4796,9 +4784,6 @@
         metadata_mapping:
           eodag:download_link: $.headers.Location
     no_auth_download: True
-    products:
-      DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
-      DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
