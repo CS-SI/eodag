@@ -36,7 +36,6 @@ from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
 if TYPE_CHECKING:
-    from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
 
@@ -157,7 +156,7 @@ class StaticStacSearch(StacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Perform a search on a static STAC Catalog"""
 
         # only return 1 page if pagination is disabled
@@ -167,7 +166,10 @@ class StaticStacSearch(StacSearch):
             and prep.items_per_page is not None
             and prep.items_per_page <= 0
         ):
-            return ([], 0) if prep.count else ([], None)
+            result = SearchResult([])
+            if prep.count:
+                result.number_matched = 0
+            return result
 
         collection = kwargs.get("collection", prep.collection)
         # provider collection specific conf
@@ -201,11 +203,9 @@ class StaticStacSearch(StacSearch):
             autospec=True,
             return_value=MockResponse(feature_collection, 200),
         ):
-            eo_products, _ = super(StaticStacSearch, self).query(
+            search_result = super(StaticStacSearch, self).query(
                 PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
             )
-        # filter using query params
-        search_result = SearchResult(eo_products)
         # Filter by date
         if "start_datetime" in kwargs:
             kwargs["start"] = kwargs.pop("start_datetime")
@@ -244,9 +244,6 @@ class StaticStacSearch(StacSearch):
                 search_result = search_result.crunch(
                     FilterProperty({property_key: property_value, "operator": "eq"})
                 )
-
-        return (
-            (search_result.data, len(search_result))
-            if prep.count
-            else (search_result.data, None)
-        )
+        if prep.count:
+            search_result.number_matched = len(search_result.data)
+        return search_result

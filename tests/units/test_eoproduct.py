@@ -20,7 +20,9 @@ import io
 import logging
 import os
 import pathlib
+import random
 import shutil
+import string
 import tempfile
 import zipfile
 
@@ -453,6 +455,10 @@ class TestEOProduct(EODagTestCase):
         """eoproduct.download must show a progress bar"""
         product = self._dummy_downloadable_product()
         product.properties["id"] = 12345
+        # random title to download in a random place
+        product.properties["title"] = "".join(
+            random.choices(string.ascii_letters, k=10)
+        )
         progress_callback = ProgressCallback()
 
         # progress bar did not start

@@ -23,6 +23,8 @@ import os
 import re
 import shutil
 import tempfile
+import warnings
+from collections import deque
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import itemgetter
@@ -68,6 +70,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
+    _deprecated,
     get_collection_dates,
     get_geometry_from_various,
     makedirs,
@@ -1120,7 +1123,7 @@ class EODataAccessGateway:
     def search(
         self,
         page: int = DEFAULT_PAGE,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE,
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1140,9 +1143,10 @@ class EODataAccessGateway:
         will be request from the provider with the next highest priority.
         Only if the request fails for all available providers, an error will be thrown.
 
-        :param page: (optional) The page number to return
+        :param page: (optional) The page number to return (**deprecated**, use
+                     :meth:`eodag.api.search_result.SearchResult.next_page` instead)
         :param items_per_page: (optional) The number of results that must appear in one single
-                               page
+                               page. If ``None``, the maximum number possible will be used.
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
                               True, the error is raised
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1184,6 +1188,15 @@ class EODataAccessGateway:
             return a list as a result of their processing. This requirement is
             enforced here.
         """
+        if page != DEFAULT_PAGE:
+            warnings.warn(
+                "Usage of deprecated search parameter 'page' "
+                "(Please use 'SearchResult.next_page()' instead)"
+                " -- Deprecated since v3.9.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         search_plugins, search_kwargs = self._prepare_search(
             start=start,
             end=end,
@@ -1203,16 +1216,23 @@ class EODataAccessGateway:
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
         search_kwargs.pop("_dc_qs", None)
-
-        search_kwargs.update(
-            page=page,
-            items_per_page=items_per_page,
-        )
+        # add page parameter
+        search_kwargs["page"] = page
 
         errors: list[tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
+
+            # add appropriate items_per_page value
+            search_kwargs["items_per_page"] = (
+                items_per_page
+                if items_per_page is not None
+                else getattr(search_plugin.config, "pagination", {}).get(
+                    "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+                )
+            )
+
             search_results = self._do_search(
                 search_plugin,
                 count=count,
@@ -1228,12 +1248,22 @@ class EODataAccessGateway:
                 )
             elif len(search_results) > 0:
                 search_results.errors = errors
+                if count and search_results.number_matched:
+                    logger.info(
+                        "Found %s result(s) on provider '%s'",
+                        search_results.number_matched,
+                        search_results[0].provider,
+                    )
                 return search_results
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
         return SearchResult([], 0, errors) if count else SearchResult([], errors=errors)
 
+    @_deprecated(
+        reason="Please use 'SearchResult.next_page()' instead",
+        version="v3.9.0",
+    )
     def search_iter_page(
         self,
         items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
@@ -1244,6 +1274,9 @@ class EODataAccessGateway:
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search.
+
+        .. deprecated:: v3.9.0
+            Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param items_per_page: (optional) The number of results requested per page
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1295,6 +1328,10 @@ class EODataAccessGateway:
                     raise
         raise RequestError("No result could be obtained from any available provider")
 
+    @_deprecated(
+        reason="Please use 'SearchResult.next_page()' instead",
+        version="v3.9.0",
+    )
     def search_iter_page_plugin(
         self,
         search_plugin: Union[Search, Api],
@@ -1303,6 +1340,9 @@ class EODataAccessGateway:
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
 
+        .. deprecated:: v3.9.0
+            Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
+
         :param items_per_page: (optional) The number of results requested per page
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatibles with the provider
@@ -1310,114 +1350,40 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-
-        iteration = 1
-        # Store the search plugin config pagination.next_page_url_tpl to reset it later
-        # since it might be modified if the next_page_url mechanism is used by the
-        # plugin. (same thing for next_page_query_obj, next_page_query_obj with POST reqs)
-        pagination_config = getattr(search_plugin.config, "pagination", {})
-        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl")
-        prev_next_page_query_obj = pagination_config.get("next_page_query_obj")
-        # Page has to be set to a value even if use_next is True, this is required
-        # internally by the search plugin (see collect_search_urls)
         kwargs.update(
             page=1,
             items_per_page=items_per_page,
         )
-        prev_product = None
-        next_page_url = None
-        next_page_query_obj = None
-        number_matched = None
-        while True:
-            # if count is enabled, it will only be performed on 1st iteration
-            if iteration == 2:
-                kwargs["count"] = False
-            if iteration > 1 and next_page_url:
-                pagination_config["next_page_url_tpl"] = next_page_url
-            if iteration > 1 and next_page_query_obj:
-                pagination_config["next_page_query_obj"] = next_page_query_obj
-            logger.info("Iterate search over multiple pages: page #%s", iteration)
-            try:
-                # remove unwanted kwargs for _do_search
-                kwargs.pop("raise_errors", None)
-                search_result = self._do_search(
-                    search_plugin, raise_errors=True, **kwargs
-                )
-                # if count is enabled, it will only be performed on 1st iteration
-                if iteration == 1:
-                    number_matched = search_result.number_matched
-            except Exception:
-                logger.warning(
-                    "error at retrieval of data from %s, for params: %s",
-                    search_plugin.provider,
-                    str(kwargs),
-                )
-                raise
-            finally:
-                # we don't want that next(search_iter_page(...)) modifies the plugin
-                # indefinitely. So we reset after each request, but before the generator
-                # yields, the attr next_page_url (to None) and
-                # config.pagination["next_page_url_tpl"] (to its original value).
-                next_page_url = getattr(search_plugin, "next_page_url", None)
-                next_page_query_obj = getattr(search_plugin, "next_page_query_obj", {})
-                next_page_merge = getattr(search_plugin, "next_page_merge", None)
+        try:
+            # remove unwanted kwargs for _do_search
+            kwargs.pop("raise_errors", None)
+            search_result = self._do_search(search_plugin, raise_errors=True, **kwargs)
+            search_result.raise_errors = True
 
-                if next_page_url:
-                    search_plugin.next_page_url = None
-                    if prev_next_page_url_tpl:
-                        search_plugin.config.pagination[
-                            "next_page_url_tpl"
-                        ] = prev_next_page_url_tpl
-                if next_page_query_obj:
-                    if prev_next_page_query_obj:
-                        search_plugin.config.pagination[
-                            "next_page_query_obj"
-                        ] = prev_next_page_query_obj
-                    # Update next_page_query_obj for next page req
-                    if next_page_merge:
-                        search_plugin.next_page_query_obj = dict(
-                            getattr(search_plugin, "query_params", {}),
-                            **next_page_query_obj,
-                        )
-                    else:
-                        search_plugin.next_page_query_obj = next_page_query_obj
+        except Exception:
+            logger.warning(
+                "error at retrieval of data from %s, for params: %s",
+                search_plugin.provider,
+                str(kwargs),
+            )
+            raise
 
-            if len(search_result) > 0:
-                # The first products between two iterations are compared. If they
-                # are actually the same product, it means the iteration failed at
-                # progressing for some reason. This is implemented as a workaround
-                # to some search plugins/providers not handling pagination.
-                product = search_result[0]
-                if (
-                    prev_product
-                    and product.properties["id"] == prev_product.properties["id"]
-                    and product.provider == prev_product.provider
-                ):
-                    logger.warning(
-                        "Iterate over pages: stop iterating since the next page "
-                        "appears to have the same products as in the previous one. "
-                        "This provider may not implement pagination.",
-                    )
-                    last_page_with_products = iteration - 1
-                    break
-                # use count got from 1st iteration
-                search_result.number_matched = number_matched
-                yield search_result
-                prev_product = product
-                # Prevent a last search if the current one returned less than the
-                # maximum number of items asked for.
-                if len(search_result) < items_per_page:
-                    last_page_with_products = iteration
-                    break
-            else:
-                last_page_with_products = iteration - 1
+        if len(search_result) == 0:
+            return
+        # remove unwanted kwargs for next_page
+        if kwargs.get("count") is True:
+            kwargs["count"] = False
+        kwargs.pop("page", None)
+        search_result.search_params = kwargs
+        if search_result._dag is None:
+            search_result._dag = self
+
+        yield search_result
+
+        for next_result in search_result.next_page():
+            if len(next_result) == 0:
                 break
-            iteration += 1
-            kwargs["page"] = iteration
-        logger.debug(
-            "Iterate over pages: last products found on page %s",
-            last_page_with_products,
-        )
+            yield next_result
 
     def search_all(
         self,
@@ -1470,81 +1436,41 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-        # Get the search plugin and the maximized value
-        # of items_per_page if defined for the provider used.
-        try:
-            collection = self.get_collection_from_alias(
-                self.guess_collection(**kwargs)[0]
-            )
-        except NoMatchingCollection:
-            collection = GENERIC_COLLECTION
-        else:
-            # fetch collections list if collection is unknown
-            if (
-                collection
-                not in self._plugins_manager.collection_to_provider_config_map.keys()
-            ):
-                logger.debug(
-                    f"Fetching external collections sources to find {collection} collection"
-                )
-                self.fetch_collections_list()
-
         # remove unwanted count
         kwargs.pop("count", None)
 
-        search_plugins, search_kwargs = self._prepare_search(
-            start=start, end=end, geom=geom, locations=locations, **kwargs
+        # First search
+        search_results = self.search(
+            items_per_page=items_per_page,
+            start=start,
+            end=end,
+            geom=geom,
+            locations=locations,
+            **kwargs,
         )
-        for i, search_plugin in enumerate(search_plugins):
-            itp = (
-                items_per_page
-                or getattr(search_plugin.config, "pagination", {}).get(
-                    "max_items_per_page"
-                )
-                or DEFAULT_MAX_ITEMS_PER_PAGE
-            )
+        if len(search_results) == 0:
+            return search_results
+
+        try:
+            search_results.raise_errors = True
+
+            # consume iterator
+            deque(search_results.next_page(update=True))
+
             logger.info(
-                "Searching for all the products with provider %s and a maximum of %s "
-                "items per page.",
-                search_plugin.provider,
-                itp,
+                "Found %s result(s) on provider '%s'",
+                len(search_results),
+                search_results[0].provider,
             )
-            all_results = SearchResult([])
-            try:
-                for page_results in self.search_iter_page_plugin(
-                    items_per_page=itp,
-                    search_plugin=search_plugin,
-                    count=False,
-                    **search_kwargs,
-                ):
-                    all_results.data.extend(page_results.data)
-                logger.info(
-                    "Found %s result(s) on provider '%s'",
-                    len(all_results),
-                    search_plugin.provider,
-                )
-                return all_results
-            except RequestError:
-                if len(all_results) == 0 and i < len(search_plugins) - 1:
-                    logger.warning(
-                        "No result could be obtained from provider %s, "
-                        "we will try to get the data from another provider",
-                        search_plugin.provider,
-                    )
-                elif len(all_results) == 0:
-                    logger.error(
-                        "No result could be obtained from any available provider"
-                    )
-                    raise
-                elif len(all_results) > 0:
-                    logger.warning(
-                        "Found %s result(s) on provider '%s', but it may be incomplete "
-                        "as it ended with an error",
-                        len(all_results),
-                        search_plugin.provider,
-                    )
-                    return all_results
-        raise RequestError("No result could be obtained from any available provider")
+        except RequestError:
+            logger.warning(
+                "Found %s result(s) on provider '%s', but it may be incomplete "
+                "as it ended with an error",
+                len(search_results),
+                search_results[0].provider,
+            )
+
+        return search_results
 
     def _search_by_id(
         self, uid: str, provider: Optional[str] = None, **kwargs: Any
@@ -1864,13 +1790,11 @@ class EODataAccessGateway:
                 max_items_per_page,
             )
 
-        results: list[EOProduct] = []
-        total_results: Optional[int] = 0 if count else None
-
         errors: list[tuple[str, Exception]] = []
 
         try:
             prep = PreparedSearch(count=count)
+            prep.raise_errors = raise_errors
 
             # append auth if needed
             if getattr(search_plugin.config, "need_auth", False):
@@ -1881,8 +1805,24 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
-            prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
+            prep.next_page_token = kwargs.pop("next_page_token", None)
+            prep.next_page_token_key = kwargs.pop(
+                "next_page_token_key", None
+            ) or search_plugin.config.pagination.get("next_page_token_key", "page")
+            prep.page = kwargs.pop("page", None)
+
+            if (
+                prep.next_page_token_key == "page"
+                and prep.items_per_page is not None
+                and prep.next_page_token is None
+                and prep.page is not None
+            ):
+                prep.next_page_token = str(
+                    prep.page
+                    - 1
+                    + search_plugin.config.pagination.get("start_page", DEFAULT_PAGE)
+                )
 
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
@@ -1909,14 +1849,13 @@ class EODataAccessGateway:
             if validate:
                 search_plugin.validate(search_params, prep.auth)
 
-            res, nb_res = search_plugin.query(prep, **search_params)
+            search_result = search_plugin.query(prep, **search_params)
 
-            if not isinstance(res, list):
+            if not isinstance(search_result.data, list):
                 raise PluginImplementationError(
                     "The query function of a Search plugin must return a list of "
-                    "results, got {} instead".format(type(res))
+                    "results, got {} instead".format(type(search_result.data))
                 )
-
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself
             # doing: eo_product.download()). The filtering is done by keeping only
@@ -1926,7 +1865,7 @@ class EODataAccessGateway:
             # WARNING: this means an eo_product that has an invalid geometry can still
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
-            for eo_product in res:
+            for eo_product in search_result.data:
                 # if collection is not defined, try to guess using properties
                 if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")
@@ -1964,18 +1903,9 @@ class EODataAccessGateway:
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
 
-            results.extend(res)
-            total_results = (
-                None
-                if (nb_res is None or total_results is None)
-                else total_results + nb_res
-            )
-            if count and nb_res is not None:
-                logger.info(
-                    "Found %s result(s) on provider '%s'",
-                    nb_res,
-                    search_plugin.provider,
-                )
+            search_result._dag = self
+            return search_result
+
         except Exception as e:
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
@@ -1987,7 +1917,7 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 errors.append((search_plugin.provider, e))
-        return SearchResult(results, total_results, errors)
+                return SearchResult([], 0, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results
@@ -2091,13 +2021,16 @@ class EODataAccessGateway:
         search_result: SearchResult, filename: str = "search_results.geojson"
     ) -> str:
         """Registers results of a search into a geojson file.
+        The output is a FeatureCollection containing the EO products as features,
+        with additional metadata such as ``number_matched``, ``next_page_token``,
+        and ``search_params`` stored in the properties.
 
         :param search_result: A set of EO products resulting from a search
         :param filename: (optional) The name of the file to generate
         :returns: The name of the created file
         """
         with open(filename, "w") as fh:
-            geojson.dump(search_result, fh)
+            geojson.dump(search_result.as_geojson_object(), fh)
         return filename
 
     @staticmethod
@@ -2112,12 +2045,16 @@ class EODataAccessGateway:
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register
-        products with the information needed to download itself
+        products with the information needed to download itself.
+
+        This method also sets the internal EODataAccessGateway instance on the products,
+        enabling pagination (e.g. access to next pages) if available.
 
         :param filename: A filename containing a search result encoded as a geojson
-        :returns: The search results encoded in `filename`
+        :returns: The search results encoded in `filename`, ready for download and pagination
         """
         products = self.deserialize(filename)
+        products._dag = self
         for i, product in enumerate(products):
             if product.downloader is None:
                 downloader = self._plugins_manager.get_download_plugin(product)

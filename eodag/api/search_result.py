@@ -19,9 +19,20 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Iterable, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Iterable,
+    Iterator,
+    Optional,
+    Union,
+    cast,
+)
 
-from shapely.geometry import GeometryCollection, shape
+from shapely.geometry import GeometryCollection
+from shapely.geometry import mapping as shapely_mapping
+from shapely.geometry import shape
 from typing_extensions import Doc
 
 from eodag.api.product import EOProduct, unregistered_product_from_item
@@ -36,6 +47,7 @@ from eodag.utils.exceptions import MisconfiguredError
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.api.core import EODataAccessGateway
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.manager import PluginManager
 
@@ -48,6 +60,11 @@ class SearchResult(UserList[EOProduct]):
 
     :param products: A list of products resulting from a search
     :param number_matched: (optional) the estimated total number of matching results
+    :param errors: (optional) stored errors encountered during the search. Tuple of (provider name, exception)
+    :param search_params: (optional) search parameters stored to use in pagination
+    :param next_page_token: (optional) next page token value to use in pagination
+    :param next_page_token_key: (optional) next page token key to use in pagination
+    :param raise_errors: (optional) whether to raise errors encountered during the search
 
     :cvar data: List of products
     :ivar number_matched: Estimated total number of matching results
@@ -62,10 +79,19 @@ class SearchResult(UserList[EOProduct]):
         products: list[EOProduct],
         number_matched: Optional[int] = None,
         errors: Optional[list[tuple[str, Exception]]] = None,
+        search_params: Optional[dict[str, Any]] = None,
+        next_page_token: Optional[str] = None,
+        next_page_token_key: Optional[str] = None,
+        raise_errors: Optional[bool] = False,
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
         self.errors = errors if errors is not None else []
+        self.search_params = search_params
+        self.next_page_token = next_page_token
+        self.next_page_token_key = next_page_token_key
+        self.raise_errors = raise_errors
+        self._dag: Optional["EODataAccessGateway"] = None
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -149,18 +175,46 @@ class SearchResult(UserList[EOProduct]):
         :param feature_collection: A collection representing a search result.
         :returns: An eodag representation of a search result
         """
+
+        products = [
+            EOProduct.from_geojson(feature)
+            for feature in feature_collection.get("features", [])
+        ]
+        props = feature_collection.get("metadata", {}) or {}
+
+        eodag_search_params = props.get("eodag:search_params", {})
+        if eodag_search_params and eodag_search_params.get("geometry"):
+            eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
+
         return SearchResult(
-            [
-                EOProduct.from_geojson(feature)
-                for feature in feature_collection["features"]
-            ]
+            products=products,
+            number_matched=props.get("eodag:number_matched"),
+            next_page_token=props.get("eodag:next_page_token"),
+            next_page_token_key=props.get("eodag:next_page_token_key"),
+            search_params=eodag_search_params or None,
+            raise_errors=props.get("eodag:raise_errors"),
         )
 
     def as_geojson_object(self) -> dict[str, Any]:
         """GeoJSON representation of SearchResult"""
+
+        geojson_search_params = {} | (self.search_params or {})
+        # search_params shapely geometry to wkt
+        if self.search_params and self.search_params.get("geometry"):
+            geojson_search_params["geometry"] = shapely_mapping(
+                self.search_params["geometry"]
+            )
+
         return {
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
+            "metadata": {
+                "eodag:number_matched": self.number_matched,
+                "eodag:next_page_token": self.next_page_token,
+                "eodag:next_page_token_key": self.next_page_token_key,
+                "eodag:search_params": geojson_search_params or None,
+                "eodag:raise_errors": self.raise_errors,
+            },
         }
 
     def as_shapely_geometry_object(self) -> GeometryCollection:
@@ -217,6 +271,97 @@ class SearchResult(UserList[EOProduct]):
             self.errors.extend(other.errors)
 
         return super().extend(other)
+
+    def next_page(self, update: bool = True) -> Iterator[SearchResult]:
+        """
+        Retrieve and iterate over the next pages of search results, if available.
+
+        This method uses the current search parameters and next page token to request
+        additional results from the provider. If ``update`` is ``True``, the current ``SearchResult``
+        instance is updated with new products and pagination information as pages are fetched.
+
+        :param update: If ``True``, update the current ``SearchResult`` with new results.
+        :returns: An iterator yielding ``SearchResult`` objects for each subsequent page.
+
+        Example:
+
+        >>> first_page = SearchResult([])  # result of a search
+        >>> for new_results in first_page.next_page():
+        ...     continue  # do something with new_results
+        """
+
+        def get_next_page(current):
+            if current.search_params is None:
+                current.search_params = {}
+            # Update the next_page_token in the search params
+            current.search_params["next_page_token"] = current.next_page_token
+            current.search_params["next_page_token_key"] = current.next_page_token_key
+            # Ensure the provider is in the search params
+            if "provider" in current.search_params:
+                current.search_params["provider"] = current.search_params.get(
+                    "provider", None
+                )
+            elif current.data and hasattr(current.data[-1], "provider"):
+                current.search_params["provider"] = current.data[-1].provider
+            search_plugins, search_kwargs = current._dag._prepare_search(
+                **current.search_params
+            )
+            # If number_matched was provided, ensure it is passed to the next search
+            if current.number_matched:
+                search_kwargs["number_matched"] = current.number_matched
+            for i, search_plugin in enumerate(search_plugins):
+                return current._dag._do_search(
+                    search_plugin,
+                    raise_errors=self.raise_errors,
+                    # validate no needed for next pages
+                    validate=False,
+                    **search_kwargs,
+                )
+
+        # Do not iterate if there is no next page token
+        #  or if the current one returned less than the maximum number of items asked for.
+        if self.next_page_token is None or (
+            self.search_params
+            and self.search_params.get("items_per_page")
+            and len(self) < cast(int, self.search_params["items_per_page"])
+        ):
+            return
+
+        new_results = get_next_page(self)
+        old_results = self
+
+        while new_results.data:
+            # The products between two iterations are compared. If they
+            # are actually the same product, it means the iteration failed at
+            # progressing for some reason.
+            if (
+                old_results.data[0].properties["id"]
+                == new_results.data[0].properties["id"]
+            ):
+                logger.warning(
+                    "Iterate over pages: stop iterating since the next page "
+                    "appears to have the same products as in the previous one. "
+                    "This provider may not implement pagination.",
+                )
+                break
+            if update:
+                self.data += new_results.data
+                self.search_params = new_results.search_params
+                self.next_page_token = new_results.next_page_token
+                self.next_page_token_key = new_results.next_page_token_key
+            yield new_results
+            # Stop iterating if there is no next page token
+            #  or if the current one returned less than the maximum number of items asked for.
+            if (
+                new_results.next_page_token is None
+                or len(new_results) < new_results.search_params["items_per_page"]
+            ):
+                break
+            old_results = new_results
+            new_results = get_next_page(new_results)
+            if not new_results:
+                break
+        return
 
     @classmethod
     def _from_stac_item(
@@ -380,6 +525,9 @@ class RawSearchResult(UserList[dict[str, Any]]):
 
     query_params: dict[str, Any]
     collection_def_params: dict[str, Any]
+    search_params: dict[str, Any]
+    next_page_token: Optional[str] = None
+    next_page_token_key: Optional[str] = None
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

@@ -1840,19 +1840,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
             "usgs": None,
-            "usgs_satapi_aws": {
-                "sortables": [
-                    "id",
-                    "start_datetime",
-                    "created",
-                    "updated",
-                    "platform",
-                    "view:sun_elevation",
-                    "view:sun_azimuth",
-                    "eo:cloud_cover",
-                ],
-                "max_sort_params": None,
-            },
+            "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},
             "wekeo_cmems": None,
             "wekeo_ecmwf": None,
             "wekeo_main": None,
@@ -1916,7 +1904,7 @@ class TestCore(TestCoreBase):
         """Search filter must be validated if requested"""
         filter = {
             "provider": "peps",
-            "productType": "S1_SAR_GRD",
+            "collection": "S1_SAR_GRD",
             "lorem": "ipsum",
         }
         # Validation by default
@@ -1924,7 +1912,7 @@ class TestCore(TestCoreBase):
         mock_validate.assert_called_once()
         args, kwargs = mock_validate.call_args
         # Some other default keyword may be added to the kwargs (e.g. geometry)
-        self.assertEqual("S1_SAR_GRD", args[1].get("productType"))
+        self.assertEqual("S1_SAR_GRD", args[1].get("collection"))
         self.assertEqual("ipsum", args[1].get("lorem"))
         mock_validate.reset_mock()
 
@@ -1944,7 +1932,7 @@ class TestCore(TestCoreBase):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
-        return_value=([], 0),
+        return_value=SearchResult([]),
     )
     def test_search_validate_invalid_filter(
         self,
@@ -1954,8 +1942,8 @@ class TestCore(TestCoreBase):
         """Search must fail if validation is enabled and the filter is not valid"""
         filter = {
             "provider": "peps",
-            "productType": "S1_SAR_GRD",
-            "orbitNumber": "dolorem",
+            "collection": "S1_SAR_GRD",
+            "sat:absolute_orbit": "dolorem",
         }
         # Validation by default: fails cause orbitNumber
         with self.assertRaises(ValidationError):
@@ -2298,25 +2286,24 @@ class TestCoreGeometry(TestCoreBase):
 
 
 class TestCoreSearch(TestCoreBase):
-    @classmethod
-    def setUpClass(cls):
-        super(TestCoreSearch, cls).setUpClass()
-        cls.dag = EODataAccessGateway()
-        cls.dag.validate_search_request = mock.MagicMock()
+    def setUp(self):
+        super().setUp()
+        self.dag = EODataAccessGateway()
+        self.dag.validate_search_request = mock.MagicMock()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
-        cls.search_results = SearchResult.from_geojson(search_results_geojson)
-        cls.search_results_size = len(cls.search_results)
+        self.search_results = SearchResult.from_geojson(search_results_geojson)
+        self.search_results_size = len(self.search_results)
         # Change the id of these products, to emulate different products
-        search_results_data_2 = copy.deepcopy(cls.search_results.data)
+        search_results_data_2 = copy.deepcopy(self.search_results.data)
         search_results_data_2[0].properties["id"] = "a"
         search_results_data_2[1].properties["id"] = "b"
-        cls.search_results_2 = SearchResult(search_results_data_2)
-        cls.search_results_size_2 = len(cls.search_results_2)
+        self.search_results_2 = SearchResult(search_results_data_2)
+        self.search_results_size_2 = len(self.search_results_2)
 
     def test_guess_collection_with_kwargs(self):
         """guess_collection must return the products matching the given kwargs"""
@@ -2693,7 +2680,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
         """_do_search must support itemsperpage higher than maximum"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
+        search_plugin.query.return_value = SearchResult(
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
         )
@@ -2755,7 +2742,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_counts(self, search_plugin):
         """_do_search must create a count query if specified"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
+        search_plugin.query.return_value = SearchResult(
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
         )
@@ -2773,7 +2760,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_without_count(self, search_plugin):
         """_do_search must be able to create a query without a count"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
+        search_plugin.query.return_value = SearchResult(
             self.search_results.data,
             None,  # .query must return None if count is False
         )
@@ -2791,7 +2778,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
         """_do_search must return None as count if provider does not return the count"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (self.search_results.data, None)
+        search_plugin.query.return_value = SearchResult(self.search_results.data, None)
 
         class DummyConfig:
             pagination = {}
@@ -2860,10 +2847,16 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_query_products_must_be_a_list(self, search_plugin):
         """_do_search expects that each search plugin returns a list of products."""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
-            self.search_results,  # This is not a list but a SearchResult
-            self.search_results_size,
-        )
+
+        # create an "invalid" SearchResult object
+
+        class FakeSearchResult:
+            def __init__(self):
+                self.data = "not-a-list"  # not a list, will trigger the error
+                self.number_matched = 1
+
+        # mock query to return the invalid SearchResult
+        search_plugin.query.return_value = FakeSearchResult()
 
         class DummyConfig:
             pagination = {}
@@ -2915,10 +2908,17 @@ class TestCoreSearch(TestCoreBase):
     def test_search_iter_page_returns_iterator(self, search_plugin, prepare_seach):
         """search_iter_page must return an iterator"""
         search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            (self.search_results_2.data, None),
-        ]
+        # create first and second SearchResult with next_page_token
+        first_page = SearchResult(
+            products=self.search_results.data, number_matched=None
+        )
+        first_page.next_page_token = "token_for_page_2"
+
+        second_page = SearchResult(
+            products=self.search_results_2.data, number_matched=None
+        )
+        second_page.next_page_token = None  # last page
+        search_plugin.query.side_effect = [first_page, second_page]
 
         class DummyConfig:
             pagination = {}
@@ -2930,10 +2930,10 @@ class TestCoreSearch(TestCoreBase):
         )
         first_result_page = next(page_iterator)
         self.assertIsInstance(first_result_page, SearchResult)
-        self.assertEqual(len(first_result_page), self.search_results_size)
+        self.assertEqual(len(first_result_page.data), self.search_results_size)
         second_result_page = next(page_iterator)
         self.assertIsInstance(second_result_page, SearchResult)
-        self.assertEqual(len(second_result_page), self.search_results_size_2)
+        self.assertEqual(len(second_result_page.data), self.search_results_size_2)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
@@ -2941,9 +2941,13 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
     def test_search_iter_page_count(self, mock_do_seach, mock_fetch_collections_list):
         """search_iter_page must return an iterator"""
+        first_page = self.search_results
+        first_page.next_page_token = "token_for_page_2"
+        first_page.next_page_token_key = "next_key"
+        second_page = self.search_results_2
         mock_do_seach.side_effect = [
-            self.search_results,
-            self.search_results_2,
+            first_page,
+            second_page,
         ]
 
         # no count by default
@@ -2989,8 +2993,10 @@ class TestCoreSearch(TestCoreBase):
             geometry=None,
             count=False,
             raise_errors=True,
-            page=2,
+            next_page_token="token_for_page_2",
+            next_page_token_key="next_key",
             items_per_page=2,
+            validate=False,
         )
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")
@@ -3041,10 +3047,17 @@ class TestCoreSearch(TestCoreBase):
     ):
         """search_iter_page must stop as soon as less than items_per_page products were retrieved"""
         search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            ([self.search_results_2.data[0]], None),
-        ]
+        # create first and second SearchResult with next_page_token
+        first_page = SearchResult(
+            products=self.search_results.data, number_matched=None
+        )
+        first_page.next_page_token = "token_for_page_2"
+
+        second_page = SearchResult(
+            products=[self.search_results_2.data[0]], number_matched=None
+        )
+        second_page.next_page_token = None  # last page
+        search_plugin.query.side_effect = [first_page, second_page]
 
         class DummyConfig:
             pagination = {}
@@ -3065,11 +3078,21 @@ class TestCoreSearch(TestCoreBase):
     ):
         """search_iter_page must stop if the page doesn't return any product"""
         search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            (self.search_results_2.data, None),
-            ([], None),
-        ]
+        # create 3 SearchResult with next_page_token
+        first_page = SearchResult(
+            products=self.search_results.data, number_matched=None
+        )
+        first_page.next_page_token = "token_for_page_2"
+        first_page.search_params = {"items_per_page": 2}
+
+        second_page = SearchResult(
+            products=self.search_results_2.data, number_matched=None
+        )
+        second_page.next_page_token = "token_for_page_3"  # last page
+        second_page.search_params = {"items_per_page": 2}
+
+        third_page = SearchResult(products=[], number_matched=None)
+        search_plugin.query.side_effect = [first_page, second_page, third_page]
 
         class DummyConfig:
             pagination = {}
@@ -3095,8 +3118,11 @@ class TestCoreSearch(TestCoreBase):
         with self.assertRaises(AttributeError):
             next(page_iterator)
 
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test_finally_breaks_when_same_product_as_previous(self, search_plugin):
+    def test_finally_breaks_when_same_product_as_previous(
+        self, search_plugin, prepare_seach
+    ):
         """search_iter_page must stop if the next page appears to have the same products"""
 
         class DummyConfig:
@@ -3124,8 +3150,15 @@ class TestCoreSearch(TestCoreBase):
         result_page2.__iter__ = lambda self: iter([same_product, mock.Mock()])
         result_page2.__len__ = lambda self: 2
 
+        prepare_seach.return_value = ([search_plugin], {})
+
         with mock.patch.object(
-            self.dag, "_do_search", side_effect=[result_page1, result_page2]
+            self.dag,
+            "_do_search",
+            side_effect=[
+                SearchResult(result_page1, 2, next_page_token="token_for_page_2"),
+                SearchResult(result_page2, 2),
+            ],
         ):
             with self.assertLogs(level="WARNING") as cm_logs:
                 page_iterator = self.dag.search_iter_page_plugin(
@@ -3275,7 +3308,7 @@ class TestCoreSearch(TestCoreBase):
                 type: PostJsonSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+                    next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
                     total_items_nb_key_path: '$.meta.found'
                 sort:
                     sort_by_tpl: '{{"sort_by": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
@@ -3415,9 +3448,12 @@ class TestCoreSearch(TestCoreBase):
     def test_search_all_must_collect_them_all(self, search_plugin, prepare_seach):
         """search_all must return all the products available"""
         search_plugin.provider = "peps"
+        first_page = SearchResult(self.search_results.data, None)
+        first_page.next_page_token = "token_for_page_2"
+        second_page = SearchResult([self.search_results_2.data[0]], None)
         search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            ([self.search_results_2.data[0]], None),
+            first_page,
+            second_page,
         ]
 
         class DummyConfig:
@@ -3439,9 +3475,11 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(len(all_results), 3)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
-    def test_search_all_use_max_items_per_page(self, mocked_search_iter_page):
+    def test_search_all_use_max_items_per_page(self, mock__do_search):
         """search_all must use the configured parameter max_items_per_page if available"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
@@ -3457,16 +3495,20 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C")
-        self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 2)
+
+        first_call_kwargs = mock__do_search.call_args_list[0][1]
+        self.assertEqual(first_call_kwargs["items_per_page"], 2)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
-    def test_search_all_use_default_value(self, mocked_search_iter_page):
+    def test_search_all_use_default_value(self, mock__do_search):
         """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
@@ -3480,19 +3522,21 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C")
+
         self.assertEqual(
-            mocked_search_iter_page.call_args[1]["items_per_page"],
+            mock__do_search.call_args_list[0].kwargs["items_per_page"],
             DEFAULT_MAX_ITEMS_PER_PAGE,
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
     )
-    def test_search_all_user_items_per_page(self, mocked_search_iter_page):
+    def test_search_all_user_items_per_page(self, mock__do_search):
         """search_all must use the value of items_per_page provided by the user"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
@@ -3506,11 +3550,12 @@ class TestCoreSearch(TestCoreBase):
                 S2_MSI_L1C:
                     _collection: '{collection}'
         """
-        mocked_search_iter_page.return_value = (self.search_results for _ in range(1))
+        mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C", items_per_page=7)
-        self.assertEqual(mocked_search_iter_page.call_args[1]["items_per_page"], 7)
+
+        self.assertEqual(mock__do_search.call_args_list[0].kwargs["items_per_page"], 7)
 
     @unittest.skip("Disable until fixed")
     def test_search_all_request_error(self):
@@ -3526,18 +3571,20 @@ class TestCoreSearch(TestCoreBase):
         dag.search_all(collection="S2_MSI_L1C")
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway._do_search",
+        autospec=True,
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     def test_search_all_unknown_collection(
-        self, mock_fetch_collections_list, mock_search_iter_page_plugin
+        self, mock_fetch_collections_list, mock__do_search
     ):
         """search_all must fetch collections if collection is unknown"""
         self.dag.search_all(collection="foo")
         mock_fetch_collections_list.assert_called_with(self.dag)
-        mock_search_iter_page_plugin.assert_called_once()
+        mock__do_search.assert_called_once()
 
     def test_fetch_external_collection_with_auth(self):
         """test _fetch_external_collection when the plugin needs authentication"""

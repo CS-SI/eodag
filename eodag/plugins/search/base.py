@@ -29,6 +29,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
@@ -52,7 +53,6 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.base")
@@ -97,7 +97,7 @@ class Search(PluginTopic):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Implementation of how the products must be searched goes here.
 
         This method must return a tuple with (1) a list of :class:`~eodag.api.product._product.EOProduct` instances

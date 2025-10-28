@@ -21,6 +21,7 @@ import os
 import shutil
 import tempfile
 
+from requests.models import Response
 from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
@@ -289,19 +290,21 @@ class TestCoreSearchResults(EODagTestCase):
             self.assertIsInstance(search_result.downloader_auth, PluginTopic)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.do_search",
+        "eodag.plugins.search.qssearch.QueryStringSearch._request",
         autospec=True,
     )
-    def test_core_search_with_provider(self, mock_query):
+    def test_core_search_with_provider(self, mock_request):
         """The core api must register search results downloaders"""
         self.dag.set_preferred_provider("creodias")
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "provider_responses/peps_search.json"
         )
         with open(search_results_file, encoding="utf-8") as f:
-            search_results_peps = json.load(f)
-
-        mock_query.return_value = search_results_peps["features"]
+            payload = json.load(f)
+        fake_response = Response()
+        fake_response.status_code = 200
+        fake_response._content = json.dumps(payload).encode("utf-8")
+        mock_request.return_value = fake_response
         search_results = self.dag.search(collection="S2_MSI_L1C", provider="peps")
         # use given provider and not preferred provider
         self.assertEqual("peps", search_results[0].provider)
