@@ -565,8 +565,8 @@ class CopGhslSearch(Search):
             return SearchResult(
                 products=products,
                 number_matched=count,
-                next_page_token="page",
-                next_page_token_key=page,
+                next_page_token_key="page",
+                next_page_token=str(page),
                 raise_errors=True,
             )
 
@@ -595,8 +595,8 @@ class CopGhslSearch(Search):
         return SearchResult(
             products=products,
             number_matched=total_items,
-            next_page_token="page",
-            next_page_token_key=page,
+            next_page_token_key="page",
+            next_page_token=str(page),
             raise_errors=True,
         )
 
