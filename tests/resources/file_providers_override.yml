@@ -27,11 +27,11 @@
     api_endpoint: https://foo.bar/search
   products:
     TEST_PRODUCT_1:
-      productType: TEST_PRODUCT_1
+      _collection: TEST_PRODUCT_1
     TEST_PRODUCT_2:
-      productType: TEST_PRODUCT_2
+      _collection: TEST_PRODUCT_2
     GENERIC_COLLECTION:
-      productType: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     base_uri: https://foo.bar

@@ -3797,7 +3797,7 @@
         title: '$.metadata._source.datasetTitle'
         _mission_start_date: '$.metadata._source.tempextent_begin'
         _mission_end_date: '$.metadata._source.tempextent_end'
-        extent: '{{"temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
+        extent: '{{"spatial": {{"bbox": [[[[-180.0, -90.0, 180.0, 90.0]]]]}}, "temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
         processing:level: '$.null'
         keywords: '$.metadata._source.keywords'
     discover_queryables:
@@ -6435,7 +6435,7 @@
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_collection_parsable_metadata:
         id: '{$.assets.enclosure.href#ceda_collection_name}'
-        description: '{$.description#decode_ceda_abstract}'
+        description: '{$.description#decode_ceda_description}'
         instruments: '$.summaries.instruments'
         keywords: '$.keywords'
         license: '$.license'

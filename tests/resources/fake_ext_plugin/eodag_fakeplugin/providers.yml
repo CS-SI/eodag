@@ -7,4 +7,4 @@
     endpoint: 'https://fakeplugin-endpoint'
   products:
     GENERIC_COLLECTION:
-      productType: '{productType}'
+      _collection: '{collection}'
