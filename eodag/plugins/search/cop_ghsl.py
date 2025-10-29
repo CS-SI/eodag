@@ -15,6 +15,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
@@ -531,7 +532,7 @@ class CopGhslSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """
         Implementation of search for the Copernicus GHSL provider
         :param prep: object containing search parameters
@@ -558,7 +559,16 @@ class CopGhslSearch(Search):
             tiles, unit = tiles_or_none
         else:
             kwargs.update(collection_config)
-            return self._create_products_without_tiles(collection, prep, kwargs)
+            products, count = self._create_products_without_tiles(
+                collection, prep, kwargs
+            )
+            return SearchResult(
+                products=products,
+                number_matched=count,
+                next_page_token="page",
+                next_page_token_key=page,
+                raise_errors=True,
+            )
 
         # create products from tiles
         kwargs.update(collection_config)
@@ -579,9 +589,16 @@ class CopGhslSearch(Search):
                 tiles, unit, collection, kwargs
             )
         if prep.count:
-            return products, count
+            total_items = count
         else:
-            return products, None
+            total_items = None
+        return SearchResult(
+            products=products,
+            number_matched=total_items,
+            next_page_token="page",
+            next_page_token_key=page,
+            raise_errors=True,
+        )
 
     @instance_cached_method()
     def _fetch_constraints(self, product_type: str) -> dict[str, Any]:
