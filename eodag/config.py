@@ -304,7 +304,7 @@ class PluginConfig(yaml.YAMLObject):
         results_entry: Union[JSONPath, str]
         #: Mapping for the collection id
         generic_collection_id: str
-        #: Mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
         #: result
         generic_collection_parsable_metadata: dict[str, str]
         #: Mapping for collection properties which can be parsed from the result and are not collection metadata

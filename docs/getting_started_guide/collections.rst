@@ -13,17 +13,17 @@ The example below shows the catalog entry for the collection *Sentinel 2 Level-2
 .. code-block:: yaml
 
    S2_MSI_L2A:
-     abstract: |
+     description: |
        The Level-2A product provides Bottom Of Atmosphere (BOA) reflectance images derived from the associated Level-1C
        products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
-     instrument: MSI
-     platform: SENTINEL2
-     platformSerialIdentifier: S2A,S2B
-     processingLevel: L2
-     sensorType: OPTICAL
+     instruments: ["MSI"]
+     constellation: SENTINEL2
+     platform: S2A,S2B
+     processing:level: L2
+     eodag:sensor_type: OPTICAL
      license: other
      title: SENTINEL2 Level-2A
-     missionStartDate: "2015-06-23T00:00:00Z"
+     extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2018-03-26T00:00:00Z", null]]}}
 
 This collection catalog can be obtained from the API:
 
@@ -56,13 +56,14 @@ The catalog is used in different ways by ``eodag``:
 
   .. code-block:: console
 
-     eodag search --sensorType OPTICAL --processingLevel L2
+     eodag search --sensor-type OPTICAL --processing-level L2
 
   .. code-block:: python
 
      from eodag import EODataAccessGateway
+     search_criteria = {"eodag:sensor_type": "OPTICAL", "processing:level": "L2"}
      dag = EODataAccessGateway()
-     dag.search(sensorType="OPTICAL", processingLevel="L2")
+     dag.search(**search_criteria)
 
 * The metadata stored in this file are sometimes added to the :attr:`properties` attribute to an
   :class:`~eodag.api.product._product.EOProduct`. It depends on whether the metadata are

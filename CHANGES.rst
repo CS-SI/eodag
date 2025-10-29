@@ -812,7 +812,7 @@ Core features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 * [v3.1.0b2] Assets keys uniformization using drivers (:pull:`1488`)
-* [v3.1.0b1] Updated `queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/5_queryables.html>`_
+* [v3.1.0b1] Updated `queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_queryables.html>`_
   mechanism and ecmwf-like plugins (:pull:`1397`)(:pull:`1427`)(:pull:`1462`)
 * **[v3.1.0]** Customizable providers configuration file through ``EODAG_PRODUCT_TYPES_CFG_FILE`` environment
   variable (:pull:`1559`)
@@ -863,7 +863,7 @@ Miscellaneous
 
 * **[build]** remove dependencies max versions (:pull:`1519`)
 * **[docs]** ``eodag-cube`` `Python API documentation
-  <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/9_post_process.html#Data-access-with-eodag-cube>`_
+  <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/8_post_process.html#Data-access-with-eodag-cube>`_
   (:pull:`1511`), ``usgs`` registration update (:pull:`1551`)
 * Various minor fixes and improvements (:pull:`1502`)(:pull:`1540`)(:pull:`1541`)(:pull:`1547`)(:pull:`1552`)
   (:pull:`1566`)(:pull:`1568`)
@@ -903,7 +903,7 @@ v3.1.0b1 (2025-01-13)
 Core features and fixes
 -----------------------
 
-* Updated `queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/5_queryables.html>`_ mechanism
+* Updated `queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_queryables.html>`_ mechanism
   and ecmwf-like plugins (:pull:`1397`)(:pull:`1427`)(:pull:`1462`)
 * Order and download polling times update (:pull:`1440`)
 * Do not retry downloading skipped products during download_all (:pull:`1465`)
@@ -941,7 +941,7 @@ Server mode
 
 Miscellaneous
 -------------
-* **[docs]** `Queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/5_queryables.html>`_
+* **[docs]** `Queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_queryables.html>`_
   documentation in a dedicated section (:pull:`1447`)
 * Various minor fixes and improvements (:pull:`1390`)(:pull:`1403`)(:pull:`1411`)(:pull:`1415`)(:pull:`1419`)
   (:pull:`1428`)(:pull:`1430`)(:pull:`1434`)(:pull:`1445`)(:pull:`1448`)(:pull:`1458`)(:pull:`1466`)
@@ -992,7 +992,7 @@ v3.0.0 (2024-10-10)
 |:warning:| Breaking changes since last stable (`v2.12.1 <changelog.rst#v2-12-1-2024-03-05>`_)
 ----------------------------------------------------------------------------------------------
 
-* [v3.0.0b1] `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_ method
+* [v3.0.0b1] `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/3_search.html#search()>`_ method
   now returns only a :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple (:pull:`1200`). It can
   optionally store the estimated total number of products in ``SearchResult.number_matched`` if the method is called
   with ``count=True`` (``False`` by  default).
@@ -1161,7 +1161,7 @@ v3.0.0b1 (2024-06-24)
 |:warning:| Breaking changes
 ----------------------------
 
-* `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_ method now
+* `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/3_search.html#search()>`_ method now
   returns only a :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple (:pull:`1200`). It can
   optionally store the estimated total number of products in ``SearchResult.number_matched`` if the method is called
   with ``count=True`` (``False`` by  default).
@@ -1178,12 +1178,12 @@ Core features and fixes
 * Search results sort feature (:pull:`943`)
 * Providers groups (:pull:`1071`)
 * Configurable download timeout (:pull:`1124`)
-* `Search by id <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#id-and-provider>`_ now
+* `Search by id <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/3_search.html#id-and-provider>`_ now
   uses :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
-  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_crunch.html#Filter-by-property>`_
+  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_
   (:pull:`1099`).
-* Free text search available for all fields when `guessing a produc type
-  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_crunch.html#Filter-by-property>`_ (:pull:`1070`),
+* Free text search available for all fields when `guessing a product type
+  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`),
   mission dates filtering support (:pull:`1222`)
 * Configurable requests ``ssl_verify`` (:pull:`1045`)
 * Download record hash independent from provider (:pull:`1023`)
@@ -1274,7 +1274,7 @@ v2.12.0 (2024-02-19)
 
 * Individual product asset download methods (:pull:`932`)
 * New environment variable `EODAG_CFG_DIR` available for custom configuration directory (:pull:`927`)
-* New `list_queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#Queryables>`_
+* New `list_queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/3_search.html#Queryables>`_
   method, available through python API and server mode, and using product-types constraints if available (:pull:`911`)
   (:pull:`917`)(:pull:`974`)(:pull:`977`)(:pull:`978`)(:pull:`981`)(:pull:`1005`)
 * Removes limited RPC server (:pull:`1011`)
@@ -1339,7 +1339,7 @@ v2.11.0b1 (2023-07-28)
 * Enable single-link download for STAC providers (:pull:`757`)
 * Fixes missing provider in STAC download link (:pull:`774`)
 * Better documentation for `guess_product_type()\
-  <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#Guess-a-product-type>`_ (:pull:`756`)
+  <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/3_search.html#Guess-a-collection>`_ (:pull:`756`)
 * Fixed issue with docker image user directory (:pull:`764`)
 * Various minor fixes and improvements (:pull:`720`)(:pull:`717`)(:pull:`722`)(:pull:`723`)(:pull:`724`)(:pull:`727`)
   (:pull:`729`)(:pull:`731`)(:pull:`737`)(:pull:`738`)(:pull:`743`)(:pull:`744`)(:pull:`745`)(:pull:`749`)(:pull:`751`)
@@ -1414,7 +1414,7 @@ v2.8.0 (2023-01-17)
 * Removes unavailable ```sobloo``` provider (:pull:`607`)
 * Landsat collection-1 data no more available on `usgs` (:pull:`601`)
 * `Product types catalog\
-  <https://eodag.readthedocs.io/en/latest/getting_started_guide/product_types.html#product-types-information-csv>`_
+  <https://eodag.readthedocs.io/en/latest/getting_started_guide/collections.html#product-types-information-csv>`_
   more visible in documentation (:pull:`603`)
 * Metadata mapping `to_geo_interface()` renamed to `to_geojson()`
   (`d7565a4 <https://github.com/CS-SI/eodag/pull/604/commits/d7565a4984d356aca20310a87c02692cb879427e>`_)
@@ -1457,7 +1457,7 @@ v2.6.0 (2022-10-07)
 ===================
 
 * New `product types automatic discovery\
-  <https://eodag.rtfd.io/en/latest/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
+  <https://eodag.rtfd.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery>`_
   (:pull:`480`)(:pull:`467`)(:pull:`470`)(:pull:`471`)(:pull:`472`)(:pull:`473`)(:pull:`481`)(:pull:`486`)(:pull:`493`)
   (:pull:`491`)(:pull:`500`)
 * New providers `cop_ads <https://ads.atmosphere.copernicus.eu>`_ and `cop_cds <https://cds.climate.copernicus.eu>`_

@@ -33,11 +33,11 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 import geojson
 import yaml
 
+from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.api.product_type import ProductType, ProductTypesDict, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -123,12 +123,8 @@ class EODataAccessGateway:
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
-        collections_config_dict = SimpleYamlProxyConfig(
-            collections_config_path
-        ).source
-        self.collections_config = self._collections_config_init(
-            collections_config_dict
-        )
+        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
+        self.collections_config = self._collections_config_init(collections_config_dict)
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -236,17 +232,17 @@ class EODataAccessGateway:
 
     def _collections_config_init(
         self, collections_config_dict: dict[str, Any]
-    ) -> ProductTypesDict:
+    ) -> CollectionsDict:
         """Initialize collections configuration.
 
         :param collections_config_dict: The collections config as a dictionary
         """
-        # Turn the collections config from a dict into a ProductTypesDict() object
+        # Turn the collections config from a dict into a CollectionsDict() object
         collections = [
-            ProductType(dag=self, id=pt, **pt_f)
+            Collection(dag=self, id=pt, **pt_f)
             for pt, pt_f in collections_config_dict.items()
         ]
-        return ProductTypesDict(collections)
+        return CollectionsDict(collections)
 
     def _sync_provider_collections(
         self,
@@ -278,8 +274,8 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = ProductType(
-                    dag=self, id=product_id, title=product_id, abstract=NOT_AVAILABLE
+                empty_product = Collection(
+                    dag=self, id=product_id, title=product_id, description=NOT_AVAILABLE
                 )
                 self.collections_config[
                     product_id
@@ -560,7 +556,7 @@ class EODataAccessGateway:
 
     def list_collections(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> ProductTypesList:
+    ) -> CollectionsList:
         """Lists supported collections.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -574,7 +570,7 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        collections: ProductTypesList = ProductTypesList([])
+        collections: CollectionsList = CollectionsList([])
 
         providers_configs = (
             list(self.providers_config.values())
@@ -890,7 +886,7 @@ class EODataAccessGateway:
                                 # to self.collections_config
                                 self.collections_config.update(
                                     {
-                                        new_collection: ProductType(
+                                        new_collection: Collection(
                                             dag=self,
                                             id=new_collection,
                                             **new_collections_conf[
@@ -903,9 +899,7 @@ class EODataAccessGateway:
                                 provider_products_config[
                                     new_collection
                                 ] = new_collection_conf
-                                ext_collections_conf[
-                                    provider
-                                ] = new_collections_conf
+                                ext_collections_conf[provider] = new_collections_conf
                                 new_collections.append(new_collection)
                                 # increase the increment if the new collection had
                                 # bad formatted attributes in the external config
@@ -914,16 +908,16 @@ class EODataAccessGateway:
                                 ].model_dump()
                                 dumped_ext_conf_pt = {
                                     **dumped_collection,
-                                    **new_collections_conf["product_types_config"][
+                                    **new_collections_conf["collections_config"][
                                         new_collection
                                     ],
                                 }
                                 if dumped_ext_conf_pt != dumped_collection:
                                     bad_formatted_pt_count += 1
                             except ValidationError:
-                                # skip product type if there is a problem with its id (missing or not a string)
+                                # skip collection if there is a problem with its id (missing or not a string)
                                 logger.debug(
-                                    f"Product type {new_collection} has been pruned on provider "
+                                    f"Collection {new_collection} has been pruned on provider "
                                     f"{provider} because its id was incorrectly parsed for eodag"
                                 )
                 if new_collections:
@@ -1039,7 +1033,7 @@ class EODataAccessGateway:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         **kwargs: Any,
-    ) -> ProductTypesList:
+    ) -> CollectionsList:
         """
         Find EODAG collection IDs that best match a set of search parameters.
 
@@ -1065,9 +1059,9 @@ class EODataAccessGateway:
         if collection := kwargs.get("collection"):
             try:
                 collection = self.get_collection_from_alias(collection)
-                return ProductTypesList([self.collections_config[collection]])
+                return CollectionsList([self.collections_config[collection]])
             except NoMatchingCollection:
-                return ProductTypesList([ProductType(dag=self, id=collection)])
+                return CollectionsList([Collection(dag=self, id=collection)])
 
         filters: dict[str, str] = {
             k: v
@@ -1099,7 +1093,7 @@ class EODataAccessGateway:
         for pt, pt_f in self.collections_config.items():
             if (
                 pt == GENERIC_COLLECTION
-                or pt not in self._plugins_manager.collections_to_provider_config_map
+                or pt not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
 
@@ -1124,10 +1118,15 @@ class EODataAccessGateway:
 
                 filter_matches = [
                     filters_evaluators[filter_name](
-                        {filter_name: pt_f.__dict__[filter_name]}
+                        {
+                            filter_name: pt_f.__dict__[
+                                Collection.get_collection_mtd_from_alias(filter_name)
+                            ]
+                        }
                     )
                     for filter_name, value in filters.items()
-                    if filter_name in pt_f.__dict__
+                    if Collection.get_collection_mtd_from_alias(filter_name)
+                    in pt_f.__dict__
                 ]
 
                 if filters_matching_method(filter_matches):
@@ -1144,7 +1143,24 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                col_start, col_end = get_collection_dates(pt_f.model_dump())
+                extent_dict_with_str_dates = {
+                    "extent": {
+                        "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                        "temporal": {"interval": [[None, None]]},
+                    }
+                }
+
+                if pt_f.model_dump()["extent"] is not None:
+                    col_dates = pt_f.model_dump()["extent"]["temporal"]["interval"][0]
+                    for i, date in enumerate(col_dates):
+                        if date is not None:
+                            extent_dict_with_str_dates["extent"]["temporal"][
+                                "interval"
+                            ][0][i] = date.strftime(
+                                "%Y-%m-%d"
+                            )  # type: ignore[index]
+
+                col_start, col_end = get_collection_dates(extent_dict_with_str_dates)
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
@@ -1162,8 +1178,8 @@ class EODataAccessGateway:
         if guesses_with_score:
             # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return ProductTypesList(
-                [self.product_types_config[pt] for pt, _ in guesses_with_score]
+            return CollectionsList(
+                [self.collections_config[pt] for pt, _ in guesses_with_score]
             )
 
         raise NoMatchingCollection()
@@ -1604,7 +1620,7 @@ class EODataAccessGateway:
 
             if len(results) == 1:
                 if not results[0].collection:
-                    # guess product type from properties
+                    # guess collection from properties
                     guesses = self.guess_collection(**results[0].properties)
                     results[0].collection = guesses[0].id
                     # reset driver
@@ -1697,7 +1713,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                product_type = guesses[0].id
+                collection = guesses[0].id
             except NoMatchingCollection:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
