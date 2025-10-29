@@ -22,6 +22,7 @@ import os
 import re
 from typing import Any
 
+from eodag.api.collection import Collection
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_default_config
 
@@ -65,7 +66,7 @@ def collections_info_to_csv(
     metadata_params = list(
         k
         for k in collections[0].model_dump().keys()
-        if k in ["platform", "processingLevel"]
+        if k in ["constellation", "processing:level"]
     )
 
     # csv fieldnames
@@ -82,7 +83,10 @@ def collections_info_to_csv(
             collections_rows[collection_name] = {"collection": collection_name}
             for metadata_param in metadata_params:
                 metadata_string = [
-                    getattr(collection, metadata_param)
+                    getattr(
+                        collection,
+                        Collection.get_collection_mtd_from_alias(metadata_param),
+                    )
                     for collection in collections
                     if collection.id == collection_name
                 ][0]

@@ -8,7 +8,7 @@ TEST_PRODUCT_1:
   keywords: ["TEST","PRODUCT1"]
   eodag:sensor_type: test
   license: other
-  extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: Test Product 1
 
 TEST_PRODUCT_2:
@@ -21,5 +21,5 @@ TEST_PRODUCT_2:
   keywords: ["TEST","PRODUCT2"]
   eodag:sensor_type: test
   license: other
-  extent: {"temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
   title: Test Product 2

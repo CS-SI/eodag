@@ -164,7 +164,7 @@ Some EODAG core settings can be overriden using environment variables:
   This is useful for restricting ``eodag`` to a subset of providers, for example in controlled or production environments.
 * ``EODAG_STRICT_COLLECTIONS`` to control how collections are listed.
 
-  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), ``eodag`` will only list collections that are present in the main product types configuration file.
+  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), ``eodag`` will only list collections that are present in the main collections configuration file.
   Collections defined only in provider configurations (but not in the main collections configuration) will be ignored.
   If not set, ``eodag`` will also include collections defined only in provider configurations, with minimal metadata.
 

@@ -2,37 +2,37 @@
   "earth_search": {
     "providers_config": {
       "foo": {
-        "productType": "foo",
+        "collection": "foo",
         "metadata_mapping": {
           "eo:cloud_cover": "$.null"
         }
       },
       "bar": {
-        "productType": "bar",
+        "collection": "bar",
         "metadata_mapping": {
           "eo:cloud_cover": "$.null"
         }
       },
       "foobar": {
-        "productType": "foobar",
+        "collection": "foobar",
         "metadata_mapping": {
           "eo:cloud_cover": "$.null"
         }
       },
       "interval_start": {
-        "productType": "interval_start",
+        "collection": "interval_start",
         "metadata_mapping": {
           "eo:cloud_cover": "$.null"
         }
       },
       "interval_end": {
-        "productType": "interval_end",
+        "collection": "interval_end",
         "metadata_mapping": {
           "eo:cloud_cover": "$.null"
         }
       },
       "interval_start_end": {
-        "productType": "interval_start_end",
+        "collection": "interval_start_end",
         "metadata_mapping": {
           "eo:cloud_cover": "$.null"
         }
@@ -45,10 +45,10 @@
         "constellation": "Not Available",
         "platform": "Not Available",
         "processing:level": "Not Available",
-        "keywords": "suspendisse",
+        "keywords": ["suspendisse"],
         "license": "WTFPL",
         "title": "titleFOO - Lorem FOO collection",
-        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
+        "extent": {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "bar": {
         "description": "abstractBAR - This is BAR",
@@ -56,10 +56,10 @@
         "constellation": "Not Available",
         "platform": "Not Available",
         "processing:level": "Not Available",
-        "keywords": "lectus,lectus_bar_key",
+        "keywords": ["lectus", "lectus_bar_key"],
         "license": "WTFPL",
         "title": "titleBAR - Lorem BAR collection (FooAndBar)",
-        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
+        "extent": {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "foobar": {
         "description": "abstract FOOBAR - This is FOOBAR",
@@ -68,22 +68,22 @@
         "constellation": "Not Available",
         "platform": "Not Available",
         "processing:level": "Not Available",
-        "keywords": "tortor",
+        "keywords": ["tortor"],
         "license": "WTFPL",
         "title": "titleFOOBAR - Lorem FOOBAR collection",
-        "extent": {"temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
+        "extent": {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2012-12-12T00:00:00.000Z", null]]}}
       },
       "interval_start": {
         "title": "TEST DATES [start; end)",
-        "extent": {"temporal": {"interval": [["2013-02-10T00:00:00.000Z", null]]}}
+        "extent": {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2013-02-10T00:00:00.000Z", null]]}}
       },
       "interval_end": {
         "title": "TEST DATES (start; end]",
-        "extent": {"temporal": {"interval": [[null, "2013-02-20T00:00:00.000Z"]]}}
+        "extent": {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [[null, "2013-02-20T00:00:00.000Z"]]}}
       },
       "interval_start_end": {
         "title": "TEST DATES [start; end]",
-        "extent": {"temporal": {"interval": [["2013-02-10T00:00:00.000Z", "2013-02-20T00:00:00.000Z"]]}}
+        "extent": {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2013-02-10T00:00:00.000Z", "2013-02-20T00:00:00.000Z"]]}}
       }
     }
   }

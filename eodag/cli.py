@@ -49,8 +49,8 @@ from urllib.parse import parse_qs
 
 import click
 
+from eodag.api.collection import CollectionsList
 from eodag.api.core import EODataAccessGateway, SearchResult
-from eodag.api.product_type import ProductTypesList
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
@@ -143,8 +143,8 @@ def version() -> None:
 
 @eodag.command(
     name="search",
-    help="Search satellite images by their collections, instrument, platform, "
-    "platform identifier, processing level or sensor type. It is mandatory to provide "
+    help="Search satellite images by their collections, instruments, constellation, "
+    "platform, processing level or sensor type. It is mandatory to provide "
     "at least one of the previous criteria for eodag to perform a search. "
     "Optionally crunch the search results before storing them in a geojson file",
 )
@@ -431,7 +431,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_product_types = ProductTypesList([])
+    guessed_collections = CollectionsList([])
     try:
         guessed_collections = dag.guess_collection(
             **kwargs,
@@ -458,13 +458,13 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             sys.exit(1)
     try:
         if guessed_collections:
-            collections = ProductTypesList(
+            collections = CollectionsList(
                 [
                     pt
                     for pt in dag.list_collections(
                         provider=provider, fetch_providers=fetch_providers
                     )
-                    if pt.id in [guessed_pt.id for guessed_pt in guessed_product_types]
+                    if pt.id in [guessed_pt.id for guessed_pt in guessed_collections]
                 ]
             )
         else:

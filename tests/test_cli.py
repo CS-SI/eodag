@@ -30,7 +30,7 @@ from click.testing import CliRunner
 from faker import Faker
 from packaging import version
 
-from eodag.api.product_type import ProductType, ProductTypesList
+from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_COLLECTION
 from tests import TEST_RESOURCES_PATH
@@ -717,23 +717,23 @@ class TestEodagCli(unittest.TestCase):
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_guess_collection_ok(self, dag):
-        """Calling eodag list with one or several valid product type feature(s) should return
-        all supported product types with this (these) feature(s) among the ones of its provider
+        """Calling eodag list with one or several valid collection feature(s) should return
+        all supported collections with this (these) feature(s) among the ones of its provider
         and with or without fetching provider according to the command.
         """
         provider = "peps"
 
-        dag.return_value.guess_collection.return_value = ProductTypesList(
+        dag.return_value.guess_collection.return_value = CollectionsList(
             [
-                ProductType(dag=dag, id="foo", title="this is foo"),
-                ProductType(dag=dag, id="bar", title="this is bar"),
+                Collection(dag=dag, id="foo", title="this is foo"),
+                Collection(dag=dag, id="bar", title="this is bar"),
             ]
         )
-        dag.return_value.list_collections.return_value = ProductTypesList(
+        dag.return_value.list_collections.return_value = CollectionsList(
             [
-                ProductType(dag=dag, id="foo", title="this is foo"),
-                ProductType(dag=dag, id="bar", title="this is bar"),
-                ProductType(dag=dag, id="baz", title="this is baz"),
+                Collection(dag=dag, id="foo", title="this is foo"),
+                Collection(dag=dag, id="bar", title="this is bar"),
+                Collection(dag=dag, id="baz", title="this is baz"),
             ]
         )
 

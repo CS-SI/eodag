@@ -185,8 +185,8 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_id` (``str``): mapping for the
             collection id
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_parsable_metadata`
-            (``dict[str, str]``): mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed
-            from the provider result
+            (``dict[str, str]``): mapping for collection metadata (e.g. ``description``, ``license``) which can be
+            parsed from the provider result
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_parsable_properties`
             (``dict[str, str]``): mapping for collection properties which can be parsed from the result and are not
             collection metadata

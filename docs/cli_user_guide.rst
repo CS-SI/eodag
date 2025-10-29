@@ -80,7 +80,7 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
   - `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
 
 For example, the following search request will first search for a collection for platform SENTINEL2 and
-processingLevel L1 (there are several collections matching these criteria, e.g., `S2_MSI_L1C`) and then use this
+processing:level L1 (there are several collections matching these criteria, e.g., `S2_MSI_L1C`) and then use this
 collection to execute the actual search.
 
 .. code-block:: console
@@ -155,4 +155,4 @@ This file can then be used in EODAG using the environment variable ``EODAG_EXT_C
 
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
 For more information on the collections discovery mechanism, please see
-`Python API User Guide / Providers and products / Collections discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.
+`Python API User Guide / Providers and products / Collections discovery <notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery>`_.
