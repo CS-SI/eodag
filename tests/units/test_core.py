@@ -1612,10 +1612,7 @@ class TestCore(TestCoreBase):
                 end_datetime="2025-01-31",
                 geometry=[-10, 35, 10, 45],
             ),
-            [
-                pt["ID"]
-                for pt in self.dag.list_collections("peps", fetch_providers=False)
-            ],
+            [pt.id for pt in self.dag.list_collections("peps", fetch_providers=False)],
             {
                 "S2_MSI_L1C": {
                     "collection": "S2_MSI_L1C",
