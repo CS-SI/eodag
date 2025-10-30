@@ -2558,6 +2558,7 @@
     extract: true
     order_enabled: false
     archive_depth: 2
+    max_workers: 4
     ssl_verify: true
   auth: !plugin
     type: KeycloakOIDCPasswordAuth

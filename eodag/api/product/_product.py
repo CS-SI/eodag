@@ -59,6 +59,7 @@ from eodag.utils.exceptions import DownloadError, MisconfiguredError, Validation
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product.drivers.base import DatasetDriver
@@ -339,6 +340,7 @@ class EOProduct:
     def download(
         self,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -355,6 +357,7 @@ class EOProduct:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
+        :param executor: (optional) An executor to download assets of the product in parallel if it has any
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
@@ -379,16 +382,25 @@ class EOProduct:
         )
 
         progress_callback, close_progress_callback = self._init_progress_bar(
-            progress_callback
+            progress_callback, executor
         )
+
         fs_path = self.downloader.download(
             self,
             auth=auth,
             progress_callback=progress_callback,
+            executor=executor,
             wait=wait,
             timeout=timeout,
             **kwargs,
         )
+
+        # shutdown executor if it was not created during parallel product downloads
+        if (
+            executor is not None
+            and executor._thread_name_prefix != "eodag-download-all"
+        ):
+            executor.shutdown(wait=True)
 
         # close progress bar if needed
         if close_progress_callback:
@@ -410,15 +422,22 @@ class EOProduct:
         return fs_path
 
     def _init_progress_bar(
-        self, progress_callback: Optional[ProgressCallback]
+        self,
+        progress_callback: Optional[ProgressCallback],
+        executor: Optional[ThreadPoolExecutor],
     ) -> tuple[ProgressCallback, bool]:
+        # determine position of the progress bar with a counter of executor passings
+        # to avoid bar overwriting in case of parallel downloads
+        count = executor._counter() if executor is not None else 1  # type: ignore
+
         # progress bar init
         if progress_callback is None:
-            progress_callback = ProgressCallback(position=1)
+            progress_callback = ProgressCallback(position=count)
             # one shot progress callback to close after download
             close_progress_callback = True
         else:
             close_progress_callback = False
+            progress_callback.pos = count
             # update units as bar may have been previously used for extraction
             progress_callback.unit = "B"
             progress_callback.unit_scale = True

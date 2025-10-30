@@ -424,7 +424,7 @@ class TestEodagCli(unittest.TestCase):
                 count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
             api_obj.download_all.assert_called_once_with(
-                search_results, output_dir=None
+                search_results, output_dir=None, executor=mock.ANY
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -876,7 +876,7 @@ class TestEodagCli(unittest.TestCase):
             ],
         )
         dag.return_value.download_all.assert_called_with(
-            mock.ANY, output_dir=output_dir
+            mock.ANY, output_dir=output_dir, executor=mock.ANY
         )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -918,7 +918,7 @@ class TestEodagCli(unittest.TestCase):
                 ["foo", "bar"],
             )
             dag.return_value.download_all.assert_called_once_with(
-                fake_result, output_dir=None
+                fake_result, output_dir=None, executor=mock.ANY
             )
 
     def test_eodag_download_missingcredentials(self):
