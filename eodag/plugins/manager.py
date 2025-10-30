@@ -132,7 +132,7 @@ class PluginManager:
         """Build mapping conf between collections and providers"""
         self.collection_to_provider_config_map = {}
         for provider in list(self.providers.values()):
-            if not provider.product_types:
+            if not provider.collections:
                 logger.info(
                     "%s: provider has no product configured and will be skipped",
                     provider,
@@ -140,7 +140,7 @@ class PluginManager:
                 del self.providers[provider.name]
                 continue
 
-            for collection in provider.product_types:
+            for collection in provider.collections:
                 collection_providers = (
                     self.collection_to_provider_config_map.setdefault(  # noqa
                         collection, []

@@ -41,7 +41,6 @@ from eodag.api.product.metadata_mapping import (
     STAGING_STATUS,
     properties_from_json,
     NOT_AVAILABLE,
-    DEFAULT_METADATA_MAPPING,
 )
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
