@@ -60,7 +60,7 @@
     GENERIC_COLLECTION:
         product:type: '{product:type}'
         _collection: '{collection}'
-        instrument: '{instrument}'
+        instruments: '{instruments}'
         processing:level: '{processing:level}'
   auth: !plugin
     type: HTTPHeaderAuth

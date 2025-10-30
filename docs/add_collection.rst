@@ -15,17 +15,17 @@ example:
 .. code-block:: yaml
 
     CBERS4_AWFI_L2:
-      abstract: |
+      description: |
         China-Brazil Earth Resources Satellite, CBERS-4 AWFI camera Level-2 product. System corrected images, expect
         some translation error.
-      instrument: AWFI
-      platform: CBERS
-      platformSerialIdentifier: CBERS-4
-      processingLevel: L2
-      keywords: AWFI,CBERS,CBERS-4,L2
-      sensorType: OPTICAL
+      instruments: ["AWFI"]
+      constellation: CBERS
+      platform: CBERS-4
+      processing:level: L2
+      keywords: ["AWFI", "CBERS", "CBERS-4", "L2"]
+      eodag:sensor_type: OPTICAL
       license: other
-      missionStartDate: "2014-12-07T00:00:00Z"
+      extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2014-12-07T00:00:00Z", null]]}}
       title: CBERS-4 AWFI Level-2
 
 The first line ``CBERS4_AWFI_L2:`` is a YAML key corresponding to the name by
@@ -37,7 +37,7 @@ The following lines need to be indented because they make a dictionary of
 configuration information for the collection we are defining. Each bit of
 information can usually be found on the provider's catalog. Note how the value
 used for the ``keywords`` entry brings together values from other entries such
-as ``instrument``, ``processingLevel``, ``platform``, etc.
+as ``instruments``, ``processing:level``, ``constellation``, etc.
 
 Add collection to a provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,13 +71,13 @@ collection:
       products:
         # ...
         CBERS4_AWFI_L2:
-          instrument: AWFI
-          collection: cbers4
-          processingLevel: 2
+          instruments: ["AWFI"]
+          _collection: cbers4
+          processing:level: 2
 
 With the example above, when searching for products of the type ``CBERS4_AWFI_L2``, the
-search will be performed by default as if we had specified the instrument ``AWFI``, the
-collection ``cbers4`` and the processingLevel ``2``.
+search will be performed by default as if we had specified the instruments ``["AWFI"]``, the
+collection ``cbers4`` and the processing:level ``2``.
 Each of those parameters can be overridden when performing an actual search. Note that
 parameters have to be named following the common model used in EODAG (see
 `Parameters mapping <params_mapping.rst>`_). Part of the provider search metadata
@@ -96,8 +96,8 @@ section to the collection definition:
           # ... default eodag search parameters
           metadata_mapping_from_product: CBERS4_PAN10M_L2
           metadata_mapping:
-            previewBaseName: '{$.sceneID#replace_str("_L4","")}'
-            thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
+            _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+            eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
 
 In the example above, we can see that the metadata mapping for the collection
 in the context of this provider can be specified in two ways:

@@ -27,12 +27,13 @@ import warnings
 from collections import deque
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 
+from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
@@ -87,6 +88,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedCollection,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
@@ -121,7 +123,8 @@ class EODataAccessGateway:
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
-        self.collections_config = SimpleYamlProxyConfig(collections_config_path)
+        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
+        self.collections_config = self._collections_config_init(collections_config_dict)
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -174,7 +177,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        available_collections = set(self.collections_config.source.keys())
+        available_collections = set(self.collections_config.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -185,8 +188,6 @@ class EODataAccessGateway:
             self._sync_provider_collections(
                 provider, available_collections, strict_mode
             )
-        # init collections configuration
-        self._collections_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -229,10 +230,19 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
 
-    def _collections_config_init(self) -> None:
-        """Initialize collections configuration."""
-        for pt_id, pd_dict in self.collections_config.source.items():
-            self.collections_config.source[pt_id].setdefault("_id", pt_id)
+    def _collections_config_init(
+        self, collections_config_dict: dict[str, Any]
+    ) -> CollectionsDict:
+        """Initialize collections configuration.
+
+        :param collections_config_dict: The collections config as a dictionary
+        """
+        # Turn the collections config from a dict into a CollectionsDict() object
+        collections = [
+            Collection(dag=self, id=pt, **pt_f)
+            for pt, pt_f in collections_config_dict.items()
+        ]
+        return CollectionsDict(collections)
 
     def _sync_provider_collections(
         self,
@@ -264,11 +274,10 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = {
-                    "title": product_id,
-                    "description": NOT_AVAILABLE,
-                }
-                self.collections_config.source[
+                empty_product = Collection(
+                    dag=self, id=product_id, title=product_id, description=NOT_AVAILABLE
+                )
+                self.collections_config[
                     product_id
                 ] = empty_product  # will update available_collections
                 products_to_add.append(product_id)
@@ -547,7 +556,7 @@ class EODataAccessGateway:
 
     def list_collections(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> list[dict[str, Any]]:
+    ) -> CollectionsList:
         """Lists supported collections.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -561,7 +570,7 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        collections: list[dict[str, Any]] = []
+        collections: CollectionsList = CollectionsList([])
 
         providers_configs = (
             list(self.providers_config.values())
@@ -579,20 +588,18 @@ class EODataAccessGateway:
             )
 
         for p in providers_configs:
-            for collection_id in p.products:  # type: ignore
+            for collection_id in p.products:
                 if collection_id == GENERIC_COLLECTION:
                     continue
 
-                config = self.collections_config[collection_id]
-                if "alias" in config:
-                    collection_id = config["alias"]
-                collection = {"ID": collection_id, **config}
-
-                if collection not in collections:
+                if (
+                    collection := self.collections_config[collection_id]
+                ) not in collections:
                     collections.append(collection)
 
-        # Return the collections sorted in lexicographic order of their ID
-        return sorted(collections, key=itemgetter("ID"))
+        # Return the collections sorted in lexicographic order of their id
+        collections.sort(key=attrgetter("id"))
+        return collections
 
     def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch collections list and update if needed.
@@ -849,6 +856,7 @@ class EODataAccessGateway:
                     )
                     continue
                 new_collections: list[str] = []
+                bad_formatted_pt_count = 0
                 for (
                     new_collection,
                     new_collection_conf,
@@ -873,26 +881,53 @@ class EODataAccessGateway:
                                 # new_collections_conf is a subset on an existing conf
                                 break
                         else:
-                            # new_collection_conf does not already exist, append it
-                            # to provider_products_config
-                            provider_products_config[
-                                new_collection
-                            ] = new_collection_conf
-                            # to self.collections_config
-                            self.collections_config.source.update(
-                                {
-                                    new_collection: {"_id": new_collection}
-                                    | new_collections_conf["collections_config"][
+                            try:
+                                # new_collection_conf does not already exist, append it
+                                # to self.collections_config
+                                self.collections_config.update(
+                                    {
+                                        new_collection: Collection(
+                                            dag=self,
+                                            id=new_collection,
+                                            **new_collections_conf[
+                                                "collections_config"
+                                            ][new_collection],
+                                        )
+                                    }
+                                )
+                                # to provider_products_config
+                                provider_products_config[
+                                    new_collection
+                                ] = new_collection_conf
+                                ext_collections_conf[provider] = new_collections_conf
+                                new_collections.append(new_collection)
+                                # increase the increment if the new collection had
+                                # bad formatted attributes in the external config
+                                dumped_collection = self.collections_config[
+                                    new_collection
+                                ].model_dump()
+                                dumped_ext_conf_pt = {
+                                    **dumped_collection,
+                                    **new_collections_conf["collections_config"][
                                         new_collection
-                                    ]
+                                    ],
                                 }
-                            )
-                            ext_collections_conf[provider] = new_collections_conf
-                            new_collections.append(new_collection)
+                                if dumped_ext_conf_pt != dumped_collection:
+                                    bad_formatted_pt_count += 1
+                            except ValidationError:
+                                # skip collection if there is a problem with its id (missing or not a string)
+                                logger.debug(
+                                    f"Collection {new_collection} has been pruned on provider "
+                                    f"{provider} because its id was incorrectly parsed for eodag"
+                                )
                 if new_collections:
                     logger.debug(
                         f"Added {len(new_collections)} collections for {provider}"
                     )
+                    if bad_formatted_pt_count > 0:
+                        logger.debug(
+                            f"bad formatted attributes skipped for {bad_formatted_pt_count} collection(s) on {provider}"
+                        )
 
             elif provider not in self.providers_config:
                 # unknown provider
@@ -944,16 +979,14 @@ class EODataAccessGateway:
         return [name for name, _ in providers]
 
     def get_collection_from_alias(self, alias_or_id: str) -> str:
-        """Return the ID of a collection by either its ID or alias
+        """Return the id of a collection by either its id or alias
 
-        :param alias_or_id: Alias of the collection. If an existing ID is given, this
+        :param alias_or_id: Alias of the collection. If an existing id is given, this
                             method will directly return the given value.
         :returns: Internal name of the collection.
         """
         collections = [
-            k
-            for k, v in self.collections_config.items()
-            if v.get("alias") == alias_or_id
+            k for k, v in self.collections_config.items() if v.alias == alias_or_id
         ]
 
         if len(collections) > 1:
@@ -966,22 +999,24 @@ class EODataAccessGateway:
                 return alias_or_id
             else:
                 raise NoMatchingCollection(
-                    f"Could not find collection from alias or ID {alias_or_id}"
+                    f"Could not find collection from alias or id {alias_or_id}"
                 )
 
         return collections[0]
 
     def get_alias_from_collection(self, collection: str) -> str:
-        """Return the alias of a collection by its ID. If no alias was defined for the
-        given collection, its ID is returned instead.
+        """Return the alias of a collection by its id. If no alias was defined for the
+        given collection, its id is returned instead.
 
-        :param collection: collection ID
-        :returns: Alias of the collection or its ID if no alias has been defined for it.
+        :param collection: collection id
+        :returns: Alias of the collection or its id if no alias has been defined for it.
         """
         if collection not in self.collections_config:
             raise NoMatchingCollection(collection)
 
-        return self.collections_config[collection].get("alias", collection)
+        if alias := self.collections_config[collection].alias:
+            return alias
+        return collection
 
     def guess_collection(
         self,
@@ -998,7 +1033,7 @@ class EODataAccessGateway:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         **kwargs: Any,
-    ) -> list[str]:
+    ) -> CollectionsList:
         """
         Find EODAG collection IDs that best match a set of search parameters.
 
@@ -1022,7 +1057,11 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
         if collection := kwargs.get("collection"):
-            return [collection]
+            try:
+                collection = self.get_collection_from_alias(collection)
+                return CollectionsList([self.collections_config[collection]])
+            except NoMatchingCollection:
+                return CollectionsList([Collection(dag=self, id=collection)])
 
         filters: dict[str, str] = {
             k: v
@@ -1051,10 +1090,10 @@ class EODataAccessGateway:
 
         guesses_with_score: list[tuple[str, int]] = []
 
-        for pt_id, pt_dict in self.collections_config.source.items():
+        for pt, pt_f in self.collections_config.items():
             if (
-                pt_id == GENERIC_COLLECTION
-                or pt_id not in self._plugins_manager.collection_to_provider_config_map
+                pt == GENERIC_COLLECTION
+                or pt not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
 
@@ -1062,7 +1101,7 @@ class EODataAccessGateway:
 
             # free text search
             if free_text:
-                match = free_text_evaluator(pt_dict)
+                match = free_text_evaluator(pt_f.model_dump())
                 if match:
                     score += 1
                 elif intersect:
@@ -1078,9 +1117,16 @@ class EODataAccessGateway:
                 }
 
                 filter_matches = [
-                    filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
+                    filters_evaluators[filter_name](
+                        {
+                            filter_name: pt_f.__dict__[
+                                Collection.get_collection_mtd_from_alias(filter_name)
+                            ]
+                        }
+                    )
                     for filter_name, value in filters.items()
-                    if filter_name in pt_dict
+                    if Collection.get_collection_mtd_from_alias(filter_name)
+                    in pt_f.__dict__
                 ]
 
                 if filters_matching_method(filter_matches):
@@ -1097,7 +1143,24 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                col_start, col_end = get_collection_dates(pt_dict)
+                extent_dict_with_str_dates = {
+                    "extent": {
+                        "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                        "temporal": {"interval": [[None, None]]},
+                    }
+                }
+
+                if pt_f.model_dump()["extent"] is not None:
+                    col_dates = pt_f.model_dump()["extent"]["temporal"]["interval"][0]
+                    for i, date in enumerate(col_dates):
+                        if date is not None:
+                            extent_dict_with_str_dates["extent"]["temporal"][
+                                "interval"
+                            ][0][i] = date.strftime(
+                                "%Y-%m-%d"
+                            )  # type: ignore[index]
+
+                col_start, col_end = get_collection_dates(extent_dict_with_str_dates)
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
@@ -1110,13 +1173,14 @@ class EODataAccessGateway:
                 if not (max_start <= min_end):
                     continue
 
-            pt_alias = pt_dict.get("alias", pt_id)
-            guesses_with_score.append((pt_alias, score))
+            guesses_with_score.append((pt_f._id, score))
 
         if guesses_with_score:
-            # sort by score descending, then pt_id for stability
+            # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt_id for pt_id, _ in guesses_with_score]
+            return CollectionsList(
+                [self.collections_config[pt] for pt, _ in guesses_with_score]
+            )
 
         raise NoMatchingCollection()
 
@@ -1557,7 +1621,7 @@ class EODataAccessGateway:
                 if not results[0].collection:
                     # guess collection from properties
                     guesses = self.guess_collection(**results[0].properties)
-                    results[0].collection = guesses[0]
+                    results[0].collection = guesses[0].id
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1648,7 +1712,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                collection = guesses[0]
+                collection = guesses[0].id
             except NoMatchingCollection:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
@@ -1890,7 +1954,7 @@ class EODataAccessGateway:
                     except NoMatchingCollection:
                         pass
                     else:
-                        eo_product.collection = guesses[0]
+                        eo_product.collection = guesses[0].id
 
                 try:
                     if eo_product.collection is not None:
@@ -2168,7 +2232,7 @@ class EODataAccessGateway:
         """
         # only fetch providers if collection is not found
         available_collections: list[str] = [
-            pt["ID"]
+            pt.id
             for pt in self.list_collections(provider=provider, fetch_providers=False)
         ]
         collection: Optional[str] = kwargs.get("collection")
@@ -2179,7 +2243,7 @@ class EODataAccessGateway:
                 if fetch_providers:
                     # fetch providers and try again
                     available_collections = [
-                        pt["ID"]
+                        pt.id
                         for pt in self.list_collections(
                             provider=provider, fetch_providers=True
                         )
@@ -2298,7 +2362,7 @@ class EODataAccessGateway:
                     for p in self.list_collections(
                         plugin.provider, fetch_providers=False
                     )
-                    if p["_id"] == collection
+                    if p._id == collection
                 ][0],
                 **{"collection": collection},
             )
@@ -2306,12 +2370,11 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                ID=GENERIC_COLLECTION,
-                **self.collections_config[GENERIC_COLLECTION],
+                **self.collections_config[GENERIC_COLLECTION].model_dump(),
                 collection=collection,
             )
-        # Remove the ID since this is equal to collection.
-        plugin.config.collection_config.pop("ID", None)
+        # Remove the id since this is equal to collections.
+        plugin.config.collection_config.pop("id", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.

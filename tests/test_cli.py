@@ -30,6 +30,7 @@ from click.testing import CliRunner
 from faker import Faker
 from packaging import version
 
+from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_COLLECTION
 from tests import TEST_RESOURCES_PATH
@@ -714,22 +715,27 @@ class TestEodagCli(unittest.TestCase):
         mock_fetch_collections_list.assert_called_with(mock.ANY, provider="peps")
         self.assertEqual(mock_fetch_collections_list.call_count, 2)
 
-    @mock.patch("eodag.cli.EODataAccessGateway.list_collections", autospec=True)
-    @mock.patch("eodag.cli.EODataAccessGateway.guess_collection", autospec=True)
-    def test_eodag_guess_collection_ok(
-        self, mock_guess_collection, mock_list_collections
-    ):
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_guess_collection_ok(self, dag):
         """Calling eodag list with one or several valid collection feature(s) should return
         all supported collections with this (these) feature(s) among the ones of its provider
         and with or without fetching provider according to the command.
         """
         provider = "peps"
-        mock_guess_collection.return_value = ["foo", "bar"]
-        mock_list_collections.return_value = [
-            {"ID": "foo", "title": "this is foo"},
-            {"ID": "bar", "title": "this is bar"},
-            {"ID": "baz", "title": "this is baz"},
-        ]
+
+        dag.return_value.guess_collection.return_value = CollectionsList(
+            [
+                Collection(dag=dag, id="foo", title="this is foo"),
+                Collection(dag=dag, id="bar", title="this is bar"),
+            ]
+        )
+        dag.return_value.list_collections.return_value = CollectionsList(
+            [
+                Collection(dag=dag, id="foo", title="this is foo"),
+                Collection(dag=dag, id="bar", title="this is bar"),
+                Collection(dag=dag, id="baz", title="this is baz"),
+            ]
+        )
 
         result = self.runner.invoke(
             eodag,
@@ -741,8 +747,8 @@ class TestEodagCli(unittest.TestCase):
         self.assertIn("bar", result.output)
         self.assertNotIn("baz", result.output)
 
-        mock_list_collections.assert_called_with(
-            mock.ANY, provider=provider, fetch_providers=False
+        dag.return_value.list_collections.assert_called_with(
+            provider=provider, fetch_providers=False
         )
 
     @mock.patch(

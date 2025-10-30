@@ -147,7 +147,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         # missing start & stop and plugin.collection_config set (set in core._prepare_search)
         self.api_plugin.config.collection_config = {
             "_collection": self.collection,
-            "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
+            "extent": {
+                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                "temporal": {"interval": [["1985-10-26", "2015-10-21"]]},
+            },
         }
         results = self.api_plugin.query(
             collection=self.collection,

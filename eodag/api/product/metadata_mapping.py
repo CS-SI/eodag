@@ -151,6 +151,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
     The currently understood converters are:
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``decode_ceda_description``: decode CEDA description field in utf-8
         - ``csv_list``: convert to a comma separated list
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
@@ -661,7 +662,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             match = data_regex.search(value)
             if match:
                 return match.group("name").replace("/", "_").upper()
-            return "NOT_AVAILABLE"
+            return NOT_AVAILABLE
+
+        @staticmethod
+        def convert_decode_ceda_description(value: str) -> str:
+            if value == NOT_AVAILABLE:
+                return value
+            return value.encode("raw_unicode_escape").decode("utf-8")
 
         @staticmethod
         def convert_recursive_sub_str(

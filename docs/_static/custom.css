@@ -18,29 +18,6 @@ table.datatable {
     border-bottom: 0px;
 }
 
-table.datatable th:nth-child(2),
-table.datatable td:nth-child(2),
-table.datatable th:nth-child(3),
-table.datatable td:nth-child(3),
-table.datatable th:nth-child(5),
-table.datatable td:nth-child(5),
-table.datatable th:nth-child(6),
-table.datatable td:nth-child(6),
-table.datatable th:nth-child(7),
-table.datatable td:nth-child(7),
-table.datatable th:nth-child(8),
-table.datatable td:nth-child(8),
-table.datatable th:nth-child(9),
-table.datatable td:nth-child(9),
-table.datatable th:nth-child(10),
-table.datatable td:nth-child(10),
-table.datatable th:nth-child(12),
-table.datatable td:nth-child(12),
-table.datatable th:nth-child(11),
-table.datatable td:nth-child(11) {
-    display: none;
-}
-
 table.params {
     display: block;
     overflow-x: auto;
@@ -146,4 +123,9 @@ dl.attribute dd {
 .sd-card.card-border-warning,
 .sd-card.card-border-info {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Add border-top to table elements when details elements are open */
+details.foldable:first-child > table {
+    border-top: 1px solid black;
 }

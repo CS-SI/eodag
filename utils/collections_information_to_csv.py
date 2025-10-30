@@ -22,6 +22,7 @@ import os
 import re
 from typing import Any
 
+from eodag.api.collection import Collection
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_default_config
 
@@ -61,8 +62,12 @@ def collections_info_to_csv(
     os.environ.update(eodag_env_backup)
 
     collections = dag.list_collections(fetch_providers=False)
-    collections_names: list[str] = [collection["ID"] for collection in collections]
-    metadata_params = list(k for k in collections[0].keys() if k != "ID")
+    collections_names: list[str] = [collection.id for collection in collections]
+    metadata_params = list(
+        k
+        for k in collections[0].model_dump().keys()
+        if k in ["constellation", "processing:level"]
+    )
 
     # csv fieldnames
     fieldnames = ["collection"] + metadata_params + providers
@@ -78,9 +83,12 @@ def collections_info_to_csv(
             collections_rows[collection_name] = {"collection": collection_name}
             for metadata_param in metadata_params:
                 metadata_string = [
-                    collection.get(metadata_param)
+                    getattr(
+                        collection,
+                        Collection.get_collection_mtd_from_alias(metadata_param),
+                    )
                     for collection in collections
-                    if collection["ID"] == collection_name
+                    if collection.id == collection_name
                 ][0]
                 if metadata_string is not None:
                     metadata_string = str(metadata_string).replace("\n", " ")
