@@ -4718,7 +4718,7 @@
     dates_required: True
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
       geometry:

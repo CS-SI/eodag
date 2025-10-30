@@ -34,13 +34,13 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 import geojson
 import yaml
 
-from eodag.api.collection import Collection, CollectionsDict
+from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
-    DiscoverProductTypes,
+    DiscoverCollections,
     PluginConfig,
     SimpleYamlProxyConfig,
     credentials_in_auth,
@@ -171,7 +171,7 @@ class EODataAccessGateway:
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
 
         for provider in self.providers.values():
-            provider.sync_product_types(self, strict_mode)
+            provider.sync_collections(self, strict_mode)
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers)
@@ -504,7 +504,7 @@ class EODataAccessGateway:
             )
 
         for p in providers_iter:
-            for collection_id in p.product_types:  # type: ignore
+            for collection_id in p.collections:  # type: ignore
                 if collection_id == GENERIC_COLLECTION:
                     continue
 
@@ -531,7 +531,7 @@ class EODataAccessGateway:
             return
 
         # providers discovery confs that are fetchable
-        providers_discovery_configs_fetchable: dict[str, DiscoverProductTypes] = {}
+        providers_discovery_configs_fetchable: dict[str, DiscoverCollections] = {}
         # check if any provider has not already been fetched for collections
         already_fetched = True
         for provider_to_fetch in self.providers.filter_by_name_or_group(provider):
@@ -585,7 +585,7 @@ class EODataAccessGateway:
                     default_discovery_conf["results_entry"], str
                 ):
                     default_discovery_conf_parsed = cast(
-                        DiscoverProductTypes,
+                        DiscoverCollections,
                         dict(
                             default_discovery_conf,
                             **{
@@ -689,7 +689,7 @@ class EODataAccessGateway:
                         kwargs["auth"] = auth
                     else:
                         logger.debug(
-                            f"Could not authenticate on {p} for product types discovery"
+                            f"Could not authenticate on {p} for collections discovery"
                         )
                         ext_collections_conf[p.name] = None
                         continue
@@ -716,7 +716,7 @@ class EODataAccessGateway:
                         continue
 
                     provider_products_config = (
-                        self.providers[provider].product_types or {}
+                        self.providers[provider].collections or {}
                     )
                 except UnsupportedProvider:
                     logger.debug(
@@ -795,7 +795,8 @@ class EODataAccessGateway:
                     )
                     if bad_formatted_col_count > 0:
                         logger.debug(
-                            f"bad formatted attributes skipped for {bad_formatted_col_count} collection(s) on {provider}"
+                            "bad formatted attributes skipped for "
+                            f"{bad_formatted_col_count} collection(s) on {provider}"
                         )
 
             elif provider not in self.providers:
@@ -824,7 +825,7 @@ class EODataAccessGateway:
         candidates = []
 
         for key, provider in self.providers.items():
-            if collection and collection not in provider.product_types:
+            if collection and collection not in provider.collections:
                 continue
 
             group = getattr(provider.config, "group", None)

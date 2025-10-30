@@ -23,7 +23,7 @@ import pytest
 from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
 from eodag.config import PluginConfig
 from eodag.utils.exceptions import (
-    UnsupportedProductType,
+    UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
 )
@@ -40,7 +40,7 @@ class TestProvider:
             "description": "Test provider for unit tests",
             "url": "https://test.example.com",
             "search": {"type": "StacSearch"},
-            "products": {"S2_MSI_L1C": {"productType": "S2_MSI_L1C"}},
+            "products": {"S2_MSI_L1C": {"collection": "S2_MSI_L1C"}},
         }
 
     def test_provider_creation_from_dict(self, basic_config):
@@ -93,7 +93,7 @@ class TestProvider:
         provider = Provider(basic_config)
         assert provider.priority == 0
         assert provider.group is None
-        assert provider.product_types == {"S2_MSI_L1C": {"productType": "S2_MSI_L1C"}}
+        assert provider.collections == {"S2_MSI_L1C": {"collection": "S2_MSI_L1C"}}
         assert provider.search_config.type == "StacSearch"
         assert provider.api_config is None
         assert provider.download_config is None
@@ -112,42 +112,42 @@ class TestProvider:
         provider = Provider(basic_config)
         assert provider.fetchable is True
 
-    def test_provider_delete_product_type(self, basic_config):
-        """Test Provider delete_product_type method."""
+    def test_provider_delete_collection(self, basic_config):
+        """Test Provider delete_collection method."""
         provider = Provider(basic_config)
 
         # Successful deletion
-        provider.delete_product_type("S2_MSI_L1C")
-        assert "S2_MSI_L1C" not in provider.product_types
+        provider.delete_collection("S2_MSI_L1C")
+        assert "S2_MSI_L1C" not in provider.collections
 
-        # Non-existent product type
-        with pytest.raises(UnsupportedProductType):
-            provider.delete_product_type("NONEXISTENT")
+        # Non-existent collection
+        with pytest.raises(UnsupportedCollection):
+            provider.delete_collection("NONEXISTENT")
 
-    def test_provider_sync_product_types_strict(self, basic_config):
-        """Test Provider sync_product_types in strict mode."""
+    def test_provider_sync_collections_strict(self, basic_config):
+        """Test Provider sync_collections in strict mode."""
         config = basic_config.copy()
-        config["products"]["UNKNOWN_TYPE"] = {"productType": "UNKNOWN_TYPE"}
+        config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
         provider = Provider(config)
 
-        product_types_config = {"S2_MSI_L1C": {"title": "Sentinel-2 L1C"}}
+        collections_config = {"S2_MSI_L1C": {"title": "Sentinel-2 L1C"}}
 
-        with patch.object(provider, "delete_product_type") as mock_delete:
-            provider.sync_product_types(product_types_config, strict_mode=True)
+        with patch.object(provider, "delete_collection") as mock_delete:
+            provider.sync_collections(collections_config, strict_mode=True)
             mock_delete.assert_called_once_with("UNKNOWN_TYPE")
 
-    def test_provider_sync_product_types_permissive(self, basic_config):
-        """Test Provider sync_product_types in permissive mode."""
+    def test_provider_sync_collections_permissive(self, basic_config):
+        """Test Provider sync_collections in permissive mode."""
         config = basic_config.copy()
-        config["products"]["UNKNOWN_TYPE"] = {"productType": "UNKNOWN_TYPE"}
+        config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
         provider = Provider(config)
 
-        product_types_config = {"S2_MSI_L1C": {"title": "Sentinel-2 L1C"}}
+        collections_config = {"S2_MSI_L1C": {"title": "Sentinel-2 L1C"}}
 
-        with patch.object(provider, "delete_product_type") as mock_delete:
-            provider.sync_product_types(product_types_config, strict_mode=False)
+        with patch.object(provider, "delete_collection") as mock_delete:
+            provider.sync_collections(collections_config, strict_mode=False)
             mock_delete.assert_not_called()
-            assert "UNKNOWN_TYPE" in product_types_config
+            assert "UNKNOWN_TYPE" in collections_config
 
 
 class TestProviderConfig:
@@ -204,7 +204,7 @@ class TestProviderConfig:
                 "description": "Original description",
                 "priority": 5,
                 "search": {"type": "StacSearch", "url": "https://example.com"},
-                "products": {"S2_MSI_L1C": {"productType": "S2_MSI_L1C"}},
+                "products": {"S2_MSI_L1C": {"collection": "S2_MSI_L1C"}},
             }
         )
 
@@ -220,7 +220,7 @@ class TestProviderConfig:
         assert isinstance(new_config.search, PluginConfig)
         assert new_config.search.type == "StacSearch"
         assert new_config.search.url == "https://example.com"
-        assert new_config.products == {"S2_MSI_L1C": {"productType": "S2_MSI_L1C"}}
+        assert new_config.products == {"S2_MSI_L1C": {"collection": "S2_MSI_L1C"}}
 
         # Verify the original config is unchanged
         assert original_config.name == "original_provider"
@@ -324,19 +324,17 @@ class TestProvidersDict:
         assert len(results) == 1
         assert results[0].name == "provider1"
 
-    def test_providers_dict_delete_product_type(self, sample_providers):
-        """Test ProvidersDict delete_product_type method."""
-        # Add a product type first
-        sample_providers["provider1"].config.products = {
-            "TEST": {"productType": "TEST"}
-        }
+    def test_providers_dict_delete_collection(self, sample_providers):
+        """Test ProvidersDict delete_collection method."""
+        # Add a collection first
+        sample_providers["provider1"].config.products = {"TEST": {"collection": "TEST"}}
 
-        sample_providers.delete_product_type("provider1", "TEST")
-        assert "TEST" not in sample_providers["provider1"].product_types
+        sample_providers.delete_collection("provider1", "TEST")
+        assert "TEST" not in sample_providers["provider1"].collections
 
         # Test with non-existent provider
         with pytest.raises(UnsupportedProvider):
-            sample_providers.delete_product_type("nonexistent", "TEST")
+            sample_providers.delete_collection("nonexistent", "TEST")
 
     def test_providers_dict_get_config(self, sample_providers):
         """Test ProvidersDict get_config method."""

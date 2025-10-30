@@ -51,7 +51,7 @@ from eodag.utils import (
     update_nested_dict,
 )
 from eodag.utils.exceptions import (
-    UnsupportedProductType,
+    UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
 )
@@ -59,8 +59,9 @@ from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.repr import html_table
 
 if TYPE_CHECKING:
-    from eodag.api.core import EODataAccessGateway
     from typing_extensions import Self
+
+    from eodag.api.core import EODataAccessGateway
 
 logger = logging.getLogger("eodag.provider")
 
@@ -259,7 +260,7 @@ class Provider:
     >>> provider = Provider(config)
     >>> provider.name
     'example_provider'
-    >>> 'S2_MSI_L1C' in provider.product_types
+    >>> 'S2_MSI_L1C' in provider.collections
     True
     >>> provider.priority  # Default priority
     0
@@ -329,7 +330,7 @@ class Provider:
             {html_table(summaries)}
             <br />
             <br />
-            {html_table(list(self.product_types.keys()))}
+            {html_table(list(self.collections.keys()))}
         </div>
         """
 
@@ -354,8 +355,8 @@ class Provider:
         return self._name
 
     @property
-    def product_types(self) -> dict[str, Any]:
-        """Return the product types dictionary for this provider."""
+    def collections(self) -> dict[str, Any]:
+        """Return the collections dictionary for this provider."""
         return getattr(self.config, "products", {})
 
     @property
@@ -375,20 +376,20 @@ class Provider:
 
     @property
     def fetchable(self) -> bool:
-        """Return True if the provider can fetch product types."""
+        """Return True if the provider can fetch collections."""
         return bool(
-            getattr(self.search_config, "discover_product_types", {}).get("fetch_url")
+            getattr(self.search_config, "discover_collections", {}).get("fetch_url")
         )
 
     @property
     def unparsable_properties(self) -> set[str]:
-        """Return set of unparsable properties for generic product types, if any."""
+        """Return set of unparsable properties for generic collections, if any."""
         if not self.fetchable or self.search_config is None:
             return set()
 
         props = getattr(
-            getattr(self.search_config, "discover_product_types", None),
-            "generic_product_type_unparsable_properties",
+            getattr(self.search_config, "discover_collections", None),
+            "generic_collection_unparsable_properties",
             {},
         )
         return set(props.keys()) if isinstance(props, dict) else set()
@@ -434,37 +435,37 @@ class Provider:
                             self.config, key
                         ).credentials = conf_with_creds.credentials
 
-    def delete_product_type(self, name: str) -> None:
-        """Remove a product type from this provider.
+    def delete_collection(self, name: str) -> None:
+        """Remove a collection from this provider.
 
-        :param name: The product type name.
+        :param name: The collection name.
 
-        :raises UnsupportedProductType: If the product type is not found.
+        :raises UnsupportedCollection: If the collection is not found.
         """
         try:
-            del self.product_types[name]
+            del self.collections[name]
         except KeyError:
-            msg = f"Product type '{name}' not found in provider '{self.name}'."
-            raise UnsupportedProductType(msg)
+            msg = f"Collection '{name}' not found in provider '{self.name}'."
+            raise UnsupportedCollection(msg)
 
-    def sync_product_types(
+    def sync_collections(
         self,
         dag: EODataAccessGateway,
         strict_mode: bool,
     ) -> None:
         """
-        Synchronize product types for a provider based on strict or permissive mode.
+        Synchronize collections for a provider based on strict or permissive mode.
 
         In strict mode, removes collections not in "dag.collections_config".
         In permissive mode, adds empty collection to config for missing types.
 
         :param dag: The gateway instance to use to list existing collections and to create new collection instances.
-        :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
+        :param strict_mode: If True, remove unknown collections; if False, add empty configs for them.
         """
         products_to_remove: list[str] = []
         products_to_add: list[str] = []
 
-        for product_id in self.product_types:
+        for product_id in self.collections:
             if product_id == GENERIC_COLLECTION:
                 continue
 
@@ -476,26 +477,24 @@ class Provider:
                 empty_product = Collection(
                     dag=dag, id=product_id, title=product_id, description=NOT_AVAILABLE
                 )
-                dag.collections_config[
-                    product_id
-                ] = empty_product  # will update available_product_types
+                dag.collections_config[product_id] = empty_product
                 products_to_add.append(product_id)
 
         if products_to_add:
             logger.debug(
-                "Product types permissive mode, %s added (provider %s)",
+                "Collections permissive mode, %s added (provider %s)",
                 ", ".join(products_to_add),
                 self,
             )
 
         if products_to_remove:
             logger.debug(
-                "Product types strict mode, ignoring %s (provider %s)",
+                "Collections strict mode, ignoring %s (provider %s)",
                 ", ".join(products_to_remove),
                 self,
             )
             for id in products_to_remove:
-                self.delete_product_type(id)
+                self.delete_collection(id)
 
     def _mm_already_built(self) -> bool:
         """Check if metadata mapping is already built (converted to querypaths/conversion)."""
@@ -759,20 +758,20 @@ class ProvidersDict(UserDict[str, Provider]):
             ):
                 yield provider
 
-    def delete_product_type(self, provider: str, product_type: str) -> None:
+    def delete_collection(self, provider: str, collection: str) -> None:
         """
-        Delete a product type from a provider.
+        Delete a collection from a provider.
 
         :param provider: The provider's name.
-        :param product_ID: The product type to delete.
+        :param product_ID: The collection to delete.
         :raises UnsupportedProvider: If the provider or product is not found.
         """
         if provider_obj := self.get(provider):
-            if product_type in provider_obj.product_types:
-                provider_obj.delete_product_type(product_type)
+            if collection in provider_obj.collections:
+                provider_obj.delete_collection(collection)
             else:
-                msg = f"Product type '{product_type}' not found for provider '{provider}'."
-                raise UnsupportedProductType(msg)
+                msg = f"Collection '{collection}' not found for provider '{provider}'."
+                raise UnsupportedCollection(msg)
         else:
             msg = f"Provider '{provider}' not found."
             raise UnsupportedProvider(msg)

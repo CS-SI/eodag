@@ -300,9 +300,9 @@ class TestConfigFunctions(unittest.TestCase):
                         api_endpoint: https://api.my_new_provider/search
                     products:
                         S2_MSI_L1C:
-                            productType: sentinel2_l1c
-                        GENERIC_PRODUCT_TYPE:
-                            productType: '{productType}'
+                            _collection: sentinel2_l1c
+                        GENERIC_COLLECTION:
+                            _collection: '{collection}'
                     download:
                         type: AwsDownload
                         s3_endpoint: https://api.my_new_provider
