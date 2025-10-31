@@ -123,6 +123,8 @@ class EOProduct:
     search_kwargs: Any
     #: Datetime for download next try
     next_try: datetime
+    #: Stream for requests
+    _stream: requests.Response
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
