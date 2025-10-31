@@ -262,9 +262,9 @@ class HTTPDownload(Download):
             {"json": json_response, "headers": {**response.headers}},
             on_response_mm_jsonpath,
         )
-        product.properties.update({
-            k: v for k, v in properties_update.items() if v != NOT_AVAILABLE
-        })
+        product.properties.update(
+            {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
+        )
         # the job id becomes the product id for EcmwfSearch products
         if "ORDERABLE" in product.properties.get("id", ""):
             product.properties["id"] = product.properties.get(
@@ -450,9 +450,9 @@ class HTTPDownload(Download):
                     f"{product.properties['title']} order status: {status_percent}"
                 )
 
-            product.properties.update({
-                k: v for k, v in status_dict.items() if v != NOT_AVAILABLE
-            })
+            product.properties.update(
+                {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
+            )
 
             product.properties["eodag:order_status"] = status_dict.get(
                 "eodag:order_status"
@@ -676,7 +676,7 @@ class HTTPDownload(Download):
                         is_empty = False
                         progress_callback(len(chunk))
                         fhandle.write(chunk)
-                self.stream.close()  # Closing response stream
+                product._stream.close()  # Closing response stream
 
                 if is_empty:
                     raise DownloadError(f"product {product.properties['id']} is empty")
@@ -722,7 +722,7 @@ class HTTPDownload(Download):
         return product_path
 
     def _check_stream_size(self, product: EOProduct) -> int:
-        stream_size = int(self.stream.headers.get("content-length", 0))
+        stream_size = int(product._stream.headers.get("content-length", 0))
         if (
             stream_size == 0
             and "order:status" in product.properties
@@ -733,14 +733,14 @@ class HTTPDownload(Download):
                 % (
                     product.properties["title"],
                     product.properties["order:status"],
-                    self.stream.reason,
+                    product._stream.reason,
                 )
             )
         return stream_size
 
     def _check_product_filename(self, product: EOProduct) -> str:
         filename = None
-        asset_content_disposition = self.stream.headers.get("content-disposition")
+        asset_content_disposition = product._stream.headers.get("content-disposition")
         if asset_content_disposition:
             filename = cast(
                 Optional[str],
@@ -748,7 +748,7 @@ class HTTPDownload(Download):
             )
         if not filename:
             # default filename extracted from path
-            filename = str(os.path.basename(self.stream.url))
+            filename = str(os.path.basename(product._stream.url))
             filename_extension = os.path.splitext(filename)[1]
             if not filename_extension:
                 if content_type := getattr(product, "headers", {}).get("Content-Type"):
@@ -1011,7 +1011,7 @@ class HTTPDownload(Download):
 
         s = requests.Session()
         try:
-            self.stream = s.request(
+            product._stream = s.request(
                 req_method,
                 req_url,
                 stream=True,
@@ -1026,7 +1026,7 @@ class HTTPDownload(Download):
             # location is not a valid url -> product is not available yet
             raise NotAvailableError("Product is not available yet")
         try:
-            self.stream.raise_for_status()
+            product._stream.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
         except RequestException as e:
@@ -1038,15 +1038,19 @@ class HTTPDownload(Download):
             # check if product was ordered
 
             if getattr(
-                self.stream, "status_code", None
-            ) is not None and self.stream.status_code == getattr(
+                product._stream, "status_code", None
+            ) is not None and product._stream.status_code == getattr(
                 self.config, "order_status", {}
-            ).get("ordered", {}).get("http_code"):
+            ).get(
+                "ordered", {}
+            ).get(
+                "http_code"
+            ):
                 product.properties["order:status"] = "ORDERED"
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 
-            product.headers = self.stream.headers
+            product.headers = product._stream.headers
             filename = self._check_product_filename(product)
             content_type = product.headers.get("Content-Type")
             guessed_content_type = (
@@ -1059,7 +1063,7 @@ class HTTPDownload(Download):
             product.size = stream_size
 
             product.filename = filename
-            return self.stream.iter_content(chunk_size=64 * 1024)
+            return product._stream.iter_content(chunk_size=64 * 1024)
 
     def _stream_download_assets(
         self,
