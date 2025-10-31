@@ -58,10 +58,9 @@ jobs:
         # Add comparison output to step summary
         cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
 
-        # Create a PR body without collapsed details (to reduce size)
-        # Remove <details>...</details> blocks but keep everything else
+        # Create a PR body without detailed diffs (to reduce size)
         {
-          # Include all header info from step summary up to the comparison output
+          # Include header info
           echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
           echo ""
           echo "### Changed file"
@@ -69,11 +68,11 @@ jobs:
           echo ""
           echo "commit [${COMMIT_SHA}](${COMMIT_URL})"
           echo ""
-          # Remove collapsed details sections but keep the path groupings and summary
-          sed '/<details>/,/<\/details>/d' /tmp/comparison_output.md
-          echo ""
           echo "---"
-          echo "**Note:** Detailed diffs are hidden from this PR body. See the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for complete diff details."
+          echo "**Note:** Detailed diffs are available in the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          echo ""
+          # Generate comparison without detailed diffs for PR body
+          python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" --no-details
         } > /tmp/pr_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6

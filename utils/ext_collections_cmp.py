@@ -70,8 +70,14 @@ def format_diff(obj1, obj2, indent=4):
     return "".join(diff)
 
 
-def compare_collections(file1_path: str, file2_path: str):
-    """Compare two ext_collections.json files."""
+def compare_collections(file1_path: str, file2_path: str, include_details: bool = True):
+    """Compare two ext_collections.json files.
+
+    Args:
+        file1_path: Path to the old/reference JSON file
+        file2_path: Path to the new JSON file
+        include_details: Whether to include detailed diff content in collapsible sections
+    """
 
     # Load JSON files
     try:
@@ -164,22 +170,31 @@ def compare_collections(file1_path: str, file2_path: str):
             paths_formatted = "`\n`".join(path_set)
             print(f"\n`{paths_formatted}`")
 
-            # Make item list collapsible
-            print("<details>")
-            print(
-                f"<summary><strong>{len(items)} collection(s) affected</strong> (click to expand)</summary>"
-            )
-            print()
+            # Show collection count
+            print(f"**{len(items)} collection(s) affected**")
 
-            # Show each affected item
-            for provider, config_type, item_name, diff_content in items:
-                print(f"##### {provider} - {config_type} - {item_name}")
-                print("```diff")
-                print(diff_content.rstrip())
-                print("```")
+            if include_details:
+                # Make item list collapsible with detailed diffs
+                print("<details>")
+                print("<summary>Click to expand for detailed diffs</summary>")
                 print()
 
-            print("</details>")
+                # Show each affected item
+                for provider, config_type, item_name, diff_content in items:
+                    print(f"##### {provider} - {config_type} - {item_name}")
+                    print("```diff")
+                    print(diff_content.rstrip())
+                    print("```")
+                    print()
+
+                print("</details>")
+            else:
+                # Just show the list of affected items without diffs
+                print()
+                for provider, config_type, item_name, _ in items:
+                    print(f"- {provider} - {config_type} - {item_name}")
+                print()
+
             print("\n - - - \n")
 
     # Summary
@@ -195,11 +210,14 @@ def compare_collections(file1_path: str, file2_path: str):
 
 def main():
     """Main entry point for the collections comparison script."""
-    if len(sys.argv) != 3:
-        print("Usage: python ext_collections_cmp.py <old.json> <new.json>")
+    if len(sys.argv) < 3:
+        print(
+            "Usage: python ext_collections_cmp.py <old.json> <new.json> [--no-details]"
+        )
         sys.exit(1)
 
-    compare_collections(sys.argv[1], sys.argv[2])
+    include_details = "--no-details" not in sys.argv
+    compare_collections(sys.argv[1], sys.argv[2], include_details)
 
 
 if __name__ == "__main__":
