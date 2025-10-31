@@ -192,9 +192,6 @@ def compare_collections(file1_path: str, file2_path: str):
     )
     print(f"- {total_paths} unique path pattern(s)")
 
-    # Ensure output is flushed
-    sys.stdout.flush()
-
 
 def main():
     """Main entry point for the collections comparison script."""

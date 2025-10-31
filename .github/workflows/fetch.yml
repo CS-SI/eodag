@@ -54,13 +54,30 @@ jobs:
         # Download reference file for comparison
         curl -s "${JSON_REF_FILE}" -o /tmp/ref_collections.json
         # Use our Python comparison script for better diff analysis
-        if python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" >> $GITHUB_STEP_SUMMARY; then
+        if python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" > /tmp/comparison_output.md; then
           echo "✅ Comparison completed successfully" >> $GITHUB_STEP_SUMMARY
         else
           echo "⚠️ Comparison script had issues, but output may still be useful" >> $GITHUB_STEP_SUMMARY
         fi
-        # Create a separate file for PR body (to avoid GitHub env var size limits)
-        cp $GITHUB_STEP_SUMMARY /tmp/pr_body.md
+        # Add comparison output to step summary
+        cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
+
+        # Create a truncated PR body that prioritizes the summary
+        cp $GITHUB_STEP_SUMMARY /tmp/pr_body_full.md
+
+        # Extract and prioritize the summary for PR body
+        {
+          head -20 /tmp/pr_body_full.md  # Include header info
+          echo ""
+          echo "## 📊 Summary"
+          grep -A 10 "### Summary:" /tmp/comparison_output.md || echo "Summary not found"
+          echo ""
+          echo "## 🔍 Changes Overview"
+          head -50 /tmp/comparison_output.md | tail -30  # Show some changes
+          echo ""
+          echo "---"
+          echo "**Note:** This PR body is truncated due to size limits. See the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for complete details."
+        } > /tmp/pr_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
       with:
