@@ -70,16 +70,17 @@ def format_diff(obj1, obj2, indent=4):
     return "".join(diff)
 
 
-def compare_collections(file1_path: str, file2_path: str, include_details: bool = True):
+def compare_collections(
+    file1_path: str, file2_path: str, include_details: bool = True, job_url: str = ""
+):
     """Compare two ext_collections.json files.
 
     Args:
         file1_path: Path to the old/reference JSON file
         file2_path: Path to the new JSON file
         include_details: Whether to include detailed diff content in collapsible sections
-    """
-
-    # Load JSON files
+        job_url: URL to the job summary for linking from light version
+    """  # Load JSON files
     try:
         with open(file1_path) as f:
             data1 = json.load(f)
@@ -168,10 +169,25 @@ def compare_collections(file1_path: str, file2_path: str, include_details: bool 
         for path_set, items in sorted(path_groups.items()):
             # Show the paths that changed
             paths_formatted = "`\n`".join(path_set)
-            print(f"\n`{paths_formatted}`")
 
-            # Show collection count
-            print(f"**{len(items)} collection(s) affected**")
+            # Create anchor for this path group (for linking from light version)
+            path_anchor = (
+                "-".join(path_set)
+                .replace(".", "")
+                .replace("[", "")
+                .replace("]", "")
+                .replace("/", "-")
+            )
+
+            print(f'\n<a id="path-{path_anchor}"></a>')
+            print(f"`{paths_formatted}`")
+
+            # Get unique providers for this path group
+            providers = sorted(set(item[0] for item in items))
+            providers_text = f" ({', '.join(providers)})" if providers else ""
+
+            # Show collection count with providers
+            print(f"**{len(items)} collection(s) affected{providers_text}**")
 
             if include_details:
                 # Make item list collapsible with detailed diffs
@@ -189,11 +205,30 @@ def compare_collections(file1_path: str, file2_path: str, include_details: bool 
 
                 print("</details>")
             else:
-                # Just show the list of affected items without diffs
-                print()
-                for provider, config_type, item_name, _ in items:
-                    print(f"- {provider} - {config_type} - {item_name}")
-                print()
+                # Light version: show details if ≤10 collections, otherwise link to detailed version
+                if len(items) <= 10:
+                    # Show collapsible details like in full version
+                    print("<details>")
+                    print("<summary>Click to expand for detailed diffs</summary>")
+                    print()
+
+                    # Show each affected item with diffs
+                    for provider, config_type, item_name, diff_content in items:
+                        print(f"##### {provider} - {config_type} - {item_name}")
+                        print("```diff")
+                        print(diff_content.rstrip())
+                        print("```")
+                        print()
+
+                    print("</details>")
+                else:
+                    # Too many items, just link to the detailed anchor in job summary
+                    print(
+                        "\n_Too many collections to list here. See "
+                        f"[detailed breakdown in job summary]({job_url}#path-{path_anchor}) "
+                        "for the complete list._"
+                    )
+                    print()
 
             print("\n - - - \n")
 
@@ -212,12 +247,20 @@ def main():
     """Main entry point for the collections comparison script."""
     if len(sys.argv) < 3:
         print(
-            "Usage: python ext_collections_cmp.py <old.json> <new.json> [--no-details]"
+            "Usage: python ext_collections_cmp.py <old.json> <new.json> [--no-details] [--job-url=URL]"
         )
         sys.exit(1)
 
     include_details = "--no-details" not in sys.argv
-    compare_collections(sys.argv[1], sys.argv[2], include_details)
+
+    # Extract job URL if provided
+    job_url = ""
+    for arg in sys.argv:
+        if arg.startswith("--job-url="):
+            job_url = arg.split("=", 1)[1]
+            break
+
+    compare_collections(sys.argv[1], sys.argv[2], include_details, job_url)
 
 
 if __name__ == "__main__":

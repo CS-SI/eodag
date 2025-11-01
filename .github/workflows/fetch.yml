@@ -72,7 +72,7 @@ jobs:
           echo "**Note:** Detailed diffs are available in the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
           echo ""
           # Generate comparison without detailed diffs for PR body
-          python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" --no-details
+          python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" --no-details --job-url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         } > /tmp/pr_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
