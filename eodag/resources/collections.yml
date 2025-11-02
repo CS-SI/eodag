@@ -4658,27 +4658,6 @@ EEA_DAILY_SSM_1KM:
   title: "Surface Soil Moisture: continental Europe daily (raster 1km) - version 1, Apr 2019"
   extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", null]]}}
 
-EEA_DAILY_VI:
-  description: |
-    Vegetation Indices (VI) comprises four daily vegetation indices (PPI, NDVI, LAI and FAPAR) and quality information,
-    that are part of the Copernicus Land Monitoring Service (CLMS) HR-VPP product suite. The 10m resolution, daily updated
-    Plant Phenology Index (PPI), Normalized Difference Vegetation Index (NDVI), Leaf Area Index (LAI) and Fraction of Absorbed
-    Photosynthetically Active Radiation (fAPAR) are derived from Copernicus Sentinel-2 satellite observations. They are
-    provided together with a related quality indicator (QFLAG2) that flags clouds, shadows, snow, open water and other areas
-    where the VI retrieval is less reliable. These Vegetation Indices are made available as a set of raster files with 10 x 10m
-    resolution, in UTM/WGS84 projection corresponding to the Sentinel-2 tiling grid, for those tiles that cover the EEA38
-    countries and the United Kingdom and for the period from 2017 until today, with daily updates. The Vegetation Indices
-    are part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus
-    Land Monitoring Service (CLMS).
-  instruments: []
-  constellation: Sentinel-2
-  platform: S2A,S2B,S2C
-  processing:level:
-  keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
-  eodag:sensor_type: RADAR
-  license: other
-  title: Vegetation Indices, daily, UTM projection
-
 EEA_HRL_TCF:
   description: |
     Tree Cover Fraction (TCF) is defined as the percentage of ground covered by tree canopy when viewed from above.
@@ -4695,6 +4674,73 @@ EEA_HRL_TCF:
   license: other
   title: Tree Cover Fraction, UTM projection
   extent: {"temporal": {"interval": [["2017-01-01T00:00:00Z", null]]}}
+
+CLMS_HRVPP_ST:
+  description: |
+    The Seasonal Trajectories product is a filtered time series of Plant Phenology Index (PPI), with regular time step, part of the Copernicus Land Monitoring Service (CLMS) HR-VPP product suite.
+    Plant Phenology Index (PPI) is a physically based vegetation index that is optimized for monitoring vegetation phenology and has a linear relationship with green leaf area index.
+    The Seasonal Trajectories (ST) products are derived from a function fitting of the time series of the PPI vegetation index and hence provide a filtered PPI time series, with regular 10-day time step, together with related quality information (QFLAG).
+    The PPI Seasonal Trajectories are derived from the PPI vegetation index and hence based on Copernicus Sentinel-2 satellite observations.
+    The ST products are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom, and for the period from 2017 until today, with yearly updates.
+    These Seasonal Trajectories are part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
+  instruments: []
+  constellation: Sentinel-2
+  platform: S2A,S2B,S2C
+  processing:level:
+  keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
+  eodag:sensor_type: RADAR
+  license: other
+  title: Seasonal Trajectories, 10-daily, ST projection
+
+CLMS_HRVPP_ST_LAEA:
+  description: |
+    The Seasonal Trajectories product is a filtered time series of Plant Phenology Index (PPI), with regular time step, part of the Copernicus Land Monitoring Service (CLMS) HR-VPP product suite.
+    Plant Phenology Index (PPI) is a physically based vegetation index that is optimized for monitoring vegetation phenology and has a linear relationship with green leaf area index.
+    The Seasonal Trajectories (ST) products are derived from a function fitting of the time series of the PPI vegetation index and hence provide a filtered PPI time series, with regular 10-day time step, together with related quality information (QFLAG).
+    The PPI Seasonal Trajectories are derived from the PPI vegetation index and hence based on Copernicus Sentinel-2 satellite observations.
+    The ST products are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom, and for the period from 2017 until today, with yearly updates.
+    These Seasonal Trajectories are part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
+  instruments: []
+  constellation: Sentinel-2
+  platform: S2A,S2B,S2C
+  processing:level:
+  keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
+  eodag:sensor_type: RADAR
+  license: other
+  title: Seasonal Trajectories, 10-daily, LAEA projection
+
+CLMS_HRVPP_VPP:
+  description: |
+    Vegetation Phenology and Productivity (VPP) comprise 13 parameters up to 2 seasons that characterize the vegetation growth cycle. It is part of the Copernicus Land Monitoring Service (CLMS) HR-VPP product suite.
+    A set of 13 Vegetation Phenology and Productivity parameters are derived, for up to two growing seasons. These parameters include the start, end and length of the growing season, the dates when the vegetation index reaches its minimum and maximum values, the maximum value itself and its distance to the minimum (amplitude), the slopes of the green-up and green-down periods and the seasonal and total productivity.
+    The Vegetation and Productivity parameters are extracted from the filtered PPI time-series, the HR-VPP Seasonal Trajectories, and hence based on Copernicus Sentinel-2 satellite observations.
+    The VPP parameters are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom and for the period from 2017 until today, with yearly updates.
+    This VPP product is part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
+  instruments: []
+  constellation: Sentinel-2
+  platform: S2A,S2B,S2C
+  processing:level:
+  keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
+  eodag:sensor_type: RADAR
+  license: other
+  title: Vegetation Phenology and Productivity, yearly, UTM projection
+
+CLMS_HRVPP_VPP_LAEA:
+  description: |
+    Vegetation Phenology and Productivity (VPP) comprise 13 parameters up to 2 seasons that characterize the vegetation growth cycle. It is part of the Copernicus Land Monitoring Service (CLMS) HR-VPP product suite.
+    A set of 13 Vegetation Phenology and Productivity parameters are derived, for up to two growing seasons. These parameters include the start, end and length of the growing season, the dates when the vegetation index reaches its minimum and maximum values, the maximum value itself and its distance to the minimum (amplitude), the slopes of the green-up and green-down periods and the seasonal and total productivity.
+    The Vegetation and Productivity parameters are extracted from the filtered PPI time-series, the HR-VPP Seasonal Trajectories, and hence based on Copernicus Sentinel-2 satellite observations.
+    The VPP parameters are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom and for the period from 2017 until today, with yearly updates.
+    This VPP product is part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
+  instruments: []
+  constellation: Sentinel-2
+  platform: S2A,S2B,S2C
+  processing:level:
+  keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
+  eodag:sensor_type: RADAR
+  license: other
+  title: Vegetation Phenology and Productivity, yearly, LAEA projection
+
 
 # MARK: AERIS --------------------------------------------------------------------------
 AERIS_IAGOS:
