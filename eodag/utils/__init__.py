@@ -79,7 +79,7 @@ from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError, Response
-from shapely.geometry import Polygon, shape
+from shapely.geometry import Polygon, box, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
@@ -133,6 +133,9 @@ DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 # default collections start date
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
+
+# default geometry / whole world bounding box
+DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
 
 # default token expiration margin in seconds
 DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
@@ -1066,7 +1069,7 @@ def nested_pairs2dict(pairs: Union[list[Any], Any]) -> Union[Any, dict[Any, Any]
 
 def get_geometry_from_various(
     locations_config: list[dict[str, Any]] = [], **query_args: Any
-) -> BaseGeometry:
+) -> Optional[BaseGeometry]:
     """Creates a ``shapely.geometry`` using given query kwargs arguments
 
     :param locations_config: (optional) EODAG locations configuration

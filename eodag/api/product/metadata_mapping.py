@@ -42,6 +42,7 @@ from shapely.ops import transform
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
+    DEFAULT_SHAPELY_GEOMETRY,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -383,14 +384,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_bounds(input_geom_unformatted: Any) -> list[float]:
             input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
+            if input_geom is None:
+                input_geom = DEFAULT_SHAPELY_GEOMETRY
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
                 geoms.sort(key=lambda x: x.area, reverse=True)
-                min_lon = 180
-                min_lat = 90
-                max_lon = -180
-                max_lat = -90
+                min_lon = 180.0
+                min_lat = 90.0
+                max_lon = -180.0
+                max_lat = -90.0
                 for geom in geoms:
                     min_lon = min(min_lon, geom.bounds[0])
                     min_lat = min(min_lat, geom.bounds[1])
