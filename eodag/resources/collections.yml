@@ -4691,6 +4691,11 @@ CLMS_HRVPP_ST:
   eodag:sensor_type: RADAR
   license: other
   title: Seasonal Trajectories, 10-daily, ST projection
+  links:
+    - rel: describedby
+      href: https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file
+      type: application/pdf
+      title: User Manual
 
 CLMS_HRVPP_ST_LAEA:
   description: |
@@ -4708,6 +4713,11 @@ CLMS_HRVPP_ST_LAEA:
   eodag:sensor_type: RADAR
   license: other
   title: Seasonal Trajectories, 10-daily, LAEA projection
+  links:
+    - rel: describedby
+      href: https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file
+      type: application/pdf
+      title: User Manual
 
 CLMS_HRVPP_VPP:
   description: |
@@ -4724,6 +4734,11 @@ CLMS_HRVPP_VPP:
   eodag:sensor_type: RADAR
   license: other
   title: Vegetation Phenology and Productivity, yearly, UTM projection
+  links:
+    - rel: describedby
+      href: https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file
+      type: application/pdf
+      title: User Manual
 
 CLMS_HRVPP_VPP_LAEA:
   description: |
@@ -4740,6 +4755,11 @@ CLMS_HRVPP_VPP_LAEA:
   eodag:sensor_type: RADAR
   license: other
   title: Vegetation Phenology and Productivity, yearly, LAEA projection
+  links:
+    - rel: describedby
+      href: https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file
+      type: application/pdf
+      title: User Manual
 
 
 # MARK: AERIS --------------------------------------------------------------------------
