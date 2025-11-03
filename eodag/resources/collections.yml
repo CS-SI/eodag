@@ -5061,6 +5061,22 @@ DT_EXTREMES:
   title: Weather and Geophysical Extremes Digital Twin (DT)
   extent: {"temporal": {"interval": [["2024-04-04T00:00:00Z", "2024-06-07T00:00:00Z"]]}}
 
+DT_CLIMATE_ADAPTATION:
+  description: |
+    The Digital Twin on Climate Change Adaptation support the analysis and testing of
+    scenarios. This in turn will support sustainable development and climate adaptation
+    and mitigation policy-making at multi-decadal timescales, at regional and national
+    levels.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate", "Change", "Adaptation"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: other
+  title: Climate Change Adaptation Digital Twin (DT)
+  extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
+
 DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   description: |
     The Climate Change Adaptation Digital Twin provides global climate projections and

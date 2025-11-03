@@ -4542,6 +4542,10 @@
       qs: $.qs
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
+    DT_CLIMATE_ADAPTATION:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      dataset: climate-dt
     DT_EXTREMES:
       discover_queryables:
         constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
@@ -5219,6 +5223,11 @@
     # DT Output
     DT_EXTREMES:
       _collection: EO.ECMWF.DAT.DT_EXTREMES
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_ADAPTATION:
+      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
