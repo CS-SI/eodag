@@ -666,8 +666,8 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(self, "stream"):
-                            retry_server_info = self.stream.headers.get(
+                        if hasattr(product, "_stream"):
+                            retry_server_info = product._stream.headers.get(
                                 "Retry-After", ""
                             )
                             if retry_server_info:
@@ -688,8 +688,8 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(self, "stream"):
-                            retry_server_info = self.stream.headers.get(
+                        if hasattr(product, "_stream"):
+                            retry_server_info = product._stream.headers.get(
                                 "Retry-After", ""
                             )
                             if retry_server_info:
