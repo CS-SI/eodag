@@ -43,27 +43,43 @@ jobs:
         git config user.email "'github-actions[bot]@users.noreply.github.com"
         git add "${JSON_OUTPUT_FILE}"
         git commit -m "chore: update external collections reference" || exit 0
-        echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
-        echo '### Changed files' >> $GITHUB_STEP_SUMMARY
-        echo 'May be truncated.' >> $GITHUB_STEP_SUMMARY
+        echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
+        echo '### Changed file' >> $GITHUB_STEP_SUMMARY
+        git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
+        echo '' >> $GITHUB_STEP_SUMMARY
         COMMIT_SHA=$(git rev-parse HEAD)
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA}"
         echo "commit [${COMMIT_SHA}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
-        echo '```diff' >> $GITHUB_STEP_SUMMARY
-        git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
-        (diff <(curl ${JSON_REF_FILE} | jq) <(cat ${JSON_OUTPUT_FILE} | jq) || true) >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-        # truncated PR body (too long causes error)
-        full_update_summary=$(cat $GITHUB_STEP_SUMMARY)
-        echo 'UPDATE_SUMMARY<<EOF' >> $GITHUB_ENV
-        echo "${full_update_summary:0:65536}" >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
+        echo '' >> $GITHUB_STEP_SUMMARY
+        # Download reference file for comparison
+        curl -s "${JSON_REF_FILE}" -o /tmp/ref_collections.json
+        # Use our Python comparison script for better diff analysis
+        python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" > /tmp/comparison_output.md
+        # Add comparison output to step summary
+        cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
+
+        # Create a PR body without detailed diffs (to reduce size)
+        {
+          # Include header info
+          echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
+          echo ""
+          echo "### Changed file"
+          git show --name-only --format=tformat:
+          echo ""
+          echo "commit [${COMMIT_SHA}](${COMMIT_URL})"
+          echo ""
+          echo "---"
+          echo "**Note:** Detailed diffs are available in the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          echo ""
+          # Generate comparison without detailed diffs for PR body
+          python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" --no-details --job-url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        } > /tmp/pr_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
       with:
         branch: external-collections-ref-update
         delete-branch: true
         title: 'chore: update external collections reference'
-        body: ${{ env.UPDATE_SUMMARY }}
+        body-path: /tmp/pr_body.md
         labels: |
           automated pr
