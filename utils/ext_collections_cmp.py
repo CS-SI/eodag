@@ -253,11 +253,15 @@ def compare_collections(
     total_changes = sum(len(items) for items in path_groups.values())
     total_paths = len(path_groups)
 
-    print("### Summary:")
-    print(
-        f"- {total_changes} item(s) with changes (providers_config + collections_config)"
-    )
-    print(f"- {total_paths} unique path pattern(s)")
+    if total_changes == 0:
+        print("### Summary:")
+        print("- No changes detected in collections configuration")
+    else:
+        print("### Summary:")
+        print(
+            f"- {total_changes} item(s) with changes (providers_config + collections_config)"
+        )
+        print(f"- {total_paths} unique path pattern(s)")
 
 
 def main():
