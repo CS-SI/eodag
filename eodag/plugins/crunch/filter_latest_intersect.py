@@ -70,6 +70,7 @@ class FilterLatestIntersect(Crunch):
         # Warning: May crash if start_datetime is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered: list[EOProduct] = []
+        search_extent: BaseGeometry
         add_to_filtered = filtered.append
         footprint: Union[dict[str, Any], BaseGeometry, Any] = search_params.get(
             "geometry"

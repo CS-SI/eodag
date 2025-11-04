@@ -27,8 +27,6 @@ module = [
     "pygeofilter.*",
     "rasterio",
     "shapefile",
-    "shapely",
-    "shapely.*",
     "stream_zip",
     "usgs",
     "usgs.*",

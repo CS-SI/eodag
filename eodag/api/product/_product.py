@@ -49,6 +49,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
@@ -68,12 +69,6 @@ if TYPE_CHECKING:
     from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
-
-try:
-    from shapely.errors import GEOSException
-except ImportError:
-    # shapely < 2.0 compatibility
-    from shapely.errors import TopologicalError as GEOSException
 
 
 logger = logging.getLogger("eodag.product")
@@ -162,9 +157,7 @@ class EOProduct:
             )
             and "eodag:default_geometry" not in properties
         ):
-            raise MisconfiguredError(
-                f"No geometry available to build EOProduct(id={properties.get('id')}, provider={provider})"
-            )
+            product_geometry = DEFAULT_SHAPELY_GEOMETRY
         elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
             product_geometry = properties.pop(
                 "eodag:default_geometry", DEFAULT_GEOMETRY
@@ -172,9 +165,11 @@ class EOProduct:
         else:
             product_geometry = properties["geometry"]
 
-        self.geometry = self.search_intersection = get_geometry_from_various(
-            geometry=product_geometry
-        )
+        geometry_obj = get_geometry_from_various(geometry=product_geometry)
+        # whole world as default geometry
+        if geometry_obj is None:
+            geometry_obj = DEFAULT_SHAPELY_GEOMETRY
+        self.geometry = self.search_intersection = geometry_obj
 
         self.search_kwargs = kwargs
         if self.search_kwargs.get("geometry") is not None:
@@ -183,7 +178,7 @@ class EOProduct:
             )
             try:
                 self.search_intersection = self.geometry.intersection(searched_geom)
-            except (GEOSException, ShapelyError):
+            except ShapelyError:
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
                     "geometry: %s",

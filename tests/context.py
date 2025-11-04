@@ -79,6 +79,7 @@ from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
+    DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     DEFAULT_SEARCH_TIMEOUT,
