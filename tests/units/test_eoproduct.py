@@ -31,6 +31,7 @@ from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
+    DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     NOT_AVAILABLE,
     USER_AGENT,
@@ -38,7 +39,6 @@ from tests.context import (
     Download,
     EOProduct,
     HTTPDownload,
-    MisconfiguredError,
     ProgressCallback,
     config,
 )
@@ -75,13 +75,15 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_default_geom(self):
         """EOProduct needs a geometry or can use confired defaultGeometry by default"""
 
-        with self.assertRaisesRegex(MisconfiguredError, "No geometry available"):
-            self._dummy_product(properties={"geometry": NOT_AVAILABLE})
+        product_no_default_geom = self._dummy_product(
+            properties={"geometry": NOT_AVAILABLE}
+        )
+        self.assertEqual(product_no_default_geom.geometry, DEFAULT_SHAPELY_GEOMETRY)
 
-        product = self._dummy_product(
+        product_default_geom = self._dummy_product(
             properties={"geometry": NOT_AVAILABLE, "defaultGeometry": (0, 0, 1, 1)}
         )
-        self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
+        self.assertEqual(product_default_geom.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
 
     def test_eoproduct_search_intersection_none(self):
         """EOProduct search_intersection attr must be None if shapely.errors.GEOSException when intersecting"""

@@ -20,14 +20,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from shapely.errors import ShapelyError
+
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils import get_geometry_from_various
-
-try:
-    from shapely.errors import GEOSException
-except ImportError:
-    # shapely < 2.0 compatibility
-    from shapely.errors import TopologicalError as GEOSException
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -108,7 +104,7 @@ class FilterOverlap(Crunch):
                         product_geometry = product.geometry.buffer(0)
                         try:
                             intersection = search_geom.intersection(product_geometry)
-                        except GEOSException:
+                        except ShapelyError:
                             logger.debug(
                                 "Product geometry still invalid. Overlap test restricted to containment"
                             )
