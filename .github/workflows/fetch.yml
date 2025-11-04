@@ -28,51 +28,90 @@ jobs:
         uv venv
         source .venv/bin/activate
         uv pip install ".[all-providers]"
-    - name: Fetch and update external collections reference
+    - name: Fetch external collections data
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
       run: |
         source .venv/bin/activate
         export JSON_OUTPUT_FILE="eodag/resources/ext_collections.json"
-        export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_COLLECTIONS_CONF_URI)")
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
         # add empty line at end of file
         sed -i -e '$a\' ${JSON_OUTPUT_FILE}
+
+    - name: Commit changes if any
+      id: commit
+      run: |
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
-        git add "${JSON_OUTPUT_FILE}"
-        git commit -m "chore: update external collections reference" || exit 0
+        git add "eodag/resources/ext_collections.json"
+
+        # Check if there are changes to commit
+        if git diff --cached --quiet; then
+          echo "No changes detected in ext_collections.json"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "commit_sha=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+        else
+          git commit -m "chore: update external collections reference"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Download reference file for comparison
+      run: |
+        source .venv/bin/activate
+        export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_COLLECTIONS_CONF_URI)")
+        curl -s "${JSON_REF_FILE}" -o /tmp/ref_collections.json
+
+    - name: Generate comparison and update job summary
+      run: |
+        source .venv/bin/activate
+        COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
+
         echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
         echo '### Changed file' >> $GITHUB_STEP_SUMMARY
-        git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
+        if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
+          git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No changes detected" >> $GITHUB_STEP_SUMMARY
+        fi
         echo '' >> $GITHUB_STEP_SUMMARY
-        COMMIT_SHA=$(git rev-parse HEAD)
-        COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA}"
-        echo "commit [${COMMIT_SHA}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
+        echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '' >> $GITHUB_STEP_SUMMARY
-        # Download reference file for comparison
-        curl -s "${JSON_REF_FILE}" -o /tmp/ref_collections.json
+
         # Use our Python comparison script for better diff analysis
-        python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" > /tmp/comparison_output.md
+        python utils/ext_collections_cmp.py /tmp/ref_collections.json "eodag/resources/ext_collections.json" > /tmp/comparison_output.md
         # Add comparison output to step summary
         cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
 
-        # Create a PR body without detailed diffs (to reduce size)
+    - name: Create PR body
+      run: |
+        source .venv/bin/activate
+        COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
+
         {
           # Include header info
           echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
           echo ""
           echo "### Changed file"
-          git show --name-only --format=tformat:
+          if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
+            git show --name-only --format=tformat:
+          else
+            echo "No changes detected"
+          fi
           echo ""
-          echo "commit [${COMMIT_SHA}](${COMMIT_URL})"
+          echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})"
           echo ""
           echo "---"
           echo "**Note:** Detailed diffs are available in the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
           echo ""
           # Generate comparison without detailed diffs for PR body
-          python utils/ext_collections_cmp.py /tmp/ref_collections.json "${JSON_OUTPUT_FILE}" --no-details --job-url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if ! python utils/ext_collections_cmp.py /tmp/ref_collections.json "eodag/resources/ext_collections.json" --no-details --job-url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
+            echo "Error running comparison script, but proceeding with PR creation."
+            echo ""
+            echo "### Summary:"
+            echo "- Comparison script failed - please check job logs"
+          fi
         } > /tmp/pr_col_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
@@ -105,53 +144,92 @@ jobs:
         source .venv/bin/activate
         # Run from /tmp to avoid installing eodag module
         cd /tmp && uv pip install "eodag[all-providers]~=3.0"
-    - name: Fetch and update external product-types reference
+    - name: Fetch external product-types data
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
       run: |
         source .venv/bin/activate
         export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
-        # Run from /tmp to avoid importing local eodag module
-        export JSON_REF_FILE=$(cd /tmp && python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
         cd "$GITHUB_WORKSPACE"
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
         # add empty line at end of file
         sed -i -e '$a\' ${JSON_OUTPUT_FILE}
+
+    - name: Commit changes if any
+      id: commit
+      run: |
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
-        git add "${JSON_OUTPUT_FILE}"
-        git commit -m "chore: update external product-types reference" || exit 0
+        git add "eodag/resources/ext_product_types.json"
+
+        # Check if there are changes to commit
+        if git diff --cached --quiet; then
+          echo "No changes detected in ext_product_types.json"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+          echo "commit_sha=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+        else
+          git commit -m "chore: update external product-types reference"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Download reference file for comparison
+      run: |
+        source .venv/bin/activate
+        # Run from /tmp to avoid importing local eodag module
+        export JSON_REF_FILE=$(cd /tmp && python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
+        curl -s "${JSON_REF_FILE}" -o /tmp/ref_product_types.json
+
+    - name: Generate comparison and update job summary
+      run: |
+        source .venv/bin/activate
+        COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
+
         echo "Update external product-types reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
         echo '### Changed file' >> $GITHUB_STEP_SUMMARY
-        git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
+        if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
+          git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No changes detected" >> $GITHUB_STEP_SUMMARY
+        fi
         echo '' >> $GITHUB_STEP_SUMMARY
-        COMMIT_SHA=$(git rev-parse HEAD)
-        COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${COMMIT_SHA}"
-        echo "commit [${COMMIT_SHA}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
+        echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '' >> $GITHUB_STEP_SUMMARY
-        # Download reference file for comparison
-        curl -s "${JSON_REF_FILE}" -o /tmp/ref_product_types.json
+
         # Use our Python comparison script for better diff analysis
-        python utils/ext_product_types_cmp.py /tmp/ref_product_types.json "${JSON_OUTPUT_FILE}" > /tmp/pt_cmp_output.md
+        python utils/ext_product_types_cmp.py /tmp/ref_product_types.json "eodag/resources/ext_product_types.json" > /tmp/pt_cmp_output.md
         # Add comparison output to step summary
         cat /tmp/pt_cmp_output.md >> $GITHUB_STEP_SUMMARY
 
-        # Create a PR body without detailed diffs (to reduce size)
+    - name: Create PR body
+      run: |
+        source .venv/bin/activate
+        COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
+
         {
           # Include header info
           echo "Update external product-types reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
           echo ""
           echo "### Changed file"
-          git show --name-only --format=tformat:
+          if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
+            git show --name-only --format=tformat:
+          else
+            echo "No changes detected"
+          fi
           echo ""
-          echo "commit [${COMMIT_SHA}](${COMMIT_URL})"
+          echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})"
           echo ""
           echo "---"
           echo "**Note:** Detailed diffs are available in the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
           echo ""
           # Generate comparison without detailed diffs for PR body
-          python utils/ext_product_types_cmp.py /tmp/ref_product_types.json "${JSON_OUTPUT_FILE}" --no-details --job-url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if ! python utils/ext_product_types_cmp.py /tmp/ref_product_types.json "eodag/resources/ext_product_types.json" --no-details --job-url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; then
+            echo "Error running comparison script, but proceeding with PR creation."
+            echo ""
+            echo "### Summary:"
+            echo "- Comparison script failed - please check job logs"
+          fi
         } > /tmp/pr_pt_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
