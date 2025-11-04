@@ -592,6 +592,15 @@ class Download(PluginTopic):
                         f"[Retry #{retry_count}, {nb_products - len(products)}/{nb_products} D/L] "
                         f"Waiting {wait_seconds}s until next download try (retry every {wait}' for {timeout}')"
                     )
+
+                    # recreate executor since it has been shut down
+                    executor = ThreadPoolExecutor(
+                        max_workers=executor._max_workers,
+                        thread_name_prefix=executor._thread_name_prefix,
+                        initializer=executor._initializer,
+                        initargs=executor._initargs,
+                    )
+
                     logger.info(info_message)
                     nb_info.display_html(info_message)
                     sleep(wait_seconds + 1)
