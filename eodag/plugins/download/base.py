@@ -470,7 +470,8 @@ class Download(PluginTopic):
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :param progress_callback: (optional) A progress callback
-        :param executor: (optional) An executor to download products in parallel
+        :param executor: (optional) An executor to download products in parallel which may
+                         be reused to also download assets of these products in parallel.
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
