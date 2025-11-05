@@ -171,7 +171,7 @@ class Collection(BaseModel):
         # iterate over each step of validation where error(s) raise(s)
         while continue_validation:
             try:
-                handler(values)  # values = handled(values) puis return values ?
+                handler(values)
             except PydanticValidationError as e:
                 tmp_errors = e.errors()
                 # raise an error if the id is invalid
@@ -189,7 +189,7 @@ class Collection(BaseModel):
                     if (
                         cls.get_collection_mtd_from_alias(wrong_param)
                         not in cls.model_fields
-                    ):  # regarde si ça marche avec un alias
+                    ):
                         del values_dict[wrong_param]
                     else:
                         values_dict[wrong_param] = cls.model_fields[
