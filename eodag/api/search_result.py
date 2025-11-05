@@ -19,16 +19,7 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Iterable,
-    Iterator,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
 
 from shapely.geometry import GeometryCollection
 from shapely.geometry import mapping as shapely_mapping
@@ -320,11 +311,7 @@ class SearchResult(UserList[EOProduct]):
 
         # Do not iterate if there is no next page token
         #  or if the current one returned less than the maximum number of items asked for.
-        if self.next_page_token is None or (
-            self.search_params
-            and self.search_params.get("items_per_page")
-            and len(self) < cast(int, self.search_params["items_per_page"])
-        ):
+        if self.next_page_token is None:
             return
 
         new_results = get_next_page(self)
