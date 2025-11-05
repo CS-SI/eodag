@@ -76,11 +76,6 @@ jobs:
 
         echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
 
-        echo '### Check potential warning logs while listing collections' >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-        echo "$WARNINGS" >> $GITHUB_STEP_SUMMARY
-        echo '```' >> $GITHUB_STEP_SUMMARY
-
         echo '### Changed file' >> $GITHUB_STEP_SUMMARY
         if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
           git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
@@ -90,6 +85,13 @@ jobs:
         echo '' >> $GITHUB_STEP_SUMMARY
         echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '' >> $GITHUB_STEP_SUMMARY
+
+        echo '### Check potential warning logs while listing collections' >> $GITHUB_STEP_SUMMARY
+        if [[ $WARNINGS == *"WARNING"* ]]; then
+          echo "Warning log(s) detected" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No warning log detected" >> $GITHUB_STEP_SUMMARY
+        fi
 
         # Use our Python comparison script for better diff analysis
         python utils/ext_collections_cmp.py /tmp/ref_collections.json "eodag/resources/ext_collections.json" > /tmp/comparison_output.md
@@ -104,9 +106,6 @@ jobs:
         {
           # Include header info
           echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
-          echo ""
-          echo '### Check potential warning logs while listing collections'
-          echo "$WARNINGS"
           echo ""
           echo "### Changed file"
           if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
@@ -127,6 +126,9 @@ jobs:
             echo "### Summary:"
             echo "- Comparison script failed - please check job logs"
           fi
+          echo '### Check potential warning logs while listing collections'
+          echo "$WARNINGS"
+          echo ""
         } > /tmp/pr_col_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
