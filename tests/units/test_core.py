@@ -2831,6 +2831,31 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(len(sr), 0)
         self.assertEqual(sr.number_matched, 0)
 
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_pagination_disabled_less_products(self, search_plugin):
+        """_do_search must handle pagination disabled when less products than items_per_page are returned"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = SearchResult(
+            [EOProduct("peps", {"id": "_"})], next_page_token=2
+        )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
+        sr = self.dag._do_search(
+            count=True,
+            search_plugin=search_plugin,
+            items_per_page=5,
+        )
+        # search returns less products than items_per_page
+        self.assertEqual(len(sr), 1)
+        self.assertIsNone(sr.next_page_token)
+
+        with self.assertRaises(StopIteration):
+            next(sr.next_page())
+
     def test__do_search_does_not_raise_by_default(self):
         """_do_search must not raise any error by default"""
 

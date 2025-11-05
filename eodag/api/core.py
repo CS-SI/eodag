@@ -1462,6 +1462,7 @@ class EODataAccessGateway:
                 len(search_results),
                 search_results[0].provider,
             )
+            search_results.number_matched = len(search_results)
         except RequestError:
             logger.warning(
                 "Found %s result(s) on provider '%s', but it may be incomplete "
@@ -1902,6 +1903,10 @@ class EODataAccessGateway:
 
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
+
+            # Make next_page not available if the current one returned less than the maximum number of items asked for.
+            if not prep.items_per_page or len(search_result) < prep.items_per_page:
+                search_result.next_page_token = None
 
             search_result._dag = self
             return search_result
