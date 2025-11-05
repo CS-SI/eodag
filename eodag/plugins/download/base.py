@@ -537,10 +537,10 @@ class Download(PluginTopic):
                             future = executor.submit(
                                 product.download,
                                 progress_callback=product_progress_callback,
+                                executor=executor,
                                 wait=wait,
                                 timeout=-1,
-                                executor=executor,
-                                **kwargs,
+                                **kwargs,  # type: ignore
                             )
                             futures[future] = product
 
