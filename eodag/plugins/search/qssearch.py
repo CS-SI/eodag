@@ -1150,6 +1150,7 @@ class QueryStringSearch(Search):
         }
         raw_search_results.query_params = prep.query_params
         raw_search_results.collection_def_params = prep.collection_def_params
+        raw_search_results.next_page_token_key = prep.next_page_token_key
 
         # If no JSON response is available, return the result as is
         if resp_as_json is None:
@@ -1168,7 +1169,7 @@ class QueryStringSearch(Search):
             jsonpath_match = jsonpath_expr.find(resp_as_json)
             if jsonpath_match:
                 next_page_query_obj = jsonpath_match[0].value
-                next_page_token_key = self.config.pagination.get("next_page_token_key")
+                next_page_token_key = raw_search_results.next_page_token_key
                 if next_page_token_key and next_page_token_key in next_page_query_obj:
                     raw_search_results.next_page_token = next_page_query_obj[
                         next_page_token_key
@@ -1203,8 +1204,9 @@ class QueryStringSearch(Search):
                 next_page_token_key = (
                     unquote(self.config.pagination["parse_url_key"])
                     if "parse_url_key" in self.config.pagination
-                    else self.config.pagination.get("next_page_token_key")
+                    else raw_search_results.next_page_token_key
                 )
+                raw_search_results.next_page_token_key = next_page_token_key
                 # Try to extract the token from the found value
                 if next_page_token_key in href_value:
                     raw_search_results.next_page_token = href_value[next_page_token_key]
@@ -1222,9 +1224,7 @@ class QueryStringSearch(Search):
                 raw_search_results.next_page_token = None
         else:
             # pagination using next_page_token_key
-            next_page_token_key = str(
-                self.config.pagination.get("next_page_token_key", "page")
-            )
+            next_page_token_key = raw_search_results.next_page_token_key
             next_page_token = prep.next_page_token
             # page number as next_page_token_key
             if next_page_token is not None and next_page_token_key == "page":
