@@ -20,6 +20,7 @@ Collection
       .. autoattribute:: license
       .. autoattribute:: description
       .. autoattribute:: alias
+
    :Methods:
 
       .. automethod:: Collection.search
