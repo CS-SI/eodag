@@ -1616,7 +1616,7 @@ class TestCore(TestCoreBase):
             {
                 "S2_MSI_L1C": {
                     **self.dag.collections_config["S2_MSI_L1C"].model_dump(
-                        exclude={"id"}
+                        mode="json", exclude={"id"}
                     ),
                     "collection": "S2_MSI_L1C",
                 }
