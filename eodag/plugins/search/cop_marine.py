@@ -212,9 +212,12 @@ class CopMarineSearch(StaticStacSearch):
         dataset_item: dict[str, Any],
         collection_dict: dict[str, Any],
         use_dataset_dates: bool = False,
+        product_id: Optional[str] = None,
     ) -> Optional[EOProduct]:
 
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
+        if product_id and product_id != item_id:
+            return None
         download_url = s3_url + "/" + item_key
         geometry = (
             get_geometry_from_various(**dataset_item)
@@ -385,9 +388,12 @@ class CopMarineSearch(StaticStacSearch):
                         dataset_item,
                         collection_dict,
                         True,
+                        kwargs.get("id", None),
                     )
                     if product:
                         products.append(product)
+                    if product and kwargs.get("id", None):
+                        break
                     continue
 
             s3_client = _get_s3_client(endpoint_url)
