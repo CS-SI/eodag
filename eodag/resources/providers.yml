@@ -5229,8 +5229,6 @@
       _collection: EO.CLMS.DAT.GLO.NDVI_1KM_V2
     CLMS_GLO_NDVI_333M:
       _collection: EO.CLMS.DAT.GLO.NDVI300_V1
-    EEA_DAILY_VI:
-      _collection: EO.CLMS.DAT.SENTINEL-2.HRVPP.VI
     # Landsat data
     LANDSAT_C2L1:
       _collection: EO.NASA.DAT.LANDSAT.C2_L1

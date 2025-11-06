@@ -1537,19 +1537,16 @@ MFG_GSA_63:
 
 HIRS_FDR_1_MULTI:
   description: |
-    This is Release 1 of the Fundamental Data Record (FDR) brightness
-    temperatures from the High Resolution Infrared Radiation Sounder (HIRS) on
-    board NOAA and Metop satellites. The data record covers more than 40 years
-    from 29 October 1978 to 31 December 2020. Release 1 provides recalibrated
-    Level 1c brightness temperatures based on the V4.0 calibration method
-    developed by Cao et al. (2007). This method was implemented into the
-    NWP-SAF software ATOVS and AVHRR processing Package (AAPP). This software
-    was consistently used to recalibrate and reprocess data from all HIRS
-    instruments on board TIROS-N, NOAA-06 to NOAA-19, Metop-A, and Metop-B. The
-    polygons, required for the data tailoring, show problems with non-continues
-    data. Some polygons of the HIRS data record are found to be incorrect.
-    However, this does not affect the correctness of the data itself. This is a
-    Fundamental Data Record (FDR).
+    This is Release 2 of the Fundamental Data Record (FDR) brightness temperatures
+    from the High Resolution Infrared Radiation Sounder (HIRS) on board NOAA and Metop
+    satellites. The data record covers more than 40 years from 29 October 1978 to 31
+    December 2022. Release 2 provides recalibrated Level 1c brightness temperatures
+    based on the V4.0 calibration method developed by Cao et al. (2007). This method
+    was implemented into the NWP-SAF software ATOVS and AVHRR processing Package (AAPP).
+    This software was consistently used to recalibrate and reprocess data from all HIRS
+    instruments on board TIROS-N, NOAA-06 to NOAA-19, Metop-A, and Metop-B. Input HIRS
+    data were collected from NOAA/CLASS and ECMWF archives and merged to produce a
+    longer time series of some of the satellites.
   instruments: ["HIRS"]
   constellation: Metop,TIROS,NOAA
   platform: Metop,TIROS,NOAA
@@ -4688,7 +4685,7 @@ CLMS_HRVPP_ST:
   platform: S2A,S2B,S2C
   processing:level:
   keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
-  eodag:sensor_type: RADAR
+  eodag:sensor_type:
   license: other
   title: Seasonal Trajectories, 10-daily, ST projection
   links:
@@ -4710,7 +4707,7 @@ CLMS_HRVPP_ST_LAEA:
   platform: S2A,S2B,S2C
   processing:level:
   keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
-  eodag:sensor_type: RADAR
+  eodag:sensor_type:
   license: other
   title: Seasonal Trajectories, 10-daily, LAEA projection
   links:
@@ -4731,7 +4728,7 @@ CLMS_HRVPP_VPP:
   platform: S2A,S2B,S2C
   processing:level:
   keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
-  eodag:sensor_type: RADAR
+  eodag:sensor_type:
   license: other
   title: Vegetation Phenology and Productivity, yearly, UTM projection
   links:
@@ -4752,7 +4749,7 @@ CLMS_HRVPP_VPP_LAEA:
   platform: S2A,S2B,S2C
   processing:level:
   keywords: ["Land", "Plant-phenology-index", "Phenology", "Vegetation", "Sentinel-2", "S2A", "S2B", "S2C"]
-  eodag:sensor_type: RADAR
+  eodag:sensor_type:
   license: other
   title: Vegetation Phenology and Productivity, yearly, LAEA projection
   links:
