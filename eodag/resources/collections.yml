@@ -1554,7 +1554,7 @@ HIRS_FDR_1_MULTI:
   keywords: ["HIRS", "L1C", "HIRS", "TIROS", "Metop", "NOAA", "Sounder", "FDR"]
   eodag:sensor_type: Sounder
   license: other
-  title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
+  title:  HIRS Level 1C Fundamental Data Record Release 2 - Multimission - Global
   extent: {"temporal": {"interval": [["1978-10-29T00:00:00Z", "2020-12-31T23:59:59Z"]]}}
 
 S6_RADIO_OCCULTATION:
