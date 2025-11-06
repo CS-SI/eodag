@@ -5142,7 +5142,7 @@ DT_CLIMATE_ADAPTATION:
   eodag:sensor_type: ATMOSPHERIC
   license: other
   title: Climate Change Adaptation Digital Twin (DT)
-  extent: {"temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2020-01-01T00:00:00Z", null]]}}
 
 DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
   description: |
@@ -6011,7 +6011,7 @@ MSG_AMVR02:
   eodag:sensor_type: OPTICAL
   license: other
   title: Atmospheric Motion Vectors Climate Data Record Release 2 - MFG and MSG - 0 degree
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1981-09-03", null]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1981-09-03T00:00:00Z", null]]}}
 
 MSG_CTH:
   description: |
