@@ -72,7 +72,6 @@ from eodag.utils import (
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
     _deprecated,
-    get_collection_dates,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -1143,32 +1142,16 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                extent_dict_with_str_dates = {
-                    "extent": {
-                        "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
-                        "temporal": {"interval": [[None, None]]},
-                    }
-                }
-
-                if pt_f.model_dump()["extent"] is not None:
-                    col_dates = pt_f.model_dump()["extent"]["temporal"]["interval"][0]
-                    for i, date in enumerate(col_dates):
-                        if date is not None:
-                            extent_dict_with_str_dates["extent"]["temporal"][
-                                "interval"
-                            ][0][i] = date.strftime(
-                                "%Y-%m-%d"
-                            )  # type: ignore[index]
-
-                col_start, col_end = get_collection_dates(extent_dict_with_str_dates)
+                col_start = pt_f.extent.temporal.interval[0][0]
+                col_end = pt_f.extent.temporal.interval[0][1]
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
-                    rfc3339_str_to_datetime(col_start) if col_start else min_aware,
+                    col_start or min_aware,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(end_date) if end_date else max_aware,
-                    rfc3339_str_to_datetime(col_end) if col_end else max_aware,
+                    col_end or max_aware,
                 )
                 if not (max_start <= min_end):
                     continue
