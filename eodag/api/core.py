@@ -2363,7 +2363,7 @@ class EODataAccessGateway:
         try:
             plugin.config.collection_config = dict(
                 [
-                    p.model_dump(exclude={"id"})
+                    p.model_dump(mode="json", exclude={"id"})
                     for p in self.list_collections(
                         plugin.provider, fetch_providers=False
                     )
@@ -2376,7 +2376,7 @@ class EODataAccessGateway:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
                 **self.collections_config[GENERIC_COLLECTION].model_dump(
-                    exclude={"id"}
+                    mode="json", exclude={"id"}
                 ),
                 collection=collection,
             )
