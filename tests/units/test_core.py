@@ -1615,8 +1615,10 @@ class TestCore(TestCoreBase):
             [pt.id for pt in self.dag.list_collections("peps", fetch_providers=False)],
             {
                 "S2_MSI_L1C": {
+                    **self.dag.collections_config["S2_MSI_L1C"].model_dump(
+                        exclude={"id"}
+                    ),
                     "collection": "S2_MSI_L1C",
-                    **self.dag.collections_config["S2_MSI_L1C"],
                 }
             },
             "S2_MSI_L1C",

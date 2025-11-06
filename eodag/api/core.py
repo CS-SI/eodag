@@ -2363,7 +2363,7 @@ class EODataAccessGateway:
         try:
             plugin.config.collection_config = dict(
                 [
-                    p
+                    p.model_dump(exclude={"id"})
                     for p in self.list_collections(
                         plugin.provider, fetch_providers=False
                     )
@@ -2375,11 +2375,11 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                **self.collections_config[GENERIC_COLLECTION].model_dump(),
+                **self.collections_config[GENERIC_COLLECTION].model_dump(
+                    exclude={"id"}
+                ),
                 collection=collection,
             )
-        # Remove the id since this is equal to collections.
-        plugin.config.collection_config.pop("id", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
