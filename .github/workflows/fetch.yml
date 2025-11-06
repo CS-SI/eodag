@@ -86,17 +86,19 @@ jobs:
         echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '' >> $GITHUB_STEP_SUMMARY
 
-        echo '### Check potential warning logs while listing collections' >> $GITHUB_STEP_SUMMARY
-        if [[ $WARNINGS == *"WARNING"* ]]; then
-          echo "Warning log(s) detected" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "No warning log detected" >> $GITHUB_STEP_SUMMARY
-        fi
-
         # Use our Python comparison script for better diff analysis
         python utils/ext_collections_cmp.py /tmp/ref_collections.json "eodag/resources/ext_collections.json" > /tmp/comparison_output.md
         # Add comparison output to step summary
         cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
+
+        echo '### Check potential warning log(s) while listing collections' >> $GITHUB_STEP_SUMMARY
+        if [[ $WARNINGS == *"WARNING"* ]]; then
+          echo "Warning log(s) detected:" >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo "$WARNINGS" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "No warning log detected" >> $GITHUB_STEP_SUMMARY
+        fi
 
     - name: Create PR body
       run: |
@@ -126,9 +128,12 @@ jobs:
             echo "### Summary:"
             echo "- Comparison script failed - please check job logs"
           fi
-          echo '### Check potential warning logs while listing collections'
-          echo "$WARNINGS"
-          echo ""
+          echo '### Check potential warning log(s) while listing collections'
+          if [[ $WARNINGS == *"WARNING"* ]]; then
+            echo "Warning log(s) detected, please fix them by seeing the [job summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."
+          else
+            echo "No warning log detected"
+          fi
         } > /tmp/pr_col_body.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
