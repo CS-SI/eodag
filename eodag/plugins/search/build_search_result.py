@@ -56,8 +56,8 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_sort,
     format_string,
-    get_geometry_from_area,
-    get_geometry_from_shape,
+    get_geometry_from_ecmwf_area,
+    get_geometry_from_ecmwf_feature,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
@@ -638,12 +638,11 @@ class ECMWFSearch(PostJsonSearch):
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
         # ECMWF Polytope uses non-geojson structure for features
         if "feature" in params:
-            if params["feature"]["type"] == "polygon":
-                params["geometry"] = get_geometry_from_shape(params["feature"])
-                params.pop("feature")
+            params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
+            params.pop("feature")
         # bounding box in area format
         if "area" in params:
-            params["geometry"] = get_geometry_from_area(params["area"])
+            params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
             params.pop("area")
 
         return params
@@ -732,10 +731,13 @@ class ECMWFSearch(PostJsonSearch):
         if "end" in filters:
             filters[END] = filters.pop("end")
 
-        # extract default datetime
-        processed_filters = self._preprocess_search_params(
-            deepcopy(filters), collection
-        )
+        # extract default datetime and convert geometry
+        try:
+            processed_filters = self._preprocess_search_params(
+                deepcopy(filters), collection
+            )
+        except Exception as e:
+            raise ValidationError(e.args[0]) from e
 
         provider_dq = getattr(self.config, "discover_queryables", {}) or {}
         product_dq = pt_config.get("discover_queryables", {}) or {}

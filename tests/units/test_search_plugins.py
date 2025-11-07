@@ -2965,17 +2965,17 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         return_value={},
     )
     @mock.patch(
-        "eodag.plugins.search.build_search_result.get_geometry_from_shape",
+        "eodag.plugins.search.build_search_result.get_geometry_from_ecmwf_feature",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.build_search_result.get_geometry_from_area",
+        "eodag.plugins.search.build_search_result.get_geometry_from_ecmwf_area",
         autospec=True,
     )
-    def test_plugins_search_ecmwfsearch_convert_geometry(
+    def test_plugins_search_ecmwfsearch_convert_geometry_ok(
         self,
-        mock_get_geometry_from_area,
-        mock_get_geometry_from_shape,
+        mock_get_geometry_from_ecmwf_area,
+        mock_get_geometry_from_ecmwf_feature,
         mock__fetch_data,
     ):
         """Custom geometry must be converted to Shapely polygon."""
@@ -2998,7 +2998,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         }
         queryables = self.search_plugin.discover_queryables(**params)
         self.assertIn("geom", queryables)
-        mock_get_geometry_from_area.assert_called_once_with(area)
+        mock_get_geometry_from_ecmwf_area.assert_called_once_with(area)
 
         # shape
         params = {
@@ -3007,7 +3007,54 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         }
         queryables = self.search_plugin.discover_queryables(**params)
         self.assertIn("geom", queryables)
-        mock_get_geometry_from_shape.assert_called_once_with(shape)
+        mock_get_geometry_from_ecmwf_feature.assert_called_once_with(shape)
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+        return_value={},
+    )
+    def test_plugins_search_ecmwfsearch_convert_geometry_ko(
+        self,
+        mock__fetch_data,
+    ):
+        """
+        ``get_geometry_from_ecmwf_*`` must raise an informative exception
+        if the given geometry is not well formed.
+        """
+        # area
+        area_values = [
+            [1.0, 2.0, 3.0],  # not enough values
+            [1.0, 2.0, 3.0, 4.0, 5.0],  # too many values
+            [1.0, "lorem", 3.0, 4.0],  # wrong type
+        ]
+        for area in area_values:
+            params = {
+                "collection": "CAMS_EU_AIR_QUALITY_RE",
+                "area": area,
+            }
+            with self.assertRaises(ValidationError):
+                self.search_plugin.discover_queryables(**params)
+
+        # feature
+        feature_values = [
+            "foo",  # not a dict
+            {"foo": "bar"},  # missing 'type'
+            {"type": "points"},  # wrong 'type'
+            {"type": "polygon"},  # missing 'shape'
+            {"type": "polygon", "shape": "boo"},  # shape is not a list
+            {
+                "type": "polygon",
+                "shape": [1, 2, 3],
+            },
+        ]
+        for feature in feature_values:
+            params = {
+                "collection": "CAMS_EU_AIR_QUALITY_RE",
+                "feature": feature,
+            }
+            with self.assertRaises(ValidationError):
+                self.search_plugin.discover_queryables(**params)
 
     @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
