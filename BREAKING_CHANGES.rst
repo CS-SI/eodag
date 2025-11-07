@@ -254,7 +254,7 @@ Files renamed
 
 External collections reference configuration file is now hosted as
 `https://cs-si.github.io/eodag/eodag/resources/ext_collections.json
-<https://cs-si.github.io/eodag/eodag/resources/ext_collections.jsons>`_. See `API user guide /  Providers and products
+<https://cs-si.github.io/eodag/eodag/resources/ext_collections.json>`_. See `API user guide /  Providers and products
 / Collections discovery <notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_ for more
 information.
 
