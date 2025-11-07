@@ -189,7 +189,7 @@ METEOBLUE_SEARCH_ARGS = [
 WEKEO_MAIN_SEARCH_ARGS = [
     "wekeo_main",
     "S5P_L1B_IR_ALL",
-    "2018-04-30S",
+    "2018-04-30",
     "2018-11-18",
     [-180, -90, 180, 90],
 ]
