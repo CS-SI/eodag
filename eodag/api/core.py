@@ -276,9 +276,7 @@ class EODataAccessGateway:
                 empty_product = Collection(
                     dag=self, id=product_id, title=product_id, description=NOT_AVAILABLE
                 )
-                self.collections_config[
-                    product_id
-                ] = empty_product  # will update available_collections
+                self.collections_config[product_id] = empty_product
                 products_to_add.append(product_id)
 
         if products_to_add:
@@ -883,16 +881,12 @@ class EODataAccessGateway:
                             try:
                                 # new_collection_conf does not already exist, append it
                                 # to self.collections_config
-                                self.collections_config.update(
-                                    {
-                                        new_collection: Collection(
-                                            dag=self,
-                                            id=new_collection,
-                                            **new_collections_conf[
-                                                "collections_config"
-                                            ][new_collection],
-                                        )
-                                    }
+                                self.collections_config[new_collection] = Collection(
+                                    dag=self,
+                                    id=new_collection,
+                                    **new_collections_conf["collections_config"][
+                                        new_collection
+                                    ],
                                 )
                                 # to provider_products_config
                                 provider_products_config[
