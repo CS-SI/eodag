@@ -4537,7 +4537,7 @@
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
-        - '{$.feature#from_geojson_polytope}'
+        - "$.geometry"
       start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - '{{"date": "{start_datetime#to_non_separated_date}/to/{end_datetime#to_non_separated_date}"}}'
@@ -4732,7 +4732,7 @@
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
-        - '{$.feature#from_geojson_polytope}'
+        - "$.geometry"
       start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
       end_datetime:
         - '{{"date": "{start_datetime#to_non_separated_date}/to/{end_datetime#to_non_separated_date}"}}'

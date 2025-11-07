@@ -84,7 +84,7 @@ from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
-from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.exceptions import MisconfiguredError, ValidationError
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
@@ -1152,6 +1152,37 @@ def get_geometry_from_various(
                 )
 
     return geom
+
+
+def get_geometry_from_shape(geom: dict[str, Any]) -> BaseGeometry:
+    """
+    Creates a ``shapely.geometry`` from ECMWF Polytope shape.
+
+    :param geom: ECMWF Polytope shape.
+    :returns: A Shapely polygon.
+    """
+    if geom["type"] == "polygon":
+        shape: list = geom["shape"]
+        polygon_args = [(p[1], p[0]) for p in shape]
+        return Polygon(polygon_args)
+    else:
+        raise ValidationError(
+            "convert_from_geojson_polytope only accepts shapes of type polygon"
+        )
+
+
+def get_geometry_from_area(area: list[float]) -> Optional[BaseGeometry]:
+    """
+    Creates a ``shapely.geometry`` from bounding box in area format.
+
+    area format: [max_lat,min_lon,min_lat,max_lon]
+
+    :param area: bounding box in area format.
+    :returns: A Shapely polygon.
+    """
+    max_lat, min_lon, min_lat, max_lon = area
+    bbox = [min_lon, min_lat, max_lon, max_lat]
+    return get_geometry_from_various(geometry=bbox)
 
 
 class MockResponse:

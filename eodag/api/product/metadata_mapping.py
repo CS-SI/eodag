@@ -434,23 +434,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             raise ValidationError("to_geojson_polytope only accepts shapely Polygon")
 
         @staticmethod
-        def convert_from_geojson_polytope(geom: dict[str, Any]) -> Polygon:
-            """
-            Converts from ECMWF Polytope non-geojson shape to Shapely polygon
-
-            :param geom: ECMWF Polytope shape.
-            :returns: A Shapely polygon.
-            """
-            if geom["type"] == "polygon":
-                shape: list = geom["shape"]
-                polygon_args = [(p[1], p[0]) for p in shape]
-                return Polygon(polygon_args)
-            else:
-                raise ValidationError(
-                    "convert_from_geojson_polytope only accepts shapes of type polygon"
-                )
-
-        @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 

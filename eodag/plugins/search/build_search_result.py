@@ -56,6 +56,8 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_sort,
     format_string,
+    get_geometry_from_area,
+    get_geometry_from_shape,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
@@ -143,6 +145,7 @@ ECMWF_KEYWORDS = {
 COP_DS_KEYWORDS = {
     "aerosol_type",
     "altitude",
+    "area",
     "band",
     "cdr_type",
     "data_format",
@@ -633,6 +636,15 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+        # ECMWF Polytope uses non-geojson structure for features
+        if "feature" in params:
+            if params["feature"]["type"] == "polygon":
+                params["geometry"] = get_geometry_from_shape(params["feature"])
+                params.pop("feature")
+        # bounding box in area format
+        if "area" in params:
+            params["geometry"] = get_geometry_from_area(params["area"])
+            params.pop("area")
 
         return params
 
@@ -735,7 +747,7 @@ class ECMWFSearch(PostJsonSearch):
         form: list[dict[str, Any]] = self._fetch_data(form_url)
 
         formated_filters = self.format_as_provider_keyword(
-            collection, processed_filters
+            collection, deepcopy(processed_filters)
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
         for k, v in {**default_values, **kwargs}.items():
@@ -792,7 +804,7 @@ class ECMWFSearch(PostJsonSearch):
         # To check if all keywords are queryable parameters, we check if they are in the
         # available values or the collection config (available values calculated from the
         # constraints might not include all queryables)
-        for keyword in filters:
+        for keyword in processed_filters:
             if (
                 keyword
                 not in available_values.keys()
