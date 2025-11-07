@@ -388,11 +388,11 @@ class CopMarineSearch(StaticStacSearch):
                         dataset_item,
                         collection_dict,
                         True,
-                        kwargs.get("id", None),
+                        kwargs.get("id"),
                     )
                     if product:
                         products.append(product)
-                    if product and kwargs.get("id", None):
+                    if product and kwargs.get("id"):
                         break
                     continue
 
