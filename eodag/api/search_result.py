@@ -301,14 +301,11 @@ class SearchResult(UserList[EOProduct]):
             if current.number_matched:
                 search_kwargs["number_matched"] = current.number_matched
             for i, search_plugin in enumerate(search_plugins):
-                search_kwargs.pop(
-                    "validate", False
-                )  # remove validate from search kwargs if present to avoid having it twice in _do_search
+                # validate no needed for next pages
+                search_kwargs["validate"] = False
                 return current._dag._do_search(
                     search_plugin,
                     raise_errors=self.raise_errors,
-                    # validate no needed for next pages
-                    validate=False,
                     **search_kwargs,
                 )
 
