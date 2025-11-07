@@ -188,9 +188,10 @@ METEOBLUE_SEARCH_ARGS = [
 ]
 WEKEO_MAIN_SEARCH_ARGS = [
     "wekeo_main",
-    "2016-10-01",
-    "2016-10-02",
-    [19.8614709, 36.9525649, 21.111086, 37.9475371],
+    "S5P_L1B_IR_ALL",
+    "2018-04-30S",
+    "2018-11-18",
+    [-180, -90, 180, 90],
 ]
 WEKEO_ECMWF_SEARCH_ARGS = [
     "wekeo_ecmwf",
