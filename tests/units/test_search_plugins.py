@@ -2959,6 +2959,56 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             context.exception.message,
         )
 
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+        return_value={},
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.get_geometry_from_shape",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.get_geometry_from_area",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_convert_geometry(
+        self,
+        mock_get_geometry_from_area,
+        mock_get_geometry_from_shape,
+        mock__fetch_data,
+    ):
+        """Custom geometry must be converted to Shapely polygon."""
+        area = [64.0, 51.0, 52.0, 63.0]
+        shape = {
+            "shape": [
+                [50.0, 50.0],
+                [50.0, 60.0],
+                [60.0, 60.0],
+                [60.0, 50.0],
+                [50.0, 50.0],
+            ],
+            "type": "polygon",
+        }
+
+        # area
+        params = {
+            "collection": "CAMS_EU_AIR_QUALITY_RE",
+            "area": area,
+        }
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIn("geom", queryables)
+        mock_get_geometry_from_area.assert_called_once_with(area)
+
+        # shape
+        params = {
+            "collection": "CAMS_EU_AIR_QUALITY_RE",
+            "feature": shape,
+        }
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIn("geom", queryables)
+        mock_get_geometry_from_shape.assert_called_once_with(shape)
+
     @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
         self, mock_requests_get
