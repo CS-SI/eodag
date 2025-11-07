@@ -124,6 +124,10 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_LAI_333M": ["dedl", "wekeo_main"],
         "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo_main"],
         "CLMS_GLO_NDVI_333M": ["dedl", "wekeo_main"],
+        "CLMS_HRVPP_ST": ["wekeo_main"],
+        "CLMS_HRVPP_ST_LAEA": ["wekeo_main"],
+        "CLMS_HRVPP_VPP": ["wekeo_main"],
+        "CLMS_HRVPP_VPP_LAEA": ["wekeo_main"],
         "COP_DEM_GLO30_DGED": [
             "creodias",
             "creodias_s3",
@@ -142,7 +146,6 @@ class TestCore(TestCoreBase):
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
-        "EEA_DAILY_VI": ["dedl", "wekeo_main"],
         "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
@@ -2273,7 +2276,10 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
-            "EEA_DAILY_VI",
+            "CLMS_HRVPP_ST",
+            "CLMS_HRVPP_ST_LAEA",
+            "CLMS_HRVPP_VPP",
+            "CLMS_HRVPP_VPP_LAEA",
             "EEA_HRL_TCF",
         ]
         self.assertListEqual(actual, expected)

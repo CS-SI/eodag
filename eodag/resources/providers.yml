@@ -3433,25 +3433,6 @@
       productType: EO:ESA:DAT:SENTINEL-5P
       processingLevel: L2
       metadata_mapping_from_product: S5P_L1B_IR_ALL
-    EEA_DAILY_VI:
-      productType: EO:EEA:DAT:CLMS_HRVPP_VI
-      metadata_mapping:
-        id:
-          - '{{"uid": "{id}"}}'
-          - '$.id'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        version:
-          - '{{"productVersion": "{version}"}}'
-          - '$.null'
-        platformSerialIdentifier:
-          - '{{"platformSerialIdentifier": "{platformSerialIdentifier}"}}'
-          - '$.id.`sub(/^[^_]+_[^_]+_([^_]+)_.*/, \\1)`'
-        tileIdentifier:
-          - '{{"tileId": "{tileIdentifier}"}}'
-          - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
     EEA_HRL_TCF:
       productType: EO:EEA:DAT:HRL:TCF
       metadata_mapping:
@@ -3541,6 +3522,34 @@
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_HRVPP_ST:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_ST
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_ST"}}'
+    CLMS_HRVPP_ST_LAEA:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_ST-LAEA
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_ST-LAEA"}}'
+    CLMS_HRVPP_VPP:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_VPP
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP"}}'
+    CLMS_HRVPP_VPP_LAEA:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA"}}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -5221,8 +5230,6 @@
       productType: EO.CLMS.DAT.GLO.NDVI_1KM_V2
     CLMS_GLO_NDVI_333M:
       productType: EO.CLMS.DAT.GLO.NDVI300_V1
-    EEA_DAILY_VI:
-      productType: EO.CLMS.DAT.SENTINEL-2.HRVPP.VI
     # Landsat data
     LANDSAT_C2L1:
       productType: EO.NASA.DAT.LANDSAT.C2_L1
@@ -5758,7 +5765,7 @@
     MSG_CTH_IODC:
       parentIdentifier: EO:EUM:DAT:MSG:CTH-IODC
     HIRS_FDR_1_MULTI:
-      parentIdentifier: EO:EUM:DAT:0647
+      parentIdentifier: EO:EUM:DAT:0961
     MSG_OCA_CDR:
       parentIdentifier: EO:EUM:DAT:0617
     S6_RADIO_OCCULTATION:
