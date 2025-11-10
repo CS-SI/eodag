@@ -701,6 +701,7 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
+        default_values.pop("metadata_mapping_from_product", None)
 
         filters["collection"] = collection
         queryables = self.discover_queryables(**{**default_values, **filters}) or {}
@@ -725,6 +726,7 @@ class ECMWFSearch(PostJsonSearch):
 
         default_values = deepcopy(col_config)
         default_values.pop("metadata_mapping", None)
+        default_values.pop("metadata_mapping_from_product", None)
         default_values.pop("discover_queryables", None)
         kwargs.pop("discover_queryables", None)
         filters = {**default_values, **kwargs}
