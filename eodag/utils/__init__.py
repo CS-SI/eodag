@@ -1154,6 +1154,45 @@ def get_geometry_from_various(
     return geom
 
 
+def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry:
+    """
+    Creates a ``shapely.geometry`` from ECMWF Polytope shape.
+
+    :param geom: ECMWF Polytope shape.
+    :returns: A Shapely polygon.
+    """
+    if not isinstance(geom, dict):
+        raise TypeError(
+            "Geometry must be a dictionary, instead it's {}".format(type(geom))
+        )
+    if "type" not in geom or geom["type"] != "polygon":
+        raise TypeError("Geometry type must be 'polygon'")
+    if "shape" not in geom:
+        raise TypeError("Missing shape in the geometry")
+    if not isinstance(geom["shape"], list):
+        raise TypeError("Geometry shape must be a list")
+
+    shape: list = geom["shape"]
+    polygon_args = [(p[1], p[0]) for p in shape]
+    return Polygon(polygon_args)
+
+
+def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
+    """
+    Creates a ``shapely.geometry`` from bounding box in area format.
+
+    area format: [max_lat,min_lon,min_lat,max_lon]
+
+    :param area: bounding box in area format.
+    :returns: A Shapely polygon.
+    """
+    if len(area) != 4:
+        raise ValueError("The area must be a list of 4 values")
+    max_lat, min_lon, min_lat, max_lon = area
+    bbox = [min_lon, min_lat, max_lon, max_lat]
+    return get_geometry_from_various(geometry=bbox)
+
+
 class MockResponse:
     """Fake requests response"""
 
