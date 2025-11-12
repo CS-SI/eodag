@@ -132,8 +132,13 @@ class ProviderConfig(yaml.YAMLObject):
         # Create a deep copy to avoid modifying the input dict or its nested structures
         mapping_copy = deepcopy(mapping)
         for key in PLUGINS_TOPICS_KEYS:
-            if _mapping := mapping_copy.get(key):
-                mapping_copy[key] = PluginConfig.from_mapping(_mapping)
+            if not (_mapping := mapping_copy.get(key)):
+                continue
+
+            if not isinstance(_mapping, dict):
+                _mapping = _mapping.__dict__
+
+            mapping_copy[key] = PluginConfig.from_mapping(_mapping)
         c = cls()
         c.__dict__.update(mapping_copy)
         c._apply_defaults()

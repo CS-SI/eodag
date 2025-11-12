@@ -27,6 +27,7 @@ import yaml.parser
 
 from eodag.api.provider import ProvidersDict
 from eodag.config import PluginConfig
+from eodag.utils import deepcopy
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
@@ -174,20 +175,26 @@ class TestProviderConfig(unittest.TestCase):
                     pluginParam2: value3
         """
         )
-        provider_config1 = yaml.load(config_stream1, Loader=yaml.Loader)
-        provider_config2 = yaml.load(config_stream2, Loader=yaml.Loader)
+        provider1_config1 = yaml.load(config_stream1, Loader=yaml.Loader)
+        provider1_config2 = yaml.load(config_stream2, Loader=yaml.Loader)
+
+        provider2_config1 = deepcopy(provider1_config1.__dict__)
+        provider2_config1.update({"name": "provider2"})
+
+        provider3_config2 = deepcopy(provider1_config2.__dict__)
+        provider3_config2.update({"name": "provider3"})
 
         providers = ProvidersDict.from_configs(
             {
-                "provider1": provider_config1,
-                "provider2": provider_config1,
+                "provider1": provider1_config1,
+                "provider2": provider2_config1,
             }
         )
 
         providers.update_from_configs(
             {
-                "provider1": provider_config2,
-                "provider3": provider_config2,
+                "provider1": provider1_config2,
+                "provider3": provider3_config2,
             }
         )
 
