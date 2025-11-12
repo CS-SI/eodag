@@ -57,6 +57,8 @@ from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
+    get_geometry_from_ecmwf_area,
+    get_geometry_from_ecmwf_feature,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
@@ -145,6 +147,7 @@ COP_DS_KEYWORDS = {
     "aerosol_type",
     "altitude",
     "product_type",
+    "area",
     "band",
     "cdr_type",
     "data_format",
@@ -608,6 +611,14 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+        # ECMWF Polytope uses non-geojson structure for features
+        if "feature" in params:
+            params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
+            params.pop("feature")
+        # bounding box in area format
+        if "area" in params:
+            params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
+            params.pop("area")
 
         return params
 
@@ -697,10 +708,13 @@ class ECMWFSearch(PostJsonSearch):
         if "end" in filters:
             filters[END] = filters.pop("end")
 
-        # extract default datetime
-        processed_filters = self._preprocess_search_params(
-            deepcopy(filters), product_type
-        )
+        # extract default datetime and convert geometry
+        try:
+            processed_filters = self._preprocess_search_params(
+                deepcopy(filters), product_type
+            )
+        except Exception as e:
+            raise ValidationError(e.args[0]) from e
 
         constraints_url = format_metadata(
             getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
@@ -715,7 +729,7 @@ class ECMWFSearch(PostJsonSearch):
         form: list[dict[str, Any]] = self._fetch_data(form_url)
 
         formated_filters = self.format_as_provider_keyword(
-            product_type, processed_filters
+            product_type, deepcopy(processed_filters)
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
         for k, v in {**default_values, **kwargs}.items():
@@ -772,7 +786,7 @@ class ECMWFSearch(PostJsonSearch):
         # To check if all keywords are queryable parameters, we check if they are in the
         # available values or the product type config (available values calculated from the
         # constraints might not include all queryables)
-        for keyword in filters:
+        for keyword in processed_filters:
             if (
                 keyword
                 not in available_values.keys()
