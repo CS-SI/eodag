@@ -69,7 +69,7 @@ from tests.context import (
     cached_yaml_load_all,
     ecmwf_temporal_to_eodag,
     get_geometry_from_various,
-    load_default_config
+    load_default_config,
 )
 
 
@@ -473,12 +473,12 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections["fetch_url"] = (
-            "https://foo.bar/collections"
-        )
-        search_plugin.config.discover_collections["next_page_url_tpl"] = (
-            "{url}?page={page}"
-        )
+        search_plugin.config.discover_collections[
+            "fetch_url"
+        ] = "https://foo.bar/collections"
+        search_plugin.config.discover_collections[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
         search_plugin.config.discover_collections["start_page"] = 0
 
         with responses.RequestsMock(
@@ -558,16 +558,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections["fetch_url"] = (
-            "https://foo.bar/collections"
-        )
-        search_plugin.config.discover_collections["next_page_url_tpl"] = (
-            "{url}?page={page}"
-        )
+        search_plugin.config.discover_collections[
+            "fetch_url"
+        ] = "https://foo.bar/collections"
+        search_plugin.config.discover_collections[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
         search_plugin.config.discover_collections["start_page"] = 0
-        search_plugin.config.discover_collections["single_collection_fetch_qs"] = (
-            "foo=bar"
-        )
+        search_plugin.config.discover_collections[
+            "single_collection_fetch_qs"
+        ] = "foo=bar"
 
         with responses.RequestsMock(
             assert_all_requests_are_fired=True
@@ -627,9 +627,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, provider)
         discover_collections_conf = search_plugin.config.discover_collections
         search_plugin.config.discover_collections.pop("fetch_url")
-        search_plugin.config.discover_collections["next_page_url_tpl"] = (
-            "{url}?page={page}"
-        )
+        search_plugin.config.discover_collections[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
         search_plugin.config.discover_collections["start_page"] = 0
         result = search_plugin.discover_collections_per_page()
         assert result is None
@@ -2396,11 +2396,13 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         self.assertEqual(
             products.data[0].properties["eodag:order_link"],
             f"{endpoint}?"
-            + json.dumps({
-                "geometry": default_geom,
-                "runOnJobQueue": True,
-                **custom_query,
-            }),
+            + json.dumps(
+                {
+                    "geometry": default_geom,
+                    "runOnJobQueue": True,
+                    **custom_query,
+                }
+            ),
         )
 
 
@@ -2925,18 +2927,20 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # no error was raised, as expected
         self.assertIsNotNone(queryables)
 
-        mock__fetch_data.assert_has_calls([
-            call(
-                mock.ANY,
-                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                "cams-europe-air-quality-reanalyses/constraints.json",
-            ),
-            call(
-                mock.ANY,
-                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                "cams-europe-air-quality-reanalyses/form.json",
-            ),
-        ])
+        mock__fetch_data.assert_has_calls(
+            [
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/constraints.json",
+                ),
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/form.json",
+                ),
+            ]
+        )
 
         # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
         for provider_queryable in provider_queryables_from_constraints_file:
@@ -2994,18 +2998,20 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIsNotNone(queryables)
 
         # cached values are not used to make the set of unit tests work then the mock is called again
-        mock__fetch_data.assert_has_calls([
-            call(
-                mock.ANY,
-                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                "cams-europe-air-quality-reanalyses/constraints.json",
-            ),
-            call(
-                mock.ANY,
-                "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
-                "cams-europe-air-quality-reanalyses/form.json",
-            ),
-        ])
+        mock__fetch_data.assert_has_calls(
+            [
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/constraints.json",
+                ),
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/form.json",
+                ),
+            ]
+        )
 
         self.assertEqual(12, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
@@ -3431,9 +3437,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.dataset2_data = deepcopy(self.dataset1_data)
         self.dataset2_data["id"] = "dataset-number-two"
         self.dataset2_data["properties"]["title"] = "dataset-number-two"
-        self.dataset2_data["assets"]["native"]["href"] = (
-            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
-        )
+        self.dataset2_data["assets"]["native"][
+            "href"
+        ] = "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
 
         self.list_objects_response1 = {
             "Contents": [

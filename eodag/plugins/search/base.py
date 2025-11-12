@@ -53,7 +53,6 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.base")

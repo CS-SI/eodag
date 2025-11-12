@@ -36,7 +36,6 @@ from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
 if TYPE_CHECKING:
-    from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
 
