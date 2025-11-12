@@ -1633,7 +1633,6 @@
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
-    dates_required: true
     remove_from_query:
       - dataset
     discover_queryables:
@@ -1805,7 +1804,6 @@
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
-    dates_required: true
     remove_from_query:
       - dataset
       - date
@@ -3536,7 +3534,6 @@
     timeout: 60
     need_auth: true
     auth_error_code: 401
-    dates_required: true
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
@@ -6384,7 +6381,6 @@
     need_auth: true
     ssl_verify: true
     end_date_excluded: false
-    dates_required: True
     remove_from_query:
       - dataset
       - date
