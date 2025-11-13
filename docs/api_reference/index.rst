@@ -16,6 +16,7 @@ The API Reference provides an overview of all public objects, functions and meth
    assets
    queryables
    collection
+   provider
    utils
    exceptions
    types
