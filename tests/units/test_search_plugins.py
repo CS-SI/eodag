@@ -1244,6 +1244,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         provider = "wekeo_ecmwf"
         search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
         search_plugin = next(search_plugins)
+        search_plugin.config.dates_required = True
         mock_request.return_value = MockResponse({"features": []}, 200)
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
@@ -1386,6 +1387,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
+        # restore previous config
+        delattr(search_plugin.config, "dates_required")
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_query_params_wekeo(self, mock__request):
@@ -2623,6 +2626,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
     def test_plugins_search_ecmwfsearch_dates_missing(self):
         """ECMWFSearch.query must use default dates if missing"""
+        self.search_plugin.config.dates_required = True
+
         # given start & stop
         results = self.search_plugin.query(
             collection=self.collection,
@@ -2679,8 +2684,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         self.assertEqual("THE.ALIAS", eoproduct.properties["eodag:alias"])
 
+        # restore previous config
+        delattr(self.search_plugin.config, "dates_required")
+
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
+        self.search_plugin.config.dates_required = True
 
         results = self.search_plugin.query(
             prep=PreparedSearch(),
@@ -2714,6 +2723,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["ecmwf:day"],
             ["20", "21"],
         )
+
+        # restore previous config
+        delattr(self.search_plugin.config, "dates_required")
 
     def test_plugins_search_ecmwfsearch_without_collection(self):
         """
