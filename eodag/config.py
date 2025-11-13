@@ -180,7 +180,7 @@ class DiscoverCollections(TypedDict, total=False):
     results_entry: Union[str, JSONPath]
     #: Mapping for the collection id
     generic_collection_id: str
-    #: Mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+    #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
     #: result
     generic_collection_parsable_metadata: dict[str, str]
     #: Mapping for collection properties which can be parsed from the result and are not collection metadata
@@ -212,6 +212,28 @@ class DiscoverQueryables(TypedDict, total=False):
     #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
     constraints_entry: str
 
+class CollectionSelector(TypedDict, total=False):
+    """Define the criteria to select a collection in :class:`~eodag.config.DynamicDiscoverQueryables`.
+
+    The selector matches if the field value starts with the given prefix,
+    i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
+
+    #: Field in the search parameters to match
+    field: str
+    #: Prefix to match in the field
+    prefix: str
+
+class DynamicDiscoverQueryables(TypedDict, total=False):
+    """Configuration for queryables dynamic discovery.
+
+    The given configuration for queryables discovery is used if any collection selector
+    matches the search parameters.
+    """
+
+    #: List of collection selection criterias
+    collection_selector: list[CollectionSelector]
+    #: Configuration for queryables discovery to use
+    discover_queryables: DiscoverQueryables
 
 class OrderOnResponse(TypedDict):
     """Configuration for order on-response during download"""
@@ -373,16 +395,6 @@ class PluginConfig(yaml.YAMLObject):
     per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
     metadata_pre_mapping: MetadataPreMapping
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
-    data_request_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
-    status_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: URL to fetch the search result when the data request is done
-    result_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: if date parameters are mandatory in the request
-    dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
     search_definition: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
@@ -392,6 +404,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
+    #: if date parameters are mandatory in the request
+    dates_required: bool
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
@@ -403,6 +418,12 @@ class PluginConfig(yaml.YAMLObject):
     version: str
     #: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` url of the authentication endpoint
     auth_endpoint: str
+    #: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
+    #: Configurations for the queryables dynamic auto-discovery.
+    #: A configuration is used based on the given selection criterias. The first match is used.
+    #: If no match is found, it falls back to standard behaviors (e.g. discovery using
+    #: :attr:`~eodag.config.PluginConfig.discover_queryables`).
+    dynamic_discover_queryables: list[DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
@@ -422,6 +443,8 @@ class PluginConfig(yaml.YAMLObject):
     ignore_assets: bool
     #: :class:`~eodag.plugins.download.base.Download` Collection specific configuration
     products: dict[str, dict[str, Any]]
+    #: :class:`~eodag.plugins.download.base.Download` Number of maximum workers allowed for parallel downloads
+    max_workers: int
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
@@ -439,7 +462,7 @@ class PluginConfig(yaml.YAMLObject):
     no_auth_download: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
     dl_url_params: dict[str, str]
-    #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
+    #: :class:`~eodag.plugins.download.aws.AwsDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
     #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
