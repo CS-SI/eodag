@@ -886,7 +886,7 @@ class TestCore(TestCoreBase):
 
         self.assertIn("foo", self.dag.providers["earth_search"].collections)
         self.assertIn("bar", self.dag.providers["earth_search"].collections)
-        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
+        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
         self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
     def test_update_collections_list_unknown_provider(self):
@@ -932,8 +932,8 @@ class TestCore(TestCoreBase):
 
         self.assertIn("foo", self.dag.providers["ecmwf"].collections)
         self.assertIn("bar", self.dag.providers["ecmwf"].collections)
-        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
-        self.assertEqual(self.dag.collections_config["bar"]["title"], "Bar collection")
+        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
+        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
     def test_update_collections_list_without_plugin(self):
         """Core api.update_collections_list without search and api plugin do nothing"""
@@ -1000,7 +1000,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has been added to the config
-            self.assertIn("foo", self.dag.providers["earth_search"].products)
+            self.assertIn("foo", self.dag.providers["earth_search"].collections)
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"]["foo"]
@@ -1040,7 +1040,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has not been added to the config
-            self.assertNotIn(100, self.dag.providers["earth_search"].products)
+            self.assertNotIn(100, self.dag.providers["earth_search"].collections)
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"][100]
@@ -3103,7 +3103,9 @@ class TestCoreSearch(TestCoreBase):
             provider = "peps"
             config = DummyConfig()
 
-        sr = self.dag._do_search(search_plugin=DummySearchPlugin(), count=True)
+        sr = self.dag._do_search(
+            search_plugin=DummySearchPlugin(), count=True, validate=False
+        )
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), 0)
         self.assertEqual(sr.number_matched, 0)
@@ -3116,7 +3118,9 @@ class TestCoreSearch(TestCoreBase):
 
         # AttributeError raised when .query is tried to be accessed on the dummy plugin.
         with self.assertRaises(AttributeError):
-            self.dag._do_search(search_plugin=DummySearchPlugin(), raise_errors=True)
+            self.dag._do_search(
+                search_plugin=DummySearchPlugin(), raise_errors=True, validate=False
+            )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_query_products_must_be_a_list(self, search_plugin):
@@ -3216,7 +3220,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
     def test_search_iter_page_count(self, mock_do_seach, mock_fetch_collections_list):
         """search_iter_page must return an iterator"""
-        first_page = self.search_results
+        first_page = copy.copy(self.search_results)
         first_page.next_page_token = "token_for_page_2"
         first_page.next_page_token_key = "next_key"
         second_page = self.search_results_2
@@ -3240,9 +3244,13 @@ class TestCoreSearch(TestCoreBase):
 
         # count only on 1st page if specified
         mock_do_seach.reset_mock()
+        first_page = copy.copy(self.search_results)
+        first_page.next_page_token = "token_for_page_2"
+        first_page.next_page_token_key = "next_key"
+        second_page = self.search_results_2
         mock_do_seach.side_effect = [
-            self.search_results,
-            self.search_results_2,
+            first_page,
+            second_page,
         ]
         page_iterator = self.dag.search_iter_page(
             collection="S2_MSI_L1C", count=True, items_per_page=2
@@ -4133,7 +4141,7 @@ class TestCoreProviderGroup(TestCoreBase):
 
         mock_get_ext_collections_conf.return_value = {
             provider: {
-                "providers_config": {"foo": {"collection": "foo"}},
+                "providers_config": {"foo": {"_collection": "foo"}},
                 "collections_config": {"foo": {"title": "Foo collection"}},
             }
             for provider in self.group

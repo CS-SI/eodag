@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 import pytest
 
+from eodag.api.core import EODataAccessGateway
 from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
 from eodag.config import PluginConfig
 from eodag.utils.exceptions import (
@@ -130,10 +131,9 @@ class TestProvider:
         config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
         provider = Provider(config)
 
-        collections_config = {"S2_MSI_L1C": {"title": "Sentinel-2 L1C"}}
-
+        dag = EODataAccessGateway()
         with patch.object(provider, "delete_collection") as mock_delete:
-            provider.sync_collections(collections_config, strict_mode=True)
+            provider.sync_collections(dag, strict_mode=True)
             mock_delete.assert_called_once_with("UNKNOWN_TYPE")
 
     def test_provider_sync_collections_permissive(self, basic_config):
@@ -142,12 +142,12 @@ class TestProvider:
         config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
         provider = Provider(config)
 
-        collections_config = {"S2_MSI_L1C": {"title": "Sentinel-2 L1C"}}
+        dag = EODataAccessGateway()
 
         with patch.object(provider, "delete_collection") as mock_delete:
-            provider.sync_collections(collections_config, strict_mode=False)
+            provider.sync_collections(dag, strict_mode=False)
             mock_delete.assert_not_called()
-            assert "UNKNOWN_TYPE" in collections_config
+            assert "UNKNOWN_TYPE" in provider.collections
 
 
 class TestProviderConfig:
