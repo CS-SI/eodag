@@ -114,10 +114,14 @@ class Pagination(TypedDict):
     next_page_url_tpl: str
     #: The query-object for POST pagination requests.
     next_page_query_obj: str
+    #: Next page token key used in pagination
+    next_page_token_key: str
     #: The endpoint for counting the number of items satisfying a request
     count_endpoint: str
     #: Index of the starting page
     start_page: int
+    #: Key in the current page URL for the next page URL
+    parse_url_key: str
 
 
 class Sort(TypedDict):
@@ -145,8 +149,12 @@ class DiscoverMetadata(TypedDict):
     metadata_pattern: str
     #: Configuration/template that will be used to query for a discovered parameter
     search_param: Union[str, dict[str, Any]]
+    #: list search parameters to send as is to the provider
+    search_param_unparsed: list[str]
     #: Path to the metadata in search result
     metadata_path: str
+    #: Use as STAC extension prefix if it does not have one already
+    metadata_prefix: str
     #: Whether an error must be raised when using a search parameter which is not queryable or not
     raise_mtd_discovery_error: bool
 
@@ -380,7 +388,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
     merge_responses: bool
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
-    collection: list[str]
+    _collection: list[str]
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
