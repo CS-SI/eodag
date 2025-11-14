@@ -4495,6 +4495,19 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         ]
         for qu in expected_queryables:
             self.assertIn(qu, queryables)
+        tile_size_queryable = queryables["tile_size"]
+        self.assertIn(Literal["10m", "3ss"], get_args(tile_size_queryable))
+
+        # test filtering queryables
+        kwargs["coord_system"] = "54009"
+        queryables = plugin.discover_queryables(**kwargs)
+        tile_size_queryable = queryables["tile_size"]
+        self.assertIn(Literal["10m"], get_args(tile_size_queryable))
+        # with array
+        kwargs["coord_system"] = ["54009"]
+        queryables = plugin.discover_queryables(**kwargs)
+        tile_size_queryable = queryables["tile_size"]
+        self.assertIn(Literal["10m"], get_args(tile_size_queryable))
 
         # product type without geometry filter
         constraints = deepcopy(self.constraints)
