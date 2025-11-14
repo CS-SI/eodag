@@ -875,8 +875,8 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         Override provider configurations with environment variables values.
 
-        Environment variables must start with 'EODAG__' and follow a nested key
-        pattern separated by double underscores '__'.
+        Environment variables must start with ``EODAG__`` and follow a nested key
+        pattern separated by double underscores ``__``.
         """
 
         def build_mapping_from_env(
@@ -885,10 +885,10 @@ class ProvidersDict(UserDict[str, Provider]):
             """
             Recursively build a dictionary from an environment variable.
 
-            The environment variable must respect the pattern: KEY1__KEY2__[...]__KEYN.
+            The environment variable must respect the pattern: ``KEY1__KEY2__[...]__KEYN``.
             It will be transformed into a nested dictionary.
 
-            :param env_var: The environment variable key (nested keys separated by '__').
+            :param env_var: The environment variable key (nested keys separated by ``__``).
             :param env_value: The value from environment variable.
             :param mapping: The dictionary where the nested mapping is built.
             """
