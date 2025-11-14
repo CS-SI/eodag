@@ -98,9 +98,13 @@ def _get_available_values_from_constraints(
             if constraint not in filtered_constraints:
                 continue
             if filter_key in constraint and isinstance(value, list):
+                value_found = False
                 for v in value:
                     if v in constraint[filter_key]:
+                        value_found = True
                         values_in_constraints.append(v)
+                if not value_found:
+                    filtered_constraints.remove(constraint)
 
             elif filter_key in constraint:
                 available_values_key.extend(constraint[filter_key])
