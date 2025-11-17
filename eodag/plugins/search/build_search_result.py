@@ -652,7 +652,7 @@ class ECMWFSearch(PostJsonSearch):
     ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
 
-        if START and END in keywords:
+        if START in keywords and END in keywords:
             return
 
         collection_conf = getattr(self.config, "metadata_mapping", {})
