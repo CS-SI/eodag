@@ -4329,16 +4329,17 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertIn("2000", tiles)
         self.assertIn("2005", tiles)
         self.assertEqual(mock_requests_get.call_count, 2)
+        ssl_verify = getattr(plugin.config, "ssl_verify", True)
         mock_requests_get.assert_has_calls(
             [
                 mock.call(
                     "https://human-settlement.emergency.copernicus.eu/data/tilesDLD/tilesDLD_BUILT_2000_3ss_4326.json",
-                    verify=True,
+                    verify=ssl_verify,
                     timeout=5,
                 ),
                 mock.call(
                     "https://human-settlement.emergency.copernicus.eu/data/tilesDLD/tilesDLD_BUILT_2005_3ss_4326.json",
-                    verify=True,
+                    verify=ssl_verify,
                     timeout=5,
                 ),
             ]

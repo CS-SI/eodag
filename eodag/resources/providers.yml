@@ -6484,7 +6484,7 @@
     type: CopGhslSearch
     api_endpoint: https://human-settlement.emergency.copernicus.eu/data/tilesDLD
     need_auth: false
-    ssl_verify: true
+    ssl_verify: false
     metadata_mapping:
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
     pagination:
