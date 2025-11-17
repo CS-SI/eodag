@@ -890,6 +890,17 @@ class EODataAccessGateway:
                                         new_collection
                                     ],
                                 )
+                            except ValidationError:
+                                # skip collection if there is a problem with its id (missing or not a string)
+                                logger.debug(
+                                    (
+                                        "Collection %s has been pruned on provider %s "
+                                        "because its id was incorrectly parsed for eodag"
+                                    ),
+                                    new_collection,
+                                    provider,
+                                )
+                            else:
                                 # to provider_products_config
                                 provider_products_config[
                                     new_collection
@@ -909,16 +920,6 @@ class EODataAccessGateway:
                                 }
                                 if dumped_ext_conf_col != dumped_collection:
                                     bad_formatted_col_count += 1
-                            except ValidationError:
-                                # skip collection if there is a problem with its id (missing or not a string)
-                                logger.debug(
-                                    (
-                                        "Collection %s has been pruned on provider %s "
-                                        "because its id was incorrectly parsed for eodag"
-                                    ),
-                                    new_collection,
-                                    provider,
-                                )
                 if new_collections:
                     logger.debug(
                         "Added %s collections for %s", len(new_collections), provider
