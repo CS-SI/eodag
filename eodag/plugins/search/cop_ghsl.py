@@ -517,7 +517,7 @@ class CopGhslSearch(Search):
                     return None
                 res.raise_for_status()
                 tiles = res.json()["grid"]
-                if filter_params["coord_system"] == 3035:
+                if filter_params["coord_system"] == "3035":
                     tiles = []
                     for t_id, bbox in res.json()["BBoxes"].items():
                         tiles.append({"tileID": t_id, "BBox_3035": bbox})
