@@ -4661,7 +4661,8 @@
       realization: "1"
       model: IFS-FESOM
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
-      dataset: climate-dt
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/climate-dt_{activity}_{experiment}_{model}.json"
       class: ng
       generation: "1"
       expver: "0001"
