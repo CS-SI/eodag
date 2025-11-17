@@ -6457,7 +6457,7 @@
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_collection_parsable_metadata:
         id: '{$.assets.enclosure.href#ceda_collection_name}'
-        description: '{$.description#decode_ceda_description}'
+        description: '{$.description#literalize_unicode}'
         instruments: '$.summaries.instruments'
         keywords: '$.keywords'
         license: '$.license'

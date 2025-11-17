@@ -152,7 +152,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
     The currently understood converters are:
         - ``ceda_collection_name``: generate a CEDA collection name from a string
-        - ``decode_ceda_description``: decode CEDA description field in utf-8
         - ``csv_list``: convert to a comma separated list
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
@@ -162,6 +161,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``get_group_name``: get the matching regex group name
+        - ``literalize_unicode``: convert a string to its raw Unicode literal form
         - ``not_available``: replace value with "Not Available"
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
@@ -668,7 +668,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return NOT_AVAILABLE
 
         @staticmethod
-        def convert_decode_ceda_description(value: str) -> str:
+        def convert_literalize_unicode(value: str) -> str:
             if value == NOT_AVAILABLE:
                 return value
             return value.encode("raw_unicode_escape").decode("utf-8")

@@ -379,8 +379,8 @@ class TestMetadataFormatter(unittest.TestCase):
             NOT_AVAILABLE,
         )
 
-    def test_convert_decode_ceda_description(self):
-        to_format = r"{fieldname#decode_ceda_description}"
+    def test_convert_literalize_unicode(self):
+        to_format = r"{fieldname#literalize_unicode}"
 
         # Case with UTF-8-encoded characters displayed in ISO
         self.assertEqual(
