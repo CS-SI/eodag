@@ -424,7 +424,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
 )
 @click.pass_context
-def list_pt(ctx: Context, **kwargs: Any) -> None:
+def list_col(ctx: Context, **kwargs: Any) -> None:
     """Print the list of supported collections"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
@@ -460,11 +460,11 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
         if guessed_collections:
             collections = CollectionsList(
                 [
-                    pt
-                    for pt in dag.list_collections(
+                    col
+                    for col in dag.list_collections(
                         provider=provider, fetch_providers=fetch_providers
                     )
-                    if pt.id in [guessed_pt.id for guessed_pt in guessed_collections]
+                    if col.id in [guessed_col.id for guessed_col in guessed_collections]
                 ]
             )
         else:
@@ -501,7 +501,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
     "DEFAULT: ext_collections.json",
 )
 @click.pass_context
-def discover_pt(ctx: Context, **kwargs: Any) -> None:
+def discover_col(ctx: Context, **kwargs: Any) -> None:
     """Fetch external collections configuration and save result"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()

@@ -661,31 +661,31 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_list_collection_ok(self):
         """Calling eodag list without provider should return all supported collections"""
         all_supported_collections = [
-            pt
-            for pt, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
-            if len(provs) != 0 and pt != GENERIC_COLLECTION
+            col
+            for col, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
+            if len(provs) != 0 and col != GENERIC_COLLECTION
         ]
         result = self.runner.invoke(eodag, ["list", "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
-        for pt in all_supported_collections:
-            self.assertIn(pt, result.output)
+        for col in all_supported_collections:
+            self.assertIn(col, result.output)
 
     def test_eodag_list_collection_with_provider_ok(self):
         """Calling eodag list with provider should return all supported collections of specified provider"""  # noqa
         for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
             provider_supported_collections = [
-                pt
-                for pt, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
+                col
+                for col, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
                 if provider in provs
-                if pt != GENERIC_COLLECTION
+                if col != GENERIC_COLLECTION
             ]
             result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
             self.assertEqual(result.exit_code, 0)
-            for pt in provider_supported_collections:
+            for col in provider_supported_collections:
                 self.assertIn(
-                    pt,
+                    col,
                     result.output,
-                    f"{pt} was not found in {provider} supported collections",
+                    f"{col} was not found in {provider} supported collections",
                 )
 
     def test_eodag_list_collection_with_provider_ko(self):

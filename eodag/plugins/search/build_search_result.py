@@ -718,9 +718,9 @@ class ECMWFSearch(PostJsonSearch):
         """
         collection = kwargs.pop("collection")
 
-        pt_config = self.get_collection_def_params(collection)
+        col_config = self.get_collection_def_params(collection)
 
-        default_values = deepcopy(pt_config)
+        default_values = deepcopy(col_config)
         default_values.pop("metadata_mapping", None)
         default_values.pop("discover_queryables", None)
         kwargs.pop("discover_queryables", None)
@@ -740,7 +740,7 @@ class ECMWFSearch(PostJsonSearch):
             raise ValidationError(e.args[0]) from e
 
         provider_dq = getattr(self.config, "discover_queryables", {}) or {}
-        product_dq = pt_config.get("discover_queryables", {}) or {}
+        product_dq = col_config.get("discover_queryables", {}) or {}
         dq_conf = {**provider_dq, **product_dq}
         constraints_url = format_metadata(dq_conf.get("constraints_url", ""), **filters)
         constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
@@ -810,7 +810,7 @@ class ECMWFSearch(PostJsonSearch):
             if (
                 keyword
                 not in available_values.keys()
-                | pt_config.keys()
+                | col_config.keys()
                 | {
                     START,
                     END,

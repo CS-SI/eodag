@@ -1294,7 +1294,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         # no date info given -> default dates (extent.temporal.interval.0.0) which are
         # then converted to year, month, day, time
-        pt_conf = {
+        col_conf = {
             "id": "ERA5_SL",
             "description": "ERA5 abstract",
             "instruments": [],
@@ -1323,7 +1323,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "_id": "ERA5_SL",
         }
         search_plugin.config.collection_config = dict(
-            pt_conf,
+            col_conf,
             **{"_collection": "ERA5_SL"},
         )
         search_plugin.query(collection="ERA5_SL", prep=PreparedSearch())
@@ -1343,7 +1343,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             verify=True,
         )
         # collection with dates are query params -> use extent.temporal.interval.0.0 and today
-        pt_conf = {
+        col_conf = {
             "id": "CAMS_EAC4",
             "description": "CAMS_EAC4 abstract",
             "instruments": [],
@@ -1369,7 +1369,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "_id": "CAMS_EAC4",
         }
         search_plugin.config.collection_config = dict(
-            pt_conf,
+            col_conf,
             **{"_collection": "CAMS_EAC4"},
         )
         search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())

@@ -689,7 +689,7 @@ class TestCore(TestCoreBase):
         for collection in collections:
             self.assertIsInstance(collection, Collection)
         # There should be no repeated collection in the output
-        self.assertEqual(len(collections), len(set(pt.id for pt in collections)))
+        self.assertEqual(len(collections), len(set(col.id for col in collections)))
         # add alias for collection - should still work
         products = self.dag.collections_config
         products.update(
@@ -705,9 +705,9 @@ class TestCore(TestCoreBase):
         for collection in collections:
             self.assertIsInstance(collection, Collection)
         # There should be no repeated collection in the output
-        self.assertEqual(len(collections), len(set(pt.id for pt in collections)))
+        self.assertEqual(len(collections), len(set(col.id for col in collections)))
         # use alias as id
-        self.assertIn("S2_MSI_ALIAS", [pt.id for pt in collections])
+        self.assertIn("S2_MSI_ALIAS", [col.id for col in collections])
 
         # restore the original collection instance in the config
         products.update(
@@ -772,50 +772,50 @@ class TestCore(TestCoreBase):
 
         # Search any filter contains filter value
         filter = "ABSTRACTFOO"
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(collections_ids, ["foo"])
         # Search the exact phrase. Search is case insensitive
         filter = '"THIS IS FOO. fooandbar"'
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(collections_ids, ["foo"])
 
         # Free text search: match in the keywords
         filter = "LECTUS_BAR_KEY"
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(collections_ids, ["bar"])
 
         # Free text search: match the phrase in title
         filter = '"FOOBAR COLLECTION"'
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(collections_ids, ["foobar_alias"])
 
         # Free text search: Using OR term match
         filter = "FOOBAR OR BAR"
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(sorted(collections_ids), ["bar", "foobar_alias"])
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
         collections_ids = [
-            pt.id for pt in self.dag.guess_collection(filter, title="FOO")
+            col.id for col in self.dag.guess_collection(filter, title="FOO")
         ]
         self.assertListEqual(sorted(collections_ids), ["bar", "foo", "foobar_alias"])
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(collections_ids, ["foo"])
 
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
-        collections_ids = [pt.id for pt in self.dag.guess_collection(filter)]
+        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
         self.assertListEqual(collections_ids, ["foobar_alias"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
         collections_ids = [
-            pt.id
-            for pt in self.dag.guess_collection(
+            col.id
+            for col in self.dag.guess_collection(
                 filter, intersect=True, title="titleFOO*"
             )
         ]
@@ -831,8 +831,8 @@ class TestCore(TestCoreBase):
         self.dag.update_collections_list(ext_collections_conf)
 
         collections_ids = [
-            pt.id
-            for pt in self.dag.guess_collection(
+            col.id
+            for col in self.dag.guess_collection(
                 title="TEST DATES",
                 start_date="2013-02-01",
                 end_date="2013-02-05",
@@ -840,8 +840,8 @@ class TestCore(TestCoreBase):
         ]
         self.assertListEqual(collections_ids, ["interval_end"])
         collections_ids = [
-            pt.id
-            for pt in self.dag.guess_collection(
+            col.id
+            for col in self.dag.guess_collection(
                 title="TEST DATES",
                 start_date="2013-02-01",
                 end_date="2013-02-15",
@@ -852,8 +852,8 @@ class TestCore(TestCoreBase):
             ["interval_end", "interval_start", "interval_start_end"],
         )
         collections_ids = [
-            pt.id
-            for pt in self.dag.guess_collection(
+            col.id
+            for col in self.dag.guess_collection(
                 title="TEST DATES", start_date="2013-02-01"
             )
         ]
@@ -862,8 +862,8 @@ class TestCore(TestCoreBase):
             ["interval_end", "interval_start", "interval_start_end"],
         )
         collections_ids = [
-            pt.id
-            for pt in self.dag.guess_collection(
+            col.id
+            for col in self.dag.guess_collection(
                 title="TEST DATES", end_date="2013-02-20"
             )
         ]
@@ -1612,7 +1612,10 @@ class TestCore(TestCoreBase):
                 end_datetime="2025-01-31",
                 geometry=[-10, 35, 10, 45],
             ),
-            [pt.id for pt in self.dag.list_collections("peps", fetch_providers=False)],
+            [
+                col.id
+                for col in self.dag.list_collections("peps", fetch_providers=False)
+            ],
             {
                 "S2_MSI_L1C": {
                     **self.dag.collections_config["S2_MSI_L1C"].model_dump(
@@ -2181,10 +2184,10 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         # check collections
         try:
             self.dag = EODataAccessGateway()
-            pt = self.dag.list_collections(fetch_providers=False)
-            self.assertEqual(2, len(pt))
-            self.assertEqual("TEST_PRODUCT_1", pt[0].id)
-            self.assertEqual("TEST_PRODUCT_2", pt[1].id)
+            col = self.dag.list_collections(fetch_providers=False)
+            self.assertEqual(2, len(col))
+            self.assertEqual("TEST_PRODUCT_1", col[0].id)
+            self.assertEqual("TEST_PRODUCT_2", col[1].id)
         finally:
             # remove env variables
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
@@ -2494,7 +2497,7 @@ class TestCoreSearch(TestCoreBase):
             "CLMS_HRVPP_VPP_LAEA",
             "EEA_HRL_TCF",
         ]
-        self.assertListEqual([pt.id for pt in actual], expected)
+        self.assertListEqual([col.id for col in actual], expected)
 
         # with collection specified
 
@@ -2521,18 +2524,18 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertNotIn(
             "S2_MSI_L1C",
-            [pt.id for pt in self.dag.guess_collection(end_date="2015-06-01")],
+            [col.id for col in self.dag.guess_collection(end_date="2015-06-01")],
         )
         self.assertIn(
             "S2_MSI_L1C",
-            [pt.id for pt in self.dag.guess_collection(end_date="2015-07-01")],
+            [col.id for col in self.dag.guess_collection(end_date="2015-07-01")],
         )
 
         # with individual filters
         actual = self.dag.guess_collection(
             constellation="SENTINEL1", processing_level="L2", intersect=True
         )
-        self.assertListEqual([pt.id for pt in actual], ["S1_SAR_OCN"])
+        self.assertListEqual([col.id for col in actual], ["S1_SAR_OCN"])
         # without intersect, the most appropriate collection must be at first position
         actual = self.dag.guess_collection(
             constellation="SENTINEL1", processing_level="L2"
@@ -2549,9 +2552,9 @@ class TestCoreSearch(TestCoreBase):
         """guess_collection must run a whoosh search without any limit"""
         # Filter that should give more than 10 products referenced in the catalog.
         opt_prods = [
-            p
-            for p in self.dag.list_collections(fetch_providers=False)
-            if p.eodag_sensor_type == "OPTICAL"
+            c
+            for c in self.dag.list_collections(fetch_providers=False)
+            if c.eodag_sensor_type == "OPTICAL"
         ]
         if len(opt_prods) <= 10:
             self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
@@ -4290,7 +4293,7 @@ class TestCoreStrictMode(TestCoreBase):
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
             collections = dag.list_collections(fetch_providers=False)
-            ids = [pt.id for pt in collections]
+            ids = [col.id for col in collections]
             self.assertNotIn("TEST_PRODUCT_2", ids)
 
         finally:
@@ -4305,5 +4308,5 @@ class TestCoreStrictMode(TestCoreBase):
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
         collections = dag.list_collections(fetch_providers=False)
-        ids = [pt.id for pt in collections]
+        ids = [col.id for col in collections]
         self.assertIn("TEST_PRODUCT_2", ids)

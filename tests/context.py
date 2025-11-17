@@ -44,7 +44,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
-from eodag.cli import download, eodag, list_pt, search_crunch
+from eodag.cli import download, eodag, list_col, search_crunch
 from eodag.config import (
     load_default_config,
     merge_configs,

@@ -247,18 +247,18 @@ class CSWSearch(Search):
         constraints: list[OgcExpression] = []
         # How the match should be performed (fuzzy, prefix, postfix or exact).
         # defaults to fuzzy
-        pt_tag, matching = (
+        col_tag, matching = (
             collection_def["name"],
             collection_def.get("matching", "fuzzy"),
         )
         if matching == "prefix":
-            constraints.append(PropertyIsLike(pt_tag, "{}%".format(collection)))
+            constraints.append(PropertyIsLike(col_tag, "{}%".format(collection)))
         elif matching == "postfix":
-            constraints.append(PropertyIsLike(pt_tag, "%{}".format(collection)))
+            constraints.append(PropertyIsLike(col_tag, "%{}".format(collection)))
         elif matching == "exact":
-            constraints.append(PropertyIsEqualTo(pt_tag, collection))
+            constraints.append(PropertyIsEqualTo(col_tag, collection))
         else:  # unknown matching is considered to be equal to 'fuzzy'
-            constraints.append(PropertyIsLike(pt_tag, "%{}%".format(collection)))
+            constraints.append(PropertyIsLike(col_tag, "%{}%".format(collection)))
 
         # `footprint`
         fp = params.get("geometry")

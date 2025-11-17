@@ -210,14 +210,14 @@ class Collection(BaseModel):
             else ""
         )
         tr_style = "style='background-color: transparent;'" if embedded else ""
-        pt_html_table = dict_to_html_table(
+        col_html_table = dict_to_html_table(
             self.model_dump(exclude={"alias"}), depth=1, brackets=False
         )
 
         return (
             f"<table>{thead}<tbody>"
             f"<tr {tr_style}><td style='text-align: left;'>"
-            f"{pt_html_table}</td></tr>"
+            f"{col_html_table}</td></tr>"
             "</tbody></table>"
         )
 
@@ -284,10 +284,10 @@ class CollectionsDict(UserDict[str, Collection]):
     ) -> None:
         super().__init__()
 
-        self.data = {pt.id: pt for pt in collections}
+        self.data = {col.id: col for col in collections}
 
     def __str__(self) -> str:
-        return "{" + ", ".join(f'"{pt}": {pt_f}' for pt, pt_f in self.items()) + "}"
+        return "{" + ", ".join(f'"{col}": {col_f}' for col, col_f in self.items()) + "}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -308,7 +308,7 @@ class CollectionsList(UserList[Collection]):
         super().__init__(collections)
 
     def __str__(self) -> str:
-        return f"{type(self).__name__}([{', '.join(str(pt) for pt in self)}])"
+        return f"{type(self).__name__}([{', '.join(str(col) for col in self)}])"
 
     def __repr__(self) -> str:
         return str(self)
@@ -334,13 +334,13 @@ class CollectionsList(UserList[Collection]):
                         <details>
                         <summary style='color: grey; font-family: monospace;'>
                         {i}&ensp;
-                        {type(pt).__name__}("<span style='color: black'>{pt.id}</span>")
+                        {type(col).__name__}("<span style='color: black'>{col.id}</span>")
                     </summary>
-                    {re.sub(r"(<thead>.*|.*</thead>)", "", pt._repr_html_())}
+                    {re.sub(r"(<thead>.*|.*</thead>)", "", col._repr_html_())}
                     </details>
                     </td></tr>
                     """
-                    for i, pt in enumerate(self)
+                    for i, col in enumerate(self)
                 ]
             )
             + "</tbody></table></details>"
