@@ -238,7 +238,7 @@ class EODataAccessGateway:
         """
         # Turn the collections config from a dict into a CollectionsDict() object
         collections = [
-            Collection(dag=self, id=pt, **pt_f)
+            Collection.create_with_dag(self, id=pt, **pt_f)
             for pt, pt_f in collections_config_dict.items()
         ]
         return CollectionsDict(collections)
@@ -273,8 +273,8 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = Collection(
-                    dag=self, id=product_id, title=product_id, description=NOT_AVAILABLE
+                empty_product = Collection.create_with_dag(
+                    self, id=product_id, title=product_id, description=NOT_AVAILABLE
                 )
                 self.collections_config[product_id] = empty_product
                 products_to_add.append(product_id)
@@ -881,8 +881,10 @@ class EODataAccessGateway:
                             try:
                                 # new_collection_conf does not already exist, append it
                                 # to self.collections_config
-                                self.collections_config[new_collection] = Collection(
-                                    dag=self,
+                                self.collections_config[
+                                    new_collection
+                                ] = Collection.create_with_dag(
+                                    self,
                                     id=new_collection,
                                     **new_collections_conf["collections_config"][
                                         new_collection
@@ -1054,7 +1056,9 @@ class EODataAccessGateway:
                 collection = self.get_collection_from_alias(collection)
                 return CollectionsList([self.collections_config[collection]])
             except NoMatchingCollection:
-                return CollectionsList([Collection(dag=self, id=collection)])
+                return CollectionsList(
+                    [Collection.create_with_dag(self, id=collection)]
+                )
 
         filters: dict[str, str] = {
             k: v

@@ -51,7 +51,10 @@ RFC3339_PATTERN = (
 
 
 class Collection(BaseModel):
-    """A class representing a collection."""
+    """A class representing a collection.
+
+    A Collection object is used to describe a group of related :class:`~eodag.api.product._product.EOProduct` objects.
+    """
 
     id: str = Field()
     title: Optional[str] = Field(default=None)
@@ -82,15 +85,28 @@ class Collection(BaseModel):
         repr=False,
     )
 
-    # Private property to store the eodag internal id values. Not part of the model schema.
+    # Private property to store the eodag internal id value. Not part of the model schema.
     _id: str = PrivateAttr()
-    _dag: EODataAccessGateway = PrivateAttr()
+    _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
 
-    # allow extra attributes in the model to accept "dag" attribute
-    # however other extra attributes will raise an error during validation
     model_config = ConfigDict(
-        extra="allow", validate_by_name=True, serialize_by_alias=True
+        extra="forbid", validate_by_name=True, serialize_by_alias=True
     )
+
+    def model_post_init(self, context: Any) -> None:
+        """Post-initialization method to set internal attributes."""
+        self._id = self.id
+
+    @classmethod
+    def create_with_dag(cls, dag: EODataAccessGateway, **kwargs) -> Collection:
+        """Create a Collection with a EODataAccessGateway instance.
+
+        :param dag: The gateway instance to use to search products and to list queryables of the collection instance
+        :param kwargs: The collection attributes
+        """
+        instance = cls(**kwargs)
+        instance._dag = dag
+        return instance
 
     @classmethod
     def get_collection_mtd_from_alias(cls, value: str) -> str:
@@ -105,49 +121,6 @@ class Collection(BaseModel):
             if field_info.alias
         }
         return alias_map.get(value, value)
-
-    def __init__(__pydantic_self__, dag: EODataAccessGateway, **values: Any) -> None:
-        """
-        Constructror to make linters pass during model calls with "dag" parameter.
-        This parameter will allow to set "_dag" private attribute during validation.
-
-        :param dag: The gateway instance to use to search products and to list queryables of the collection instance
-        """
-        super().__init__(**{"dag": dag, **values})
-
-    def model_post_init(self, context: Any) -> None:
-        """Post-initialization method to set internal attributes."""
-        self._id = self.id
-        # set "_dag" private attribute and remove "dag" public one created during the validation
-        self._dag = getattr(self, "dag")
-        delattr(self, "dag")
-
-    @model_validator(mode="before")
-    @classmethod
-    def remove_extra_attributes(cls, values: dict[str, Any]) -> dict[str, Any]:
-        """Remove extra attributes not defined in the model (except "dag") if any"""
-        errors: list[InitErrorDetails] = []
-
-        for key in values.keys():
-            if (
-                key != "dag"
-                and cls.get_collection_mtd_from_alias(key) not in cls.model_fields
-            ):
-                error = InitErrorDetails(
-                    type=PydanticCustomError(
-                        "extra_forbidden", "Extra inputs are not permitted"
-                    ),
-                    loc=(key,),
-                    input=values[key],
-                )
-                errors.append(error)
-
-        if errors:
-            raise PydanticValidationError.from_exception_data(
-                title=cls.__name__, line_errors=errors
-            )
-
-        return values
 
     @model_validator(mode="after")
     def set_id_from_alias(self) -> Self:
@@ -248,6 +221,14 @@ class Collection(BaseModel):
             "</tbody></table>"
         )
 
+    def _ensure_dag(self) -> EODataAccessGateway:
+        if self._dag is None:
+            raise RuntimeError(
+                f"Collection '{self.id}' needs EODataAccessGateway to perform this operation. "
+                "Create with: Collection.create_with_dag(dag, id='...')"
+            )
+        return self._dag
+
     def search(self, **kwargs: Any) -> SearchResult:
         """Look for products of this collection matching criteria using the `dag` attribute of the instance.
 
@@ -258,6 +239,7 @@ class Collection(BaseModel):
         :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `collection` argument is set in `kwargs`,
                                                                    since it is already defined by the instance
         """
+        dag = self._ensure_dag()
         collection_search_arg = "collection"
         if collection_search_arg in kwargs:
             raise ValidationError(
@@ -265,7 +247,7 @@ class Collection(BaseModel):
                 {collection_search_arg},
             )
 
-        return self._dag.search(collection=self.id, **kwargs)
+        return dag.search(collection=self.id, **kwargs)
 
     def list_queryables(self, **kwargs: Any) -> QueryablesDict:
         """Fetch the queryable properties for this collection using the `dag` attribute of the instance.
@@ -277,6 +259,7 @@ class Collection(BaseModel):
         :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `collection` argument is set in `kwargs`,
                                                                    since it is already defined by the instance
         """
+        dag = self._ensure_dag()
         collection_search_arg = "collection"
         if collection_search_arg in kwargs:
             raise ValidationError(
@@ -284,7 +267,7 @@ class Collection(BaseModel):
                 {collection_search_arg},
             )
 
-        return self._dag.list_queryables(collection=self.id, **kwargs)
+        return dag.list_queryables(collection=self.id, **kwargs)
 
 
 class CollectionsDict(UserDict[str, Collection]):

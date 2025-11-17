@@ -694,8 +694,8 @@ class TestCore(TestCoreBase):
         products = self.dag.collections_config
         products.update(
             {
-                "S2_MSI_L1C": Collection(
-                    dag=self.dag,
+                "S2_MSI_L1C": Collection.create_with_dag(
+                    self.dag,
                     alias="S2_MSI_ALIAS",
                     **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
                 )
@@ -712,8 +712,8 @@ class TestCore(TestCoreBase):
         # restore the original collection instance in the config
         products.update(
             {
-                "S2_MSI_L1C": Collection(
-                    dag=self.dag,
+                "S2_MSI_L1C": Collection.create_with_dag(
+                    self.dag,
                     id="S2_MSI_L1C",
                     **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
                 )
@@ -1165,7 +1165,7 @@ class TestCore(TestCoreBase):
         )
         self.assertEqual(
             self.dag.collections_config.data["foo"],
-            Collection(dag=self.dag, id="foo", title="Foo collection"),
+            Collection.create_with_dag(self.dag, id="foo", title="Foo collection"),
         )
 
         # update existing provider conf and check that discover_collections() is launched for it
@@ -1532,8 +1532,8 @@ class TestCore(TestCoreBase):
         # add an alias to the collection
         products.update(
             {
-                "S1_SAR_GRD": Collection(
-                    dag=self.dag,
+                "S1_SAR_GRD": Collection.create_with_dag(
+                    self.dag,
                     alias="S1_SG",
                     **products["S1_SAR_GRD"].model_dump(exclude={"alias"}),
                 )
@@ -1550,8 +1550,8 @@ class TestCore(TestCoreBase):
         # restore the original collection instance in the config
         products.update(
             {
-                "S1_SAR_GRD": Collection(
-                    dag=self.dag,
+                "S1_SAR_GRD": Collection.create_with_dag(
+                    self.dag,
                     id="S1_SAR_GRD",
                     **products["S1_SAR_GRD"].model_dump(exclude={"id", "alias"}),
                 )
@@ -2757,8 +2757,8 @@ class TestCoreSearch(TestCoreBase):
         products = self.dag.collections_config
         products.update(
             {
-                "S2_MSI_L1C": Collection(
-                    dag=self.dag,
+                "S2_MSI_L1C": Collection.create_with_dag(
+                    self.dag,
                     alias="S2_MSI_ALIAS",
                     **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
                 )
@@ -2776,8 +2776,8 @@ class TestCoreSearch(TestCoreBase):
         # restore the original collection instance in the config
         products.update(
             {
-                "S2_MSI_L1C": Collection(
-                    dag=self.dag,
+                "S2_MSI_L1C": Collection.create_with_dag(
+                    self.dag,
                     id="S2_MSI_L1C",
                     **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
                 )
@@ -4005,8 +4005,8 @@ class TestCoreProductAlias(TestCoreBase):
         products = cls.dag.collections_config
         products.update(
             {
-                "S2_MSI_L1C": Collection(
-                    dag=cls.dag,
+                "S2_MSI_L1C": Collection.create_with_dag(
+                    cls.dag,
                     alias="S2_MSI_ALIAS",
                     **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
                 )
@@ -4182,7 +4182,7 @@ class TestCoreProviderGroup(TestCoreBase):
 
         self.assertEqual(
             self.dag.collections_config.data["foo"],
-            Collection(dag=self.dag, id="foo", title="Foo collection"),
+            Collection.create_with_dag(self.dag, id="foo", title="Foo collection"),
         )
 
         # restore providers config

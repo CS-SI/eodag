@@ -725,15 +725,15 @@ class TestEodagCli(unittest.TestCase):
 
         dag.return_value.guess_collection.return_value = CollectionsList(
             [
-                Collection(dag=dag, id="foo", title="this is foo"),
-                Collection(dag=dag, id="bar", title="this is bar"),
+                Collection.create_with_dag(dag=dag, id="foo", title="this is foo"),
+                Collection.create_with_dag(dag=dag, id="bar", title="this is bar"),
             ]
         )
         dag.return_value.list_collections.return_value = CollectionsList(
             [
-                Collection(dag=dag, id="foo", title="this is foo"),
-                Collection(dag=dag, id="bar", title="this is bar"),
-                Collection(dag=dag, id="baz", title="this is baz"),
+                Collection.create_with_dag(dag=dag, id="foo", title="this is foo"),
+                Collection.create_with_dag(dag=dag, id="bar", title="this is bar"),
+                Collection.create_with_dag(dag=dag, id="baz", title="this is baz"),
             ]
         )
 

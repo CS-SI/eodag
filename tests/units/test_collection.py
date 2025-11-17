@@ -36,7 +36,7 @@ class TestCollection(unittest.TestCase):
     def setUp(self):
         super(TestCollection, self).setUp()
         self.dag = EODataAccessGateway()
-        self.collection = Collection(dag=self.dag, id="foo")
+        self.collection = Collection.create_with_dag(self.dag, id="foo")
 
         # mock os.environ to empty env
         self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
@@ -49,7 +49,7 @@ class TestCollection(unittest.TestCase):
 
     def test_collection_set_ids_and_alias(self):
         """Collection ids and alias must be correctly set"""
-        collection = Collection(dag=self.dag, id="foo", alias="bar")
+        collection = Collection(id="foo", alias="bar")
 
         # check that id attribute has the same value as alias attribute
         self.assertIsInstance(collection, Collection)
@@ -69,7 +69,7 @@ class TestCollection(unittest.TestCase):
             # try to create a collection with bad formatted attributes
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
-                collection = Collection(dag=self.dag, id="foo", platform=0, bar="bat")
+                collection = Collection(id="foo", platform=0, bar="bat")
 
             self.assertIn("2 validation errors for collection foo", str(cm.output))
             self.assertIn("platform\\n  Input should be a valid string", str(cm.output))
@@ -95,13 +95,13 @@ class TestCollection(unittest.TestCase):
 
             # try to create a collection with a missing id
             with self.assertRaises(ValidationError) as context:
-                Collection(dag=self.dag)
+                Collection()
 
             self.assertIn("id\n  Field required", str(context.exception))
 
             # try to create a collection with a wrong id
             with self.assertRaises(ValidationError) as context:
-                Collection(dag=self.dag, id=1)
+                Collection(id=1)
 
             self.assertIn(
                 "id\n  Input should be a valid string", str(context.exception)
@@ -121,7 +121,6 @@ class TestCollection(unittest.TestCase):
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
                 Collection(
-                    dag=self.dag,
                     id="foo",
                     extent={
                         "spatial": {
@@ -186,7 +185,6 @@ class TestCollection(unittest.TestCase):
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
                 Collection(
-                    dag=self.dag,
                     id="foo",
                     extent={
                         "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
@@ -208,6 +206,18 @@ class TestCollection(unittest.TestCase):
         finally:
             # remove the environment variable
             os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
+
+    def test_collection_missing_dag(self):
+        """Collection.search must raise an error if no dag is set"""
+        with self.assertRaises(RuntimeError) as context:
+            Collection(id="foo").search()
+        self.assertIn(
+            (
+                "Collection 'foo' needs EODataAccessGateway to perform this operation. "
+                "Create with: Collection.create_with_dag(dag, id='...')"
+            ),
+            str(context.exception),
+        )
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.search",
@@ -269,7 +279,7 @@ class TestCollectionsDict(unittest.TestCase):
     def setUp(self):
         super(TestCollectionsDict, self).setUp()
         self.dag = EODataAccessGateway()
-        self.collections_dict = CollectionsDict([Collection(dag=self.dag, id="foo")])
+        self.collections_dict = CollectionsDict([Collection(id="foo")])
 
     def test_search_result_is_dict_like(self):
         """CollectionsDict must provide a dict interface"""
@@ -280,7 +290,7 @@ class TestCollectionsList(unittest.TestCase):
     def setUp(self):
         super(TestCollectionsList, self).setUp()
         self.dag = EODataAccessGateway()
-        self.collections_list = CollectionsList([Collection(dag=self.dag, id="foo")])
+        self.collections_list = CollectionsList([Collection(id="foo")])
 
     def test_search_result_is_list_like(self):
         """CollectionsList must provide a list interface"""
