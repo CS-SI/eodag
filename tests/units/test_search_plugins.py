@@ -873,7 +873,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         conf_update_dict = search_plugin.discover_collections()
         keywords_list = conf_update_dict["collections_config"]["foo_collection"][
             "keywords"
-        ].split(",")
+        ]
 
         self.assertEqual(
             [

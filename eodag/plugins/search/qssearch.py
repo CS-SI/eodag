@@ -643,7 +643,11 @@ class QueryStringSearch(Search):
 
                             conf_update_dict["collections_config"][
                                 generic_collection_id
-                            ].update(collection_data)
+                            ] |= {
+                                k: v
+                                for k, v in collection_data.items()
+                                if v != NOT_AVAILABLE
+                            }
 
                             # update collection id if needed
                             if (

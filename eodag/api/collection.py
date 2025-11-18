@@ -26,7 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
-from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
+from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
 
 from eodag.utils.env import is_env_var_true
@@ -58,6 +58,7 @@ class Collection(BaseModel):
 
     id: str = Field()
     title: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
     extent: Extent = Field(
         default=Extent(
             spatial=SpatialExtent(bbox=[[-180.0, -90.0, 180.0, 90.0]]),  # type: ignore
@@ -70,15 +71,20 @@ class Collection(BaseModel):
             "), with date/time strings in RFC 3339 format"
         ),
     )
-    processing_level: Optional[str] = Field(default=None, alias="processing:level")
-    instruments: list[str] = Field(default=[])
-    constellation: Optional[str] = Field(default=None)
-    platform: Optional[str] = Field(default=None)
-    eodag_sensor_type: Optional[str] = Field(default=None, alias="eodag:sensor_type")
-    keywords: list[str] = Field(default=[])
+    keywords: Optional[list[str]] = Field(default=None)
     license: Optional[str] = Field(default=None)
-    description: Optional[str] = Field(default=None)
     links: Optional[Links] = Field(default=None)
+    providers: Optional[list[Provider]] = Field(default=None)
+
+    # summaries
+    constellation: Optional[str] = Field(default=None)
+    instruments: Optional[list[str]] = Field(default=None)
+    platform: Optional[str] = Field(default=None)
+    processing_level: Optional[str] = Field(default=None, alias="processing:level")
+    sci_doi: Optional[str] = Field(default=None, alias="sci:doi")
+    eodag_sensor_type: Optional[str] = Field(default=None, alias="eodag:sensor_type")
+
+    # eodag-specific attribute
     alias: Optional[str] = Field(
         default=None,
         description="An alias given by a user to use his customized id intead of the internal id of EODAG",
