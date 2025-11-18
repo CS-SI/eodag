@@ -75,7 +75,7 @@ class Collection(BaseModel):
     constellation: Optional[str] = Field(default=None)
     platform: Optional[str] = Field(default=None)
     eodag_sensor_type: Optional[str] = Field(default=None, alias="eodag:sensor_type")
-    keywords: Optional[list[str]] = Field(default=None)
+    keywords: list[str] = Field(default=[])
     license: Optional[str] = Field(default=None)
     description: Optional[str] = Field(default=None)
     links: Optional[Links] = Field(default=None)

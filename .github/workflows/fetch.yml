@@ -28,12 +28,6 @@ jobs:
         uv venv
         source .venv/bin/activate
         uv pip install ".[all-providers]"
-    - name: List collections by allowing the fetch and hightlight warning logs
-      env:
-        EODAG_VALIDATE_COLLECTIONS: True
-      run: |
-        source .venv/bin/activate
-        WARNINGS=$(eodag -vvv list 2>&1 | tee /dev/tty | sed '/Listing available collections/Q' | grep -i "\[WARNING")
     - name: Fetch external collections data
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
@@ -44,7 +38,13 @@ jobs:
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
         # add empty line at end of file
         sed -i -e '$a\' ${JSON_OUTPUT_FILE}
-
+    - name: List collections by allowing the fetch and hightlight warning logs
+      env:
+        EODAG_VALIDATE_COLLECTIONS: True
+        EODAG_EXT_COLLECTIONS_CFG_FILE: "eodag/resources/ext_collections.json"
+      run: |
+        source .venv/bin/activate
+        eodag -vvv list 2>&1 | grep -i "\[WARNING" | tee /tmp/warnings.txt
     - name: Commit changes if any
       id: commit
       run: |
@@ -92,10 +92,10 @@ jobs:
         cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
 
         echo '### Check potential warning log(s) while listing collections' >> $GITHUB_STEP_SUMMARY
-        if [[ $WARNINGS == *"WARNING"* ]]; then
+        if [ -s "/tmp/warnings.txt" ]; then
           echo "Warning log(s) detected:" >> $GITHUB_STEP_SUMMARY
           echo '' >> $GITHUB_STEP_SUMMARY
-          echo "$WARNINGS" >> $GITHUB_STEP_SUMMARY
+          cat "/tmp/warnings.txt" >> $GITHUB_STEP_SUMMARY
         else
           echo "No warning log detected" >> $GITHUB_STEP_SUMMARY
         fi

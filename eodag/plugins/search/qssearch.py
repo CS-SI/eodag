@@ -606,15 +606,19 @@ class QueryStringSearch(Search):
                             ),
                         )
                         # collections_config extraction
-                        conf_update_dict["collections_config"][
-                            generic_collection_id
-                        ] = properties_from_json(
+                        collection_properties = properties_from_json(
                             collection_result,
                             self.config.discover_collections[
                                 "generic_collection_parsable_metadata"
                             ],
                         )
-
+                        conf_update_dict["collections_config"][
+                            generic_collection_id
+                        ] = {
+                            k: v
+                            for k, v in collection_properties.items()
+                            if v != NOT_AVAILABLE
+                        }
                         if (
                             "single_collection_parsable_metadata"
                             in self.config.discover_collections
@@ -701,12 +705,11 @@ class QueryStringSearch(Search):
                             r"[\[\]'\"]", "", keywords_values_str
                         )
                         # sorted list of unique lowercase keywords
-                        keywords_values_str = ",".join(
-                            sorted(set(keywords_values_str.split(",")))
-                        )
+                        keywords_values = sorted(set(keywords_values_str.split(",")))
+
                         conf_update_dict["collections_config"][generic_collection_id][
                             "keywords"
-                        ] = keywords_values_str
+                        ] = keywords_values
 
                     # runs concurrent requests and aggregate results in conf_update_dict
                     max_connections = self.config.discover_collections.get(
