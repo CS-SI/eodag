@@ -1113,9 +1113,25 @@ class ECMWFSearch(PostJsonSearch):
             if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
-            is_required = bool(element.get("required")) and bool(
-                available_values.get(name)
-            )
+            is_required: bool
+            if bool(element.get("required")):
+                # required by form
+                if name in available_values:
+                    # required by some constraint, but not by all constraints
+                    # is it required by the filtered constraints?
+                    if available_values[name]:
+                        # required by the filtered constraints
+                        is_required = True
+                    else:
+                        # not required by the filtered constraints
+                        is_required = False
+                else:
+                    # required only by form
+                    is_required = True
+            else:
+                # not required by form
+                is_required = False
+
             if is_required:
                 required_list.append(name)
 
