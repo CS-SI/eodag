@@ -3,7 +3,18 @@ Migration guide
 
 Full changelog available in `Release history <changelog.html>`_.
 
-v4.0.0b1
+v4.0.0a2
+++++++++
+
+Collections objects
+~~~~~~~~~~~~~~~~~~~
+
+:meth:`~eodag.api.core.EODataAccessGateway.list_collections` and
+:meth:`~eodag.api.core.EODataAccessGateway.guess_collection` now return
+:class:`~eodag.api.collection.CollectionsList` instances (lists of
+:class:`~eodag.api.collection.Collection` objects) instead of list of dictionaries and list of strings respectively.
+
+v4.0.0a1
 ++++++++
 
 STAC-Formatted API and Results
