@@ -24,7 +24,6 @@
 """EODAG package"""
 from importlib.metadata import PackageNotFoundError, version
 
-from .api.collection import Collection
 from .api.core import EODataAccessGateway
 from .api.product import EOProduct
 from .api.search_result import SearchResult
@@ -39,7 +38,6 @@ except PackageNotFoundError:  # pragma: no cover
 __all__ = [
     "EODataAccessGateway",
     "EOProduct",
-    "Collection",
     "SearchResult",
     "setup_logging",
 ]

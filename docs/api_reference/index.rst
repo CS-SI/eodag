@@ -63,7 +63,7 @@ The API Reference provides an overview of all public objects, functions and meth
          :text-align: center
          :shadow: md
 
-         Represents individual collections of catalogs and their metadata in Pydantic models with capabilities to search and list queryables.
+         Represents individual collections and their metadata in Pydantic models with capabilities to search and list queryables.
 
    .. grid-item-card:: :octicon:`list-unordered;1.5em`  Queryables
          :link: queryables

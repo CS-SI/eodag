@@ -230,7 +230,7 @@ class EODagTestCase(unittest.TestCase):
                     title="MyRecord",
                     creator="eodagUnitTests",
                     publisher="eodagUnitTests",
-                    description="A dumb CSW record for testing purposes",
+                    abstract="A dumb CSW record for testing purposes",
                     subjects=[],
                     date="",
                     references=[
@@ -260,7 +260,7 @@ class EODagTestCase(unittest.TestCase):
                             http://localhost:8000/admin/storm_csw/resource/52/change/
                         </dct:references>
                         <dct:modified>2017-05-05 13:02:35.548758+00:00</dct:modified>
-                        <dct:description/>
+                        <dct:abstract/>
                         <dc:date>2017-05-05 13:02:35.139807+00:00</dc:date>
                         <dc:creator> </dc:creator>
                         <dc:coverage/>

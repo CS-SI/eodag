@@ -171,8 +171,9 @@ Some EODAG core settings can be overriden using environment variables:
   This is useful if you want to strictly control which collections are available, for example to ensure consistency across environments.
 * ``EODAG_VALIDATE_COLLECTIONS`` to control whether collections validation will log a warning if it fails.
 
-  Mostly created for ensuring ``eodag`` internal and external collections configuration is still correct, this environment variable
-  will allow to log a warning when a collection does not follow the right schema of its model if set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``).
+  If set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), this environment variable will allow to log a warning when a collection does not follow the right schema of its model.
+
+  It was mostly created for ensuring ``eodag`` internal and external collections configuration is still correct.
 
 Example usage:
 
