@@ -376,7 +376,24 @@ class TestMetadataFormatter(unittest.TestCase):
         )
         self.assertEqual(
             format_metadata(to_format, fieldname="NOT_AVAILABLE"),
-            "NOT_AVAILABLE",
+            NOT_AVAILABLE,
+        )
+
+    def test_convert_literalize_unicode(self):
+        to_format = r"{fieldname#literalize_unicode}"
+
+        # Case with UTF-8-encoded characters displayed in ISO
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname="This is a text with UTF-8-encoded characters displayed in ISO: â\x80\x99, Ã©, Ã§ and Ã´.",
+            ),
+            "This is a text with UTF-8-encoded characters displayed in ISO: ’, é, ç and ô.",
+        )
+
+        # Case with NOT_AVAILABLE value
+        self.assertEqual(
+            format_metadata(to_format, fieldname=NOT_AVAILABLE), NOT_AVAILABLE
         )
 
     def test_convert_recursive_sub_str(self):

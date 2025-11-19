@@ -49,6 +49,7 @@ from urllib.parse import parse_qs
 
 import click
 
+from eodag.api.collection import CollectionsList
 from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
@@ -142,8 +143,8 @@ def version() -> None:
 
 @eodag.command(
     name="search",
-    help="Search satellite images by their collections, instrument, platform, "
-    "platform identifier, processing level or sensor type. It is mandatory to provide "
+    help="Search satellite images by their collections, instruments, constellation, "
+    "platform, processing level or sensor type. It is mandatory to provide "
     "at least one of the previous criteria for eodag to perform a search. "
     "Optionally crunch the search results before storing them in a geojson file",
 )
@@ -423,14 +424,14 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
 )
 @click.pass_context
-def list_pt(ctx: Context, **kwargs: Any) -> None:
+def list_col(ctx: Context, **kwargs: Any) -> None:
     """Print the list of supported collections"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
     fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_collections = []
+    guessed_collections = CollectionsList([])
     try:
         guessed_collections = dag.guess_collection(
             **kwargs,
@@ -457,22 +458,24 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             sys.exit(1)
     try:
         if guessed_collections:
-            collections = [
-                pt
-                for pt in dag.list_collections(
-                    provider=provider, fetch_providers=fetch_providers
-                )
-                if pt["ID"] in guessed_collections
-            ]
+            collections = CollectionsList(
+                [
+                    col
+                    for col in dag.list_collections(
+                        provider=provider, fetch_providers=fetch_providers
+                    )
+                    if col.id in [guessed_col.id for guessed_col in guessed_collections]
+                ]
+            )
         else:
             collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
         click.echo("Listing available collections:")
         for collection in collections:
-            click.echo("\n* {}: ".format(collection["ID"]))
-            for prop, value in collection.items():
-                if prop != "ID":
+            click.echo("\n* {}: ".format(collection.id))
+            for prop, value in collection.model_dump().items():
+                if prop != "id":
                     text_wrapper.initial_indent = "    - {}: ".format(prop)
                     text_wrapper.subsequent_indent = " " * len(
                         text_wrapper.initial_indent
@@ -498,7 +501,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
     "DEFAULT: ext_collections.json",
 )
 @click.pass_context
-def discover_pt(ctx: Context, **kwargs: Any) -> None:
+def discover_col(ctx: Context, **kwargs: Any) -> None:
     """Fetch external collections configuration and save result"""
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()

@@ -463,13 +463,13 @@ def _import_stac_item_from_known_provider(
                 )
                 eo_product = products[0]
 
-                configured_pts = [
+                configured_cols = [
                     k
                     for k, v in search_plugin.config.products.items()
                     if v.get("_collection") == feature.get("collection")
                 ]
-                if len(configured_pts) > 0:
-                    eo_product.collection = configured_pts[0]
+                if len(configured_cols) > 0:
+                    eo_product.collection = configured_cols[0]
                 else:
                     eo_product.collection = feature.get("collection")
 

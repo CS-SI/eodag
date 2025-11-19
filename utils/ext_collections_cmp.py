@@ -126,8 +126,8 @@ def compare_collections(
     # Compare each provider
     common_providers = providers1 & providers2
     for provider in sorted(common_providers):
-        provider_data1 = data1[provider]
-        provider_data2 = data2[provider]
+        provider_data1 = data1[provider] or {}
+        provider_data2 = data2[provider] or {}
 
         # Compare providers_config items content (no list diff, just content)
         providers_config1 = set(provider_data1.get("providers_config", {}).keys())

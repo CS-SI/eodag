@@ -101,6 +101,8 @@ class StaticStacSearch(StacSearch):
             return None
         fetch_url = unformatted_fetch_url.format(**self.config.__dict__)
 
+        logger.info(f"Fetching collections: {fetch_url}")
+
         collections = fetch_stac_collections(
             fetch_url,
             collection=kwargs.get("q"),

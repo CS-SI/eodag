@@ -161,6 +161,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``get_group_name``: get the matching regex group name
+        - ``literalize_unicode``: convert a string to its raw Unicode literal form
         - ``not_available``: replace value with "Not Available"
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
@@ -664,7 +665,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             match = data_regex.search(value)
             if match:
                 return match.group("name").replace("/", "_").upper()
-            return "NOT_AVAILABLE"
+            return NOT_AVAILABLE
+
+        @staticmethod
+        def convert_literalize_unicode(value: str) -> str:
+            if value == NOT_AVAILABLE:
+                return value
+            return value.encode("raw_unicode_escape").decode("utf-8")
 
         @staticmethod
         def convert_recursive_sub_str(

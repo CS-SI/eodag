@@ -3811,7 +3811,7 @@
         title: '$.metadata._source.datasetTitle'
         _mission_start_date: '$.metadata._source.tempextent_begin'
         _mission_end_date: '$.metadata._source.tempextent_end'
-        extent: '{{"temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
+        extent: '{{"spatial": {{"bbox": [[[[-180.0, -90.0, 180.0, 90.0]]]]}}, "temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
         processing:level: '$.null'
         keywords: '$.metadata._source.keywords'
     discover_queryables:
@@ -4736,7 +4736,7 @@
     dates_required: True
     discover_queryables:
       fetch_url: null
-      product_type_fetch_url: null
+      collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
       geometry:
@@ -6456,8 +6456,8 @@
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_collection_parsable_metadata:
-        ID: '{$.assets.enclosure.href#ceda_collection_name}'
-        description: '$.description'
+        id: '{$.assets.enclosure.href#ceda_collection_name}'
+        description: '{$.description#literalize_unicode}'
         instruments: '$.summaries.instruments'
         keywords: '$.keywords'
         license: '$.license'

@@ -156,19 +156,24 @@ Some EODAG core settings can be overriden using environment variables:
   <../notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_collections.json.
   If the file is not readable, only user-modified providers will be fetched.
-* ``EODAG_PROVIDERS_WHITELIST`` to restrict EODAG to only use a specific list of providers.
+* ``EODAG_PROVIDERS_WHITELIST`` to restrict ``eodag`` to only use a specific list of providers.
 
-  If this environment variable is set (as a comma-separated list of provider names), EODAG will only load and use the specified providers.
+  If this environment variable is set (as a comma-separated list of provider names), ``eodag`` will only load and use the specified providers.
   All other providers will be ignored, regardless of their presence in configuration files.
 
-  This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
+  This is useful for restricting ``eodag`` to a subset of providers, for example in controlled or production environments.
 * ``EODAG_STRICT_COLLECTIONS`` to control how collections are listed.
 
-  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), EODAG will only list collections that are present in the main collections configuration file.
+  If this environment variable is set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), ``eodag`` will only list collections that are present in the main collections configuration file.
   Collections defined only in provider configurations (but not in the main collections configuration) will be ignored.
-  If not set, EODAG will also include collections defined only in provider configurations, with minimal metadata.
+  If not set, ``eodag`` will also include collections defined only in provider configurations, with minimal metadata.
 
   This is useful if you want to strictly control which collections are available, for example to ensure consistency across environments.
+* ``EODAG_VALIDATE_COLLECTIONS`` to control whether collections validation will log a warning if it fails.
+
+  If set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``), this environment variable will allow to log a warning when a collection does not follow the right schema of its model.
+
+  It was mostly created for ensuring ``eodag`` internal and external collections configuration is still correct.
 
 Example usage:
 
@@ -176,6 +181,7 @@ Example usage:
 
    export EODAG_PROVIDERS_WHITELIST=peps,creodias,cop_dataspace
    export EODAG_STRICT_COLLECTIONS=true
+   export EODAG_VALIDATE_COLLECTIONS=true
 
 CLI configuration
 ^^^^^^^^^^^^^^^^^

@@ -403,10 +403,10 @@ class Search(PluginTopic):
             return queryables
         else:
             all_queryables: dict[str, Any] = {}
-            for pt in available_collections:
-                self.config.collection_config = collection_configs[pt]
-                pt_queryables = self._get_collection_queryables(pt, None, filters)
-                all_queryables.update(pt_queryables)
+            for col in available_collections:
+                self.config.collection_config = collection_configs[col]
+                col_queryables = self._get_collection_queryables(col, None, filters)
+                all_queryables.update(col_queryables)
             # reset defaults because they may vary between collections
             for k, v in all_queryables.items():
                 v.__metadata__[0].default = getattr(

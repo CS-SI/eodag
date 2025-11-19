@@ -38,7 +38,6 @@ from typing import (
 import orjson
 import requests
 import yaml
-import yaml.constructor
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
@@ -305,7 +304,7 @@ class PluginConfig(yaml.YAMLObject):
         results_entry: Union[JSONPath, str]
         #: Mapping for the collection id
         generic_collection_id: str
-        #: Mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
         #: result
         generic_collection_parsable_metadata: dict[str, str]
         #: Mapping for collection properties which can be parsed from the result and are not collection metadata
@@ -316,7 +315,7 @@ class PluginConfig(yaml.YAMLObject):
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
-        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``id``
         #: is redefined in this mapping, it will replace ``generic_collection_id`` value
         single_collection_parsable_metadata: dict[str, str]
 

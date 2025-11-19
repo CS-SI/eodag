@@ -15,6 +15,7 @@ The API Reference provides an overview of all public objects, functions and meth
    eoproduct
    assets
    queryables
+   collection
    utils
    exceptions
    types
@@ -55,6 +56,14 @@ The API Reference provides an overview of all public objects, functions and meth
          :shadow: md
 
          Manage product assets including AssetsDict and Asset classes for handling multi-file products and pixel access operations.
+
+   .. grid-item-card:: :octicon:`book;1.5em`  Collection
+         :link: collection
+         :link-type: doc
+         :text-align: center
+         :shadow: md
+
+         Represents individual collections and their metadata in Pydantic models with capabilities to search and list queryables.
 
    .. grid-item-card:: :octicon:`list-unordered;1.5em`  Queryables
          :link: queryables

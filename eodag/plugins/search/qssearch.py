@@ -185,8 +185,8 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_id` (``str``): mapping for the
             collection id
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_parsable_metadata`
-            (``dict[str, str]``): mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed
-            from the provider result
+            (``dict[str, str]``): mapping for collection metadata (e.g. ``description``, ``license``) which can be
+            parsed from the provider result
           * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_parsable_properties`
             (``dict[str, str]``): mapping for collection properties which can be parsed from the result and are not
             collection metadata
@@ -606,15 +606,19 @@ class QueryStringSearch(Search):
                             ),
                         )
                         # collections_config extraction
-                        conf_update_dict["collections_config"][
-                            generic_collection_id
-                        ] = properties_from_json(
+                        collection_properties = properties_from_json(
                             collection_result,
                             self.config.discover_collections[
                                 "generic_collection_parsable_metadata"
                             ],
                         )
-
+                        conf_update_dict["collections_config"][
+                            generic_collection_id
+                        ] = {
+                            k: v
+                            for k, v in collection_properties.items()
+                            if v != NOT_AVAILABLE
+                        }
                         if (
                             "single_collection_parsable_metadata"
                             in self.config.discover_collections
@@ -622,29 +626,50 @@ class QueryStringSearch(Search):
                             collection_data = self._get_collection_metadata_from_single_collection_endpoint(
                                 generic_collection_id
                             )
+                            collection_data_id = collection_data.pop("id", None)
+
+                            # remove collection if it must have be renamed but renaming failed
+                            if (
+                                collection_data_id
+                                and collection_data_id == NOT_AVAILABLE
+                            ):
+                                del conf_update_dict["collections_config"][
+                                    generic_collection_id
+                                ]
+                                del conf_update_dict["providers_config"][
+                                    generic_collection_id
+                                ]
+                                return
+
                             conf_update_dict["collections_config"][
                                 generic_collection_id
-                            ].update(collection_data)
+                            ] |= {
+                                k: v
+                                for k, v in collection_data.items()
+                                if v != NOT_AVAILABLE
+                            }
 
                             # update collection id if needed
-                            if collection_data_id := collection_data.get("ID"):
-                                if generic_collection_id != collection_data_id:
-                                    logger.debug(
-                                        "Rename %s collection to %s",
-                                        generic_collection_id,
-                                        collection_data_id,
-                                    )
-                                    conf_update_dict["providers_config"][
-                                        collection_data_id
-                                    ] = conf_update_dict["providers_config"].pop(
-                                        generic_collection_id
-                                    )
-                                    conf_update_dict["collections_config"][
-                                        collection_data_id
-                                    ] = conf_update_dict["collections_config"].pop(
-                                        generic_collection_id
-                                    )
-                                    generic_collection_id = collection_data_id
+                            if (
+                                collection_data_id
+                                and collection_data_id != generic_collection_id
+                            ):
+                                logger.debug(
+                                    "Rename %s collection to %s",
+                                    generic_collection_id,
+                                    collection_data_id,
+                                )
+                                conf_update_dict["providers_config"][
+                                    collection_data_id
+                                ] = conf_update_dict["providers_config"].pop(
+                                    generic_collection_id
+                                )
+                                conf_update_dict["collections_config"][
+                                    collection_data_id
+                                ] = conf_update_dict["collections_config"].pop(
+                                    generic_collection_id
+                                )
+                                generic_collection_id = collection_data_id
 
                         # update keywords
                         keywords_fields = [
@@ -684,12 +709,11 @@ class QueryStringSearch(Search):
                             r"[\[\]'\"]", "", keywords_values_str
                         )
                         # sorted list of unique lowercase keywords
-                        keywords_values_str = ",".join(
-                            sorted(set(keywords_values_str.split(",")))
-                        )
+                        keywords_values = sorted(set(keywords_values_str.split(",")))
+
                         conf_update_dict["collections_config"][generic_collection_id][
                             "keywords"
-                        ] = keywords_values_str
+                        ] = keywords_values
 
                     # runs concurrent requests and aggregate results in conf_update_dict
                     max_connections = self.config.discover_collections.get(

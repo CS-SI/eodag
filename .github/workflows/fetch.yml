@@ -32,13 +32,31 @@ jobs:
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
+        JSON_OUTPUT_FILE: "eodag/resources/ext_collections.json"
       run: |
         source .venv/bin/activate
-        export JSON_OUTPUT_FILE="eodag/resources/ext_collections.json"
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
         # add empty line at end of file
         sed -i -e '$a\' ${JSON_OUTPUT_FILE}
-
+    - name: List collections by allowing the fetch and hightlight warning logs
+      env:
+        EODAG_VALIDATE_COLLECTIONS: True
+        EODAG_EXT_COLLECTIONS_CFG_FILE: "eodag/resources/ext_collections.json"
+      run: |
+        source .venv/bin/activate
+        eodag -vvv list 2> >(tee /tmp/logs.txt)
+        cat /tmp/logs.txt | grep -i "\[WARNING" > /tmp/warnings.txt
+    - name: Upload full logs
+      uses: actions/upload-artifact@v5
+      id: artifact-upload-step
+      with:
+        name: collection-logs-full
+        path: /tmp/logs.txt
+        retention-days: 30
+    - name: logs artifact URL
+      run:  |
+        echo "${{ steps.artifact-upload-step.outputs.artifact-url }}" > /tmp/logs_url.txt
+        cat /tmp/logs_url.txt
     - name: Commit changes if any
       id: commit
       run: |
@@ -60,7 +78,7 @@ jobs:
     - name: Download reference file for comparison
       run: |
         source .venv/bin/activate
-        export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_COLLECTIONS_CONF_URI)")
+        JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_COLLECTIONS_CONF_URI)")
         curl -s "${JSON_REF_FILE}" -o /tmp/ref_collections.json
 
     - name: Generate comparison and update job summary
@@ -69,6 +87,15 @@ jobs:
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
 
         echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
+
+        echo '### Collections validation' >> $GITHUB_STEP_SUMMARY
+        if [ -s "/tmp/warnings.txt" ]; then
+          WARN_COUNT=$(wc -l < "/tmp/warnings.txt")
+          echo "⚠️ **${WARN_COUNT} warning(s) detected** - please review the [validation logs (logs.txt)](`cat /tmp/logs_url.txt`)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ **No warnings detected**" >> $GITHUB_STEP_SUMMARY
+        fi
+
         echo '### Changed file' >> $GITHUB_STEP_SUMMARY
         if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
           git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
@@ -78,12 +105,10 @@ jobs:
         echo '' >> $GITHUB_STEP_SUMMARY
         echo "commit [${{ steps.commit.outputs.commit_sha }}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '' >> $GITHUB_STEP_SUMMARY
-
         # Use our Python comparison script for better diff analysis
         python utils/ext_collections_cmp.py /tmp/ref_collections.json "eodag/resources/ext_collections.json" > /tmp/comparison_output.md
         # Add comparison output to step summary
         cat /tmp/comparison_output.md >> $GITHUB_STEP_SUMMARY
-
     - name: Create PR body
       run: |
         source .venv/bin/activate
@@ -92,6 +117,14 @@ jobs:
         {
           # Include header info
           echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
+          echo ""
+          echo '### Collections validation'
+          if [ -s "/tmp/warnings.txt" ]; then
+            WARN_COUNT=$(wc -l < "/tmp/warnings.txt")
+            echo "⚠️ **${WARN_COUNT} warning(s) detected** - please review the [validation logs (logs.txt)](`cat /tmp/logs_url.txt`)"
+          else
+            echo "✅ **No warnings detected**"
+          fi
           echo ""
           echo "### Changed file"
           if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
@@ -148,9 +181,9 @@ jobs:
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
+        JSON_OUTPUT_FILE: "eodag/resources/ext_product_types.json"
       run: |
         source .venv/bin/activate
-        export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
         cd "$GITHUB_WORKSPACE"
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
         # add empty line at end of file
@@ -178,7 +211,7 @@ jobs:
       run: |
         source .venv/bin/activate
         # Run from /tmp to avoid importing local eodag module
-        export JSON_REF_FILE=$(cd /tmp && python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
+        JSON_REF_FILE=$(cd /tmp && python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
         curl -s "${JSON_REF_FILE}" -o /tmp/ref_product_types.json
 
     - name: Generate comparison and update job summary

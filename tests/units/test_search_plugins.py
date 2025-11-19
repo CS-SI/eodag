@@ -768,6 +768,82 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             verify=True,
         )
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    def test_plugins_search_querystringsearch_discover_collections_with_id_to_rename(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_collections must handle collections that have to be renamed"""
+        # One of the providers that has discover_collections() configured with QueryStringSearch
+        provider = "wekeo_cmems"
+        search_plugin = self.get_search_plugin(provider=provider)
+        # change configuration for this test to rename the collection id
+        search_plugin.config.discover_collections[
+            "single_collection_parsable_metadata"
+        ]["id"] = (None, cached_parse("$.metadata.understandable_id"))
+
+        # case where the name to replace the current id exists in the metadata
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "1a2b3c4d",
+                        "metadata": {"title": "The FOO collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "1a2b3c4d",
+                "metadata": {
+                    "title": "The FOO collection",
+                    "understandable_id": "foo_collection",
+                },
+            },
+        ]
+
+        with self.assertLogs(level="DEBUG") as cm:
+            conf_update_dict = search_plugin.discover_collections()
+            self.assertIn(
+                "Rename 1a2b3c4d collection to foo_collection", str(cm.output)
+            )
+
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["collections_config"])
+        self.assertNotIn("1a2b3c4d", conf_update_dict["providers_config"])
+        self.assertNotIn("1a2b3c4d", conf_update_dict["collections_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            "1a2b3c4d",
+        )
+        self.assertNotIn("id", conf_update_dict["collections_config"]["foo_collection"])
+
+        # case where the name to replace the current id does not exist in the metadata
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "5e6f7g8h",
+                        "metadata": {"title": "The BAR collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "5e6f7g8h",
+                "metadata": {"title": "The BAR collection"},
+            },
+        ]
+
+        conf_update_dict = search_plugin.discover_collections()
+
+        self.assertNotIn("5e6f7g8h", conf_update_dict["providers_config"])
+        self.assertNotIn("5e6f7g8h", conf_update_dict["collections_config"])
+
+        # restore configuration
+        del search_plugin.config.discover_collections[
+            "single_collection_parsable_metadata"
+        ]["id"]
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
@@ -797,7 +873,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         conf_update_dict = search_plugin.discover_collections()
         keywords_list = conf_update_dict["collections_config"]["foo_collection"][
             "keywords"
-        ].split(",")
+        ]
 
         self.assertEqual(
             [
@@ -1216,9 +1292,10 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
-        # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
-        pt_conf = {
-            "ID": "ERA5_SL",
+        # no date info given -> default dates (extent.temporal.interval.0.0) which are
+        # then converted to year, month, day, time
+        col_conf = {
+            "id": "ERA5_SL",
             "description": "ERA5 abstract",
             "instruments": [],
             "constellation": "ERA5",
@@ -1239,11 +1316,14 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "eodag:sensor_type": "ATMOSPHERIC",
             "license": "other",
             "title": "ERA5 hourly data on single levels from 1940 to present",
-            "extent": {"temporal": {"interval": [["1940-01-01T00:00:00Z", None]]}},
+            "extent": {
+                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                "temporal": {"interval": [["1940-01-01T00:00:00Z", None]]},
+            },
             "_id": "ERA5_SL",
         }
         search_plugin.config.collection_config = dict(
-            pt_conf,
+            col_conf,
             **{"_collection": "ERA5_SL"},
         )
         search_plugin.query(collection="ERA5_SL", prep=PreparedSearch())
@@ -1262,9 +1342,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
-        # collection with dates are query params -> use missionStartDate and today
-        pt_conf = {
-            "ID": "CAMS_EAC4",
+        # collection with dates are query params -> use extent.temporal.interval.0.0 and today
+        col_conf = {
+            "id": "CAMS_EAC4",
             "description": "CAMS_EAC4 abstract",
             "instruments": [],
             "constellation": "CAMS",
@@ -1282,11 +1362,14 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "eodag:sensor_type": "ATMOSPHERIC",
             "license": "other",
             "title": "CAMS global reanalysis (EAC4)",
-            "extent": {"temporal": {"interval": [["2003-01-01T00:00:00Z", None]]}},
+            "extent": {
+                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                "temporal": {"interval": [["2003-01-01T00:00:00Z", None]]},
+            },
             "_id": "CAMS_EAC4",
         }
         search_plugin.config.collection_config = dict(
-            pt_conf,
+            col_conf,
             **{"_collection": "CAMS_EAC4"},
         )
         search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
@@ -2073,8 +2156,8 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9]+$",
                 },
-                "productType": {
-                    "title": "Product Type",
+                "collection": {
+                    "title": "Collection",
                     "type": "string",
                     "oneOf": [
                         {"const": "DGE_30", "title": "DGE_30", "group": None},
@@ -2108,7 +2191,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         queryables = plugin.discover_queryables(
             collection="COP_DEM_GLO90_DGED", provider="wekeo_main"
         )
-        self.assertIn("product_type", queryables)
+        self.assertIn("collection", queryables)
         self.assertIn("geom", queryables)
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)
@@ -2576,7 +2659,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # missing start & stop and plugin.collection_config set (set in core._prepare_search)
         self.search_plugin.config.collection_config = {
             "_collection": self.collection,
-            "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
+            "extent": {
+                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                "temporal": {"interval": [["1985-10-26", "2015-10-21"]]},
+            },
             "alias": "THE.ALIAS",
         }
         results = self.search_plugin.query(
@@ -2772,7 +2858,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             form = json.load(f)
         mock__fetch_data.side_effect = [constraints, form]
         collection_config = {
-            "extent": {"temporal": {"interval": [["2001-01-01T00:00:00Z", None]]}}
+            "extent": {
+                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                "temporal": {"interval": [["2001-01-01T00:00:00Z", None]]},
+            }
         }
         setattr(self.search_plugin.config, "collection_config", collection_config)
 
@@ -3224,7 +3313,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                         ["1970-01-01T00:00:00.000000Z", "1970-01-01T00:00:00.000000Z"]
                     ]
                 },
-                "spatial": {"bbox": [[0, 0, 0, 0]]},
+                "spatial": {"bbox": [[0.0, 0.0, 0.0, 0.0]]},
             },
             "assets": {
                 "thumbnail": {
@@ -3276,9 +3365,11 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             ],
             "geometry": {
                 "type": "Polygon",
-                "coordinates": [[[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]],
+                "coordinates": [
+                    [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+                ],
             },
-            "bbox": [0, 0, 0, 0],
+            "bbox": [0.0, 0.0, 0.0, 0.0],
             "properties": {
                 "title": "dataset-number-one",
                 "datetime": "1970-01-01T00:00:00.000000Z",
