@@ -1676,12 +1676,9 @@
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       metadata_mapping:
-        latitude:
-          - '{{"location": {{"latitude": {"latitude"}, "longitude": {"longitude"}}}}}'
-          - $."latitude"
-        longitude:
-          - '{{"location": {{"latitude": {"latitude"}, "longitude": {"longitude"}}}}}'
-          - $."longitude"
+        geometry:
+          - '{{"location": {{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}}}'
+          - $.geometry
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: cams-global-ghg-reanalysis-egg4-monthly
       metadata_mapping:
