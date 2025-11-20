@@ -532,7 +532,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
     #: Configurations for the queryables dynamic auto-discovery.
     #: A configuration is used based on the given selection criterias. The first match is used.
-    #: If no match is found, it falls back to standard behaviors (e.g. discovery via :meth:`~eodag.plugins.search.base.Search.discover_queryables`)
+    #: If no match is found, it falls back to standard behaviors (e.g. discovery via
+    #: :meth:`~eodag.plugins.search.base.Search.discover_queryables`)
     dynamic_discover_queryables: list[PluginConfig.DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
