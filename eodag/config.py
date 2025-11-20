@@ -336,10 +336,10 @@ class PluginConfig(yaml.YAMLObject):
         constraints_entry: str
 
     class CollectionSelector(TypedDict, total=False):
-        """Define the criteria to select a collection.
+        """Define the criteria to select a collection in :class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`.
 
         The selector matches if the field value starts with the given prefix,
-        i.e. it matches if `parameters[field].startswith(prefix)==True`"""
+        i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
 
         #: Field in the search parameters to match
         field: str
@@ -532,7 +532,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
     #: Configurations for the queryables dynamic auto-discovery.
     #: A configuration is used based on the given selection criterias. The first match is used.
-    #: If no match is found, it falls back to standard behaviors (e.g. discovery via `discover_queryables`)
+    #: If no match is found, it falls back to standard behaviors (e.g. discovery via :meth:`~eodag.plugins.search.base.Search.discover_queryables`)
     dynamic_discover_queryables: list[PluginConfig.DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
