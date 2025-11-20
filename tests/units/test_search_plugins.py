@@ -1244,6 +1244,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         provider = "wekeo_ecmwf"
         search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
         search_plugin = next(search_plugins)
+        search_plugin.config.dates_required = True
         mock_request.return_value = MockResponse({"features": []}, 200)
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
@@ -1386,6 +1387,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
+        # restore previous config
+        delattr(search_plugin.config, "dates_required")
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_query_params_wekeo(self, mock__request):
@@ -2623,6 +2626,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
     def test_plugins_search_ecmwfsearch_dates_missing(self):
         """ECMWFSearch.query must use default dates if missing"""
+        self.search_plugin.config.dates_required = True
+
         # given start & stop
         results = self.search_plugin.query(
             collection=self.collection,
@@ -2679,8 +2684,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         self.assertEqual("THE.ALIAS", eoproduct.properties["eodag:alias"])
 
+        # restore previous config
+        delattr(self.search_plugin.config, "dates_required")
+
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
+        self.search_plugin.config.dates_required = True
 
         results = self.search_plugin.query(
             prep=PreparedSearch(),
@@ -2714,6 +2723,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["ecmwf:day"],
             ["20", "21"],
         )
+
+        # restore previous config
+        delattr(self.search_plugin.config, "dates_required")
 
     def test_plugins_search_ecmwfsearch_without_collection(self):
         """
@@ -3160,10 +3172,17 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        wekeo_ecmwf_constraints = {"constraints": constraints[0]}
-        mock_requests_get.return_value = MockResponse(
-            wekeo_ecmwf_constraints, status_code=200
-        )
+        wekeo_ecmwf_constraints = [constraints[0]]
+
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        wekeo_ecmwf_form = form
+
+        mock_requests_get.side_effect = [
+            MockResponse(wekeo_ecmwf_constraints, status_code=200),
+            MockResponse(wekeo_ecmwf_form, status_code=200),
+        ]
 
         provider_queryables_from_constraints_file = [
             "ecmwf_year",
@@ -3181,10 +3200,19 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        mock_requests_get.assert_called_once_with(
+        self.assertEqual(len(mock_requests_get.call_args), 2)
+        mock_requests_get.assert_any_call(
             mock.ANY,
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
-            "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
+            "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
+            "reanalysis-era5-single-levels-monthly-means/constraints.json",
+            headers=USER_AGENT,
+            auth=None,
+            timeout=60,
+        )
+        mock_requests_get.assert_any_call(
+            mock.ANY,
+            "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
+            "reanalysis-era5-single-levels-monthly-means/form.json",
             headers=USER_AGENT,
             auth=None,
             timeout=60,
@@ -3236,11 +3264,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # with additional param
         queryables = search_plugin.discover_queryables(
             collection="ERA5_SL_MONTHLY",
+            dataset="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             **{"ecmwf:variable": "a"},
         )
         self.assertIsNotNone(queryables)
 
-        self.assertEqual(10, len(queryables))
+        self.assertEqual(12, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:

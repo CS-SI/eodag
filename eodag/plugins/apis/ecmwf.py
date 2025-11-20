@@ -297,7 +297,8 @@ class EcmwfApi(Api, ECMWFSearch):
         pass
 
     def discover_queryables(
-        self, **kwargs: Any
+        self,
+        **kwargs: Any,
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using metadata mapping
 

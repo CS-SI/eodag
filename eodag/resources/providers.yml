@@ -1633,7 +1633,6 @@
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
-    dates_required: true
     remove_from_query:
       - dataset
     discover_queryables:
@@ -1805,7 +1804,6 @@
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
-    dates_required: true
     remove_from_query:
       - dataset
       - date
@@ -1859,7 +1857,7 @@
     UERRA_EUROPE_SL:
       dataset: reanalysis-uerra-europe-single-levels
       metadata_mapping:
-        <<: *day_month_year
+        <<: *time_day_month_year
     GLACIERS_DIST_RANDOLPH:
       dataset: insitu-glaciers-extent
     GRIDDED_GLACIERS_MASS_CHANGE:
@@ -3536,7 +3534,6 @@
     timeout: 60
     need_auth: true
     auth_error_code: 401
-    dates_required: true
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
@@ -3545,7 +3542,41 @@
       max_items_per_page: 200
     discover_collections:
       fetch_url: null
-    available_values_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+    dynamic_discover_queryables:
+      - collection_selector: # cop_ads
+          - field: dataset
+            prefix: EO:ECMWF:DAT:CAMS
+        discover_queryables:
+          fetch_url: null
+          product_type_fetch_url: null
+          constraints_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+      - collection_selector: # cop_cds
+          - field: dataset
+            prefix: EO:ECMWF:DAT:SATELLITE
+          - field: dataset
+            prefix: EO:ECMWF:DAT:SEASONAL
+          - field: dataset
+            prefix: EO:ECMWF:DAT:INSITU
+          - field: dataset
+            prefix: EO:ECMWF:DAT:DERIVED
+          - field: dataset
+            prefix: EO:ECMWF:DAT:REANALYSIS
+          - field: dataset
+            prefix: EO:ECMWF:DAT:SIS
+        discover_queryables:
+          fetch_url: null
+          collection_fetch_url: null
+          constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+      - collection_selector: # cop_ewds
+          - field: dataset
+            prefix: EO:ECMWF:DAT:CEMS
+        discover_queryables:
+          fetch_url: null
+          product_type_fetch_url: null
+          constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
     metadata_mapping:
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
@@ -6350,7 +6381,6 @@
     need_auth: true
     ssl_verify: true
     end_date_excluded: false
-    dates_required: True
     remove_from_query:
       - dataset
       - date

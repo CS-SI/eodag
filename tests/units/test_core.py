@@ -1844,7 +1844,45 @@ class TestCore(TestCoreBase):
 
         self.assertEqual(queryables.additional_properties, True)
 
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_list_queryables_dynamic_discover_queryables(
+        self,
+        mock__fetch_data: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ):
+        """ECMWFSearch must dynamically get the discover queryables configuration"""
+        provider = "wekeo_ecmwf"
+        # get the original cop_* provider for each wekeo_ecmwf product
+        original_cop_providers = {
+            pt: next(p for p in providers if p.startswith("cop_"))
+            for pt, providers in self.SUPPORTED_COLLECTIONS.items()
+            if provider in providers
+        }
+        copernicus_urls = {
+            "cop_ads": "ads.atmosphere.copernicus.eu",
+            "cop_cds": "cds.climate.copernicus.eu",
+            "cop_ewds": "ewds.climate.copernicus.eu",
+        }
+        for product, original_provider in original_cop_providers.items():
+            self.dag.list_queryables(provider=provider, collection=product)
+            self.assertEqual(mock__fetch_data.call_count, 2)
+            constraints_url = mock__fetch_data.call_args_list[0][0][1]
+            form_url = mock__fetch_data.call_args_list[1][0][1]
+            # check if URLs in queryables_config are the copernicus ones
+            original_url = copernicus_urls[original_provider]
+            self.assertIn(original_url, constraints_url)
+            self.assertIn(original_url, form_url)
+            mock__fetch_data.reset_mock()
+
     def test_queryables_repr(self):
+        """The HTML representation of queryables must be correct"""
         queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
         self.assertIsInstance(queryables, QueryablesDict)
         queryables_repr = html.fromstring(queryables._repr_html_())

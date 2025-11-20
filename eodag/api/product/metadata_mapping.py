@@ -152,6 +152,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
     The currently understood converters are:
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``wekeo_to_cop_collection``: converts the name of a collection from the WEkEO format to the Copernicus format
         - ``csv_list``: convert to a comma separated list
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
@@ -253,6 +254,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 field_name = conversion_func_spec.groupdict()["field_name"]
                 converter = conversion_func_spec.groupdict()["converter"]
                 self.custom_args = conversion_func_spec.groupdict()["args"]
+                # converts back "_COLON_" to ":"
+                if self.custom_args is not None and "_COLON_" in self.custom_args:
+                    self.custom_args = self.custom_args.replace("_COLON_", ":")
                 self.custom_converter = getattr(self, "convert_{}".format(converter))
 
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
@@ -1061,6 +1065,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                     assets_dict[asset_basename] = assets_dict.pop(asset_name)
             return assets_dict
 
+        @staticmethod
+        def convert_wekeo_to_cop_collection(val: str, prefix: str) -> str:
+            """Converts the name of a collection from the WEkEO format to the Copernicus format."""
+            return val.removeprefix(prefix).lower().replace("_", "-")
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[\w-]*:[\w#-]*\(?.*}", search_param):
         search_param = re.sub(
@@ -1069,6 +1078,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             search_param,
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
+    # convert colons `:` in the parameters passed to the converter (e.g. 'foo#boo(fun:with:colons)')
+    if re.search(r"{[\w-]*#[\w-]*\([^)]*:.*}", search_param):
+        search_param = re.sub(
+            r"({[\w-]*#[\w-]*)\(([^)]*)(.*})",
+            lambda m: m.group(1)
+            + "("
+            + m.group(2).replace(":", "_COLON_")
+            + m.group(3),
+            search_param,
+        )
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
 
