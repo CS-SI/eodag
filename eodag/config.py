@@ -336,6 +336,30 @@ class PluginConfig(yaml.YAMLObject):
         #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
         constraints_entry: str
 
+    class CollectionSelector(TypedDict, total=False):
+        """Define the criteria to select a collection in :class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`.
+
+        The selector matches if the field value starts with the given prefix,
+        i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
+
+        #: Field in the search parameters to match
+        field: str
+        #: Prefix to match in the field
+        prefix: str
+
+    class DynamicDiscoverQueryables(TypedDict, total=False):
+        """Configuration for queryables dynamic discovery.
+
+        The given configuration for queryables discovery is used if any collection selector
+        matches the search parameters.
+        """
+
+        #: List of collection selection criterias
+        collection_selector: list[PluginConfig.CollectionSelector]
+
+        #: Configuration for queryables discovery to use
+        discover_queryables: PluginConfig.DiscoverQueryables
+
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
 
@@ -506,6 +530,12 @@ class PluginConfig(yaml.YAMLObject):
     version: str
     #: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` url of the authentication endpoint
     auth_endpoint: str
+    #: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
+    #: Configurations for the queryables dynamic auto-discovery.
+    #: A configuration is used based on the given selection criterias. The first match is used.
+    #: If no match is found, it falls back to standard behaviors (e.g. discovery using
+    #: :attr:`~eodag.config.PluginConfig.discover_queryables`).
+    dynamic_discover_queryables: list[PluginConfig.DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url

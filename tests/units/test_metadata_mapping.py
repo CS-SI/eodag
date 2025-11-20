@@ -800,6 +800,38 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, assets=assets_list), str(expected_result)
         )
 
+    def test_convert_wekeo_to_cop_collection(self):
+        """Test convertion of the name of a collection from the WEkEO format to the Copernicus format.
+
+        e.g. EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE -> satellite-carbon-dioxide
+        """
+        to_format = "{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}"
+        cop_format = format_metadata(
+            to_format, dataset="EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE"
+        )
+        self.assertEqual(
+            cop_format,
+            "satellite-carbon-dioxide",
+        )
+
+        to_format = "{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}"
+        cop_format = format_metadata(
+            to_format, dataset="LOREM_SATELLITE_CARBON_DIOXIDE"
+        )
+        self.assertEqual(
+            cop_format,
+            "lorem-satellite-carbon-dioxide",
+        )
+
+        to_format = "{dataset#wekeo_to_cop_collection()}"
+        cop_format = format_metadata(
+            to_format, dataset="EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE"
+        )
+        self.assertEqual(
+            cop_format,
+            "eo:ecmwf:dat:satellite-carbon-dioxide",
+        )
+
 
 class TestMetadataMappingFunctions(unittest.TestCase):
     def test_properties_from_xml_single_value_no_conversion(self):

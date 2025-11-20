@@ -462,6 +462,28 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
+
+        * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
+          (``list`` [:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
+          the queryables from different provider queryables endpoints. A configuration is used based on the given
+          selection criterias. The first match is used. If no match is found, it falls back to standard behaviors
+          (e.g. discovery using :attr:`~eodag.config.PluginConfig.discover_queryables`).
+          Each element of the list has the following keys:
+
+          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.collection_selector`
+            (``list`` [:class:`~eodag.config.PluginConfig.CollectionSelector`]): list of collection selection
+            criterias. The configuration given in
+            :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables` is used if any collection
+            selector matches the search parameters. The selector matches if the field value starts with the given
+            prefix, i.e. it matches if ``parameters[field].startswith(prefix)==True``. It has the following keys:
+
+            * :attr:`~eodag.config.PluginConfig.CollectionSelector.field` (``str``) Field in the search parameters to
+              match
+            * :attr:`~eodag.config.PluginConfig.CollectionSelector.prefix` (``str``) Prefix to match in the field
+
+          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables`
+            (``list`` [:class:`~eodag.config.PluginConfig.DiscoverQueryables`]): same as
+            :attr:`~eodag.config.PluginConfig.discover_queryables` above.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -701,14 +723,32 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
+        default_values.pop("metadata_mapping_from_product", None)
 
         filters["collection"] = collection
         queryables = self.discover_queryables(**{**default_values, **filters}) or {}
 
         return QueryablesDict(additional_properties=False, **queryables)
 
+    def _find_dynamic_queryables_config(
+        self, kwargs: dict[str, Any], dynamic_config: list
+    ) -> dict[str, Any]:
+        """Find the appropriate queryables configuration from dynamic configuration.
+
+        :param kwargs: Search parameters
+        :param dynamic_config: List of dynamic discover queryables configurations
+        :return: Found queryables configuration or empty dict
+        """
+        for dc in dynamic_config:
+            for cs in dc["collection_selector"]:
+                field = cs["field"]
+                if kwargs[field].startswith(cs["prefix"]):
+                    return dc["discover_queryables"]
+        return {}
+
     def discover_queryables(
-        self, **kwargs: Any
+        self,
+        **kwargs: Any,
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using its constraints file
 
@@ -722,6 +762,7 @@ class ECMWFSearch(PostJsonSearch):
 
         default_values = deepcopy(pt_config)
         default_values.pop("metadata_mapping", None)
+        default_values.pop("metadata_mapping_from_product", None)
         default_values.pop("discover_queryables", None)
         kwargs.pop("discover_queryables", None)
         filters = {**default_values, **kwargs}
@@ -739,9 +780,16 @@ class ECMWFSearch(PostJsonSearch):
         except Exception as e:
             raise ValidationError(e.args[0]) from e
 
+        # dynamic_discover_queryables for WekeoECMWFSearch
+        queryables_config = {}
+        if dynamic_config := getattr(self.config, "dynamic_discover_queryables", []):
+            queryables_config = self._find_dynamic_queryables_config(
+                kwargs, dynamic_config
+            )
+
         provider_dq = getattr(self.config, "discover_queryables", {}) or {}
         product_dq = pt_config.get("discover_queryables", {}) or {}
-        dq_conf = {**provider_dq, **product_dq}
+        dq_conf = {**provider_dq, **product_dq, **queryables_config}
         constraints_url = format_metadata(dq_conf.get("constraints_url", ""), **filters)
         constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
