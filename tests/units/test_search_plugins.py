@@ -3165,7 +3165,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
         self.assertEqual("WekeoECMWFSearch", search_plugin.__class__.__name__)
         self.assertEqual(
-            "WekeoECMWFSearch",
+            "ECMWFSearch",
             search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
         )
 

@@ -1849,15 +1849,15 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
     )
     def test_list_queryables_dynamic_discover_queryables(
         self,
-        mock_discover_queryables: mock.Mock,
+        mock__fetch_data: mock.Mock,
         mock_auth_plugin: mock.Mock,
     ):
-        """WekeoECMWFSearch must dynamically get the discover queryables configuration"""
+        """ECMWFSearch must dynamically get the discover queryables configuration"""
         provider = "wekeo_ecmwf"
         # get the original cop_* provider for each wekeo_ecmwf product
         original_cop_providers = {
@@ -1872,18 +1872,17 @@ class TestCore(TestCoreBase):
         }
         for product, original_provider in original_cop_providers.items():
             self.dag.list_queryables(provider=provider, collection=product)
-            mock_discover_queryables.assert_called_once()
-            args, kwargs = mock_discover_queryables.call_args
-            queryables_config = args[1]
+            self.assertEqual(mock__fetch_data.call_count, 2)
+            constraints_url = mock__fetch_data.call_args_list[0][0][1]
+            form_url = mock__fetch_data.call_args_list[1][0][1]
             # check if URLs in queryables_config are the copernicus ones
             original_url = copernicus_urls[original_provider]
-            self.assertIn("constraints_url", queryables_config)
-            self.assertIn(original_url, queryables_config["constraints_url"])
-            self.assertIn("form_url", queryables_config)
-            self.assertIn(original_url, queryables_config["form_url"])
-            mock_discover_queryables.reset_mock()
+            self.assertIn(original_url, constraints_url)
+            self.assertIn(original_url, form_url)
+            mock__fetch_data.reset_mock()
 
     def test_queryables_repr(self):
+        """The HTML representation of queryables must be correct"""
         queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
         self.assertIsInstance(queryables, QueryablesDict)
         queryables_repr = html.fromstring(queryables._repr_html_())
