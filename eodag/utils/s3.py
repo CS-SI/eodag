@@ -56,6 +56,9 @@ logger = logging.getLogger("eodag.utils.s3")
 
 MIME_OCTET_STREAM = "application/octet-stream"
 
+# Backpressure configuration
+BACKPRESSURE_DOWNLOAD_CHUNKS = 10  # Total chunks (downloading + buffered) per file
+
 
 def fetch_range(
     bucket_name: str, key_name: str, start: int, end: int, client_s3: S3Client
@@ -98,11 +101,6 @@ class S3FileInfo:
     # These fields hold the state for downloading
     #: Offset in the logical (global) file stream where this file starts.
     file_start_offset: int = 0
-    #: Mapping of futures to their start byte offsets, used to track download progress.
-    #: Each future corresponds to a chunk of data being downloaded.
-    #: The key is the future object, and the value is the start byte offset of that
-    #: chunk in the logical file stream.
-    futures: dict = field(default_factory=dict)
     #: Buffers for downloaded data chunks, mapping start byte offsets to the actual data.
     #: This allows for partial downloads and efficient memory usage.
     #: The key is the start byte offset, and the value is the bytes data for that
@@ -114,6 +112,8 @@ class S3FileInfo:
     #: This allows the streaming process to continue from where it left off,
     #: ensuring that all data is eventually yielded without duplication.
     next_yield: int = 0
+    #: Queue of pending ranges that haven't been submitted yet
+    pending_ranges: list[tuple[int, int]] = field(default_factory=list)
 
 
 def _prepare_file_in_zip(f_info: S3FileInfo, s3_client: S3Client):
@@ -192,49 +192,66 @@ def _chunks_from_s3_objects(
 ) -> Iterator[tuple[int, Iterator[bytes]]]:
     """Download chunks from S3 objects in parallel, respecting byte ranges and file order."""
     # Prepare ranges and futures per file
+    pending_chunks_count = 0
     for f_info in files_info:
         ranges = _compute_file_ranges(f_info, byte_range, range_size)
-
-        if not ranges:
-            # Mark as inactive (no futures)
-            f_info.futures = {}
-            f_info.buffers = {}
-            f_info.next_yield = 0
-            continue
 
         f_info.buffers = {}
         f_info.next_yield = 0
 
-        futures = {}
-        # start,end are absolute offsets in the S3 object (data_start_offset already applied)
-        for start, end in ranges:
-            future = executor.submit(
-                fetch_range,
-                f_info.bucket_name,
-                f_info.key,
-                start,
-                end,
-                s3_client,
-            )
-            # Track both start and end so we can compute the yielded length precisely
-            futures[future] = (start, end)
+        if not ranges:
+            # Mark as inactive
+            f_info.pending_ranges = []
+            continue
 
-        f_info.futures = futures
+        f_info.pending_ranges = ranges
+
+        pending_chunks_count += len(ranges)
 
     # Keep only files that actually have something to download
-    active_indices = [i for i, fi in enumerate(files_info) if fi.futures]
+    active_indices = [i for i, fi in enumerate(files_info) if fi.pending_ranges]
 
-    # Combine all futures to wait on globally
-    all_futures = {
-        fut: (f_info, start, end)
-        for f_info in (files_info[i] for i in active_indices)
-        for fut, (start, end) in f_info.futures.items()
-    }
+    # Combine all futures to wait on globally (initially empty)
+    all_futures = {}
+
+    # Track outstanding chunks and next file index
+    total_outstanding_chunks = 0
+    next_file_index = 0  # Track which file to submit from next
+
+    def submit_tasks_to_limit() -> bool:
+        """Submit S3 chunk download tasks up to the global backpressure limit, prioritizing files sequentially."""
+        nonlocal all_futures, total_outstanding_chunks, next_file_index
+
+        while total_outstanding_chunks < BACKPRESSURE_DOWNLOAD_CHUNKS:
+            if next_file_index >= len(files_info):
+                break  # No more files with pending ranges
+
+            f_info = files_info[next_file_index]
+            if f_info.pending_ranges:
+                start, end = f_info.pending_ranges.pop(0)
+                future = executor.submit(
+                    fetch_range,
+                    f_info.bucket_name,
+                    f_info.key,
+                    start,
+                    end,
+                    s3_client,
+                )
+                all_futures[future] = (f_info, start, end)
+                total_outstanding_chunks += 1
+
+                if not f_info.pending_ranges:
+                    next_file_index += 1  # Move to next file when current is exhausted
+            else:
+                next_file_index += 1  # Skip completed files
+                # If we reach here, no files have pending ranges
+
+        return False
 
     def make_chunks_generator(target_info: S3FileInfo) -> Iterator[bytes]:
         """Create a generator bound to a specific file info (no late-binding bug)."""
         info = target_info  # bind
-        nonlocal all_futures
+        nonlocal all_futures, total_outstanding_chunks, pending_chunks_count
         while info.next_yield < info.size:
             # First, try to flush anything already buffered for this file
             next_start = info.next_yield
@@ -245,10 +262,14 @@ def _chunks_from_s3_objects(
                     raise InvalidDataError(
                         f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
                     )
+                chunk_len = len(chunk)
+
                 yield chunk
-                next_start += len(chunk)
+                next_start += chunk_len
                 info.next_yield = next_start
                 flushed = True
+                total_outstanding_chunks -= 1
+                pending_chunks_count -= 1
 
             if info.next_yield >= info.size:
                 break
@@ -258,7 +279,7 @@ def _chunks_from_s3_objects(
                 continue
 
             # Nothing to flush for this file: wait for more futures to complete globally
-            if not all_futures:
+            if not pending_chunks_count:
                 # No more incoming data anywhere; stop to avoid waiting on an empty set
                 break
 
@@ -269,6 +290,10 @@ def _chunks_from_s3_objects(
                 # Store buffer with a key relative to the start of the file data
                 rel_start = start - f_info.data_start_offset
                 f_info.buffers[rel_start] = data
+
+            submit_tasks_to_limit()
+
+    submit_tasks_to_limit()
 
     # Yield per-file generators with their original indices
     for idx in active_indices:
@@ -308,14 +333,6 @@ def _build_stream_response(
     :return: Streaming HTTP response with appropriate content, headers, and media type.
     """
 
-    def _wrap_generator_with_cleanup(
-        generator: Iterable[bytes], executor: ThreadPoolExecutor
-    ) -> Iterator[bytes]:
-        try:
-            yield from generator
-        finally:
-            executor.shutdown(wait=True)
-
     def _build_response(
         content_gen: Iterable[bytes],
         media_type: str,
@@ -323,7 +340,7 @@ def _build_stream_response(
         size: Optional[int] = None,
     ) -> StreamResponse:
         return StreamResponse(
-            content=_wrap_generator_with_cleanup(content_gen, executor),
+            content=content_gen,
             media_type=media_type,
             headers={"Accept-Ranges": "bytes"},
             filename=filename,
@@ -390,7 +407,7 @@ def stream_download_from_s3(
     byte_range: tuple[Optional[int], Optional[int]] = (None, None),
     compress: Literal["zip", "raw", "auto"] = "auto",
     zip_filename: str = "archive",
-    range_size: int = 1024**2 * 8,
+    range_size: int = 1024**2 * 16,
     max_workers: int = 8,
 ) -> StreamResponse:
     """
