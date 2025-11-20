@@ -462,6 +462,22 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
+        * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
+          (:class:`list[~eodag.config.PluginConfig.DynamicDiscoverQueryables]`): list of configurations to fetch
+          the queryables from different provider queryables endpoints. A configuration is used based on the given
+          selection criterias. The first match is used. If no match is found, it falls back to standard behaviors
+          (e.g. discovery via `discover_queryables`). Each element of the list has the following keys:
+
+          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.collection_selector`
+            (:class:`list[~eodag.config.PluginConfig.CollectionSelector]`): list of collection selection criterias.
+            The configuration given in `discover_queryables` is used if any collection selector matches the
+            search parameters. The selector matches if the field value starts with the given prefix,
+            i.e. it matches if `parameters[field].startswith(prefix)==True`.
+            It has the following keys:
+            * :attr:`field` (``str``) Field in the search parameters to match
+            * :attr:`prefix` (``str``) Prefix to match in the field
+          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables`
+            (:class:`list[~eodag.config.PluginConfig.DiscoverQueryables]`): same as `discover_queryables` above.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
