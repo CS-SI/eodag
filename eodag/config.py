@@ -38,7 +38,6 @@ from typing import (
 import orjson
 import requests
 import yaml
-import yaml.constructor
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
@@ -241,10 +240,15 @@ class PluginConfig(yaml.YAMLObject):
         next_page_url_tpl: str
         #: The query-object for POST pagination requests.
         next_page_query_obj: str
+        #: Next page token key used in pagination. Can be guessed from ``KNOWN_NEXT_PAGE_TOKEN_KEYS`` (but needed by
+        # ``stac-fastapi-eodag`` that cannot guess and will use ``page`` as default).
+        next_page_token_key: str
         #: The endpoint for counting the number of items satisfying a request
         count_endpoint: str
         #: Index of the starting page
         start_page: int
+        #: Key in the current page URL for the next page URL
+        parse_url_key: str
 
     class Sort(TypedDict):
         """Configuration for sort during search"""
@@ -300,7 +304,7 @@ class PluginConfig(yaml.YAMLObject):
         results_entry: Union[JSONPath, str]
         #: Mapping for the collection id
         generic_collection_id: str
-        #: Mapping for collection metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
         #: result
         generic_collection_parsable_metadata: dict[str, str]
         #: Mapping for collection properties which can be parsed from the result and are not collection metadata
@@ -311,7 +315,7 @@ class PluginConfig(yaml.YAMLObject):
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
-        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``id``
         #: is redefined in this mapping, it will replace ``generic_collection_id`` value
         single_collection_parsable_metadata: dict[str, str]
 
@@ -330,6 +334,30 @@ class PluginConfig(yaml.YAMLObject):
         constraints_url: str
         #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
         constraints_entry: str
+
+    class CollectionSelector(TypedDict, total=False):
+        """Define the criteria to select a collection in :class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`.
+
+        The selector matches if the field value starts with the given prefix,
+        i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
+
+        #: Field in the search parameters to match
+        field: str
+        #: Prefix to match in the field
+        prefix: str
+
+    class DynamicDiscoverQueryables(TypedDict, total=False):
+        """Configuration for queryables dynamic discovery.
+
+        The given configuration for queryables discovery is used if any collection selector
+        matches the search parameters.
+        """
+
+        #: List of collection selection criterias
+        collection_selector: list[PluginConfig.CollectionSelector]
+
+        #: Configuration for queryables discovery to use
+        discover_queryables: PluginConfig.DiscoverQueryables
 
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
@@ -501,6 +529,12 @@ class PluginConfig(yaml.YAMLObject):
     version: str
     #: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` url of the authentication endpoint
     auth_endpoint: str
+    #: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
+    #: Configurations for the queryables dynamic auto-discovery.
+    #: A configuration is used based on the given selection criterias. The first match is used.
+    #: If no match is found, it falls back to standard behaviors (e.g. discovery using
+    #: :attr:`~eodag.config.PluginConfig.discover_queryables`).
+    dynamic_discover_queryables: list[PluginConfig.DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url

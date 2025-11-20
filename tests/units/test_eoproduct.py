@@ -20,7 +20,9 @@ import io
 import logging
 import os
 import pathlib
+import random
 import shutil
+import string
 import tempfile
 import zipfile
 
@@ -31,6 +33,7 @@ from shapely import geometry
 
 from tests import EODagTestCase
 from tests.context import (
+    DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     NOT_AVAILABLE,
     USER_AGENT,
@@ -38,7 +41,6 @@ from tests.context import (
     Download,
     EOProduct,
     HTTPDownload,
-    MisconfiguredError,
     ProgressCallback,
     config,
 )
@@ -75,16 +77,18 @@ class TestEOProduct(EODagTestCase):
     def test_eoproduct_default_geom(self):
         """EOProduct needs a geometry or can use confired eodag:default_geometry by default"""
 
-        with self.assertRaisesRegex(MisconfiguredError, "No geometry available"):
-            self._dummy_product(properties={"geometry": NOT_AVAILABLE})
+        product_no_default_geom = self._dummy_product(
+            properties={"geometry": NOT_AVAILABLE}
+        )
+        self.assertEqual(product_no_default_geom.geometry, DEFAULT_SHAPELY_GEOMETRY)
 
-        product = self._dummy_product(
+        product_default_geom = self._dummy_product(
             properties={
                 "geometry": NOT_AVAILABLE,
                 "eodag:default_geometry": (0, 0, 1, 1),
             }
         )
-        self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
+        self.assertEqual(product_default_geom.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
 
     def test_eoproduct_search_intersection_none(self):
         """EOProduct search_intersection attr must be None if shapely.errors.GEOSException when intersecting"""
@@ -453,6 +457,10 @@ class TestEOProduct(EODagTestCase):
         """eoproduct.download must show a progress bar"""
         product = self._dummy_downloadable_product()
         product.properties["id"] = 12345
+        # random title to download in a random place
+        product.properties["title"] = "".join(
+            random.choices(string.ascii_letters, k=10)
+        )
         progress_callback = ProgressCallback()
 
         # progress bar did not start
@@ -588,3 +596,44 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.assets.get_values("foo")[0]["href"], "foo.href")
         self.assertEqual(len(product.assets.get_values("foo?o,o")), 1)
         self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")
+
+    def test_eoproduct_sorted_properties(self):
+        """eoproduct.properties must be sorted"""
+        product = self._dummy_product(
+            properties={
+                "geometry": "POINT (0 0)",
+                "b_property": "b_value",
+                "a_property": "a_value",
+                "c_property": "c_value",
+                "foo:property": "foo_value",
+                "eodag:z_property": "z_value",
+                "eodag:y_property": "y_value",
+            }
+        )
+        self.assertListEqual(
+            list(product.properties.keys()),
+            [
+                "a_property",
+                "b_property",
+                "c_property",
+                "eodag:y_property",
+                "eodag:z_property",
+                "foo:property",
+            ],
+        )
+
+    def test_eoproduct_none_properties(self):
+        """eoproduct none properties must skipped"""
+        product = self._dummy_product(
+            properties={
+                "geometry": "POINT (0 0)",
+                "b_property": "b_value",
+                "a_property": None,
+            }
+        )
+        self.assertDictEqual(
+            product.properties,
+            {
+                "b_property": "b_value",
+            },
+        )

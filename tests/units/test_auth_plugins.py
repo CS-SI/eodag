@@ -739,7 +739,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         """should create a presigned url to download from S3"""
         # provider with no credentials required
         provider = "provider_with_auth_keys"
-        product_type = "foo_product"
+        collection = "foo_product"
         product = EOProduct(
             provider,
             dict(
@@ -747,7 +747,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
                 title="dummy_product",
                 id="dummy",
             ),
-            productType=product_type,
+            collection=collection,
         )
         product.assets.update({"a1": {"href": "https://s3.abc.test.com/b1/a1/a1.json"}})
         product.assets.update({"a2": {"href": "https://s3.abc.test.com/b1/a2/a2.json"}})
@@ -1033,7 +1033,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
     def test_plugins_download_http_presign_url(self):
         """should create a presigned url to download via HTTP"""
         provider = "foo_provider"
-        product_type = "LANDSAT_C2_L1"
+        collection = "LANDSAT_C2_L1"
         product = EOProduct(
             provider,
             dict(
@@ -1041,7 +1041,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
                 title="dummy_product",
                 id="dummy",
             ),
-            productType=product_type,
+            collection=collection,
         )
         product.assets.update({"a1": {"href": "http://foo.bar.com/b1/a1/a1.json"}})
         product.assets.update({"a2": {"href": "http://foo.bar.com/b1/a2/a2.json"}})

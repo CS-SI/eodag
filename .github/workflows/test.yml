@@ -2,16 +2,16 @@ name: Run Tests
 
 on:
   push:
-    branches: [master, develop, v4]
+    branches: [master, develop, v3.10.x]
   pull_request:
-    branches: [master, develop, v4]
+    branches: [master, develop, v3.10.x]
   schedule:
     - cron: "0 7 * * 1"
   workflow_dispatch:
 
 jobs:
   lint:
-    name: Linting (pre-commit and mypy)
+    name: Linting (prek/pre-commit and mypy)
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repo

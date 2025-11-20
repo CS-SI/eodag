@@ -19,11 +19,13 @@ search:
   type: StacSearch
   results_entry: features
   pagination:
-    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+    next_page_query_obj: '{{"limit":{items_per_page},"{next_page_token_key}":"{next_page_token}"}}'
     total_items_nb_key_path: '$.numberMatched'
     next_page_url_key_path: '$.links[?(@.rel="next")].href'
     next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
     next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
+    # do not use 'page' as default key, guess from provider response
+    next_page_token_key: null
   sort:
     sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
     sort_order_mapping:
@@ -50,7 +52,7 @@ search:
       constellation: '{$.summaries.constellation#csv_list}'
       platform: '{$.summaries.platform#csv_list}'
       processing:level: '{$.summaries."processing:level"#csv_list}'
-      keywords: '{$.keywords#csv_list}'
+      keywords: '$.keywords'
       license: '$.license'
       title: '$.title'
       extent: '$.extent'

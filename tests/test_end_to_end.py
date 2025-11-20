@@ -188,10 +188,10 @@ METEOBLUE_SEARCH_ARGS = [
 ]
 WEKEO_MAIN_SEARCH_ARGS = [
     "wekeo_main",
-    "EEA_DAILY_VI",
-    "2016-10-01",
-    "2016-10-02",
-    [19.8614709, 36.9525649, 21.111086, 37.9475371],
+    "S5P_L1B_IR_ALL",
+    "2018-04-30",
+    "2018-11-18",
+    [-180, -90, 180, 90],
 ]
 WEKEO_ECMWF_SEARCH_ARGS = [
     "wekeo_ecmwf",
@@ -702,13 +702,7 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "fedeo_ceda"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
-            ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
-                "ID"
-            ],
-            "MERIS_ALAMO_L2_V2.2",
-        )
-        self.assertEqual(
-            "MERIS",
+            ["MERIS"],
             ext_collections_conf[provider]["collections_config"]["MERIS_ALAMO_L2_V2.2"][
                 "instruments"
             ],

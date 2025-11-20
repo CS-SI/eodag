@@ -33,7 +33,7 @@ from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
 from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
 from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
-from eodag.api.product.drivers.base import DatasetDriver, NoDriver
+from eodag.api.product.drivers.base import DatasetDriver
 from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,
@@ -42,8 +42,9 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     NOT_AVAILABLE,
 )
+from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
-from eodag.cli import download, eodag, list_pt, search_crunch
+from eodag.cli import download, eodag, list_col, search_crunch
 from eodag.config import (
     load_default_config,
     merge_configs,
@@ -79,6 +80,7 @@ from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
+    DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     DEFAULT_SEARCH_TIMEOUT,

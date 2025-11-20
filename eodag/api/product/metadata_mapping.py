@@ -42,6 +42,7 @@ from shapely.ops import transform
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
+    DEFAULT_SHAPELY_GEOMETRY,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -151,6 +152,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
     The currently understood converters are:
         - ``ceda_collection_name``: generate a CEDA collection name from a string
+        - ``wekeo_to_cop_collection``: converts the name of a collection from the WEkEO format to the Copernicus format
         - ``csv_list``: convert to a comma separated list
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
@@ -160,6 +162,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``get_group_name``: get the matching regex group name
+        - ``literalize_unicode``: convert a string to its raw Unicode literal form
         - ``not_available``: replace value with "Not Available"
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
@@ -251,6 +254,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 field_name = conversion_func_spec.groupdict()["field_name"]
                 converter = conversion_func_spec.groupdict()["converter"]
                 self.custom_args = conversion_func_spec.groupdict()["args"]
+                # converts back "_COLON_" to ":"
+                if self.custom_args is not None and "_COLON_" in self.custom_args:
+                    self.custom_args = self.custom_args.replace("_COLON_", ":")
                 self.custom_converter = getattr(self, "convert_{}".format(converter))
 
             return super(MetadataFormatter, self).get_field(field_name, args, kwargs)
@@ -383,14 +389,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_bounds(input_geom_unformatted: Any) -> list[float]:
             input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
+            if input_geom is None:
+                input_geom = DEFAULT_SHAPELY_GEOMETRY
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
                 geoms.sort(key=lambda x: x.area, reverse=True)
-                min_lon = 180
-                min_lat = 90
-                max_lon = -180
-                max_lat = -90
+                min_lon = 180.0
+                min_lat = 90.0
+                max_lon = -180.0
+                max_lat = -90.0
                 for geom in geoms:
                     min_lon = min(min_lon, geom.bounds[0])
                     min_lat = min(min_lat, geom.bounds[1])
@@ -661,7 +669,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             match = data_regex.search(value)
             if match:
                 return match.group("name").replace("/", "_").upper()
-            return "NOT_AVAILABLE"
+            return NOT_AVAILABLE
+
+        @staticmethod
+        def convert_literalize_unicode(value: str) -> str:
+            if value == NOT_AVAILABLE:
+                return value
+            return value.encode("raw_unicode_escape").decode("utf-8")
 
         @staticmethod
         def convert_recursive_sub_str(
@@ -1051,6 +1065,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                     assets_dict[asset_basename] = assets_dict.pop(asset_name)
             return assets_dict
 
+        @staticmethod
+        def convert_wekeo_to_cop_collection(val: str, prefix: str) -> str:
+            """Converts the name of a collection from the WEkEO format to the Copernicus format."""
+            return val.removeprefix(prefix).lower().replace("_", "-")
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[\w-]*:[\w#-]*\(?.*}", search_param):
         search_param = re.sub(
@@ -1059,6 +1078,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             search_param,
         )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
+    # convert colons `:` in the parameters passed to the converter (e.g. 'foo#boo(fun:with:colons)')
+    if re.search(r"{[\w-]*#[\w-]*\([^)]*:.*}", search_param):
+        search_param = re.sub(
+            r"({[\w-]*#[\w-]*)\(([^)]*)(.*})",
+            lambda m: m.group(1)
+            + "("
+            + m.group(2).replace(":", "_COLON_")
+            + m.group(3),
+            search_param,
+        )
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
 

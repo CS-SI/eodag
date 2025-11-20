@@ -35,4 +35,9 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
 
 # exportable content
-__all__ = ["EODataAccessGateway", "EOProduct", "SearchResult", "setup_logging"]
+__all__ = [
+    "EODataAccessGateway",
+    "EOProduct",
+    "SearchResult",
+    "setup_logging",
+]

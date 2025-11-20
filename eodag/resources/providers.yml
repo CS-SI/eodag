@@ -91,7 +91,7 @@
     results_entry: 'results'
     ssl_verify: true
     pagination:
-      next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+      next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
       total_items_nb_key_path: '$.meta.found'
       # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
       # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
@@ -521,8 +521,10 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
+      next_page_token_key: page
+
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     discover_metadata:
@@ -682,6 +684,9 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
@@ -1330,18 +1335,8 @@
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
       max_items_per_page: 500
-    sort:
-      sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
-      sort_param_mapping:
-        id: id
-        start_datetime: properties.datetime
-        created: properties.created
-        updated: properties.updated
-        platform: properties.platform
-        view:sun_elevation: properties.view:sun_elevation
-        view:sun_azimuth: properties.view:sun_azimuth
-        eo:cloud_cover: properties.eo:cloud_cover
+      next_page_token_key: next
+    # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
   products:
@@ -1406,6 +1401,8 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1471,7 +1468,6 @@
     type: AwsAuth
     matching_url: s3://
     requester_pays: True
-
 ---
 !provider # MARK: earth_search_gcs
   name: earth_search_gcs
@@ -1496,6 +1492,8 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1635,7 +1633,6 @@
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
-    dates_required: true
     remove_from_query:
       - dataset
     discover_queryables:
@@ -1807,7 +1804,6 @@
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
-    dates_required: true
     remove_from_query:
       - dataset
       - date
@@ -1861,7 +1857,7 @@
     UERRA_EUROPE_SL:
       dataset: reanalysis-uerra-europe-single-levels
       metadata_mapping:
-        <<: *day_month_year
+        <<: *time_day_month_year
     GLACIERS_DIST_RANDOLPH:
       dataset: insitu-glaciers-extent
     GRIDDED_GLACIERS_MASS_CHANGE:
@@ -1950,8 +1946,9 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_token_key: page
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     sort:
@@ -2333,6 +2330,9 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
@@ -2962,6 +2962,7 @@
     ssl_verify: true
     pagination:
       max_items_per_page: 1000
+      next_page_token_key: token
     sort:
       sort_param_mapping:
         id: id
@@ -3022,6 +3023,9 @@
       collection_fetch_url: null
     pagination:
       max_items_per_page: 10_000
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -3107,8 +3111,9 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
       max_items_per_page: 200
+      next_page_token_key: skip
     discover_collections:
       fetch_url: null
     discover_queryables:
@@ -3327,25 +3332,6 @@
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L2
       metadata_mapping_from_product: S5P_L1B_IR_ALL
-    EEA_DAILY_VI:
-      _collection: EO:EEA:DAT:CLMS_HRVPP_VI
-      metadata_mapping:
-        id:
-          - '{{"uid": "{id}"}}'
-          - '$.id'
-        sat:relative_orbit:
-          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
-          - '$.null'
-        version:
-          - '{{"productVersion": "{version}"}}'
-          - '$.null'
-        platform:
-          - '{{"platformSerialIdentifier": "{platform}"}}'
-          - '$.id.`sub(/^[^_]+_[^_]+_([^_]+)_.*/, \\1)`'
-        grid:code:
-          - '{{"tileId": "{grid:code}"}}'
-          - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
     EEA_HRL_TCF:
       product:type: EO:EEA:DAT:HRL:TCF
       metadata_mapping:
@@ -3435,6 +3421,34 @@
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
       metadata_mapping:
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_HRVPP_ST:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_ST
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_ST"}}'
+    CLMS_HRVPP_ST_LAEA:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_ST-LAEA
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_ST-LAEA"}}'
+    CLMS_HRVPP_VPP:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_VPP
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP"}}'
+    CLMS_HRVPP_VPP_LAEA:
+      _collection: EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA
+      metadata_mapping:
+        id:
+          - '{{"uid": "{id}"}}'
+          - '$.id'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA"}}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -3520,15 +3534,49 @@
     timeout: 60
     need_auth: true
     auth_error_code: 401
-    dates_required: true
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_token_key: skip
       max_items_per_page: 200
     discover_collections:
       fetch_url: null
-    available_values_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+    dynamic_discover_queryables:
+      - collection_selector: # cop_ads
+          - field: dataset
+            prefix: EO:ECMWF:DAT:CAMS
+        discover_queryables:
+          fetch_url: null
+          product_type_fetch_url: null
+          constraints_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+      - collection_selector: # cop_cds
+          - field: dataset
+            prefix: EO:ECMWF:DAT:SATELLITE
+          - field: dataset
+            prefix: EO:ECMWF:DAT:SEASONAL
+          - field: dataset
+            prefix: EO:ECMWF:DAT:INSITU
+          - field: dataset
+            prefix: EO:ECMWF:DAT:DERIVED
+          - field: dataset
+            prefix: EO:ECMWF:DAT:REANALYSIS
+          - field: dataset
+            prefix: EO:ECMWF:DAT:SIS
+        discover_queryables:
+          fetch_url: null
+          collection_fetch_url: null
+          constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+      - collection_selector: # cop_ewds
+          - field: dataset
+            prefix: EO:ECMWF:DAT:CEMS
+        discover_queryables:
+          fetch_url: null
+          product_type_fetch_url: null
+          constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
     metadata_mapping:
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
@@ -3773,7 +3821,8 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_token_key: skip
     discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
       single_collection_fetch_qs: q={_collection}
@@ -3793,7 +3842,7 @@
         title: '$.metadata._source.datasetTitle'
         _mission_start_date: '$.metadata._source.tempextent_begin'
         _mission_end_date: '$.metadata._source.tempextent_end'
-        extent: '{{"temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
+        extent: '{{"spatial": {{"bbox": [[[[-180.0, -90.0, 180.0, 90.0]]]]}}, "temporal": {{"interval": [[{_mission_start_date}, {_mission_end_date}]]}}}}'
         processing:level: '$.null'
         keywords: '$.metadata._source.keywords'
     discover_queryables:
@@ -3888,6 +3937,9 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       max_items_per_page: 1_000
     sort:
       sort_by_default:
@@ -4521,7 +4573,7 @@
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4536,10 +4588,131 @@
       qs: $.qs
       eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
-    DT_EXTREMES:
-      dataset: extremes-dt
     DT_CLIMATE_ADAPTATION:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
       dataset: climate-dt
+    DT_EXTREMES:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+      dataset: extremes-dt
+      class: d1
+      expver: "0001"
+      type: fc
+      time: "0000"
+    DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      realization: "1"
+      model: ICON
+      resolution: high
+      experiment: hist
+    DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      experiment: hist
+      realization: "1"
+      model: IFS-NEMO
+    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: HighResMIP
+      experiment: cont
+      realization: "1"
+      model: IFS-NEMO
+      resolution: high
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "1"
+      model: ICON
+      resolution: high
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "1"
+      model: IFS-NEMO
+    DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: cont
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: story-nudging
+      experiment: Tplus2.0K
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: ng
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: CMIP6
+      experiment: hist
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "2"
+      model: IFS-FESOM
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4569,9 +4742,6 @@
         metadata_mapping:
           eodag:download_link: $.headers.Location
     no_auth_download: True
-    products:
-      DT_EXTREMES:
-      DT_CLIMATE_ADAPTATION:
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
@@ -4583,7 +4753,98 @@
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
 ---
-
+!provider # MARK: dedt_mn5
+  name: dedt_mn5
+  priority: 0
+  roles:
+    - host
+  description: Destination Earth Digital Twin Outputs from marenostrum through Polytope API
+  url: https://polytope.mn5.apps.dte.destination-earth.eu/openapi
+  search: !plugin
+    type: ECMWFSearch
+    need_auth: true
+    ssl_verify: true
+    dates_required: True
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
+    metadata_mapping:
+      geometry:
+        - '{{"feature": {geometry#to_geojson_polytope}}}'
+        - "$.geometry"
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
+      end_datetime:
+        - '{{"date": "{start_datetime#to_non_separated_date}/to/{end_datetime#to_non_separated_date}"}}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
+      product:type:
+        - dataset
+        - $.dataset
+      qs: $.qs
+      eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+  products:
+    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
+      dataset: climate-dt
+      class: d1
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: HighResMIP
+      experiment: cont
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
+      class: d1
+      dataset: climate-dt
+      generation: "1"
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: "1"
+      model: IFS-FESOM
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
+    auth_error_code: 401
+    order_enabled: True
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
+        _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
+        eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
+        eodag:status_link: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
+    order_status:
+      request:
+        method: GET
+        headers:
+      metadata_mapping:
+        eodag:order_status: $.json.status
+        eodag:order_message: $.json.message
+        error_message: $.null
+      success:
+        http_code: 303
+      error:
+        eodag:order_status: failed
+      on_success:
+        result_type: json
+        metadata_mapping:
+          eodag:download_link: $.headers.Location
+    no_auth_download: True
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
+    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
+    redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
+    client_id: polytope-api-public
+    user_consent_needed: false
+    token_exchange_post_data_method: data
+    token_provision: header
+    login_form_xpath: //form[@id='kc-form-login']
+    authentication_uri_source: login-form
+---
 !provider # MARK: dedl
   name: dedl
   priority: 0
@@ -4622,8 +4883,8 @@
         title: '$.title'
         extent: '$.extent'
     pagination:
-      next_page_url_key_path: null
       max_items_per_page: 100
+      next_page_token_key: page
     sort:
       sort_param_mapping:
         id: id
@@ -4999,8 +5260,6 @@
       _collection: EO.CLMS.DAT.GLO.NDVI_1KM_V2
     CLMS_GLO_NDVI_333M:
       _collection: EO.CLMS.DAT.GLO.NDVI300_V1
-    EEA_DAILY_VI:
-      _collection: EO.CLMS.DAT.SENTINEL-2.HRVPP.VI
     # Landsat data
     LANDSAT_C2L1:
       _collection: EO.NASA.DAT.LANDSAT.C2_L1
@@ -5158,7 +5417,7 @@
       - '&'
     asset_key_from_href: false
     pagination:
-      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
+      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={next_page_token}'
       start_page: 0
       total_items_nb_key_path: '$.totalResults'
       # 2024/02/01: 500 is the max, no error if greater
@@ -5536,7 +5795,7 @@
     MSG_CTH_IODC:
       _collection: EO:EUM:DAT:MSG:CTH-IODC
     HIRS_FDR_1_MULTI:
-      _collection: EO:EUM:DAT:0647
+      _collection: EO:EUM:DAT:0961
     MSG_OCA_CDR:
       _collection: EO:EUM:DAT:0617
     S6_RADIO_OCCULTATION:
@@ -5784,6 +6043,9 @@
         limit: 10000
     pagination:
       total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 1000 is ok and 2000 fails
       max_items_per_page: 1000
     sort:
@@ -5911,6 +6173,9 @@
         limit: 10000
     pagination:
       total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
       # 1000 is ok and 2000 fails
       max_items_per_page: 1000
     sort:
@@ -6116,7 +6381,6 @@
     need_auth: true
     ssl_verify: true
     end_date_excluded: false
-    dates_required: True
     remove_from_query:
       - dataset
       - date
@@ -6201,6 +6465,14 @@
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
     timeout: 60
+    pagination:
+      next_page_url_tpl: '{url}?startRecord={next_page_token}'
+      next_page_query_obj: '{{"limit":{items_per_page}}}'
+      next_page_token_key: skip
+      # startRecord is equivalent to skip + 1, so make skip start at page 2
+      start_page: 2
+      next_page_query_obj_key_path: null
+      next_page_url_key_path: null
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
@@ -6214,8 +6486,8 @@
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_collection_parsable_metadata:
-        ID: '{$.assets.enclosure.href#ceda_collection_name}'
-        description: '$.description'
+        id: '{$.assets.enclosure.href#ceda_collection_name}'
+        description: '{$.description#literalize_unicode}'
         instruments: '$.summaries.instruments'
         keywords: '$.keywords'
         license: '$.license'

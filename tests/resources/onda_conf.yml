@@ -21,6 +21,7 @@
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Metadata'
+      next_page_token_key: skip
       # 2021/03/19: 2000 is the max, if greater 200 response but contains an error message
       max_items_per_page: 2_000
     sort:
@@ -45,16 +46,16 @@
         operations:
           AND:
             - 'footprint:"Intersects({geometry#to_rounded_wkt})"'
-            - 'productType:{productType}'
-            - 'platformName:{platform}'
+            - 'productType:{_collection}'
+            - 'platformName:{constellation}'
             - 'cloudCoverPercentage:[0 TO {cloudCover}]'
             - 'beginPosition:[{start_datetime#to_iso_utc_datetime} TO *]'
             - 'endPosition:[* TO {end_datetime#to_iso_utc_datetime}]'
             - '{id#remove_extension}'
-            - 'platformSerialIdentifier:{platformSerialIdentifier}'
-            - 'instrumentShortName:{instrument}'
-            - 'processingLevel:{processingLevel}'
-            - 'sensorType:{sensorType}'
+            - 'platformSerialIdentifier:{platform}'
+            - 'instrumentShortName:{instruments}'
+            - 'processingLevel:{processing:level}'
+            - 'sensorType:{eodag:sensor_type}'
             - 'topicCategory:{topicCategory}'
             - 'lineage:{lineage}'
             - 'orbitNumber:{orbitNumber}'
@@ -85,22 +86,22 @@
       #   but `free_text_search_operations.$search.operations.AND` entries are then used instead.
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
-      productType:
+      _collection:
         - null
         - '$.Metadata.productType'
-      platform:
+      constellation:
         - null
         - '$.Metadata.platformName'
-      platformSerialIdentifier:
+      platform:
         - null
         - '$.Metadata.platformSerialIdentifier'
-      instrument:
+      instruments:
         - null
         - '$.Metadata.instrumentShortName'
-      processingLevel:
+      processing:level:
         - null
         - '$.Metadata.processingLevel'
-      sensorType:
+      eodag:sensor_type:
         - null
         - '$.Metadata.sensorType'
 
@@ -167,130 +168,130 @@
   products:
     # S1
     S1_SAR_OCN:
-      productType: '*OCN*'
+      _collection: '*OCN*'
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_GRD:
-      productType: '*GRD*'
+      _collection: '*GRD*'
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_SLC:
-      productType: '*SLC*'
+      _collection: '*SLC*'
       metadata_mapping:
         cloudCover: '$.null'
     S1_SAR_RAW:
-      productType: '*RAW*'
+      _collection: '*RAW*'
       metadata_mapping:
         cloudCover: '$.null'
     # S2
     S2_MSI_L1C:
-      productType: S2MSI1C
+      _collection: S2MSI1C
     S2_MSI_L2A:
-      productType: S2MSI2A
+      _collection: S2MSI2A
     # S3 SRAL
     S3_SRA:
-      productType: SR_1_SRA___
+      _collection: SR_1_SRA___
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_A:
-      productType: SR_1_SRA_A_
+      _collection: SR_1_SRA_A_
       metadata_mapping:
         cloudCover: '$.null'
     S3_SRA_BS:
-      productType: SR_1_SRA_BS
+      _collection: SR_1_SRA_BS
       metadata_mapping:
         cloudCover: '$.null'
     S3_LAN:
-      productType: SR_2_LAN___
+      _collection: SR_2_LAN___
       metadata_mapping:
         cloudCover: '$.null'
     S3_WAT:
-      productType: SR_2_WAT___
+      _collection: SR_2_WAT___
       metadata_mapping:
         cloudCover: '$.null'
     # S3 OLCI
     S3_EFR:
-      productType: OL_1_EFR___
+      _collection: OL_1_EFR___
     S3_ERR:
-      productType: OL_1_ERR___
+      _collection: OL_1_ERR___
     S3_OLCI_L2LFR:
-      productType: OL_2_LFR___
+      _collection: OL_2_LFR___
     S3_OLCI_L2LRR:
-      productType: OL_2_LRR___
+      _collection: OL_2_LRR___
     S3_OLCI_L2WRR:
-      productType: OL_2_WRR___
+      _collection: OL_2_WRR___
     S3_OLCI_L2WFR:
-      productType: OL_2_WFR___
+      _collection: OL_2_WFR___
     # S3 SLSTR
     S3_SLSTR_L1RBT:
-      productType: SL_1_RBT___
+      _collection: SL_1_RBT___
     S3_SLSTR_L2LST:
-      productType: SL_2_LST___
+      _collection: SL_2_LST___
     S3_SLSTR_L2WST:
-      productType: SL_2_WST___
+      _collection: SL_2_WST___
     S3_SLSTR_L2FRP:
-      productType: SL_2_FRP___
+      _collection: SL_2_FRP___
     # S3 SY
     S3_SY_AOD:
-      productType: SY_2_AOD___
+      _collection: SY_2_AOD___
     S3_SY_SYN:
-      productType: SY_2_SYN___
+      _collection: SY_2_SYN___
     S3_SY_V10:
-      productType: SY_2_V10___
+      _collection: SY_2_V10___
     S3_SY_VG1:
-      productType: SY_2_VG1___
+      _collection: SY_2_VG1___
     S3_SY_VGP:
-      productType: SY_2_VGP___
+      _collection: SY_2_VGP___
     # S5P L1
     S5P_L1B_RA_BD1:
-      productType: L1B_RA_BD1
+      _collection: L1B_RA_BD1
     S5P_L1B_RA_BD2:
-      productType: L1B_RA_BD2
+      _collection: L1B_RA_BD2
     S5P_L1B_RA_BD3:
-      productType: L1B_RA_BD3
+      _collection: L1B_RA_BD3
     S5P_L1B_RA_BD4:
-      productType: L1B_RA_BD4
+      _collection: L1B_RA_BD4
     S5P_L1B_RA_BD5:
-      productType: L1B_RA_BD5
+      _collection: L1B_RA_BD5
     S5P_L1B_RA_BD6:
-      productType: L1B_RA_BD6
+      _collection: L1B_RA_BD6
     S5P_L1B_RA_BD7:
-      productType: L1B_RA_BD7
+      _collection: L1B_RA_BD7
     S5P_L1B_RA_BD8:
-      productType: L1B_RA_BD8
+      _collection: L1B_RA_BD8
     # S5P L2
     S5P_L2_NO2:
-      productType: L2__NO2___
+      _collection: L2__NO2___
     S5P_L2_CLOUD:
-      productType: L2__CLOUD_
+      _collection: L2__CLOUD_
     S5P_L2_O3:
-      productType: L2__O3____
+      _collection: L2__O3____
     S5P_L2_CO:
-      productType: L2__CO____
+      _collection: L2__CO____
     S5P_L2_AER_AI:
-      productType: L2__AER_AI
+      _collection: L2__AER_AI
     S5P_L2_O3_PR:
-      productType: L2__O3__PR
+      _collection: L2__O3__PR
     S5P_L2_AER_LH:
-      productType: L2__AER_LH
+      _collection: L2__AER_LH
     S5P_L2_HCHO:
-      productType: L2__HCHO__
+      _collection: L2__HCHO__
     S5P_L2_CH4:
-      productType: L2__CH4___
+      _collection: L2__CH4___
     S5P_L2_NP_BD3:
-      productType: L2__NP_BD3
+      _collection: L2__NP_BD3
     S5P_L2_NP_BD6:
-      productType: L2__NP_BD6
+      _collection: L2__NP_BD6
     S5P_L2_NP_BD7:
-      productType: L2__NP_BD7
+      _collection: L2__NP_BD7
     S5P_L2_SO2:
-      productType: L2__SO2___
+      _collection: L2__SO2___
     # Landsat
     L8_OLI_TIRS_C1L1:
-      platform: 'Landsat-*'
+      constellation: 'Landsat-*'
     GENERIC_COLLECTION:
-      productType: '{productType}'
-      platform: '{platform}'
+      _collection: '{collection}'
+      constellation: '{constellation}'
   download: !plugin
     type: HTTPDownload
     # base_uri used to parse eodag:download_link

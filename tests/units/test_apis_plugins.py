@@ -113,12 +113,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_dates_missing(self):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             collection=self.collection,
             start_datetime="2020-01-01",
             end_datetime="2020-01-02",
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         self.assertEqual(
             eoproduct.properties["start_datetime"],
             "2020-01-01T00:00:00.000Z",
@@ -129,10 +129,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
 
         # missing start & stop
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             collection=self.collection,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         self.assertIn(
             eoproduct.properties["start_datetime"],
             DEFAULT_MISSION_START_DATE,
@@ -147,9 +147,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         # missing start & stop and plugin.collection_config set (set in core._prepare_search)
         self.api_plugin.config.collection_config = {
             "_collection": self.collection,
-            "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
+            "extent": {
+                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                "temporal": {"interval": [["1985-10-26", "2015-10-21"]]},
+            },
         }
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             collection=self.collection,
         )
         eoproduct = results[0]
@@ -167,9 +170,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         EcmwfApi.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
         """
-        results, count = self.api_plugin.query(**self.query_dates)
-        assert count == 1
-        eoproduct = results[0]
+        results = self.api_plugin.query(**self.query_dates)
+        assert results.number_matched == 1
+        eoproduct = results.data[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert (
             eoproduct.properties["start_datetime"] == self.query_dates["start_datetime"]
@@ -181,10 +184,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
     def test_plugins_apis_ecmwf_query_with_collection(self):
         """EcmwfApi.query must build a EOProduct from input parameters with predefined collection"""
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(self.collection)
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
         # check if collection_params is a subset of eoproduct.properties
@@ -194,17 +197,17 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         params["ecmwf:param"] = "tcc"
 
         # collection default settings can be overwritten using search kwargs
-        results, _ = self.api_plugin.query(**params)
-        eoproduct = results[0]
+        results = self.api_plugin.query(**params)
+        eoproduct = results.data[0]
         assert eoproduct.properties["ecmwf:param"] == "tcc"
 
     def test_plugins_apis_ecmwf_query_with_custom_collection(self):
         """EcmwfApi.query must build a EOProduct from input parameters with custom collection"""
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             **self.query_dates,
             **self.custom_query_params,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(
             "%s_%s_%s"
             % (
@@ -282,7 +285,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             **self.custom_query_params,
             validate=False,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         expected_path = os.path.join(
             output_data_path, "%s" % eoproduct.properties["title"]
         )
@@ -540,10 +543,10 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
             "prep": PreparedSearch(
                 items_per_page=5,
-                page=2,
             ),
         }
-        search_results, total_count = self.api_plugin.query(**search_kwargs)
+        search_kwargs["prep"].next_page_token = "6"
+        search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
             start_date="2020-02-01",
@@ -553,10 +556,10 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             max_results=5,
             starting_number=6,
         )
-        self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
+        self.assertEqual(search_results.data[0].provider, "usgs")
+        self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
         self.assertEqual(
-            search_results[0].geometry,
+            search_results.data[0].geometry,
             shape(
                 mock_api_scene_search.return_value["data"]["results"][0][
                     "spatialBounds"
@@ -564,18 +567,21 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             ),
         )
         self.assertEqual(
-            search_results[0].properties["id"],
+            search_results.data[0].properties["id"],
             mock_api_scene_search.return_value["data"]["results"][0]["displayId"],
         )
         self.assertEqual(
-            search_results[0].properties["eo:cloud_cover"],
+            search_results.data[0].properties["eo:cloud_cover"],
             float(
                 mock_api_scene_search.return_value["data"]["results"][0]["cloudCover"]
             ),
         )
-        self.assertEqual(search_results[0].properties["order:status"], ONLINE_STATUS)
         self.assertEqual(
-            total_count, mock_api_scene_search.return_value["data"]["totalHits"]
+            search_results.data[0].properties["order:status"], ONLINE_STATUS
+        )
+        self.assertEqual(
+            search_results.number_matched,
+            mock_api_scene_search.return_value["data"]["totalHits"],
         )
 
     @mock.patch("usgs.api.login", autospec=True)
@@ -615,10 +621,10 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "id": "SOME_PRODUCT_ID",
             "prep": PreparedSearch(
                 items_per_page=500,
-                page=1,
             ),
         }
-        search_results, total_count = self.api_plugin.query(**search_kwargs)
+        search_kwargs["prep"].next_page_token = "1"
+        search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
             where={"filter_id": "bar_id", "value": "SOME_PRODUCT_ID"},
@@ -629,9 +635,9 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             max_results=500,
             starting_number=1,
         )
-        self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
-        self.assertEqual(len(search_results), 1)
+        self.assertEqual(search_results.data[0].provider, "usgs")
+        self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
+        self.assertEqual(len(search_results.data), 1)
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)

@@ -23,14 +23,17 @@ import os
 import re
 import shutil
 import tempfile
+import warnings
+from collections import deque
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 
+from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
@@ -53,7 +56,10 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import MeteoblueSearch
+from eodag.plugins.search.build_search_result import (
+    ALLOWED_KEYWORDS as ECMWF_ALLOWED_KEYWORDS,
+)
+from eodag.plugins.search.build_search_result import ECMWF_PREFIX, MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
@@ -65,7 +71,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
-    get_collection_dates,
+    _deprecated,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -81,6 +87,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedCollection,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
@@ -115,7 +122,8 @@ class EODataAccessGateway:
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
-        self.collections_config = SimpleYamlProxyConfig(collections_config_path)
+        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
+        self.collections_config = self._collections_config_init(collections_config_dict)
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -168,7 +176,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        available_collections = set(self.collections_config.source.keys())
+        available_collections = set(self.collections_config.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -179,8 +187,6 @@ class EODataAccessGateway:
             self._sync_provider_collections(
                 provider, available_collections, strict_mode
             )
-        # init collections configuration
-        self._collections_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -223,10 +229,19 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
 
-    def _collections_config_init(self) -> None:
-        """Initialize collections configuration."""
-        for pt_id, pd_dict in self.collections_config.source.items():
-            self.collections_config.source[pt_id].setdefault("_id", pt_id)
+    def _collections_config_init(
+        self, collections_config_dict: dict[str, Any]
+    ) -> CollectionsDict:
+        """Initialize collections configuration.
+
+        :param collections_config_dict: The collections config as a dictionary
+        """
+        # Turn the collections config from a dict into a CollectionsDict() object
+        collections = [
+            Collection.create_with_dag(self, id=col, **col_f)
+            for col, col_f in collections_config_dict.items()
+        ]
+        return CollectionsDict(collections)
 
     def _sync_provider_collections(
         self,
@@ -258,13 +273,10 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = {
-                    "title": product_id,
-                    "description": NOT_AVAILABLE,
-                }
-                self.collections_config.source[
-                    product_id
-                ] = empty_product  # will update available_collections
+                empty_product = Collection.create_with_dag(
+                    self, id=product_id, title=product_id, description=NOT_AVAILABLE
+                )
+                self.collections_config[product_id] = empty_product
                 products_to_add.append(product_id)
 
         if products_to_add:
@@ -541,7 +553,7 @@ class EODataAccessGateway:
 
     def list_collections(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> list[dict[str, Any]]:
+    ) -> CollectionsList:
         """Lists supported collections.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -555,7 +567,7 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        collections: list[dict[str, Any]] = []
+        collections: CollectionsList = CollectionsList([])
 
         providers_configs = (
             list(self.providers_config.values())
@@ -573,20 +585,18 @@ class EODataAccessGateway:
             )
 
         for p in providers_configs:
-            for collection_id in p.products:  # type: ignore
+            for collection_id in p.products:
                 if collection_id == GENERIC_COLLECTION:
                     continue
 
-                config = self.collections_config[collection_id]
-                if "alias" in config:
-                    collection_id = config["alias"]
-                collection = {"ID": collection_id, **config}
-
-                if collection not in collections:
+                if (
+                    collection := self.collections_config[collection_id]
+                ) not in collections:
                     collections.append(collection)
 
-        # Return the collections sorted in lexicographic order of their ID
-        return sorted(collections, key=itemgetter("ID"))
+        # Return the collections sorted in lexicographic order of their id
+        collections.sort(key=attrgetter("id"))
+        return collections
 
     def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch collections list and update if needed.
@@ -843,6 +853,7 @@ class EODataAccessGateway:
                     )
                     continue
                 new_collections: list[str] = []
+                bad_formatted_col_count = 0
                 for (
                     new_collection,
                     new_collection_conf,
@@ -867,26 +878,58 @@ class EODataAccessGateway:
                                 # new_collections_conf is a subset on an existing conf
                                 break
                         else:
-                            # new_collection_conf does not already exist, append it
-                            # to provider_products_config
-                            provider_products_config[
-                                new_collection
-                            ] = new_collection_conf
-                            # to self.collections_config
-                            self.collections_config.source.update(
-                                {
-                                    new_collection: {"_id": new_collection}
-                                    | new_collections_conf["collections_config"][
+                            try:
+                                # new_collection_conf does not already exist, append it
+                                # to self.collections_config
+                                self.collections_config[
+                                    new_collection
+                                ] = Collection.create_with_dag(
+                                    self,
+                                    id=new_collection,
+                                    **new_collections_conf["collections_config"][
                                         new_collection
-                                    ]
+                                    ],
+                                )
+                            except ValidationError:
+                                # skip collection if there is a problem with its id (missing or not a string)
+                                logger.debug(
+                                    (
+                                        "Collection %s has been pruned on provider %s "
+                                        "because its id was incorrectly parsed for eodag"
+                                    ),
+                                    new_collection,
+                                    provider,
+                                )
+                            else:
+                                # to provider_products_config
+                                provider_products_config[
+                                    new_collection
+                                ] = new_collection_conf
+                                ext_collections_conf[provider] = new_collections_conf
+                                new_collections.append(new_collection)
+                                # increase the increment if the new collection had
+                                # bad formatted attributes in the external config
+                                dumped_collection = self.collections_config[
+                                    new_collection
+                                ].model_dump()
+                                dumped_ext_conf_col = {
+                                    **dumped_collection,
+                                    **new_collections_conf["collections_config"][
+                                        new_collection
+                                    ],
                                 }
-                            )
-                            ext_collections_conf[provider] = new_collections_conf
-                            new_collections.append(new_collection)
+                                if dumped_ext_conf_col != dumped_collection:
+                                    bad_formatted_col_count += 1
                 if new_collections:
                     logger.debug(
-                        f"Added {len(new_collections)} collections for {provider}"
+                        "Added %s collections for %s", len(new_collections), provider
                     )
+                    if bad_formatted_col_count > 0:
+                        logger.debug(
+                            "bad formatted attributes skipped for %s collection(s) on %s",
+                            bad_formatted_col_count,
+                            provider,
+                        )
 
             elif provider not in self.providers_config:
                 # unknown provider
@@ -938,16 +981,14 @@ class EODataAccessGateway:
         return [name for name, _ in providers]
 
     def get_collection_from_alias(self, alias_or_id: str) -> str:
-        """Return the ID of a collection by either its ID or alias
+        """Return the id of a collection by either its id or alias
 
-        :param alias_or_id: Alias of the collection. If an existing ID is given, this
+        :param alias_or_id: Alias of the collection. If an existing id is given, this
                             method will directly return the given value.
         :returns: Internal name of the collection.
         """
         collections = [
-            k
-            for k, v in self.collections_config.items()
-            if v.get("alias") == alias_or_id
+            k for k, v in self.collections_config.items() if v.alias == alias_or_id
         ]
 
         if len(collections) > 1:
@@ -960,22 +1001,24 @@ class EODataAccessGateway:
                 return alias_or_id
             else:
                 raise NoMatchingCollection(
-                    f"Could not find collection from alias or ID {alias_or_id}"
+                    f"Could not find collection from alias or id {alias_or_id}"
                 )
 
         return collections[0]
 
     def get_alias_from_collection(self, collection: str) -> str:
-        """Return the alias of a collection by its ID. If no alias was defined for the
-        given collection, its ID is returned instead.
+        """Return the alias of a collection by its id. If no alias was defined for the
+        given collection, its id is returned instead.
 
-        :param collection: collection ID
-        :returns: Alias of the collection or its ID if no alias has been defined for it.
+        :param collection: collection id
+        :returns: Alias of the collection or its id if no alias has been defined for it.
         """
         if collection not in self.collections_config:
             raise NoMatchingCollection(collection)
 
-        return self.collections_config[collection].get("alias", collection)
+        if alias := self.collections_config[collection].alias:
+            return alias
+        return collection
 
     def guess_collection(
         self,
@@ -992,7 +1035,7 @@ class EODataAccessGateway:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         **kwargs: Any,
-    ) -> list[str]:
+    ) -> CollectionsList:
         """
         Find EODAG collection IDs that best match a set of search parameters.
 
@@ -1002,7 +1045,7 @@ class EODataAccessGateway:
                           operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
                           ``*`` and ``?`` wildcards.
         :param intersect: Join results for each parameter using INTERSECT instead of UNION.
-        :param instrument: Instrument parameter.
+        :param instruments: Instruments parameter.
         :param platform: Platform parameter.
         :param constellation: Constellation parameter.
         :param processing_level: Processing level parameter.
@@ -1016,7 +1059,13 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
         if collection := kwargs.get("collection"):
-            return [collection]
+            try:
+                collection = self.get_collection_from_alias(collection)
+                return CollectionsList([self.collections_config[collection]])
+            except NoMatchingCollection:
+                return CollectionsList(
+                    [Collection.create_with_dag(self, id=collection)]
+                )
 
         filters: dict[str, str] = {
             k: v
@@ -1045,10 +1094,10 @@ class EODataAccessGateway:
 
         guesses_with_score: list[tuple[str, int]] = []
 
-        for pt_id, pt_dict in self.collections_config.source.items():
+        for col, col_f in self.collections_config.items():
             if (
-                pt_id == GENERIC_COLLECTION
-                or pt_id not in self._plugins_manager.collection_to_provider_config_map
+                col == GENERIC_COLLECTION
+                or col not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
 
@@ -1056,7 +1105,7 @@ class EODataAccessGateway:
 
             # free text search
             if free_text:
-                match = free_text_evaluator(pt_dict)
+                match = free_text_evaluator(col_f.model_dump())
                 if match:
                     score += 1
                 elif intersect:
@@ -1072,9 +1121,16 @@ class EODataAccessGateway:
                 }
 
                 filter_matches = [
-                    filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
+                    filters_evaluators[filter_name](
+                        {
+                            filter_name: col_f.__dict__[
+                                Collection.get_collection_mtd_from_alias(filter_name)
+                            ]
+                        }
+                    )
                     for filter_name, value in filters.items()
-                    if filter_name in pt_dict
+                    if Collection.get_collection_mtd_from_alias(filter_name)
+                    in col_f.__dict__
                 ]
 
                 if filters_matching_method(filter_matches):
@@ -1091,33 +1147,35 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                col_start, col_end = get_collection_dates(pt_dict)
+                col_start = col_f.extent.temporal.interval[0][0]
+                col_end = col_f.extent.temporal.interval[0][1]
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
-                    rfc3339_str_to_datetime(col_start) if col_start else min_aware,
+                    col_start or min_aware,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(end_date) if end_date else max_aware,
-                    rfc3339_str_to_datetime(col_end) if col_end else max_aware,
+                    col_end or max_aware,
                 )
                 if not (max_start <= min_end):
                     continue
 
-            pt_alias = pt_dict.get("alias", pt_id)
-            guesses_with_score.append((pt_alias, score))
+            guesses_with_score.append((col_f._id, score))
 
         if guesses_with_score:
-            # sort by score descending, then pt_id for stability
+            # sort by score descending, then col for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt_id for pt_id, _ in guesses_with_score]
+            return CollectionsList(
+                [self.collections_config[col] for col, _ in guesses_with_score]
+            )
 
         raise NoMatchingCollection()
 
     def search(
         self,
         page: int = DEFAULT_PAGE,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE,
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1137,9 +1195,10 @@ class EODataAccessGateway:
         will be request from the provider with the next highest priority.
         Only if the request fails for all available providers, an error will be thrown.
 
-        :param page: (optional) The page number to return
+        :param page: (optional) The page number to return (**deprecated**, use
+                     :meth:`eodag.api.search_result.SearchResult.next_page` instead)
         :param items_per_page: (optional) The number of results that must appear in one single
-                               page
+                               page. If ``None``, the maximum number possible will be used.
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
                               True, the error is raised
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1181,6 +1240,15 @@ class EODataAccessGateway:
             return a list as a result of their processing. This requirement is
             enforced here.
         """
+        if page != DEFAULT_PAGE:
+            warnings.warn(
+                "Usage of deprecated search parameter 'page' "
+                "(Please use 'SearchResult.next_page()' instead)"
+                " -- Deprecated since v3.9.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         search_plugins, search_kwargs = self._prepare_search(
             start=start,
             end=end,
@@ -1200,16 +1268,23 @@ class EODataAccessGateway:
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
         search_kwargs.pop("_dc_qs", None)
-
-        search_kwargs.update(
-            page=page,
-            items_per_page=items_per_page,
-        )
+        # add page parameter
+        search_kwargs["page"] = page
 
         errors: list[tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
+
+            # add appropriate items_per_page value
+            search_kwargs["items_per_page"] = (
+                items_per_page
+                if items_per_page is not None
+                else getattr(search_plugin.config, "pagination", {}).get(
+                    "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+                )
+            )
+
             search_results = self._do_search(
                 search_plugin,
                 count=count,
@@ -1225,12 +1300,22 @@ class EODataAccessGateway:
                 )
             elif len(search_results) > 0:
                 search_results.errors = errors
+                if count and search_results.number_matched:
+                    logger.info(
+                        "Found %s result(s) on provider '%s'",
+                        search_results.number_matched,
+                        search_results[0].provider,
+                    )
                 return search_results
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
         return SearchResult([], 0, errors) if count else SearchResult([], errors=errors)
 
+    @_deprecated(
+        reason="Please use 'SearchResult.next_page()' instead",
+        version="v3.9.0",
+    )
     def search_iter_page(
         self,
         items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
@@ -1241,6 +1326,9 @@ class EODataAccessGateway:
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search.
+
+        .. deprecated:: v3.9.0
+            Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param items_per_page: (optional) The number of results requested per page
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1292,6 +1380,10 @@ class EODataAccessGateway:
                     raise
         raise RequestError("No result could be obtained from any available provider")
 
+    @_deprecated(
+        reason="Please use 'SearchResult.next_page()' instead",
+        version="v3.9.0",
+    )
     def search_iter_page_plugin(
         self,
         search_plugin: Union[Search, Api],
@@ -1300,6 +1392,9 @@ class EODataAccessGateway:
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
 
+        .. deprecated:: v3.9.0
+            Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
+
         :param items_per_page: (optional) The number of results requested per page
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatibles with the provider
@@ -1307,114 +1402,40 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-
-        iteration = 1
-        # Store the search plugin config pagination.next_page_url_tpl to reset it later
-        # since it might be modified if the next_page_url mechanism is used by the
-        # plugin. (same thing for next_page_query_obj, next_page_query_obj with POST reqs)
-        pagination_config = getattr(search_plugin.config, "pagination", {})
-        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl")
-        prev_next_page_query_obj = pagination_config.get("next_page_query_obj")
-        # Page has to be set to a value even if use_next is True, this is required
-        # internally by the search plugin (see collect_search_urls)
         kwargs.update(
             page=1,
             items_per_page=items_per_page,
         )
-        prev_product = None
-        next_page_url = None
-        next_page_query_obj = None
-        number_matched = None
-        while True:
-            # if count is enabled, it will only be performed on 1st iteration
-            if iteration == 2:
-                kwargs["count"] = False
-            if iteration > 1 and next_page_url:
-                pagination_config["next_page_url_tpl"] = next_page_url
-            if iteration > 1 and next_page_query_obj:
-                pagination_config["next_page_query_obj"] = next_page_query_obj
-            logger.info("Iterate search over multiple pages: page #%s", iteration)
-            try:
-                # remove unwanted kwargs for _do_search
-                kwargs.pop("raise_errors", None)
-                search_result = self._do_search(
-                    search_plugin, raise_errors=True, **kwargs
-                )
-                # if count is enabled, it will only be performed on 1st iteration
-                if iteration == 1:
-                    number_matched = search_result.number_matched
-            except Exception:
-                logger.warning(
-                    "error at retrieval of data from %s, for params: %s",
-                    search_plugin.provider,
-                    str(kwargs),
-                )
-                raise
-            finally:
-                # we don't want that next(search_iter_page(...)) modifies the plugin
-                # indefinitely. So we reset after each request, but before the generator
-                # yields, the attr next_page_url (to None) and
-                # config.pagination["next_page_url_tpl"] (to its original value).
-                next_page_url = getattr(search_plugin, "next_page_url", None)
-                next_page_query_obj = getattr(search_plugin, "next_page_query_obj", {})
-                next_page_merge = getattr(search_plugin, "next_page_merge", None)
+        try:
+            # remove unwanted kwargs for _do_search
+            kwargs.pop("raise_errors", None)
+            search_result = self._do_search(search_plugin, raise_errors=True, **kwargs)
+            search_result.raise_errors = True
 
-                if next_page_url:
-                    search_plugin.next_page_url = None
-                    if prev_next_page_url_tpl:
-                        search_plugin.config.pagination[
-                            "next_page_url_tpl"
-                        ] = prev_next_page_url_tpl
-                if next_page_query_obj:
-                    if prev_next_page_query_obj:
-                        search_plugin.config.pagination[
-                            "next_page_query_obj"
-                        ] = prev_next_page_query_obj
-                    # Update next_page_query_obj for next page req
-                    if next_page_merge:
-                        search_plugin.next_page_query_obj = dict(
-                            getattr(search_plugin, "query_params", {}),
-                            **next_page_query_obj,
-                        )
-                    else:
-                        search_plugin.next_page_query_obj = next_page_query_obj
+        except Exception:
+            logger.warning(
+                "error at retrieval of data from %s, for params: %s",
+                search_plugin.provider,
+                str(kwargs),
+            )
+            raise
 
-            if len(search_result) > 0:
-                # The first products between two iterations are compared. If they
-                # are actually the same product, it means the iteration failed at
-                # progressing for some reason. This is implemented as a workaround
-                # to some search plugins/providers not handling pagination.
-                product = search_result[0]
-                if (
-                    prev_product
-                    and product.properties["id"] == prev_product.properties["id"]
-                    and product.provider == prev_product.provider
-                ):
-                    logger.warning(
-                        "Iterate over pages: stop iterating since the next page "
-                        "appears to have the same products as in the previous one. "
-                        "This provider may not implement pagination.",
-                    )
-                    last_page_with_products = iteration - 1
-                    break
-                # use count got from 1st iteration
-                search_result.number_matched = number_matched
-                yield search_result
-                prev_product = product
-                # Prevent a last search if the current one returned less than the
-                # maximum number of items asked for.
-                if len(search_result) < items_per_page:
-                    last_page_with_products = iteration
-                    break
-            else:
-                last_page_with_products = iteration - 1
+        if len(search_result) == 0:
+            return
+        # remove unwanted kwargs for next_page
+        if kwargs.get("count") is True:
+            kwargs["count"] = False
+        kwargs.pop("page", None)
+        search_result.search_params = kwargs
+        if search_result._dag is None:
+            search_result._dag = self
+
+        yield search_result
+
+        for next_result in search_result.next_page():
+            if len(next_result) == 0:
                 break
-            iteration += 1
-            kwargs["page"] = iteration
-        logger.debug(
-            "Iterate over pages: last products found on page %s",
-            last_page_with_products,
-        )
+            yield next_result
 
     def search_all(
         self,
@@ -1467,81 +1488,42 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-        # Get the search plugin and the maximized value
-        # of items_per_page if defined for the provider used.
-        try:
-            collection = self.get_collection_from_alias(
-                self.guess_collection(**kwargs)[0]
-            )
-        except NoMatchingCollection:
-            collection = GENERIC_COLLECTION
-        else:
-            # fetch collections list if collection is unknown
-            if (
-                collection
-                not in self._plugins_manager.collection_to_provider_config_map.keys()
-            ):
-                logger.debug(
-                    f"Fetching external collections sources to find {collection} collection"
-                )
-                self.fetch_collections_list()
-
         # remove unwanted count
         kwargs.pop("count", None)
 
-        search_plugins, search_kwargs = self._prepare_search(
-            start=start, end=end, geom=geom, locations=locations, **kwargs
+        # First search
+        search_results = self.search(
+            items_per_page=items_per_page,
+            start=start,
+            end=end,
+            geom=geom,
+            locations=locations,
+            **kwargs,
         )
-        for i, search_plugin in enumerate(search_plugins):
-            itp = (
-                items_per_page
-                or getattr(search_plugin.config, "pagination", {}).get(
-                    "max_items_per_page"
-                )
-                or DEFAULT_MAX_ITEMS_PER_PAGE
-            )
+        if len(search_results) == 0:
+            return search_results
+
+        try:
+            search_results.raise_errors = True
+
+            # consume iterator
+            deque(search_results.next_page(update=True))
+
             logger.info(
-                "Searching for all the products with provider %s and a maximum of %s "
-                "items per page.",
-                search_plugin.provider,
-                itp,
+                "Found %s result(s) on provider '%s'",
+                len(search_results),
+                search_results[0].provider,
             )
-            all_results = SearchResult([])
-            try:
-                for page_results in self.search_iter_page_plugin(
-                    items_per_page=itp,
-                    search_plugin=search_plugin,
-                    count=False,
-                    **search_kwargs,
-                ):
-                    all_results.data.extend(page_results.data)
-                logger.info(
-                    "Found %s result(s) on provider '%s'",
-                    len(all_results),
-                    search_plugin.provider,
-                )
-                return all_results
-            except RequestError:
-                if len(all_results) == 0 and i < len(search_plugins) - 1:
-                    logger.warning(
-                        "No result could be obtained from provider %s, "
-                        "we will try to get the data from another provider",
-                        search_plugin.provider,
-                    )
-                elif len(all_results) == 0:
-                    logger.error(
-                        "No result could be obtained from any available provider"
-                    )
-                    raise
-                elif len(all_results) > 0:
-                    logger.warning(
-                        "Found %s result(s) on provider '%s', but it may be incomplete "
-                        "as it ended with an error",
-                        len(all_results),
-                        search_plugin.provider,
-                    )
-                    return all_results
-        raise RequestError("No result could be obtained from any available provider")
+            search_results.number_matched = len(search_results)
+        except RequestError:
+            logger.warning(
+                "Found %s result(s) on provider '%s', but it may be incomplete "
+                "as it ended with an error",
+                len(search_results),
+                search_results[0].provider,
+            )
+
+        return search_results
 
     def _search_by_id(
         self, uid: str, provider: Optional[str] = None, **kwargs: Any
@@ -1628,7 +1610,7 @@ class EODataAccessGateway:
                 if not results[0].collection:
                     # guess collection from properties
                     guesses = self.guess_collection(**results[0].properties)
-                    results[0].collection = guesses[0]
+                    results[0].collection = guesses[0].id
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1719,7 +1701,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                collection = guesses[0]
+                collection = guesses[0].id
             except NoMatchingCollection:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
@@ -1776,7 +1758,9 @@ class EODataAccessGateway:
                     not in self._plugins_manager.collection_to_provider_config_map.keys()
                 ):
                     # Try to get specific collection from external provider
-                    logger.debug(f"Fetching {provider} to find {collection} collection")
+                    logger.debug(
+                        "Fetching %s to find %s collection", provider, collection
+                    )
                     self._fetch_external_collection(provider, collection)
             if not provider:
                 # no provider or still not found -> fetch all external collections
@@ -1861,13 +1845,11 @@ class EODataAccessGateway:
                 max_items_per_page,
             )
 
-        results: list[EOProduct] = []
-        total_results: Optional[int] = 0 if count else None
-
         errors: list[tuple[str, Exception]] = []
 
         try:
             prep = PreparedSearch(count=count)
+            prep.raise_errors = raise_errors
 
             # append auth if needed
             if getattr(search_plugin.config, "need_auth", False):
@@ -1878,17 +1860,41 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
-            prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
+            prep.next_page_token = kwargs.pop("next_page_token", None)
+            prep.next_page_token_key = kwargs.pop(
+                "next_page_token_key", None
+            ) or search_plugin.config.pagination.get("next_page_token_key", "page")
+            prep.page = kwargs.pop("page", None)
+
+            if (
+                prep.next_page_token_key == "page"
+                and prep.items_per_page is not None
+                and prep.next_page_token is None
+                and prep.page is not None
+            ):
+                prep.next_page_token = str(
+                    prep.page
+                    - 1
+                    + search_plugin.config.pagination.get("start_page", DEFAULT_PAGE)
+                )
 
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
+            ecmwf_queryables = [
+                f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
+            ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
                 if param in Queryables.model_fields:
                     param_alias = Queryables.model_fields[param].alias or param
                     search_params[param_alias] = value
+                elif param in ecmwf_queryables:
+                    # alias equivalent for ECMWF queryables
+                    search_params[
+                        re.sub(rf"^{ECMWF_PREFIX[:-1]}_", f"{ECMWF_PREFIX}", param)
+                    ] = value
                 else:
                     # remove `provider:` or `provider_` prefix if any
                     search_params[
@@ -1898,14 +1904,13 @@ class EODataAccessGateway:
             if validate:
                 search_plugin.validate(search_params, prep.auth)
 
-            res, nb_res = search_plugin.query(prep, **search_params)
+            search_result = search_plugin.query(prep, **search_params)
 
-            if not isinstance(res, list):
+            if not isinstance(search_result.data, list):
                 raise PluginImplementationError(
                     "The query function of a Search plugin must return a list of "
-                    "results, got {} instead".format(type(res))
+                    "results, got {} instead".format(type(search_result.data))
                 )
-
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself
             # doing: eo_product.download()). The filtering is done by keeping only
@@ -1915,7 +1920,7 @@ class EODataAccessGateway:
             # WARNING: this means an eo_product that has an invalid geometry can still
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
-            for eo_product in res:
+            for eo_product in search_result.data:
                 # if collection is not defined, try to guess using properties
                 if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")
@@ -1940,7 +1945,7 @@ class EODataAccessGateway:
                     except NoMatchingCollection:
                         pass
                     else:
-                        eo_product.collection = guesses[0]
+                        eo_product.collection = guesses[0].id
 
                 try:
                     if eo_product.collection is not None:
@@ -1953,18 +1958,13 @@ class EODataAccessGateway:
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
 
-            results.extend(res)
-            total_results = (
-                None
-                if (nb_res is None or total_results is None)
-                else total_results + nb_res
-            )
-            if count and nb_res is not None:
-                logger.info(
-                    "Found %s result(s) on provider '%s'",
-                    nb_res,
-                    search_plugin.provider,
-                )
+            # Make next_page not available if the current one returned less than the maximum number of items asked for.
+            if not prep.items_per_page or len(search_result) < prep.items_per_page:
+                search_result.next_page_token = None
+
+            search_result._dag = self
+            return search_result
+
         except Exception as e:
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
@@ -1976,7 +1976,7 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 errors.append((search_plugin.provider, e))
-        return SearchResult(results, total_results, errors)
+                return SearchResult([], 0, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results
@@ -2080,13 +2080,16 @@ class EODataAccessGateway:
         search_result: SearchResult, filename: str = "search_results.geojson"
     ) -> str:
         """Registers results of a search into a geojson file.
+        The output is a FeatureCollection containing the EO products as features,
+        with additional metadata such as ``number_matched``, ``next_page_token``,
+        and ``search_params`` stored in the properties.
 
         :param search_result: A set of EO products resulting from a search
         :param filename: (optional) The name of the file to generate
         :returns: The name of the created file
         """
         with open(filename, "w") as fh:
-            geojson.dump(search_result, fh)
+            geojson.dump(search_result.as_geojson_object(), fh)
         return filename
 
     @staticmethod
@@ -2101,12 +2104,16 @@ class EODataAccessGateway:
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register
-        products with the information needed to download itself
+        products with the information needed to download itself.
+
+        This method also sets the internal EODataAccessGateway instance on the products,
+        enabling pagination (e.g. access to next pages) if available.
 
         :param filename: A filename containing a search result encoded as a geojson
-        :returns: The search results encoded in `filename`
+        :returns: The search results encoded in `filename`, ready for download and pagination
         """
         products = self.deserialize(filename)
+        products._dag = self
         for i, product in enumerate(products):
             if product.downloader is None:
                 downloader = self._plugins_manager.get_download_plugin(product)
@@ -2220,8 +2227,8 @@ class EODataAccessGateway:
         """
         # only fetch providers if collection is not found
         available_collections: list[str] = [
-            pt["ID"]
-            for pt in self.list_collections(provider=provider, fetch_providers=False)
+            col.id
+            for col in self.list_collections(provider=provider, fetch_providers=False)
         ]
         collection: Optional[str] = kwargs.get("collection")
         coll_alias: Optional[str] = collection
@@ -2231,8 +2238,8 @@ class EODataAccessGateway:
                 if fetch_providers:
                     # fetch providers and try again
                     available_collections = [
-                        pt["ID"]
-                        for pt in self.list_collections(
+                        col.id
+                        for col in self.list_collections(
                             provider=provider, fetch_providers=True
                         )
                     ]
@@ -2261,9 +2268,9 @@ class EODataAccessGateway:
                 self._attach_collection_config(plugin, collection)
                 collection_configs[collection] = plugin.config.collection_config
             else:
-                for pt in available_collections:
-                    self._attach_collection_config(plugin, pt)
-                    collection_configs[pt] = plugin.config.collection_config
+                for col in available_collections:
+                    self._attach_collection_config(plugin, col)
+                    collection_configs[col] = plugin.config.collection_config
 
             # authenticate if required
             if getattr(plugin.config, "need_auth", False) and (
@@ -2277,8 +2284,14 @@ class EODataAccessGateway:
                         plugin.provider,
                     )
 
+            # use queryables aliases
+            kwargs_alias = {**kwargs}
+            for search_param, field_info in Queryables.model_fields.items():
+                if search_param in kwargs and field_info.alias:
+                    kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+
             plugin_queryables = plugin.list_queryables(
-                kwargs,
+                kwargs_alias,
                 available_collections,
                 collection_configs,
                 collection,
@@ -2340,11 +2353,11 @@ class EODataAccessGateway:
         try:
             plugin.config.collection_config = dict(
                 [
-                    p
-                    for p in self.list_collections(
+                    c.model_dump(mode="json", exclude={"id"})
+                    for c in self.list_collections(
                         plugin.provider, fetch_providers=False
                     )
-                    if p["_id"] == collection
+                    if c._id == collection
                 ][0],
                 **{"collection": collection},
             )
@@ -2352,12 +2365,11 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                ID=GENERIC_COLLECTION,
-                **self.collections_config[GENERIC_COLLECTION],
+                **self.collections_config[GENERIC_COLLECTION].model_dump(
+                    mode="json", exclude={"id"}
+                ),
                 collection=collection,
             )
-        # Remove the ID since this is equal to collection.
-        plugin.config.collection_config.pop("ID", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.

@@ -31,10 +31,8 @@ import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
-from pydantic import Field
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
-from shapely.geometry.base import BaseGeometry
 from typing_extensions import get_args  # noqa: F401
 
 from eodag.api.product import EOProduct
@@ -47,7 +45,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
-from eodag.api.search_result import RawSearchResult
+from eodag.api.search_result import RawSearchResult, SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
@@ -58,6 +56,8 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_sort,
     format_string,
+    get_geometry_from_ecmwf_area,
+    get_geometry_from_ecmwf_feature,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
@@ -145,6 +145,7 @@ ECMWF_KEYWORDS = {
 COP_DS_KEYWORDS = {
     "aerosol_type",
     "altitude",
+    "area",
     "band",
     "cdr_type",
     "data_format",
@@ -190,6 +191,7 @@ COP_DS_KEYWORDS = {
     "statistic",
     "system_version",
     "temporal_aggregation",
+    "temporal_resolution",
     "time_aggregation",
     "time_reference",
     "time_step",
@@ -287,9 +289,22 @@ def _update_properties_from_element(
         prop["description"] = description
 
 
-def ecmwf_format(v: str) -> str:
-    """Add ECMWF prefix to value v if v is a ECMWF keyword."""
-    return ECMWF_PREFIX + v if v in ALLOWED_KEYWORDS else v
+def ecmwf_format(v: str, alias: bool = True) -> str:
+    """Add ECMWF prefix to value v if v is a ECMWF keyword.
+
+    :param v: parameter to format
+    :param alias: whether to format for alias (with ':') or for query param (False, with '_')
+    :return: formatted parameter
+
+    >>> ecmwf_format('dataset', alias=False)
+    'ecmwf_dataset'
+    >>> ecmwf_format('variable')
+    'ecmwf:variable'
+    >>> ecmwf_format('unknown_param')
+    'unknown_param'
+    """
+    separator = ":" if alias else "_"
+    return f"{ECMWF_PREFIX[:-1]}{separator}{v}" if v in ALLOWED_KEYWORDS else v
 
 
 def get_min_max(
@@ -447,6 +462,28 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
+
+        * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
+          (``list`` [:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
+          the queryables from different provider queryables endpoints. A configuration is used based on the given
+          selection criterias. The first match is used. If no match is found, it falls back to standard behaviors
+          (e.g. discovery using :attr:`~eodag.config.PluginConfig.discover_queryables`).
+          Each element of the list has the following keys:
+
+          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.collection_selector`
+            (``list`` [:class:`~eodag.config.PluginConfig.CollectionSelector`]): list of collection selection
+            criterias. The configuration given in
+            :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables` is used if any collection
+            selector matches the search parameters. The selector matches if the field value starts with the given
+            prefix, i.e. it matches if ``parameters[field].startswith(prefix)==True``. It has the following keys:
+
+            * :attr:`~eodag.config.PluginConfig.CollectionSelector.field` (``str``) Field in the search parameters to
+              match
+            * :attr:`~eodag.config.PluginConfig.CollectionSelector.prefix` (``str``) Prefix to match in the field
+
+          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables`
+            (``list`` [:class:`~eodag.config.PluginConfig.DiscoverQueryables`]): same as
+            :attr:`~eodag.config.PluginConfig.discover_queryables` above.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -480,7 +517,9 @@ class ECMWFSearch(PostJsonSearch):
             },
         )
 
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> RawSearchResult:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -488,13 +527,21 @@ class ECMWFSearch(PostJsonSearch):
         :return: list containing the results from the provider in json format
         """
         # no real search. We fake it all
-        return [{}]
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = kwargs
+        raw_search_results.query_params = (
+            prep.query_params if hasattr(prep, "query_params") else {}
+        )
+        raw_search_results.collection_def_params = (
+            prep.collection_def_params if hasattr(prep, "collection_def_params") else {}
+        )
+        return raw_search_results
 
     def query(
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Build ready-to-download SearchResult
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information needed for the search
@@ -505,11 +552,11 @@ class ECMWFSearch(PostJsonSearch):
         if not collection:
             collection = kwargs.get("collection")
         kwargs = self._preprocess_search_params(kwargs, collection)
-        result, num_items = super().query(prep, **kwargs)
-        if prep.count and not num_items:
-            num_items = 1
+        result = super().query(prep, **kwargs)
+        if prep.count and not result.number_matched:
+            result.number_matched = 1
 
-        return result, num_items
+        return result
 
     def clear(self) -> None:
         """Clear search context"""
@@ -570,7 +617,9 @@ class ECMWFSearch(PostJsonSearch):
                 params["geometry"] = _dc_qp["area"].split("/")
 
         params = {
-            k.removeprefix(ECMWF_PREFIX): v for k, v in params.items() if v is not None
+            k.removeprefix(ECMWF_PREFIX).removeprefix(f"{ECMWF_PREFIX[:-1]}_"): v
+            for k, v in params.items()
+            if v is not None
         }
 
         # dates
@@ -609,6 +658,14 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+        # ECMWF Polytope uses non-geojson structure for features
+        if "feature" in params:
+            params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
+            params.pop("feature")
+        # bounding box in area format
+        if "area" in params:
+            params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
+            params.pop("area")
 
         return params
 
@@ -617,7 +674,7 @@ class ECMWFSearch(PostJsonSearch):
     ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
 
-        if START and END in keywords:
+        if START in keywords and END in keywords:
             return
 
         collection_conf = getattr(self.config, "metadata_mapping", {})
@@ -666,14 +723,32 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
+        default_values.pop("metadata_mapping_from_product", None)
 
         filters["collection"] = collection
         queryables = self.discover_queryables(**{**default_values, **filters}) or {}
 
         return QueryablesDict(additional_properties=False, **queryables)
 
+    def _find_dynamic_queryables_config(
+        self, kwargs: dict[str, Any], dynamic_config: list
+    ) -> dict[str, Any]:
+        """Find the appropriate queryables configuration from dynamic configuration.
+
+        :param kwargs: Search parameters
+        :param dynamic_config: List of dynamic discover queryables configurations
+        :return: Found queryables configuration or empty dict
+        """
+        for dc in dynamic_config:
+            for cs in dc["collection_selector"]:
+                field = cs["field"]
+                if kwargs[field].startswith(cs["prefix"]):
+                    return dc["discover_queryables"]
+        return {}
+
     def discover_queryables(
-        self, **kwargs: Any
+        self,
+        **kwargs: Any,
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using its constraints file
 
@@ -683,10 +758,13 @@ class ECMWFSearch(PostJsonSearch):
         """
         collection = kwargs.pop("collection")
 
-        pt_config = self.get_collection_def_params(collection)
+        col_config = self.get_collection_def_params(collection)
 
-        default_values = deepcopy(pt_config)
+        default_values = deepcopy(col_config)
         default_values.pop("metadata_mapping", None)
+        default_values.pop("metadata_mapping_from_product", None)
+        default_values.pop("discover_queryables", None)
+        kwargs.pop("discover_queryables", None)
         filters = {**default_values, **kwargs}
 
         if "start" in filters:
@@ -694,34 +772,40 @@ class ECMWFSearch(PostJsonSearch):
         if "end" in filters:
             filters[END] = filters.pop("end")
 
-        # extract default datetime
-        processed_filters = self._preprocess_search_params(
-            deepcopy(filters), collection
-        )
+        # extract default datetime and convert geometry
+        try:
+            processed_filters = self._preprocess_search_params(
+                deepcopy(filters), collection
+            )
+        except Exception as e:
+            raise ValidationError(e.args[0]) from e
 
-        constraints_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
-            **filters,
-        )
+        # dynamic_discover_queryables for WekeoECMWFSearch
+        queryables_config = {}
+        if dynamic_config := getattr(self.config, "dynamic_discover_queryables", []):
+            queryables_config = self._find_dynamic_queryables_config(
+                kwargs, dynamic_config
+            )
+
+        provider_dq = getattr(self.config, "discover_queryables", {}) or {}
+        product_dq = col_config.get("discover_queryables", {}) or {}
+        dq_conf = {**provider_dq, **product_dq, **queryables_config}
+        constraints_url = format_metadata(dq_conf.get("constraints_url", ""), **filters)
         constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
-        form_url = format_metadata(
-            getattr(self.config, "discover_queryables", {}).get("form_url", ""),
-            **filters,
-        )
+        form_url = format_metadata(dq_conf.get("form_url", ""), **filters)
         form: list[dict[str, Any]] = self._fetch_data(form_url)
 
         formated_filters = self.format_as_provider_keyword(
-            collection, processed_filters
+            collection, deepcopy(processed_filters)
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
         for k, v in {**default_values, **kwargs}.items():
-            key = k.removeprefix(ECMWF_PREFIX)
+            key = k.removeprefix(ECMWF_PREFIX).removeprefix(f"{ECMWF_PREFIX[:-1]}_")
 
             if key not in ALLOWED_KEYWORDS | {
                 START,
                 END,
-                "geom",
                 "geometry",
             }:
                 raise ValidationError(
@@ -770,19 +854,20 @@ class ECMWFSearch(PostJsonSearch):
         # To check if all keywords are queryable parameters, we check if they are in the
         # available values or the collection config (available values calculated from the
         # constraints might not include all queryables)
-        for keyword in filters:
+        for keyword in processed_filters:
             if (
                 keyword
                 not in available_values.keys()
-                | pt_config.keys()
+                | col_config.keys()
                 | {
                     START,
                     END,
-                    "geom",
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
-                and keyword.removeprefix(ECMWF_PREFIX)
+                and keyword.removeprefix(ECMWF_PREFIX).removeprefix(
+                    f"{ECMWF_PREFIX[:-1]}_"
+                )
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
                 raise ValidationError(
@@ -803,10 +888,11 @@ class ECMWFSearch(PostJsonSearch):
 
         # ecmwf:date is replaced by start and end.
         # start and end filters are supported whenever combinations of "year", "month", "day" filters exist
+        queryable_prefix = f"{ECMWF_PREFIX[:-1]}_"
         if (
-            queryables.pop(f"{ECMWF_PREFIX}date", None)
-            or f"{ECMWF_PREFIX}year" in queryables
-            or f"{ECMWF_PREFIX}hyear" in queryables
+            queryables.pop(f"{queryable_prefix}date", None)
+            or f"{queryable_prefix}year" in queryables
+            or f"{queryable_prefix}hyear" in queryables
         ):
             queryables.update(
                 {
@@ -822,13 +908,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # area is geom in EODAG.
         if queryables.pop("area", None):
-            queryables["geom"] = Annotated[
-                Union[str, dict[str, float], BaseGeometry],
-                Field(
-                    None,
-                    description="Read EODAG documentation for all supported geometry format.",
-                ),
-            ]
+            queryables["geom"] = Queryables.get_with_default("geom", None)
 
         return queryables
 
@@ -1026,12 +1106,15 @@ class ECMWFSearch(PostJsonSearch):
             if is_required:
                 required_list.append(name)
 
-            queryables[ecmwf_format(name)] = Annotated[
+            formatted_param = ecmwf_format(name, alias=False)
+            formatted_alias = ecmwf_format(name)
+            queryables[formatted_param] = Annotated[
                 get_args(
                     json_field_definition_to_python(
                         prop,
                         default_value=default,
                         required=is_required,
+                        alias=formatted_alias,
                     )
                 )
             ]
@@ -1061,14 +1144,16 @@ class ECMWFSearch(PostJsonSearch):
         for name, values in available_values.items():
             # Rename keywords from form with metadata mapping.
             # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-            key = ecmwf_format(name)
+            formatted_param = ecmwf_format(name, alias=False)
+            formatted_alias = ecmwf_format(name)
 
-            queryables[key] = Annotated[
+            queryables[formatted_param] = Annotated[
                 get_args(
                     json_field_definition_to_python(
                         {"type": "string", "title": name, "enum": values},
                         default_value=defaults.get(name),
-                        required=bool(key in required),
+                        required=bool(formatted_alias in required),
+                        alias=formatted_alias,
                     )
                 )
             ]
@@ -1346,7 +1431,7 @@ class MeteoblueSearch(ECMWFSearch):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> list[dict[str, Any]]:
+    ) -> RawSearchResult:
         """Perform the actual search request, and return result in a single element.
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
@@ -1361,8 +1446,12 @@ class MeteoblueSearch(ECMWFSearch):
             f" {self.__class__.__name__} instance"
         )
         response = self._request(prep)
+        raw_search_results = RawSearchResult([response.json()])
+        raw_search_results.search_params = kwargs
 
-        return [response.json()]
+        raw_search_results.query_params = prep.query_params
+        raw_search_results.collection_def_params = prep.collection_def_params
+        return raw_search_results
 
     def build_query_string(
         self, collection: str, query_dict: dict[str, Any]
@@ -1539,7 +1628,9 @@ class WekeoECMWFSearch(ECMWFSearch):
 
         return normalized
 
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> RawSearchResult:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -1549,6 +1640,16 @@ class WekeoECMWFSearch(ECMWFSearch):
         if "id" in kwargs and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> use parent normalize results.
             # No real search. We fake it all, then check order status using given id
-            return [{}]
+            raw_search_results = RawSearchResult([{}])
+            raw_search_results.search_params = kwargs
+            raw_search_results.query_params = (
+                prep.query_params if hasattr(prep, "query_params") else {}
+            )
+            raw_search_results.collection_def_params = (
+                prep.collection_def_params
+                if hasattr(prep, "collection_def_params")
+                else {}
+            )
+            return raw_search_results
         else:
-            return QueryStringSearch.do_search(self, *args, **kwargs)
+            return QueryStringSearch.do_search(self, prep, **kwargs)
