@@ -60,7 +60,7 @@ jobs:
         body: |
           `${{ env.EXPECTED_TAG }}` release.
 
-          5 files were updated:
+          2 files were updated:
 
           [CHANGES.rst](https://github.com/CS-SI/eodag/blob/new-release/CHANGES.rst), and version updated in:
           - [pyproject.toml](https://github.com/CS-SI/eodag/blob/new-release/pyproject.toml?plain=1#L6)
