@@ -3,6 +3,147 @@ Release history
 ===============
 
 
+v4.0.0 (2025-11-20)
+===================
+
+Bug Fixes
+---------
+
+* Keep ext_product_types.json in v4 (`#1888`_, `d4f8379`_)
+
+* **core**: Skip None EOProduct.properties (`#1892`_, `41c2fc4`_)
+
+* **core**: Sort queryables and ecmwf alias support (`#1894`_, `090c0bd`_)
+
+* **plugins**: Add temporal resolution to ecmwf properties (`#1899`_, `219e669`_)
+
+* **plugins**: Cop_marine search by id (`#1923`_, `0d42f00`_)
+
+* **plugins**: Ecmwf geometries support (`#1924`_, `e996be9`_)
+
+Chores
+------
+
+* Update external product types reference (`#1880`_, `d67aaaf`_)
+
+* Update external product-types reference (`#1919`_, `da20e3d`_)
+
+* Update external product-types reference (`#1911`_, `1d10144`_)
+
+Continuous Integration
+----------------------
+
+* Better external collections summary in auto-update PR (`#1907`_, `43d9fb4`_)
+
+* Fetch collections PR fix and refactor (`#1917`_, `0b88c50`_)
+
+* Pre-commit replaced with faster prek (`#1914`_, `eb5dd5f`_)
+
+* Run tests for v4 branch and associated PRs (`#1868`_, `a944aab`_)
+
+Features
+--------
+
+* **core**: Collections representation classes (`#1731`_, `4b57160`_)
+
+* **core**: Search pagination using next_page (`#1745`_, `9abe670`_)
+
+* **core**: Search validation (`#1877`_, `a157358`_)
+
+* **core**: STAC formatted properties (`#1730`_, `743d7b5`_)
+
+* **plugins**: Use original copernicus provider to list queryables of wekeo_ecmwf (`#1897`_,
+  `0929a7c`_)
+
+* **providers**: Add DEDT Marenostrum provider (`#1869`_, `650d21b`_)
+
+* **providers**: Add DT_CLIMATE_ADAPTATION collection (`#1908`_, `cd84b88`_)
+
+Refactoring
+-----------
+
+* Remove deprecated code (`#1781`_, `09e14fe`_)
+
+* Remove deprecated converters and plugins (`#1789`_, `edff5fe`_)
+
+* Remove deprecated OAuth (`#1839`_, `3b749e2`_)
+
+* Remove deprecated server-mode (`#1840`_, `266471b`_)
+
+* **collections**: CLMS and MetOp updates (`#1906`_, `9ebb872`_)
+
+* **core**: Disable search pagination when less items got than expected (`#1920`_, `dfa18e7`_)
+
+* **core**: Remove deprecatred legacy driver and get_data doc (`#1891`_, `2500af7`_)
+
+* **core**: Whole world as default product geometry and shapely stubs (`#1915`_, `99df712`_)
+
+* **plugins**: Remove deprecated CreodiasS3Download (`#1886`_, `ea0a817`_)
+
+* **providers**: Next_page_token_key added to confs (`#1921`_, `2bb99ba`_)
+
+.. _#1730: https://github.com/CS-SI/eodag/pull/1730
+.. _#1731: https://github.com/CS-SI/eodag/pull/1731
+.. _#1745: https://github.com/CS-SI/eodag/pull/1745
+.. _#1781: https://github.com/CS-SI/eodag/pull/1781
+.. _#1789: https://github.com/CS-SI/eodag/pull/1789
+.. _#1839: https://github.com/CS-SI/eodag/pull/1839
+.. _#1840: https://github.com/CS-SI/eodag/pull/1840
+.. _#1868: https://github.com/CS-SI/eodag/pull/1868
+.. _#1869: https://github.com/CS-SI/eodag/pull/1869
+.. _#1877: https://github.com/CS-SI/eodag/pull/1877
+.. _#1880: https://github.com/CS-SI/eodag/pull/1880
+.. _#1886: https://github.com/CS-SI/eodag/pull/1886
+.. _#1888: https://github.com/CS-SI/eodag/pull/1888
+.. _#1891: https://github.com/CS-SI/eodag/pull/1891
+.. _#1892: https://github.com/CS-SI/eodag/pull/1892
+.. _#1894: https://github.com/CS-SI/eodag/pull/1894
+.. _#1897: https://github.com/CS-SI/eodag/pull/1897
+.. _#1899: https://github.com/CS-SI/eodag/pull/1899
+.. _#1906: https://github.com/CS-SI/eodag/pull/1906
+.. _#1907: https://github.com/CS-SI/eodag/pull/1907
+.. _#1908: https://github.com/CS-SI/eodag/pull/1908
+.. _#1911: https://github.com/CS-SI/eodag/pull/1911
+.. _#1914: https://github.com/CS-SI/eodag/pull/1914
+.. _#1915: https://github.com/CS-SI/eodag/pull/1915
+.. _#1917: https://github.com/CS-SI/eodag/pull/1917
+.. _#1919: https://github.com/CS-SI/eodag/pull/1919
+.. _#1920: https://github.com/CS-SI/eodag/pull/1920
+.. _#1921: https://github.com/CS-SI/eodag/pull/1921
+.. _#1923: https://github.com/CS-SI/eodag/pull/1923
+.. _#1924: https://github.com/CS-SI/eodag/pull/1924
+.. _090c0bd: https://github.com/CS-SI/eodag/commit/090c0bdee39041eb9b572112602be9477771a5fe
+.. _0929a7c: https://github.com/CS-SI/eodag/commit/0929a7c7f883a5c5efcb87b903e2752a6efd789b
+.. _09e14fe: https://github.com/CS-SI/eodag/commit/09e14fe91054bd3a67b572da47f283ea34309b9f
+.. _0b88c50: https://github.com/CS-SI/eodag/commit/0b88c5041ec4d838cad64dbf864185b72325c791
+.. _0d42f00: https://github.com/CS-SI/eodag/commit/0d42f00e9c237188c0ffc7de8aad3b5a0a37a6ae
+.. _1d10144: https://github.com/CS-SI/eodag/commit/1d101448d7611c339f1eaa4c594ad7261c7c5b77
+.. _219e669: https://github.com/CS-SI/eodag/commit/219e669fa6e8bbbfa96357b21b964dd53c445233
+.. _2500af7: https://github.com/CS-SI/eodag/commit/2500af7753cbbc1cfe6d315ea3247aebf6299859
+.. _266471b: https://github.com/CS-SI/eodag/commit/266471b676289ad532818986843478cac5765337
+.. _2bb99ba: https://github.com/CS-SI/eodag/commit/2bb99babf59ec2b7cf60a05148f20217ba6bfac9
+.. _3b749e2: https://github.com/CS-SI/eodag/commit/3b749e2b64f4c828f9562de7211df19ae7967736
+.. _41c2fc4: https://github.com/CS-SI/eodag/commit/41c2fc4735df6b4498a5333dc13007ece279afce
+.. _43d9fb4: https://github.com/CS-SI/eodag/commit/43d9fb442a8f33ab94873be251b230d1838d01c8
+.. _4b57160: https://github.com/CS-SI/eodag/commit/4b571601b8a872265adc14c7fdb0be8e8566aa4c
+.. _650d21b: https://github.com/CS-SI/eodag/commit/650d21b84e3c929eee7c1b100e6ee7ecfd0a70b8
+.. _743d7b5: https://github.com/CS-SI/eodag/commit/743d7b5d25d50425de4c7f1c62c0922d7453afe2
+.. _99df712: https://github.com/CS-SI/eodag/commit/99df71295a9a4c9f03bcb05cec814c4f50e43fb2
+.. _9abe670: https://github.com/CS-SI/eodag/commit/9abe670945a70878ed7de5c53c46e5d5776e96c1
+.. _9ebb872: https://github.com/CS-SI/eodag/commit/9ebb87297d464d06430dd5271c20b44e0df9b14c
+.. _a157358: https://github.com/CS-SI/eodag/commit/a157358fa85e88b09ded3f05e02f463c05bd8cbd
+.. _a944aab: https://github.com/CS-SI/eodag/commit/a944aab4675310576ba64d8bc0f634ceb95c3f4b
+.. _cd84b88: https://github.com/CS-SI/eodag/commit/cd84b88ff1bcb765f0b7ecd4d67fea1b06bc403e
+.. _d4f8379: https://github.com/CS-SI/eodag/commit/d4f8379b90c02346506bdb53ded4c06ef128df31
+.. _d67aaaf: https://github.com/CS-SI/eodag/commit/d67aaafbfa4b36721df758029becdfd066e6c3e3
+.. _da20e3d: https://github.com/CS-SI/eodag/commit/da20e3d65b1c34233d363901ff79ba1513f0e693
+.. _dfa18e7: https://github.com/CS-SI/eodag/commit/dfa18e7212094204000da269d039f05906dcb294
+.. _e996be9: https://github.com/CS-SI/eodag/commit/e996be9ae1d7d94703452df736aed6ec8115a1f5
+.. _ea0a817: https://github.com/CS-SI/eodag/commit/ea0a817674470685d4d5d83461c55e7ba0c52f79
+.. _eb5dd5f: https://github.com/CS-SI/eodag/commit/eb5dd5fb85ae17f02ac3abf8d96ff72b84358fea
+.. _edff5fe: https://github.com/CS-SI/eodag/commit/edff5fe12aedf860d1d30392a7775f3d23e648db
+
+
 v4.0.0a1 (2025-10-20)
 =====================
 
