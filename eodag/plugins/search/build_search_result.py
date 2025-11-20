@@ -462,22 +462,6 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
-        * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
-          (list[:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
-          the queryables from different provider queryables endpoints. A configuration is used based on the given
-          selection criterias. The first match is used. If no match is found, it falls back to standard behaviors
-          (e.g. discovery via :meth:`~eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables`). Each element of the list has the following keys:
-
-          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.collection_selector`
-            (list[:class:`~eodag.config.PluginConfig.CollectionSelector`]): list of collection selection criterias.
-            The configuration given in :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables` is used if any collection selector matches the
-            search parameters. The selector matches if the field value starts with the given prefix,
-            i.e. it matches if ``parameters[field].startswith(prefix)==True``.
-            It has the following keys:
-            * :attr:`~eodag.config.PluginConfig.CollectionSelector.field` (``str``) Field in the search parameters to match
-            * :attr:`~eodag.config.PluginConfig.prefix` (``str``) Prefix to match in the field
-          * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables`
-            (list[:class:`~eodag.config.PluginConfig.DiscoverQueryables`]): same as `discover_queryables` above.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -1554,6 +1538,28 @@ class WekeoECMWFSearch(ECMWFSearch):
             additional parameters needed to perform search. These parameters won't be included in
             the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
             will be passed to a :meth:`str.format` method before being loaded as json.
+
+          * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
+            (``list`` [:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
+            the queryables from different provider queryables endpoints. A configuration is used based on the given
+            selection criterias. The first match is used. If no match is found, it falls back to standard behaviors
+            (e.g. discovery via :meth:`~eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables`).
+            Each element of the list has the following keys:
+
+            * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.collection_selector`
+              (``list`` [:class:`~eodag.config.PluginConfig.CollectionSelector`]): list of collection selection
+              criterias. The configuration given in
+              :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables` is used if any collection
+              selector matches the search parameters. The selector matches if the field value starts with the given
+              prefix, i.e. it matches if ``parameters[field].startswith(prefix)==True``. It has the following keys:
+
+              * :attr:`~eodag.config.PluginConfig.CollectionSelector.field` (``str``) Field in the search parameters to
+                match
+              * :attr:`~eodag.config.PluginConfig.CollectionSelector.prefix` (``str``) Prefix to match in the field
+
+            * :attr:`~eodag.config.PluginConfig.DynamicDiscoverQueryables.discover_queryables`
+              (``list`` [:class:`~eodag.config.PluginConfig.DiscoverQueryables`]): same as
+              :attr:`~eodag.config.PluginConfig.discover_queryables` above.
     """
 
     def normalize_results(
