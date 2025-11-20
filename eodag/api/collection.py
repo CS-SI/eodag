@@ -132,6 +132,7 @@ class Collection(BaseModel):
     def set_id_from_alias(self) -> Self:
         """if an alias exists, use it to update id attribute"""
         if self.alias is not None:
+            self._id = self.id
             self.id = self.alias
         return self
 

@@ -176,7 +176,12 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        available_collections = set(self.collections_config.keys())
+        available_collections = set()
+        for coll in self.collections_config.values():
+            if getattr(coll, "_id", None):
+                available_collections.add(coll._id)
+            else:
+                available_collections.add(coll.id)
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -584,14 +589,12 @@ class EODataAccessGateway:
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for p in providers_configs:
-            for collection_id in p.products:
-                if collection_id == GENERIC_COLLECTION:
-                    continue
-
-                if (
-                    collection := self.collections_config[collection_id]
-                ) not in collections:
+        for coll_id, collection in self.collections_config.items():
+            original_id = collection._id
+            if not original_id:
+                original_id = coll_id
+            for p in providers_configs:
+                if original_id in p.products and collection not in collections:
                     collections.append(collection)
 
         # Return the collections sorted in lexicographic order of their id
@@ -988,7 +991,7 @@ class EODataAccessGateway:
         :returns: Internal name of the collection.
         """
         collections = [
-            k for k, v in self.collections_config.items() if v.alias == alias_or_id
+            v for k, v in self.collections_config.items() if v.alias == alias_or_id
         ]
 
         if len(collections) > 1:
@@ -1004,7 +1007,7 @@ class EODataAccessGateway:
                     f"Could not find collection from alias or id {alias_or_id}"
                 )
 
-        return collections[0]
+        return collections[0]._id or collections[0].id
 
     def get_alias_from_collection(self, collection: str) -> str:
         """Return the alias of a collection by its id. If no alias was defined for the
