@@ -1100,12 +1100,12 @@ class EODataAccessGateway:
         guesses_with_score: list[tuple[str, int]] = []
 
         for col, col_f in self.collections_config.items():
-            if (
-                col == GENERIC_COLLECTION
-                or col not in self._plugins_manager.collection_to_provider_config_map
+            if col == GENERIC_COLLECTION or (
+                col not in self._plugins_manager.collection_to_provider_config_map
+                and col_f._id
+                not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
-
             score = 0  # how many filters matched
 
             # free text search
@@ -1152,21 +1152,29 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                col_start = col_f.extent.temporal.interval[0][0]
-                col_end = col_f.extent.temporal.interval[0][1]
+                col_start_str = col_f.extent.temporal.interval[0][0]
+                if col_start_str:
+                    col_start = rfc3339_str_to_datetime(col_start_str)
+                else:
+                    col_start = min_aware
+                col_end_str = col_f.extent.temporal.interval[0][1]
+                if col_end_str:
+                    col_end = rfc3339_str_to_datetime(col_end_str)
+                else:
+                    col_end = max_aware
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
-                    col_start or min_aware,
+                    col_start,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(end_date) if end_date else max_aware,
-                    col_end or max_aware,
+                    col_end,
                 )
                 if not (max_start <= min_end):
                     continue
 
-            guesses_with_score.append((col_f._id, score))
+            guesses_with_score.append((col_f.id, score))
 
         if guesses_with_score:
             # sort by score descending, then col for stability
