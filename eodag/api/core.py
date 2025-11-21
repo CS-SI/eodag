@@ -590,6 +590,8 @@ class EODataAccessGateway:
             )
 
         for coll_id, collection in self.collections_config.items():
+            if coll_id == "GENERIC_COLLECTION":
+                continue
             original_id = collection._id
             if not original_id:
                 original_id = coll_id
