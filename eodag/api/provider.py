@@ -56,7 +56,7 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
-from eodag.utils.repr import html_table
+from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -310,36 +310,34 @@ class Provider:
         """Hash based on provider name, for use in sets/dicts."""
         return hash(self.name)
 
-    def _repr_html_(self, show_name: bool = True) -> str:
+    def _repr_html_(self, embedded: bool = False) -> str:
         """HTML representation for Jupyter/IPython display."""
         group_display = f" ({self.group})" if self.group else ""
-        header_html = (
-            f"""
-        <h4 class="provider-title">{self.name}{group_display}</h4>
-        """
-            if show_name
+        thead = (
+            f"""<thead><tr><td style='text-align: left; color: grey;'>
+                {type(self).__name__}("<span style='color: black'>{self.name}{group_display}</span>")</td></tr></thead>
+            """
+            if not embedded
             else ""
         )
+        tr_style = "style='background-color: transparent;'" if embedded else ""
 
         summaries = {
-            "Description": self.config.description or "",
-            "URL": self.config.url or "",
-            "Priority": self.priority,
+            "name": self.name,
+            "description": self.config.description or "",
+            "url": self.config.url or "",
+            "priority": self.priority,
+            "collections": list(self.collections.keys()),
         }
 
-        html = f"""
-        <br />
-        <div>
-            {header_html}
-            <br />
-            {html_table(summaries)}
-            <br />
-            <br />
-            {html_table(list(self.collections.keys()))}
-        </div>
-        """
+        col_html_table = dict_to_html_table(summaries, depth=1, brackets=False)
 
-        return html
+        return (
+            f"<table>{thead}<tbody>"
+            f"<tr {tr_style}><td style='text-align: left;'>"
+            f"{col_html_table}</td></tr>"
+            "</tbody></table>"
+        )
 
     @property
     def config(self) -> ProviderConfig:
@@ -606,7 +604,7 @@ class ProvidersDict(UserDict[str, Provider]):
         :return: HTML string representation of the ProvidersDict.
         """
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
-                ProvidersDict ({len(self.data)})
+                {type(self).__name__} ({len(self.data)})
                 </td></tr></thead>"""
         rows = ""
 
@@ -616,7 +614,7 @@ class ProvidersDict(UserDict[str, Provider]):
                 f"<tr><td style='text-align: left;'>"
                 f"<details>"
                 f"<summary style='cursor: pointer; font-weight: bold;'>{provider.name}</summary>"
-                f"{provider._repr_html_(show_name=False)}"
+                f"{provider._repr_html_()}"
                 f"</details>"
                 f"</td></tr>"
             )
