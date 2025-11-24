@@ -212,6 +212,7 @@ class DiscoverQueryables(TypedDict, total=False):
     #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
     constraints_entry: str
 
+
 class CollectionSelector(TypedDict, total=False):
     """Define the criteria to select a collection in :class:`~eodag.config.DynamicDiscoverQueryables`.
 
@@ -222,6 +223,7 @@ class CollectionSelector(TypedDict, total=False):
     field: str
     #: Prefix to match in the field
     prefix: str
+
 
 class DynamicDiscoverQueryables(TypedDict, total=False):
     """Configuration for queryables dynamic discovery.
@@ -234,6 +236,7 @@ class DynamicDiscoverQueryables(TypedDict, total=False):
     collection_selector: list[CollectionSelector]
     #: Configuration for queryables discovery to use
     discover_queryables: DiscoverQueryables
+
 
 class OrderOnResponse(TypedDict):
     """Configuration for order on-response during download"""
