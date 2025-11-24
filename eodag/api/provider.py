@@ -477,8 +477,8 @@ class Provider:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = Collection(
-                    dag=dag, id=product_id, title=product_id, description=NOT_AVAILABLE
+                empty_product = Collection.create_with_dag(
+                    dag, id=product_id, title=product_id, description=NOT_AVAILABLE
                 )
                 dag.collections_config[product_id] = empty_product
                 products_to_add.append(product_id)
