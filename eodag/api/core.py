@@ -1063,13 +1063,16 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
         if collection := kwargs.get("collection"):
-            try:
-                collection = self.get_collection_from_alias(collection)
+            if collection in self.collections_config:
                 return CollectionsList([self.collections_config[collection]])
-            except NoMatchingCollection:
-                return CollectionsList(
-                    [Collection.create_with_dag(self, id=collection)]
-                )
+            else:
+                try:
+                    collection = self.get_collection_from_alias(collection)
+                    return CollectionsList([self.collections_config[collection]])
+                except NoMatchingCollection:
+                    return CollectionsList(
+                        [Collection.create_with_dag(self, id=collection)]
+                    )
 
         filters: dict[str, str] = {
             k: v
