@@ -886,15 +886,14 @@ class EODataAccessGateway:
                             try:
                                 # new_collection_conf does not already exist, append it
                                 # to self.collections_config
-                                self.collections_config[
-                                    new_collection
-                                ] = Collection.create_with_dag(
+                                new_coll_obj = Collection.create_with_dag(
                                     self,
                                     id=new_collection,
                                     **new_collections_conf["collections_config"][
                                         new_collection
                                     ],
                                 )
+                                self.collections_config[new_coll_obj.id] = new_coll_obj
                             except ValidationError:
                                 # skip collection if there is a problem with its id (missing or not a string)
                                 logger.debug(
@@ -915,7 +914,7 @@ class EODataAccessGateway:
                                 # increase the increment if the new collection had
                                 # bad formatted attributes in the external config
                                 dumped_collection = self.collections_config[
-                                    new_collection
+                                    new_coll_obj.id
                                 ].model_dump()
                                 dumped_ext_conf_col = {
                                     **dumped_collection,
@@ -1153,15 +1152,15 @@ class EODataAccessGateway:
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
                 col_start_str = col_f.extent.temporal.interval[0][0]
-                if col_start_str:
+                if col_start_str and isinstance(col_start_str, str):
                     col_start = rfc3339_str_to_datetime(col_start_str)
                 else:
-                    col_start = min_aware
+                    col_start = col_start_str or min_aware
                 col_end_str = col_f.extent.temporal.interval[0][1]
-                if col_end_str:
+                if col_end_str and isinstance(col_end_str, str):
                     col_end = rfc3339_str_to_datetime(col_end_str)
                 else:
-                    col_end = max_aware
+                    col_end = col_end_str or max_aware
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
