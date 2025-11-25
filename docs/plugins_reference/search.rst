@@ -22,6 +22,7 @@ This table lists all the search plugins currently available:
    static_stac_search.StaticStacSearch
    stac_list_assets.StacListAssets
    cop_marine.CopMarineSearch
+   cop_ghsl.CopGhslSearch
    creodias_s3.CreodiasS3Search
    build_search_result.ECMWFSearch
    build_search_result.MeteoblueSearch
