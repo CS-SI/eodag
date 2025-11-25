@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import annotations
 
 from collections import UserDict
@@ -11,6 +28,8 @@ from pydantic_core import PydanticUndefined
 from shapely.geometry.base import BaseGeometry
 
 from eodag.types import annotated_dict_to_model, model_fields_to_annotated
+from eodag.types.stac_extensions import STAC_EXTENSIONS
+from eodag.types.stac_metadata import CommonStacMetadata
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
 
 Percentage = Annotated[PositiveInt, Lt(100)]
@@ -47,11 +66,21 @@ class CommonQueryables(BaseModel):
         f.__metadata__[0].default = default
         return f
 
+    @classmethod
+    def from_stac_models(
+        cls,
+        extensions=STAC_EXTENSIONS,
+        base_model=CommonStacMetadata,
+    ):
+        """from_stac_models class method to create Queryables from STAC models"""
+        return
+
 
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties.
 
     Parameters default value is set to ``None`` to have them not required.
+    Fields described here are queryables-specific and complete StacMetadata fields.
     """
 
     start: Annotated[
@@ -78,57 +107,7 @@ class Queryables(CommonQueryables):
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]
-    # common metadata
-    constellation: Annotated[str, Field(None)]
-    created: Annotated[str, Field(None)]
-    description: Annotated[str, Field(None)]
-    gsd: Annotated[int, Field(None)]
     id: Annotated[str, Field(None)]
-    instruments: Annotated[str, Field(None)]
-    keywords: Annotated[str, Field(None)]
-    license: Annotated[str, Field(None)]
-    platform: Annotated[str, Field(None)]
-    providers: Annotated[str, Field(None)]
-    title: Annotated[str, Field(None)]
-    uid: Annotated[str, Field(None)]
-    updated: Annotated[str, Field(None)]
-    # eo extension
-    eo_cloud_cover: Annotated[Percentage, Field(None, alias="eo:cloud_cover")]
-    eo_snow_cover: Annotated[Percentage, Field(None, alias="eo:snow_cover")]
-    # grid extension
-    grid_code: Annotated[
-        str, Field(None, alias="grid:code", pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$")
-    ]
-    # mgrs extension
-    mgrs_grid_square: Annotated[str, Field(None, alias="mgrs:grid_square")]
-    mgrs_latitude_band: Annotated[str, Field(None, alias="mgrs:latitude_band")]
-    mgrs_utm_zone: Annotated[str, Field(None, alias="mgrs:utm_zone")]
-    # order extension
-    order_status: Annotated[str, Field(None, alias="order:status")]
-    # processing extension
-    processing_level: Annotated[str, Field(None, alias="processing:level")]
-    # product extension
-    product_acquisition_type: Annotated[
-        str, Field(None, alias="product:acquisition_type")
-    ]
-    product_timeliness: Annotated[str, Field(None, alias="product:timeliness")]
-    product_type: Annotated[str, Field(None, alias="product:type")]
-    # sar extension
-    sar_beam_ids: Annotated[str, Field(None, alias="sar:beam_ids")]
-    sar_frequency_band: Annotated[float, Field(None, alias="sar:frequency_band")]
-    sar_instrument_mode: Annotated[str, Field(None, alias="sar:instrument_mode")]
-    sar_polarizations: Annotated[list[str], Field(None, alias="sar:polarizations")]
-    # sat extension
-    sat_absolute_orbit: Annotated[int, Field(None, alias="sat:absolute_orbit")]
-    sat_orbit_cycle: Annotated[int, Field(None, alias="sat:orbit_cycle")]
-    sat_orbit_state: Annotated[str, Field(None, alias="sat:orbit_state")]
-    sat_relative_orbit: Annotated[int, Field(None, alias="sat:relative_orbit")]
-    # sci extension
-    sci_doi: Annotated[str, Field(None, alias="sci:doi")]
-    # view extension
-    view_incidence_angle: Annotated[str, Field(None, alias="view:incidence_angle")]
-    view_sun_azimuth: Annotated[str, Field(None, alias="view:sun_azimuth")]
-    view_sun_elevation: Annotated[str, Field(None, alias="view:sun_elevation")]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

@@ -35,6 +35,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
+from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils import (
     GENERIC_COLLECTION,
     copy_deepcopy,
@@ -358,7 +359,7 @@ class Search(PluginTopic):
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError as e:
             if str(e):
-                logger.debug(str(e))
+                logger.debug("%s, configured metadata-mapping used", str(e))
             queryables = self.queryables_from_metadata_mapping(collection, alias)
 
         return QueryablesDict(**queryables)
@@ -468,8 +469,11 @@ class Search(PluginTopic):
             ):
                 del metadata_mapping[param]
 
+        queryables_model = create_stac_metadata_model(
+            base_models=[Queryables, CommonStacMetadata]
+        )
         eodag_queryables = copy_deepcopy(
-            model_fields_to_annotated(Queryables.model_fields)
+            model_fields_to_annotated(queryables_model.model_fields)
         )
         queryables["collection"] = eodag_queryables.pop("collection")
         # add default value for collection

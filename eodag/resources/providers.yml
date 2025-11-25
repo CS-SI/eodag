@@ -589,9 +589,6 @@
       version: '$.properties.version'
       created: '$.properties.dhusIngestDate'
       updated: '$.properties.updated'
-      sar:instrument_mode:
-        - 'sensorMode'
-        - '$.properties.sensorMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       start_datetime:
