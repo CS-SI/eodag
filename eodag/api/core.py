@@ -713,7 +713,7 @@ class EODataAccessGateway:
                         continue
 
                     provider_products_config = (
-                        self.providers[provider].collections or {}
+                        self.providers[provider].collections_config or {}
                     )
                 except UnsupportedProvider:
                     logger.debug(
@@ -825,7 +825,7 @@ class EODataAccessGateway:
         candidates = []
 
         for key, provider in self.providers.items():
-            if collection and collection not in provider.collections:
+            if collection and collection not in provider.collections_config:
                 continue
 
             group = getattr(provider.config, "group", None)

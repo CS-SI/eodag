@@ -265,7 +265,7 @@ class Provider:
     >>> provider = Provider(config)
     >>> provider.name
     'example_provider'
-    >>> 'S2_MSI_L1C' in provider.collections
+    >>> 'S2_MSI_L1C' in provider.collections_config
     True
     >>> provider.priority  # Default priority
     0
@@ -327,7 +327,7 @@ class Provider:
             "description": self.config.description or "",
             "url": self.config.url or "",
             "priority": self.priority,
-            "collections": list(self.collections.keys()),
+            "collections": list(self.collections_config.keys()),
         }
 
         col_html_table = dict_to_html_table(summaries, depth=1, brackets=False)
@@ -358,8 +358,8 @@ class Provider:
         return self._name
 
     @property
-    def collections(self) -> dict[str, Any]:
-        """Return the collections dictionary for this provider."""
+    def collections_config(self) -> dict[str, Any]:
+        """Return the collections configuration dictionary for this provider."""
         return getattr(self.config, "products", {})
 
     @property
@@ -446,7 +446,7 @@ class Provider:
         :raises UnsupportedCollection: If the collection is not found.
         """
         try:
-            del self.collections[name]
+            del self.collections_config[name]
         except KeyError:
             msg = f"Collection '{name}' not found in provider '{self.name}'."
             raise UnsupportedCollection(msg)
@@ -468,7 +468,7 @@ class Provider:
         products_to_remove: list[str] = []
         products_to_add: list[str] = []
 
-        for product_id in self.collections:
+        for product_id in self.collections_config:
             if product_id == GENERIC_COLLECTION:
                 continue
 
@@ -770,7 +770,7 @@ class ProvidersDict(UserDict[str, Provider]):
         :raises UnsupportedProvider: If the provider or product is not found.
         """
         if provider_obj := self.get(provider):
-            if collection in provider_obj.collections:
+            if collection in provider_obj.collections_config:
                 provider_obj.delete_collection(collection)
             else:
                 msg = f"Collection '{collection}' not found for provider '{provider}'."

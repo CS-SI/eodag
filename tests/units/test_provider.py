@@ -94,7 +94,9 @@ class TestProvider:
         provider = Provider(basic_config)
         assert provider.priority == 0
         assert provider.group is None
-        assert provider.collections == {"S2_MSI_L1C": {"collection": "S2_MSI_L1C"}}
+        assert provider.collections_config == {
+            "S2_MSI_L1C": {"collection": "S2_MSI_L1C"}
+        }
         assert provider.search_config.type == "StacSearch"
         assert provider.api_config is None
         assert provider.download_config is None
@@ -119,7 +121,7 @@ class TestProvider:
 
         # Successful deletion
         provider.delete_collection("S2_MSI_L1C")
-        assert "S2_MSI_L1C" not in provider.collections
+        assert "S2_MSI_L1C" not in provider.collections_config
 
         # Non-existent collection
         with pytest.raises(UnsupportedCollection):
@@ -147,7 +149,7 @@ class TestProvider:
         with patch.object(provider, "delete_collection") as mock_delete:
             provider.sync_collections(dag, strict_mode=False)
             mock_delete.assert_not_called()
-            assert "UNKNOWN_TYPE" in provider.collections
+            assert "UNKNOWN_TYPE" in provider.collections_config
 
 
 class TestProviderConfig:
@@ -330,7 +332,7 @@ class TestProvidersDict:
         sample_providers["provider1"].config.products = {"TEST": {"collection": "TEST"}}
 
         sample_providers.delete_collection("provider1", "TEST")
-        assert "TEST" not in sample_providers["provider1"].collections
+        assert "TEST" not in sample_providers["provider1"].collections_config
 
         # Test with non-existent provider
         with pytest.raises(UnsupportedProvider):

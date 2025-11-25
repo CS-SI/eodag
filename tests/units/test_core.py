@@ -877,15 +877,15 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers["earth_search"].collections)
-        self.assertNotIn("bar", self.dag.providers["earth_search"].collections)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].collections_config)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
         self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertIn("foo", self.dag.providers["earth_search"].collections)
-        self.assertIn("bar", self.dag.providers["earth_search"].collections)
+        self.assertIn("foo", self.dag.providers["earth_search"].collections_config)
+        self.assertIn("bar", self.dag.providers["earth_search"].collections_config)
         self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
         self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
@@ -912,8 +912,8 @@ class TestCore(TestCoreBase):
         # we keep the existing ext-conf to use it for a provider with an api plugin
         ext_collections_conf["ecmwf"] = ext_collections_conf.pop("earth_search")
 
-        self.assertNotIn("foo", self.dag.providers["ecmwf"].collections)
-        self.assertNotIn("bar", self.dag.providers["ecmwf"].collections)
+        self.assertNotIn("foo", self.dag.providers["ecmwf"].collections_config)
+        self.assertNotIn("bar", self.dag.providers["ecmwf"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
@@ -930,8 +930,8 @@ class TestCore(TestCoreBase):
 
         self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertIn("foo", self.dag.providers["ecmwf"].collections)
-        self.assertIn("bar", self.dag.providers["ecmwf"].collections)
+        self.assertIn("foo", self.dag.providers["ecmwf"].collections_config)
+        self.assertIn("bar", self.dag.providers["ecmwf"].collections_config)
         self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
         self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
@@ -940,8 +940,8 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers["earth_search"].collections)
-        self.assertNotIn("bar", self.dag.providers["earth_search"].collections)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].collections_config)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
@@ -949,8 +949,8 @@ class TestCore(TestCoreBase):
 
         self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertNotIn("foo", self.dag.providers["earth_search"].collections)
-        self.assertNotIn("bar", self.dag.providers["earth_search"].collections)
+        self.assertNotIn("foo", self.dag.providers["earth_search"].collections_config)
+        self.assertNotIn("bar", self.dag.providers["earth_search"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
@@ -1000,7 +1000,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has been added to the config
-            self.assertIn("foo", self.dag.providers["earth_search"].collections)
+            self.assertIn("foo", self.dag.providers["earth_search"].collections_config)
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"]["foo"]
@@ -1040,7 +1040,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has not been added to the config
-            self.assertNotIn(100, self.dag.providers["earth_search"].collections)
+            self.assertNotIn(100, self.dag.providers["earth_search"].collections_config)
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"][100]
@@ -1153,7 +1153,7 @@ class TestCore(TestCoreBase):
         self.dag.fetch_collections_list()
         self.assertTrue(self.dag.providers["earth_search"].collections_fetched)
         self.assertEqual(
-            self.dag.providers["earth_search"].collections["foo"],
+            self.dag.providers["earth_search"].collections_config["foo"],
             {"_collection": "foo"},
         )
         self.assertEqual(
@@ -4174,14 +4174,14 @@ class TestCoreProviderGroup(TestCoreBase):
             if self.dag.providers[name].fetchable:
                 self.assertTrue(self.dag.providers[name].collections_fetched)
                 self.assertEqual(
-                    self.dag.providers[name].collections["foo"],
+                    self.dag.providers[name].collections_config["foo"],
                     {"_collection": "foo"},
                 )
                 mock_discover_collections.assert_called_with(self.dag, provider=name)
             else:
                 self.assertFalse(self.dag.providers[name].collections_fetched)
                 self.assertNotIn(
-                    "foo", list(self.dag.providers[name].collections.keys())
+                    "foo", list(self.dag.providers[name].collections_config.keys())
                 )
 
         self.assertEqual(
