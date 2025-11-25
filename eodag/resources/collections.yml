@@ -6890,7 +6890,7 @@ GHS_BUILT_S:
   eodag:sensor_type: multi
   license: other
   title: GHS built-up surface spatial raster dataset, derived from Sentinel-2 composite and Landsat, multi-temporal (1975-2030)
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_H:
   description: |
@@ -6907,7 +6907,7 @@ GHS_BUILT_H:
   eodag:sensor_type: multi
   license: other
   title: GHS-BUILT-H R2023A - GHS building height, derived from AW3D30, SRTM30, and Sentinel2 composite (2018)
-  extent: {"temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_V:
   description: |
@@ -6922,7 +6922,7 @@ GHS_BUILT_V:
   eodag:sensor_type: multi
   license: other
   title: GHS built-up volume grids derived from joint assessment of Sentinel2, Landsat, and global DEM data, multitemporal (1975-2030)
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_C:
   description: |
@@ -6941,7 +6941,7 @@ GHS_BUILT_C:
   eodag:sensor_type: multi
   license: other
   title: GHS Settlement Characteristics, derived from Sentinel2 composite (2018) and other GHS R2023A data
-  extent: {"temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
 
 GHS_LAND:
   description: |
@@ -6954,7 +6954,7 @@ GHS_LAND:
   eodag:sensor_type: multi
   license: other
   title: Land fraction as derived from Sentinel2 image composite (2018) and OSM data
-  extent: {"temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2018-01-01T00:00:00Z", "2018-12-31T00:00:00Z"]]}}
 
 GHS_POP:
   description: |
@@ -6970,7 +6970,7 @@ GHS_POP:
   eodag:sensor_type: multi
   license: other
   title: GHS population grid multitemporal (1975-2030)
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_SMOD:
   description: |
@@ -6988,7 +6988,7 @@ GHS_SMOD:
   eodag:sensor_type: multi
   license: other
   title: GHS settlement layers, application of the Degree of Urbanisation methodology (stage I) to GHS-POP R2023A and GHS-BUILT-S R2023A, multitemporal (1975-2030)
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_ESM:
   description: |
@@ -7004,7 +7004,7 @@ GHS_ESM:
   eodag:sensor_type: multi
   license: other
   title: European Settlement Map from Copernicus Very High Resolution data for reference year 2015
-  extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-31.39, 27.55, 44.93, 71.27]]}, "temporal": {"interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
 
 GHS_DUC:
   description: |
@@ -7025,7 +7025,7 @@ GHS_DUC:
   eodag:sensor_type: multi
   license: other
   title: GHS Degree of Urbanisation Classification, application of the Degree of Urbanisation methodology (stage II) to GADM 4.1 layer, multitemporal (1975-2030)
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_FUA:
   description: |
@@ -7044,7 +7044,7 @@ GHS_FUA:
   eodag:sensor_type: multi
   license: other
   title: GHS functional urban areas, derived from GHS-UCDB R2019A, (2015), R2019A
-  extent: {"temporal": {"interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2015-01-01T00:00:00Z", "2015-12-31T00:00:00Z"]]}}
 
 GHS_BUILT_LAUSTAT:
   description: |
@@ -7059,7 +7059,7 @@ GHS_BUILT_LAUSTAT:
   eodag:sensor_type: multi
   license: other
   title: GHS built-up surface statistics in European LAU, multitemporal (1975-2020)
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2020-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-79.7, -26.64, 62.29, 88.92]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2020-12-31T00:00:00Z"]]}}
 
 GHS_ENACT_POP:
   description: |
@@ -7075,7 +7075,7 @@ GHS_ENACT_POP:
   eodag:sensor_type: multi
   license: other
   title: ENACT-POP R2020A - ENACT 2011 Population Grid
-  extent: {"temporal": {"interval": [["2011-01-01T00:00:00Z", "2011-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-53.51, 24.791, 58.715, 70.916]]}, "temporal": {"interval": [["2011-01-01T00:00:00Z", "2011-12-31T00:00:00Z"]]}}
 
 GHS_UCDB_DOMAIN:
   description: |
@@ -7091,7 +7091,7 @@ GHS_UCDB_DOMAIN:
   eodag:sensor_type: multi
   license: other
   title: Stats in the City - the GHS Urban Centre Database UCDB R2024A by Thematic Domain
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 GHS_UCDB_REGION:
   description: |
@@ -7107,7 +7107,7 @@ GHS_UCDB_REGION:
   eodag:sensor_type: multi
   license: other
   title: Stats in the City - the GHS Urban Centre Database UCDB R2024A by Region
-  extent: {"temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1975-01-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
 
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
