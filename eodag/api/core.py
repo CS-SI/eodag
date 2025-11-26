@@ -1126,7 +1126,7 @@ class EODataAccessGateway:
             warnings.warn(
                 "Usage of deprecated search parameter 'page' "
                 "(Please use 'SearchResult.next_page()' instead)"
-                " -- Deprecated since v3.9.0",
+                " -- Deprecated since v4.0.0",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -1196,7 +1196,7 @@ class EODataAccessGateway:
 
     @_deprecated(
         reason="Please use 'SearchResult.next_page()' instead",
-        version="v3.9.0",
+        version="4.0.0",
     )
     def search_iter_page(
         self,
@@ -1209,7 +1209,7 @@ class EODataAccessGateway:
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search.
 
-        .. deprecated:: v3.9.0
+        .. deprecated:: v4.0.0
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param items_per_page: (optional) The number of results requested per page
@@ -1264,7 +1264,7 @@ class EODataAccessGateway:
 
     @_deprecated(
         reason="Please use 'SearchResult.next_page()' instead",
-        version="v3.9.0",
+        version="4.0.0",
     )
     def search_iter_page_plugin(
         self,
@@ -1274,7 +1274,7 @@ class EODataAccessGateway:
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
 
-        .. deprecated:: v3.9.0
+        .. deprecated:: v4.0.0
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param items_per_page: (optional) The number of results requested per page
