@@ -659,6 +659,17 @@ class ProvidersDict(UserDict[str, Provider]):
         return [provider.name for provider in self.data.values()]
 
     @property
+    def groups(self) -> list[str]:
+        """
+        List of provider groups if exist or names.
+
+        :return: List of provider groups if exist or names.
+        """
+        return list(
+            set(provider.group or provider.name for provider in self.data.values())
+        )
+
+    @property
     def configs(self) -> dict[str, ProviderConfig]:
         """
         Dictionary of provider configs keyed by provider name.
@@ -682,25 +693,23 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         Get a ProviderConfig by provider name.
 
-        If the provider is not found by name, attempts to get by group.
-
-        :param provider: The provider name or group.
+        :param provider: The provider name.
         :return: The ProviderConfig if found, otherwise None.
         """
         prov = self.get(provider)
         return prov.config if prov else None
 
-    def filter(self, q: Optional[str] = None) -> Iterator[Provider]:
+    def filter(self, q: Optional[str] = None) -> ProvidersDict:
         """
-        Yield providers whose name, group, description or URL matches the free-text query.
+        Return providers whose name, group, description, URL or collection matches the free-text query.
 
         Supports logical operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
         ``*`` and ``?`` wildcards.
 
-        If no query is provided, returns all providers in the collection.
+        If no query is provided, returns all providers.
 
-        :param q: Free-text parameter to filter providers. If None, yields all providers.
-        :return: Iterator of matching Provider objects.
+        :param q: Free-text parameter to filter providers. If None, returns all providers.
+        :return: matching Provider objects.
 
         Example
         -------
@@ -718,33 +727,36 @@ class ProvidersDict(UserDict[str, Provider]):
         ...     'search': {'type': 'StacSearch'}
         ... })
         >>> # Filter by description content
-        >>> list(p.name for p in providers.filter('Satellite'))
-        ['test1']
+        >>> providers.filter('Satellite')
+        ProvidersDict(['test1'])
         >>> # Filter with logical operators
         >>> providers['test3'] = Provider({
         ...     'name': 'test3',
         ...     'description': 'Satellite weather data',
         ...     'search': {'type': 'StacSearch'}
         ... })
-        >>> list(p.name for p in providers.filter('Satellite AND weather'))
-        ['test3']
+        >>> providers.filter('Satellite AND weather')
+        ProvidersDict(['test3'])
         >>> # Get all providers when no filter
-        >>> len(list(providers.filter()))
+        >>> len(providers.filter())
         3
         """
         if not q:
-            yield from self.data.values()
-            return
+            # yield from self.data.values()
+            return self
 
         free_text_query = compile_free_text_query(q)
-        searchable_attributes = {"name", "group", "description", "url"}
+        searchable_attributes = {"name", "group", "description", "url", "products"}
 
+        filtered = ProvidersDict()
         for p in self.data.values():
             searchables = {
                 k: v for k, v in p.config.__dict__.items() if k in searchable_attributes
             }
             if free_text_query(searchables):
-                yield p
+                # yield p
+                filtered[p.name] = p
+        return filtered
 
     def filter_by_name_or_group(
         self, name_or_group: Optional[str] = None

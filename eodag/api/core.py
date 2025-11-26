@@ -209,7 +209,7 @@ class EODataAccessGateway:
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
         """
-        if provider not in self.available_providers():
+        if provider not in self.providers.names:
             raise UnsupportedProvider(
                 f"This provider is not recognised by eodag: {provider}"
             )
@@ -809,7 +809,7 @@ class EODataAccessGateway:
         self._plugins_manager.build_collection_to_provider_config_map()
 
     @_deprecated(
-        reason="Please use 'EODataAccessGateway.providers.names' instead",
+        reason="Please use 'EODataAccessGateway.providers' instead",
         version="4.0.0",
     )
     def available_providers(
@@ -818,7 +818,7 @@ class EODataAccessGateway:
         """Gives the sorted list of the available providers or groups
 
         .. deprecated:: v4.0.0
-            Please use :attr:`eodag.api.core.EODataAccessGateway.providers.names` instead.
+            Please use :attr:`eodag.api.core.EODataAccessGateway.providers` instead.
 
         The providers or groups are sorted first by their priority level in descending order,
         and then alphabetically in ascending order for providers or groups with the same

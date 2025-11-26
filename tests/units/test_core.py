@@ -671,7 +671,7 @@ class TestCore(TestCoreBase):
 
     def test_supported_providers_in_unit_test(self):
         """Every provider must be referenced in the core unittest SUPPORTED_PROVIDERS class attribute"""
-        for provider in self.dag.available_providers():
+        for provider in self.dag.providers.names:
             self.assertIn(provider, self.SUPPORTED_PROVIDERS)
 
     def test_supported_collections_in_unit_test(self):
@@ -1323,13 +1323,13 @@ class TestCore(TestCoreBase):
             # auth needed for search without credentials
             os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert "peps" not in dag.available_providers()
+            assert "peps" not in dag.providers.names
 
             # auth needed for search with credentials
             os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
             os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert "peps" in dag.available_providers()
+            assert "peps" in dag.providers.names
             assert getattr(dag.providers["peps"].search_config, "need_auth", False)
 
         # Teardown
@@ -1354,7 +1354,7 @@ class TestCore(TestCoreBase):
         mock_iter_ep.side_effect = skip_qssearch
 
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        self.assertNotIn("peps", dag.available_providers())
+        self.assertNotIn("peps", dag.providers.names)
         self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
         dag._plugins_manager.skipped_plugins = []
 
@@ -1369,7 +1369,7 @@ class TestCore(TestCoreBase):
             os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
             delattr(dag.providers["peps"].config, "auth")
-            assert "peps" in dag.available_providers()
+            assert "peps" in dag.providers.names
             assert getattr(dag.providers["peps"].search_config, "need_auth", False)
             assert not hasattr(dag.providers["peps"].config, "auth")
 
@@ -1393,11 +1393,11 @@ class TestCore(TestCoreBase):
         )
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
         delattr(dag.providers["peps"].config, "search")
-        assert "peps" in dag.available_providers()
+        assert "peps" in dag.providers.names
         assert not hasattr(dag.providers["peps"].config, "api")
         assert not hasattr(dag.providers["peps"].config, "search")
 
-        assert "peps" in dag.available_providers()
+        assert "peps" in dag.providers.names
 
         with self.assertLogs(level="INFO") as cm:
             dag._prune_providers_list()
@@ -2179,7 +2179,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             )
             self.dag = EODataAccessGateway()
             # only foo_provider in conf
-            self.assertEqual(self.dag.available_providers(), ["foo_provider"])
+            self.assertEqual(self.dag.providers.names, ["foo_provider"])
             self.assertEqual(
                 self.dag.providers["foo_provider"].search_config.api_endpoint,
                 "https://foo.bar/search",
@@ -4091,7 +4091,7 @@ class TestCoreProviderGroup(TestCoreBase):
         """
         The method available_providers returns only one entry for both grouped providers
         """
-        providers = self.dag.available_providers()
+        providers = self.dag.providers.names
 
         # check that setting "by_group" argument to True removes names of grouped providers and add names of their group
         groups = []
@@ -4103,7 +4103,7 @@ class TestCoreProviderGroup(TestCoreBase):
             if provider_group:
                 providers.remove(provider)
 
-        self.assertCountEqual(self.dag.available_providers(by_group=True), providers)
+        self.assertCountEqual(self.dag.providers.groups, providers)
 
     def test_list_collections(self) -> None:
         """

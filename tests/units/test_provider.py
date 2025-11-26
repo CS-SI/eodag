@@ -318,9 +318,9 @@ class TestProvidersDict:
 
     def test_providers_dict_filter_with_query(self, sample_providers):
         """Test ProvidersDict filter with query."""
-        results = list(sample_providers.filter("First"))
+        results = sample_providers.filter("First")
         assert len(results) == 1
-        assert results[0].name == "provider1"
+        assert results.names == ["provider1"]
 
     def test_providers_dict_filter_by_name_or_group(self, sample_providers):
         """Test ProvidersDict filter_by_name_or_group."""
