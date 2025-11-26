@@ -864,9 +864,7 @@ class ProvidersDict(UserDict[str, Provider]):
             try:
                 if name in self.data:
                     self.data[name].update_from_config(conf)
-                    logger.debug("%s: configuration updated", name)
                 else:
-                    logger.info("%s: loading provider from configuration", name)
                     self.data[name] = Provider(conf)
 
                 self.data[name].collections_fetched = False
@@ -946,6 +944,8 @@ class ProvidersDict(UserDict[str, Provider]):
             else:
                 new_map = mapping.setdefault(parts[0], {})
                 build_mapping_from_env("__".join(parts[1:]), env_value, new_map)
+
+        logger.debug("Loading configuration from environment variables")
 
         mapping_from_env: dict[str, dict[str, Any]] = {}
         for env_var in os.environ:
