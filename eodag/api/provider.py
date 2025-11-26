@@ -329,6 +329,8 @@ class Provider:
             "url": self.config.url or "",
             "priority": self.priority,
         }
+        if self.group:
+            summaries["group"] = self.group
 
         col_html_table = dict_to_html_table(summaries, depth=1, brackets=False)
 
