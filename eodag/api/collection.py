@@ -291,7 +291,7 @@ class CollectionsDict(UserDict[str, Collection]):
     ) -> None:
         super().__init__()
 
-        self.data = {col.id: col for col in collections}
+        self.data = {col._id: col for col in collections}
 
     def __str__(self) -> str:
         return "{" + ", ".join(f'"{col}": {col_f}' for col, col_f in self.items()) + "}"

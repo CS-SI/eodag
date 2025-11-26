@@ -2509,6 +2509,10 @@ class TestCoreSearch(TestCoreBase):
         actual = self.dag.guess_collection(collection="S2_MSI_L1C")
         self.assertListEqual([actual[0].id], ["S2_MSI_L1C"])
 
+        # known collection which has an alias
+        actual = self.dag.guess_collection(collection="foobar")
+        self.assertListEqual([actual[0].id], ["foobar_alias"])
+
         # known alias
         actual = self.dag.guess_collection(collection="foobar_alias")
         self.assertListEqual([actual[0].id], ["foobar_alias"])

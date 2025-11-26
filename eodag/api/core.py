@@ -176,12 +176,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        available_collections = set()
-        for coll in self.collections_config.values():
-            if getattr(coll, "_id", None):
-                available_collections.add(coll._id)
-            else:
-                available_collections.add(coll.id)
+        available_collections = set(self.collections_config.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -572,8 +567,6 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        collections: CollectionsList = CollectionsList([])
-
         providers_configs = (
             list(self.providers_config.values())
             if not provider
@@ -589,15 +582,17 @@ class EODataAccessGateway:
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for coll_id, collection in self.collections_config.items():
-            if coll_id == "GENERIC_COLLECTION":
-                continue
-            original_id = collection._id
-            if not original_id:
-                original_id = coll_id
-            for p in providers_configs:
-                if original_id in p.products and collection not in collections:
-                    collections.append(collection)
+        # unique collection ids from providers configs
+        collection_ids = {
+            collection_id
+            for p in providers_configs
+            for collection_id in p.products
+            if collection_id != GENERIC_COLLECTION
+        }
+
+        collections = CollectionsList(
+            [self.collections_config[collection_id] for collection_id in collection_ids]
+        )
 
         # Return the collections sorted in lexicographic order of their id
         collections.sort(key=attrgetter("id"))
@@ -893,7 +888,7 @@ class EODataAccessGateway:
                                         new_collection
                                     ],
                                 )
-                                self.collections_config[new_coll_obj.id] = new_coll_obj
+                                self.collections_config[new_coll_obj._id] = new_coll_obj
                             except ValidationError:
                                 # skip collection if there is a problem with its id (missing or not a string)
                                 logger.debug(
@@ -914,7 +909,7 @@ class EODataAccessGateway:
                                 # increase the increment if the new collection had
                                 # bad formatted attributes in the external config
                                 dumped_collection = self.collections_config[
-                                    new_coll_obj.id
+                                    new_coll_obj._id
                                 ].model_dump()
                                 dumped_ext_conf_col = {
                                     **dumped_collection,
@@ -992,7 +987,7 @@ class EODataAccessGateway:
         :returns: Internal name of the collection.
         """
         collections = [
-            v for k, v in self.collections_config.items() if v.alias == alias_or_id
+            v for k, v in self.collections_config.items() if v.id == alias_or_id
         ]
 
         if len(collections) > 1:
@@ -1102,10 +1097,9 @@ class EODataAccessGateway:
         guesses_with_score: list[tuple[str, int]] = []
 
         for col, col_f in self.collections_config.items():
-            if col == GENERIC_COLLECTION or (
-                col not in self._plugins_manager.collection_to_provider_config_map
-                and col_f._id
-                not in self._plugins_manager.collection_to_provider_config_map
+            if (
+                col == GENERIC_COLLECTION
+                or col not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
             score = 0  # how many filters matched
@@ -1176,7 +1170,7 @@ class EODataAccessGateway:
                 if not (max_start <= min_end):
                     continue
 
-            guesses_with_score.append((col_f.id, score))
+            guesses_with_score.append((col_f._id, score))
 
         if guesses_with_score:
             # sort by score descending, then col for stability
