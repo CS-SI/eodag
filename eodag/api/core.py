@@ -26,6 +26,7 @@ import shutil
 import tempfile
 import warnings
 from collections import deque
+from copy import deepcopy
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import attrgetter, itemgetter
@@ -119,7 +120,7 @@ class EODataAccessGateway:
         collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
         self.collections_config = self._collections_config_init(collections_config_dict)
 
-        self.providers = ProvidersDict.from_configs(load_default_config())
+        self._providers = ProvidersDict.from_configs(load_default_config())
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
         self.conf_dir = os.getenv(
@@ -143,8 +144,8 @@ class EODataAccessGateway:
             self.conf_dir = tmp_conf_dir
             makedirs(self.conf_dir)
 
-        self._plugins_manager = PluginManager(self.providers)
-        self.providers = self._plugins_manager.providers
+        self._plugins_manager = PluginManager(self._providers)
+        self._providers = self._plugins_manager.providers
 
         # First level override: From a user configuration file
         if user_conf_file_path is None:
@@ -160,19 +161,19 @@ class EODataAccessGateway:
                         ),
                         standard_configuration_path,
                     )
-        self.providers.update_from_config_file(user_conf_file_path)
+        self._providers.update_from_config_file(user_conf_file_path)
 
         # Second level override: From environment variables
-        self.providers.update_from_env()
+        self._providers.update_from_env()
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
 
-        for provider in self.providers.values():
+        for provider in self._providers.values():
             provider.sync_collections(self, strict_mode)
 
         # re-build _plugins_manager using up-to-date providers_config
-        self._plugins_manager.rebuild(self.providers)
+        self._plugins_manager.rebuild(self._providers)
 
         # store pruned providers configs
         self._pruned_providers_config: dict[str, Any] = {}
@@ -198,6 +199,20 @@ class EODataAccessGateway:
             for col, col_f in collections_config_dict.items()
         ]
         return CollectionsDict(collections)
+
+    @property
+    def providers(self) -> ProvidersDict:
+        """Providers of eodag configuration sorted by priority in descending order and by name in ascending order."""
+        providers = deepcopy(self._providers)
+        # Sort: priority descending, then name ascending
+        providers.data = {
+            k: v
+            for k, v in sorted(
+                providers.data.items(), key=lambda item: (-item[1].priority, item[0])
+            )
+        }
+
+        return providers
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -225,7 +240,7 @@ class EODataAccessGateway:
 
         :returns: The provider with the maximum priority and its priority
         """
-        return max(self.providers.priorities.items(), key=itemgetter(1))
+        return max(self._providers.priorities.items(), key=itemgetter(1))
 
     def update_providers_config(
         self,
@@ -253,10 +268,10 @@ class EODataAccessGateway:
                 logger.info(
                     "%s: provider restored from the pruned configurations", name
                 )
-                self.providers[name] = Provider(config)
+                self._providers[name] = Provider(config)
                 self._pruned_providers_config.pop(name)
 
-        self.providers.update_from_configs(conf_update)
+        self._providers.update_from_configs(conf_update)
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_collection_to_provider_config_map()
@@ -333,7 +348,7 @@ class EODataAccessGateway:
         update_needed = False
 
         # loop over a copy to allow popping items
-        for name, provider in list(self.providers.items()):
+        for name, provider in list(self._providers.items()):
             conf = provider.config
 
             # remove providers using skipped plugins
@@ -343,7 +358,7 @@ class EODataAccessGateway:
                 if isinstance(v, PluginConfig)
                 and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
             ]:
-                del self.providers[provider.name]
+                del self._providers[provider.name]
                 logger.debug(
                     f"{provider}: provider needing unavailable plugin has been removed"
                 )
@@ -355,7 +370,7 @@ class EODataAccessGateway:
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider.name] = conf
-                    del self.providers[provider.name]
+                    del self._providers[provider.name]
 
                     update_needed = True
                     logger.info(
@@ -367,7 +382,7 @@ class EODataAccessGateway:
                 if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
                     self._pruned_providers_config[provider.name] = conf
-                    del self.providers[provider.name]
+                    del self._providers[provider.name]
 
                     update_needed = True
                     logger.info(
@@ -387,7 +402,7 @@ class EODataAccessGateway:
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider.name] = conf
-                    del self.providers[provider.name]
+                    del self._providers[provider.name]
 
                     update_needed = True
                     logger.info(
@@ -398,7 +413,7 @@ class EODataAccessGateway:
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
                 self._pruned_providers_config[provider.name] = conf
-                del self.providers[provider.name]
+                del self._providers[provider.name]
 
                 update_needed = True
                 logger.info(
@@ -408,7 +423,7 @@ class EODataAccessGateway:
 
         if update_needed:
             # rebuild _plugins_manager with updated providers list
-            self._plugins_manager.rebuild(self.providers)
+            self._plugins_manager.rebuild(self._providers)
 
     def set_locations_conf(self, locations_conf_path: str | None) -> None:
         """Set locations configuration.
@@ -531,7 +546,7 @@ class EODataAccessGateway:
         providers_discovery_configs_fetchable: dict[str, DiscoverCollections] = {}
         # check if any provider has not already been fetched for collections
         already_fetched = True
-        for provider_to_fetch in self.providers.filter_by_name_or_group(provider):
+        for provider_to_fetch in self._providers.filter_by_name_or_group(provider):
             if provider_to_fetch.fetchable and provider_to_fetch.search_config:
                 providers_discovery_configs_fetchable[
                     provider_to_fetch.name
@@ -705,15 +720,15 @@ class EODataAccessGateway:
         :param ext_collections_conf: external collections configuration
         """
         for provider, new_collections_conf in ext_collections_conf.items():
-            if new_collections_conf and provider in self.providers:
+            if new_collections_conf and provider in self._providers:
                 try:
-                    fetchable = self.providers[provider].fetchable
+                    fetchable = self._providers[provider].fetchable
                     if not fetchable:
                         # conf has been updated and provider collections are no more discoverable
                         continue
 
                     provider_products_config = (
-                        self.providers[provider].collections_config or {}
+                        self._providers[provider].collections_config or {}
                     )
                 except UnsupportedProvider:
                     logger.debug(
@@ -731,7 +746,7 @@ class EODataAccessGateway:
                     if new_collection not in provider_products_config:
                         for existing_collection in provider_products_config.copy():
                             # compare parsed extracted conf (without metadata_mapping entry)
-                            unparsable_keys = self.providers[
+                            unparsable_keys = self._providers[
                                 provider
                             ].unparsable_properties
 
@@ -799,11 +814,11 @@ class EODataAccessGateway:
                             provider,
                         )
 
-            elif provider not in self.providers:
+            elif provider not in self._providers:
                 # unknown provider
                 continue
 
-            self.providers[provider].collections_fetched = True
+            self._providers[provider].collections_fetched = True
 
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_collection_to_provider_config_map()
@@ -831,6 +846,7 @@ class EODataAccessGateway:
         """
         candidates = []
 
+        # use "providers" property to get sorted providers
         for key, provider in self.providers.items():
             if collection and collection not in provider.collections_config:
                 continue
@@ -846,9 +862,6 @@ class EODataAccessGateway:
                 if name not in grouped or priority > grouped[name]:
                     grouped[name] = priority
             candidates = list(grouped.items())
-
-        # Sort: priority descending, then name ascending
-        candidates.sort(key=lambda item: (-item[1], item[0]))
 
         return [name for name, _ in candidates]
 

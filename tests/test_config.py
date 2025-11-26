@@ -538,7 +538,7 @@ class TestStacProviderConfig(unittest.TestCase):
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag.providers[
+        provider_search_conf = self.dag._providers[
             "usgs_satapi_aws"
         ].search_config.__dict__
 
@@ -593,7 +593,7 @@ class TestStacProviderConfig(unittest.TestCase):
         ]["search"]
 
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag.providers["foo"].search_config.__dict__
+        provider_search_conf = self.dag._providers["foo"].search_config.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
         self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])

@@ -116,14 +116,14 @@ class TestCoreProvidersConfig(TestCase):
             """
         )
         self.assertIsInstance(
-            self.dag.providers["foo_provider"].config.auth, PluginConfig
+            self.dag._providers["foo_provider"].config.auth, PluginConfig
         )
         self.assertEqual(
-            self.dag.providers["foo_provider"].config.auth.type, "GenericAuth"
+            self.dag._providers["foo_provider"].config.auth.type, "GenericAuth"
         )
 
         # update pruned provider with credentials
-        self.assertNotIn("usgs", self.dag.providers)
+        self.assertNotIn("usgs", self.dag._providers)
         self.dag.update_providers_config(
             """
             usgs:
@@ -133,9 +133,9 @@ class TestCoreProvidersConfig(TestCase):
                         password: bar
             """
         )
-        self.assertIsInstance(self.dag.providers["usgs"].api_config, PluginConfig)
+        self.assertIsInstance(self.dag._providers["usgs"].api_config, PluginConfig)
         self.assertEqual(
-            self.dag.providers["usgs"].api_config.credentials["username"], "foo"
+            self.dag._providers["usgs"].api_config.credentials["username"], "foo"
         )
 
         # add new provider that requires auth but without credentials
@@ -153,7 +153,7 @@ class TestCoreProvidersConfig(TestCase):
                         _collection: '{collection}'
             """
         )
-        self.assertIn("bar_provider", self.dag.providers)
+        self.assertIn("bar_provider", self.dag._providers)
 
         # update provider with credentials
         self.dag.update_providers_config(
@@ -166,10 +166,10 @@ class TestCoreProvidersConfig(TestCase):
             """
         )
         self.assertIsInstance(
-            self.dag.providers["bar_provider"].config.auth, PluginConfig
+            self.dag._providers["bar_provider"].config.auth, PluginConfig
         )
         self.assertEqual(
-            self.dag.providers["bar_provider"].config.auth.credentials["username"],
+            self.dag._providers["bar_provider"].config.auth.credentials["username"],
             "bar",
         )
 
@@ -224,22 +224,22 @@ class TestCoreProvidersConfig(TestCase):
             """
         )
         self.assertDictEqual(
-            self.dag.providers["a_provider_with_creds"].config.auth.credentials,
+            self.dag._providers["a_provider_with_creds"].config.auth.credentials,
             {"username": "bar", "password": "foo"},
         )
         self.assertDictEqual(
-            self.dag.providers["a_provider_with_creds"].config.auth.credentials,
-            self.dag.providers[
+            self.dag._providers["a_provider_with_creds"].config.auth.credentials,
+            self.dag._providers[
                 "a_provider_without_creds_matching_url"
             ].config.auth.credentials,
         )
         self.assertDictEqual(
-            self.dag.providers["another_provider_with_creds"].config.auth.credentials,
+            self.dag._providers["another_provider_with_creds"].config.auth.credentials,
             {"username": "baz", "password": "qux"},
         )
         self.assertDictEqual(
-            self.dag.providers["another_provider_with_creds"].config.auth.credentials,
-            self.dag.providers[
+            self.dag._providers["another_provider_with_creds"].config.auth.credentials,
+            self.dag._providers[
                 "a_provider_without_creds_matching_conf"
             ].config.auth.credentials,
         )
@@ -250,18 +250,18 @@ class TestCoreProvidersConfig(TestCase):
         # minimal STAC provider
         self.dag.add_provider("foo", "https://foo.bar/search")
         self.assertEqual(
-            self.dag.providers["foo"].search_config.type,
+            self.dag._providers["foo"].search_config.type,
             "StacSearch",
         )
         self.assertEqual(
-            self.dag.providers["foo"].search_config.api_endpoint,
+            self.dag._providers["foo"].search_config.api_endpoint,
             "https://foo.bar/search",
         )
         self.assertEqual(
-            self.dag.providers["foo"].download_config.type,
+            self.dag._providers["foo"].download_config.type,
             "HTTPDownload",
         )
-        self.assertFalse(hasattr(self.dag.providers["foo"].config, "auth"))
+        self.assertFalse(hasattr(self.dag._providers["foo"].config, "auth"))
         self.assertEqual(
             self.dag.get_preferred_provider()[0],
             "foo",
@@ -280,23 +280,23 @@ class TestCoreProvidersConfig(TestCase):
             priority=0,
         )
         self.assertEqual(
-            self.dag.providers["bar"].search_config.type,
+            self.dag._providers["bar"].search_config.type,
             "QueryStringSearch",
         )
         self.assertEqual(
-            self.dag.providers["bar"].search_config.api_endpoint,
+            self.dag._providers["bar"].search_config.api_endpoint,
             "https://foo.bar/search",
         )
         self.assertEqual(
-            self.dag.providers["bar"].download_config.type,
+            self.dag._providers["bar"].download_config.type,
             "AwsDownload",
         )
         self.assertEqual(
-            self.dag.providers["bar"].config.auth.type,
+            self.dag._providers["bar"].config.auth.type,
             "AwsAuth",
         )
         self.assertDictEqual(
-            self.dag.providers["bar"].config.auth.credentials,
+            self.dag._providers["bar"].config.auth.credentials,
             {"aws_profile": "abc"},
         )
         self.assertNotEqual(
@@ -309,16 +309,16 @@ class TestCoreProvidersConfig(TestCase):
             "baz", api={"type": "UsgsApi", "some_parameter": "some_value"}
         )
         self.assertEqual(
-            self.dag.providers["baz"].api_config.type,
+            self.dag._providers["baz"].api_config.type,
             "UsgsApi",
         )
         self.assertEqual(
-            self.dag.providers["baz"].api_config.some_parameter,
+            self.dag._providers["baz"].api_config.some_parameter,
             "some_value",
         )
-        self.assertFalse(hasattr(self.dag.providers["baz"].config, "search"))
-        self.assertFalse(hasattr(self.dag.providers["baz"].config, "download"))
-        self.assertFalse(hasattr(self.dag.providers["baz"].config, "auth"))
+        self.assertFalse(hasattr(self.dag._providers["baz"].config, "search"))
+        self.assertFalse(hasattr(self.dag._providers["baz"].config, "download"))
+        self.assertFalse(hasattr(self.dag._providers["baz"].config, "auth"))
         self.assertEqual(
             self.dag.get_preferred_provider()[0],
             "baz",
@@ -347,14 +347,14 @@ class TestCoreProvidersConfig(TestCase):
             },
         )
         self.assertEqual(
-            self.dag.providers["foo"].search_config.metadata_mapping["bar"],
+            self.dag._providers["foo"].search_config.metadata_mapping["bar"],
             "$.properties.bar",
         )
 
         # search method must build metadata_mapping as jsonpath object
         self.dag.search(provider="foo", collection="abc", raise_errors=True)
         self.assertEqual(
-            self.dag.providers["foo"].search_config.metadata_mapping["bar"],
+            self.dag._providers["foo"].search_config.metadata_mapping["bar"],
             (None, Child(Child(Root(), Fields("properties")), Fields("bar"))),
         )
 
@@ -369,7 +369,7 @@ class TestCoreProvidersConfig(TestCase):
             },
         )
         self.assertEqual(
-            self.dag.providers["foo"].search_config.metadata_mapping["bar"],
+            self.dag._providers["foo"].search_config.metadata_mapping["bar"],
             (None, Child(Child(Root(), Fields("properties")), Fields("baz"))),
         )
 
@@ -459,7 +459,7 @@ class TestCoreCollectionsConfig(TestCase):
 
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            self.dag.providers["foo_provider"].search_config.discover_collections[
+            self.dag._providers["foo_provider"].search_config.discover_collections[
                 "fetch_url"
             ],
             auth=mock.ANY,

@@ -64,18 +64,18 @@ def params_mapping_to_csv(
 
     # update stac providers metadata_mapping
     stac_mapping = load_stac_provider_config()["search"]["metadata_mapping"]
-    for p in dag.providers.keys():
-        if getattr(dag.providers[p].search_config, "type", None) == "StacSearch":
-            dag.providers[p].search_config.metadata_mapping = dict(
+    for p in dag._providers.keys():
+        if getattr(dag._providers[p].search_config, "type", None) == "StacSearch":
+            dag._providers[p].search_config.metadata_mapping = dict(
                 stac_mapping,
-                **dag.providers[p].search_config.__dict__.get("metadata_mapping", {}),
+                **dag._providers[p].search_config.__dict__.get("metadata_mapping", {}),
             )
 
     # list of lists of all parameters per provider
     params_list_of_lists: list[list[str]] = []
-    for p in dag.providers.keys():
+    for p in dag._providers.keys():
         if mapping_dict := getattr(
-            dag.providers[p].search_config, "metadata_mapping", None
+            dag._providers[p].search_config, "metadata_mapping", None
         ):
             params_list_of_lists.append(list(mapping_dict.keys()))
 
@@ -83,7 +83,7 @@ def params_mapping_to_csv(
     global_keys: list[str] = sorted(list(set().union(*(params_list_of_lists))))
 
     # csv fieldnames
-    fieldnames = ["parameter"] + sorted(dag.providers.keys())
+    fieldnames = ["parameter"] + sorted(dag._providers.keys())
 
     logging_additional_infos = ""
 
@@ -157,9 +157,9 @@ def params_mapping_to_csv(
 
             # write metadata mapping
             for param in global_keys:
-                for provider in dag.providers.keys():
+                for provider in dag._providers.keys():
                     if mapping_dict := getattr(
-                        dag.providers[provider].search_config, "metadata_mapping", None
+                        dag._providers[provider].search_config, "metadata_mapping", None
                     ):
                         if param in mapping_dict.keys():
                             if isinstance(mapping_dict[param], list):
