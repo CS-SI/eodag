@@ -242,6 +242,7 @@ class TestProvidersDict:
             "provider1": {
                 "name": "provider1",
                 "description": "First provider",
+                "url": "https://provider1.example.com",
                 "group": "group_a",
                 "priority": 1,
                 "search": {"type": "StacSearch"},
@@ -275,6 +276,13 @@ class TestProvidersDict:
         # Test with Provider object
         provider = sample_providers["provider1"]
         assert provider in sample_providers
+
+    def test_providers_dict_attributes(self, sample_providers):
+        """Test ProvidersDict provider attributes."""
+        assert sample_providers["provider1"].title == "First provider"
+        assert sample_providers["provider1"].url == "https://provider1.example.com"
+        assert sample_providers["provider2"].title == "Second provider"
+        assert sample_providers["provider2"].url is None
 
     def test_providers_dict_basic_properties(self, sample_providers):
         """Test ProvidersDict basic properties."""

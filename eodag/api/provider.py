@@ -23,6 +23,7 @@ import tempfile
 import traceback
 from collections import UserDict
 from inspect import isclass
+from textwrap import shorten
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -56,7 +57,7 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
-from eodag.utils.repr import dict_to_html_table
+from eodag.utils.repr import dict_to_html_table, str_as_href
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -324,10 +325,9 @@ class Provider:
 
         summaries = {
             "name": self.name,
-            "description": self.config.description or "",
+            "title": self.config.description or "",
             "url": self.config.url or "",
             "priority": self.priority,
-            "collections": list(self.collections_config.keys()),
         }
 
         col_html_table = dict_to_html_table(summaries, depth=1, brackets=False)
@@ -356,6 +356,16 @@ class Provider:
     def name(self) -> str:
         """The name of the provider."""
         return self._name
+
+    @property
+    def title(self) -> Optional[str]:
+        """The title of the provider."""
+        return getattr(self.config, "description", None)
+
+    @property
+    def url(self) -> Optional[str]:
+        """The url of the provider."""
+        return getattr(self.config, "url", None)
 
     @property
     def collections_config(self) -> dict[str, Any]:
@@ -597,29 +607,47 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         return f"ProvidersDict({list(self.data.keys())})"
 
-    def _repr_html_(self) -> str:
+    def _repr_html_(self, embeded=False) -> str:
         """
         HTML representation for Jupyter/IPython display.
 
         :return: HTML string representation of the ProvidersDict.
         """
-        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
-                {type(self).__name__} ({len(self.data)})
-                </td></tr></thead>"""
-        rows = ""
-
-        for provider in self.data.values():
-            # Wrap each provider in a collapsible details element
-            rows += (
-                f"<tr><td style='text-align: left;'>"
-                f"<details>"
-                f"<summary style='cursor: pointer; font-weight: bold;'>{provider.name}</summary>"
-                f"{provider._repr_html_()}"
-                f"</details>"
-                f"</td></tr>"
+        longest_name = max([len(k) for k in self.keys()])
+        thead = (
+            f"""<thead><tr><td style='text-align: left; color: grey;'>
+                {type(self).__name__}&ensp;({len(self)})
+                </td></tr></thead>
+            """
+            if not embeded
+            else ""
+        )
+        tr_style = "style='background-color: transparent;'" if embeded else ""
+        return (
+            f"<table>{thead}"
+            + "".join(
+                [
+                    f"""<tr {tr_style}><td style='text-align: left;'>
+                <details><summary style='color: grey;'>
+                    <span style='color: black; font-family: monospace;'>{k}:{'&nbsp;' * (longest_name - len(k))}</span>
+                    Provider(
+                        {"'priority': '<span style='color: black'>" + str(v.priority) + "</span>',&ensp;"
+                         if v.priority is not None else ""}
+                        {"'title': '<span style='color: black'>"
+                         + shorten(v.title, width=70, placeholder="[...]") + "</span>',&ensp;"
+                         if v.title else ""}
+                        {"'url': '" + str_as_href(v.url) + "'" if v.url else ""}
+                    )
+                </summary>
+                    {v._repr_html_(embedded=True)}
+                </details>
+                </td></tr>
+                """
+                    for k, v in self.items()
+                ]
             )
-
-        return f"<table>{thead}{rows}</table>"
+            + "</table>"
+        )
 
     @property
     def names(self) -> list[str]:
