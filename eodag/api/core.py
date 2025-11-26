@@ -808,10 +808,17 @@ class EODataAccessGateway:
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_collection_to_provider_config_map()
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.providers.names' instead",
+        version="4.0.0",
+    )
     def available_providers(
         self, collection: Optional[str] = None, by_group: bool = False
     ) -> list[str]:
         """Gives the sorted list of the available providers or groups
+
+        .. deprecated:: v4.0.0
+            Please use :attr:`eodag.api.core.EODataAccessGateway.providers.names` instead.
 
         The providers or groups are sorted first by their priority level in descending order,
         and then alphabetically in ascending order for providers or groups with the same
