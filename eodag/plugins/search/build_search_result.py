@@ -895,25 +895,34 @@ class ECMWFSearch(PostJsonSearch):
         # start and end filters are supported whenever combinations of "year", "month", "day" filters exist
         queryable_prefix = f"{ECMWF_PREFIX[:-1]}_"
         if (
-            queryables.pop(f"{queryable_prefix}date", None)
+            f"{queryable_prefix}date" in queryables
             or f"{queryable_prefix}year" in queryables
             or f"{queryable_prefix}hyear" in queryables
         ):
+            old_queryable = queryables.pop(f"{queryable_prefix}date", None)
+            if old_queryable is None:
+                old_queryable = queryables.get(f"{queryable_prefix}year", None)
+            if old_queryable is None:
+                old_queryable = queryables.get(f"{queryable_prefix}hyear", None)
+            required = False
+            if old_queryable:
+                required = get_args(old_queryable)[1].is_required()
             queryables.update(
                 {
                     "start": Queryables.get_with_default(
-                        "start", processed_filters.get(START)
+                        "start", processed_filters.get(START), required
                     ),
                     "end": Queryables.get_with_default(
-                        "end",
-                        processed_filters.get(END),
+                        "end", processed_filters.get(END), required
                     ),
                 }
             )
 
         # area is geom in EODAG.
-        if queryables.pop("area", None):
-            queryables["geom"] = Queryables.get_with_default("geom", None)
+        if "area" in queryables:
+            old_queryable = queryables.pop("area", None)
+            required = get_args(old_queryable)[1].is_required()
+            queryables["geom"] = Queryables.get_with_default("geom", None, required)
 
         return queryables
 
