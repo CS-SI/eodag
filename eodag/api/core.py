@@ -41,7 +41,6 @@ from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
-    DiscoverCollections,
     PluginConfig,
     SimpleYamlProxyConfig,
     credentials_in_auth,
@@ -545,7 +544,9 @@ class EODataAccessGateway:
             return
 
         # providers discovery confs that are fetchable
-        providers_discovery_configs_fetchable: dict[str, DiscoverCollections] = {}
+        providers_discovery_configs_fetchable: dict[
+            str, PluginConfig.DiscoverCollections
+        ] = {}
         # check if any provider has not already been fetched for collections
         already_fetched = True
         for provider_to_fetch in self._providers.filter_by_name_or_group(provider):
@@ -599,7 +600,7 @@ class EODataAccessGateway:
                     default_discovery_conf["results_entry"], str
                 ):
                     default_discovery_conf_parsed = cast(
-                        DiscoverCollections,
+                        PluginConfig.DiscoverCollections,
                         dict(
                             default_discovery_conf,
                             **{

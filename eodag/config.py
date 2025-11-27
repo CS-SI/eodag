@@ -94,239 +94,225 @@ class SimpleYamlProxyConfig:
         self.source.update(other.source)
 
 
-class Pagination(TypedDict):
-    """Search pagination configuration"""
-
-    #: The maximum number of items per page that the provider can handle
-    max_items_per_page: int
-    #: Key path for the number of total items in the provider result
-    total_items_nb_key_path: Union[str, JSONPath]
-    #: Key path for the next page URL
-    next_page_url_key_path: Union[str, JSONPath]
-    #: Key path for the next page POST request query-object (body)
-    next_page_query_obj_key_path: Union[str, JSONPath]
-    # TODO: change this typing to bool and adapt code to it
-    next_page_merge_key_path: Union[str, JSONPath]
-    #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
-    #: search request
-    count_tpl: str
-    #: The f-string template for pagination requests.
-    next_page_url_tpl: str
-    #: The query-object for POST pagination requests.
-    next_page_query_obj: str
-    #: Next page token key used in pagination
-    next_page_token_key: str
-    #: The endpoint for counting the number of items satisfying a request
-    count_endpoint: str
-    #: Index of the starting page
-    start_page: int
-    #: Key in the current page URL for the next page URL
-    parse_url_key: str
-
-
-class Sort(TypedDict):
-    """Configuration for sort during search"""
-
-    #: Default sort settings
-    sort_by_default: list[tuple[str, str]]
-    #: F-string template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to sort search
-    #: results
-    sort_by_tpl: str
-    #: Mapping between eodag and provider query parameters used for sort
-    sort_param_mapping: dict[str, str]
-    #: Mapping between eodag and provider sort-order parameters
-    sort_order_mapping: dict[Literal["ascending", "descending"], str]
-    #: Maximum number of allowed sort parameters per request
-    max_sort_params: Annotated[int, Gt(0)]
-
-
-class DiscoverMetadata(TypedDict):
-    """Configuration for metadata discovery (search result properties)"""
-
-    #: Whether metadata discovery is enabled or not
-    auto_discovery: bool
-    #: Metadata regex pattern used for discovery in search result properties
-    metadata_pattern: str
-    #: Configuration/template that will be used to query for a discovered parameter
-    search_param: Union[str, dict[str, Any]]
-    #: list search parameters to send as is to the provider
-    search_param_unparsed: list[str]
-    #: Path to the metadata in search result
-    metadata_path: str
-    #: Use as STAC extension prefix if it does not have one already
-    metadata_prefix: str
-    #: Whether an error must be raised when using a search parameter which is not queryable or not
-    raise_mtd_discovery_error: bool
-
-
-class DiscoverCollections(TypedDict, total=False):
-    """Configuration for collections discovery"""
-
-    #: URL from which the collections can be fetched
-    fetch_url: Optional[str]
-    #: HTTP method used to fetch collections
-    fetch_method: str
-    #: Request body to fetch collections using POST method
-    fetch_body: dict[str, Any]
-    #: Maximum number of connections for concurrent HTTP requests
-    max_connections: int
-    #: The f-string template for pagination requests.
-    next_page_url_tpl: str
-    #: Index of the starting page for pagination requests.
-    start_page: int
-    #: Type of the provider result
-    result_type: str
-    #: JsonPath to the list of collections
-    results_entry: Union[str, JSONPath]
-    #: Mapping for the collection id
-    generic_collection_id: str
-    #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
-    #: result
-    generic_collection_parsable_metadata: dict[str, str]
-    #: Mapping for collection properties which can be parsed from the result and are not collection metadata
-    generic_collection_parsable_properties: dict[str, str]
-    #: Mapping for collection properties which cannot be parsed from the result and are not collection metadata
-    generic_collection_unparsable_properties: dict[str, str]
-    #: URL to fetch data for a single collection
-    single_collection_fetch_url: str
-    #: Query string to be added to the fetch_url to filter for a collection
-    single_collection_fetch_qs: str
-    #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
-    #: is redefined in this mapping, it will replace ``generic_collection_id`` value
-    single_collection_parsable_metadata: dict[str, str]
-
-
-class DiscoverQueryables(TypedDict, total=False):
-    """Configuration for queryables discovery"""
-
-    #: URL to fetch the queryables valid for all collections
-    fetch_url: Optional[str]
-    #: URL to fetch the queryables for a specific collection
-    collection_fetch_url: Optional[str]
-    #: Type of the result
-    result_type: str
-    #: JsonPath to retrieve the queryables from the provider result
-    results_entry: str
-    #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
-    constraints_url: str
-    #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
-    constraints_entry: str
-
-
-class CollectionSelector(TypedDict, total=False):
-    """Define the criteria to select a collection in :class:`~eodag.config.DynamicDiscoverQueryables`.
-
-    The selector matches if the field value starts with the given prefix,
-    i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
-
-    #: Field in the search parameters to match
-    field: str
-    #: Prefix to match in the field
-    prefix: str
-
-
-class DynamicDiscoverQueryables(TypedDict, total=False):
-    """Configuration for queryables dynamic discovery.
-
-    The given configuration for queryables discovery is used if any collection selector
-    matches the search parameters.
-    """
-
-    #: List of collection selection criterias
-    collection_selector: list[CollectionSelector]
-    #: Configuration for queryables discovery to use
-    discover_queryables: DiscoverQueryables
-
-
-class OrderOnResponse(TypedDict):
-    """Configuration for order on-response during download"""
-
-    #: Parameters metadata-mapping to apply to the order response
-    metadata_mapping: dict[str, Union[str, list[str]]]
-
-
-class OrderStatusSuccess(TypedDict):
-    """
-    Configuration to identify order status success during download
-
-    Order status response matching the following parameters are considered success
-    At least one is required
-    """
-
-    #: Success value for ``status``
-    status: str
-    #: Success value for ``message``
-    message: str
-    #: Success value for status response HTTP code
-    http_code: int
-
-
-class OrderStatusOrdered(TypedDict, total=False):
-    """
-    Configuration to identify order status ordered during download
-    """
-
-    #: HTTP code of the order status response
-    http_code: int
-
-
-class OrderStatusRequest(TypedDict, total=False):
-    """
-    Order status request configuration
-    """
-
-    #: Request HTTP method
-    method: str
-    #: Request hearders
-    headers: dict[str, Any]
-
-
-class OrderStatusOnSuccess(TypedDict, total=False):
-    """Configuration for order status on-success during download"""
-
-    #: Whether a new search is needed on success or not
-    need_search: bool
-    #: Return type of the success result
-    result_type: str
-    #: Key in the success response that gives access to the result
-    results_entry: str
-    #: Metadata-mapping to apply to the success status result
-    metadata_mapping: dict[str, Union[str, list[str]]]
-
-
-class OrderStatus(TypedDict, total=False):
-    """Configuration for order status during download"""
-
-    #: Order status request configuration
-    request: OrderStatusRequest
-    #: Metadata-mapping used to parse order status response
-    metadata_mapping: dict[str, Union[str, list[str]]]
-    #: Configuration to identify order status success during download
-    success: OrderStatusSuccess
-    #: Part of the order status response that tells there is an error
-    error: dict[str, Any]
-    #: Configuration to identify order status ordered during download
-    ordered: OrderStatusOrdered
-    #: Configuration for order status on-success during download
-    on_success: OrderStatusOnSuccess
-
-
-class MetadataPreMapping(TypedDict, total=False):
-    """Configuration which can be used to simplify further metadata extraction"""
-
-    #: JsonPath of the metadata entry
-    metadata_path: str
-    #: Key to get the metadata id
-    metadata_path_id: str
-    #: Key to get the metadata value
-    metadata_path_value: str
-
-
 class PluginConfig(yaml.YAMLObject):
     """Representation of a plugin config.
 
     This class variables describe available plugins configuration parameters.
     """
+
+    class Pagination(TypedDict):
+        """Search pagination configuration"""
+
+        #: The maximum number of items per page that the provider can handle
+        max_items_per_page: int
+        #: Key path for the number of total items in the provider result
+        total_items_nb_key_path: Union[str, JSONPath]
+        #: Key path for the next page URL
+        next_page_url_key_path: Union[str, JSONPath]
+        #: Key path for the next page POST request query-object (body)
+        next_page_query_obj_key_path: Union[str, JSONPath]
+        # TODO: change this typing to bool and adapt code to it
+        next_page_merge_key_path: Union[str, JSONPath]
+        #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
+        #: search request
+        count_tpl: str
+        #: The f-string template for pagination requests.
+        next_page_url_tpl: str
+        #: The query-object for POST pagination requests.
+        next_page_query_obj: str
+        #: Next page token key used in pagination
+        next_page_token_key: str
+        #: The endpoint for counting the number of items satisfying a request
+        count_endpoint: str
+        #: Index of the starting page
+        start_page: int
+        #: Key in the current page URL for the next page URL
+        parse_url_key: str
+
+    class Sort(TypedDict):
+        """Configuration for sort during search"""
+
+        #: Default sort settings
+        sort_by_default: list[tuple[str, str]]
+        #: F-string template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to sort search
+        #: results
+        sort_by_tpl: str
+        #: Mapping between eodag and provider query parameters used for sort
+        sort_param_mapping: dict[str, str]
+        #: Mapping between eodag and provider sort-order parameters
+        sort_order_mapping: dict[Literal["ascending", "descending"], str]
+        #: Maximum number of allowed sort parameters per request
+        max_sort_params: Annotated[int, Gt(0)]
+
+    class DiscoverMetadata(TypedDict):
+        """Configuration for metadata discovery (search result properties)"""
+
+        #: Whether metadata discovery is enabled or not
+        auto_discovery: bool
+        #: Metadata regex pattern used for discovery in search result properties
+        metadata_pattern: str
+        #: Configuration/template that will be used to query for a discovered parameter
+        search_param: Union[str, dict[str, Any]]
+        #: list search parameters to send as is to the provider
+        search_param_unparsed: list[str]
+        #: Path to the metadata in search result
+        metadata_path: str
+        #: Use as STAC extension prefix if it does not have one already
+        metadata_prefix: str
+        #: Whether an error must be raised when using a search parameter which is not queryable or not
+        raise_mtd_discovery_error: bool
+
+    class DiscoverCollections(TypedDict, total=False):
+        """Configuration for collections discovery"""
+
+        #: URL from which the collections can be fetched
+        fetch_url: Optional[str]
+        #: HTTP method used to fetch collections
+        fetch_method: str
+        #: Request body to fetch collections using POST method
+        fetch_body: dict[str, Any]
+        #: Maximum number of connections for concurrent HTTP requests
+        max_connections: int
+        #: The f-string template for pagination requests.
+        next_page_url_tpl: str
+        #: Index of the starting page for pagination requests.
+        start_page: int
+        #: Type of the provider result
+        result_type: str
+        #: JsonPath to the list of collections
+        results_entry: Union[str, JSONPath]
+        #: Mapping for the collection id
+        generic_collection_id: str
+        #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
+        #: result
+        generic_collection_parsable_metadata: dict[str, str]
+        #: Mapping for collection properties which can be parsed from the result and are not collection metadata
+        generic_collection_parsable_properties: dict[str, str]
+        #: Mapping for collection properties which cannot be parsed from the result and are not collection metadata
+        generic_collection_unparsable_properties: dict[str, str]
+        #: URL to fetch data for a single collection
+        single_collection_fetch_url: str
+        #: Query string to be added to the fetch_url to filter for a collection
+        single_collection_fetch_qs: str
+        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+        #: is redefined in this mapping, it will replace ``generic_collection_id`` value
+        single_collection_parsable_metadata: dict[str, str]
+
+    class DiscoverQueryables(TypedDict, total=False):
+        """Configuration for queryables discovery"""
+
+        #: URL to fetch the queryables valid for all collections
+        fetch_url: Optional[str]
+        #: URL to fetch the queryables for a specific collection
+        collection_fetch_url: Optional[str]
+        #: Type of the result
+        result_type: str
+        #: JsonPath to retrieve the queryables from the provider result
+        results_entry: str
+        #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
+        constraints_url: str
+        #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
+        constraints_entry: str
+
+    class CollectionSelector(TypedDict, total=False):
+        """Define the criteria to select a collection in :class:`~eodag.config.DynamicDiscoverQueryables`.
+
+        The selector matches if the field value starts with the given prefix,
+        i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
+
+        #: Field in the search parameters to match
+        field: str
+        #: Prefix to match in the field
+        prefix: str
+
+    class DynamicDiscoverQueryables(TypedDict, total=False):
+        """Configuration for queryables dynamic discovery.
+
+        The given configuration for queryables discovery is used if any collection selector
+        matches the search parameters.
+        """
+
+        #: List of collection selection criterias
+        collection_selector: list[PluginConfig.CollectionSelector]
+        #: Configuration for queryables discovery to use
+        discover_queryables: PluginConfig.DiscoverQueryables
+
+    class OrderOnResponse(TypedDict):
+        """Configuration for order on-response during download"""
+
+        #: Parameters metadata-mapping to apply to the order response
+        metadata_mapping: dict[str, Union[str, list[str]]]
+
+    class OrderStatusSuccess(TypedDict):
+        """
+        Configuration to identify order status success during download
+
+        Order status response matching the following parameters are considered success
+        At least one is required
+        """
+
+        #: Success value for ``status``
+        status: str
+        #: Success value for ``message``
+        message: str
+        #: Success value for status response HTTP code
+        http_code: int
+
+    class OrderStatusOrdered(TypedDict, total=False):
+        """
+        Configuration to identify order status ordered during download
+        """
+
+        #: HTTP code of the order status response
+        http_code: int
+
+    class OrderStatusRequest(TypedDict, total=False):
+        """
+        Order status request configuration
+        """
+
+        #: Request HTTP method
+        method: str
+        #: Request hearders
+        headers: dict[str, Any]
+
+    class OrderStatusOnSuccess(TypedDict, total=False):
+        """Configuration for order status on-success during download"""
+
+        #: Whether a new search is needed on success or not
+        need_search: bool
+        #: Return type of the success result
+        result_type: str
+        #: Key in the success response that gives access to the result
+        results_entry: str
+        #: Metadata-mapping to apply to the success status result
+        metadata_mapping: dict[str, Union[str, list[str]]]
+
+    class OrderStatus(TypedDict, total=False):
+        """Configuration for order status during download"""
+
+        #: Order status request configuration
+        request: PluginConfig.OrderStatusRequest
+        #: Metadata-mapping used to parse order status response
+        metadata_mapping: dict[str, Union[str, list[str]]]
+        #: Configuration to identify order status success during download
+        success: PluginConfig.OrderStatusSuccess
+        #: Part of the order status response that tells there is an error
+        error: dict[str, Any]
+        #: Configuration to identify order status ordered during download
+        ordered: PluginConfig.OrderStatusOrdered
+        #: Configuration for order status on-success during download
+        on_success: PluginConfig.OrderStatusOnSuccess
+
+    class MetadataPreMapping(TypedDict, total=False):
+        """Configuration which can be used to simplify further metadata extraction"""
+
+        #: JsonPath of the metadata entry
+        metadata_path: str
+        #: Key to get the metadata id
+        metadata_path_id: str
+        #: Key to get the metadata value
+        metadata_path_value: str
 
     #: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
     name: str
@@ -366,15 +352,15 @@ class PluginConfig(yaml.YAMLObject):
     #: Key in the provider search result that gives access to the result entries
     results_entry: str
     #: :class:`~eodag.plugins.search.base.Search` Dict containing parameters for pagination
-    pagination: Pagination
+    pagination: PluginConfig.Pagination
     #: :class:`~eodag.plugins.search.base.Search` Configuration for sorting the results
-    sort: Sort
+    sort: PluginConfig.Sort
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
-    discover_metadata: DiscoverMetadata
+    discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the collections auto-discovery
-    discover_collections: DiscoverCollections
+    discover_collections: PluginConfig.DiscoverCollections
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
-    discover_queryables: DiscoverQueryables
+    discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: dict[str, Union[str, list[str]]]
     #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
@@ -397,7 +383,7 @@ class PluginConfig(yaml.YAMLObject):
     #: result and a two step search has to be performed
     per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
-    metadata_pre_mapping: MetadataPreMapping
+    metadata_pre_mapping: PluginConfig.MetadataPreMapping
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
     search_definition: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
@@ -426,7 +412,7 @@ class PluginConfig(yaml.YAMLObject):
     #: A configuration is used based on the given selection criterias. The first match is used.
     #: If no match is found, it falls back to standard behaviors (e.g. discovery using
     #: :attr:`~eodag.config.PluginConfig.discover_queryables`).
-    dynamic_discover_queryables: list[DynamicDiscoverQueryables]
+    dynamic_discover_queryables: list[PluginConfig.DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
@@ -457,9 +443,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.http.HTTPDownload`
     #: Dictionary containing the key :attr:`~eodag.config.PluginConfig.metadata_mapping` which can be used to add new
     #: product properties based on the data in response to the order request
-    order_on_response: OrderOnResponse
+    order_on_response: PluginConfig.OrderOnResponse
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Order status handling
-    order_status: OrderStatus
+    order_status: PluginConfig.OrderStatus
     #: :class:`~eodag.plugins.download.http.HTTPDownload`
     #: Do not authenticate the download request but only the order and order status ones
     no_auth_download: bool
