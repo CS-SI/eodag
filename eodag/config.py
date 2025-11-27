@@ -120,7 +120,8 @@ class PluginConfig(yaml.YAMLObject):
         next_page_url_tpl: str
         #: The query-object for POST pagination requests.
         next_page_query_obj: str
-        #: Next page token key used in pagination
+        #: Next page token key used in pagination. Can be guessed from ``KNOWN_NEXT_PAGE_TOKEN_KEYS`` (but needed by
+        # ``stac-fastapi-eodag`` that cannot guess and will use ``page`` as default).
         next_page_token_key: str
         #: The endpoint for counting the number of items satisfying a request
         count_endpoint: str
@@ -194,7 +195,7 @@ class PluginConfig(yaml.YAMLObject):
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
-        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
+        #: Mapping for collection metadata returned by the endpoint given in single_collection_fetch_url. If ``id``
         #: is redefined in this mapping, it will replace ``generic_collection_id`` value
         single_collection_parsable_metadata: dict[str, str]
 
@@ -215,7 +216,7 @@ class PluginConfig(yaml.YAMLObject):
         constraints_entry: str
 
     class CollectionSelector(TypedDict, total=False):
-        """Define the criteria to select a collection in :class:`~eodag.config.DynamicDiscoverQueryables`.
+        """Define the criteria to select a collection in :class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`.
 
         The selector matches if the field value starts with the given prefix,
         i.e. it matches if ``parameters[field].startswith(prefix)==True``"""
@@ -428,7 +429,8 @@ class PluginConfig(yaml.YAMLObject):
     flatten_top_dirs: bool
     #: :class:`~eodag.plugins.download.base.Download` Level in extracted path tree where to find data
     archive_depth: int
-    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
+    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``eodag:download_link``
+    #: or not
     ignore_assets: bool
     #: :class:`~eodag.plugins.download.base.Download` Collection specific configuration
     products: dict[str, dict[str, Any]]
