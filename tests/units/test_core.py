@@ -1040,7 +1040,9 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has not been added to the config
-            self.assertNotIn(100, self.dag._providers["earth_search"].collections_config)
+            self.assertNotIn(
+                100, self.dag._providers["earth_search"].collections_config
+            )
 
             # remove the wrong collection from the external conf
             del ext_collections_conf[provider]["providers_config"][100]

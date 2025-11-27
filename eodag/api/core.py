@@ -506,7 +506,9 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        providers = self.providers.filter_by_name(provider)
+        providers_iter, providers_check = itertools.tee(
+            self._providers.filter_by_name_or_group(provider)
+        )
 
         if provider and not any(providers_check):
             raise UnsupportedProvider(
@@ -516,8 +518,8 @@ class EODataAccessGateway:
         # unique collection ids from providers configs
         collection_ids = {
             collection_id
-            for p in providers.values()
-            for collection_id in p.products
+            for p in providers_iter
+            for collection_id in p.collections_config
             if collection_id != GENERIC_COLLECTION
         }
 
