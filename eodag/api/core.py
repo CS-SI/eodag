@@ -424,7 +424,7 @@ class EODataAccessGateway:
             # rebuild _plugins_manager with updated providers list
             self._plugins_manager.rebuild(self._providers)
 
-    def set_locations_conf(self, locations_conf_path: str | None) -> None:
+    def set_locations_conf(self, locations_conf_path: Optional[str]) -> None:
         """Set locations configuration.
         This configuration (YML format) will contain a shapefile list associated
         to a name and attribute parameters needed to identify the needed geometry.

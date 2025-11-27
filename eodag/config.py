@@ -577,13 +577,13 @@ class PluginConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = "!plugin"
 
-    def __or__(self, other: Self | dict[str, Any]) -> Self:
+    def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
         """Return a new PluginConfig with merged values."""
         new_config = self.__class__.from_mapping(self.__dict__)
         new_config.update(other)
         return new_config
 
-    def __ior__(self, other: Self | dict[str, Any]) -> Self:
+    def __ior__(self, other: Union[Self, dict[str, Any]]) -> Self:
         """In-place update of the PluginConfig."""
         self.update(other)
         return self
@@ -615,7 +615,7 @@ class PluginConfig(yaml.YAMLObject):
                 "A Plugin config must specify the type of Plugin it configures"
             )
 
-    def update(self, config: Optional[Self | dict[Any, Any]]) -> None:
+    def update(self, config: Optional[Union[Self, dict[Any, Any]]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters

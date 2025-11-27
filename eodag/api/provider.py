@@ -162,7 +162,7 @@ class ProviderConfig(yaml.YAMLObject):
                 "type of plugin"
             )
 
-    def update(self, config: Self | dict[str, Any]) -> None:
+    def update(self, config: Union[Self, dict[str, Any]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param config: The config from which to override configuration parameters
@@ -276,7 +276,7 @@ class Provider:
     _config: ProviderConfig
     collections_fetched: bool
 
-    def __init__(self, config: ProviderConfig | dict[str, Any]):
+    def __init__(self, config: Union[ProviderConfig, dict[str, Any]]):
         """Initialize provider with configuration."""
         if isinstance(config, dict):
             self._config = ProviderConfig.from_mapping(config)
@@ -532,7 +532,7 @@ class Provider:
 
         return False
 
-    def update_from_config(self, config: ProviderConfig | dict[str, Any]) -> None:
+    def update_from_config(self, config: Union[ProviderConfig, dict[str, Any]]) -> None:
         """Update the provider's configuration from a given config.
 
         :param config: The new configuration to update from.
@@ -840,8 +840,8 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @staticmethod
     def _get_whitelisted_configs(
-        configs: Mapping[str, ProviderConfig | dict[str, Any]],
-    ) -> Mapping[str, ProviderConfig | dict[str, Any]]:
+        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    ) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
         """
         Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
 
@@ -855,7 +855,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def update_from_configs(
         self,
-        configs: Mapping[str, ProviderConfig | dict[str, Any]],
+        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
     ) -> None:
         """
         Update providers from a dictionary of configurations.
@@ -976,7 +976,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @classmethod
     def from_configs(
-        cls, configs: Mapping[str, ProviderConfig | dict[str, Any]]
+        cls, configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]]
     ) -> Self:
         """
         Build a ProvidersDict from a configuration mapping.
