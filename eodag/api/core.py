@@ -567,8 +567,6 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        collections: CollectionsList = CollectionsList([])
-
         providers_configs = (
             list(self.providers_config.values())
             if not provider
@@ -584,15 +582,17 @@ class EODataAccessGateway:
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for p in providers_configs:
-            for collection_id in p.products:
-                if collection_id == GENERIC_COLLECTION:
-                    continue
+        # unique collection ids from providers configs
+        collection_ids = {
+            collection_id
+            for p in providers_configs
+            for collection_id in p.products
+            if collection_id != GENERIC_COLLECTION
+        }
 
-                if (
-                    collection := self.collections_config[collection_id]
-                ) not in collections:
-                    collections.append(collection)
+        collections = CollectionsList(
+            [self.collections_config[collection_id] for collection_id in collection_ids]
+        )
 
         # Return the collections sorted in lexicographic order of their id
         collections.sort(key=attrgetter("id"))
@@ -881,15 +881,14 @@ class EODataAccessGateway:
                             try:
                                 # new_collection_conf does not already exist, append it
                                 # to self.collections_config
-                                self.collections_config[
-                                    new_collection
-                                ] = Collection.create_with_dag(
+                                new_coll_obj = Collection.create_with_dag(
                                     self,
                                     id=new_collection,
                                     **new_collections_conf["collections_config"][
                                         new_collection
                                     ],
                                 )
+                                self.collections_config[new_coll_obj._id] = new_coll_obj
                             except ValidationError:
                                 # skip collection if there is a problem with its id (missing or not a string)
                                 logger.debug(
@@ -910,7 +909,7 @@ class EODataAccessGateway:
                                 # increase the increment if the new collection had
                                 # bad formatted attributes in the external config
                                 dumped_collection = self.collections_config[
-                                    new_collection
+                                    new_coll_obj._id
                                 ].model_dump()
                                 dumped_ext_conf_col = {
                                     **dumped_collection,
@@ -988,7 +987,7 @@ class EODataAccessGateway:
         :returns: Internal name of the collection.
         """
         collections = [
-            k for k, v in self.collections_config.items() if v.alias == alias_or_id
+            v for k, v in self.collections_config.items() if v.id == alias_or_id
         ]
 
         if len(collections) > 1:
@@ -1004,7 +1003,7 @@ class EODataAccessGateway:
                     f"Could not find collection from alias or id {alias_or_id}"
                 )
 
-        return collections[0]
+        return collections[0]._id or collections[0].id
 
     def get_alias_from_collection(self, collection: str) -> str:
         """Return the alias of a collection by its id. If no alias was defined for the
@@ -1059,13 +1058,16 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
         if collection := kwargs.get("collection"):
-            try:
-                collection = self.get_collection_from_alias(collection)
+            if collection in self.collections_config:
                 return CollectionsList([self.collections_config[collection]])
-            except NoMatchingCollection:
-                return CollectionsList(
-                    [Collection.create_with_dag(self, id=collection)]
-                )
+            else:
+                try:
+                    collection = self.get_collection_from_alias(collection)
+                    return CollectionsList([self.collections_config[collection]])
+                except NoMatchingCollection:
+                    return CollectionsList(
+                        [Collection.create_with_dag(self, id=collection)]
+                    )
 
         filters: dict[str, str] = {
             k: v
@@ -1100,7 +1102,6 @@ class EODataAccessGateway:
                 or col not in self._plugins_manager.collection_to_provider_config_map
             ):
                 continue
-
             score = 0  # how many filters matched
 
             # free text search
@@ -1147,16 +1148,24 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                col_start = col_f.extent.temporal.interval[0][0]
-                col_end = col_f.extent.temporal.interval[0][1]
+                col_start_str = col_f.extent.temporal.interval[0][0]
+                if col_start_str and isinstance(col_start_str, str):
+                    col_start = rfc3339_str_to_datetime(col_start_str)
+                else:
+                    col_start = col_start_str or min_aware
+                col_end_str = col_f.extent.temporal.interval[0][1]
+                if col_end_str and isinstance(col_end_str, str):
+                    col_end = rfc3339_str_to_datetime(col_end_str)
+                else:
+                    col_end = col_end_str or max_aware
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
-                    col_start or min_aware,
+                    col_start,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(end_date) if end_date else max_aware,
-                    col_end or max_aware,
+                    col_end,
                 )
                 if not (max_start <= min_end):
                     continue

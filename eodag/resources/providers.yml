@@ -6046,8 +6046,8 @@
       next_page_url_key_path: null
       next_page_query_obj_key_path: null
       next_page_token_key: page
-      # 1000 is ok and 2000 fails
-      max_items_per_page: 1000
+      # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
+      max_items_per_page: 80
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
@@ -6176,8 +6176,8 @@
       next_page_url_key_path: null
       next_page_query_obj_key_path: null
       next_page_token_key: page
-      # 1000 is ok and 2000 fails
-      max_items_per_page: 1000
+      # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
+      max_items_per_page: 80
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
