@@ -3,6 +3,22 @@ Release history
 ===============
 
 
+v4.0.0a3 (2025-11-27)
+=====================
+
+Bug Fixes
+---------
+
+* **core**: Handling of collections with aliases (`#1935`_, `274280a`_)
+
+* **providers**: Geodes max_items_per_page down to 80 (`#1938`_, `abf8c71`_)
+
+.. _#1935: https://github.com/CS-SI/eodag/pull/1935
+.. _#1938: https://github.com/CS-SI/eodag/pull/1938
+
+.. _274280a: https://github.com/CS-SI/eodag/commit/274280ae3b5df1fe7eac792d57192e633879dbcd
+.. _abf8c71: https://github.com/CS-SI/eodag/commit/abf8c71bdbb7b3bcc27371b85f47261c489e3650
+
 v4.0.0a2 (2025-11-19)
 =====================
 
