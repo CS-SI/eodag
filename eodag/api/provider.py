@@ -748,7 +748,7 @@ class ProvidersDict(UserDict[str, Provider]):
             return self
 
         free_text_query = compile_free_text_query(q)
-        searchable_attributes = {"name", "group", "description", "url", "products"}
+        searchable_attributes = {"name", "group", "description", "products"}
 
         filtered = ProvidersDict()
         for p in self.data.values():
