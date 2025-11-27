@@ -132,6 +132,7 @@ class Collection(BaseModel):
     def set_id_from_alias(self) -> Self:
         """if an alias exists, use it to update id attribute"""
         if self.alias is not None:
+            self._id = self.id
             self.id = self.alias
         return self
 
@@ -290,7 +291,7 @@ class CollectionsDict(UserDict[str, Collection]):
     ) -> None:
         super().__init__()
 
-        self.data = {col.id: col for col in collections}
+        self.data = {col._id: col for col in collections}
 
     def __str__(self) -> str:
         return "{" + ", ".join(f'"{col}": {col_f}' for col, col_f in self.items()) + "}"
