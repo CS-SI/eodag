@@ -303,7 +303,7 @@ class EODataAccessGateway:
         :param search: Search :class:`~eodag.config.PluginConfig` mapping
         :param products: Provider collections mapping
         :param download: Download :class:`~eodag.config.PluginConfig` mapping
-        :param kwargs: Additional :class:`~eodag.config.ProviderConfig` mapping
+        :param kwargs: Additional :class:`~eodag.api.provider.ProviderConfig` mapping
         """
         conf_dict: dict[str, Any] = {
             name: {

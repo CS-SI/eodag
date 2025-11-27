@@ -81,7 +81,7 @@ class ProviderConfig(yaml.YAMLObject):
     :param url: URL to the webpage representing the provider
     :param api: (optional) The configuration of a plugin of type Api
     :param search: (optional) The configuration of a plugin of type Search
-    :param products: (optional) The products types supported by the provider
+    :param products: (optional) The collections supported by the provider
     :param download: (optional) The configuration of a plugin of type Download
     :param auth: (optional) The configuration of a plugin of type Authentication
     :param search_auth: (optional) The configuration of a plugin of type Authentication for search
@@ -118,7 +118,7 @@ class ProviderConfig(yaml.YAMLObject):
 
     @classmethod
     def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[Self]:
-        """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
+        """Build a :class:`~eodag.api.provider.ProviderConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
             if node_key.value == "name":
@@ -128,7 +128,7 @@ class ProviderConfig(yaml.YAMLObject):
 
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
-        """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
+        """Build a :class:`~eodag.api.provider.ProviderConfig` from a mapping"""
         cls.validate(mapping)
         # Create a deep copy to avoid modifying the input dict or its nested structures
         mapping_copy = deepcopy(mapping)
@@ -147,7 +147,7 @@ class ProviderConfig(yaml.YAMLObject):
 
     @staticmethod
     def validate(config_keys: Union[tuple[str, ...], dict[str, Any]]) -> None:
-        """Validate a :class:`~eodag.config.ProviderConfig`
+        """Validate a :class:`~eodag.api.provider.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
         """
@@ -201,7 +201,7 @@ class ProviderConfig(yaml.YAMLObject):
         self._apply_defaults()
 
     def with_name(self, new_name: str) -> Self:
-        """Create a copy of this ProviderConfig with a different name.
+        """Create a copy of this :class:`~eodag.api.provider.ProviderConfig` with a different name.
 
         :param new_name: The new name for the provider config.
         :return: A new ProviderConfig instance with the updated name.
@@ -250,7 +250,7 @@ class Provider:
     """
     Represents a data provider with its configuration and utility methods.
 
-    :param config: Provider configuration as ProviderConfig instance or dict
+    :param config: Provider configuration as :meth:`~eodag.api.provider.ProviderConfig` instance or :class:`dict`
     :param collections_fetched: Flag indicating whether collections have been fetched
 
     Example
@@ -346,10 +346,10 @@ class Provider:
         """
         Provider configuration (read-only assignment).
 
-        To update configuration safely, use provider.update_from_config()
+        To update configuration safely, use :meth:`~eodag.api.provider.Provider.update_from_config`
         which handles metadata mapping and other provider-specific logic.
 
-        Note: Direct config modification (config.update(), config.name = ...)
+        Note: Direct config modification (``config.update()``, ``config.name = ...``)
         bypasses important provider validation.
         """
         return self._config
@@ -398,7 +398,9 @@ class Provider:
 
     @property
     def unparsable_properties(self) -> set[str]:
-        """Return set of unparsable properties for generic collections, if any."""
+        """Return set of unparsable properties from
+        :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_collection_unparsable_properties`, if any.
+        """
         if not self.fetchable or self.search_config is None:
             return set()
 
@@ -471,11 +473,11 @@ class Provider:
         """
         Synchronize collections for a provider based on strict or permissive mode.
 
-        In strict mode, removes collections not in "dag.collections_config".
+        In strict mode, removes collections not in :attr:`~eodag.api.core.EODataAccessGateway.collections_config`.
         In permissive mode, adds empty collection to config for missing types.
 
         :param dag: The gateway instance to use to list existing collections and to create new collection instances.
-        :param strict_mode: If True, remove unknown collections; if False, add empty configs for them.
+        :param strict_mode: If ``True``, remove unknown collections; if ``False``, add empty configs for them.
         """
         products_to_remove: list[str] = []
         products_to_add: list[str] = []
@@ -560,14 +562,14 @@ class Provider:
 
 class ProvidersDict(UserDict[str, Provider]):
     """
-    A dictionary-like collection of Provider objects, keyed by provider name.
+    A dictionary-like collection of :class:`~eodag.api.provider.Provider` objects, keyed by provider name.
 
     :param providers: Initial providers to populate the dictionary.
     """
 
     def __contains__(self, item: object) -> bool:
         """
-        Check if a provider is in the dictionary by name or Provider instance.
+        Check if a provider is in the dictionary by name or :class:`~eodag.api.provider.Provider` instance.
 
         :param item: Provider name or Provider instance to check.
         :return: True if the provider is in the dictionary, False otherwise.
@@ -578,7 +580,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def __setitem__(self, key: str, value: Provider) -> None:
         """
-        Add a Provider to the dictionary.
+        Add a :class:`~eodag.api.provider.Provider` to the dictionary.
 
         :param key: The name of the provider.
         :param value: The Provider instance to add.
@@ -603,7 +605,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def __repr__(self) -> str:
         """
-        String representation of ProvidersDict.
+        String representation of :class:`~eodag.api.provider.ProvidersDict`.
 
         :return: String listing provider names.
         """
@@ -613,7 +615,7 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         HTML representation for Jupyter/IPython display.
 
-        :return: HTML string representation of the ProvidersDict.
+        :return: HTML string representation of the :class:`~eodag.api.provider.ProvidersDict`.
         """
         longest_name = max([len(k) for k in self.keys()])
         thead = (
@@ -676,7 +678,7 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         Dictionary of provider configs keyed by provider name.
 
-        :return: Dictionary mapping provider name to ProviderConfig.
+        :return: Dictionary mapping provider name to :class:`~eodag.api.provider.ProviderConfig`.
         """
         return {provider.name: provider.config for provider in self.data.values()}
 
@@ -693,10 +695,10 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def get_config(self, provider: str) -> Optional[ProviderConfig]:
         """
-        Get a ProviderConfig by provider name.
+        Get a :class:`~eodag.api.provider.ProviderConfig` from provider name.
 
         :param provider: The provider name.
-        :return: The ProviderConfig if found, otherwise None.
+        :return: The :class:`~eodag.api.provider.ProviderConfig` if found, otherwise None.
         """
         prov = self.get(provider)
         return prov.config if prov else None
@@ -711,7 +713,7 @@ class ProvidersDict(UserDict[str, Provider]):
         If no query is provided, returns all providers.
 
         :param q: Free-text parameter to filter providers. If None, returns all providers.
-        :return: matching Provider objects.
+        :return: matching Provider objects in a :class:`~eodag.api.provider.ProvidersDict`.
 
         Example
         -------
@@ -764,12 +766,12 @@ class ProvidersDict(UserDict[str, Provider]):
         self, name_or_group: Optional[str] = None
     ) -> Iterator[Provider]:
         """
-        Yield providers whose name or group matches the given name_or_group.
+        Yield providers whose name or group matches the given ``name_or_group``.
 
-        If name_or_group is None, yields all providers.
+        If ``name_or_group`` is ``None``, yields all providers.
 
         :param name_or_group: The provider name or group to filter by. If None, yields all providers.
-        :return: Iterator of matching Provider objects.
+        :return: Iterator of matching :class:`~eodag.api.provider.Provider` objects.
 
         Example
         -------
@@ -979,8 +981,9 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         Build a ProvidersDict from a configuration mapping.
 
-        :param configs: A dictionary mapping provider names to configuration dicts or ProviderConfig instances.
-        :return: An instance of ProvidersDict populated with the given configurations.
+        :param configs: A dictionary mapping provider names to configuration dicts or
+                        :class:`~eodag.api.provider.ProviderConfig` instances.
+        :return: An instance of :class:`~eodag.api.provider.ProvidersDict` populated with the given configurations.
         """
         providers = cls()
         providers.update_from_configs(configs)
