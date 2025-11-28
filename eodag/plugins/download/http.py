@@ -791,15 +791,20 @@ class HTTPDownload(Download):
             not getattr(self.config, "ignore_assets", False)
             or kwargs.get("asset") is not None
         ):
+            executor = ThreadPoolExecutor(
+                max_workers=getattr(self.config, "max_workers", None)
+            )
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
-                assets_stream_list = self._stream_download_assets(
-                    product,
-                    auth,
-                    None,
-                    assets_values=assets_values,
-                    **kwargs,
-                )
+                with executor:
+                    assets_stream_list = self._stream_download_assets(
+                        product,
+                        executor,
+                        auth,
+                        None,
+                        assets_values,
+                        **kwargs,
+                    )
 
                 # single asset
                 if len(assets_stream_list) == 1:
@@ -1068,6 +1073,7 @@ class HTTPDownload(Download):
     def _stream_download_assets(
         self,
         product: EOProduct,
+        executor: ThreadPoolExecutor,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         assets_values: list[Asset] = [],
@@ -1084,7 +1090,9 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = self._get_asset_sizes(assets_values, auth, params) or None
+        total_size = (
+            self._get_asset_sizes(assets_values, executor, auth, params) or None
+        )
 
         progress_callback.reset(total=total_size)
 
@@ -1225,6 +1233,21 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
+        # create executor if not given
+        if executor is None:
+            executor = ThreadPoolExecutor(
+                max_workers=getattr(self.config, "max_workers", None)
+            )
+            shutdown_executor = True
+        else:
+            if (
+                max_workers := getattr(
+                    self.config, "max_workers", executor._max_workers
+                )
+            ) < executor._max_workers:
+                executor._max_workers = max_workers
+            shutdown_executor = False
+
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]
@@ -1234,7 +1257,7 @@ class HTTPDownload(Download):
         assets_values = product.assets.get_values(kwargs.get("asset"))
 
         assets_stream_list = self._stream_download_assets(
-            product, auth, progress_callback, assets_values=assets_values, **kwargs
+            product, executor, auth, progress_callback, assets_values, **kwargs
         )
 
         # remove existing incomplete file
@@ -1281,21 +1304,6 @@ class HTTPDownload(Download):
                 )
                 os.rename(asset_abs_path_temp, asset_abs_path)
             return
-
-        # create executor if not given
-        if executor is None:
-            executor = ThreadPoolExecutor(
-                max_workers=getattr(self.config, "max_workers", None)
-            )
-            shutdown_executor = True
-        else:
-            if (
-                max_workers := getattr(
-                    self.config, "max_workers", executor._max_workers
-                )
-            ) < executor._max_workers:
-                executor._max_workers = max_workers
-            shutdown_executor = False
 
         futures = (
             executor.submit(download_asset, asset_stream)
@@ -1359,6 +1367,7 @@ class HTTPDownload(Download):
     def _get_asset_sizes(
         self,
         assets_values: list[Asset],
+        executor: ThreadPoolExecutor,
         auth: Optional[AuthBase],
         params: Optional[dict[str, str]],
         zipped: bool = False,
@@ -1367,8 +1376,11 @@ class HTTPDownload(Download):
 
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        # loop for assets size & filename
-        for asset in assets_values:
+
+        # loop for assets size & filename in parallel
+        def fetch_asset_size(asset: Asset) -> None:
+            nonlocal total_size
+
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 try:
@@ -1430,4 +1442,8 @@ class HTTPDownload(Download):
                             asset.size = int(size_str) if size_str.isdigit() else 0
 
                 total_size += asset.size
+
+        futures = (executor.submit(fetch_asset_size, asset) for asset in assets_values)
+        [f.result() for f in as_completed(futures)]
+
         return total_size
