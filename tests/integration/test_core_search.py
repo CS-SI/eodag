@@ -278,7 +278,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(collection)
+        available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
@@ -314,7 +314,7 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_raise_errors(self, mock_get, mock_request):
         """Core search fallback mechanism must halt loop on error if raise_errors is set"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(collection)
+        available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
@@ -349,7 +349,7 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_find_on_first(self, mock_get, mock_request):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(collection)
+        available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
@@ -409,7 +409,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(collection)
+        available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
@@ -453,7 +453,7 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_find_on_second_empty_results(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(collection)
+        available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
@@ -490,7 +490,7 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_given_provider(self, mock_query):
         """Core search must not loop over providers if a provider is specified"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.available_providers(collection)
+        available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [

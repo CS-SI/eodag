@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.0.0a4 (2025-11-28)
+=====================
+
+Features
+--------
+
+* **core**: Providers representation classes (`#1902`_, `fa5f42b`_)
+
+.. _#1902: https://github.com/CS-SI/eodag/pull/1902
+.. _fa5f42b: https://github.com/CS-SI/eodag/commit/fa5f42b5ec0cbe172e4dd73db6906f9f7b583793
+
+
 v4.0.0a3 (2025-11-27)
 =====================
 

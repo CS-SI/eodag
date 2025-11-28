@@ -153,7 +153,7 @@ Some EODAG core settings can be overriden using environment variables:
 * ``EODAG_COLLECTIONS_CFG_FILE`` for defining the desired path to the collections configuration file in place of
   `<python-site-packages>/eodag/resources/collections.yml`.
 * ``EODAG_EXT_COLLECTIONS_CFG_FILE`` for defining the desired path to the `external collections configuration file\
-  <../notebooks/api_user_guide/1_providers_products_available.ipynb#Collections-discovery>`_
+  <../notebooks/api_user_guide/1_providers_collections_available.ipynb#Collections-discovery>`_
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_collections.json.
   If the file is not readable, only user-modified providers will be fetched.
 * ``EODAG_PROVIDERS_WHITELIST`` to restrict ``eodag`` to only use a specific list of providers.
