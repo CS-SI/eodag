@@ -4,27 +4,11 @@
 Collection
 ===========
 
-.. autoclass:: Collection
 
-   :Attributes:
+The `Collection` class is a `Pydantic <https://docs.pydantic.dev>`_ model representing individual
+collection and its metadata.
 
-      .. autoattribute:: id
-      .. autoattribute:: title
-      .. autoattribute:: extent
-      .. autoattribute:: processing_level
-      .. autoattribute:: instruments
-      .. autoattribute:: constellation
-      .. autoattribute:: platform
-      .. autoattribute:: eodag_sensor_type
-      .. autoattribute:: keywords
-      .. autoattribute:: license
-      .. autoattribute:: description
-      .. autoattribute:: alias
-
-   :Methods:
-
-      .. automethod:: Collection.search
-      .. automethod:: Collection.list_queryables
+.. autopydantic_model:: Collection
 
 .. autoclass:: CollectionsDict
    :members:

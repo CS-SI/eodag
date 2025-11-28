@@ -64,31 +64,26 @@ def params_mapping_to_csv(
 
     # update stac providers metadata_mapping
     stac_mapping = load_stac_provider_config()["search"]["metadata_mapping"]
-    for p in dag.providers_config.keys():
-        if (
-            hasattr(dag.providers_config[p], "search")
-            and getattr(dag.providers_config[p].search, "type", None) == "StacSearch"
-        ):
-            dag.providers_config[p].search.metadata_mapping = dict(
+    for p in dag._providers.keys():
+        if getattr(dag._providers[p].search_config, "type", None) == "StacSearch":
+            dag._providers[p].search_config.metadata_mapping = dict(
                 stac_mapping,
-                **dag.providers_config[p].search.__dict__.get("metadata_mapping", {}),
+                **dag._providers[p].search_config.__dict__.get("metadata_mapping", {}),
             )
 
     # list of lists of all parameters per provider
     params_list_of_lists: list[list[str]] = []
-    for p in dag.providers_config.keys():
-        if hasattr(dag.providers_config[p], "search") and hasattr(
-            dag.providers_config[p].search, "metadata_mapping"
+    for p in dag._providers.keys():
+        if mapping_dict := getattr(
+            dag._providers[p].search_config, "metadata_mapping", None
         ):
-            params_list_of_lists.append(
-                list(dag.providers_config[p].search.__dict__["metadata_mapping"].keys())
-            )
+            params_list_of_lists.append(list(mapping_dict.keys()))
 
     # union of params_list_of_lists
     global_keys: list[str] = sorted(list(set().union(*(params_list_of_lists))))
 
     # csv fieldnames
-    fieldnames = ["parameter"] + sorted(dag.providers_config.keys())
+    fieldnames = ["parameter"] + sorted(dag._providers.keys())
 
     logging_additional_infos = ""
 
@@ -131,7 +126,6 @@ def params_mapping_to_csv(
                             and "Definition"
                             in param_node.xpath("../../../thead/tr/th[2]/text()")[0]
                         ):
-
                             params_rows[param]["class"] = param_node.xpath(
                                 "../../../caption/text()"
                             )[1].strip(": ")
@@ -163,13 +157,10 @@ def params_mapping_to_csv(
 
             # write metadata mapping
             for param in global_keys:
-                for provider in dag.providers_config.keys():
-                    if hasattr(dag.providers_config[provider], "search") and hasattr(
-                        dag.providers_config[provider].search, "metadata_mapping"
+                for provider in dag._providers.keys():
+                    if mapping_dict := getattr(
+                        dag._providers[provider].search_config, "metadata_mapping", None
                     ):
-                        mapping_dict = dag.providers_config[provider].search.__dict__[
-                            "metadata_mapping"
-                        ]
                         if param in mapping_dict.keys():
                             if isinstance(mapping_dict[param], list):
                                 params_rows[param][

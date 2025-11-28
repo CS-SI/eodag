@@ -155,7 +155,6 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[dict[str, Any]]:
-
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is orderable

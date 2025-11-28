@@ -31,6 +31,7 @@ Catalog
 
 .. autosummary::
 
+   EODataAccessGateway.providers
    EODataAccessGateway.available_providers
    EODataAccessGateway.list_collections
    EODataAccessGateway.guess_collection
@@ -88,4 +89,4 @@ Misc
              available_providers, search, search_all, search_iter_page, crunch, download, download_all, serialize,
              deserialize, deserialize_and_register, group_by_extent, guess_collection, get_cruncher,
              update_collections_list, fetch_collections_list, discover_collections, list_queryables,
-             available_sortables, import_stac_items
+             available_sortables, import_stac_items, providers

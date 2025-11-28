@@ -47,8 +47,9 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     NotAvailableError,
+    PluginConfig,
     PluginManager,
-    config,
+    ProvidersDict,
     load_default_config,
     path_to_uri,
     uri_to_path,
@@ -59,8 +60,8 @@ class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseDownloadPluginTest, cls).setUpClass()
-        providers_config = load_default_config()
-        cls.plugins_manager = PluginManager(providers_config)
+        providers = ProvidersDict.from_configs(load_default_config())
+        cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         expanduser_mock_side_effect = (
@@ -288,7 +289,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self._set_download_simulation(
             mock_requests_session, local_product_as_archive_path
         )
-        dl_config = config.PluginConfig.from_mapping(
+        dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
                 "base_uri": "fake_base_uri",
@@ -707,7 +708,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = iter(
-            [b"some ", b"content"]
+            [
+                b"some ",
+                b"content",
+            ]
         )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": '; filename = "somethingelse"'

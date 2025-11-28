@@ -11,7 +11,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 .. toctree::
    :hidden:
 
-   notebooks/api_user_guide/1_providers_products_available.ipynb
+   notebooks/api_user_guide/1_providers_collections_available.ipynb
    notebooks/api_user_guide/2_configuration.ipynb
    notebooks/api_user_guide/3_search.ipynb
    notebooks/api_user_guide/4_queryables.ipynb
@@ -25,7 +25,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    :gutter: 4
 
    .. grid-item-card:: :octicon:`database;1.5em`  Providers & Collections
-      :link: notebooks/api_user_guide/1_providers_products_available
+      :link: notebooks/api_user_guide/1_providers_collections_available
       :link-type: doc
       :text-align: center
       :shadow: md

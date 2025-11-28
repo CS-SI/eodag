@@ -50,7 +50,7 @@ class TestExternalPluginConfig(unittest.TestCase):
     def tearDown(self):
         super(TestExternalPluginConfig, self).tearDown()
 
-        self.dag.providers_config.pop("fakeplugin_provider", None)
+        self.dag._providers.pop("fakeplugin_provider", None)
 
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
@@ -62,7 +62,7 @@ class TestExternalPluginConfig(unittest.TestCase):
     def test_update_providers_from_ext_plugin(self):
         """Load fake external plugin and check if it updates providers config"""
 
-        default_providers_count = len(self.dag.providers_config)
+        default_providers_count = len(self.dag._providers)
 
         src = os.path.join(TEST_RESOURCES_PATH, "fake_ext_plugin")
         fakeplugin_location = os.path.join(self.tmp_home_dir.name, "fake_ext_plugin")
@@ -77,6 +77,4 @@ class TestExternalPluginConfig(unittest.TestCase):
 
             # New EODataAccessGateway instance, check if new conf has been loaded
             self.dag = EODataAccessGateway()
-            self.assertEqual(
-                len(self.dag.providers_config), default_providers_count + 1
-            )
+            self.assertEqual(len(self.dag._providers), default_providers_count + 1)

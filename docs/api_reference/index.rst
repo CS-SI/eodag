@@ -16,6 +16,7 @@ The API Reference provides an overview of all public objects, functions and meth
    assets
    queryables
    collection
+   provider
    utils
    exceptions
    types
@@ -64,6 +65,14 @@ The API Reference provides an overview of all public objects, functions and meth
          :shadow: md
 
          Represents individual collections and their metadata in Pydantic models with capabilities to search and list queryables.
+
+   .. grid-item-card:: :octicon:`database;1.5em`  Provider
+         :link: provider
+         :link-type: doc
+         :text-align: center
+         :shadow: md
+
+         Provider management including ProvidersDict and Provider classes for handling multiple data sources and their configurations.
 
    .. grid-item-card:: :octicon:`list-unordered;1.5em`  Queryables
          :link: queryables

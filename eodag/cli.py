@@ -484,9 +484,7 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
                         click.echo(text_wrapper.fill(str(value)))
     except UnsupportedProvider:
         click.echo("Unsupported provider. You may have a typo")
-        click.echo(
-            "Available providers: {}".format(", ".join(dag.available_providers()))
-        )
+        click.echo("Available providers: {}".format(", ".join(dag.providers.names)))
         sys.exit(1)
 
 

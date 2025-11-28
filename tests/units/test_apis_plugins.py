@@ -28,6 +28,7 @@ from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
+from eodag.api.provider import ProvidersDict
 from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
@@ -55,8 +56,8 @@ class BaseApisPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseApisPluginTest, cls).setUpClass()
-        providers_config = load_default_config()
-        cls.plugins_manager = PluginManager(providers_config)
+        providers = ProvidersDict.from_configs(load_default_config())
+        cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         expanduser_mock_side_effect = (

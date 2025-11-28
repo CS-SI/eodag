@@ -130,7 +130,7 @@ class Collection(BaseModel):
 
     @model_validator(mode="after")
     def set_id_from_alias(self) -> Self:
-        """if an alias exists, use it to update id attribute"""
+        """If an alias exists, use it to update ``id`` attribute"""
         if self.alias is not None:
             self._id = self.id
             self.id = self.alias
@@ -141,9 +141,9 @@ class Collection(BaseModel):
     def validate_collection(
         cls, values: dict[str, Any] | Self, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        """Allow to create a collection instance with bad formatted attributes (except "id").
-        Set incorrectly formatted attributes to None and ignore extra attributes.
-        Log a warning about validation errors if EODAG_VALIDATE_COLLECTIONS is set to True.
+        """Allow to create a collection instance with bad formatted attributes (except ``id``).
+        Set incorrectly formatted attributes to ``None`` and ignore extra attributes.
+        Log a warning about validation errors if ``EODAG_VALIDATE_COLLECTIONS`` environment variable is set to ``True``.
         """
         errors: list[ErrorDetails] = []
         continue_validation: bool = True
@@ -237,7 +237,7 @@ class Collection(BaseModel):
         return self._dag
 
     def search(self, **kwargs: Any) -> SearchResult:
-        """Look for products of this collection matching criteria using the `dag` attribute of the instance.
+        """Look for products of this collection matching criteria using the ``dag`` attribute of the instance.
 
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatible with the provider
@@ -257,12 +257,12 @@ class Collection(BaseModel):
         return dag.search(collection=self.id, **kwargs)
 
     def list_queryables(self, **kwargs: Any) -> QueryablesDict:
-        """Fetch the queryable properties for this collection using the `dag` attribute of the instance.
+        """Fetch the queryable properties for this collection using the ``dag`` attribute of the instance.
 
         :param kwargs: additional filters for queryables
 
         :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
-                  properties, associating parameters to their annotated type, and a additional_properties attribute
+                  properties, associating parameters to their annotated type, and an ``additional_properties`` attribute
         :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `collection` argument is set in `kwargs`,
                                                                    since it is already defined by the instance
         """
@@ -278,7 +278,7 @@ class Collection(BaseModel):
 
 
 class CollectionsDict(UserDict[str, Collection]):
-    """A UserDict object which values are :class:`~eodag.api.collection.Collection` objects, keyed by provider id.
+    """A UserDict object which values are :class:`~eodag.api.collection.Collection` objects, keyed by provider ``id``.
 
     :param collections: A list of collections
 

@@ -10,16 +10,16 @@ constellation,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`q
 created,,,,,,,,,,metadata only,,metadata only,
 datetime,,,,metadata only,metadata only,,,metadata only,metadata only,,metadata only,,metadata only
 description,,,,,,,,,,metadata only,,metadata only,
-end_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+end_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 endingDateTime,metadata only,,metadata only,,,,,,,,,,
 eo:cloud_cover,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 eo:snow_cover,,,,,,,,,,:green:`queryable metadata`,,:green:`queryable metadata`,
-eodag:default_geometry,,metadata only,,,,,metadata only,,,,,,
-eodag:download_link,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+eodag:default_geometry,,metadata only,,,,metadata only,metadata only,,,,,,
+eodag:download_link,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 eodag:quicklook,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 eodag:thumbnail,metadata only,,metadata only,metadata only,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 extraInformation,,,,,,,metadata only,,,,,,
-geometry,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+geometry,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 grid:code,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,
 gsd,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 id,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
@@ -27,7 +27,7 @@ instruments,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`que
 keywords,,,,,,,,,metadata only,metadata only,,metadata only,
 license,,,,,,,,,,metadata only,,metadata only,
 links,,,,,,,,,,metadata only,,,
-order:status,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+order:status,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 processing:datetime,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 processing:facility,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 processing:level,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,:green:`queryable metadata`,,:green:`queryable metadata`,
@@ -35,12 +35,13 @@ processing:software,metadata only,,metadata only,,,,,,,,,,
 processing:version,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 product:acquisition_type,,,,,,,,,,metadata only,,metadata only,
 product:timeliness,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
-product:type,:green:`queryable metadata`,,:green:`queryable metadata`,,,,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
+product:type,:green:`queryable metadata`,,:green:`queryable metadata`,,,metadata only,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
 productInformation,,,,,,,metadata only,,,,,,
 providers,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,:green:`queryable metadata`,,:green:`queryable metadata`,
 published,metadata only,,metadata only,,,,,,metadata only,metadata only,,metadata only,
 published_after,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 published_before,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
+qs,,,,,,metadata only,,,,,,,
 s1:datatake_id,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 s1:instrument_configuration_ID,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 s1:slice_number,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
@@ -58,7 +59,7 @@ sat:orbit_state,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,:
 sat:relative_orbit,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
 services,,,,,,,,,,metadata only,,,
 size,,,,,,,metadata only,,,,,,
-start_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,metadata only,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only
+start_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,metadata only,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only
 type,,,,,,,metadata only,,,,,,
 uid,metadata only,,metadata only,,,,metadata only,,metadata only,metadata only,,metadata only,
 updated,:green:`queryable metadata`,,metadata only,,,,metadata only,,,metadata only,,metadata only,

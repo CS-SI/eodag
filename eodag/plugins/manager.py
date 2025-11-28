@@ -24,12 +24,8 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import importlib_metadata
 
-from eodag.config import (
-    AUTH_TOPIC_KEYS,
-    PLUGINS_TOPICS_KEYS,
-    load_config,
-    merge_configs,
-)
+from eodag.api.provider import ProvidersDict
+from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, load_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -48,7 +44,8 @@ if TYPE_CHECKING:
     from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
-    from eodag.config import PluginConfig, ProviderConfig
+    from eodag.api.provider import ProviderConfig
+    from eodag.config import PluginConfig
     from eodag.plugins.base import PluginTopic
 
 
@@ -67,8 +64,8 @@ class PluginManager:
     it, and the plugins to use to perform defined actions (search, download,
     authenticate, crunch).
 
-    :param providers_config: The configuration with all information about the providers
-                             supported by ``eodag``
+    :param providers: The ProvidersDict instance with all information about the providers
+                      supported by ``eodag``
     """
 
     supported_topics = set(PLUGINS_TOPICS_KEYS)
@@ -77,9 +74,9 @@ class PluginManager:
 
     skipped_plugins: list[str]
 
-    def __init__(self, providers_config: dict[str, ProviderConfig]) -> None:
+    def __init__(self, providers: ProvidersDict) -> None:
         self.skipped_plugins = []
-        self.providers_config = providers_config
+        self.providers = providers
         # Load all the plugins. This will make all plugin classes of a particular
         # type to be available in the base plugin class's 'plugins' attribute.
         # For example, by importing module 'eodag.plugins.search.resto', the plugin
@@ -119,19 +116,14 @@ class PluginManager:
                         str(x) for x in dist.locate_file(name).rglob("providers.yml")
                     ]
                     if plugin_providers_config_path:
-                        plugin_providers_config = load_config(
-                            plugin_providers_config_path[0]
-                        )
-                        merge_configs(plugin_providers_config, self.providers_config)
-                        self.providers_config = plugin_providers_config
+                        plugin_configs = load_config(plugin_providers_config_path[0])
+                        self.providers.update_from_configs(plugin_configs)
         self.rebuild()
 
-    def rebuild(
-        self, providers_config: Optional[dict[str, ProviderConfig]] = None
-    ) -> None:
+    def rebuild(self, providers: Optional[ProvidersDict] = None) -> None:
         """(Re)Build plugin manager mapping and cache"""
-        if providers_config is not None:
-            self.providers_config = providers_config
+        if providers is not None:
+            self.providers = providers
 
         self.build_collection_to_provider_config_map()
         self._built_plugins_cache: dict[tuple[str, str, str], Any] = {}
@@ -139,27 +131,22 @@ class PluginManager:
     def build_collection_to_provider_config_map(self) -> None:
         """Build mapping conf between collections and providers"""
         self.collection_to_provider_config_map = {}
-        for provider in list(self.providers_config):
-            provider_config = self.providers_config[provider]
-            if not hasattr(provider_config, "products") or not provider_config.products:
+        for provider in list(self.providers.values()):
+            if not provider.collections_config:
                 logger.info(
                     "%s: provider has no product configured and will be skipped",
                     provider,
                 )
-                self.providers_config.pop(provider)
+                del self.providers[provider.name]
                 continue
 
-            # provider priority set to lowest if not set
-            if getattr(provider_config, "priority", None) is None:
-                self.providers_config[provider].priority = provider_config.priority = 0
-
-            for collection in provider_config.products:
+            for collection in provider.collections_config:
                 collection_providers = (
                     self.collection_to_provider_config_map.setdefault(  # noqa
                         collection, []
                     )
                 )
-                collection_providers.append(provider_config)
+                collection_providers.append(provider.config)
                 collection_providers.sort(key=attrgetter("priority"), reverse=True)
 
     def get_search_plugins(
@@ -203,7 +190,7 @@ class PluginManager:
                 )
                 configs = self.collection_to_provider_config_map[GENERIC_COLLECTION]
         else:
-            configs = list(self.providers_config.values())
+            configs = list(p.config for p in self.providers.values())
 
         if provider:
             configs = [
@@ -227,7 +214,10 @@ class PluginManager:
         :param product: The product to get a download plugin for
         :returns: The download plugin capable of downloading the product
         """
-        plugin_conf = self.providers_config[product.provider]
+        plugin_conf = self.providers.get_config(product.provider)
+        if plugin_conf is None:
+            msg = f"Provider {product.provider} not found"
+            raise UnsupportedProvider(msg)
         if download := getattr(plugin_conf, "download", None):
             plugin_conf.download.priority = plugin_conf.priority
             plugin = cast(
@@ -322,7 +312,7 @@ class PluginManager:
             return False
 
         # providers configs with given provider at first
-        sorted_providers_config = deepcopy(self.providers_config)
+        sorted_providers_config = deepcopy(self.providers.configs)
         sorted_providers_config = {
             provider: sorted_providers_config.pop(provider),
             **sorted_providers_config,

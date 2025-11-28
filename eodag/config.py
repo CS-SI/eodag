@@ -19,21 +19,8 @@ from __future__ import annotations
 
 import logging
 import os
-import tempfile
 from importlib.resources import files as res_files
-from inspect import isclass
-from typing import (
-    Annotated,
-    Any,
-    ItemsView,
-    Iterator,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    ValuesView,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, TypedDict, Union
 
 import orjson
 import requests
@@ -42,24 +29,26 @@ import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
 
-from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
-    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
-    cast_scalar_value,
     deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
-    slugify,
     sort_dict,
     string_to_jsonpath,
-    update_nested_dict,
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from typing import ItemsView, Iterator, ValuesView
+
+    from typing_extensions import Self
+
+    from eodag.api.provider import ProviderConfig
 
 logger = logging.getLogger("eodag.config")
 
@@ -103,115 +92,6 @@ class SimpleYamlProxyConfig:
         if not isinstance(other, self.__class__):
             raise ValueError("'{}' must be of type {}".format(other, self.__class__))
         self.source.update(other.source)
-
-
-class ProviderConfig(yaml.YAMLObject):
-    """Representation of eodag configuration.
-
-    :param name: The name of the provider
-    :param priority: (optional) The priority of the provider while searching a product.
-                     Lower value means lower priority. (Default: 0)
-    :param api: (optional) The configuration of a plugin of type Api
-    :param search: (optional) The configuration of a plugin of type Search
-    :param products: (optional) The collections supported by the provider
-    :param download: (optional) The configuration of a plugin of type Download
-    :param auth: (optional) The configuration of a plugin of type Authentication
-    :param search_auth: (optional) The configuration of a plugin of type Authentication for search
-    :param download_auth: (optional) The configuration of a plugin of type Authentication for download
-    :param kwargs: Additional configuration variables for this provider
-    """
-
-    name: str
-    group: str
-    priority: int = 0  # Set default priority to 0
-    roles: list[str]
-    description: str
-    url: str
-    api: PluginConfig
-    search: PluginConfig
-    products: dict[str, Any]
-    download: PluginConfig
-    auth: PluginConfig
-    search_auth: PluginConfig
-    download_auth: PluginConfig
-    collections_fetched: bool  # set in core.update_collections_list
-
-    yaml_loader = yaml.Loader
-    yaml_dumper = yaml.SafeDumper
-    yaml_tag = "!provider"
-
-    @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[ProviderConfig]:
-        """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
-        cls.validate(tuple(node_key.value for node_key, _ in node.value))
-        for node_key, node_value in node.value:
-            if node_key.value == "name":
-                node_value.value = slugify(node_value.value).replace("-", "_")
-                break
-        return loader.construct_yaml_object(node, cls)
-
-    @classmethod
-    def from_mapping(cls, mapping: dict[str, Any]) -> ProviderConfig:
-        """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
-        cls.validate(mapping)
-        for key in PLUGINS_TOPICS_KEYS:
-            if key in mapping:
-                mapping[key] = PluginConfig.from_mapping(mapping[key])
-        c = cls()
-        c.__dict__.update(mapping)
-        return c
-
-    @staticmethod
-    def validate(config_keys: Union[tuple[str, ...], dict[str, Any]]) -> None:
-        """Validate a :class:`~eodag.config.ProviderConfig`
-
-        :param config_keys: The configurations keys to validate
-        """
-        if "name" not in config_keys:
-            raise ValidationError("Provider config must have name key")
-        if not any(k in config_keys for k in PLUGINS_TOPICS_KEYS):
-            raise ValidationError("A provider must implement at least one plugin")
-        non_api_keys = [k for k in PLUGINS_TOPICS_KEYS if k != "api"]
-        if "api" in config_keys and any(k in config_keys for k in non_api_keys):
-            raise ValidationError(
-                "A provider implementing an Api plugin must not implement any other "
-                "type of plugin"
-            )
-
-    def update(self, mapping: Optional[dict[str, Any]]) -> None:
-        """Update the configuration parameters with values from `mapping`
-
-        :param mapping: The mapping from which to override configuration parameters
-        """
-        if mapping is None:
-            mapping = {}
-        merge_mappings(
-            self.__dict__,
-            {
-                key: value
-                for key, value in mapping.items()
-                if key not in PLUGINS_TOPICS_KEYS and value is not None
-            },
-        )
-        for key in PLUGINS_TOPICS_KEYS:
-            current_value: Optional[PluginConfig] = getattr(self, key, None)
-            mapping_value = mapping.get(key, {})
-            if current_value is not None:
-                current_value.update(mapping_value)
-            elif mapping_value:
-                try:
-                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
-                except ValidationError as e:
-                    logger.warning(
-                        (
-                            "Could not add %s Plugin config to %s configuration: %s. "
-                            "Try updating existing %s Plugin configs instead."
-                        ),
-                        key,
-                        self.name,
-                        str(e),
-                        ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
-                    )
 
 
 class PluginConfig(yaml.YAMLObject):
@@ -273,11 +153,11 @@ class PluginConfig(yaml.YAMLObject):
         #: Metadata regex pattern used for discovery in search result properties
         metadata_pattern: str
         #: Configuration/template that will be used to query for a discovered parameter
-        search_param: str | dict[str, Any]
-        #: Path to the metadata in search result
-        metadata_path: str
+        search_param: Union[str, dict[str, Any]]
         #: list search parameters to send as is to the provider
         search_param_unparsed: list[str]
+        #: Path to the metadata in search result
+        metadata_path: str
         #: Use as STAC extension prefix if it does not have one already
         metadata_prefix: str
         #: Whether an error must be raised when using a search parameter which is not queryable or not
@@ -301,7 +181,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Type of the provider result
         result_type: str
         #: JsonPath to the list of collections
-        results_entry: Union[JSONPath, str]
+        results_entry: Union[str, JSONPath]
         #: Mapping for the collection id
         generic_collection_id: str
         #: Mapping for collection metadata (e.g. ``description``, ``license``) which can be parsed from the provider
@@ -355,7 +235,6 @@ class PluginConfig(yaml.YAMLObject):
 
         #: List of collection selection criterias
         collection_selector: list[PluginConfig.CollectionSelector]
-
         #: Configuration for queryables discovery to use
         discover_queryables: PluginConfig.DiscoverQueryables
 
@@ -555,6 +434,8 @@ class PluginConfig(yaml.YAMLObject):
     ignore_assets: bool
     #: :class:`~eodag.plugins.download.base.Download` Collection specific configuration
     products: dict[str, dict[str, Any]]
+    #: :class:`~eodag.plugins.download.base.Download` Number of maximum workers allowed for parallel downloads
+    max_workers: int
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
@@ -575,6 +456,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.aws.AwsDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
+    #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
+    requester_pays: bool
     #: :class:`~eodag.plugins.download.aws.AwsDownload` S3 endpoint
     s3_endpoint: str
 
@@ -601,9 +484,6 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.base.Authentication` Part of the search or download plugin configuration
     #: that needs authentication
     matching_conf: dict[str, Any]
-    #: :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`
-    #: Whether download is done from a requester-pays bucket or not
-    requester_pays: bool
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
     #: How the token should be used in the request
     token_provision: str
@@ -697,89 +577,73 @@ class PluginConfig(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_tag = "!plugin"
 
+    def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
+        """Return a new PluginConfig with merged values."""
+        new_config = self.__class__.from_mapping(self.__dict__)
+        new_config.update(other)
+        return new_config
+
+    def __ior__(self, other: Union[Self, dict[str, Any]]) -> Self:
+        """In-place update of the PluginConfig."""
+        self.update(other)
+        return self
+
+    def __contains__(self, item: str) -> bool:
+        """Check if a key is in the PluginConfig."""
+        return item in self.__dict__
+
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> PluginConfig:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: dict[str, Any]) -> PluginConfig:
+    def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         cls.validate(tuple(mapping.keys()))
         c = cls()
-        c.__dict__.update(mapping)
+        c.__dict__.update(deepcopy(mapping))
         return c
 
     @staticmethod
     def validate(config_keys: tuple[Any, ...]) -> None:
         """Validate a :class:`~eodag.config.PluginConfig`"""
-        if "type" not in config_keys:
+        # credentials may be set without type when the provider uses search_auth plugin.
+        if "type" not in config_keys and "credentials" not in config_keys:
             raise ValidationError(
                 "A Plugin config must specify the type of Plugin it configures"
             )
 
-    def update(self, mapping: Optional[dict[Any, Any]]) -> None:
+    def update(self, config: Optional[Union[Self, dict[Any, Any]]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
         """
-        if mapping is None:
-            mapping = {}
+        if config is None:
+            return
+        source = config if isinstance(config, dict) else config.__dict__
         merge_mappings(
-            self.__dict__, {k: v for k, v in mapping.items() if v is not None}
+            self.__dict__, {k: v for k, v in source.items() if v is not None}
         )
 
+    def matches_target_auth(self, target_config: Self):
+        """Check if the target auth configuration matches this one"""
+        target_matching_conf = getattr(target_config, "matching_conf", {})
+        target_matching_url = getattr(target_config, "matching_url", None)
 
-def load_default_config() -> dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionary.
+        matching_conf = getattr(self, "matching_conf", {})
+        matching_url = getattr(self, "matching_url", None)
 
-    Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
-    variable if exists.
-
-    :returns: The default provider's configuration
-    """
-    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
-        res_files("eodag") / "resources" / "providers.yml"
-    )
-    return load_config(eodag_providers_cfg_file)
-
-
-def load_config(config_path: str) -> dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionary from a given file
-
-    If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
-
-    :param config_path: The path to the provider config file
-    :returns: The default provider's configuration
-    """
-    logger.debug("Loading configuration from %s", config_path)
-    config: dict[str, ProviderConfig] = {}
-    try:
-        # Providers configs are stored in this file as separated yaml documents
-        # Load all of it
-        providers_configs: list[ProviderConfig] = cached_yaml_load_all(config_path)
-    except yaml.parser.ParserError as e:
-        logger.error("Unable to load configuration")
-        raise e
-
-    stac_provider_config = load_stac_provider_config()
-
-    whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
-    whitelist = None
-    if whitelist_env:
-        whitelist = {provider for provider in whitelist_env.split(",")}
-        logger.info("Using providers whitelist: %s", ", ".join(whitelist))
-
-    for provider_config in providers_configs:
-        if provider_config is None or (
-            whitelist and provider_config.name not in whitelist
+        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(
+            matching_conf
         ):
-            continue
-        provider_config_init(provider_config, stac_provider_config)
-        config[provider_config.name] = provider_config
+            return True
 
-    return config
+        if target_matching_url and target_matching_url == matching_url:
+            return True
+
+        return False
 
 
 def credentials_in_auth(auth_conf: PluginConfig) -> bool:
@@ -793,275 +657,40 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     )
 
 
-def share_credentials(
-    providers_config: dict[str, ProviderConfig],
-) -> None:
-    """Share credentials between plugins having the same matching criteria
+def load_default_config() -> dict[str, ProviderConfig]:
+    """Load the providers configuration into a dictionary.
 
-    :param providers_configs: eodag providers configurations
+    Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
+    variable if exists.
+
+    :returns: The default provider's configuration
     """
-    auth_confs_with_creds = [
-        getattr(p, k)
-        for p in providers_config.values()
-        for k in AUTH_TOPIC_KEYS
-        if hasattr(p, k) and credentials_in_auth(getattr(p, k))
-    ]
-    for provider, provider_config in providers_config.items():
-        if auth_confs_with_creds:
-            for auth_topic_key in AUTH_TOPIC_KEYS:
-                provider_config_auth = getattr(provider_config, auth_topic_key, None)
-                if provider_config_auth and not credentials_in_auth(
-                    provider_config_auth
-                ):
-                    # no credentials set for this provider
-                    provider_matching_conf = getattr(
-                        provider_config_auth, "matching_conf", {}
-                    )
-                    provider_matching_url = getattr(
-                        provider_config_auth, "matching_url", None
-                    )
-                    for conf_with_creds in auth_confs_with_creds:
-                        # copy credentials between plugins if `matching_conf` or `matching_url` are matching
-                        if (
-                            provider_matching_conf
-                            and sort_dict(provider_matching_conf)
-                            == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
-                        ) or (
-                            provider_matching_url
-                            and provider_matching_url
-                            == getattr(conf_with_creds, "matching_url", None)
-                        ):
-                            getattr(
-                                providers_config[provider], auth_topic_key
-                            ).credentials = conf_with_creds.credentials
+    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
+        res_files("eodag") / "resources" / "providers.yml"
+    )
+
+    return load_config(eodag_providers_cfg_file)
 
 
-def provider_config_init(
-    provider_config: ProviderConfig,
-    stac_search_default_conf: Optional[dict[str, Any]] = None,
-) -> None:
-    """Applies some default values to provider config
+def load_config(config_path: str) -> dict[str, ProviderConfig]:
+    """Load the providers configuration into a dictionary from a given file
 
-    :param provider_config: An eodag provider configuration
-    :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
+    If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
+
+    :param config_path: The path to the provider config file
+    :returns: The default provider's configuration
     """
-    # For the provider, set the default output_dir of its download plugin
-    # as tempdir in a portable way
-    for download_topic_key in ("download", "api"):
-        if download_topic_key in vars(provider_config):
-            download_conf = getattr(provider_config, download_topic_key)
-            if not getattr(download_conf, "output_dir", None):
-                download_conf.output_dir = tempfile.gettempdir()
-            if not getattr(download_conf, "delete_archive", None):
-                download_conf.delete_archive = True
+    logger.debug("Loading configuration from %s", config_path)
 
     try:
-        if (
-            stac_search_default_conf is not None
-            and provider_config.search
-            and provider_config.search.type in STAC_SEARCH_PLUGINS
-        ):
-            # search config set to stac defaults overriden with provider config
-            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
-            provider_config.search.__dict__ = update_nested_dict(
-                per_provider_stac_provider_config["search"],
-                provider_config.search.__dict__,
-                allow_empty_values=True,
-            )
-    except AttributeError:
-        pass
+        # Providers configs are stored in this file as separated yaml documents
+        # Load all of it
+        providers_configs: list[ProviderConfig] = cached_yaml_load_all(config_path)
+    except yaml.parser.ParserError as e:
+        logger.error("Unable to load configuration")
+        raise e
 
-
-def override_config_from_file(
-    config: dict[str, ProviderConfig], file_path: str
-) -> None:
-    """Override a configuration with the values in a file
-
-    :param config: An eodag providers configuration dictionary
-    :param file_path: The path to the file from where the new values will be read
-    """
-    logger.info("Loading user configuration from: %s", os.path.abspath(file_path))
-    with open(os.path.abspath(os.path.realpath(file_path)), "r") as fh:
-        try:
-            config_in_file = yaml.safe_load(fh)
-            if config_in_file is None:
-                return
-        except yaml.parser.ParserError as e:
-            logger.error("Unable to load user configuration file")
-            raise e
-
-    override_config_from_mapping(config, config_in_file)
-
-
-def override_config_from_env(config: dict[str, ProviderConfig]) -> None:
-    """Override a configuration with environment variables values
-
-    :param config: An eodag providers configuration dictionary
-    """
-
-    def build_mapping_from_env(
-        env_var: str, env_value: str, mapping: dict[str, Any]
-    ) -> None:
-        """Recursively build a dictionary from an environment variable.
-
-        The environment variable must respect the pattern: KEY1__KEY2__[...]__KEYN.
-        It will be transformed to::
-
-            {
-                "key1": {
-                    "key2": {
-                        {...}
-                    }
-                }
-            }
-
-        :param env_var: The environment variable to be transformed into a dictionary
-        :param env_value: The value from environment variable
-        :param mapping: The mapping in which the value will be created
-        """
-        parts = env_var.split("__")
-        iter_parts = iter(parts)
-        env_type = get_type_hints(PluginConfig).get(next(iter_parts, ""), str)
-        child_env_type = (
-            get_type_hints(env_type).get(next(iter_parts, ""))
-            if isclass(env_type)
-            else None
-        )
-        if len(parts) == 2 and child_env_type:
-            # for nested config (pagination, ...)
-            # try converting env_value type from type hints
-            try:
-                env_value = cast_scalar_value(env_value, child_env_type)
-            except TypeError:
-                logger.warning(
-                    f"Could not convert {parts} value {env_value} to {child_env_type}"
-                )
-            mapping.setdefault(parts[0], {})
-            mapping[parts[0]][parts[1]] = env_value
-        elif len(parts) == 1:
-            # try converting env_value type from type hints
-            try:
-                env_value = cast_scalar_value(env_value, env_type)
-            except TypeError:
-                logger.warning(
-                    f"Could not convert {parts[0]} value {env_value} to {env_type}"
-                )
-            mapping[parts[0]] = env_value
-        else:
-            new_map = mapping.setdefault(parts[0], {})
-            build_mapping_from_env("__".join(parts[1:]), env_value, new_map)
-
-    mapping_from_env: dict[str, Any] = {}
-    for env_var in os.environ:
-        if env_var.startswith("EODAG__"):
-            build_mapping_from_env(
-                env_var[len("EODAG__") :].lower(),  # noqa
-                os.environ[env_var],
-                mapping_from_env,
-            )
-
-    override_config_from_mapping(config, mapping_from_env)
-
-
-def override_config_from_mapping(
-    config: dict[str, ProviderConfig], mapping: dict[str, Any]
-) -> None:
-    """Override a configuration with the values in a mapping.
-
-    If the environment variable ``EODAG_PROVIDERS_WHITELIST`` is set (as a comma-separated list of provider names),
-    only the listed providers will be used from the mapping. All other providers in the mapping will be ignored.
-
-    :param config: An eodag providers configuration dictionary
-    :param mapping: The mapping containing the values to be overriden
-    """
-    whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
-    whitelist = None
-    if whitelist_env:
-        whitelist = {provider for provider in whitelist_env.split(",")}
-
-    for provider, new_conf in mapping.items():
-        # check if metada-mapping as already been built as jsonpath in providers_config
-        # or provider not in whitelist
-        if not isinstance(new_conf, dict) or (whitelist and provider not in whitelist):
-            continue
-        new_conf_search = new_conf.get("search", {}) or {}
-        new_conf_api = new_conf.get("api", {}) or {}
-        if provider in config and "metadata_mapping" in {
-            **new_conf_search,
-            **new_conf_api,
-        }:
-            search_plugin_key = (
-                "search" if "metadata_mapping" in new_conf_search else "api"
-            )
-            # get some already configured value
-            configured_metadata_mapping = getattr(
-                config[provider], search_plugin_key
-            ).metadata_mapping
-            some_configured_value = next(iter(configured_metadata_mapping.values()))
-            # check if the configured value has already been built as jsonpath
-            if (
-                isinstance(some_configured_value, list)
-                and isinstance(some_configured_value[1], tuple)
-                or isinstance(some_configured_value, tuple)
-            ):
-                # also build as jsonpath the incoming conf
-                mtd_cfg_as_conversion_and_querypath(
-                    deepcopy(mapping[provider][search_plugin_key]["metadata_mapping"]),
-                    mapping[provider][search_plugin_key]["metadata_mapping"],
-                )
-
-        # try overriding conf
-        old_conf: Optional[ProviderConfig] = config.get(provider)
-        if old_conf is not None:
-            old_conf.update(new_conf)
-        else:
-            logger.info(
-                "%s: unknown provider found in user conf, trying to use provided configuration",
-                provider,
-            )
-            try:
-                new_conf["name"] = new_conf.get("name", provider)
-                config[provider] = ProviderConfig.from_mapping(new_conf)
-            except Exception:
-                logger.warning(
-                    "%s skipped: could not be loaded from user configuration", provider
-                )
-
-                import traceback as tb
-
-                logger.debug(tb.format_exc())
-
-
-def merge_configs(config: dict[str, Any], other_config: dict[str, Any]) -> None:
-    """Override a configuration with the values of another configuration
-
-    :param config: An eodag providers configuration dictionary
-    :param other_config: An eodag providers configuration dictionary
-    """
-    # configs union with other_config values as default
-    other_config = dict(config, **other_config)
-
-    for provider, new_conf in other_config.items():
-        old_conf = config.get(provider)
-
-        if old_conf:
-            # update non-objects values
-            new_conf = dict(old_conf.__dict__, **new_conf.__dict__)
-
-            for conf_k, conf_v in new_conf.items():
-                old_conf_v = getattr(old_conf, conf_k, None)
-
-                if isinstance(conf_v, PluginConfig) and isinstance(
-                    old_conf_v, PluginConfig
-                ):
-                    old_conf_v.update(conf_v.__dict__)
-                    new_conf[conf_k] = old_conf_v
-                elif isinstance(old_conf_v, PluginConfig):
-                    new_conf[conf_k] = old_conf_v
-
-                setattr(config[provider], conf_k, new_conf[conf_k])
-        else:
-            config[provider] = new_conf
+    return {p.name: p for p in providers_configs if p is not None}
 
 
 def load_yml_config(yml_path: str) -> dict[Any, Any]:
