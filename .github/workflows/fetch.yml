@@ -86,7 +86,7 @@ jobs:
         source .venv/bin/activate
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
 
-        echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
+        echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_collections_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
 
         echo '### Collections validation' >> $GITHUB_STEP_SUMMARY
         if [ -s "/tmp/warnings.txt" ]; then
@@ -116,7 +116,7 @@ jobs:
 
         {
           # Include header info
-          echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
+          echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_collections_available.html#Collections-discovery)"
           echo ""
           echo '### Collections validation'
           if [ -s "/tmp/warnings.txt" ]; then
@@ -219,7 +219,7 @@ jobs:
         source .venv/bin/activate
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
 
-        echo "Update external product-types reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
+        echo "Update external product-types reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_collections_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
         echo '### Changed file' >> $GITHUB_STEP_SUMMARY
         if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
           git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
@@ -242,7 +242,7 @@ jobs:
 
         {
           # Include header info
-          echo "Update external product-types reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
+          echo "Update external product-types reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_collections_available.html#Collections-discovery)"
           echo ""
           echo "### Changed file"
           if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
