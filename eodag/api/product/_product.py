@@ -31,6 +31,8 @@ from requests.auth import AuthBase
 from shapely import geometry
 from shapely.errors import ShapelyError
 
+from eodag.types.stac_metadata import create_stac_metadata_model
+
 try:
     # import from eodag-cube if installed
     from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
@@ -143,6 +145,13 @@ class EOProduct:
             and not key.startswith("_")
             and value is not None
         }
+        self.properties.setdefault(
+            "datetime",
+            self.properties.get("start_datetime")
+            or self.properties.get("end_datetime"),
+        )
+
+        # sort properties to have common stac properties first
         common_stac_properties = {
             key: self.properties[key]
             for key in sorted(self.properties)
@@ -204,23 +213,30 @@ class EOProduct:
         if self.search_intersection is not None:
             search_intersection = geometry.mapping(self.search_intersection)
 
+        stac_properties = {
+            **{
+                key: value
+                for key, value in self.properties.items()
+                if key not in ("geometry", "id")
+            },
+            "eodag:collection": self.collection,
+            "eodag:provider": self.provider,
+            "eodag:search_intersection": search_intersection,
+        }
+        props_model = create_stac_metadata_model()
+        props_validated = props_model.model_validate(stac_properties)
+
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
             "geometry": geometry.mapping(self.geometry),
+            "bbox": self.geometry.bounds,
             "id": self.properties["id"],
             "assets": self.assets.as_dict(),
-            "properties": {
-                "eodag:collection": self.collection,
-                "eodag:provider": self.provider,
-                "eodag:search_intersection": search_intersection,
-                **{
-                    key: value
-                    for key, value in self.properties.items()
-                    if key not in ("geometry", "id")
-                },
-            },
+            "properties": stac_properties,
+            "links": [],
+            "stac_extensions": props_validated.get_conformance_classes(),
+            "stac_version": "1.1.0",
         }
-
         return geojson_repr
 
     @classmethod

@@ -206,6 +206,9 @@ class SearchResult(UserList[EOProduct]):
                 "eodag:search_params": geojson_search_params or None,
                 "eodag:raise_errors": self.raise_errors,
             },
+            "links": [],
+            "stac_extensions": [],
+            "stac_version": "1.1.0",
         }
 
     def as_shapely_geometry_object(self) -> GeometryCollection:
