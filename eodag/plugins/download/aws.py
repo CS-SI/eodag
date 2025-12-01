@@ -710,7 +710,7 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        if auth and isinstance(auth, boto3.resources.base.ServiceResource):
+        if auth and isinstance(auth, boto3.resource("s3").__class__):
             s3_resource = auth
         else:
             s3_resource = boto3.resource(
