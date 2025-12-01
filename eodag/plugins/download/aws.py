@@ -374,11 +374,15 @@ class AwsDownload(Download):
                     else {}
                 )
                 if not os.path.isfile(chunk_abs_path):
+                    transfer_config = boto3.s3.transfer.TransferConfig(
+                        use_threads=False
+                    )
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
                         chunk_abs_path,
                         ExtraArgs=extra_args,
                         Callback=progress_callback,
+                        Config=transfer_config,
                     )
                 return
 
