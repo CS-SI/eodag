@@ -476,8 +476,8 @@ class HTTPDownload(Download):
         if (
             success_status and success_status != status_dict.get("eodag:order_status")
         ) or (success_code and success_code != response.status_code):
-            if "eodag:download_link" in product.properties:
-                del product.properties["eodag:download_link"]
+            # Remove the download link if the order has not been completed or was not successful
+            product.properties.pop("eodag:download_link", None)
             return None
 
         product.properties["order:status"] = ONLINE_STATUS
