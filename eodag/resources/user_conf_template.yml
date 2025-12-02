@@ -142,7 +142,7 @@ ecmwf:
         credentials:
             username:
             password:
-esa_heritage_missions:
+eocat:
     priority: # Lower value means lower priority (Default: 0)
     api:
         output_dir:

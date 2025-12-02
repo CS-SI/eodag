@@ -649,7 +649,7 @@ class TestCore(TestCoreBase):
         "earth_search",
         "earth_search_gcs",
         "ecmwf",
-        "esa_heritage_missions",
+        "eocat",
         "eumetsat_ds",
         "fedeo_ceda",
         "geodes",
@@ -1989,7 +1989,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
             },
             "ecmwf": None,
-            "esa_heritage_missions": {"max_sort_params": None, "sortables": []},
+            "eocat": {"max_sort_params": None, "sortables": []},
             "eumetsat_ds": {
                 "sortables": [
                     "start_datetime",

@@ -22,7 +22,7 @@ Products from the following providers are made available through ``eodag``:
 * `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_: Element84 Earth Search and Google Cloud
   Storage download
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
-* `esa_heritage_missions <https://earth.esa.int/eogateway/missions/heritage-missions>`_: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
+* `eocat <https://earth.esa.int/eogateway/missions/heritage-missions>`_: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
 * `eumetsat_ds <https://data.eumetsat.int>`_: EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
 * `fedeo_ceda <https://climate.esa.int/en/>`_: FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access. The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue of all CCI datasets.
 * `geodes <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal
