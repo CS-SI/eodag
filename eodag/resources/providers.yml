@@ -6503,8 +6503,8 @@
   download: !plugin
     type: HTTPDownload
 ---
-!provider # MARK: esa_heritage_missions
-  name: esa_heritage_missions
+!provider # MARK: eocat
+  name: eocat
   priority: 0
   description: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
   roles:
@@ -6516,7 +6516,7 @@
     ssl_verify: true
     timeout: 90
     discover_product_types:
-      fetch_url: 'https://eocat.esa.int/eo-catalogue/collections?limit=200'
+      fetch_url: 'https://eocat.esa.int/eo-catalogue/collections?limit=1000'
       result_type: json
       results_entry: '$.collections[?(@.links[*].rel=="items" & @.id!="datasets" & @.id!="services")]'
       single_collection_fetch_url: 'https://eocat.esa.int/eo-catalogue/collections/{productType}'
