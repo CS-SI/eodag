@@ -10,12 +10,7 @@ from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
 from shapely.geometry.base import BaseGeometry
 
-from eodag.types import (
-    annotated_dict_to_model,
-    json_field_definition_to_python,
-    model_fields_to_annotated,
-    python_field_definition_to_json,
-)
+from eodag.types import annotated_dict_to_model, model_fields_to_annotated
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
 
 Percentage = Annotated[PositiveInt, Lt(100)]
@@ -47,13 +42,11 @@ class CommonQueryables(BaseModel):
         """Get field and set default value."""
         annotated_fields = model_fields_to_annotated(cls.model_fields)
         f = annotated_fields[field]
-        json_field_definition = python_field_definition_to_json(f)
-        updated_field = json_field_definition_to_python(
-            json_field_definition=json_field_definition,
-            default_value=default,
-            required=required,
-        )
-        return updated_field
+        if required:
+            f.__metadata__[0].default = PydanticUndefined
+        elif default is not None:
+            f.__metadata__[0].default = default
+        return f
 
 
 class Queryables(CommonQueryables):
