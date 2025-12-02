@@ -35,7 +35,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.plugins.authentication.aws_auth import raise_if_auth_error
+from eodag.plugins.authentication.aws_auth import AwsAuth, raise_if_auth_error
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -295,7 +295,7 @@ class AwsDownload(Download):
         )
 
         # authenticate
-        if product.downloader_auth:
+        if product.downloader_auth and isinstance(product.downloader_auth, AwsAuth):
             authenticated_objects = product.downloader_auth.authenticate_objects(
                 bucket_names_and_prefixes
             )
@@ -321,7 +321,7 @@ class AwsDownload(Download):
 
         # files in zip
         updated_bucket_names_and_prefixes = self._download_file_in_zip(
-            product,
+            product.downloader_auth,
             bucket_names_and_prefixes,
             product_local_path,
             progress_callback,
@@ -386,11 +386,21 @@ class AwsDownload(Download):
                     )
                 return
 
-            futures = (
-                executor.submit(download_chunk, chunk)
-                for chunk in unique_product_chunks
-            )
-            [f.result() for f in as_completed(futures)]
+            # use parallelization if possible.
+            # when products are already downloaded in parallel but the executor has only one worker,
+            # we avoid submitting nested tasks to the executor to prevent deadlocks
+            if (
+                executor._thread_name_prefix == "eodag-download-all"
+                and executor._max_workers == 1
+            ):
+                for product_chunk in unique_product_chunks:
+                    download_chunk(product_chunk)
+            else:
+                futures = (
+                    executor.submit(download_chunk, product_chunk)
+                    for product_chunk in unique_product_chunks
+                )
+                [f.result() for f in as_completed(futures)]
 
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
@@ -423,23 +433,20 @@ class AwsDownload(Download):
 
     def _download_file_in_zip(
         self,
-        product,
-        bucket_names_and_prefixes,
-        product_local_path,
-        progress_callback,
-        executor,
+        downloader_auth: AwsAuth,
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        product_local_path: str,
+        progress_callback: ProgressCallback,
+        executor: ThreadPoolExecutor,
     ):
         """
         Download file in zip from a prefix like `foo/bar.zip!file.txt`
         """
-        if (
-            not getattr(product, "downloader_auth", None)
-            or product.downloader_auth.s3_resource is None
-        ):
+        if downloader_auth.s3_resource is None:
             logger.debug("Cannot check files in s3 zip without s3 resource")
             return bucket_names_and_prefixes
 
-        s3_client = product.downloader_auth.get_s3_client()
+        s3_client = downloader_auth.get_s3_client()
 
         downloaded = []
 
@@ -472,15 +479,27 @@ class AwsDownload(Download):
                 return i
             return None
 
-        futures = (
-            executor.submit(process_zip_file, i, pack)
-            for i, pack in enumerate(bucket_names_and_prefixes)
-        )
+        # use parallelization if possible
+        # when products are already downloaded in parallel but the executor has only one worker,
+        # we avoid submitting nested tasks to the executor to prevent deadlocks
+        if (
+            executor._thread_name_prefix == "eodag-download-all"
+            and executor._max_workers == 1
+        ):
+            for i, pack in enumerate(bucket_names_and_prefixes):
+                result = process_zip_file(i, pack)
+                if result is not None:
+                    downloaded.append(result)
+        else:
+            futures = (
+                executor.submit(process_zip_file, i, pack)
+                for i, pack in enumerate(bucket_names_and_prefixes)
+            )
 
-        for future in as_completed(futures):
-            result = future.result()
-            if result is not None:
-                downloaded.append(result)
+            for future in as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    downloaded.append(result)
 
         return [
             pack

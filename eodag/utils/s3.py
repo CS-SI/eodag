@@ -596,7 +596,7 @@ def update_assets_from_s3(
 def open_s3_zipped_object(
     bucket_name: str,
     key_name: str,
-    s3_client,
+    s3_client: S3Client,
     zip_size: Optional[int] = None,
     partial: bool = True,
 ) -> tuple[ZipFile, bytes]:

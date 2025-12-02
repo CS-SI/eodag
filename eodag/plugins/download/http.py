@@ -1305,11 +1305,21 @@ class HTTPDownload(Download):
                 os.rename(asset_abs_path_temp, asset_abs_path)
             return
 
-        futures = (
-            executor.submit(download_asset, asset_stream)
-            for asset_stream in assets_stream_list
-        )
-        [f.result() for f in as_completed(futures)]
+        # use parallelization if possible
+        # when products are already downloaded in parallel but the executor has only one worker,
+        # we avoid submitting nested tasks to the executor to prevent deadlocks
+        if (
+            executor._thread_name_prefix == "eodag-download-all"
+            and executor._max_workers == 1
+        ):
+            for asset_stream in assets_stream_list:
+                download_asset(asset_stream)
+        else:
+            futures = (
+                executor.submit(download_asset, asset_stream)
+                for asset_stream in assets_stream_list
+            )
+            [f.result() for f in as_completed(futures)]
 
         if shutdown_executor:
             executor.shutdown(wait=True)
@@ -1443,7 +1453,19 @@ class HTTPDownload(Download):
 
                 total_size += asset.size
 
-        futures = (executor.submit(fetch_asset_size, asset) for asset in assets_values)
-        [f.result() for f in as_completed(futures)]
+        # use parallelization if possible
+        # when products are already downloaded in parallel but the executor has only one worker,
+        # we avoid submitting nested tasks to the executor to prevent deadlocks
+        if (
+            executor._thread_name_prefix == "eodag-download-all"
+            and executor._max_workers == 1
+        ):
+            for asset in assets_values:
+                fetch_asset_size(asset)
+        else:
+            futures = (
+                executor.submit(fetch_asset_size, asset) for asset in assets_values
+            )
+            [f.result() for f in as_completed(futures)]
 
         return total_size

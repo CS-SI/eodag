@@ -525,62 +525,87 @@ class Download(PluginTopic):
             progress_callback.unit_scale = False
         progress_callback.refresh()
 
+        # Keep one thread free for nested tasks to download assets in parallel
+        # NOTE: we assume here that all products come from the same provider and then the same downloader
+        nested_asset_downloads = False
+        if (
+            products[0].downloader
+            and products[0].downloader.config.type == "AwsDownload"
+            or len(product.assets) > 0
+            and (
+                not getattr(self.config, "ignore_assets", False)
+                or kwargs.get("asset") is not None
+            )
+        ):
+            nested_asset_downloads = True
+
         with progress_callback as bar:
             while "Loop until all products are download or timeout is reached":
-                # try downloading each product before retry in parallel
-                with executor:
-                    futures = {}
+                # try downloading each product in parallel before retry
 
-                    for idx, product in enumerate(products):
-                        if datetime.now() >= product.next_try:
-                            products[idx].next_try += timedelta(minutes=wait)
-                            future = executor.submit(
-                                product.download,
-                                progress_callback=product_progress_callback,
-                                executor=executor,
-                                wait=wait,
-                                timeout=-1,
-                                **kwargs,  # type: ignore
-                            )
-                            futures[future] = product
+                # Download products in batches to handle nested tasks to download assets in parallel.
+                # We avoid having less workers in the executor than the number of products to download in parallel
+                # to prevent deadlocks. This could happen by submiting and waiting for a task within task.
+                # We ensure at least one thread is available for these tasks and at least one product is downloaded
+                # at a time.
+                # If there is only one worker, a specific process at assets download level is used to avoid deadlocks.
+                batch_size = len(products)
+                if nested_asset_downloads and executor._max_workers <= batch_size:
+                    batch_size = max(executor._max_workers - 1, 1)
 
-                    for future in as_completed(futures.keys()):
-                        product = futures[future]
-                        try:
-                            result = future.result()
-                            paths.append(result)
+                products_batch = products[:batch_size]
+                futures = {}
 
-                            if downloaded_callback:
-                                downloaded_callback(product)
+                for idx, product in enumerate(products_batch):
+                    if datetime.now() >= product.next_try:
+                        products[idx].next_try += timedelta(minutes=wait)
+                        future = executor.submit(
+                            product.download,
+                            progress_callback=product_progress_callback,
+                            executor=executor,
+                            wait=wait,
+                            timeout=-1,
+                            **kwargs,  # type: ignore
+                        )
+                        futures[future] = product
 
-                            # product downloaded, to not retry it
-                            products.remove(product)
-                            bar(1)
+                for future in as_completed(futures.keys()):
+                    product = futures[future]
+                    try:
+                        result = future.result()
+                        paths.append(result)
 
-                            # reset stop time for next product
-                            stop_time = datetime.now() + timedelta(minutes=timeout)
+                        if downloaded_callback:
+                            downloaded_callback(product)
 
-                        except NotAvailableError as e:
-                            logger.info(e)
-                            continue
+                        # product downloaded, to not retry it
+                        products.remove(product)
+                        bar(1)
 
-                        except (AuthenticationError, MisconfiguredError):
-                            logger.exception(
-                                f"Stopped because of credentials problems with provider {self.provider}"
-                            )
-                            raise
+                        # reset stop time for next product
+                        stop_time = datetime.now() + timedelta(minutes=timeout)
 
-                        except (RuntimeError, Exception):
-                            import traceback as tb
+                    except NotAvailableError as e:
+                        logger.info(e)
+                        continue
 
-                            logger.error(
-                                f"A problem occurred during download of product: {product}. "
-                                "Skipping it"
-                            )
-                            logger.debug(f"\n{tb.format_exc()}")
+                    except (AuthenticationError, MisconfiguredError):
+                        logger.exception(
+                            f"Stopped because of credentials problems with provider {self.provider}"
+                        )
+                        raise
 
-                            # product skipped, to not retry it
-                            products.remove(product)
+                    except (RuntimeError, Exception):
+                        import traceback as tb
+
+                        logger.error(
+                            f"A problem occurred during download of product: {product}. "
+                            "Skipping it"
+                        )
+                        logger.debug(f"\n{tb.format_exc()}")
+
+                        # product skipped, to not retry it
+                        products.remove(product)
 
                 if (
                     len(products) > 0
@@ -594,14 +619,6 @@ class Download(PluginTopic):
                         f"Waiting {wait_seconds}s until next download try (retry every {wait}' for {timeout}')"
                     )
 
-                    # recreate executor since it has been shut down
-                    executor = ThreadPoolExecutor(
-                        max_workers=executor._max_workers,
-                        thread_name_prefix=executor._thread_name_prefix,
-                        initializer=executor._initializer,
-                        initargs=executor._initargs,
-                    )
-
                     logger.info(info_message)
                     nb_info.display_html(info_message)
                     sleep(wait_seconds + 1)
@@ -613,6 +630,9 @@ class Download(PluginTopic):
                     break
                 elif len(products) == 0:
                     break
+
+        # Shutdown executor at the end
+        executor.shutdown(wait=True)
 
         return paths
 
