@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 import boto3
 import requests
+from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from lxml import etree
@@ -365,9 +366,7 @@ class AwsDownload(Download):
                     else {}
                 )
                 if not os.path.isfile(chunk_abs_path):
-                    transfer_config = boto3.s3.transfer.TransferConfig(
-                        use_threads=False
-                    )
+                    transfer_config = TransferConfig(use_threads=False)
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
                         chunk_abs_path,
