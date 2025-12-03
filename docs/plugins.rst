@@ -99,6 +99,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |KeycloakOIDCPasswordAuth| replace:: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
 .. |HttpQueryStringAuth| replace:: :class:`~eodag.plugins.authentication.qsauth.HttpQueryStringAuth`
 .. |SASAuth| replace:: :class:`~eodag.plugins.authentication.sas_auth.SASAuth`
+.. |EOIAMAuth| replace:: :class:`~eodag.plugins.authentication.eoiamauth.EOIAMAuth`
 
 .. |AwsDownload| replace:: :class:`~eodag.plugins.download.aws.AwsDownload`
 .. |HTTPDownload| replace:: :class:`~eodag.plugins.download.http.HTTPDownload`
