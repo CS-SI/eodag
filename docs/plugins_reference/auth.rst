@@ -32,3 +32,4 @@ This table lists all the authentication plugins currently available:
    token_exchange.OIDCTokenExchangeAuth
    qsauth.HttpQueryStringAuth
    sas_auth.SASAuth
+   eoiamauth.EOIAMAuth

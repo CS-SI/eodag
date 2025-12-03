@@ -6569,4 +6569,4 @@
   download: !plugin
     type: HTTPDownload
   auth: !plugin
-    type: GenericAuth
+    type: EOIAMAuth
