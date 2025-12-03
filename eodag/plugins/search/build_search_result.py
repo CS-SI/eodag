@@ -61,7 +61,7 @@ from eodag.utils import (
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
-from eodag.utils.dates import is_range_in_range
+from eodag.utils.dates import DATE_RANGE_PATTERN, is_range_in_range
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
@@ -184,6 +184,7 @@ COP_DS_KEYWORDS = {
     "region",
     "release_version",
     "satellite",
+    "satellite_mission",
     "sensor",
     "sensor_and_algorithm",
     "soil_level",
@@ -959,13 +960,16 @@ class ECMWFSearch(PostJsonSearch):
                 )
 
             # We convert every single value to a list of string
-            filter_v = values if isinstance(values, (list, tuple)) else [values]
+            filter_v = list(values) if isinstance(values, tuple) else values
+            filter_v = filter_v if isinstance(filter_v, list) else [filter_v]
 
             # We strip values of superfluous quotes (added by mapping converter to_geojson).
-            # ECMWF accept values with /to/. We need to split it to an array
-            # ECMWF accept values in format val1/val2. We need to split it to an array
-            sep = re.compile(r"/to/|/")
-            filter_v = [i for v in filter_v for i in sep.split(str(v))]
+            # ECMWF accept date ranges with /to/. We need to split it to an array
+            # ECMWF accept date ranges in format val1/val2. We need to split it to an array
+            date_regex = re.compile(DATE_RANGE_PATTERN)
+            if any(date_regex.match(v) for v in filter_v):
+                sep = re.compile(r"/to/|/")
+                filter_v = [i for v in filter_v for i in sep.split(str(v))]
 
             # special handling for time 0000 converted to 0 by pre-formating with metadata_mapping
             if keyword.split(":")[-1] == "time":

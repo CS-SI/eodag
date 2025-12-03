@@ -35,6 +35,8 @@ RFC3339_PATTERN = (
     r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
 )
 
+DATE_RANGE_PATTERN = r"\d{4}-\d{2}-\d{2}((/to/|/)\d{4}-\d{2}-\d{2})?"
+
 
 def get_timestamp(date_time: str) -> float:
     """Return the Unix timestamp of an ISO8601 date/datetime in seconds.
