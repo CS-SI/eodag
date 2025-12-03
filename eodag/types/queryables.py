@@ -37,15 +37,14 @@ class CommonQueryables(BaseModel):
 
     @classmethod
     def get_with_default(
-        cls, field: str, default: Optional[Any] = None, required: Optional[bool] = False
+        cls, field: str, default: Optional[Any]
     ) -> Annotated[Any, FieldInfo]:
         """Get field and set default value."""
         annotated_fields = model_fields_to_annotated(cls.model_fields)
         f = annotated_fields[field]
-        if required:
-            f.__metadata__[0].default = PydanticUndefined
-        elif default is not None:
-            f.__metadata__[0].default = default
+        if default is None:
+            return f
+        f.__metadata__[0].default = default
         return f
 
 
