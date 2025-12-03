@@ -304,20 +304,11 @@ class AwsDownload(Download):
                 "Authentication plugin (AwsAuth) has to be configured if AwsDownload is used"
             )
 
-        # create executor if not given
-        if executor is None:
-            executor = ThreadPoolExecutor(
-                max_workers=getattr(self.config, "max_workers", None)
-            )
-            shutdown_executor = True
-        else:
-            if (
-                max_workers := getattr(
-                    self.config, "max_workers", executor._max_workers
-                )
-            ) < executor._max_workers:
-                executor._max_workers = max_workers
-            shutdown_executor = False
+        # create an executor if not given and anticipate the possible need to shut it down
+        executor, shutdown_executor = (
+            (ThreadPoolExecutor(), True) if executor is None else (executor, False)
+        )
+        self._config_executor(executor)
 
         # files in zip
         updated_bucket_names_and_prefixes = self._download_file_in_zip(

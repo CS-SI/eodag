@@ -495,15 +495,11 @@ class Download(PluginTopic):
         # another output for notebooks
         nb_info = NotebookWidgets()
 
-        # initialize an executor if not given
+        # create an executor if not given
         executor = ThreadPoolExecutor() if executor is None else executor
         # set thread name prefix so that the EOProduct download() method can identify
         # whether the executor was created during parallel product downloads or not
-        executor._thread_name_prefix = "eodag-download-all"
-        if (
-            max_workers := getattr(self.config, "max_workers", executor._max_workers)
-        ) < executor._max_workers:
-            executor._max_workers = max_workers
+        self._config_executor(executor, "eodag-download-all")
 
         for product in products:
             product.next_try = start_time
@@ -745,3 +741,27 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
+
+    def _config_executor(
+        self, executor: ThreadPoolExecutor, thread_name_prefix: Optional[str] = None
+    ) -> None:
+        """
+        Configure a ThreadPoolExecutor instance.
+
+        This method ensures that a ThreadPoolExecutor is correctly set for downloads by adjusting its
+        maximum number of workers if necessary. It also configures the thread name prefix to identify
+        threads created by the executor, which is useful for distinguishing between executors created
+        for parallel product downloads versus those created for other purposes.
+
+        :param executor: A ThreadPoolExecutor instance.
+        :param thread_name_prefix: (optional) A prefix for naming threads created by the executor.
+                                   When provided, threads will be named using this prefix to help
+                                   identify the executor's purpose (e.g., "eodag-download-all").
+        """
+        if (
+            max_workers := getattr(self.config, "max_workers", executor._max_workers)
+        ) < executor._max_workers:
+            executor._max_workers = max_workers
+
+        if thread_name_prefix:
+            executor._thread_name_prefix = "eodag-download-all"

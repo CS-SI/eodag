@@ -1233,20 +1233,11 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
-        # create executor if not given
-        if executor is None:
-            executor = ThreadPoolExecutor(
-                max_workers=getattr(self.config, "max_workers", None)
-            )
-            shutdown_executor = True
-        else:
-            if (
-                max_workers := getattr(
-                    self.config, "max_workers", executor._max_workers
-                )
-            ) < executor._max_workers:
-                executor._max_workers = max_workers
-            shutdown_executor = False
+        # create an executor if not given and anticipate the possible need to shut it down
+        executor, shutdown_executor = (
+            (ThreadPoolExecutor(), True) if executor is None else (executor, False)
+        )
+        self._config_executor(executor)
 
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
