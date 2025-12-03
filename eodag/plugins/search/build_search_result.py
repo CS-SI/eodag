@@ -895,7 +895,7 @@ class ECMWFSearch(PostJsonSearch):
         # start and end filters are supported whenever combinations of "year", "month", "day" filters exist
         queryable_prefix = f"{ECMWF_PREFIX[:-1]}_"
         if (
-            queryables.pop(f"{queryable_prefix}date", None)
+            f"{queryable_prefix}date" in queryables
             or f"{queryable_prefix}year" in queryables
             or f"{queryable_prefix}hyear" in queryables
         ):
