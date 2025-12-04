@@ -87,6 +87,7 @@ from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product import EOProduct
@@ -1919,6 +1920,7 @@ class EODataAccessGateway:
         search_result: SearchResult,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -1936,6 +1938,8 @@ class EODataAccessGateway:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
+        :param executor: (optional) An executor to download EO products of ``search_result`` in parallel
+                                    which will also be reused to download assets of these products in parallel.
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries of the same product
         :param timeout: (optional) If download fails, maximum time in minutes
@@ -1956,8 +1960,7 @@ class EODataAccessGateway:
         paths = []
         if search_result:
             logger.info("Downloading %s products", len(search_result))
-            # Get download plugin using first product assuming product from several provider
-            # aren't mixed into a search result
+            # Get download plugin using first product assuming all plugins use base.Download.download_all
             download_plugin = self._plugins_manager.get_download_plugin(
                 search_result[0]
             )
@@ -1965,6 +1968,7 @@ class EODataAccessGateway:
                 search_result,
                 downloaded_callback=downloaded_callback,
                 progress_callback=progress_callback,
+                executor=executor,
                 wait=wait,
                 timeout=timeout,
                 **kwargs,
@@ -2026,6 +2030,7 @@ class EODataAccessGateway:
         self,
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -2056,6 +2061,8 @@ class EODataAccessGateway:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
+        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any. If ``None``
+                         , a default executor will be created
         :param wait: (optional) If download fails, wait time in minutes between
                     two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
@@ -2080,7 +2087,11 @@ class EODataAccessGateway:
             return uri_to_path(product.location)
         self._setup_downloader(product)
         path = product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout, **kwargs
+            progress_callback=progress_callback,
+            executor=executor,
+            wait=wait,
+            timeout=timeout,
+            **kwargs,
         )
 
         return path

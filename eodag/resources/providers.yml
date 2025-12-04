@@ -49,6 +49,7 @@
       usgs:productId: '$.id'
     extract: True
     order_enabled: true
+    max_workers: 2
   products:
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt may be outdated
     # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
@@ -2558,6 +2559,7 @@
     extract: true
     order_enabled: false
     archive_depth: 2
+    max_workers: 4
     ssl_verify: true
   auth: !plugin
     type: KeycloakOIDCPasswordAuth

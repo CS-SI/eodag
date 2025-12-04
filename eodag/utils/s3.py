@@ -391,7 +391,7 @@ def stream_download_from_s3(
     compress: Literal["zip", "raw", "auto"] = "auto",
     zip_filename: str = "archive",
     range_size: int = 1024**2 * 8,
-    max_workers: int = 8,
+    provider_max_workers: Optional[int] = None,
 ) -> StreamResponse:
     """
     Stream data from one or more S3 objects in chunks, with support for global byte ranges.
@@ -431,7 +431,7 @@ def stream_download_from_s3(
         Only used when creating ZIP archives.
     :param range_size: Size of each download chunk in bytes. Larger chunks reduce
         request overhead but use more memory. Default: 8MB.
-    :param max_workers: Maximum number of concurrent download threads.
+    :param provider_max_workers: (optional) Maximum number of concurrent download threads of the provider used.
         Higher values improve throughput for multiple ranges.
     :return: StreamResponse object containing:
 
@@ -480,7 +480,7 @@ def stream_download_from_s3(
             pass
     """
 
-    executor = ThreadPoolExecutor(max_workers=max_workers)
+    executor = ThreadPoolExecutor(max_workers=provider_max_workers)
 
     # Prepare all files
     offset = 0
@@ -596,7 +596,7 @@ def update_assets_from_s3(
 def open_s3_zipped_object(
     bucket_name: str,
     key_name: str,
-    s3_client,
+    s3_client: S3Client,
     zip_size: Optional[int] = None,
     partial: bool = True,
 ) -> tuple[ZipFile, bytes]:

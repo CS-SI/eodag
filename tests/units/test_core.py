@@ -29,6 +29,7 @@ from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
 import yaml
+from concurrent.futures import ThreadPoolExecutor
 from lxml import html
 from pydantic import ValidationError as PydanticValidationError
 from shapely import wkt
@@ -4041,6 +4042,91 @@ class TestCoreDownload(TestCoreBase):
         with self.assertLogs(level="INFO") as cm:
             self.dag.download(product)
             self.assertIn("Local product detected. Download skipped", str(cm.output))
+
+    @mock.patch("eodag.plugins.download.base.as_completed")
+    @mock.patch(
+        "eodag.plugins.download.base.ThreadPoolExecutor", spec=ThreadPoolExecutor
+    )
+    def test_download_all_no_executor(self, mock_executor_class, mock_as_completed):
+        """download_all must create its own ThreadPoolExecutor if no executor is provided"""
+        mock_executor_instance = mock.Mock(spec=ThreadPoolExecutor)
+        mock_executor_instance._max_workers = 5
+        mock_executor_class.return_value = mock_executor_instance
+
+        search_result = SearchResult(
+            [
+                EOProduct(
+                    "peps",
+                    dict(
+                        geometry="POINT (0 0)",
+                        id="dummy_product_a",
+                        title="dummy_product_a",
+                    ),
+                ),
+                EOProduct(
+                    "peps",
+                    dict(
+                        geometry="POINT (0 0)",
+                        id="dummy_product_b",
+                        title="dummy_product_b",
+                    ),
+                ),
+            ]
+        )
+
+        self.dag.download_all(search_result, wait=-1, timeout=-1)
+
+        mock_executor_class.assert_called_once()
+        self.assertEqual(mock_executor_instance.submit.call_count, 2)
+        mock_executor_instance.submit.assert_any_call(
+            search_result[0].download,
+            progress_callback=None,
+            executor=mock_executor_instance,
+            wait=-1,
+            timeout=-1,
+        )
+        mock_as_completed.assert_called_once()
+
+    @mock.patch("eodag.plugins.download.base.as_completed")
+    def test_download_all_with_executor(self, mock_as_completed):
+        """download_all must use the provided ThreadPoolExecutor if any"""
+        mock_executor = mock.Mock(spec=ThreadPoolExecutor)
+        mock_executor._max_workers = 5
+
+        search_result = SearchResult(
+            [
+                EOProduct(
+                    "peps",
+                    dict(
+                        geometry="POINT (0 0)",
+                        id="dummy_product_a",
+                        title="dummy_product_a",
+                    ),
+                ),
+                EOProduct(
+                    "peps",
+                    dict(
+                        geometry="POINT (0 0)",
+                        id="dummy_product_b",
+                        title="dummy_product_b",
+                    ),
+                ),
+            ]
+        )
+
+        self.dag.download_all(
+            search_result, executor=mock_executor, wait=-1, timeout=-1
+        )
+
+        self.assertEqual(mock_executor.submit.call_count, 2)
+        mock_executor.submit.assert_any_call(
+            search_result[0].download,
+            progress_callback=None,
+            executor=mock_executor,
+            wait=-1,
+            timeout=-1,
+        )
+        mock_as_completed.assert_called_once()
 
 
 class TestCoreProductAlias(TestCoreBase):

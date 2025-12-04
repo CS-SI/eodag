@@ -48,6 +48,7 @@ from eodag.utils.logging import get_logging_verbose
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
+    from concurrent.futures import ThreadPoolExecutor
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
+    from eodag.utils import ProgressCallback, Unpack
 
 
 logger = logging.getLogger("eodag.apis.ecmwf")
@@ -185,6 +186,7 @@ class EcmwfApi(Api, ECMWFSearch):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -268,29 +270,6 @@ class EcmwfApi(Api, ECMWFSearch):
         )
         product.location = path_to_uri(product_path)
         return product_path
-
-    def download_all(
-        self,
-        products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        wait: float = DEFAULT_DOWNLOAD_WAIT,
-        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Unpack[DownloadConf],
-    ) -> list[str]:
-        """
-        Download all using parent (base plugin) method
-        """
-        return super(EcmwfApi, self).download_all(
-            products,
-            auth=auth,
-            downloaded_callback=downloaded_callback,
-            progress_callback=progress_callback,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )
 
     def clear(self) -> None:
         """Clear search context"""

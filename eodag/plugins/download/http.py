@@ -41,6 +41,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
@@ -90,10 +91,9 @@ if TYPE_CHECKING:
     from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, Unpack
+    from eodag.utils import Unpack
 
 logger = logging.getLogger("eodag.download.http")
 
@@ -596,6 +596,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -637,6 +638,7 @@ class HTTPDownload(Download):
                     record_filename,
                     auth,
                     progress_callback,
+                    executor,
                     **kwargs,
                 )
                 if kwargs.get("asset") is None:
@@ -674,7 +676,7 @@ class HTTPDownload(Download):
                         is_empty = False
                         progress_callback(len(chunk))
                         fhandle.write(chunk)
-                self.stream.close()  # Closing response stream
+                product._stream.close()  # Closing response stream
 
                 if is_empty:
                     raise DownloadError(f"product {product.properties['id']} is empty")
@@ -720,7 +722,7 @@ class HTTPDownload(Download):
         return product_path
 
     def _check_stream_size(self, product: EOProduct) -> int:
-        stream_size = int(self.stream.headers.get("content-length", 0))
+        stream_size = int(product._stream.headers.get("content-length", 0))
         if (
             stream_size == 0
             and "order:status" in product.properties
@@ -731,14 +733,14 @@ class HTTPDownload(Download):
                 % (
                     product.properties["title"],
                     product.properties["order:status"],
-                    self.stream.reason,
+                    product._stream.reason,
                 )
             )
         return stream_size
 
     def _check_product_filename(self, product: EOProduct) -> str:
         filename = None
-        asset_content_disposition = self.stream.headers.get("content-disposition")
+        asset_content_disposition = product._stream.headers.get("content-disposition")
         if asset_content_disposition:
             filename = cast(
                 Optional[str],
@@ -746,7 +748,7 @@ class HTTPDownload(Download):
             )
         if not filename:
             # default filename extracted from path
-            filename = str(os.path.basename(self.stream.url))
+            filename = str(os.path.basename(product._stream.url))
             filename_extension = os.path.splitext(filename)[1]
             if not filename_extension:
                 if content_type := getattr(product, "headers", {}).get("Content-Type"):
@@ -789,15 +791,20 @@ class HTTPDownload(Download):
             not getattr(self.config, "ignore_assets", False)
             or kwargs.get("asset") is not None
         ):
+            executor = ThreadPoolExecutor(
+                max_workers=getattr(self.config, "max_workers", None)
+            )
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
-                assets_stream_list = self._stream_download_assets(
-                    product,
-                    auth,
-                    None,
-                    assets_values=assets_values,
-                    **kwargs,
-                )
+                with executor:
+                    assets_stream_list = self._stream_download_assets(
+                        product,
+                        executor,
+                        auth,
+                        None,
+                        assets_values,
+                        **kwargs,
+                    )
 
                 # single asset
                 if len(assets_stream_list) == 1:
@@ -1009,7 +1016,7 @@ class HTTPDownload(Download):
 
         s = requests.Session()
         try:
-            self.stream = s.request(
+            product._stream = s.request(
                 req_method,
                 req_url,
                 stream=True,
@@ -1024,7 +1031,7 @@ class HTTPDownload(Download):
             # location is not a valid url -> product is not available yet
             raise NotAvailableError("Product is not available yet")
         try:
-            self.stream.raise_for_status()
+            product._stream.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
         except RequestException as e:
@@ -1036,8 +1043,8 @@ class HTTPDownload(Download):
             # check if product was ordered
 
             if getattr(
-                self.stream, "status_code", None
-            ) is not None and self.stream.status_code == getattr(
+                product._stream, "status_code", None
+            ) is not None and product._stream.status_code == getattr(
                 self.config, "order_status", {}
             ).get(
                 "ordered", {}
@@ -1048,7 +1055,7 @@ class HTTPDownload(Download):
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 
-            product.headers = self.stream.headers
+            product.headers = product._stream.headers
             filename = self._check_product_filename(product)
             content_type = product.headers.get("Content-Type")
             guessed_content_type = (
@@ -1061,11 +1068,12 @@ class HTTPDownload(Download):
             product.size = stream_size
 
             product.filename = filename
-            return self.stream.iter_content(chunk_size=64 * 1024)
+            return product._stream.iter_content(chunk_size=64 * 1024)
 
     def _stream_download_assets(
         self,
         product: EOProduct,
+        executor: ThreadPoolExecutor,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         assets_values: list[Asset] = [],
@@ -1082,7 +1090,9 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = self._get_asset_sizes(assets_values, auth, params) or None
+        total_size = (
+            self._get_asset_sizes(assets_values, executor, auth, params) or None
+        )
 
         progress_callback.reset(total=total_size)
 
@@ -1188,11 +1198,6 @@ class HTTPDownload(Download):
 
         # Process each asset
         for asset in assets_values:
-            if not asset["href"] or asset["href"].startswith("file:"):
-                logger.info(
-                    f"Local asset detected. Download skipped for {asset['href']}"
-                )
-                continue
             asset_chunks = get_chunks_generator(asset)
             try:
                 # start reading chunks to set assets attributes
@@ -1220,12 +1225,19 @@ class HTTPDownload(Download):
         record_filename: str,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download product assets if they exist"""
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
+
+        # create an executor if not given and anticipate the possible need to shut it down
+        executor, shutdown_executor = (
+            (ThreadPoolExecutor(), True) if executor is None else (executor, False)
+        )
+        self._config_executor(executor)
 
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
@@ -1236,7 +1248,7 @@ class HTTPDownload(Download):
         assets_values = product.assets.get_values(kwargs.get("asset"))
 
         assets_stream_list = self._stream_download_assets(
-            product, auth, progress_callback, assets_values=assets_values, **kwargs
+            product, executor, auth, progress_callback, assets_values, **kwargs
         )
 
         # remove existing incomplete file
@@ -1259,15 +1271,14 @@ class HTTPDownload(Download):
                 local_assets_count += 1
                 continue
 
-        for asset_stream in assets_stream_list:
+        def download_asset(asset_stream: StreamResponse) -> None:
             asset_chunks = asset_stream.content
             asset_path = cast(str, asset_stream.arcname)
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
             asset_abs_path_dir = os.path.dirname(asset_abs_path)
-            if not os.path.isdir(asset_abs_path_dir):
-                os.makedirs(asset_abs_path_dir)
+            os.makedirs(asset_abs_path_dir, exist_ok=True)
             # remove temporary file
             if os.path.isfile(asset_abs_path_temp):
                 os.remove(asset_abs_path_temp)
@@ -1283,6 +1294,27 @@ class HTTPDownload(Download):
                     os.path.basename(asset_abs_path),
                 )
                 os.rename(asset_abs_path_temp, asset_abs_path)
+            return
+
+        # use parallelization if possible
+        # when products are already downloaded in parallel but the executor has only one worker,
+        # we avoid submitting nested tasks to the executor to prevent deadlocks
+        if (
+            executor._thread_name_prefix == "eodag-download-all"
+            and executor._max_workers == 1
+        ):
+            for asset_stream in assets_stream_list:
+                download_asset(asset_stream)
+        else:
+            futures = (
+                executor.submit(download_asset, asset_stream)
+                for asset_stream in assets_stream_list
+            )
+            [f.result() for f in as_completed(futures)]
+
+        if shutdown_executor:
+            executor.shutdown(wait=True)
+
         # only one local asset
         if local_assets_count == len(assets_urls) and local_assets_count == 1:
             # remove empty {fs_dir_path}
@@ -1336,6 +1368,7 @@ class HTTPDownload(Download):
     def _get_asset_sizes(
         self,
         assets_values: list[Asset],
+        executor: ThreadPoolExecutor,
         auth: Optional[AuthBase],
         params: Optional[dict[str, str]],
         zipped: bool = False,
@@ -1344,8 +1377,11 @@ class HTTPDownload(Download):
 
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        # loop for assets size & filename
-        for asset in assets_values:
+
+        # loop for assets size & filename in parallel
+        def fetch_asset_size(asset: Asset) -> None:
+            nonlocal total_size
+
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 try:
@@ -1407,27 +1443,20 @@ class HTTPDownload(Download):
                             asset.size = int(size_str) if size_str.isdigit() else 0
 
                 total_size += asset.size
-        return total_size
 
-    def download_all(
-        self,
-        products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        wait: float = DEFAULT_DOWNLOAD_WAIT,
-        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Unpack[DownloadConf],
-    ):
-        """
-        Download all using parent (base plugin) method
-        """
-        return super(HTTPDownload, self).download_all(
-            products,
-            auth=auth,
-            downloaded_callback=downloaded_callback,
-            progress_callback=progress_callback,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )
+        # use parallelization if possible
+        # when products are already downloaded in parallel but the executor has only one worker,
+        # we avoid submitting nested tasks to the executor to prevent deadlocks
+        if (
+            executor._thread_name_prefix == "eodag-download-all"
+            and executor._max_workers == 1
+        ):
+            for asset in assets_values:
+                fetch_asset_size(asset)
+        else:
+            futures = (
+                executor.submit(fetch_asset_size, asset) for asset in assets_values
+            )
+            [f.result() for f in as_completed(futures)]
+
+        return total_size
