@@ -1,22 +1,36 @@
 from __future__ import annotations
 
+import re
 from collections import UserDict
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Lt
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
 from shapely.geometry.base import BaseGeometry
+from typing_extensions import get_args
 
-from eodag.types import annotated_dict_to_model, model_fields_to_annotated
+from eodag.types import (
+    BaseModelCustomJsonSchema,
+    annotated_dict_to_model,
+    model_fields_to_annotated,
+)
+from eodag.utils.dates import (
+    COMPACT_DATE_PATTERN,
+    COMPACT_DATE_RANGE_PATTERN,
+    DATE_PATTERN,
+    DATE_RANGE_PATTERN,
+    is_range_in_range,
+    parse_date,
+)
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
 
 Percentage = Annotated[PositiveInt, Lt(100)]
 
 
-class CommonQueryables(BaseModel):
+class CommonQueryables(BaseModelCustomJsonSchema):
     """A class representing search common queryable properties."""
 
     collection: Annotated[str, Field()]
@@ -132,6 +146,51 @@ class Queryables(CommonQueryables):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    @field_validator("ecmwf_date", mode="plain", check_fields=False)
+    @classmethod
+    def check_date_range(cls, v: str) -> str:
+        """Validate date ranges"""
+        if not isinstance(v, str):
+            raise ValueError(
+                "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')"
+            )
+        date_regex = [
+            re.compile(p)
+            for p in (
+                DATE_PATTERN,
+                COMPACT_DATE_PATTERN,
+                DATE_RANGE_PATTERN,
+                COMPACT_DATE_RANGE_PATTERN,
+            )
+        ]
+        if not any(r.match(v) is not None for r in date_regex):
+            raise ValueError(
+                "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')"
+            )
+        try:
+            start, end = parse_date(v)
+        except ValueError as e:
+            raise ValueError("date must follow 'yyyy-mm-dd' format") from e
+        if end < start:
+            raise ValueError("date range end must be after start")
+
+        field_info = cls.model_fields["ecmwf_date"]
+        literals = get_args(field_info.annotation)
+        v_range = v
+        if "/" not in v_range:
+            v_range = f"{v}/{v}"
+        # The literals can be a mixed list of single values (e.g "2023-06-27")
+        # and intervals (e.g. "2024-11-12/2025-11-20")
+        for literal in literals:
+            literal_range = literal
+            if "/" not in literal:
+                literal_range = f"{literal}/{literal}"
+            # FIXME is_range_in_range() does not support the separator '/to/'
+            if is_range_in_range(literal_range, v_range):
+                return v
+
+        raise ValueError("date range must be within any of the available literals")
+
 
 class QueryablesDict(UserDict[str, Any]):
     """Class inheriting from UserDict which contains queryables with their annotated type;
@@ -232,4 +291,4 @@ class QueryablesDict(UserDict[str, Any]):
         :param model_name: name used for :class:`pydantic.BaseModel` creation
         :return: pydantic BaseModel of the queryables dict
         """
-        return annotated_dict_to_model(model_name, self.data)
+        return annotated_dict_to_model(model_name, self.data, Queryables)
