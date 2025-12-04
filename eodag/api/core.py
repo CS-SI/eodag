@@ -1960,8 +1960,7 @@ class EODataAccessGateway:
         paths = []
         if search_result:
             logger.info("Downloading %s products", len(search_result))
-            # Get download plugin using first product assuming product from several provider
-            # aren't mixed into a search result
+            # Get download plugin using first product assuming all plugins use base.Download.download_all
             download_plugin = self._plugins_manager.get_download_plugin(
                 search_result[0]
             )
