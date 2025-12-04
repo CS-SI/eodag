@@ -184,6 +184,7 @@ COP_DS_KEYWORDS = {
     "region",
     "release_version",
     "satellite",
+    "satellite_mission",
     "sensor",
     "sensor_and_algorithm",
     "soil_level",
