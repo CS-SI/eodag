@@ -380,7 +380,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
-    @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
+    @mock.patch("eodag.api.product._product.EOProduct._stream", create=True)
     def test_plugins_download_http_nonzip_file_with_zip_extension_ok(
         self, mock_stream, mock_stream_download
     ):
@@ -426,7 +426,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
-    @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
+    @mock.patch("eodag.api.product._product.EOProduct._stream", create=True)
     def test_plugins_download_http_file_without_zip_extension_ok(
         self, mock_stream, mock_stream_download
     ):
@@ -484,7 +484,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
-    @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
+    @mock.patch("eodag.api.product._product.EOProduct._stream", create=True)
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_ignore_assets(
@@ -1195,7 +1195,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             {
                 "foo": {
                     "href": path_to_uri(
-                        os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
+                        os.path.abspath(os.path.join(os.sep, "somewhere", "onething"))
                     )
                 },
                 "bar": {

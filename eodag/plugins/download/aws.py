@@ -25,7 +25,9 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 import boto3
 import requests
+from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from lxml import etree
 from requests.auth import AuthBase
 
@@ -34,7 +36,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.plugins.authentication.aws_auth import raise_if_auth_error
+from eodag.plugins.authentication.aws_auth import AwsAuth, raise_if_auth_error
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -65,10 +67,9 @@ if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
 
     from eodag.api.product import EOProduct
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, Unpack
+    from eodag.utils import Unpack
 
 
 logger = logging.getLogger("eodag.download.aws")
@@ -227,6 +228,7 @@ class AwsDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -246,6 +248,7 @@ class AwsDownload(Download):
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
+        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
         :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
@@ -293,7 +296,7 @@ class AwsDownload(Download):
         )
 
         # authenticate
-        if product.downloader_auth:
+        if product.downloader_auth and isinstance(product.downloader_auth, AwsAuth):
             authenticated_objects = product.downloader_auth.authenticate_objects(
                 bucket_names_and_prefixes
             )
@@ -302,9 +305,19 @@ class AwsDownload(Download):
                 "Authentication plugin (AwsAuth) has to be configured if AwsDownload is used"
             )
 
+        # create an executor if not given and anticipate the possible need to shut it down
+        executor, shutdown_executor = (
+            (ThreadPoolExecutor(), True) if executor is None else (executor, False)
+        )
+        self._config_executor(executor)
+
         # files in zip
         updated_bucket_names_and_prefixes = self._download_file_in_zip(
-            product, bucket_names_and_prefixes, product_local_path, progress_callback
+            product.downloader_auth,
+            bucket_names_and_prefixes,
+            product_local_path,
+            progress_callback,
+            executor,
         )
         # prevent nothing-to-download errors if download was performed in zip
         raise_error = (
@@ -329,7 +342,8 @@ class AwsDownload(Download):
         if len(unique_product_chunks) > 0:
             progress_callback.reset(total=total_size)
         try:
-            for product_chunk in unique_product_chunks:
+
+            def download_chunk(product_chunk: Any) -> None:
                 try:
                     chunk_rel_path = self.get_chunk_dest_path(
                         product,
@@ -339,11 +353,11 @@ class AwsDownload(Download):
                 except NotAvailableError as e:
                     # out of SAFE format chunk
                     logger.warning(e)
-                    continue
+                    return
+
                 chunk_abs_path = os.path.join(product_local_path, chunk_rel_path)
                 chunk_abs_path_dir = os.path.dirname(chunk_abs_path)
-                if not os.path.isdir(chunk_abs_path_dir):
-                    os.makedirs(chunk_abs_path_dir)
+                os.makedirs(chunk_abs_path_dir, exist_ok=True)
 
                 bucket_objects = authenticated_objects.get(product_chunk.bucket_name)
                 extra_args = (
@@ -352,18 +366,40 @@ class AwsDownload(Download):
                     else {}
                 )
                 if not os.path.isfile(chunk_abs_path):
+                    transfer_config = TransferConfig(use_threads=False)
                     product_chunk.Bucket().download_file(
                         product_chunk.key,
                         chunk_abs_path,
                         ExtraArgs=extra_args,
                         Callback=progress_callback,
+                        Config=transfer_config,
                     )
+                return
+
+            # use parallelization if possible.
+            # when products are already downloaded in parallel but the executor has only one worker,
+            # we avoid submitting nested tasks to the executor to prevent deadlocks
+            if (
+                executor._thread_name_prefix == "eodag-download-all"
+                and executor._max_workers == 1
+            ):
+                for product_chunk in unique_product_chunks:
+                    download_chunk(product_chunk)
+            else:
+                futures = (
+                    executor.submit(download_chunk, product_chunk)
+                    for product_chunk in unique_product_chunks
+                )
+                [f.result() for f in as_completed(futures)]
 
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
         except ClientError as e:
             raise_if_auth_error(e, self.provider)
             logger.warning("Unexpected error: %s" % e)
+
+        if shutdown_executor:
+            executor.shutdown(wait=True)
 
         # finalize safe product
         if build_safe and product.collection and "S2_MSI" in product.collection:
@@ -386,31 +422,33 @@ class AwsDownload(Download):
         return product_local_path
 
     def _download_file_in_zip(
-        self, product, bucket_names_and_prefixes, product_local_path, progress_callback
+        self,
+        downloader_auth: AwsAuth,
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        product_local_path: str,
+        progress_callback: ProgressCallback,
+        executor: ThreadPoolExecutor,
     ):
         """
         Download file in zip from a prefix like `foo/bar.zip!file.txt`
         """
-        if (
-            not getattr(product, "downloader_auth", None)
-            or product.downloader_auth.s3_resource is None
-        ):
+        if downloader_auth.s3_resource is None:
             logger.debug("Cannot check files in s3 zip without s3 resource")
             return bucket_names_and_prefixes
 
-        s3_client = product.downloader_auth.get_s3_client()
+        s3_client = downloader_auth.get_s3_client()
 
         downloaded = []
-        for i, pack in enumerate(bucket_names_and_prefixes):
+
+        def process_zip_file(i: int, pack: tuple[str, Optional[str]]) -> Optional[int]:
             bucket_name, prefix = pack
-            if ".zip!" in prefix:
+            if prefix is not None and ".zip!" in prefix:
                 splitted_path = prefix.split(".zip!")
                 zip_prefix = f"{splitted_path[0]}.zip"
                 rel_path = splitted_path[-1]
                 dest_file = os.path.join(product_local_path, rel_path)
                 dest_abs_path_dir = os.path.dirname(dest_file)
-                if not os.path.isdir(dest_abs_path_dir):
-                    os.makedirs(dest_abs_path_dir)
+                os.makedirs(dest_abs_path_dir, exist_ok=True)
 
                 zip_file, _ = open_s3_zipped_object(
                     bucket_name, zip_prefix, s3_client, partial=False
@@ -428,7 +466,30 @@ class AwsDownload(Download):
                             output_file.write(zchunk)
                             progress_callback(len(zchunk))
 
-                downloaded.append(i)
+                return i
+            return None
+
+        # use parallelization if possible
+        # when products are already downloaded in parallel but the executor has only one worker,
+        # we avoid submitting nested tasks to the executor to prevent deadlocks
+        if (
+            executor._thread_name_prefix == "eodag-download-all"
+            and executor._max_workers == 1
+        ):
+            for i, pack in enumerate(bucket_names_and_prefixes):
+                result = process_zip_file(i, pack)
+                if result is not None:
+                    downloaded.append(result)
+        else:
+            futures = (
+                executor.submit(process_zip_file, i, pack)
+                for i, pack in enumerate(bucket_names_and_prefixes)
+            )
+
+            for future in as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    downloaded.append(result)
 
         return [
             pack
@@ -710,7 +771,7 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        if auth and isinstance(auth, boto3.resources.base.ServiceResource):
+        if auth and isinstance(auth, boto3.resource("s3").__class__):
             s3_resource = auth
         else:
             s3_resource = boto3.resource(
@@ -773,6 +834,7 @@ class AwsDownload(Download):
             byte_range,
             compress,
             zip_filename,
+            provider_max_workers=getattr(self.config, "max_workers", None),
         )
 
     def _get_commonpath(
@@ -1112,26 +1174,3 @@ class AwsDownload(Download):
 
         logger.debug(f"Downloading {chunk.key} to {product_path}")
         return product_path
-
-    def download_all(
-        self,
-        products: SearchResult,
-        auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
-        downloaded_callback: Optional[DownloadedCallback] = None,
-        progress_callback: Optional[ProgressCallback] = None,
-        wait: float = DEFAULT_DOWNLOAD_WAIT,
-        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Unpack[DownloadConf],
-    ) -> list[str]:
-        """
-        download_all using parent (base plugin) method
-        """
-        return super(AwsDownload, self).download_all(
-            products,
-            auth=auth,
-            downloaded_callback=downloaded_callback,
-            progress_callback=progress_callback,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )

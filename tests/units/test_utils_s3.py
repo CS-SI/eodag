@@ -553,7 +553,7 @@ class TestUtilsS3(TestCase):
                     files_info=case["files_info"],
                     compress=case["compress"],
                     zip_filename=case["zip_filename"],
-                    max_workers=2,
+                    provider_max_workers=2,
                 )
 
                 self.assert_stream_response(

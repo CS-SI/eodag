@@ -29,6 +29,8 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -105,6 +107,7 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -115,6 +118,7 @@ class Download(PluginTopic):
         :param product: The EO product to download
         :param auth: (optional) authenticated object
         :param progress_callback: (optional) A progress callback
+        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
@@ -447,6 +451,7 @@ class Download(PluginTopic):
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -454,7 +459,7 @@ class Download(PluginTopic):
         """
         Base download_all method.
 
-        This specific implementation uses the :meth:`eodag.plugins.download.base.Download.download` method
+        This specific implementation uses the :meth:`~eodag.api.product._product.EOProduct.download` method
         implemented by the plugin to **sequentially** attempt to download products.
 
         :param products: Products to download
@@ -465,6 +470,8 @@ class Download(PluginTopic):
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :param progress_callback: (optional) A progress callback
+        :param executor: (optional) An executor to download products in parallel which may
+                         be reused to also download assets of these products in parallel.
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
@@ -485,8 +492,14 @@ class Download(PluginTopic):
         stop_time = start_time + timedelta(minutes=timeout)
         nb_products = len(products)
         retry_count = 0
-        # another output for notbooks
+        # another output for notebooks
         nb_info = NotebookWidgets()
+
+        # create an executor if not given
+        executor = ThreadPoolExecutor() if executor is None else executor
+        # set thread name prefix so that the EOProduct download() method can identify
+        # whether the executor was created during parallel product downloads or not
+        self._config_executor(executor, "eodag-download-all")
 
         for product in products:
             product.next_try = start_time
@@ -508,53 +521,88 @@ class Download(PluginTopic):
             progress_callback.unit_scale = False
         progress_callback.refresh()
 
+        # anticipate nested tasks to download assets in parallel for at least one product
+        nested_asset_downloads = any(
+            product
+            for product in products
+            if (
+                product.downloader
+                and product.downloader.config.type == "AwsDownload"
+                or len(product.assets) > 0
+                and (
+                    not getattr(self.config, "ignore_assets", False)
+                    or kwargs.get("asset") is not None
+                )
+            )
+        )
+
         with progress_callback as bar:
             while "Loop until all products are download or timeout is reached":
-                # try downloading each product before retry
-                for idx, product in enumerate(products):
+                # try downloading each product in parallel before retry
+
+                # Download products in batches to handle nested tasks to download assets in parallel.
+                # We avoid having less workers in the executor than the number of products to download in parallel
+                # to prevent deadlocks. This could happen by submiting and waiting for a task within a task.
+                # We ensure at least one thread is available for these tasks and at least one product is downloaded
+                # at a time.
+                # If there is only one worker, a specific process at assets download level is used to avoid deadlocks.
+                batch_size = len(products)
+                if nested_asset_downloads and executor._max_workers <= batch_size:
+                    batch_size = max(executor._max_workers - 1, 1)
+
+                products_batch = products[:batch_size]
+                futures = {}
+
+                for idx, product in enumerate(products_batch):
                     if datetime.now() >= product.next_try:
                         products[idx].next_try += timedelta(minutes=wait)
-                        try:
-                            paths.append(
-                                product.download(
-                                    progress_callback=product_progress_callback,
-                                    wait=wait,
-                                    timeout=-1,
-                                    **kwargs,
-                                )
-                            )
+                        future = executor.submit(
+                            product.download,
+                            progress_callback=product_progress_callback,
+                            executor=executor,
+                            wait=wait,
+                            timeout=-1,
+                            **kwargs,  # type: ignore
+                        )
+                        futures[future] = product
 
-                            if downloaded_callback:
-                                downloaded_callback(product)
+                for future in as_completed(futures.keys()):
+                    product = futures[future]
+                    try:
+                        result = future.result()
+                        paths.append(result)
 
-                            # product downloaded, to not retry it
-                            products.remove(product)
-                            bar(1)
+                        if downloaded_callback:
+                            downloaded_callback(product)
 
-                            # reset stop time for next product
-                            stop_time = datetime.now() + timedelta(minutes=timeout)
+                        # product downloaded, to not retry it
+                        products.remove(product)
+                        bar(1)
 
-                        except NotAvailableError as e:
-                            logger.info(e)
-                            continue
+                        # reset stop time for next product
+                        stop_time = datetime.now() + timedelta(minutes=timeout)
 
-                        except (AuthenticationError, MisconfiguredError):
-                            logger.exception(
-                                f"Stopped because of credentials problems with provider {self.provider}"
-                            )
-                            raise
+                    except NotAvailableError as e:
+                        logger.info(e)
+                        continue
 
-                        except (RuntimeError, Exception):
-                            import traceback as tb
+                    except (AuthenticationError, MisconfiguredError):
+                        logger.exception(
+                            f"Stopped because of credentials problems with provider {self.provider}"
+                        )
+                        raise
 
-                            logger.error(
-                                f"A problem occurred during download of product: {product}. "
-                                "Skipping it"
-                            )
-                            logger.debug(f"\n{tb.format_exc()}")
+                    except (RuntimeError, Exception):
+                        import traceback as tb
 
-                            # product skipped, to not retry it
-                            products.remove(product)
+                        logger.error(
+                            f"A problem occurred during download of product: {product}. "
+                            "Skipping it"
+                        )
+                        logger.debug(f"\n{tb.format_exc()}")
+
+                        # product skipped, to not retry it
+                        products.remove(product)
 
                 if (
                     len(products) > 0
@@ -567,6 +615,7 @@ class Download(PluginTopic):
                         f"[Retry #{retry_count}, {nb_products - len(products)}/{nb_products} D/L] "
                         f"Waiting {wait_seconds}s until next download try (retry every {wait}' for {timeout}')"
                     )
+
                     logger.info(info_message)
                     nb_info.display_html(info_message)
                     sleep(wait_seconds + 1)
@@ -578,6 +627,9 @@ class Download(PluginTopic):
                     break
                 elif len(products) == 0:
                     break
+
+        # Shutdown executor at the end
+        executor.shutdown(wait=True)
 
         return paths
 
@@ -641,8 +693,8 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(self, "stream"):
-                            retry_server_info = self.stream.headers.get(
+                        if hasattr(product, "_stream"):
+                            retry_server_info = product._stream.headers.get(
                                 "Retry-After", ""
                             )
                             if retry_server_info:
@@ -663,8 +715,8 @@ class Download(PluginTopic):
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
-                        if hasattr(self, "stream"):
-                            retry_server_info = self.stream.headers.get(
+                        if hasattr(product, "_stream"):
+                            retry_server_info = product._stream.headers.get(
                                 "Retry-After", ""
                             )
                             if retry_server_info:
@@ -690,3 +742,27 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
+
+    def _config_executor(
+        self, executor: ThreadPoolExecutor, thread_name_prefix: Optional[str] = None
+    ) -> None:
+        """
+        Configure a ThreadPoolExecutor instance.
+
+        This method ensures that a ThreadPoolExecutor is correctly set for downloads by adjusting its
+        maximum number of workers if necessary. It also configures the thread name prefix to identify
+        threads created by the executor, which is useful for distinguishing between executors created
+        for parallel product downloads versus those created for other purposes.
+
+        :param executor: A ThreadPoolExecutor instance.
+        :param thread_name_prefix: (optional) A prefix for naming threads created by the executor.
+                                   When provided, threads will be named using this prefix to help
+                                   identify the executor's purpose (e.g., "eodag-download-all").
+        """
+        if (
+            max_workers := getattr(self.config, "max_workers", executor._max_workers)
+        ) < executor._max_workers:
+            executor._max_workers = max_workers
+
+        if thread_name_prefix:
+            executor._thread_name_prefix = "eodag-download-all"
