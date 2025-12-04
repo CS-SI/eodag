@@ -834,6 +834,7 @@ class AwsDownload(Download):
             byte_range,
             compress,
             zip_filename,
+            provider_max_workers=getattr(self.config, "max_workers", None),
         )
 
     def _get_commonpath(
