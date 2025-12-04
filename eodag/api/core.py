@@ -453,6 +453,9 @@ class EODataAccessGateway:
             if locations_conf_path is None:
                 locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
                 if not os.path.isfile(locations_conf_path):
+                    # Ensure the directory exists
+                    os.makedirs(os.path.dirname(locations_conf_path), exist_ok=True)
+
                     # copy locations conf file and replace path example
                     locations_conf_template = str(
                         res_files("eodag") / "resources" / "locations_conf_template.yml"
