@@ -244,7 +244,9 @@ def append_time(input_date: date, time: Optional[str]) -> dt:
     return combined_dt
 
 
-def parse_date(date: str, time: Optional[Union[str, list[str]]]) -> tuple[dt, dt]:
+def parse_date(
+    date: str, time: Optional[Union[str, list[str]]] = None
+) -> tuple[dt, dt]:
     """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
     if "to" in date:
         start_date_str, end_date_str = date.split("/to/")

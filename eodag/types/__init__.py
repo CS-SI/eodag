@@ -386,7 +386,9 @@ class BaseModelCustomJsonSchema(BaseModel):
 
 
 def annotated_dict_to_model(
-    model_name: str, annotated_fields: dict[str, Annotated[Any, FieldInfo]]
+    model_name: str,
+    annotated_fields: dict[str, Annotated[Any, FieldInfo]],
+    model_class: Optional[type[BaseModel]] = BaseModelCustomJsonSchema,
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 
@@ -411,6 +413,7 @@ def annotated_dict_to_model(
     :param model_name: name of the model to be created
     :param annotated_fields: dict containing the parameters and annotated values that should become
                              the properties of the model
+    :param model_class: (optiional) base class of the returned model
     :returns: pydantic model
     """
     fields = {}
@@ -423,7 +426,7 @@ def annotated_dict_to_model(
 
     custom_model = create_model(
         model_name,
-        __base__=BaseModelCustomJsonSchema,
+        __base__=model_class,
         **fields,  # type: ignore
     )
 
