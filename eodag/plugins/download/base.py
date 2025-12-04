@@ -521,19 +521,20 @@ class Download(PluginTopic):
             progress_callback.unit_scale = False
         progress_callback.refresh()
 
-        # Keep one thread free for nested tasks to download assets in parallel
-        # NOTE: we assume here that all products come from the same provider and then the same downloader
-        nested_asset_downloads = False
-        if (
-            products[0].downloader
-            and products[0].downloader.config.type == "AwsDownload"
-            or len(product.assets) > 0
-            and (
-                not getattr(self.config, "ignore_assets", False)
-                or kwargs.get("asset") is not None
+        # anticipate nested tasks to download assets in parallel for at least one product
+        nested_asset_downloads = any(
+            product
+            for product in products
+            if (
+                product.downloader
+                and product.downloader.config.type == "AwsDownload"
+                or len(product.assets) > 0
+                and (
+                    not getattr(self.config, "ignore_assets", False)
+                    or kwargs.get("asset") is not None
+                )
             )
-        ):
-            nested_asset_downloads = True
+        )
 
         with progress_callback as bar:
             while "Loop until all products are download or timeout is reached":
@@ -541,7 +542,7 @@ class Download(PluginTopic):
 
                 # Download products in batches to handle nested tasks to download assets in parallel.
                 # We avoid having less workers in the executor than the number of products to download in parallel
-                # to prevent deadlocks. This could happen by submiting and waiting for a task within task.
+                # to prevent deadlocks. This could happen by submiting and waiting for a task within a task.
                 # We ensure at least one thread is available for these tasks and at least one product is downloaded
                 # at a time.
                 # If there is only one worker, a specific process at assets download level is used to avoid deadlocks.
