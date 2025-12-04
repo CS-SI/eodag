@@ -560,7 +560,7 @@ Examples:
 @click.option(
     "--max-workers",
     type=int,
-    help="The maximum number of workers to use for downloading products in parallel",
+    help="The maximum number of workers to use for downloading products and assets in parallel",
 )
 @click.pass_context
 def download(ctx: Context, **kwargs: Any) -> None:

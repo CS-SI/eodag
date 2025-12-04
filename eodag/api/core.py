@@ -1939,7 +1939,7 @@ class EODataAccessGateway:
                                   creation and update to give the user a
                                   feedback on the download progress
         :param executor: (optional) An executor to download EO products of ``search_result`` in parallel
-                                    which may be reused to also download assets of these products in parallel.
+                                    which will also be reused to download assets of these products in parallel.
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries of the same product
         :param timeout: (optional) If download fails, maximum time in minutes
@@ -2061,7 +2061,8 @@ class EODataAccessGateway:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any
+        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any. If ``None``
+                         , a default executor will be created
         :param wait: (optional) If download fails, wait time in minutes between
                     two download tries
         :param timeout: (optional) If download fails, maximum time in minutes

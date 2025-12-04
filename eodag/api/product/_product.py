@@ -357,7 +357,8 @@ class EOProduct:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param executor: (optional) An executor to download assets of the product in parallel if it has any
+        :param executor: (optional) An executor to download assets of the product in parallel if it has any. If ``None``
+                         , a default executor will be created
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
