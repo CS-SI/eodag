@@ -21,9 +21,9 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from types import MethodType
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -65,6 +65,8 @@ from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_RANGE_PATTERN,
     is_range_in_range,
+    parse_date,
+    parse_year_month_day,
 )
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
@@ -310,93 +312,6 @@ def ecmwf_format(v: str, alias: bool = True) -> str:
     """
     separator = ":" if alias else "_"
     return f"{ECMWF_PREFIX[:-1]}{separator}{v}" if v in ALLOWED_KEYWORDS else v
-
-
-def get_min_max(
-    value: Optional[Union[str, list[str]]] = None,
-) -> tuple[Optional[str], Optional[str]]:
-    """Returns the min and max from a list of strings or the same string if a single string is given."""
-    if isinstance(value, list):
-        sorted_values = sorted(value)
-        return sorted_values[0], sorted_values[-1]
-    return value, value
-
-
-def append_time(input_date: date, time: Optional[str]) -> datetime:
-    """
-    Parses a time string in format HHMM and appends it to a date.
-
-    if the time string is in format HH:MM or HH_MM we convert it to HHMM
-    """
-    if not time:
-        time = "0000"
-    time = re.sub(":|_", "", time)
-    if time == "2400":
-        time = "0000"
-    dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
-    dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def parse_date(
-    date: str, time: Optional[Union[str, list[str]]]
-) -> tuple[datetime, datetime]:
-    """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
-    if "to" in date:
-        start_date_str, end_date_str = date.split("/to/")
-    elif "/" in date:
-        dates = date.split("/")
-        start_date_str = dates[0]
-        end_date_str = dates[-1]
-    else:
-        start_date_str = end_date_str = date
-
-    # Update YYYYMMDD formatted dates
-    if re.match(r"^\d{8}$", start_date_str):
-        start_date_str = (
-            f"{start_date_str[:4]}-{start_date_str[4:6]}-{start_date_str[6:]}"
-        )
-    if re.match(r"^\d{8}$", end_date_str):
-        end_date_str = f"{end_date_str[:4]}-{end_date_str[4:6]}-{end_date_str[6:]}"
-
-    start_date = datetime.fromisoformat(start_date_str.rstrip("Z"))
-    end_date = datetime.fromisoformat(end_date_str.rstrip("Z"))
-
-    if time:
-        start_t, end_t = get_min_max(time)
-        start_date = append_time(start_date.date(), start_t)
-        end_date = append_time(end_date.date(), end_t)
-
-    return start_date, end_date
-
-
-def parse_year_month_day(
-    year: Union[str, list[str]],
-    month: Optional[Union[str, list[str]]] = None,
-    day: Optional[Union[str, list[str]]] = None,
-    time: Optional[Union[str, list[str]]] = None,
-) -> tuple[datetime, datetime]:
-    """Extracts and returns the year, month, day, and time from the parameters."""
-
-    def build_date(year, month=None, day=None, time=None) -> datetime:
-        """Datetime from default_date with updated year, month, day and time."""
-        updated_date = datetime(int(year), 1, 1).replace(
-            month=int(month) if month is not None else 1,
-            day=int(day) if day is not None else 1,
-        )
-        if time is not None:
-            updated_date = append_time(updated_date.date(), time)
-        return updated_date
-
-    start_y, end_y = get_min_max(year)
-    start_m, end_m = get_min_max(month)
-    start_d, end_d = get_min_max(day)
-    start_t, end_t = get_min_max(time)
-
-    start_date = build_date(start_y, start_m, start_d, start_t)
-    end_date = build_date(end_y, end_m, end_d, end_t)
-
-    return start_date, end_date
 
 
 def ecmwf_temporal_to_eodag(
