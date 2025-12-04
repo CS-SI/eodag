@@ -28,6 +28,7 @@ from urllib.parse import quote_plus, unquote_plus
 
 import geojson
 import orjson
+from dateutil import tz
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
@@ -64,7 +65,7 @@ from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_RANGE_PATTERN,
-    is_range_in_range,
+    datetime_range,
 )
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
@@ -339,7 +340,7 @@ def append_time(input_date: date, time: Optional[str]) -> datetime:
 
 
 def parse_date(
-    date: str, time: Optional[Union[str, list[str]]]
+    date: str, time: Optional[Union[str, list[str]]] = None
 ) -> tuple[datetime, datetime]:
     """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
     if "to" in date:
@@ -998,18 +999,20 @@ class ECMWFSearch(PostJsonSearch):
                 present_values = []
                 # The entry values for "date" can be a mixed list of single values (e.g "2023-06-27")
                 # and intervals (e.g. "2024-11-12/2025-11-20")
+                if keyword == "date":
+                    if any("/" in v for v in entry_values):
+                        for entry_value in entry_values:
+                            start, end = parse_date(entry_value)
+                            enumerated_datetimes = datetime_range(start, end)
+                            entry_values = [
+                                d.replace(tzinfo=tz.UTC).isoformat()[0:10]
+                                for d in enumerated_datetimes
+                            ]
+                            entry[keyword] = entry_values
+
                 for entry_value in entry_values:
-                    if keyword == "date" and "/" in entry_value:
-                        input_range = values
-                        if isinstance(values, list):
-                            input_range = values[0]
-                        if is_range_in_range(entry_value, input_range):
-                            present_values.extend(filter_v)
-                    else:
-                        new_values = [
-                            value for value in filter_v if value == entry_value
-                        ]
-                        present_values.extend(new_values)
+                    new_values = [value for value in filter_v if value == entry_value]
+                    present_values.extend(new_values)
 
                 # Remove present values from the missing_values set
                 missing_values -= set(present_values)

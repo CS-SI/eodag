@@ -437,13 +437,15 @@ class Search(PluginTopic):
             collection = search_params.get("collection")
             if not collection:
                 raise ValidationError("Field required: collection")
-            self.list_queryables(
+            _queryables = self.list_queryables(
                 filters=search_params,
                 available_collections=[collection],
                 collection_configs={collection: self.config.collection_config},
                 collection=collection,
                 alias=collection,
-            ).get_model().model_validate(search_params)
+            )
+            _model = _queryables.get_model()
+            _model.model_validate(search_params)
         except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
 
