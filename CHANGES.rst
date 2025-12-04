@@ -3,6 +3,31 @@ Release history
 ===============
 
 
+v4.0.0a5 (2025-12-04)
+=====================
+
+Chores
+------
+
+* Ensure locations dir exists during init (`#1958`_, `df263c2`_)
+
+Performance Improvements
+------------------------
+
+* Download products and assets in parallel (`#1890`_, `b0b3799`_)
+
+Refactoring
+-----------
+
+* Boto3 ServiceResource type check (`#1949`_, `90fafbe`_)
+
+.. _#1890: https://github.com/CS-SI/eodag/pull/1890
+.. _#1949: https://github.com/CS-SI/eodag/pull/1949
+.. _#1958: https://github.com/CS-SI/eodag/pull/1958
+.. _90fafbe: https://github.com/CS-SI/eodag/commit/90fafbe3501569ab394b14b6df14ff69f38c35f8
+.. _b0b3799: https://github.com/CS-SI/eodag/commit/b0b37992c9d49d7e5743f2a638f84f47f1de440e
+.. _df263c2: https://github.com/CS-SI/eodag/commit/df263c28042cc0aa4cdfeb88c24004aea9955cd5
+
 v4.0.0a4 (2025-11-28)
 =====================
 
