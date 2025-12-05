@@ -32,8 +32,8 @@ from tests.context import (
     EOProduct,
     PluginTopic,
     SearchResult,
+    mock,
 )
-from tests.utils import mock
 
 
 class TestCoreSearchResults(EODagTestCase):

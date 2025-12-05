@@ -43,8 +43,8 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     ProgressCallback,
+    mock,
 )
-from tests.utils import mock
 
 
 class TestEOProduct(EODagTestCase):

@@ -17,15 +17,8 @@
 # limitations under the License.
 import os
 from importlib.resources import files as res_files
-from typing import Any, Literal, Optional
 
-# All tests files should import mock from this place
-from unittest import mock
-from urllib.parse import parse_qs, urlparse
-
-import fastapi
 import yaml
-from fastapi.datastructures import QueryParams  # noqa
 
 
 def no_blanks(string):
@@ -58,24 +51,3 @@ def write_eodag_conf_with_fake_credentials(config_file):
                 conf[auth_plugin_key]["credentials"][cred_key] = "foo"
     with open(config_file, mode="w") as fh:
         yaml.dump(was_empty_conf, fh, default_flow_style=False)
-
-
-def mock_request(
-    url: str,
-    body: Optional[dict[str, Any]] = None,
-    method: Optional[Literal["GET", "POST"]] = "GET",
-) -> mock.Mock:
-    parsed_url = urlparse(url)
-    url_without_qs = parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
-    url_root = parsed_url.scheme + "://" + parsed_url.netloc
-    query_dict = parse_qs(parsed_url.query)
-    query_params = {k: ",".join(v) for k, v in query_dict.items()}
-
-    mocked_request = mock.Mock(spec=fastapi.Request)
-    mocked_request.state.url_root = url_root
-    mocked_request.state.url = url_without_qs
-    mocked_request.url = url
-    mocked_request.method = method
-    mocked_request.query_params = QueryParams(query_params)
-    mocked_request.json.return_value = body
-    return mocked_request
