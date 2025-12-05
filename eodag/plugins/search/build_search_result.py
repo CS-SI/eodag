@@ -895,7 +895,7 @@ class ECMWFSearch(PostJsonSearch):
         # start and end filters are supported whenever combinations of "year", "month", "day" filters exist
         queryable_prefix = f"{ECMWF_PREFIX[:-1]}_"
         if (
-            queryables.pop(f"{queryable_prefix}date", None)
+            f"{queryable_prefix}date" in queryables
             or f"{queryable_prefix}year" in queryables
             or f"{queryable_prefix}hyear" in queryables
         ):
@@ -996,16 +996,20 @@ class ECMWFSearch(PostJsonSearch):
                 # date constraint may be intervals. We identify intervals with a "/" in the value
                 # we assume that if the first value is an interval, all values are intervals
                 present_values = []
-                if keyword == "date" and "/" in entry[keyword][0]:
-                    input_range = values
-                    if isinstance(values, list):
-                        input_range = values[0]
-                    if any(is_range_in_range(x, input_range) for x in entry[keyword]):
-                        present_values = filter_v
-                else:
-                    present_values = [
-                        value for value in filter_v if value in entry_values
-                    ]
+                # The entry values for "date" can be a mixed list of single values (e.g "2023-06-27")
+                # and intervals (e.g. "2024-11-12/2025-11-20")
+                for entry_value in entry_values:
+                    if keyword == "date" and "/" in entry_value:
+                        input_range = values
+                        if isinstance(values, list):
+                            input_range = values[0]
+                        if is_range_in_range(entry_value, input_range):
+                            present_values.extend(filter_v)
+                    else:
+                        new_values = [
+                            value for value in filter_v if value == entry_value
+                        ]
+                        present_values.extend(new_values)
 
                 # Remove present values from the missing_values set
                 missing_values -= set(present_values)
@@ -1113,9 +1117,25 @@ class ECMWFSearch(PostJsonSearch):
             if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
-            is_required = bool(element.get("required")) and bool(
-                available_values.get(name)
-            )
+            is_required: bool
+            if bool(element.get("required")):
+                # required by form
+                if name in available_values:
+                    # required by some constraint, but not by all constraints
+                    # is it required by the filtered constraints?
+                    if available_values[name]:
+                        # required by the filtered constraints
+                        is_required = True
+                    else:
+                        # not required by the filtered constraints
+                        is_required = False
+                else:
+                    # required only by form
+                    is_required = True
+            else:
+                # not required by form
+                is_required = False
+
             if is_required:
                 required_list.append(name)
 
