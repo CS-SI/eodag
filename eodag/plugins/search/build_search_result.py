@@ -909,7 +909,7 @@ class ECMWFSearch(PostJsonSearch):
                 entry_values = entry.get(keyword, [])
 
                 # date constraint may be intervals. We identify intervals with a "/" in the value.
-                # The entry values for "date" can be a mixed list of single values (e.g "2023-06-27")
+                # date constraint can be a mixed list of single values (e.g "2023-06-27")
                 # and intervals (e.g. "2024-11-12/2025-11-20")
                 present_values = []
                 for entry_value in entry_values:
@@ -917,6 +917,8 @@ class ECMWFSearch(PostJsonSearch):
                         input_range = values
                         if isinstance(values, list):
                             input_range = values[0]
+                        if "/" not in input_range:
+                            input_range = f"{input_range}/{input_range}"
                         if is_range_in_range(entry_value, input_range):
                             present_values.extend(filter_v)
                     else:

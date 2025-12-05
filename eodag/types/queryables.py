@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
+from datetime import datetime
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Lt
@@ -22,6 +23,7 @@ from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_PATTERN,
     DATE_RANGE_PATTERN,
+    datetime_range,
     is_range_in_range,
     parse_date,
 )
@@ -173,23 +175,52 @@ class Queryables(CommonQueryables):
             raise ValueError("date must follow 'yyyy-mm-dd' format") from e
         if end < start:
             raise ValueError("date range end must be after start")
+        # enumerate dates in range
+        v_set: set[str] = {
+            Queryables._format_datetime(d) for d in datetime_range(start, end)
+        }
+        # is_range_in_range() support only ranges (no single date allowed) in the format 'yyyy-mm-dd/yyyy-mm-dd'
+        v_range: str = Queryables._format_datetime_range(start, end)
 
         field_info = cls.model_fields["ecmwf_date"]
         literals = get_args(field_info.annotation)
-        v_range = v
-        if "/" not in v_range:
-            v_range = f"{v}/{v}"
-        # The literals can be a mixed list of single values (e.g "2023-06-27")
+
+        # Collect missing values to report errors
+        missing_values = set(v_set)
+
+        # date constraint may be intervals. We identify intervals with a "/" in the value.
+        # date constraint can be a mixed list of single values (e.g "2023-06-27")
         # and intervals (e.g. "2024-11-12/2025-11-20")
         for literal in literals:
-            literal_range = literal
-            if "/" not in literal:
-                literal_range = f"{literal}/{literal}"
-            # FIXME is_range_in_range() does not support the separator '/to/'
-            if is_range_in_range(literal_range, v_range):
-                return v
+            literal_start, literal_end = parse_date(literal)
+            if "/" in literal:
+                # range with separator / or /to/
+                literal_range: str = Queryables._format_datetime_range(
+                    literal_start, literal_end
+                )
+                # TODO the two ranges are partially overlapping
+                # TODO find the collection with mixed literals
+                if is_range_in_range(literal_range, v_range):
+                    return v
+            else:
+                # convert literal to the format 'yyyy-mm-dd'
+                literal_start_str = Queryables._format_datetime(literal_start)
+                if literal_start_str in v_set:
+                    missing_values.remove(literal_start_str)
+                if not missing_values:
+                    return v
 
         raise ValueError("date range must be within any of the available literals")
+
+    @staticmethod
+    def _format_datetime(dt: datetime) -> str:
+        return dt.isoformat()[:10]
+
+    @staticmethod
+    def _format_datetime_range(start: datetime, end: datetime) -> str:
+        return (
+            f"{Queryables._format_datetime(start)}/{Queryables._format_datetime(end)}"
+        )
 
 
 class QueryablesDict(UserDict[str, Any]):
