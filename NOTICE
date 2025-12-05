@@ -41,7 +41,6 @@ https://github.com/jupyter-widgets/ipyleaflet
 https://github.com/GeospatialPython/pyshp
 https://github.com/python-visualization/folium
 https://github.com/Unidata/netcdf4-python
-https://github.com/tiangolo/fastapi
 https://github.com/urllib3/urllib3
 https://github.com/annotated-types/annotated-types
 https://github.com/pypa/setuptools
@@ -78,8 +77,6 @@ https://github.com/mapbox/rasterio
 https://github.com/lxml/lxml
 https://github.com/jupyter-widgets/ipywidgets
 https://github.com/jupyter/jupyter
-https://github.com/encode/uvicorn
-https://github.com/encode/starlette
 
 
 The function slugify, located at eodag/utils/__init__.py is a modified version of the function with the same name from

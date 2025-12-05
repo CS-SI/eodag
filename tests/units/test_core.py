@@ -58,9 +58,10 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     makedirs,
+    mock,
     model_fields_to_annotated,
 )
-from tests.utils import mock, write_eodag_conf_with_fake_credentials
+from tests.utils import write_eodag_conf_with_fake_credentials
 
 
 class TestCoreBase(unittest.TestCase):

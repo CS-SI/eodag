@@ -41,10 +41,11 @@ from tests.context import (
     NoMatchingCollection,
     download,
     eodag,
+    mock,
     search_crunch,
 )
 from tests.units import test_core
-from tests.utils import mock, no_blanks, write_eodag_conf_with_fake_credentials
+from tests.utils import no_blanks, write_eodag_conf_with_fake_credentials
 
 
 class TestEodagCli(unittest.TestCase):
