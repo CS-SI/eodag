@@ -91,7 +91,7 @@ class Collection(BaseModel):
         repr=False,
     )
 
-    # path to external collection metadata file
+    # path to external collection metadata file (required by stac-fastapi-eodag)
     eodag_stac_collection: Optional[str] = Field(
         default=None, alias="stacCollection", exclude=True, repr=False
     )
