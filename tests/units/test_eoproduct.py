@@ -618,6 +618,7 @@ class TestEOProduct(EODagTestCase):
                 "a_property",
                 "b_property",
                 "c_property",
+                "datetime",
                 "eodag:y_property",
                 "eodag:z_property",
                 "foo:property",
@@ -637,5 +638,6 @@ class TestEOProduct(EODagTestCase):
             product.properties,
             {
                 "b_property": "b_value",
+                "datetime": None,
             },
         )

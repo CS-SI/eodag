@@ -1783,14 +1783,15 @@ class EODataAccessGateway:
 
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
+            queryables_fields = Queryables.from_stac_models().model_fields
             ecmwf_queryables = [
                 f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
             ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
-                if param in Queryables.model_fields:
-                    param_alias = Queryables.model_fields[param].alias or param
+                if param in queryables_fields:
+                    param_alias = queryables_fields[param].alias or param
                     search_params[param_alias] = value
                 elif param in ecmwf_queryables:
                     # alias equivalent for ECMWF queryables
@@ -2190,7 +2191,8 @@ class EODataAccessGateway:
 
             # use queryables aliases
             kwargs_alias = {**kwargs}
-            for search_param, field_info in Queryables.model_fields.items():
+            queryables_fields = Queryables.from_stac_models().model_fields
+            for search_param, field_info in queryables_fields.items():
                 if search_param in kwargs and field_info.alias:
                     kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
 

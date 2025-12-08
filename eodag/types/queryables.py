@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from annotated_types import Lt
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -35,7 +35,7 @@ from eodag.types import (
     model_fields_to_annotated,
 )
 from eodag.types.stac_extensions import STAC_EXTENSIONS
-from eodag.types.stac_metadata import CommonStacMetadata
+from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils.dates import (
     COMPACT_DATE_PATTERN,
     COMPACT_DATE_RANGE_PATTERN,
@@ -48,6 +48,9 @@ from eodag.utils.dates import (
     parse_date,
 )
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
+
+if TYPE_CHECKING:
+    from eodag.types.stac_extensions import BaseStacExtension
 
 Percentage = Annotated[PositiveInt, Lt(100)]
 
@@ -86,11 +89,23 @@ class CommonQueryables(BaseModelCustomJsonSchema):
     @classmethod
     def from_stac_models(
         cls,
-        extensions=STAC_EXTENSIONS,
-        base_model=CommonStacMetadata,
-    ):
-        """from_stac_models class method to create Queryables from STAC models"""
-        return
+        extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
+        base_model: type[BaseModel] = CommonStacMetadata,
+    ) -> type[Queryables]:
+        """Creates Queryables from STAC models.
+
+        :param extensions: list of STAC extensions to include in the model
+        :param base_model: base STAC model to use
+        :return: Queryables model
+        """
+        return cast(
+            type[Queryables],
+            create_stac_metadata_model(
+                base_models=[cls, base_model],
+                extensions=extensions,
+                class_name="Queryables",
+            ),
+        )
 
 
 class Queryables(CommonQueryables):

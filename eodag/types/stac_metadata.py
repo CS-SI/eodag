@@ -21,16 +21,15 @@ from collections.abc import Callable
 from datetime import datetime as dt
 from typing import Annotated, Any, ClassVar, Optional, Union, cast
 
-import attr
 from pydantic import (
     AliasChoices,
     AliasPath,
     BaseModel,
     Field,
+    create_model,
     field_serializer,
     model_validator,
 )
-from pydantic._internal._model_construction import ModelMetaclass
 from pydantic.fields import FieldInfo
 from stac_pydantic.item import ItemProperties
 from stac_pydantic.shared import Provider
@@ -187,7 +186,7 @@ def create_stac_metadata_model(
     extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
     base_models: list[type[BaseModel]] = [CommonStacMetadata],
     class_name: str = "StacMetadata",
-) -> type[CommonStacMetadata]:
+) -> type[BaseModel]:
     """Create a pydantic model to validate item properties.
 
     :param extensions: list of STAC extensions to include in the model
@@ -195,7 +194,7 @@ def create_stac_metadata_model(
     :param class_name: name of the created model
     :returns: pydantic model class
     """
-    extension_models: list[ModelMetaclass] = []
+    extension_models: list[type[BaseModel]] = []
 
     # Check extensions for additional parameters to include
     for extension in extensions:
@@ -214,16 +213,17 @@ def create_stac_metadata_model(
             else:
                 aliases[key] = field.alias
 
-    model: type[CommonStacMetadata] = attr.make_class(
+    model = create_model(
         class_name,
-        attrs={},
-        bases=tuple(models),
-        class_body={
-            "_conformance_classes": {
-                e.__class__.__name__: e.schema_href for e in extensions
-            },
-            "get_conformance_classes": _get_conformance_classes,
-        },
+        __base__=tuple(models),
+        _conformance_classes=(
+            ClassVar[dict[str, str]],
+            {e.__class__.__name__: e.schema_href for e in extensions},
+        ),
+        get_conformance_classes=(
+            ClassVar[Callable[[Any], list[str]]],
+            _get_conformance_classes,
+        ),
     )
 
     for key in duplicates:

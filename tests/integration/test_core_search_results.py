@@ -64,7 +64,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "eo:cloud_cover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
-                        "instruments": "SAR-C SAR",
+                        "instruments": ["SAR-C", "SAR"],
                         "eodag:search_intersection": {
                             "coordinates": [
                                 [

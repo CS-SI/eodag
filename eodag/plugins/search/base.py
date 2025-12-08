@@ -409,9 +409,10 @@ class Search(PluginTopic):
                 col_queryables = self._get_collection_queryables(col, None, filters)
                 all_queryables.update(col_queryables)
             # reset defaults because they may vary between collections
+            queryables_fields = Queryables.from_stac_models().model_fields
             for k, v in all_queryables.items():
                 v.__metadata__[0].default = getattr(
-                    Queryables.model_fields.get(k, Field(None)), "default", None
+                    queryables_fields.get(k, Field(None)), "default", None
                 )
             return QueryablesDict(
                 additional_properties=auto_discovery,

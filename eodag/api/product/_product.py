@@ -23,7 +23,7 @@ import os
 import re
 import tempfile
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import requests
 from requests import RequestException
@@ -31,6 +31,7 @@ from requests.auth import AuthBase
 from shapely import geometry
 from shapely.errors import ShapelyError
 
+from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 
 try:
@@ -226,7 +227,7 @@ class EOProduct:
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
         }
-        props_model = create_stac_metadata_model()
+        props_model = cast(CommonStacMetadata, create_stac_metadata_model())
         props_validated = props_model.model_validate(stac_properties)
 
         geojson_repr: dict[str, Any] = {

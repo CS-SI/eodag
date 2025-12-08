@@ -19,13 +19,12 @@
 
 from typing import Annotated, Any, Optional, Union
 
-from annotated_types import Lt
+from annotated_types import Ge, Le
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from pydantic.types import PositiveInt
 
 from eodag.utils import ONLINE_STATUS
 
-Percentage = Annotated[PositiveInt, Lt(100)]
+Percentage = Annotated[int, Ge(0), Le(100)]
 
 
 class BaseStacExtension(BaseModel):
@@ -47,7 +46,7 @@ class BaseStacExtension(BaseModel):
 
         fields: dict[str, Any] = getattr(self.FIELDS, "model_fields", {})
         for k, v in fields.items():
-            v.alias = v.serialization_alias = k.replace(
+            v.alias = v.serialization_alias = v.validation_alias = k.replace(
                 f"{self.field_name_prefix}_", f"{self.field_name_prefix}:"
             )
             v.metadata.insert(0, {"extension": self.__class__.__name__})
