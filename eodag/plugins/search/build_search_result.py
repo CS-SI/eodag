@@ -31,6 +31,7 @@ import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
+from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
 from typing_extensions import get_args  # noqa: F401
@@ -1064,7 +1065,8 @@ class ECMWFSearch(PostJsonSearch):
                         prop,
                         default_value=default,
                         required=is_required,
-                        alias=formatted_alias,
+                        validation_alias=AliasChoices(formatted_alias, name),
+                        serialization_alias=formatted_alias,
                     )
                 )
             ]
@@ -1103,7 +1105,8 @@ class ECMWFSearch(PostJsonSearch):
                         {"type": "string", "title": name, "enum": values},
                         default_value=defaults.get(name),
                         required=bool(formatted_alias in required),
-                        alias=formatted_alias,
+                        validation_alias=AliasChoices(formatted_alias, name),
+                        serialization_alias=formatted_alias,
                     )
                 )
             ]

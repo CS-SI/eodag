@@ -32,7 +32,7 @@ from typing import (
 )
 
 from annotated_types import Gt, Lt
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, create_model
 from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
@@ -153,7 +153,8 @@ def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
     default_value: Optional[Any] = None,
     required: Optional[bool] = False,
-    alias: Optional[str] = None,
+    validation_alias: Optional[Union[str, AliasChoices]] = None,
+    serialization_alias: Optional[str] = None,
 ) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object
 
@@ -171,6 +172,8 @@ def json_field_definition_to_python(
     :param json_field_definition: the json field definition
     :param default_value: default value of the field
     :param required: if the field is required
+    :param validation_alias: validation alias
+    :param serialization_alias: serialization alias
     :returns: the python field definition
     """
     python_type = json_type_to_python(json_field_definition.get("type"))
@@ -181,7 +184,8 @@ def json_field_definition_to_python(
         pattern=json_field_definition.get("pattern", PydanticUndefined),
         le=json_field_definition.get("maximum", PydanticUndefined),
         ge=json_field_definition.get("minimum", PydanticUndefined),
-        alias=alias or PydanticUndefined,
+        validation_alias=validation_alias or PydanticUndefined,
+        serialization_alias=serialization_alias or PydanticUndefined,
     )
 
     enum = json_field_definition.get("enum")
