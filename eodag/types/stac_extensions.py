@@ -19,9 +19,8 @@
 
 from typing import Annotated, Any, Optional, Union
 
-import attr
 from annotated_types import Lt
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.types import PositiveInt
 
 from eodag.utils import ONLINE_STATUS
@@ -29,22 +28,22 @@ from eodag.utils import ONLINE_STATUS
 Percentage = Annotated[PositiveInt, Lt(100)]
 
 
-@attr.s
-class BaseStacExtension:
+class BaseStacExtension(BaseModel):
     """Abstract base class for defining STAC extensions."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     FIELDS: Optional[type[BaseModel]] = None
+    schema_href: Optional[str] = None
+    field_name_prefix: Optional[str] = None
 
-    schema_href: str = attr.ib(default=None)
-
-    field_name_prefix: Optional[str] = attr.ib(default=None)
-
-    def __attrs_post_init__(self) -> None:
+    @model_validator(mode="after")
+    def setup_field_aliases(self) -> "BaseStacExtension":
         """Add serialization validation_alias to extension properties
         and extension metadata to the field.
         """
         if self.field_name_prefix is None:
-            return
+            return self
 
         fields: dict[str, Any] = getattr(self.FIELDS, "model_fields", {})
         for k, v in fields.items():
@@ -52,6 +51,7 @@ class BaseStacExtension:
                 f"{self.field_name_prefix}_", f"{self.field_name_prefix}:"
             )
             v.metadata.insert(0, {"extension": self.__class__.__name__})
+        return self
 
 
 class SarFields(BaseModel):
@@ -75,16 +75,13 @@ class SarFields(BaseModel):
     sar_beam_ids: Optional[list[str]] = Field(None)
 
 
-@attr.s
 class SarExtension(BaseStacExtension):
     """STAC SAR extension."""
 
-    FIELDS = SarFields
+    FIELDS: type[BaseModel] = SarFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/sar/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="sar")
+    schema_href: str = "https://stac-extensions.github.io/sar/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "sar"
 
 
 class SatelliteFields(BaseModel):
@@ -100,16 +97,13 @@ class SatelliteFields(BaseModel):
     sat_anx_datetime: Optional[str] = Field(None)
 
 
-@attr.s
 class SatelliteExtension(BaseStacExtension):
     """STAC Satellite extension."""
 
-    FIELDS = SatelliteFields
+    FIELDS: type[BaseModel] = SatelliteFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/sat/v1.1.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="sat")
+    schema_href: str = "https://stac-extensions.github.io/sat/v1.1.0/schema.json"
+    field_name_prefix: Optional[str] = "sat"
 
 
 class TimestampFields(BaseModel):
@@ -122,15 +116,12 @@ class TimestampFields(BaseModel):
     expires: Optional[str] = Field(None)
 
 
-@attr.s
 class TimestampExtension(BaseStacExtension):
     """STAC timestamp extension"""
 
-    FIELDS = TimestampFields
+    FIELDS: type[BaseModel] = TimestampFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/timestamps/v1.0.0/schema.json"
-    )
+    schema_href: str = "https://stac-extensions.github.io/timestamps/v1.0.0/schema.json"
 
 
 class ProcessingFields(BaseModel):
@@ -145,16 +136,13 @@ class ProcessingFields(BaseModel):
     processing_software: Optional[dict[str, str]] = Field(None)
 
 
-@attr.s
 class ProcessingExtension(BaseStacExtension):
     """STAC processing extension."""
 
-    FIELDS = ProcessingFields
+    FIELDS: type[BaseModel] = ProcessingFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/processing/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="processing")
+    schema_href: str = "https://stac-extensions.github.io/processing/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "processing"
 
 
 class ViewGeometryFields(BaseModel):
@@ -169,16 +157,13 @@ class ViewGeometryFields(BaseModel):
     view_sun_elevation: Optional[float] = Field(None)
 
 
-@attr.s
 class ViewGeometryExtension(BaseStacExtension):
     """STAC ViewGeometry extension."""
 
-    FIELDS = ViewGeometryFields
+    FIELDS: type[BaseModel] = ViewGeometryFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/view/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="view")
+    schema_href: str = "https://stac-extensions.github.io/view/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "view"
 
 
 class ElectroOpticalFields(BaseModel):
@@ -191,16 +176,13 @@ class ElectroOpticalFields(BaseModel):
     eo_bands: Optional[list[dict[str, Union[str, int]]]] = Field(None)
 
 
-@attr.s
 class ElectroOpticalExtension(BaseStacExtension):
     """STAC ElectroOptical extension."""
 
-    FIELDS = ElectroOpticalFields
+    FIELDS: type[BaseModel] = ElectroOpticalFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/eo/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="eo")
+    schema_href: str = "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "eo"
 
 
 class ScientificCitationFields(BaseModel):
@@ -213,16 +195,13 @@ class ScientificCitationFields(BaseModel):
     sci_publications: Optional[list[dict[str, str]]] = Field(None)
 
 
-@attr.s
 class ScientificCitationExtension(BaseStacExtension):
     """STAC scientific extension."""
 
-    FIELDS = ScientificCitationFields
+    FIELDS: type[BaseModel] = ScientificCitationFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/scientific/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="sci")
+    schema_href: str = "https://stac-extensions.github.io/scientific/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "sci"
 
 
 class ProductFields(BaseModel):
@@ -236,16 +215,13 @@ class ProductFields(BaseModel):
     product_acquisition_type: Optional[str] = Field(None)
 
 
-@attr.s
 class ProductExtension(BaseStacExtension):
     """STAC product extension."""
 
-    FIELDS = ProductFields
+    FIELDS: type[BaseModel] = ProductFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/product/v0.1.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="product")
+    schema_href: str = "https://stac-extensions.github.io/product/v0.1.0/schema.json"
+    field_name_prefix: Optional[str] = "product"
 
 
 class StorageFields(BaseModel):
@@ -265,16 +241,13 @@ class StorageFields(BaseModel):
         return "online" if v == ONLINE_STATUS else "offline"
 
 
-@attr.s
 class StorageExtension(BaseStacExtension):
     """STAC product extension."""
 
-    FIELDS = StorageFields
+    FIELDS: type[BaseModel] = StorageFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/storage/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="storage")
+    schema_href: str = "https://stac-extensions.github.io/storage/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "storage"
 
 
 class OrderFields(BaseModel):
@@ -287,16 +260,13 @@ class OrderFields(BaseModel):
     order_date: Optional[bool] = Field(default=None)
 
 
-@attr.s
 class OrderExtension(BaseStacExtension):
     """STAC product extension."""
 
-    FIELDS = OrderFields
+    FIELDS: type[BaseModel] = OrderFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/order/v1.1.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="order")
+    schema_href: str = "https://stac-extensions.github.io/order/v1.1.0/schema.json"
+    field_name_prefix: Optional[str] = "order"
 
 
 class GridFields(BaseModel):
@@ -309,16 +279,13 @@ class GridFields(BaseModel):
     )
 
 
-@attr.s
 class GridExtension(BaseStacExtension):
     """STAC grid extension."""
 
-    FIELDS = GridFields
+    FIELDS: type[BaseModel] = GridFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/grid/v1.1.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="grid")
+    schema_href: str = "https://stac-extensions.github.io/grid/v1.1.0/schema.json"
+    field_name_prefix: Optional[str] = "grid"
 
 
 class MgrsFields(BaseModel):
@@ -331,16 +298,13 @@ class MgrsFields(BaseModel):
     mgrs_utm_zone: Optional[str] = Field(default=None)
 
 
-@attr.s
 class MgrsExtension(BaseStacExtension):
     """STAC mgrs extension."""
 
-    FIELDS = MgrsFields
+    FIELDS: type[BaseModel] = MgrsFields
 
-    schema_href: str = attr.ib(
-        default="https://stac-extensions.github.io/mgrs/v1.0.0/schema.json"
-    )
-    field_name_prefix: Optional[str] = attr.ib(default="mgrs")
+    schema_href: str = "https://stac-extensions.github.io/mgrs/v1.0.0/schema.json"
+    field_name_prefix: Optional[str] = "mgrs"
 
 
 STAC_EXTENSIONS = [
