@@ -2682,6 +2682,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual("THE.ALIAS", eoproduct.properties["eodag:alias"])
+        self.assertEqual("THE.ALIAS", eoproduct.collection)
 
         # restore previous config
         delattr(self.search_plugin.config, "dates_required")

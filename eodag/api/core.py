@@ -1851,9 +1851,7 @@ class EODataAccessGateway:
 
                 try:
                     if eo_product.collection is not None:
-                        eo_product.collection = self.get_collection_from_alias(
-                            eo_product.collection
-                        )
+                        self.get_collection_from_alias(eo_product.collection)
                 except NoMatchingCollection:
                     logger.debug("collection %s not found", eo_product.collection)
 

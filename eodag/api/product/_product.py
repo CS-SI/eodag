@@ -131,7 +131,8 @@ class EOProduct:
     ) -> None:
         self.provider = provider
         self.collection = (
-            kwargs.get("collection")
+            properties.get("eodag:alias")
+            or kwargs.get("collection")
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
