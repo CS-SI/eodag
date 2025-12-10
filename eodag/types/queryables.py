@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from datetime import datetime
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Lt
@@ -24,6 +23,8 @@ from eodag.utils.dates import (
     DATE_PATTERN,
     DATE_RANGE_PATTERN,
     datetime_range,
+    format_date,
+    format_date_range,
     is_range_in_range,
     parse_date,
 )
@@ -176,11 +177,9 @@ class Queryables(CommonQueryables):
         if end < start:
             raise ValueError("date range end must be after start")
         # enumerate dates in range
-        v_set: set[str] = {
-            Queryables._format_datetime(d) for d in datetime_range(start, end)
-        }
+        v_set: set[str] = {format_date(d) for d in datetime_range(start, end)}
         # is_range_in_range() support only ranges (no single date allowed) in the format 'yyyy-mm-dd/yyyy-mm-dd'
-        v_range: str = Queryables._format_datetime_range(start, end)
+        v_range: str = format_date_range(start, end)
 
         field_info = cls.model_fields["ecmwf_date"]
         literals = get_args(field_info.annotation)
@@ -196,30 +195,18 @@ class Queryables(CommonQueryables):
             literal_start, literal_end = parse_date(literal)
             if "/" in literal:
                 # range with separator / or /to/
-                literal_range: str = Queryables._format_datetime_range(
-                    literal_start, literal_end
-                )
+                literal_range: str = format_date_range(literal_start, literal_end)
                 if is_range_in_range(literal_range, v_range):
                     return v
             else:
                 # convert literal to the format 'yyyy-mm-dd'
-                literal_start_str = Queryables._format_datetime(literal_start)
+                literal_start_str = format_date(literal_start)
                 if literal_start_str in v_set:
                     missing_values.remove(literal_start_str)
                 if not missing_values:
                     return v
 
         raise ValueError("date not allowed")
-
-    @staticmethod
-    def _format_datetime(dt: datetime) -> str:
-        return dt.isoformat()[:10]
-
-    @staticmethod
-    def _format_datetime_range(start: datetime, end: datetime) -> str:
-        return (
-            f"{Queryables._format_datetime(start)}/{Queryables._format_datetime(end)}"
-        )
 
 
 class QueryablesDict(UserDict[str, Any]):
