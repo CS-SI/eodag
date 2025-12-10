@@ -175,7 +175,6 @@ class TestCoreProvidersConfig(TestCase):
 
     def test_core_providers_shared_credentials(self):
         """credentials must be shared between plugins having the same matching settings"""
-
         self.dag.add_provider(
             "a_provider_without_creds_matching_url",
             "https://foo.bar/search",
@@ -185,7 +184,16 @@ class TestCoreProvidersConfig(TestCase):
             },
         )
         self.dag.add_provider(
-            "a_provider_with_creds",
+            "a_provider_without_creds_matching_url_matching_conf",
+            "https://foo.bar/search",
+            auth={
+                "type": "GenericAuth",
+                "matching_url": "http://foo.bar",
+                "matching_conf": {"one_thing": "special"},
+            },
+        )
+        self.dag.add_provider(
+            "a_provider_with_creds_matching_url",
             "https://foo.bar/search",
             auth={
                 "type": "GenericAuth",
@@ -193,9 +201,10 @@ class TestCoreProvidersConfig(TestCase):
                 "credentials": {"username": "bar", "password": "foo"},
             },
         )
+
         self.dag.update_providers_config(
             """
-            another_provider_with_creds:
+            a_provider_with_creds_matching_conf:
                 search:
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
@@ -221,26 +230,99 @@ class TestCoreProvidersConfig(TestCase):
                     type: GenericAuth
                     matching_conf:
                         something: special
+
+            another_provider_without_creds_matching_url_matching_conf:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                products:
+                    GENERIC_COLLECTION:
+                        _collection: '{collection}'
+                auth:
+                    type: GenericAuth
+                    matching_url: http://foo.bar.baz
+                    matching_conf:
+                        something: special
             """
         )
+
+        self.dag.add_provider(
+            "a_third_provider_without_creds_matching_url_matching_conf",
+            "https://foo.bar/search",
+            auth={
+                "type": "GenericAuth",
+                "matching_url": "http://foo.bar",
+                "matching_conf": {"something": "special"},
+            },
+        )
+        self.dag.add_provider(
+            "a_provider_with_creds_matching_url_matching_conf",
+            "https://foo.bar/search",
+            auth={
+                "type": "GenericAuth",
+                "matching_url": "http://foo.bar",
+                "matching_conf": {"something": "special"},
+                "credentials": {"username": "foobar", "password": "quux"},
+            },
+        )
+
+        # providers having same matching_url must share credentials if they do not have different matching_conf
         self.assertDictEqual(
-            self.dag._providers["a_provider_with_creds"].config.auth.credentials,
+            self.dag._providers[
+                "a_provider_with_creds_matching_url"
+            ].config.auth.credentials,
             {"username": "bar", "password": "foo"},
         )
         self.assertDictEqual(
-            self.dag._providers["a_provider_with_creds"].config.auth.credentials,
+            self.dag._providers[
+                "a_provider_with_creds_matching_url"
+            ].config.auth.credentials,
             self.dag._providers[
                 "a_provider_without_creds_matching_url"
             ].config.auth.credentials,
         )
+        self.assertNotIn(
+            "credentials",
+            self.dag._providers[
+                "a_provider_without_creds_matching_url_matching_conf"
+            ].config.auth.__dict__,
+        )
+
+        # providers having same matching_conf must share credentials if they do not have different matching_url
         self.assertDictEqual(
-            self.dag._providers["another_provider_with_creds"].config.auth.credentials,
+            self.dag._providers[
+                "a_provider_with_creds_matching_conf"
+            ].config.auth.credentials,
             {"username": "baz", "password": "qux"},
         )
         self.assertDictEqual(
-            self.dag._providers["another_provider_with_creds"].config.auth.credentials,
+            self.dag._providers[
+                "a_provider_with_creds_matching_conf"
+            ].config.auth.credentials,
             self.dag._providers[
                 "a_provider_without_creds_matching_conf"
+            ].config.auth.credentials,
+        )
+        self.assertNotIn(
+            "credentials",
+            self.dag._providers[
+                "another_provider_without_creds_matching_url_matching_conf"
+            ].config.auth.__dict__,
+        )
+
+        # providers having same matching_url and matching_conf must share credentials
+        self.assertDictEqual(
+            self.dag._providers[
+                "a_provider_with_creds_matching_url_matching_conf"
+            ].config.auth.credentials,
+            {"username": "foobar", "password": "quux"},
+        )
+        self.assertDictEqual(
+            self.dag._providers[
+                "a_provider_with_creds_matching_url_matching_conf"
+            ].config.auth.credentials,
+            self.dag._providers[
+                "a_third_provider_without_creds_matching_url_matching_conf"
             ].config.auth.credentials,
         )
 

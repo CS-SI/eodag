@@ -50,6 +50,7 @@ from eodag.config import (
     load_default_config,
     load_stac_provider_config,
     get_ext_collections_conf,
+    AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
 )
 from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
