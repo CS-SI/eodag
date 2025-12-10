@@ -451,6 +451,7 @@ class Provider:
                         getattr(
                             self.config, key
                         ).credentials = conf_with_creds.credentials
+                        return
 
     def delete_collection(self, name: str) -> None:
         """Remove a collection from this provider.
