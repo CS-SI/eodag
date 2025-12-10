@@ -303,3 +303,13 @@ def parse_year_month_day(
     end_date = build_date(end_y, end_m, end_d, end_t)
 
     return start_date, end_date
+
+
+def format_date(date: dt) -> str:
+    """Format a ``datetime`` with the format 'YYYY-MM-DD'"""
+    return date.isoformat()[:10]
+
+
+def format_date_range(start: dt, end: dt) -> str:
+    """Format a range with the format 'YYYY-MM-DD/YYYY-MM-DD'"""
+    return f"{format_date(start)}/{format_date(end)}"
