@@ -65,6 +65,7 @@ from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_RANGE_PATTERN,
+    format_date,
     is_range_in_range,
     parse_date,
     parse_year_month_day,
@@ -547,6 +548,12 @@ class ECMWFSearch(PostJsonSearch):
         # check if default dates have to be added
         if getattr(self.config, "dates_required", False):
             self._check_date_params(params, collection)
+
+        # read 'start_datetime' and 'end_datetime' from 'date' range
+        if "date" in params:
+            start_date, end_date = parse_date(params.pop("date"))
+            params[START] = format_date(start_date)
+            params[END] = format_date(end_date)
 
         # adapt end date if it is midnight
         if END in params:
