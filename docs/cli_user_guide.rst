@@ -157,6 +157,15 @@ Please note that if you did not customize EODAG with new providers settings, thi
 For more information on the product types discovery mechanism, please see
 `Python API User Guide / Providers and products / Product types discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.
 
+Docker image
+------------
+
+A Docker image is available via the `GitHub Container Registry <https://github.com/CS-SI/eodag/pkgs/container/eodag>`_:
+
+.. code-block:: bash
+
+    docker pull ghcr.io/cs-si/eodag:v3.10.x
+
 Server mode
 -----------
 

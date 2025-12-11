@@ -245,6 +245,15 @@ Start playing with the CLI:
 
 - To print log messages, add ``-v`` to eodag master command. e.g. ``eodag -v list``. The more ``v`` given (up to 3), the more verbose the tool is. For a full verbose output, do for example: ``eodag -vvv list``
 
+Docker image
+------------
+
+A Docker image is available via the `GitHub Container Registry <https://github.com/CS-SI/eodag/pkgs/container/eodag>`_:
+
+.. code-block:: bash
+
+    docker pull ghcr.io/cs-si/eodag:v3.10.x
+
 Contribute
 ==========
 
