@@ -584,3 +584,19 @@ class TestEOProduct(EODagTestCase):
         self.assertEqual(product.assets.get_values("foo")[0]["href"], "foo.href")
         self.assertEqual(len(product.assets.get_values("foo?o,o")), 1)
         self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")
+
+    def test_eoproduct_none_properties(self):
+        """eoproduct none properties must skipped"""
+        product = self._dummy_product(
+            properties={
+                "geometry": "POINT (0 0)",
+                "b_property": "b_value",
+                "a_property": None,
+            }
+        )
+        self.assertDictEqual(
+            product.properties,
+            {
+                "b_property": "b_value",
+            },
+        )

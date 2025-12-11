@@ -50,8 +50,6 @@ class TestCoreSearchResults(EODagTestCase):
             "features": [
                 {
                     "properties": {
-                        "snowCover": None,
-                        "resolution": None,
                         "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "productType": "OCN",
@@ -67,7 +65,6 @@ class TestCoreSearchResults(EODagTestCase):
                         "20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
                         "instrument": "SAR-C SAR",
-                        "abstract": None,
                         "eodag_search_intersection": {
                             "coordinates": [
                                 [
@@ -80,17 +77,7 @@ class TestCoreSearchResults(EODagTestCase):
                             ],
                             "type": "Polygon",
                         },
-                        "organisationName": None,
                         "startTimeFromAscendingNode": "2018-02-15T23:53:22.871Z",
-                        "platform": None,
-                        "sensorType": None,
-                        "processingLevel": None,
-                        "orbitType": None,
-                        "topicCategory": None,
-                        "orbitDirection": None,
-                        "parentIdentifier": None,
-                        "sensorMode": None,
-                        "quicklook": None,
                     },
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
