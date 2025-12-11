@@ -6096,11 +6096,11 @@
     S2_MSI_L1C:
       productType: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
-      productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
+      productType: THEIA_REFLECTANCE_SENTINEL2_L2A
     S2_MSI_L2B_MAJA_SNOW:
-      productType: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+      productType: THEIA_SNOW_SENTINEL2_L2B
     S2_MSI_L2B_MAJA_WATER:
-      productType: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
+      productType: THEIA_WATERQUAL_SENTINEL2_L2B
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
@@ -6221,11 +6221,11 @@
     S2_MSI_L1C:
       productType: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
-      productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
+      productType: THEIA_REFLECTANCE_SENTINEL2_L2A
     S2_MSI_L2B_MAJA_SNOW:
-      productType: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+      productType: THEIA_SNOW_SENTINEL2_L2B
     S2_MSI_L2B_MAJA_WATER:
-      productType: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
+      productType: THEIA_WATERQUAL_SENTINEL2_L2B
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
