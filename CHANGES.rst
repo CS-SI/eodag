@@ -2,6 +2,73 @@
 Release history
 ===============
 
+.. _changelog-unreleased:
+
+v3.10.1 (2025-12-11)
+====================
+
+Bug Fixes
+---------
+
+* **core**: Queryables alias usage (`#1893`_, `fd00403`_)
+
+* **core**: Skip None EOProduct.properties (`9264e54`_)
+
+* **plugins**: Add temporal resolution to ecmwf properties (`6c82a1e`_)
+
+* **plugins**: Cop_marine search by id (`a10d509`_)
+
+* **plugins**: Dates formatting and missing param in ECMWFSearch queryables (`b36db01`_)
+
+* **plugins**: Ecmwf geometries support (`8a14151`_)
+
+* **providers**: Geodes max_items_per_page down to 80 (`0bb913b`_)
+
+* **providers**: Renamed THEIA collections on geodes (`cba02fc`_)
+
+Build System
+------------
+
+* Add docker image (`52e6088`_)
+
+* Add python3.14 support (`57b7260`_)
+
+Chores
+------
+
+* Allow pydantic >= 2.12.0 by buiding docs with python3.13 (`6be0eb7`_)
+
+Documentation
+-------------
+
+* Docker image (`352607c`_)
+
+Refactoring
+-----------
+
+* **collections**: CLMS and MetOp updates (`8808c5f`_)
+
+* **core**: Whole world as default product geometry and shapely stubs (`c49e26d`_)
+
+* **plugins**: Boto3 ServiceResource type check (`6b78dae`_)
+
+.. _#1893: https://github.com/CS-SI/eodag/pull/1893
+.. _0bb913b: https://github.com/CS-SI/eodag/commit/0bb913b7582fee5dad1d1d22961906e336f81719
+.. _352607c: https://github.com/CS-SI/eodag/commit/352607cc751a7dd45d6bd905a8f92723f00ae5bd
+.. _52e6088: https://github.com/CS-SI/eodag/commit/52e60885e72608f9b215f4f8a5b4f4ae177e8f87
+.. _57b7260: https://github.com/CS-SI/eodag/commit/57b72600d5cd9b99427a758ad058dac3a298f26e
+.. _6b78dae: https://github.com/CS-SI/eodag/commit/6b78dae5e76847887ca2823d36507845e557db6a
+.. _6be0eb7: https://github.com/CS-SI/eodag/commit/6be0eb713df1aac8382f1f359335560ac413272c
+.. _6c82a1e: https://github.com/CS-SI/eodag/commit/6c82a1ea0c46057145ff1662ba43403eff69fbca
+.. _8808c5f: https://github.com/CS-SI/eodag/commit/8808c5fd603a838c1f7be0f2c710a85babb3f7d7
+.. _8a14151: https://github.com/CS-SI/eodag/commit/8a14151a4c1b320191bd9ba963201520512988d7
+.. _9264e54: https://github.com/CS-SI/eodag/commit/9264e54f5765af356d14c129a2718ee91c1adf00
+.. _a10d509: https://github.com/CS-SI/eodag/commit/a10d509baeca36d0602bbd22c62bb06fbc13d79c
+.. _b36db01: https://github.com/CS-SI/eodag/commit/b36db0109d4b9969835a63787a867cd0702e05c8
+.. _c49e26d: https://github.com/CS-SI/eodag/commit/c49e26d71d5b8e8f4408be07f63cf3d2dd414a90
+.. _cba02fc: https://github.com/CS-SI/eodag/commit/cba02fc453f435d617f24161d6d716095071f2b9
+.. _fd00403: https://github.com/CS-SI/eodag/commit/fd004035d1415421bfb55356e9dad4ead83734ba
+
 
 v3.10.0 (2025-10-20)
 ====================
