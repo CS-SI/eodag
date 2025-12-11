@@ -1283,7 +1283,7 @@ class QueryStringSearch(Search):
             )
             # collection alias (required by opentelemetry-instrumentation-eodag)
             if alias := getattr(self.config, "collection_config", {}).get("alias"):
-                properties["eodag:alias"] = alias
+                kwargs["collection"] = alias
             product = EOProduct(self.provider, properties, **kwargs)
 
             additional_assets = self.get_assets_from_mapping(result)

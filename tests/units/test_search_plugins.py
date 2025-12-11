@@ -2667,10 +2667,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
                 "temporal": {"interval": [["1985-10-26", "2015-10-21"]]},
             },
-            "alias": "THE.ALIAS",
         }
         results = self.search_plugin.query(
-            collection="THE.ALIAS",
+            collection=self.collection,
         )
         eoproduct = results.data[0]
         self.assertEqual(
@@ -2681,8 +2680,6 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["end_datetime"],
             "1985-10-26T00:00:00.000Z",
         )
-        self.assertEqual("THE.ALIAS", eoproduct.properties["eodag:alias"])
-        self.assertEqual("THE.ALIAS", eoproduct.collection)
 
         # restore previous config
         delattr(self.search_plugin.config, "dates_required")
@@ -2726,6 +2723,20 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # restore previous config
         delattr(self.search_plugin.config, "dates_required")
+
+    def test_plugins_search_ecmwfsearch_collection_with_alias(self):
+        """alias of collection must be used in search result"""
+        self.search_plugin.config.collection_config = {
+            "_collection": self.collection,
+            "alias": "THE.ALIAS",
+        }
+        results = self.search_plugin.query(
+            collection="THE.ALIAS",
+            start_datetime="2020-01-01",
+            end_datetime="2020-01-02",
+        )
+        eoproduct = results.data[0]
+        self.assertEqual("THE.ALIAS", eoproduct.collection)
 
     def test_plugins_search_ecmwfsearch_without_collection(self):
         """

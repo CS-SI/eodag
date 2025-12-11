@@ -1849,12 +1849,6 @@ class EODataAccessGateway:
                     else:
                         eo_product.collection = guesses[0].id
 
-                try:
-                    if eo_product.collection is not None:
-                        self.get_collection_from_alias(eo_product.collection)
-                except NoMatchingCollection:
-                    logger.debug("collection %s not found", eo_product.collection)
-
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
 
