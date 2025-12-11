@@ -1292,7 +1292,7 @@ class ECMWFSearch(PostJsonSearch):
 
             # collection alias (required by opentelemetry-instrumentation-eodag)
             if alias := getattr(self.config, "collection_config", {}).get("alias"):
-                properties["eodag:alias"] = alias
+                kwargs["collection"] = alias
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
@@ -1534,7 +1534,7 @@ class MeteoblueSearch(ECMWFSearch):
         properties = {ecmwf_format(k): v for k, v in parsed_properties.items()}
         # collection alias (required by opentelemetry-instrumentation-eodag)
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
-            properties["eodag:alias"] = alias
+            collection = alias
 
         def slugify(date_str: str) -> str:
             return date_str.split("T")[0].replace("-", "")
