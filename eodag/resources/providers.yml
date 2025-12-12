@@ -3584,7 +3584,8 @@
         - '{{"startdate": "{start_datetime#to_iso_utc_datetime}"}}'
         - $.properties.startdate
       end_datetime:
-        - '{{"enddate": "{end_datetime#to_iso_utc_datetime}"}}'
+        # map 'date' to validate request against copernicus queryables
+        - '{{"enddate": "{end_datetime#to_iso_utc_datetime}", "date": "{start_datetime#to_iso_date}/{end_datetime#to_iso_date}"}}'
         - $.properties.enddate
       product:type:
         - dataset_id
