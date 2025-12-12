@@ -912,9 +912,15 @@ class ECMWFSearch(PostJsonSearch):
 
             # Filter constraints and check for missing values
             filtered_constraints = []
+            # True if some constraint is defined for this keyword.
+            # In other words: if no constraint defines a list of values
+            # then any value is allowed for this keyword
+            keyword_constrained = False
             for entry in constraints:
                 # Filter based on the presence of any value in filter_v
                 entry_values = entry.get(keyword, [])
+                if entry_values:
+                    keyword_constrained = True
 
                 # date constraint may be intervals. We identify intervals with a "/" in the value.
                 # date constraint can be a mixed list of single values (e.g "2023-06-27")
@@ -944,7 +950,7 @@ class ECMWFSearch(PostJsonSearch):
 
             # raise an error as no constraint entry matched the input keywords
             # raise an error if one value from input is not allowed
-            if not filtered_constraints or missing_values:
+            if keyword_constrained and (not filtered_constraints or missing_values):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
@@ -970,7 +976,9 @@ class ECMWFSearch(PostJsonSearch):
                 )
 
             parsed_keywords.append(keyword)
-            constraints = filtered_constraints
+            # if the keyword is not constrained then any value is allowed
+            if keyword_constrained:
+                constraints = filtered_constraints
 
         available_values: dict[str, Any] = {k: set() for k in ordered_keywords}
 
