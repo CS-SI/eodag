@@ -1374,11 +1374,13 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             **{"_collection": "CAMS_EAC4"},
         )
         search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
+        # `date` mapping to pass validation of ECMWF parameters
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "startdate": "2003-01-01T00:00:00.000Z",
                 "enddate": "2003-01-01T00:00:00.000Z",
+                "date": "2003-01-01/2003-01-01",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "itemsPerPage": 20,
                 "startIndex": 0,
