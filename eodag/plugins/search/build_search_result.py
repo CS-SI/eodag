@@ -551,7 +551,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # read 'start_datetime' and 'end_datetime' from 'date' range
         if "date" in params:
-            start_date, end_date = parse_date(params.pop("date"))
+            start_date, end_date = parse_date(params["date"])
             params[START] = format_date(start_date)
             params[END] = format_date(end_date)
 
