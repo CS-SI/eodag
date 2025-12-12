@@ -1051,17 +1051,13 @@ class ECMWFSearch(PostJsonSearch):
                 default = ",".join(default)
 
             is_required: bool
-            if bool(element.get("required")):
-                # required by form
-                if name in available_values:
-                    # required by some constraint, but not by all constraints
-                    # is it required by the filtered constraints?
-                    if available_values[name]:
-                        # required by the filtered constraints
-                        is_required = True
-                    else:
-                        # not required by the filtered constraints
-                        is_required = False
+            if available_values.get(name):
+                # required by the filtered constraints (available_values[name] is a not empty list)
+                is_required = True
+            elif bool(element.get("required")):
+                if name in available_values and not available_values[name]:
+                    # not required by the filtered constraints (available_values[name] is an empty list)
+                    is_required = False
                 else:
                     # required only by form
                     is_required = True
