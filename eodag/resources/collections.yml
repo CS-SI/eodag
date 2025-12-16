@@ -1990,15 +1990,15 @@ MSG_SEVIRI_RSS_AMV_CDR_V1:
 
 MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
   description: |
-    Release 1 of the Fundamental Climate Data Record (FCDR) of MSG imager 
-    SEVIRI (Spinning Enhanced Visible Infra-Red Imager) level 1.5 counts 
-    and recalibration coefficients (only for the infrared channels) from 
-    the Rapid Scan Service (RSS). This release covers the MSG SEVIRI RSS 
-    record from three different satellite platforms Meteosat-8 to -10. 
-    Both operational and recalibrated calibration coefficients are provided. 
-    The FCDR covers 13 years’ worth of data from 2008-05-06 until 2021-09-17, 
-    but recalibrated parameters are only available until 2020-04. To improve 
-    usability, the data are reformatted to NetCDF and additionally contain 
+    Release 1 of the Fundamental Climate Data Record (FCDR) of MSG imager
+    SEVIRI (Spinning Enhanced Visible Infra-Red Imager) level 1.5 counts
+    and recalibration coefficients (only for the infrared channels) from
+    the Rapid Scan Service (RSS). This release covers the MSG SEVIRI RSS
+    record from three different satellite platforms Meteosat-8 to -10.
+    Both operational and recalibrated calibration coefficients are provided.
+    The FCDR covers 13 years’ worth of data from 2008-05-06 until 2021-09-17,
+    but recalibrated parameters are only available until 2020-04. To improve
+    usability, the data are reformatted to NetCDF and additionally contain
     variable grouping, geolocation information, and sun/satellite angles.
   instruments: ["SEVIRI"]
   constellation: MSG
@@ -2012,33 +2012,33 @@ MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
 
 MSG_SEVIRI_SARAH_CDR_V003:
   description: |
-    The third edition of the Surface Solar Radiation Data Set - Heliosat 
-    (SARAH-3) is a satellite-based climate data record of the solar 
-    surface irradiance (SIS), the surface direct irradiance ((direct 
-    horizontal and direct normalized, SID and DNI), the sunshine duration 
-    (SDU), the photosynthetically active radiation (PAR), daylight (DAL), 
-    and the effective cloud albedo derived (CAL) from satellite-observations 
-    of the visible channels of the MVIRI and the SEVIRI instruments onboard 
-    the geostationary Meteosat satellites. SARAH-3 covers the time period 
-    1 Jan 1983 - 31 Dec 2020 as climate data record (CDR) and is 
-    operationally extended as Interim Climate Data Record (ICDR) to the 
-    present with a latency of 5 days; the data cover the region ±65° 
-    longitude and ±65° latitude. The products are available as monthly 
-    (P1M) and daily (P1D) means, and as 30-min instantaneous data (PT30M) 
-    (sunshine duration is available as monthly and daily sum) on a regular 
-    latitude/longitude grid with a spatial resolution of 0.05° x 0.05° 
-    degrees. The data record is complemented with a comprehensive 
-    documentation of the algorithms used and the generation of the data 
+    The third edition of the Surface Solar Radiation Data Set - Heliosat
+    (SARAH-3) is a satellite-based climate data record of the solar
+    surface irradiance (SIS), the surface direct irradiance ((direct
+    horizontal and direct normalized, SID and DNI), the sunshine duration
+    (SDU), the photosynthetically active radiation (PAR), daylight (DAL),
+    and the effective cloud albedo derived (CAL) from satellite-observations
+    of the visible channels of the MVIRI and the SEVIRI instruments onboard
+    the geostationary Meteosat satellites. SARAH-3 covers the time period
+    1 Jan 1983 - 31 Dec 2020 as climate data record (CDR) and is
+    operationally extended as Interim Climate Data Record (ICDR) to the
+    present with a latency of 5 days; the data cover the region ±65°
+    longitude and ±65° latitude. The products are available as monthly
+    (P1M) and daily (P1D) means, and as 30-min instantaneous data (PT30M)
+    (sunshine duration is available as monthly and daily sum) on a regular
+    latitude/longitude grid with a spatial resolution of 0.05° x 0.05°
+    degrees. The data record is complemented with a comprehensive
+    documentation of the algorithms used and the generation of the data
     record. Validation report and user guidance are also available.\n\n
-    All product are available via the CM SAF Web User Interface. The 
-    daily and monthly mean surface incoming shortwave radiation (SIS) 
-    and the daily and monthly sums of sunshine duration (SDU) are also 
-    provided via EUMETCast.\n\nNote: the CDR coverage ends on the 
+    All product are available via the CM SAF Web User Interface. The
+    daily and monthly mean surface incoming shortwave radiation (SIS)
+    and the daily and monthly sums of sunshine duration (SDU) are also
+    provided via EUMETCast.\n\nNote: the CDR coverage ends on the
     31/12/2020. Dates after 31/12/2020 are covered by the ICDR.
   instruments: ["SEVIRI", "MVIRI"]
   constellation: MSG
   platform: MSG,MFG
-  processing:level: 
+  processing:level:
   keywords: ["Climate", "Interim Climate Data Record", "Radiation", "Thematic Climate Data Record", "SEVIRI", "MSG"]
   eodag:sensor_type: Optical
   license: CC-BY-4.0
@@ -2047,7 +2047,7 @@ MSG_SEVIRI_SARAH_CDR_V003:
 
 MTG_FCI_ACTIVE_FIRE_L2_V1:
   description: |
-    The Active Fire Monitoring product indicates the presence of fire within a pixel. 
+    The Active Fire Monitoring product indicates the presence of fire within a pixel.
     The key input to the algorithm is the FCI channel IR-3.8, which is very sensitive to hot spots caused by fire.
   instruments: ["FCI"]
   constellation: MTG
@@ -2061,30 +2061,30 @@ MTG_FCI_ACTIVE_FIRE_L2_V1:
 
 MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
   description: |
-    The GIRAFE v1 climate data record (CDR) provides precipitation estimates 
-    derived from a combination of passive microwave (PMW) observations onboard 
-    polar orbiting satellites and infrared (IR) observations onboard 
-    geostationary satellites. GIRAFE v1 covers the time period 2002/01/01 
-    until 2022/12/31. The PMW input to GIRAFE v1 is from various microwave 
-    imager and sounder instruments. Precipitation rate estimates are retrieved 
-    from the observed PMW brightness temperatures by precipitation retrieval 
-    algorithms HOAPS, PNPR-CLIM*, and PRPS. The resulting archives of 
-    instantaneous precipitation rate estimates are homogenized using quantile 
-    mapping. The IR input to GIRAFE comes from the five geostationary positions 
-    forming the Geo-Ring, providing observations along all geographical longitudes. 
-    The spatially and temporally highly resolved IR input is trained to detect the 
-    occurrence of precipitation using the PMW-based instantaneous precipitation 
-    rate estimates. Conditional precipitation rates are computed based on PMW 
-    observations only. At latitudes higher than 55°N/S where Geo-Ring IR pixels 
-    are extremely distorted, GIRAFE v1 relies only on the PMW input. GIRAFE v1 is 
-    a gridded product which is available globally at a spatial resolution of 1° x 1°  
-    and at a temporal resolution of 24h as accumulated precipitation computed from 
-    the (IR-based) fraction of precipitation and the conditional precipitation rate. 
-    Additionally, 1° x 1° monthly mean values of the daily accumulated precipitation 
-    are provided. The daily accumulated precipitation features a dedicated sampling 
+    The GIRAFE v1 climate data record (CDR) provides precipitation estimates
+    derived from a combination of passive microwave (PMW) observations onboard
+    polar orbiting satellites and infrared (IR) observations onboard
+    geostationary satellites. GIRAFE v1 covers the time period 2002/01/01
+    until 2022/12/31. The PMW input to GIRAFE v1 is from various microwave
+    imager and sounder instruments. Precipitation rate estimates are retrieved
+    from the observed PMW brightness temperatures by precipitation retrieval
+    algorithms HOAPS, PNPR-CLIM*, and PRPS. The resulting archives of
+    instantaneous precipitation rate estimates are homogenized using quantile
+    mapping. The IR input to GIRAFE comes from the five geostationary positions
+    forming the Geo-Ring, providing observations along all geographical longitudes.
+    The spatially and temporally highly resolved IR input is trained to detect the
+    occurrence of precipitation using the PMW-based instantaneous precipitation
+    rate estimates. Conditional precipitation rates are computed based on PMW
+    observations only. At latitudes higher than 55°N/S where Geo-Ring IR pixels
+    are extremely distorted, GIRAFE v1 relies only on the PMW input. GIRAFE v1 is
+    a gridded product which is available globally at a spatial resolution of 1° x 1°
+    and at a temporal resolution of 24h as accumulated precipitation computed from
+    the (IR-based) fraction of precipitation and the conditional precipitation rate.
+    Additionally, 1° x 1° monthly mean values of the daily accumulated precipitation
+    are provided. The daily accumulated precipitation features a dedicated sampling
     uncertainty at the same 1° x 1° x 24 h resolution which is based on the analysis
-    of decorrelation scales in space and time in the IR-based  precipitation fields. 
-    This is a Thematic Climate Data Record (TCDR).\n*The PNPR-CLIM algorithm has 
+    of decorrelation scales in space and time in the IR-based  precipitation fields.
+    This is a Thematic Climate Data Record (TCDR).\n*The PNPR-CLIM algorithm has
     been developed by CNR-ISAC in the C3S_312b_Lot1 Copernicus project.
   instruments: ["GOES Imager", "VISSR", "JAMI", "MVIRI", "AHI", "MTSAT-2 Imager", "ABI", "SEVIRI"]
   constellation: MTG

@@ -5631,7 +5631,7 @@
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_OL_2_WFRBC003:
-      product:type: OL_2_WFRBC003 ### dans le lien il y a OL_2_WFR___ aussi
+      product:type: OL_2_WFRBC003
       _collection: EO:EUM:DAT:0556
       metadata_mapping:
         <<: *orbit_zone_tile
