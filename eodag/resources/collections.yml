@@ -1021,6 +1021,24 @@ S3_OLCI_L4BALTIC:
   title: SENTINEL3 OLCI Baltic Sea Surface Ocean Colour Plankton
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2023-04-10T00:00:00Z", null]]}}
 
+S3_OL_2_WFRBC003:
+  description: |
+    OLCI Level 2 Marine products provide spectral information on the colour of the oceans (water reflectances).
+    These radiometric products are used to estimate geophysical parameters e.g. estimates of phytoplankton biomass
+    through determining the Chlorophyll-a (Chl) concentration.  In coastal areas, they also allow monitoring of
+    the sediment load via the Total Suspended Matter (TSM) product.  Full resolution products are at a nominal
+    300m resolution. This collection contains reprocessed data from baseline collection 003. Operational data
+    can be found in the corresponding collection.
+  instruments: ["OLCI"]
+  constellation: SENTINEL3
+  platform: S3A,S3B
+  processing:level: L2
+  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "Radiation", "Ocean", "Ocean Colour"]
+  eodag:sensor_type: OPTICAL
+  license: proprietary
+  title: OLCI Level 2 Ocean Colour Full Resolution (version BC003) - Sentinel-3 - Reprocessed
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-04-25T00:00:00Z", "2021-04-28T00:00:00Z"]]}}
+
 # MARK: S3 SLSTR
 S3_SLSTR_L1RBT:
   description: |
@@ -1940,6 +1958,143 @@ MTG_FCI_OLR:
   license: other
   title: Outgoing LW radiation at TOA - MTG - 0 degree
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2025-01-22T00:00:00Z", null]]}}
+
+MSG_SEVIRI_RSS_AMV_CDR_V1:
+  description: |
+    Release 1 of the Climate Data Record (CDR) of MSG imager SEVIRI
+    (Spinning Enhanced Visible Infra-Red Imager) High-Resolution Wind (HRW)
+    from the Rapid Scan Service (RSS). This release covers the MSG SEVIRI
+    RSS record from three different satellite platforms Meteosat-8 to -10.
+    The CDR covers 12 years’ worth of data from 2008-05-06 until 2020-04-03
+    and there is a product every five minutes in NetCDF format. It provides
+    information on Atmospheric motion vectors (AMV) speed (ms-1),
+    direction (degree), and height (given in pressure units Pa) of vectors
+    which are derived by tracking cloud or water vapour features between
+    two images in time. AMV are wind vectors retrieved at all heights below
+    the tropopause, derived from High Resolution Visible (HRV), Visible 0.6
+    microns Water Vapour (6.2 microns and 7.3 microns) and 10.8 microns.
+    Infrared channels. In all channels, winds are retrieved by tracking cloud
+    features. For the two WV channels, water vapour features are also tracked
+    (clear sky winds).\nThe data record has been generated using the NWC SAF
+    software for geostationary satellites (NWC/GEO).
+  instruments: ["SEVIRI"]
+  constellation: MSG
+  platform: MSG
+  processing:level: L2
+  keywords: ["Wind", "Level 2 Data", "SEVIRI", "MSG"]
+  eodag:sensor_type: Optical
+  license: CC-BY-4.0
+  title: SEVIRI Rapid Scan Atmospheric Motion Vectors Climate Data Record Release 1 - MSG
+  extent: {"spatial": {"bbox": [[-64.0, 16.0, 70.0, 70.0]]}, "temporal": {"interval": [["2008-05-06T00:00:00Z", "2020-04-03T00:00:00Z"]]}}
+
+
+MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
+  description: |
+    Release 1 of the Fundamental Climate Data Record (FCDR) of MSG imager 
+    SEVIRI (Spinning Enhanced Visible Infra-Red Imager) level 1.5 counts 
+    and recalibration coefficients (only for the infrared channels) from 
+    the Rapid Scan Service (RSS). This release covers the MSG SEVIRI RSS 
+    record from three different satellite platforms Meteosat-8 to -10. 
+    Both operational and recalibrated calibration coefficients are provided. 
+    The FCDR covers 13 years’ worth of data from 2008-05-06 until 2021-09-17, 
+    but recalibrated parameters are only available until 2020-04. To improve 
+    usability, the data are reformatted to NetCDF and additionally contain 
+    variable grouping, geolocation information, and sun/satellite angles.
+  instruments: ["SEVIRI"]
+  constellation: MSG
+  platform: MSG
+  processing:level: L1
+  keywords: ["Calibration", "Level 1 Data", "Fundamental Climate Data Record", "Radiation", "SEVIRI", "MSG"]
+  eodag:sensor_type: Optical
+  license: proprietary
+  title: SEVIRI Rapid Scan High Rate Level 1.5 Image Data Climate Data Record Release 1 - MSG
+  extent: {"spatial": {"bbox": [[-71.22, 12.78, 90.22, 81.26]]}, "temporal": {"interval": [["2008-05-06T00:00:00Z", "2021-09-17T00:00:00Z"]]}}
+
+MSG_SEVIRI_SARAH_CDR_V003:
+  description: |
+    The third edition of the Surface Solar Radiation Data Set - Heliosat 
+    (SARAH-3) is a satellite-based climate data record of the solar 
+    surface irradiance (SIS), the surface direct irradiance ((direct 
+    horizontal and direct normalized, SID and DNI), the sunshine duration 
+    (SDU), the photosynthetically active radiation (PAR), daylight (DAL), 
+    and the effective cloud albedo derived (CAL) from satellite-observations 
+    of the visible channels of the MVIRI and the SEVIRI instruments onboard 
+    the geostationary Meteosat satellites. SARAH-3 covers the time period 
+    1 Jan 1983 - 31 Dec 2020 as climate data record (CDR) and is 
+    operationally extended as Interim Climate Data Record (ICDR) to the 
+    present with a latency of 5 days; the data cover the region ±65° 
+    longitude and ±65° latitude. The products are available as monthly 
+    (P1M) and daily (P1D) means, and as 30-min instantaneous data (PT30M) 
+    (sunshine duration is available as monthly and daily sum) on a regular 
+    latitude/longitude grid with a spatial resolution of 0.05° x 0.05° 
+    degrees. The data record is complemented with a comprehensive 
+    documentation of the algorithms used and the generation of the data 
+    record. Validation report and user guidance are also available.\n\n
+    All product are available via the CM SAF Web User Interface. The 
+    daily and monthly mean surface incoming shortwave radiation (SIS) 
+    and the daily and monthly sums of sunshine duration (SDU) are also 
+    provided via EUMETCast.\n\nNote: the CDR coverage ends on the 
+    31/12/2020. Dates after 31/12/2020 are covered by the ICDR.
+  instruments: ["SEVIRI", "MVIRI"]
+  constellation: MSG
+  platform: MSG,MFG
+  processing:level: 
+  keywords: ["Climate", "Interim Climate Data Record", "Radiation", "Thematic Climate Data Record", "SEVIRI", "MSG"]
+  eodag:sensor_type: Optical
+  license: CC-BY-4.0
+  title: Surface Radiation Data Set - Heliosat (SARAH) - Edition 3
+  extent: {"spatial": {"bbox": [[-65.0, -65.0, 65.0, 65.0]]}, "temporal": {"interval": [["1983-01-01T00:00:00Z", null]]}}
+
+MTG_FCI_ACTIVE_FIRE_L2_V1:
+  description: |
+    The Active Fire Monitoring product indicates the presence of fire within a pixel. 
+    The key input to the algorithm is the FCI channel IR-3.8, which is very sensitive to hot spots caused by fire.
+  instruments: ["FCI"]
+  constellation: MTG
+  platform: MTG
+  processing:level: L2
+  keywords: ["Fire", "Level 2 Data", "MTG"]
+  eodag:sensor_type: Imager
+  license: CC-BY-4.0
+  title: Active Fire Monitoring (netCDF) - MTG - 0 degree
+  extent: {"spatial": {"bbox": [[-67.5, -67.5, 67.5, 67.5]]}, "temporal": {"interval": [["2025-07-03T00:00:00Z", null]]}}
+
+MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
+  description: |
+    The GIRAFE v1 climate data record (CDR) provides precipitation estimates 
+    derived from a combination of passive microwave (PMW) observations onboard 
+    polar orbiting satellites and infrared (IR) observations onboard 
+    geostationary satellites. GIRAFE v1 covers the time period 2002/01/01 
+    until 2022/12/31. The PMW input to GIRAFE v1 is from various microwave 
+    imager and sounder instruments. Precipitation rate estimates are retrieved 
+    from the observed PMW brightness temperatures by precipitation retrieval 
+    algorithms HOAPS, PNPR-CLIM*, and PRPS. The resulting archives of 
+    instantaneous precipitation rate estimates are homogenized using quantile 
+    mapping. The IR input to GIRAFE comes from the five geostationary positions 
+    forming the Geo-Ring, providing observations along all geographical longitudes. 
+    The spatially and temporally highly resolved IR input is trained to detect the 
+    occurrence of precipitation using the PMW-based instantaneous precipitation 
+    rate estimates. Conditional precipitation rates are computed based on PMW 
+    observations only. At latitudes higher than 55°N/S where Geo-Ring IR pixels 
+    are extremely distorted, GIRAFE v1 relies only on the PMW input. GIRAFE v1 is 
+    a gridded product which is available globally at a spatial resolution of 1° x 1°  
+    and at a temporal resolution of 24h as accumulated precipitation computed from 
+    the (IR-based) fraction of precipitation and the conditional precipitation rate. 
+    Additionally, 1° x 1° monthly mean values of the daily accumulated precipitation 
+    are provided. The daily accumulated precipitation features a dedicated sampling 
+    uncertainty at the same 1° x 1° x 24 h resolution which is based on the analysis
+    of decorrelation scales in space and time in the IR-based  precipitation fields. 
+    This is a Thematic Climate Data Record (TCDR).\n*The PNPR-CLIM algorithm has 
+    been developed by CNR-ISAC in the C3S_312b_Lot1 Copernicus project.
+  instruments: ["GOES Imager", "VISSR", "JAMI", "MVIRI", "AHI", "MTSAT-2 Imager", "ABI", "SEVIRI"]
+  constellation: MTG
+  platform: GOES,Himawari,MFG,MSG
+  processing:level: L3
+  keywords: ["GOES", "Himawari", "MFG", "MSG", "Climate", "Precipitation", "Level 3 Data", "GIRAFE"]
+  eodag:sensor_type: Optical,Imager
+  license: CC-BY-4.0
+  title: "GIRAFE v1: CM SAF Global Interpolated RAinFall Estimation version 1"
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2002-01-01T00:00:00Z", "2022-12-31T00:00:00Z"]]}}
 
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
