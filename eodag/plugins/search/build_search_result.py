@@ -294,6 +294,27 @@ def _update_properties_from_element(
     if element["type"] == "DateRangeWidget":
         prop["description"] = "date formatted like yyyy-mm-dd/yyyy-mm-dd"
 
+    # a single geographic location
+    if element["type"] == "GeographicLocationWidget":
+        prop.update(
+            {
+                "type": "object",
+                "description": "Longitude and latitude of a single location",
+                "properties": {
+                    "longitude": {
+                        "type": "number",
+                        "maximum": 180,
+                        "minimum": -180,
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                    },
+                },
+            }
+        )
+
     if description := element.get("help"):
         prop["description"] = description
 
