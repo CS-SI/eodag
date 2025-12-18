@@ -3188,6 +3188,21 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 self.search_plugin.discover_queryables(**params)
 
+        # location
+        location_values = [
+            "foo",  # not a dict
+            {"lorem": "foo", "ipsum": "boo"},  # missing both fields
+            {"latitude": 40, "ipsum": "boo"},  # missing one field
+            {"latitude": 40, "longitude": "boo"},  # value is not a number
+        ]
+        for location in location_values:
+            params = {
+                "collection": "CAMS_EU_AIR_QUALITY_RE",
+                "location": location,
+            }
+            with self.assertRaises(ValidationError):
+                self.search_plugin.discover_queryables(**params)
+
     @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
         self, mock_requests_get
