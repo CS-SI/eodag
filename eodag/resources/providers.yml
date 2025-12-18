@@ -3044,6 +3044,18 @@
       end_datetime:
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
+      processing:software:
+        - '{{"query":{{"processing:software":{{"eq":{processing:software}}}}}}}'
+        - '$.properties.processing:software'
+      spatial:cycle_id:
+        - '{{"query":{{"spatial:cycle_id":{{"eq":{spatial:cycle_id}}}}}}}'
+        - '$.properties.spatial:cycle_id'
+      spatial:pass_id:
+        - '{{"query":{{"spatial:pass_id":{{"eq":{spatial:pass_id}}}}}}}'
+        - '$.properties.spatial:pass_id'
+      spatial:scene_id:
+        - '{{"query":{{"spatial:scene_id":{{"eq":{spatial:scene_id}}}}}}}'
+        - '$.properties.spatial:scene_id'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
