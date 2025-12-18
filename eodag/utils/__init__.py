@@ -1193,6 +1193,23 @@ def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
     return get_geometry_from_various(geometry=bbox)
 
 
+def get_geometry_from_ecmwf_location(
+    location: dict[str, float]
+) -> Optional[BaseGeometry]:
+    """
+    Creates a ``shapely.geometry`` from a single location.
+
+    location format: {"latitude": float, "longitude": float}
+
+    :param location: dictionary with latitude and longitude
+    :returns: A Shapely polygon.
+    """
+    lat = location["latitude"]
+    lon = location["longitude"]
+    bbox = [lon, lat, lon, lat]
+    return get_geometry_from_various(geometry=bbox)
+
+
 class MockResponse:
     """Fake requests response"""
 
