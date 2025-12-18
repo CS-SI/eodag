@@ -59,6 +59,7 @@ from eodag.utils import (
     format_string,
     get_geometry_from_ecmwf_area,
     get_geometry_from_ecmwf_feature,
+    get_geometry_from_ecmwf_location,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
@@ -615,6 +616,10 @@ class ECMWFSearch(PostJsonSearch):
         if "area" in params:
             params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
             params.pop("area")
+        # single location
+        if "location" in params:
+            params["geometry"] = get_geometry_from_ecmwf_location(params["location"])
+            params.pop("location")
 
         return params
 

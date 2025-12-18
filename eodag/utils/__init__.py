@@ -1162,9 +1162,7 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry:
     :returns: A Shapely polygon.
     """
     if not isinstance(geom, dict):
-        raise TypeError(
-            "Geometry must be a dictionary, instead it's {}".format(type(geom))
-        )
+        raise TypeError("Geometry must be a dictionary")
     if "type" not in geom or geom["type"] != "polygon":
         raise TypeError("Geometry type must be 'polygon'")
     if "shape" not in geom:
@@ -1190,6 +1188,27 @@ def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
         raise ValueError("The area must be a list of 4 values")
     max_lat, min_lon, min_lat, max_lon = area
     bbox = [min_lon, min_lat, max_lon, max_lat]
+    return get_geometry_from_various(geometry=bbox)
+
+
+def get_geometry_from_ecmwf_location(
+    location: dict[str, float]
+) -> Optional[BaseGeometry]:
+    """
+    Creates a ``shapely.geometry`` from a single location.
+
+    location format: {"latitude": float, "longitude": float}
+
+    :param location: dictionary with latitude and longitude
+    :returns: A Shapely polygon.
+    """
+    if not isinstance(location, dict):
+        raise TypeError("Location type must be a dictionary")
+    if not all(f in location for f in ("latitude", "longitude")):
+        raise ValueError("The location must contains the latitude and the longitude")
+    lat = location["latitude"]
+    lon = location["longitude"]
+    bbox = [lon, lat, lon, lat]
     return get_geometry_from_various(geometry=bbox)
 
 
