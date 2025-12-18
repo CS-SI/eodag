@@ -1667,8 +1667,13 @@ def format_pydantic_error(e: PydanticValidationError) -> str:
     """
     error_header = f"{e.error_count()} error(s). "
 
+    def concat_loc_names(location: tuple):
+        """Concatenate location names, excluding list indexes"""
+        str_loc = (loc for loc in location if type(loc) is str)
+        return ".".join(str_loc)
+
     error_messages = [
-        f'{err["loc"][0]}: {err["msg"]}' if err["loc"] else err["msg"]
+        f'{concat_loc_names(err["loc"])}: {err["msg"]}' if err["loc"] else err["msg"]
         for err in e.errors()
     ]
     return error_header + "; ".join(set(error_messages))

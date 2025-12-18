@@ -206,6 +206,14 @@ def json_field_definition_to_python(
                 enum = items.get("enum")
             elif "const" in items:
                 const = items.get("const")
+    elif python_type is dict:
+        properties = json_field_definition.get("properties")
+        if isinstance(properties, dict):
+            fields_type: dict = {
+                k: json_field_definition_to_python(v, required=required)
+                for k, v in properties.items()
+            }
+            python_type = TypedDict("dictionary", fields_type)  # type: ignore
 
     if enum:
         literal = Literal[tuple(sorted(enum))]  # type: ignore
