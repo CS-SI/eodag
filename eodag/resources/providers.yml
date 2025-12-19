@@ -5467,7 +5467,7 @@
       product:type:
         - type
         - '$.properties.productInformation.productType'
-      constellation: '$.properties.acquisitionInformation[0].platform.platformShortName'
+      platform: '$.properties.acquisitionInformation[0].platform.platformShortName'
       instruments: '{$.properties.acquisitionInformation[0].instrument.instrumentShortName#split( )}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.properties.title#sanitize}'
@@ -5631,11 +5631,14 @@
         <<: *orbit_zone_tile
         <<: *sentinel_params
     S3_OL_2_WFRBC003:
-      product:type: OL_2_WFRBC003
+      product:type: OL_2_WFR___
       _collection: EO:EUM:DAT:0556
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
+        platform:
+          - sat
+          - '$.properties.acquisitionInformation[0].platform.platformShortName'
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       product:type: SL_1_RBT___
