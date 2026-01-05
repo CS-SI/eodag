@@ -62,7 +62,8 @@ class Sentinel1Driver(DatasetDriver):
         # metadata
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$",
+                re.IGNORECASE,
             ),
             "roles": ["metadata"],
         },
@@ -82,7 +83,10 @@ class Sentinel1Driver(DatasetDriver):
             "roles": ["overview"],
         },
         # default
-        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)(?:\?.*)?$"), "roles": ["auxiliary"]},
+        {
+            "pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)(?:\?.*)?$"),
+            "roles": ["auxiliary"],
+        },
     ]
 
     def _normalize_key(self, key: str, eo_product: EOProduct) -> str:
