@@ -55,34 +55,34 @@ class Sentinel1Driver(DatasetDriver):
         # data
         {
             "pattern": re.compile(
-                r"^.*?([vh]{2}).*\.(?:jp2|tiff?|dat)$", re.IGNORECASE
+                r"^.*?([vh]{2}).*\.(?:jp2|tiff?|dat)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["data"],
         },
         # metadata
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["metadata"],
         },
         # thumbnail
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?(thumbnail)(\.jpe?g|\.png)$", re.IGNORECASE
+                r"^(?:.*[/\\])?(thumbnail)(\.jpe?g|\.png)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["thumbnail"],
         },
         # quicklook
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpe?g|\.png)$",
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpe?g|\.png)(?:\?.*)?$",
                 re.IGNORECASE,
             ),
             "roles": ["overview"],
         },
         # default
-        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)$"), "roles": ["auxiliary"]},
+        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)(?:\?.*)?$"), "roles": ["auxiliary"]},
     ]
 
     def _normalize_key(self, key: str, eo_product: EOProduct) -> str:
