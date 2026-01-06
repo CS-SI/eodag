@@ -44,6 +44,7 @@ class Sentinel1Driver(DatasetDriver):
         (re.compile(r"sm", re.IGNORECASE), ""),
         (re.compile(r"raw([-_]s)?", re.IGNORECASE), ""),
         (re.compile(r"[t?0-9]{3,}", re.IGNORECASE), ""),
+        (re.compile(r"[0-9A-F]{3,}", re.IGNORECASE), ""),
         (re.compile(r"-+"), "-"),
         (re.compile(r"-+\."), "."),
         (re.compile(r"_+"), "_"),
