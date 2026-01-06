@@ -773,7 +773,6 @@ class AwsDownload(Download):
         )
 
         # check if auth is a S3 resource by verifying it has the meta.client attribute.
-        # isinstance() check is not possible here because it is a dynamically generated class.
         if auth and hasattr(auth, "meta") and hasattr(auth.meta, "client"):
             s3_resource = auth
         else:
