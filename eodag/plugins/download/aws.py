@@ -771,7 +771,9 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        if auth and isinstance(auth, boto3.resource("s3").__class__):
+
+        # check if auth is a S3 resource by verifying it has the meta.client attribute.
+        if auth and hasattr(auth, "meta") and hasattr(auth.meta, "client"):
             s3_resource = auth
         else:
             s3_resource = boto3.resource(
