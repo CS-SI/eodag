@@ -3375,17 +3375,22 @@
       product:type: DTE_90
       metadata_mapping_from_product: COP_DEM_GLO30_DGED
     CLMS_GLO_NDVI_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
-      product:type: NDVI300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_indices
+      product:identifier: ndvi_global_300m_10daily_v1
       metadata_mapping:
-        <<: *id_from_date
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
+        product:identifier:
+        - '{{"productIdentifier": "{product:identifier}"}}'
+        - '$.null'
+        id:
+        - '{{"productIdentifier": "{id}"}}'
+        - '$.id'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
     CLMS_GLO_NDVI_1KM_LTS:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
-      product:type: NDVI
-      metadata_mapping:
-        <<: *id_from_date
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_indices
+      product:identifier: ndvi-lts_global_1km_10daily_v2
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
       product:type: Corine Land Cover 2018
@@ -3403,38 +3408,40 @@
         eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
-      product:type: FCOVER300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_properties
+      product:identifier: fcover_global_300m_10daily_v1
       metadata_mapping:
-        <<: *id_from_date
+        product:identifier:
+        - '{{"productIdentifier": "{product:identifier}"}}'
+        - '$.null'
+        id:
+        - '{{"productIdentifier": "{id}"}}'
+        - '$.id'
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
           - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
     CLMS_GLO_DMP_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF
-      product:type: DMP300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: dry-gross_dry_matter_productivity
+      product:identifier: dmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_GDMP_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF
-      product:type: GDMP300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: dry-gross_dry_matter_productivity
+      product:identifier: gdmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_FAPAR_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF
-      product:type: FAPAR300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_properties
+      product:identifier: fapar_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_LAI_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF
-      product:type: LAI300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_properties
+      product:identifier: lai_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
     CLMS_HRVPP_ST:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST
       metadata_mapping:
