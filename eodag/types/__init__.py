@@ -19,17 +19,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    Annotated,
-    Any,
-    Literal,
-    Optional,
-    Type,
-    TypedDict,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Annotated, Any, Literal, Optional, Type, Union, get_args, get_origin
 
 from annotated_types import Gt, Lt
 from pydantic import BaseModel, ConfigDict, Field, create_model
@@ -37,6 +27,7 @@ from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, PydanticUndefined
+from typing_extensions import TypedDict
 
 from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
