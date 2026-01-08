@@ -28,7 +28,6 @@ from typing import (
     Callable,
     Optional,
     Sequence,
-    TypedDict,
     cast,
     get_args,
 )
@@ -57,6 +56,7 @@ from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from typing_extensions import TypedDict
 from urllib3 import Retry
 
 from eodag.api.product import EOProduct

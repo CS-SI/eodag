@@ -18,7 +18,9 @@
 """EODAG drivers package"""
 from __future__ import annotations
 
-from typing import Callable, TypedDict
+from typing import Callable
+
+from typing_extensions import TypedDict
 
 from eodag.api.product.drivers.base import DatasetDriver, NoDriver
 from eodag.api.product.drivers.generic import GenericDriver

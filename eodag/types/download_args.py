@@ -17,7 +17,9 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Optional, TypedDict, Union
+from typing import Optional, Union
+
+from typing_extensions import TypedDict
 
 
 class DownloadConf(TypedDict, total=False):

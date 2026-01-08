@@ -29,7 +29,6 @@ from typing import (
     Iterator,
     Literal,
     Optional,
-    TypedDict,
     Union,
     ValuesView,
     get_type_hints,
@@ -42,6 +41,7 @@ import yaml.constructor
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
+from typing_extensions import TypedDict
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
