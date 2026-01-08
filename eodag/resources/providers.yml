@@ -3411,37 +3411,27 @@
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
       product:identifier: fcover_global_300m_10daily_v1
-      metadata_mapping:
-        product:identifier:
-        - '{{"productIdentifier": "{product:identifier}"}}'
-        - '$.null'
-        id:
-        - '{{"productIdentifier": "{id}"}}'
-        - '$.id'
-        productGroupId:
-          - '{{"productGroupId": "{productGroupId}"}}'
-          - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_DMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
       product:identifier: dmp_global_300m_10daily_v1
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_GDMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
       product:identifier: gdmp_global_300m_10daily_v1
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_FAPAR_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
       product:identifier: fapar_global_300m_10daily_v1
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_LAI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
       product:identifier: lai_global_300m_10daily_v1
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_HRVPP_ST:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST
       metadata_mapping:
