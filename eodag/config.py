@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 from importlib.resources import files as res_files
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
 import orjson
 import requests
@@ -28,6 +28,7 @@ import yaml
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
+from typing_extensions import TypedDict
 
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
