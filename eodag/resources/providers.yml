@@ -3415,7 +3415,7 @@
     CLMS_GLO_DMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      product:identifier: dmp_global_300m_10daily_v1
+      product:identifier: dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_GDMP_333M:
       _collection: EO:JRC:DAT:CLMS
