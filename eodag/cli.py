@@ -52,7 +52,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from eodag.api.collection import CollectionsList
 from eodag.api.core import EODataAccessGateway, SearchResult
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -246,7 +246,7 @@ def version() -> None:
     help="The number of items to return. Eodag is bound to whatever limitation the "
     "providers have on the number of results they return. This option allows "
     "to control how many items eodag should request "
-    f"[default: {DEFAULT_ITEMS_PER_PAGE}]",
+    f"[default: {DEFAULT_LIMIT}]",
 )
 @click.option(
     "--page",
@@ -363,7 +363,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
 
-    items_per_page = kwargs.pop("items")
+    limit = kwargs.pop("items")
     page = kwargs.pop("page") or 1
 
     gateway = EODataAccessGateway(
@@ -373,18 +373,14 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     # Search
     get_all_products = kwargs.pop("all")
     if get_all_products:
-        # search_all needs items_per_page to be None if the user lets eodag determines
+        # search_all needs limit to be None if the user lets eodag determines
         # what value it should take.
-        items_per_page = None if items_per_page is None else items_per_page
-        results = gateway.search_all(items_per_page=items_per_page, **criteria)
+        limit = None if limit is None else limit
+        results = gateway.search_all(limit=limit, **criteria)
     else:
         # search should better take a value that is not None
-        items_per_page = (
-            DEFAULT_ITEMS_PER_PAGE if items_per_page is None else items_per_page
-        )
-        results = gateway.search(
-            count=count, page=page, items_per_page=items_per_page, **criteria
-        )
+        limit = DEFAULT_LIMIT if limit is None else limit
+        results = gateway.search(count=count, page=page, limit=limit, **criteria)
         if results.number_matched is not None:
             click.echo(
                 "Found a total number of {} products".format(results.number_matched)

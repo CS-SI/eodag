@@ -462,7 +462,7 @@ class ECMWFSearch(PostJsonSearch):
         )
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
     ) -> RawSearchResult:
         """Should perform the actual search request.
 
@@ -1418,7 +1418,7 @@ class MeteoblueSearch(ECMWFSearch):
         return urls, 1
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
     ) -> RawSearchResult:
         """Perform the actual search request, and return result in a single element.
 
@@ -1617,7 +1617,7 @@ class WekeoECMWFSearch(ECMWFSearch):
         return normalized
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
     ) -> RawSearchResult:
         """Should perform the actual search request.
 

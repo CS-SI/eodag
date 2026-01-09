@@ -339,6 +339,7 @@ class SearchResult(UserList[EOProduct]):
 
         # Do not iterate if there is no next page token
         #  or if the current one returned less than the maximum number of items asked for.
+        print(self.next_page_token)
         if self.next_page_token is None:
             return
 
@@ -369,7 +370,7 @@ class SearchResult(UserList[EOProduct]):
             #  or if the current one returned less than the maximum number of items asked for.
             if (
                 new_results.next_page_token is None
-                or len(new_results) < new_results.search_params["items_per_page"]
+                or len(new_results) < new_results.search_params["limit"]
             ):
                 break
             old_results = new_results

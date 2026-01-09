@@ -43,8 +43,8 @@ from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_MAX_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
+    DEFAULT_MAX_LIMIT,
     CommonQueryables,
     EODataAccessGateway,
     EOProduct,
@@ -3263,7 +3263,7 @@ class TestCoreSearch(TestCoreBase):
             geometry=None,
             raise_errors=True,
             page=1,
-            items_per_page=DEFAULT_ITEMS_PER_PAGE,
+            items_per_page=DEFAULT_LIMIT,
         )
 
         # count only on 1st page if specified
@@ -3777,7 +3777,7 @@ class TestCoreSearch(TestCoreBase):
                 yield ([search_plugin], {})
 
         prepare_seach.side_effect = yield_search_plugin()
-        all_results = self.dag.search_all(items_per_page=2)
+        all_results = self.dag.search_all(limit=2)
         self.assertIsInstance(all_results, SearchResult)
         self.assertEqual(len(all_results), 3)
 
@@ -3836,7 +3836,7 @@ class TestCoreSearch(TestCoreBase):
 
         self.assertEqual(
             mock__do_search.call_args_list[0].kwargs["items_per_page"],
-            DEFAULT_MAX_ITEMS_PER_PAGE,
+            DEFAULT_MAX_LIMIT,
         )
 
     @mock.patch(
@@ -3860,7 +3860,7 @@ class TestCoreSearch(TestCoreBase):
         mock__do_search.side_effect = [SearchResult([self.search_results.data[0]], 1)]
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
-        dag.search_all(collection="S2_MSI_L1C", items_per_page=7)
+        dag.search_all(collection="S2_MSI_L1C", limit=7)
 
         self.assertEqual(mock__do_search.call_args_list[0].kwargs["items_per_page"], 7)
 

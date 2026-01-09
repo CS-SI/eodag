@@ -61,8 +61,8 @@ from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_MAX_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
+    DEFAULT_MAX_LIMIT,
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
@@ -1080,7 +1080,7 @@ class EODataAccessGateway:
     def search(
         self,
         page: int = DEFAULT_PAGE,
-        items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE,
+        limit: Optional[int] = DEFAULT_LIMIT,
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1102,7 +1102,7 @@ class EODataAccessGateway:
 
         :param page: (optional) The page number to return (**deprecated**, use
                      :meth:`eodag.api.search_result.SearchResult.next_page` instead)
-        :param items_per_page: (optional) The number of results that must appear in one single
+        :param limit: (optional) The number of results that must appear in one single
                                page. If ``None``, the maximum number possible will be used.
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
                               True, the error is raised
@@ -1181,12 +1181,12 @@ class EODataAccessGateway:
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
 
-            # add appropriate items_per_page value
-            search_kwargs["items_per_page"] = (
-                items_per_page
-                if items_per_page is not None
+            # add appropriate limit value
+            search_kwargs["limit"] = (
+                limit
+                if limit is not None
                 else getattr(search_plugin.config, "pagination", {}).get(
-                    "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+                    "max_limit", DEFAULT_MAX_LIMIT
                 )
             )
 
@@ -1223,7 +1223,7 @@ class EODataAccessGateway:
     )
     def search_iter_page(
         self,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        limit: int = DEFAULT_LIMIT,
         start: Optional[str] = None,
         end: Optional[str] = None,
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
@@ -1235,7 +1235,7 @@ class EODataAccessGateway:
         .. deprecated:: v4.0.0
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
-        :param items_per_page: (optional) The number of results requested per page
+        :param limit: (optional) The number of results requested per page
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
@@ -1267,7 +1267,7 @@ class EODataAccessGateway:
         for i, search_plugin in enumerate(search_plugins):
             try:
                 return self.search_iter_page_plugin(
-                    items_per_page=items_per_page,
+                    limit=limit,
                     search_plugin=search_plugin,
                     **search_kwargs,
                 )
@@ -1292,7 +1292,7 @@ class EODataAccessGateway:
     def search_iter_page_plugin(
         self,
         search_plugin: Union[Search, Api],
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        limit: int = DEFAULT_LIMIT,
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
@@ -1300,7 +1300,7 @@ class EODataAccessGateway:
         .. deprecated:: v4.0.0
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
-        :param items_per_page: (optional) The number of results requested per page
+        :param limit: (optional) The number of results requested per page
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatibles with the provider
         :param search_plugin: search plugin to be used
@@ -1309,7 +1309,7 @@ class EODataAccessGateway:
         """
         kwargs.update(
             page=1,
-            items_per_page=items_per_page,
+            limit=limit,
         )
         try:
             # remove unwanted kwargs for _do_search
@@ -1344,7 +1344,7 @@ class EODataAccessGateway:
 
     def search_all(
         self,
-        items_per_page: Optional[int] = None,
+        limit: Optional[int] = None,
         start: Optional[str] = None,
         end: Optional[str] = None,
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
@@ -1358,16 +1358,16 @@ class EODataAccessGateway:
 
         Requests are attempted to all providers of the product ordered by descending piority.
 
-        :param items_per_page: (optional) The number of results requested internally per
+        :param limit: (optional) The number of results requested internally per
                                page. The maximum number of items than can be requested
                                at once to a provider has been configured in EODAG for
-                               some of them. If items_per_page is None and this number
+                               some of them. If limit is None and this number
                                is available for the searched provider, it is used to
                                limit the number of requests made. This should also
                                reduce the time required to collect all the products
                                matching the search criteria. If this number is not
                                available, a default value of 50 is used instead.
-                               items_per_page can also be set to any arbitrary value.
+                               limit can also be set to any arbitrary value.
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
@@ -1398,7 +1398,7 @@ class EODataAccessGateway:
 
         # First search
         search_results = self.search(
-            items_per_page=items_per_page,
+            limit=limit,
             start=start,
             end=end,
             geom=geom,
@@ -1475,18 +1475,16 @@ class EODataAccessGateway:
 
             # adds maximal pagination to be able to do a search-all + crunch if more
             # than one result are returned
-            items_per_page = plugin.config.pagination.get(
-                "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
-            )
-            kwargs.update(items_per_page=items_per_page)
+            limit = plugin.config.pagination.get("max_limit", DEFAULT_MAX_LIMIT)
+            kwargs.update(limit=limit)
             if isinstance(plugin, PostJsonSearch):
                 kwargs.update(
-                    items_per_page=items_per_page,
+                    limit=limit,
                     _dc_qs=_dc_qs,
                 )
             else:
                 kwargs.update(
-                    items_per_page=items_per_page,
+                    limit=limit,
                 )
 
             try:
@@ -1733,21 +1731,18 @@ class EODataAccessGateway:
         :returns: A collection of EO products matching the criteria
         """
         logger.info("Searching on provider %s", search_plugin.provider)
-        max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
-            "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+        max_limit = getattr(search_plugin.config, "pagination", {}).get(
+            "max_limit", DEFAULT_MAX_LIMIT
         )
-        if (
-            kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE) > max_items_per_page
-            and max_items_per_page > 0
-        ):
+        if kwargs.get("limit", DEFAULT_LIMIT) > max_limit and max_limit > 0:
             logger.warning(
                 "EODAG believes that you might have asked for more products/items "
                 "than the maximum allowed by '%s': %s > %s. Try to lower "
-                "the value of 'items_per_page' and get the next page (e.g. 'page=2'), "
+                "the value of 'limit' and get the next page (e.g. 'page=2'), "
                 "or directly use the 'search_all' method.",
                 search_plugin.provider,
-                kwargs["items_per_page"],
-                max_items_per_page,
+                kwargs["limit"],
+                max_limit,
             )
 
         errors: list[tuple[str, Exception]] = []
@@ -1765,7 +1760,7 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
-            prep.items_per_page = kwargs.pop("items_per_page", None)
+            prep.limit = kwargs.pop("limit", None)
             prep.next_page_token = kwargs.pop("next_page_token", None)
             prep.next_page_token_key = kwargs.pop(
                 "next_page_token_key", None
@@ -1774,7 +1769,7 @@ class EODataAccessGateway:
 
             if (
                 prep.next_page_token_key == "page"
-                and prep.items_per_page is not None
+                and prep.limit is not None
                 and prep.next_page_token is None
                 and prep.page is not None
             ):
@@ -1857,7 +1852,7 @@ class EODataAccessGateway:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
 
             # Make next_page not available if the current one returned less than the maximum number of items asked for.
-            if not prep.items_per_page or len(search_result) < prep.items_per_page:
+            if not prep.limit or len(search_result) < prep.limit:
                 search_result.next_page_token = None
 
             search_result._dag = self

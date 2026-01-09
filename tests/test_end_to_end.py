@@ -729,7 +729,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
-            items_per_page=100,
+            limit=100,
             provider="peps",
         )
         prods_sorted_by_size = SearchResult(
