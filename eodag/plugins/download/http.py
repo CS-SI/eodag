@@ -465,6 +465,8 @@ class HTTPDownload(Download):
         if (success_status and success_status != status_dict.get("status")) or (
             success_code and success_code != response.status_code
         ):
+            # Remove the download link if the order has not been completed or was not successful
+            product.properties.pop("downloadLink", None)
             return None
 
         product.properties["storageStatus"] = ONLINE_STATUS
