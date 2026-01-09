@@ -152,6 +152,12 @@ eumetsat_ds:
             password:
     download:
         output_dir:
+fedeo_ceda:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
 geodes:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration

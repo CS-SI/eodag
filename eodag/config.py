@@ -636,12 +636,29 @@ class PluginConfig(yaml.YAMLObject):
         matching_conf = getattr(self, "matching_conf", {})
         matching_url = getattr(self, "matching_url", None)
 
-        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(
-            matching_conf
+        # both match
+        if (
+            target_matching_conf
+            and sort_dict(target_matching_conf) == sort_dict(matching_conf)
+            and target_matching_url
+            and target_matching_url == matching_url
         ):
             return True
 
-        if target_matching_url and target_matching_url == matching_url:
+        # conf matches and no matching_url expected
+        if (
+            target_matching_conf
+            and sort_dict(target_matching_conf) == sort_dict(matching_conf)
+            and not target_matching_url
+        ):
+            return True
+
+        # url matches and no matching_conf expected
+        if (
+            target_matching_url
+            and target_matching_url == matching_url
+            and not target_matching_conf
+        ):
             return True
 
         return False

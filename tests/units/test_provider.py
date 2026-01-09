@@ -20,10 +20,12 @@ from unittest.mock import patch
 
 import pytest
 
-from eodag.api.core import EODataAccessGateway
-from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
-from eodag.config import PluginConfig
-from eodag.utils.exceptions import (
+from tests.context import (
+    EODataAccessGateway,
+    PluginConfig,
+    Provider,
+    ProviderConfig,
+    ProvidersDict,
     UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
