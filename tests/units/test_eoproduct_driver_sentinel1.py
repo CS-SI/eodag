@@ -90,7 +90,7 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
             self.product.driver.guess_asset_key_and_roles(
                 "s3://foo/1/28/0/preview.png?collection=foo&items=foo", self.product
             ),
-            ("previ.png", ["overview"]),
+            ("preview.png", ["overview"]),
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
