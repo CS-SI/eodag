@@ -2882,10 +2882,10 @@ class TestCoreSearch(TestCoreBase):
         self, mock_get_search_plugins, mock_get_auth_plugin, mock__do_search
     ):
         """_search_by_id must filter search plugins using given kwargs, clear plugin and perform search"""
-        # max_items_per_page plugin conf
+        # max_limit plugin conf
         mock_config = mock.Mock()
         type(mock_config).pagination = mock.PropertyMock(
-            return_value={"max_items_per_page": 100}
+            return_value={"max_limit": 100}
         )
         type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
             return_value=mock_config
@@ -2919,7 +2919,7 @@ class TestCoreSearch(TestCoreBase):
             collection="bar",
             raise_errors=True,
             page=1,
-            items_per_page=100,
+            limit=100,
         )
         self.assertEqual(found, mock__do_search.return_value)
 
@@ -2960,20 +2960,20 @@ class TestCoreSearch(TestCoreBase):
         )
 
         class DummyConfig:
-            pagination = {"max_items_per_page": 1}
+            pagination = {"max_limit": 1}
 
         search_plugin.config = DummyConfig()
         with self.assertLogs(level="WARNING") as cm:
             sr = self.dag._do_search(
                 count=True,
                 search_plugin=search_plugin,
-                items_per_page=2,
+                limit=2,
             )
             self.assertIsInstance(sr, SearchResult)
             self.assertEqual(len(sr), self.search_results_size)
             self.assertEqual(sr.number_matched, self.search_results_size)
             self.assertIn(
-                "Try to lower the value of 'items_per_page'",
+                "Try to lower the value of 'limit'",
                 str(cm.output),
             )
 
@@ -3064,7 +3064,7 @@ class TestCoreSearch(TestCoreBase):
             count=True,
             search_plugin=search_plugin,
             page=page,
-            items_per_page=2,
+            limit=2,
         )
         self.assertEqual(len(sr), self.search_results_size)
         self.assertIsNone(sr.number_matched)
@@ -3081,19 +3081,19 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
 
         page = 4
-        items_per_page = 10
+        limit = 10
         sr = self.dag._do_search(
             count=True,
             search_plugin=search_plugin,
             page=page,
-            items_per_page=items_per_page,
+            limit=limit,
         )
         self.assertEqual(len(sr), 0)
         self.assertEqual(sr.number_matched, 0)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_pagination_disabled_less_products(self, search_plugin):
-        """_do_search must handle pagination disabled when less products than items_per_page are returned"""
+        """_do_search must handle pagination disabled when less products than limit are returned"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = SearchResult(
             [EOProduct("peps", {"id": "_"})], next_page_token=2
@@ -3107,9 +3107,9 @@ class TestCoreSearch(TestCoreBase):
         sr = self.dag._do_search(
             count=True,
             search_plugin=search_plugin,
-            items_per_page=5,
+            limit=5,
         )
-        # search returns less products than items_per_page
+        # search returns less products than limit
         self.assertEqual(len(sr), 1)
         self.assertIsNone(sr.next_page_token)
 
@@ -3229,7 +3229,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         prepare_seach.return_value = ([search_plugin], {})
         page_iterator = self.dag.search_iter_page_plugin(
-            items_per_page=2, search_plugin=search_plugin
+            limit=2, search_plugin=search_plugin
         )
         first_result_page = next(page_iterator)
         self.assertIsInstance(first_result_page, SearchResult)
@@ -3263,7 +3263,7 @@ class TestCoreSearch(TestCoreBase):
             geometry=None,
             raise_errors=True,
             page=1,
-            items_per_page=DEFAULT_LIMIT,
+            limit=DEFAULT_LIMIT,
         )
 
         # count only on 1st page if specified
@@ -3277,7 +3277,7 @@ class TestCoreSearch(TestCoreBase):
             second_page,
         ]
         page_iterator = self.dag.search_iter_page(
-            collection="S2_MSI_L1C", count=True, items_per_page=2
+            collection="S2_MSI_L1C", count=True, limit=2
         )
         next(page_iterator)
         mock_do_seach.assert_called_once_with(
@@ -3288,7 +3288,7 @@ class TestCoreSearch(TestCoreBase):
             count=True,
             raise_errors=True,
             page=1,
-            items_per_page=2,
+            limit=2,
         )
         # 2nd page: no count
         next(page_iterator)
@@ -3302,7 +3302,7 @@ class TestCoreSearch(TestCoreBase):
             raise_errors=True,
             next_page_token="token_for_page_2",
             next_page_token_key="next_key",
-            items_per_page=2,
+            limit=2,
             validate=False,
         )
 
@@ -3321,9 +3321,7 @@ class TestCoreSearch(TestCoreBase):
         )
         mock_search_plugin.side_effect = [RequestError("fail"), iter([1, 2, 3])]
 
-        page_iterator = self.dag.search_iter_page(
-            items_per_page=2, collection="S2_MSI_L1C"
-        )
+        page_iterator = self.dag.search_iter_page(limit=2, collection="S2_MSI_L1C")
         results = list(page_iterator)
         self.assertEqual(results, [1, 2, 3])
 
@@ -3345,14 +3343,14 @@ class TestCoreSearch(TestCoreBase):
         mock_search_plugin.side_effect = [RequestError("fail1"), RequestError("fail2")]
 
         with self.assertRaises(RequestError):
-            list(self.dag.search_iter_page(items_per_page=2, collection="S2_MSI_L1C"))
+            list(self.dag.search_iter_page(limit=2, collection="S2_MSI_L1C"))
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_iter_page_exhaust_get_all_pages_and_quit_early(
         self, search_plugin, prepare_seach
     ):
-        """search_iter_page must stop as soon as less than items_per_page products were retrieved"""
+        """search_iter_page must stop as soon as less than limit products were retrieved"""
         search_plugin.provider = "peps"
         # create first and second SearchResult with next_page_token
         first_page = SearchResult(
@@ -3372,7 +3370,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         prepare_seach.return_value = ([search_plugin], {})
         page_iterator = self.dag.search_iter_page_plugin(
-            items_per_page=2, search_plugin=search_plugin
+            limit=2, search_plugin=search_plugin
         )
         all_page_results = list(page_iterator)
         self.assertEqual(len(all_page_results), 2)
@@ -3390,13 +3388,13 @@ class TestCoreSearch(TestCoreBase):
             products=self.search_results.data, number_matched=None
         )
         first_page.next_page_token = "token_for_page_2"
-        first_page.search_params = {"items_per_page": 2}
+        first_page.search_params = {"limit": 2}
 
         second_page = SearchResult(
             products=self.search_results_2.data, number_matched=None
         )
         second_page.next_page_token = "token_for_page_3"  # last page
-        second_page.search_params = {"items_per_page": 2}
+        second_page.search_params = {"limit": 2}
 
         third_page = SearchResult(products=[], number_matched=None)
         search_plugin.query.side_effect = [first_page, second_page, third_page]
@@ -3407,7 +3405,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         prepare_seach.return_value = ([search_plugin], {})
         page_iterator = self.dag.search_iter_page_plugin(
-            items_per_page=2, search_plugin=search_plugin
+            limit=2, search_plugin=search_plugin
         )
         all_page_results = list(page_iterator)
         self.assertEqual(len(all_page_results), 2)
@@ -3469,7 +3467,7 @@ class TestCoreSearch(TestCoreBase):
         ):
             with self.assertLogs(level="WARNING") as cm_logs:
                 page_iterator = self.dag.search_iter_page_plugin(
-                    items_per_page=2, search_plugin=search_plugin
+                    limit=2, search_plugin=search_plugin
                 )
 
                 first_page = next(page_iterator)
@@ -3615,7 +3613,7 @@ class TestCoreSearch(TestCoreBase):
                 type: PostJsonSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
+                    next_page_query_obj: '{{"limit":{limit},"page":{next_page_token}}}'
                     total_items_nb_key_path: '$.meta.found'
                 sort:
                     sort_by_tpl: '{{"sort_by": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
@@ -3659,7 +3657,7 @@ class TestCoreSearch(TestCoreBase):
                 type: QueryStringSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={limit}&page={page}&exactCount=1'
                     total_items_nb_key_path: '$.properties.totalResults'
                 metadata_mapping:
                     dummy: 'dummy'
@@ -3685,7 +3683,7 @@ class TestCoreSearch(TestCoreBase):
                 type: QueryStringSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={limit}&page={page}&exactCount=1'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
@@ -3720,7 +3718,7 @@ class TestCoreSearch(TestCoreBase):
                 type: QueryStringSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={limit}&page={page}&exactCount=1'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
@@ -3786,8 +3784,8 @@ class TestCoreSearch(TestCoreBase):
         autospec=True,
         return_value=(SearchResult([mock.Mock()], 1)),
     )
-    def test_search_all_use_max_items_per_page(self, mock__do_search):
-        """search_all must use the configured parameter max_items_per_page if available"""
+    def test_search_all_use_max_limit(self, mock__do_search):
+        """search_all must use the configured parameter max_limit if available"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:
@@ -3795,7 +3793,7 @@ class TestCoreSearch(TestCoreBase):
                 type: QueryStringSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    max_items_per_page: 2
+                    max_limit: 2
                 metadata_mapping:
                     dummy: 'dummy'
             products:
@@ -3808,7 +3806,7 @@ class TestCoreSearch(TestCoreBase):
         dag.search_all(collection="S2_MSI_L1C")
 
         first_call_kwargs = mock__do_search.call_args_list[0][1]
-        self.assertEqual(first_call_kwargs["items_per_page"], 2)
+        self.assertEqual(first_call_kwargs["limit"], 2)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
@@ -3835,7 +3833,7 @@ class TestCoreSearch(TestCoreBase):
         dag.search_all(collection="S2_MSI_L1C")
 
         self.assertEqual(
-            mock__do_search.call_args_list[0].kwargs["items_per_page"],
+            mock__do_search.call_args_list[0].kwargs["limit"],
             DEFAULT_MAX_LIMIT,
         )
 
@@ -3843,8 +3841,8 @@ class TestCoreSearch(TestCoreBase):
         "eodag.api.core.EODataAccessGateway._do_search",
         autospec=True,
     )
-    def test_search_all_user_items_per_page(self, mock__do_search):
-        """search_all must use the value of items_per_page provided by the user"""
+    def test_search_all_user_limit(self, mock__do_search):
+        """search_all must use the value of limit provided by the user"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:
@@ -3862,7 +3860,7 @@ class TestCoreSearch(TestCoreBase):
         dag.set_preferred_provider("dummy_provider")
         dag.search_all(collection="S2_MSI_L1C", limit=7)
 
-        self.assertEqual(mock__do_search.call_args_list[0].kwargs["items_per_page"], 7)
+        self.assertEqual(mock__do_search.call_args_list[0].kwargs["limit"], 7)
 
     @unittest.skip("Disable until fixed")
     def test_search_all_request_error(self):
