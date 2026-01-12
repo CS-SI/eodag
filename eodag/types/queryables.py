@@ -273,6 +273,10 @@ class QueryablesDict(UserDict[str, Any]):
                                and v.__metadata__[0].get_default() != PydanticUndefined else ""}
                             {"'required': <span style='color: black'>"
                              + str(v.__metadata__[0].is_required()) + "</span>,"}
+                            {"'alias': '<span style='color: black'>"
+                               + str(v.__metadata__[0].alias) + "</span>',&ensp;"
+                               if v.__metadata__[0].alias
+                               and v.__metadata__[0].alias != PydanticUndefined else ""}
                             ...
                         )]
                     </summary>
