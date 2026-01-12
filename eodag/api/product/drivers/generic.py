@@ -36,7 +36,7 @@ class GenericDriver(DatasetDriver):
                 (
                     r"^(?:.*[/\\])?([^/\\]+)"
                     r"(\.jp2|\.tiff?|\.dat|\.nc|\.grib2?|"
-                    r"\.zarr|\.nat|\.covjson|\.parquet|\.zip|\.tar|\.gz)$"
+                    r"\.zarr|\.nat|\.covjson|\.parquet|\.zip|\.tar|\.gz)(?:\?.*)?$"
                 ),
                 re.IGNORECASE,
             ),
@@ -45,21 +45,21 @@ class GenericDriver(DatasetDriver):
         # metadata
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["metadata"],
         },
         # thumbnail
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?(thumbnail)(\.jpg|\.jpeg|\.png)$", re.IGNORECASE
+                r"^(?:.*[/\\])?(thumbnail)(\.jpg|\.jpeg|\.png)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["thumbnail"],
         },
         # quicklook
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpg|\.jpeg|\.png)$",
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpg|\.jpeg|\.png)(?:\?.*)?$",
                 re.IGNORECASE,
             ),
             "roles": ["overview"],
