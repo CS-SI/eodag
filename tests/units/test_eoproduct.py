@@ -140,7 +140,7 @@ class TestEOProduct(EODagTestCase):
             properties["eodag:search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag:collection"], self.collection)
+        self.assertEqual(geo_interface["collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""

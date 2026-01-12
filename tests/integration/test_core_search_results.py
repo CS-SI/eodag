@@ -59,7 +59,6 @@ class TestCoreSearchResults(EODagTestCase):
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                         ),
                         "eodag:provider": "peps",
-                        "eodag:collection": "S1_SAR_OCN",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
@@ -81,6 +80,7 @@ class TestCoreSearchResults(EODagTestCase):
                     },
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
+                    "collection": "S1_SAR_OCN",
                     "geometry": {
                         "coordinates": [
                             [
@@ -166,13 +166,13 @@ class TestCoreSearchResults(EODagTestCase):
         return {
             "properties": {
                 "eodag:provider": "peps",
-                "eodag:collection": "S1_SAR_OCN",
                 "eodag:search_intersection": {
                     "coordinates": geom_coords,
                     "type": geom_type,
                 },
             },
             "id": eo_id,
+            "collection": "S1_SAR_OCN",
             "geometry": {"coordinates": geom_coords, "type": geom_type},
         }
 

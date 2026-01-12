@@ -223,7 +223,6 @@ class EOProduct:
                 for key, value in self.properties.items()
                 if key not in ("geometry", "id")
             },
-            "eodag:collection": self.collection,
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
         }
@@ -240,6 +239,7 @@ class EOProduct:
             "links": [],
             "stac_extensions": props_validated.get_conformance_classes(),
             "stac_version": "1.1.0",
+            "collection": self.collection,
         }
         return geojson_repr
 
@@ -254,11 +254,11 @@ class EOProduct:
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         try:
+            collection = feature.get("collection")
             properties = feature["properties"]
             properties["geometry"] = feature["geometry"]
             properties["id"] = feature["id"]
             provider = properties.pop("eodag:provider")
-            collection = properties.pop("eodag:collection")
             search_intersection = properties.pop("eodag:search_intersection")
         except KeyError as e:
             raise ValidationError(
