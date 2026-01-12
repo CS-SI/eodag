@@ -2642,9 +2642,24 @@ class TestCoreSearch(TestCoreBase):
         self, mock_auth_session_request, mock_fetch_collections_list
     ):
         """_prepare_search must handle start & end dates"""
+        # with start and end parameters
         base = {
             "start": "2020-01-01",
             "end": "2020-02-01",
+        }
+        _, prepared_search = self.dag._prepare_search(**base)
+        self.assertEqual(prepared_search["start_datetime"], base["start"])
+        self.assertEqual(prepared_search["end_datetime"], base["end"])
+        # with datetime
+        base = {"datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z"}
+        _, prepared_search = self.dag._prepare_search(**base)
+        self.assertEqual(prepared_search["start_datetime"], "2021-01-01T00:00:00")
+        self.assertEqual(prepared_search["end_datetime"], "2021-01-02T00:00:00")
+        # with both, start/end overwrites datetime
+        base = {
+            "start": "2020-01-01",
+            "end": "2020-02-01",
+            "datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z",
         }
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["start_datetime"], base["start"])

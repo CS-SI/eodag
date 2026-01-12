@@ -73,7 +73,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
-from eodag.utils.dates import rfc3339_str_to_datetime
+from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -1622,14 +1622,18 @@ class EODataAccessGateway:
         kwargs["collection"] = collection
 
         if start is not None:
+            if kwargs.pop("datetime", None):
+                logger.warning("datetime filter is overwritten by start")
             kwargs["start_datetime"] = start
         if end is not None:
+            if kwargs.pop("datetime", None):
+                logger.warning("datetime filter is overwritten by end")
             kwargs["end_datetime"] = end
-        if "box" in kwargs or "bbox" in kwargs:
-            logger.warning(
-                "'box' or 'bbox' parameters are only supported for backwards "
-                " compatibility reasons. Usage of 'geom' is recommended."
-            )
+        if not start and not end and "datetime" in kwargs:
+            datetimes = get_datetime(kwargs)
+            kwargs["start_datetime"] = datetimes[0]
+            kwargs["end_datetime"] = datetimes[1]
+
         if geom is not None:
             kwargs["geometry"] = geom
         box = kwargs.pop("box", None)
