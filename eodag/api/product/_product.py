@@ -721,3 +721,21 @@ class EOProduct:
                     <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
                 </tr>
             </table>"""
+
+    def to_xarray(self) -> None:
+        """Convert the EOProduct to an xarray Dataset.
+
+        This method is a placeholder and should be implemented in a subclass
+        or by installing the `eodag-cube` package. It is intended to provide
+        additional functionality for handling EOProduct data in an xarray context.
+        """
+        raise NotImplementedError("Install eodag-cube to make this method available.")
+
+    def augment_to_xarray(self) -> None:
+        """Augment the EOProduct with xarray capabilities.
+
+        This method is a placeholder and should be implemented in a subclass
+        or by installing the `eodag-cube` package. It is intended to provide
+        additional functionality for handling EOProduct data in an xarray context.
+        """
+        raise NotImplementedError("Install eodag-cube to make this method available.")
