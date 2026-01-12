@@ -17,10 +17,11 @@
 # limitations under the License.
 
 import unittest
+from typing import Literal
 
-from pydantic import ValidationError
+from pydantic import ValidationError, create_model
 
-from eodag.types import search_args
+from eodag.types import queryables, search_args
 from eodag.utils.exceptions import ValidationError as EodagValidationError
 
 
@@ -94,4 +95,126 @@ class TestStacSearch(unittest.TestCase):
             "'eodagSortParam' parameter is called several times to sort results with different sorting "
             "orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
             str(e.exception.message),
+        )
+
+
+class TestQueryables(unittest.TestCase):
+    def setUp(self):
+        super(TestQueryables, self).setUp()
+        self.model = create_model(
+            "Queryables",
+            ecmwf_date=(
+                Literal[
+                    "2020-10-06",
+                    "2021-05-18",
+                    "2021-10-12",
+                    "2023-06-27",
+                    "2024-11-12/2026-01-12",
+                ],
+                ...,
+            ),
+            __base__=queryables.Queryables,
+        )
+
+    def test_search_ecmwf_date(self):
+        """search used with "ecmwf_date" argument must not raise errors if the argument is correct"""
+        self.model.model_validate(
+            {
+                "collection": "dummy_collection",
+                "ecmwf_date": "2020-10-06",
+            }
+        )
+        self.model.model_validate(
+            {
+                "collection": "dummy_collection",
+                "ecmwf_date": "2025-01-10",
+            }
+        )
+        self.model.model_validate(
+            {
+                "collection": "dummy_collection",
+                "ecmwf_date": "2025-01-05/2025-01-10",
+            }
+        )
+
+    def test_search_ecmwf_date_with_errors(self):
+        """search used with "ecmwf_date" argument must raise errors if the argument is incorrect"""
+        # not a string
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {"collection": "dummy_collection", "ecmwf_date": ["foo"]}
+            )
+        self.assertIn(
+            "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')",
+            str(context.exception),
+        )
+        # empty string
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {"collection": "dummy_collection", "ecmwf_date": ""}
+            )
+        self.assertIn(
+            "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')",
+            str(context.exception),
+        )
+        # wrong format
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {"collection": "dummy_collection", "ecmwf_date": "2025-31-12"}
+            )
+        self.assertIn(
+            "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')",
+            str(context.exception),
+        )
+        # invalid date
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {"collection": "dummy_collection", "ecmwf_date": "2025-02-29"}
+            )
+        self.assertIn(
+            "date must follow 'yyyy-mm-dd' format",
+            str(context.exception),
+        )
+        # end date before start date
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {
+                    "collection": "dummy_collection",
+                    "ecmwf_date": "2025-01-10/2025-01-05",
+                }
+            )
+        self.assertIn(
+            "date range end must be after start",
+            str(context.exception),
+        )
+        # date not allowed by constraints
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {"collection": "dummy_collection", "ecmwf_date": "2020-10-07"}
+            )
+        self.assertIn(
+            "date not allowed",
+            str(context.exception),
+        )
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {
+                    "collection": "dummy_collection",
+                    "ecmwf_date": "2020-10-06/2020-10-10",
+                }
+            )
+        self.assertIn(
+            "date not allowed",
+            str(context.exception),
+        )
+        with self.assertRaises(ValidationError) as context:
+            self.model.model_validate(
+                {
+                    "collection": "dummy_collection",
+                    "ecmwf_date": "2024-11-10/2024-11-12",
+                }
+            )
+        self.assertIn(
+            "date not allowed",
+            str(context.exception),
         )
