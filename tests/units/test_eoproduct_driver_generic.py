@@ -82,6 +82,12 @@ class TestEOProductDriverGeneric(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/tilejson.json?foo", self.product
+            ),
+            ("tilejson.json", ["metadata"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
                 "s3://foo/1/28/0/thumbnail.png", self.product
             ),
             ("thumbnail.png", ["thumbnail"]),

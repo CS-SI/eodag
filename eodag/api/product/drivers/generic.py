@@ -45,7 +45,8 @@ class GenericDriver(DatasetDriver):
         # metadata
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$",
+                re.IGNORECASE,
             ),
             "roles": ["metadata"],
         },

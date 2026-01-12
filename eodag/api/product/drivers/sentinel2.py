@@ -40,7 +40,9 @@ class Sentinel2Driver(DatasetDriver):
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
         # masks
         {
-            "pattern": re.compile(r"^.*?(MSK_[^/\\]+)\.(?:jp2|tiff?)(?:\?.*)?$", re.IGNORECASE),
+            "pattern": re.compile(
+                r"^.*?(MSK_[^/\\]+)\.(?:jp2|tiff?)(?:\?.*)?$", re.IGNORECASE
+            ),
             "roles": ["data-mask"],
         },
         # visual
@@ -53,14 +55,16 @@ class Sentinel2Driver(DatasetDriver):
         # bands
         {
             "pattern": re.compile(
-                r"^.*?([A-Z]+[0-9]*[A-Z]?)(_[0-9]+m)?\.(?:jp2|tiff?)(?:\?.*)?$", re.IGNORECASE
+                r"^.*?([A-Z]+[0-9]*[A-Z]?)(_[0-9]+m)?\.(?:jp2|tiff?)(?:\?.*)?$",
+                re.IGNORECASE,
             ),
             "roles": ["data"],
         },
         # metadata
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$",
+                re.IGNORECASE,
             ),
             "roles": ["metadata"],
         },
@@ -80,7 +84,10 @@ class Sentinel2Driver(DatasetDriver):
             "roles": ["overview"],
         },
         # default
-        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)(?:\?.*)?$"), "roles": ["auxiliary"]},
+        {
+            "pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)(?:\?.*)?$"),
+            "roles": ["auxiliary"],
+        },
     ]
 
     def _normalize_key(self, key: str, eo_product: EOProduct) -> str:
