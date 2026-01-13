@@ -24,6 +24,7 @@ import random
 import shutil
 import string
 import tempfile
+import time
 import zipfile
 
 import geojson
@@ -479,9 +480,14 @@ class TestEOProduct(EODagTestCase):
         # should be product id cast to str
         self.assertEqual(progress_callback.desc, "12345")
 
+        # Progressbar need at least "progress_callback.mininterval" seconds, here 0.1 second
+        # Wait 0.2 to be sure progress ends
+        time.sleep(0.2)
+
         # progress bar finished
-        self.assertEqual(progress_callback.n, progress_callback.total)
-        self.assertGreater(progress_callback.total, 0)
+        self.assertEqual(progress_callback.initial, 0)
+        self.assertEqual(progress_callback.total, 1)
+        self.assertEqual(progress_callback.pos, 1)
 
     def test_eoproduct_register_downloader(self):
         """eoproduct.register_donwloader must set download and auth plugins"""

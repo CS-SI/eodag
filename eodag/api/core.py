@@ -155,11 +155,14 @@ class EODataAccessGateway:
             user_conf_file_path = os.getenv(env_var_name)
             if user_conf_file_path is None:
                 user_conf_file_path = standard_configuration_path
-                if not os.path.isfile(standard_configuration_path):
+                source = str(
+                    res_files("eodag") / "resources" / "user_conf_template.yml"
+                )
+                if os.path.isfile(source) and not os.path.isfile(
+                    standard_configuration_path
+                ):
                     shutil.copy(
-                        str(
-                            res_files("eodag") / "resources" / "user_conf_template.yml"
-                        ),
+                        source,
                         standard_configuration_path,
                     )
         self._providers.update_from_config_file(user_conf_file_path)

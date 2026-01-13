@@ -25,8 +25,6 @@ import os
 import sys
 from unittest import mock
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-
 from eodag import EODataAccessGateway, api, config, setup_logging
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
@@ -45,7 +43,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
-from eodag.cli import download, eodag, list_col, search_crunch
+from eodag.cli import download, eodag_cli, list_col, search_crunch
 from eodag.config import (
     load_default_config,
     load_stac_provider_config,
