@@ -1687,7 +1687,17 @@ def format_pydantic_error(e: PydanticValidationError) -> str:
     error_header = f"{e.error_count()} error(s). "
 
     def concat_loc_names(location: tuple):
-        """Concatenate location names, excluding list indexes"""
+        """Concatenate location names, excluding list indexes.
+
+        :param location: Location components
+        :returns: Concatenation of the string elements of the location
+
+        Examples:
+            >>> concat_loc_names(("variable", 0))
+            'variable'
+            >>> concat_loc_names(("location", "latitude"))
+            'location.latitude'
+        """
         str_loc = (loc for loc in location if type(loc) is str)
         return ".".join(str_loc)
 

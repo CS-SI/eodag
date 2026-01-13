@@ -73,7 +73,18 @@ def get_timestamp(date_time: str) -> float:
 
 
 def datetime_range(start: dt, end: dt) -> Iterator[dt]:
-    """Generator function for all dates in-between ``start`` and ``end`` date."""
+    """Generator function for all dates in-between ``start`` and ``end`` date.
+
+    :param start: Start date
+    :param end: End date
+    :returns: Generator of dates
+
+    Examples:
+        >>> from eodag.utils.dates import datetime_range
+        >>> from datetime import datetime
+        >>> list(datetime_range(datetime(2020, 12, 31), datetime(2021, 1, 1)))
+        [datetime.datetime(2020, 12, 31, 0, 0), datetime.datetime(2021, 1, 1, 0, 0)]
+    """
     delta = end - start
     for nday in range(delta.days + 1):
         yield start + datetime.timedelta(days=nday)
@@ -164,6 +175,9 @@ def get_date(date: Optional[str]) -> Optional[str]:
     """
     Check if the input date can be parsed as a date
 
+    :param date: The date to parse
+    :returns: The datetime represented with ISO format
+
     Examples:
         >>> from eodag.utils.exceptions import ValidationError
         >>> get_date("2023-09-23")
@@ -221,18 +235,46 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
 def get_min_max(
     value: Optional[Union[str, list[str]]] = None,
 ) -> tuple[Optional[str], Optional[str]]:
-    """Returns the min and max from a list of strings or the same string if a single string is given."""
+    """Returns the min and max from a list of strings or the same string if a single string is given.
+
+    :param value: a single string or a list of strings
+    :returns: a tuple with the min and max values
+
+    Examples:
+        >>> get_min_max(["a", "c", "b"])
+        ('a', 'c')
+        >>> get_min_max(["a"])
+        ('a', 'a')
+        >>> get_min_max("a")
+        ('a', 'a')
+    """
     if isinstance(value, list):
         sorted_values = sorted(value)
         return sorted_values[0], sorted_values[-1]
     return value, value
 
 
-def append_time(input_date: date, time: Optional[str]) -> dt:
+def append_time(input_date: date, time: Optional[str] = None) -> dt:
     """
     Parses a time string in format HHMM and appends it to a date.
 
-    if the time string is in format HH:MM or HH_MM we convert it to HHMM
+    If the time string is in format HH:MM or HH_MM we convert it to HHMM.
+
+    :param input_date: Date to combine with the time
+    :param time: (optional) time string in format HHMM, HH:MM or HH_MM
+    :returns: Datetime obtained by appenting the time to the date
+
+    Examples:
+        >>> from eodag.utils.dates import append_time
+        >>> from datetime import date
+        >>> append_time(date(2020, 12, 13))
+        datetime.datetime(2020, 12, 13, 0, 0)
+        >>> append_time(date(2020, 12, 13), "")
+        datetime.datetime(2020, 12, 13, 0, 0)
+        >>> append_time(date(2020, 12, 13), "2400")
+        datetime.datetime(2020, 12, 13, 0, 0)
+        >>> append_time(date(2020, 12, 13), "14_31")
+        datetime.datetime(2020, 12, 13, 14, 31)
     """
     if not time:
         time = "0000"
@@ -247,7 +289,17 @@ def append_time(input_date: date, time: Optional[str]) -> dt:
 def parse_date(
     date: str, time: Optional[Union[str, list[str]]] = None
 ) -> tuple[dt, dt]:
-    """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
+    """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals.
+
+    :param date: Single or interval date string
+    :returns: A tuple with the start and end datetime
+
+    Examples:
+        >>> parse_date("2020-12-15")
+        (datetime.datetime(2020, 12, 15, 0, 0), datetime.datetime(2020, 12, 15, 0, 0))
+        >>> parse_date("2020-12-15/to/20201230")
+        (datetime.datetime(2020, 12, 15, 0, 0), datetime.datetime(2020, 12, 30, 0, 0))
+    """
     if "to" in date:
         start_date_str, end_date_str = date.split("/to/")
     elif "/" in date:
@@ -282,7 +334,19 @@ def parse_year_month_day(
     day: Optional[Union[str, list[str]]] = None,
     time: Optional[Union[str, list[str]]] = None,
 ) -> tuple[dt, dt]:
-    """Extracts and returns the year, month, day, and time from the parameters."""
+    """Extracts and returns the year, month, day, and time from the parameters
+    and returns a tuple with the minimum and maximum datetimes.
+
+    :param year: List of years or a single one
+    :param month: (optional) List of months or a single one
+    :param day: (optional) List of days or a single one
+    :param time: (optional) List of times or a single one in the format HHMM, HH:MM or HH_MM
+    :returns: A tuple with the start and end datetime
+
+    Examples:
+        >>> parse_year_month_day(["2020", "2021", "2022"], ["01", "03", "05"], "01", ["0000", "1200"])
+        (datetime.datetime(2020, 1, 1, 0, 0), datetime.datetime(2022, 5, 1, 12, 0))
+    """
 
     def build_date(year, month=None, day=None, time=None) -> dt:
         """Datetime from default_date with updated year, month, day and time."""
@@ -306,10 +370,31 @@ def parse_year_month_day(
 
 
 def format_date(date: dt) -> str:
-    """Format a ``datetime`` with the format 'YYYY-MM-DD'"""
+    """Format a ``datetime`` with the format 'YYYY-MM-DD'.
+
+    :param date: Datetime to format
+    :returns: Date string in the format 'YYYY-MM-DD'
+
+    Examples:
+        >>> from datetime import datetime
+        >>> format_date(datetime(2020, 12, 2))
+        '2020-12-02'
+        >>> format_date(datetime(2020, 12, 2, 11, 22, 33))
+        '2020-12-02'
+    """
     return date.isoformat()[:10]
 
 
 def format_date_range(start: dt, end: dt) -> str:
-    """Format a range with the format 'YYYY-MM-DD/YYYY-MM-DD'"""
+    """Format a range with the format 'YYYY-MM-DD/YYYY-MM-DD'.
+
+    :param start: Start datetime
+    :param end: End datetime
+    :returns: Date range in the format 'YYYY-MM-DD/YYYY-MM-DD'
+
+    Examples:
+        >>> from datetime import datetime
+        >>> format_date_range(datetime(2020, 12, 2, 11, 22, 33), datetime(2020, 12, 31))
+        '2020-12-02/2020-12-31'
+    """
     return f"{format_date(start)}/{format_date(end)}"
