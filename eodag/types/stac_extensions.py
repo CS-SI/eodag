@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from eodag.utils import ONLINE_STATUS
 
-Percentage = Annotated[int, Ge(0), Le(100)]
+Percentage = Annotated[float, Ge(0), Le(100)]
 
 
 class BaseStacExtension(BaseModel):
@@ -294,7 +294,7 @@ class MgrsFields(BaseModel):
 
     mgrs_grid_square: Optional[str] = Field(default=None)
     mgrs_latitude_band: Optional[str] = Field(default=None)
-    mgrs_utm_zone: Optional[str] = Field(default=None)
+    mgrs_utm_zone: Optional[int] = Field(default=None)
 
 
 class MgrsExtension(BaseStacExtension):

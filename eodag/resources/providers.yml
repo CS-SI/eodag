@@ -2966,8 +2966,8 @@
         platform: properties.platform
     metadata_mapping:
       grid:code:
-        - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code}"}}}}}}'
-        - '$.properties."s2:mgrs_tile"'
+        - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
+        - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
   products:
     S1_SAR_GRD:
       _collection: sentinel-1-grd
@@ -6106,6 +6106,9 @@
       sat:absolute_orbit:
         - '{{"query":{{"sat:absolute_orbit":{{"eq":{sat:absolute_orbit}}}}}}}'
         - '$.properties."sat:absolute_orbit"'
+      sat:orbit_state:
+        - '{{"query":{{"sat:orbit_state":{{"eq":{sat:orbit_state}}}}}}}'
+        - '{$.properties.sat:orbit_state#to_lower}'
       sat:relative_orbit:
         - '{{"query":{{"sat:relative_orbit":{{"eq":{sat:relative_orbit}}}}}}}'
         - '$.properties."sat:relative_orbit"'
@@ -6133,6 +6136,7 @@
       grid:code:
         - '{{"query":{{"grid:code":{{"contains":"{grid:code#replace_str("MGRS-","T")}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
       eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
@@ -6236,6 +6240,9 @@
       sat:absolute_orbit:
         - '{{"query":{{"sat:absolute_orbit":{{"eq":{sat:absolute_orbit}}}}}}}'
         - '$.properties."sat:absolute_orbit"'
+      sat:orbit_state:
+        - '{{"query":{{"sat:orbit_state":{{"eq":{sat:orbit_state}}}}}}}'
+        - '{$.properties.sat:orbit_state#to_lower}'
       sat:relative_orbit:
         - '{{"query":{{"sat:relative_orbit":{{"eq":{sat:relative_orbit}}}}}}}'
         - '$.properties."sat:relative_orbit"'
@@ -6263,6 +6270,7 @@
       grid:code:
         - '{{"query":{{"grid:code":{{"contains":"{grid:code#replace_str("MGRS-","T")}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
       eodag:download_link: '$.properties.endpoint_url'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
