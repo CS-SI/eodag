@@ -23,6 +23,7 @@ import tempfile
 
 from requests.models import Response
 from shapely import geometry
+from stac_validator import stac_validator
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
@@ -116,6 +117,12 @@ class TestCoreSearchResults(EODagTestCase):
             # specified file
             path = self.dag.serialize(self.search_result, filename=f.name)
             self.assertEqual(path, f.name)
+        stac = stac_validator.StacValidate(
+            path, item_collection=True, links=True, assets=True
+        )
+        stac.validate_item_collection()
+        for msg in stac.message:
+            self.assertTrue(msg["valid_stac"], stac.message)
         with open(path, "r") as f:
             self.make_assertions(f)
         os.unlink(path)
