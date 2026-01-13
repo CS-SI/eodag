@@ -824,9 +824,7 @@ class ECMWFSearch(PostJsonSearch):
                 )
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
-                raise ValidationError(
-                    f"'{keyword}' is not a queryable parameter", {keyword}
-                )
+                raise ValidationError("'%s' is not a queryable parameter" % keyword)
 
         # generate queryables
         if form:
