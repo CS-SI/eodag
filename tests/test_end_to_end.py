@@ -18,10 +18,10 @@
 
 import datetime
 import hashlib
-import multiprocessing
 import os
 import re
 import shutil
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -349,20 +349,24 @@ class TestEODagEndToEnd(EndToEndBase):
     def tearDownClass(cls):
         cls.tmp_download_dir.cleanup()
 
-    def execute_download(self, product, expected_filename, wait_sec=5, timeout_sec=120):
-        """Download the product in a child process, avoiding to perform the entire
+    def execute_download(
+        self, product, expected_filename=None, wait_sec=5, timeout_sec=120
+    ):
+        """Download the product in a child thread, avoiding to perform the entire
         download, then do some checks and delete the downloaded result from the
         filesystem.
         """
 
         start_time = time.time()
 
-        dl_pool = multiprocessing.Pool()
-
-        dl_result = dl_pool.apply_async(
-            func=self.eodag.download,
-            args=(product, None, wait_sec / 60, timeout_sec / 60),
+        download_thread = threading.Thread(
+            target=self.eodag.download,
+            args=(product, None, None, wait_sec / 60, timeout_sec / 60),
+            kwargs={"output_dir": self.tmp_download_path, "extract": False},
+            daemon=True,
         )
+        download_thread.start()
+
         max_wait_time = timeout_sec
         while (
             sum(
@@ -373,26 +377,21 @@ class TestEODagEndToEnd(EndToEndBase):
             <= 0
             and max_wait_time > 0
         ):
-            # check every 2s if download has start
-            dl_result.wait(2)
+            time.sleep(2)
             max_wait_time -= 2
 
-        try:
-            dl_result.get(timeout=wait_sec)
-        except multiprocessing.TimeoutError:
-            pass
-
-        dl_pool.terminate()
-        dl_pool.close()
+        # Wait for the thread to complete or timeout
+        download_thread.join(timeout=wait_sec)
 
         stop_time = time.time()
         print(stop_time - start_time)
 
-        self.assertIn(
-            expected_filename, os.listdir(product.downloader.config.output_dir)
-        )
+        if expected_filename is None:
+            expected_filename = product.properties["title"]
+
+        self.assertIn(expected_filename, os.listdir(self.tmp_download_path))
         self.downloaded_file_path = os.path.join(
-            product.downloader.config.output_dir, expected_filename
+            self.tmp_download_path, expected_filename
         )
         # check whether expected_filename refers to a file or a dir
         if os.path.isdir(self.downloaded_file_path):
