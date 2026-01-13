@@ -1636,6 +1636,8 @@ class EODataAccessGateway:
 
         if geom is not None:
             kwargs["geometry"] = geom
+        elif "intersects" in kwargs:
+            kwargs["geometry"] = kwargs.pop("intersects")
         box = kwargs.pop("box", None)
         box = kwargs.pop("bbox", box)
         if geom is None and box is not None:

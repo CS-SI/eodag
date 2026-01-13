@@ -22,7 +22,7 @@ from collections import UserDict
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from annotated_types import Lt
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
@@ -67,12 +67,17 @@ class CommonQueryables(BaseModelCustomJsonSchema):
         >>> CommonQueryables.get_queryable_from_alias('collection')
         'collection'
         """
-        alias_map = {
-            field_info.alias: name
-            for name, field_info in cls.model_fields.items()
-            if field_info.alias
-        }
-        return alias_map.get(value, value)
+        for name, field_info in cls.model_fields.items():
+            if field_info.alias:
+                if isinstance(field_info.alias, AliasChoices):
+                    aliases = [a[0] for a in field_info.alias.convert_to_aliases()]
+                    if value in aliases:
+                        return name
+                else:
+                    if value == field_info.alias:
+                        return name
+
+        return value
 
     @classmethod
     def get_with_default(
@@ -119,7 +124,7 @@ class Queryables(CommonQueryables):
         str,
         Field(
             None,
-            alias="start_datetime",
+            alias=AliasChoices("start_datetime", "datetime"),
             description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
         ),
     ]
@@ -135,7 +140,7 @@ class Queryables(CommonQueryables):
         Union[str, dict[str, float], BaseGeometry],
         Field(
             None,
-            alias="geometry",
+            alias=AliasChoices("geometry", "intersects"),
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]

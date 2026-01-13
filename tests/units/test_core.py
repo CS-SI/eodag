@@ -2699,6 +2699,16 @@ class TestCoreSearch(TestCoreBase):
         self.assertNotIn("bbox", prepared_search)
         self.assertNotIn("bbox", prepared_search)
         self.assertIsInstance(prepared_search["geometry"], Polygon)
+        base = {
+            "intersects": {
+                "type": "Polygon",
+                "coordinates": [[[6, 53], [6, 73], [37, 73], [37, 53], [6, 53]]],
+            }
+        }
+        _, prepared_search = self.dag._prepare_search(**base)
+        self.assertIn("geometry", prepared_search)
+        self.assertNotIn("intersects", prepared_search)
+        self.assertIsInstance(prepared_search["geometry"], Polygon)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
