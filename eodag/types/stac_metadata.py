@@ -238,12 +238,12 @@ def _get_conformance_classes(self) -> list[str]:
 
     model_fields_by_alias = {
         field_info.serialization_alias: field_info
-        for name, field_info in self.model_fields.items()
+        for name, field_info in self.__class__.model_fields.items()
         if field_info.serialization_alias
     }
 
     for f in self.model_fields_set:
-        mf = model_fields_by_alias.get(f) or self.model_fields.get(f)
+        mf = model_fields_by_alias.get(f) or self.__class__.model_fields.get(f)
         if not mf or not isinstance(mf, FieldInfo) or not mf.metadata:
             continue
         extension = next(

@@ -25,6 +25,7 @@ import tempfile
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
+import orjson
 import requests
 from requests import RequestException
 from requests.auth import AuthBase
@@ -215,7 +216,9 @@ class EOProduct:
         """
         search_intersection = None
         if self.search_intersection is not None:
-            search_intersection = geometry.mapping(self.search_intersection)
+            search_intersection = orjson.loads(
+                orjson.dumps(self.search_intersection.__geo_interface__)
+            )
 
         stac_properties = {
             **{
@@ -226,17 +229,28 @@ class EOProduct:
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
         }
+        stac_providers = self.properties.get("providers", [])
+        if not any("host" in p.get("roles", []) for p in stac_providers):
+            stac_providers.append({"name": self.provider, "roles": ["host"]})
+            stac_properties["providers"] = stac_providers
+
         props_model = cast(CommonStacMetadata, create_stac_metadata_model())
         props_validated = props_model.model_validate(stac_properties)
 
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
-            "geometry": geometry.mapping(self.geometry),
-            "bbox": self.geometry.bounds,
+            "geometry": orjson.loads(orjson.dumps(self.geometry.__geo_interface__)),
+            "bbox": list(self.geometry.bounds),
             "id": self.properties["id"],
             "assets": self.assets.as_dict(),
             "properties": stac_properties,
-            "links": [],
+            "links": [
+                {
+                    "rel": "collection",
+                    "href": f"./{self.collection}.json",
+                    "type": "application/json",
+                },
+            ],
             "stac_extensions": props_validated.get_conformance_classes(),
             "stac_version": "1.1.0",
             "collection": self.collection,
