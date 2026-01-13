@@ -319,29 +319,6 @@ class TestEODagEndToEnd(EndToEndBase):
         cls.tmp_download_dir = TemporaryDirectory()
         cls.tmp_download_path = cls.tmp_download_dir.name
 
-        for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to cls.tmp_download_path for tests
-            if hasattr(conf, "download") and hasattr(conf.download, "output_dir"):
-                conf.download.output_dir = cls.tmp_download_path
-            elif hasattr(conf, "api") and hasattr(conf.api, "output_dir"):
-                conf.api.output_dir = cls.tmp_download_path
-            else:
-                # no output_dir found for provider
-                pass
-            # Force all providers implementing RestoSearch and defining how to retrieve
-            # products by specifying the
-            # location scheme to use https, enabling actual downloading of the product
-            if (
-                getattr(getattr(conf, "search", {}), "product_location_scheme", "https")
-                == "file"
-            ):
-                conf.search.product_location_scheme = "https"
-            # Disable extraction
-            try:  # Case HTTPDownload plugin
-                conf.download.extract = False
-            except (KeyError, AttributeError):  # case api plugin
-                conf.api.extract = False
-
     def setUp(self):
         self.downloaded_file_path = ""
 
