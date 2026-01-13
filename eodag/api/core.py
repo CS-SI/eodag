@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import geojson
 import yaml
+from pydantic import AliasChoices
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
@@ -2227,7 +2228,12 @@ class EODataAccessGateway:
             queryables_fields = Queryables.from_stac_models().model_fields
             for search_param, field_info in queryables_fields.items():
                 if search_param in kwargs and field_info.alias:
-                    kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+                    if isinstance(field_info.alias, AliasChoices):
+                        kwargs_alias[
+                            field_info.alias.convert_to_aliases()[0][0]
+                        ] = kwargs_alias.pop(search_param)
+                    else:
+                        kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
 
             plugin_queryables = plugin.list_queryables(
                 kwargs_alias,

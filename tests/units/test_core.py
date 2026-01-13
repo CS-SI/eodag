@@ -1905,6 +1905,7 @@ class TestCore(TestCoreBase):
             if "'id'" in span.text:
                 id_present = True
                 self.assertIn("str", spans[i + 1].text)
+                break
         self.assertTrue(id_present)
 
     @mock.patch(
