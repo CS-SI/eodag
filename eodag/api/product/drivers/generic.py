@@ -66,5 +66,8 @@ class GenericDriver(DatasetDriver):
             "roles": ["overview"],
         },
         # default
-        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)$"), "roles": ["auxiliary"]},
+        {
+            "pattern": re.compile(r"^(?:.*[/\\])?([^/\\?]+)(?:\?.*)?$"),
+            "roles": ["auxiliary"],
+        },
     ]

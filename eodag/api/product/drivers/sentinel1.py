@@ -85,7 +85,7 @@ class Sentinel1Driver(DatasetDriver):
         },
         # default
         {
-            "pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)(?:\?.*)?$"),
+            "pattern": re.compile(r"^(?:.*[/\\])?([^/\\?]+)(?:\?.*)?$"),
             "roles": ["auxiliary"],
         },
     ]
