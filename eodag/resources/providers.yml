@@ -3377,19 +3377,17 @@
     CLMS_GLO_NDVI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
-      product:identifier: ndvi_global_300m_10daily_v1
+      _product_identifier: ndvi_global_300m_10daily_v1
       metadata_mapping:
-        product:identifier:
-        - '{{"productIdentifier": "{product:identifier}"}}'
+        _product_identifier:
+        - '{{"productIdentifier": "{_product_identifier}"}}'
         - '$.null'
-        id:
-        - '{{"productIdentifier": "{id}"}}'
-        - '$.id'
+        id: '$.id'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
-      product:identifier: ndvi-lts_global_1km_10daily_v2
+      _product_identifier: ndvi-lts_global_1km_10daily_v2
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
@@ -3410,27 +3408,27 @@
     CLMS_GLO_FCOVER_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      product:identifier: fcover_global_300m_10daily_v1
+      _product_identifier: fcover_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_DMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      product:identifier: dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1
+      _product_identifier: dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_GDMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      product:identifier: gdmp_global_300m_10daily_v1
+      _product_identifier: gdmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_FAPAR_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      product:identifier: fapar_global_300m_10daily_v1
+      _product_identifier: fapar_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_LAI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      product:identifier: lai_global_300m_10daily_v1
+      _product_identifier: lai_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_HRVPP_ST:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST
