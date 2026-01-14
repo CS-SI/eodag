@@ -38,12 +38,13 @@ class Sentinel1Driver(DatasetDriver):
         (re.compile(r"grd", re.IGNORECASE), ""),
         (re.compile(r"slc", re.IGNORECASE), ""),
         (re.compile(r"ocn", re.IGNORECASE), ""),
-        (re.compile(r"iw", re.IGNORECASE), ""),
-        (re.compile(r"ew", re.IGNORECASE), ""),
+        (re.compile(r"(?<![A-Za-z])iw(?![A-Za-z])", re.IGNORECASE), ""),
+        (re.compile(r"(?<![A-Za-z])ew(?![A-Za-z])", re.IGNORECASE), ""),
         (re.compile(r"wv", re.IGNORECASE), ""),
-        (re.compile(r"sm", re.IGNORECASE), ""),
-        (re.compile(r"raw([-_]s)?", re.IGNORECASE), ""),
+        (re.compile(r"(?<![A-Za-z])sm(?![A-Za-z])", re.IGNORECASE), ""),
+        (re.compile(r"(?<![A-Za-z])raw([-_]s)?(?![A-Za-z])", re.IGNORECASE), ""),
         (re.compile(r"[t?0-9]{3,}", re.IGNORECASE), ""),
+        (re.compile(r"\b[0-9A-F]{3,}\b", re.IGNORECASE), ""),
         (re.compile(r"-+"), "-"),
         (re.compile(r"-+\."), "."),
         (re.compile(r"_+"), "_"),
@@ -55,34 +56,38 @@ class Sentinel1Driver(DatasetDriver):
         # data
         {
             "pattern": re.compile(
-                r"^.*?([vh]{2}).*\.(?:jp2|tiff?|dat)$", re.IGNORECASE
+                r"^.*?([vh]{2}).*\.(?:jp2|tiff?|dat)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["data"],
         },
         # metadata
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)(?:\?.*)?$",
+                re.IGNORECASE,
             ),
             "roles": ["metadata"],
         },
         # thumbnail
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?(thumbnail)(\.jpe?g|\.png)$", re.IGNORECASE
+                r"^(?:.*[/\\])?(thumbnail)(\.jpe?g|\.png)(?:\?.*)?$", re.IGNORECASE
             ),
             "roles": ["thumbnail"],
         },
         # quicklook
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpe?g|\.png)$",
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpe?g|\.png)(?:\?.*)?$",
                 re.IGNORECASE,
             ),
             "roles": ["overview"],
         },
         # default
-        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)$"), "roles": ["auxiliary"]},
+        {
+            "pattern": re.compile(r"^(?:.*[/\\])?([^/\\?]+)(?:\?.*)?$"),
+            "roles": ["auxiliary"],
+        },
     ]
 
     def _normalize_key(self, key: str, eo_product: EOProduct) -> str:

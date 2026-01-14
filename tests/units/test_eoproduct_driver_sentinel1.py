@@ -52,7 +52,7 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
-                "http://foo/1/28/0/iw-hh.tif", self.product
+                "http://foo/1/28/0/iw-hh.tif?foo", self.product
             ),
             ("HH", ["data"]),
         )
@@ -61,6 +61,18 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
                 "s3://foo/1/28/0/s1a-vv.tiff", self.product
             ),
             ("VV", ["data"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/calibration-vh-05a44d.xml", self.product
+            ),
+            ("calibration-vh.xml", ["metadata"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/tilejson.json?foo", self.product
+            ),
+            ("tilejson.json", ["metadata"]),
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
@@ -76,13 +88,25 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/preview.png?collection=foo&items=foo", self.product
+            ),
+            ("preview.png", ["overview"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
                 "s3://foo/1/28/0/quick-look.jpg", self.product
             ),
             ("quick-look.jpg", ["overview"]),
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
-                "s3://foo/1/28/0/foo.bar", self.product
+                "s3://foo/1/28/0/foo.bar?baz", self.product
             ),
             ("foo.bar", ["auxiliary"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/foo.bar.baz", self.product
+            ),
+            ("foo.bar.baz", ["auxiliary"]),
         )
