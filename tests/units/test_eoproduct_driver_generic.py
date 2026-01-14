@@ -70,7 +70,7 @@ class TestEOProductDriverGeneric(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
-                "2018/1/28/0/ew-hv.foo", self.product
+                "2018/1/28/0/ew-hv.foo?bar", self.product
             ),
             ("ew-hv.foo", ["auxiliary"]),
         )

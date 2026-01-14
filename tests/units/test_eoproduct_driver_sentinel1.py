@@ -52,7 +52,7 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
-                "http://foo/1/28/0/iw-hh.tif", self.product
+                "http://foo/1/28/0/iw-hh.tif?foo", self.product
             ),
             ("HH", ["data"]),
         )
@@ -100,7 +100,13 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
-                "s3://foo/1/28/0/foo.bar", self.product
+                "s3://foo/1/28/0/foo.bar?baz", self.product
             ),
             ("foo.bar", ["auxiliary"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/foo.bar.baz", self.product
+            ),
+            ("foo.bar.baz", ["auxiliary"]),
         )
