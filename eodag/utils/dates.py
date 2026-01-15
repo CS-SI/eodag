@@ -80,10 +80,18 @@ def datetime_range(start: dt, end: dt) -> Iterator[dt]:
     :returns: Generator of dates
 
     Examples:
-        >>> from eodag.utils.dates import datetime_range
         >>> from datetime import datetime
-        >>> list(datetime_range(datetime(2020, 12, 31), datetime(2021, 1, 1)))
-        [datetime.datetime(2020, 12, 31, 0, 0), datetime.datetime(2021, 1, 1, 0, 0)]
+        >>> dtr = datetime_range(datetime(2020, 12, 31), datetime(2021, 1, 2))
+        >>> next(dtr)
+        datetime.datetime(2020, 12, 31, 0, 0)
+        >>> next(dtr)
+        datetime.datetime(2021, 1, 1, 0, 0)
+        >>> next(dtr)
+        datetime.datetime(2021, 1, 2, 0, 0)
+        >>> next(dtr)
+        Traceback (most recent call last):
+        ...
+        StopIteration
     """
     delta = end - start
     for nday in range(delta.days + 1):
@@ -255,10 +263,7 @@ def get_min_max(
 
 
 def append_time(input_date: date, time: Optional[str] = None) -> dt:
-    """
-    Parses a time string in format HHMM and appends it to a date.
-
-    If the time string is in format HH:MM or HH_MM we convert it to HHMM.
+    """Appends a string-formatted time to a date.
 
     :param input_date: Date to combine with the time
     :param time: (optional) time string in format HHMM, HH:MM or HH_MM
@@ -334,8 +339,7 @@ def parse_year_month_day(
     day: Optional[Union[str, list[str]]] = None,
     time: Optional[Union[str, list[str]]] = None,
 ) -> tuple[dt, dt]:
-    """Extracts and returns the year, month, day, and time from the parameters
-    and returns a tuple with the minimum and maximum datetimes.
+    """Returns minimum and maximum datetimes from given lists of years, months, days, times.
 
     :param year: List of years or a single one
     :param month: (optional) List of months or a single one
