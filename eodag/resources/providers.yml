@@ -3562,7 +3562,7 @@
             prefix: EO:ECMWF:DAT:CAMS
         discover_queryables:
           fetch_url: null
-          product_type_fetch_url: null
+          collection_fetch_url: null
           constraints_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
           form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
       - collection_selector: # cop_cds
@@ -3588,7 +3588,7 @@
             prefix: EO:ECMWF:DAT:CEMS
         discover_queryables:
           fetch_url: null
-          product_type_fetch_url: null
+          collection_fetch_url: null
           constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
           form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
     metadata_mapping:
