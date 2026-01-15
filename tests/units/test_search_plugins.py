@@ -1374,11 +1374,13 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             **{"_collection": "CAMS_EAC4"},
         )
         search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
+        # `date` mapping to pass validation of ECMWF parameters
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "startdate": "2003-01-01T00:00:00.000Z",
                 "enddate": "2003-01-01T00:00:00.000Z",
+                "date": "2003-01-01/2003-01-01",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "itemsPerPage": 20,
                 "startIndex": 0,
@@ -3077,6 +3079,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         return_value={},
     )
     @mock.patch(
+        "eodag.plugins.search.build_search_result.get_geometry_from_ecmwf_location",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.build_search_result.get_geometry_from_ecmwf_feature",
         autospec=True,
     )
@@ -3088,6 +3094,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self,
         mock_get_geometry_from_ecmwf_area,
         mock_get_geometry_from_ecmwf_feature,
+        mock_get_geometry_from_ecmwf_location,
         mock__fetch_data,
     ):
         """Custom geometry must be converted to Shapely polygon."""
@@ -3101,6 +3108,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 [50.0, 50.0],
             ],
             "type": "polygon",
+        }
+        location = {
+            "latitude": 30.0,
+            "longitude": 30.0,
         }
 
         # area
@@ -3120,6 +3131,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         queryables = self.search_plugin.discover_queryables(**params)
         self.assertIn("geom", queryables)
         mock_get_geometry_from_ecmwf_feature.assert_called_once_with(shape)
+
+        # location
+        params = {
+            "collection": "CAMS_EU_AIR_QUALITY_RE",
+            "location": location,
+        }
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIn("geom", queryables)
+        mock_get_geometry_from_ecmwf_location.assert_called_once_with(location)
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
@@ -3164,6 +3184,21 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             params = {
                 "collection": "CAMS_EU_AIR_QUALITY_RE",
                 "feature": feature,
+            }
+            with self.assertRaises(ValidationError):
+                self.search_plugin.discover_queryables(**params)
+
+        # location
+        location_values = [
+            "foo",  # not a dict
+            {"lorem": "foo", "ipsum": "boo"},  # missing both fields
+            {"latitude": 40, "ipsum": "boo"},  # missing one field
+            {"latitude": 40, "longitude": "boo"},  # value is not a number
+        ]
+        for location in location_values:
+            params = {
+                "collection": "CAMS_EU_AIR_QUALITY_RE",
+                "location": location,
             }
             with self.assertRaises(ValidationError):
                 self.search_plugin.discover_queryables(**params)
