@@ -394,6 +394,7 @@ S1_AUX_GNSSRD:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: AUX
@@ -412,6 +413,7 @@ S1_AUX_MOEORB:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: AUX
@@ -430,6 +432,7 @@ S1_AUX_POEORB:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: AUX
@@ -448,6 +451,7 @@ S1_AUX_PREORB:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: AUX
@@ -466,6 +470,7 @@ S1_AUX_PROQUA:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: AUX
@@ -484,6 +489,7 @@ S1_AUX_RESORB:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: AUX
@@ -502,6 +508,7 @@ S1_SAR_L3_IW_MCM:
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L3
@@ -520,6 +527,7 @@ S1_SAR_L3_DH_MCM:
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L3
@@ -543,6 +551,7 @@ S1_SAR_OCN:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L2
@@ -567,6 +576,7 @@ S1_SAR_GRD:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -591,6 +601,7 @@ S1_SAR_GRD_JP2:
     Product without SAFE formatting, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -615,6 +626,7 @@ S1_SAR_GRD_COG:
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -633,6 +645,7 @@ S1_SAR_SLC:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L1
@@ -650,6 +663,7 @@ S1_SAR_RAW:
     SAFE formatted product, see
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instruments: ["SAR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
   processing:level: L0
@@ -671,6 +685,7 @@ S2_MSI_L1C:
     and ECMWF data (total column of ozone, total column of water vapour and mean sea level pressure).
     SAFE formatted product, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instruments: ["MSI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L1
@@ -691,6 +706,7 @@ S2_MSI_L1C_JP2:
     and ECMWF data (total column of ozone, total column of water vapour and mean sea level pressure).
     Product without SAFE formatting, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instruments: ["MSI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L1
@@ -706,6 +722,7 @@ S2_MSI_L2A:
     products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
     SAFE formatted product, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instruments: ["MSI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -721,6 +738,7 @@ S2_MSI_L2A_JP2:
     products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
     Product without SAFE formatting, see https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/data-formats
   instruments: ["MSI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -736,6 +754,7 @@ S2_MSI_L2A_COG:
     products. Each Level-2A product is composed of 100x100 km2 tiles in cartographic geometry (UTM/WGS84 projection).
     Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
   instruments: ["MSI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -752,6 +771,7 @@ S2_MSI_L2A_MAJA:
     are downloaded from PEPS. The full description of the product format is available at
     https://theia.cnes.fr/atdistrib/documents/PSC-NT-411-0362-CNES_01_00_SENTINEL-2A_L2A_Products_Description.pdf
   instruments: ["MSI"]
+  providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -768,6 +788,7 @@ S2_MSI_L2B_MAJA_SNOW:
     file (8 bits GeoTIFF) of 20 m resolution and a vector file (Shapefile polygons). More details about the snow
     products description are available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=10748#en
   instruments: ["MSI"]
+  providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -782,6 +803,7 @@ S2_MSI_L2B_MAJA_WATER:
     A description of the Land Water Quality data distributed by Theia is available at
     https://theia.cnes.fr/atdistrib/documents/THEIA-ST-411-0477-CNES_01-03_Format_Specification_of_OBS2CO_WaterColor_Products.pdf
   instruments: ["MSI"]
+  providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: SENTINEL2
   platform: S2A,S2B,S2C
   processing:level: L2
@@ -807,6 +829,7 @@ S3_EFR:
     less than 30 days. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the
     EU Copernicus programme.
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -830,6 +853,7 @@ S3_EFR_BC002:
     less than 30 days. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the
     EU Copernicus programme.
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -853,6 +877,7 @@ S3_ERR:
     - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in less than 30 days Sentinel-3 is
     part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -875,6 +900,7 @@ S3_ERR_BC002:
     series of Sentinel satellites, under the umbrella of the EU Copernicus programme. This collection contains
     reprocessed data from baseline collection 002. Operational data can be found in the corresponding collection.
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -888,6 +914,7 @@ S3_RAC:
   description: |
     Sentinel 3 OLCI products output during Radiometric Calibration mode
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -906,6 +933,7 @@ S3_OLCI_L2LRR:
     (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-land
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -923,6 +951,7 @@ S3_OLCI_L2LFR:
     within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-land
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -940,6 +969,7 @@ S3_OLCI_L2WRR:
     (NTC) (i.e. within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -958,6 +988,7 @@ S3_OLCI_L2WRR_BC003:
     This collection contains reprocessed data from baseline collection 003. Operational data can be found in the
     corresponding collection.
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -975,6 +1006,7 @@ S3_OLCI_L2WFR:
     within 1 month after acquisition) or in re-processed NTC.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -994,6 +1026,7 @@ S3_OLCI_L2WFR_BC003:
     corresponding collection.
     Details at https://sentinel.esa.int/web/sentinel/user-guides/sentinel-3-olci/product-types/level-2-water
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1012,6 +1045,7 @@ S3_OLCI_L4BALTIC:
     Temporal resolution: monthly Spatial resolution: 300 meters To find this product in the catalogue, use the search
     keyword ""OCEANCOLOUR_BAL_BGC_L4_NRT"". DOI (product) : https://doi.org/10.48670/moi-00295
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L4
@@ -1030,6 +1064,7 @@ S3_OL_2_WFRBC003:
     300m resolution. This collection contains reprocessed data from baseline collection 003. Operational data
     can be found in the corresponding collection.
   instruments: ["OLCI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1049,6 +1084,7 @@ S3_SLSTR_L1RBT:
     SLSTR channels, and quality flags, pixel classification information
     and meteorological annotations
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1069,6 +1105,7 @@ S3_SLSTR_L1RBT_BC003:
     This collection contains reprocessed data from baseline collection 003. Operational data can be found
     in the corresponding collection.
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1089,6 +1126,7 @@ S3_SLSTR_L1RBT_BC004:
     umbrella of the EU Copernicus programme. This collection contains reprocessed data from baseline collection 004.
     Operational data can be found in the corresponding collection.
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1104,6 +1142,7 @@ S3_SLSTR_L2LST:
     It contains measurement file with Land Surface Temperature (LST) values with associated parameters (LST
     parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1119,6 +1158,7 @@ S3_SLSTR_L2WST:
     It contains measurement file with Water Surface Temperature (WST) values with associated parameters (WST
     parameters are computed and provided for each pixel (re-gridded or orphan) included in the 1 km measurement grid)
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1135,6 +1175,7 @@ S3_SLSTR_L2WST_BC003:
     satellites, under the umbrella of the EU Copernicus programme. This collection contains reprocessed data from
     baseline collection 003. Operational data can be found in the corresponding collection.
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1152,6 +1193,7 @@ S3_SLSTR_L2AOD:
     NOTE: The SLSTR L2 AOD product is generated by EUMETSAT in NRT only. An offline (NTC) AOD product is generated
     from SYN data by ESA, exploiting the synergy between the SLSTR and OLCI instruments.
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1168,6 +1210,7 @@ S3_SLSTR_L2FRP:
     The fire detection is based on a mixed thermal band, combining S7 radiometric measurements and,
     for pixels associated with a saturated value of S7 (i.e. above 311 K), F1 radiometric measurements.
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1193,6 +1236,7 @@ S3_SLSTR_L2:
     format is identical to the files in the Level-1 packet.The SL_2_LST packet contains 10 annotation files, providing
     the same parameters as in SL_2_WCT and, in addition, some vegetation parameters.
   instruments: ["SLSTR"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1212,6 +1256,7 @@ S3_SRA:
     in less than 30 days. - All Sentinel-3 Short Time Critical (STC) products are available at pick-up point in less
     than 48 hours. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1227,6 +1272,7 @@ S3_SRA_A:
     ECHO_SAR_Ku: L1A Tracking measurements (sorted and calibrated) in SAR mode - Ku-band (80-Hz)
     ECHO_PLRM: L1A Tracking measurements (sorted and calibrated) in pseudo-LRM mode - Ku and C bands (80-Hz)
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1244,6 +1290,7 @@ S3_SRA_BS:
     ECHO_PLRM : L1b Tracking measurements in pseudo-LRM mode - Ku and C bands (20-Hz) as defined in the L1b
                 MEAS product
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1
@@ -1262,6 +1309,7 @@ S3_SRA_1A_BC004:
     satellites, under the umbrella of the EU Copernicus programme. This collection contains reprocessed data from
     baseline collection 004. Operational data can be found in the corresponding collection.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1A
@@ -1279,6 +1327,7 @@ S3_SRA_1A_BC005:
     the umbrella of the EU Copernicus programme. This dataset contains reprocessed data from Baseline Collection 005,
     and is continued by the operational NTC data stream from 10/Mar/2023 onwards.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1A
@@ -1297,6 +1346,7 @@ S3_SRA_1B_BC004:
     the umbrella of the EU Copernicus programme. This collection contains reprocessed data from baseline collection 004.
     Operational data can be found in the corresponding collection.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1B
@@ -1314,6 +1364,7 @@ S3_SRA_1B_BC005:
     of the EU Copernicus programme. This dataset contains reprocessed data from Baseline Collection 005, and is continued
     by the operational NTC data stream from 10/Mar/2023 onwards.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1B
@@ -1335,6 +1386,7 @@ S3_SRA_BS_BC004:
     the umbrella of the EU Copernicus programme. This collection contains reprocessed data from baseline collection 004.
     Operational data can be found in the corresponding collection.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1B
@@ -1355,6 +1407,7 @@ S3_SRA_BS_BC005:
     the umbrella of the EU Copernicus programme. This dataset contains reprocessed data from Baseline Collection 005,
     and is continued by the operational NTC data stream from 10/Mar/2023 onwards.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L1B
@@ -1379,6 +1432,7 @@ S3_WAT:
     than 30 days - All Sentinel-3 Short Time Critical (STC) products are available at pick-up point in less than 48
     hours Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1400,6 +1454,7 @@ S3_WAT_BC004:
     Copernicus programme. This collection contains reprocessed data from baseline collection 004. Operational data can
     be found in the corresponding collection.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1421,6 +1476,7 @@ S3_WAT_BC005:
     Copernicus programme. This collection contains reprocessed data from baseline collection 004. Operational data can
     be found in the corresponding collection.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1433,6 +1489,7 @@ S3_WAT_BC005:
 S3_LAN:
   description: LAN or SR_2_LAN___ (peps)
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1457,6 +1514,7 @@ S3_LAN_HY:
     sheet, and Greenland ice sheet interior. Over coastal zones the 50 km common area between Land and Marine products
     remains. Therefore, the Hydrology products cover up to 25 km over surfaces considered as Marine.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1481,6 +1539,7 @@ S3_LAN_SI:
     Ice Thematic Products, the mask remains static, and the coverage was calculated by the Expert Support
     Laboratories (ESL) of the Sentinel-3 MPC, based on the maximum of sea ice extent given a NSIDC sea ice climatology.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -1505,6 +1564,7 @@ S3_LAN_LI:
     Land Ice Thematic Products, the mask includes the Antarctica and Greenland ice sheets, along with glacier areas as
     defined in the Randolph Glacier Inventory (RGI) database.
   instruments: ["SRAL"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -2106,6 +2166,7 @@ S3_SY_SYN:
     Some sub-sampled annotations and atmospheric datasets are provided on the OLCI tie-points grid.
     Several associated variables are also provided in annotation data files.
   instruments: ["SYNERGY"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -2122,6 +2183,7 @@ S3_SY_AOD:
     sea, aerosol optical thickness. The resolution of this product is wider than classic S3 products,
     as the dataset are provided on a 4.5 km² resolution
   instruments: ["SYNERGY"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: L2
@@ -2138,6 +2200,7 @@ S3_SY_V10:
     reflectances and NDVI. The product grid and the four spectral bands are similar to the SYN Level-2
     VGP product.
   instruments: ["SYNERGY"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: LEVEL-2W
@@ -2154,6 +2217,7 @@ S3_SY_VG1:
     reflectances and NDVI. The product grid and the four spectral bands are similar to the SYN Level-2
     VGP product.
   instruments: ["SYNERGY"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: LEVEL-2
@@ -2170,6 +2234,7 @@ S3_SY_VGP:
     means that measurements are provided on a regular latitude-longitude grid, with an equatorial
     sampling distance of approximately 1 km. This product is restricted in longitude, including only filled ones.
   instruments: ["SYNERGY"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
   processing:level: LEVEL-2
@@ -2190,6 +2255,7 @@ S5P_L1B2_IR_ALL:
     (non-scanning), with a swath width of ~2600 km on the Earth's surface. The typical pixel size (near nadir) will
     be 7x3.5 km2 for all spectral bands, with the exception of the UV1 band (7x28 km2) and SWIR bands (7x7 km2).
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B, L2
@@ -2209,6 +2275,7 @@ S5P_L1B_IR_ALL:
     (non-scanning), with a swath width of ~2600 km on the Earth's surface. The typical pixel size (near nadir) will
     be 7x3.5 km2 for all spectral bands, with the exception of the UV1 band (7x28 km2) and SWIR bands (7x7 km2).
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2229,6 +2296,7 @@ S5P_L2_IR_ALL:
     Level 2 data provides total columns of ozone, sulfur dioxide, nitrogen dioxide, carbon monoxide, formaldehyde,
     tropospheric columns of ozone, vertical profiles of ozone and cloud & aerosol information.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2250,6 +2318,7 @@ S5P_L1B_IR_SIR:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2271,6 +2340,7 @@ S5P_L1B_IR_UVN:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2292,6 +2362,7 @@ S5P_L1B_RA_BD1:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2313,6 +2384,7 @@ S5P_L1B_RA_BD2:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2334,6 +2406,7 @@ S5P_L1B_RA_BD3:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2355,6 +2428,7 @@ S5P_L1B_RA_BD4:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2376,6 +2450,7 @@ S5P_L1B_RA_BD5:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2397,6 +2472,7 @@ S5P_L1B_RA_BD6:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2418,6 +2494,7 @@ S5P_L1B_RA_BD7:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2439,6 +2516,7 @@ S5P_L1B_RA_BD8:
     on the SWIR part of the instrument.
     Each of the detectors is divided in two halves, which yields a total of eight spectral bands.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L1B
@@ -2456,6 +2534,7 @@ S5P_L2_NO2:
     tropospheric contributions of the retrieved slant columns, and in the calculation of the air-mass factors used to
     convert slant to total columns.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2473,6 +2552,7 @@ S5P_L2_CLOUD:
     gas retrievals, but also to extend the satellite data record of cloud information derived from oxygen A-band
     measurements initiated with GOME.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2491,6 +2571,7 @@ S5P_L2_O3:
     These products are provided in NetCDF-CF format and contain total ozone, ozone temperature, and error information
     including averaging kernels.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2508,6 +2589,7 @@ S5P_L2_CO:
     tropospheric boundary layer. For cloudy atmospheres, the column sensitivity changes according to the light path.
     The TROPOMI CO retrieval uses the same method employed by SCIAMACHY.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2525,6 +2607,7 @@ S5P_L2_AER_AI:
     is possible. This is ideal for tracking the evolution of episodic aerosol plumes from dust outbreaks, volcanic ash,
     and biomass burning.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2544,6 +2627,7 @@ S5P_L2_O3_PR:
     in 6 layers. In addition, the total ozone column and tropospheric ozone columns are provided. For the ozone profile,
     the precision and smoothing errors, the a-priori profile and the averaging kernel are also provided.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2565,6 +2649,7 @@ S5P_L2_O3_TCL:
     columns on a 0.5° by 1° latitude-longitude grid for the tropical region between 20°N and 20°S. The TROPOMI
     tropospheric ozone column product uses the TROPOMI Level-2 total OZONE and CLOUD products as input.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2583,6 +2668,7 @@ S5P_L2_AER_LH:
     modelling and studies of cloud formation processes. Aerosol height information also helps to interpret the UV
     Aerosol Index (UVAI) in terms of aerosol absorption as the index is strongly height-dependent.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2602,6 +2688,7 @@ S5P_L2_HCHO:
     In addition to the main product results, such as HCHO slant column, vertical column and air mass factor, the level 2
     data files contain several additional parameters and diagnostic information.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2629,6 +2716,7 @@ S5P_L2_CH4:
     (SUOMI-National Polar-orbiting Partnership) mission to use VIIRS (Visible Infrared Imaging Radiometer Suite) cloud
     information to select cloud free TROPOMI pixels for high quality methane retrieval.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2653,6 +2741,7 @@ S5P_L2_NP_BD3:
     2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
     This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2677,6 +2766,7 @@ S5P_L2_NP_BD6:
     2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
     This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2701,6 +2791,7 @@ S5P_L2_NP_BD7:
     2. The mean and standard deviation of the sun-normalised radiance in a number of VIIRS moderate resolution bands.
     This information is provided for three S5P spectral bands (to account for differences in spatial sampling).
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2719,6 +2810,7 @@ S5P_L2_SO2:
     SO2 values is essential in order to detect and monitor volcanic eruptions and anthropogenic pollution sources.
     Volcanic SO2 emissions may also pose a threat to aviation, along with volcanic ash.
   instruments: ["TROPOMI"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL5P
   platform: S5P
   processing:level: L2
@@ -2740,6 +2832,7 @@ S6_P4_L1AHR_F06:
     mission, implemented and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the
     National Oceanic and Atmospheric Administration (NOAA).
   instruments: ["Poseidon-4"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL6-A
   platform: S6A
   processing:level: L1A
@@ -2760,6 +2853,7 @@ S6_P4_L1BLR_F06:
     and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and
     Atmospheric Administration (NOAA).
   instruments: ["Poseidon-4"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL6-A
   platform: S6A
   processing:level: L1B
@@ -2780,6 +2874,7 @@ S6_P4_L1BAHR_F06:
     co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and
     Atmospheric Administration (NOAA).
   instruments: ["Poseidon-4"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL6-A
   platform: S6A
   processing:level: L1B
@@ -2803,6 +2898,7 @@ S6_P4_L2LR_F06:
     and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and
     Atmospheric Administration (NOAA).
   instruments: ["Poseidon-4"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL6-A
   platform: S6A
   processing:level: L2
@@ -2828,6 +2924,7 @@ S6_P4_L2HR_F06:
     European Commission, ESA, EUMETSAT and the USA, through NASA and the National Oceanic and Atmospheric
     Administration (NOAA).
   instruments: ["Poseidon-4"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL6-A
   platform: S6A
   processing:level: L2
@@ -2846,6 +2943,7 @@ S6_AMR_L2_F06:
     Copernicus mission, implemented and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
     and the National Oceanic and Atmospheric Administration (NOAA).
   instruments: ["AMR-C"]
+  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL6-A
   platform: S6A
   processing:level: L2
@@ -2874,6 +2972,7 @@ VENUS_L2A_MAJA:
     Level2 products provide surface reflectances after atmospheric correction, along with masks of clouds and their
     shadows. Data is processed by MAJA (before called MACCS) for THEIA land data center.
   instruments: []
+  providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: VENUS
   platform: VENUS
   processing:level: L2A
@@ -2886,6 +2985,7 @@ VENUS_L2A_MAJA:
 VENUS_L3A_MAJA:
   description: ""
   instruments: []
+  providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: VENUS
   platform: VENUS
   processing:level: L3A
