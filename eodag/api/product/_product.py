@@ -56,6 +56,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    STAC_VERSION,
     USER_AGENT,
     ProgressCallback,
     format_string,
@@ -247,12 +248,12 @@ class EOProduct:
             "links": [
                 {
                     "rel": "collection",
-                    "href": f"./{self.collection}.json",
+                    "href": f"{self.collection}.json",
                     "type": "application/json",
                 },
             ],
             "stac_extensions": props_validated.get_conformance_classes(),
-            "stac_version": "1.1.0",
+            "stac_version": STAC_VERSION,
             "collection": self.collection,
         }
         return geojson_repr

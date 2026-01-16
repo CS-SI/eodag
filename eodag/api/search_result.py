@@ -32,7 +32,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
-from eodag.utils import GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS
+from eodag.utils import GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS, STAC_VERSION
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
@@ -208,7 +208,7 @@ class SearchResult(UserList[EOProduct]):
             },
             "links": [],
             "stac_extensions": [],
-            "stac_version": "1.1.0",
+            "stac_version": STAC_VERSION,
         }
 
     def as_shapely_geometry_object(self) -> GeometryCollection:

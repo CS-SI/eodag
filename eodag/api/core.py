@@ -30,6 +30,7 @@ from copy import deepcopy
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import attrgetter, itemgetter
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import geojson
@@ -1986,8 +1987,23 @@ class EODataAccessGateway:
         :param filename: (optional) The name of the file to generate
         :returns: The name of the created file
         """
+        search_result_dict = search_result.as_geojson_object()
+        # write search results
         with open(filename, "w") as fh:
-            geojson.dump(search_result.as_geojson_object(), fh)
+            geojson.dump(search_result_dict, fh)
+            logger.debug("Search results saved to %s", filename)
+        # write collection(s)
+        if search_result._dag is None:
+            return filename
+        collections = set(p.collection for p in search_result)
+        for collection in collections:
+            collection_obj = search_result._dag.collections_config.get(
+                collection, Collection(id=collection)
+            )
+            with open(Path(filename).parent / f"{collection}.json", "w") as fh:
+                geojson.dump(collection_obj.serialize(), fh)
+                logger.debug("Collection '%s' saved to %s", collection, fh.name)
+
         return filename
 
     @staticmethod

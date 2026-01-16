@@ -145,6 +145,8 @@ KNOWN_NEXT_PAGE_TOKEN_KEYS = ["token", "next", "page", "skip"]
 
 ONLINE_STATUS = "succeeded"
 
+STAC_VERSION = "1.1.0"
+
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
 mimetypes.add_type("application/x-grib", ".grib")
