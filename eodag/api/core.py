@@ -1988,6 +1988,15 @@ class EODataAccessGateway:
         :returns: The name of the created file
         """
         search_result_dict = search_result.as_geojson_object()
+        # add self link
+        search_result_dict.setdefault("links", [])
+        search_result_dict["links"].append(
+            {
+                "rel": "self",
+                "href": f"{filename}",
+                "type": "application/json",
+            },
+        )
         # write search results
         with open(filename, "w") as fh:
             geojson.dump(search_result_dict, fh)
@@ -2000,8 +2009,18 @@ class EODataAccessGateway:
             collection_obj = search_result._dag.collections_config.get(
                 collection, Collection(id=collection)
             )
+            collection_dict = collection_obj.serialize()
+            # add links
+            collection_dict.setdefault("links", [])
+            collection_dict["links"].append(
+                {
+                    "rel": "self",
+                    "href": f"{collection}.json",
+                    "type": "application/json",
+                },
+            )
             with open(Path(filename).parent / f"{collection}.json", "w") as fh:
-                geojson.dump(collection_obj.serialize(), fh)
+                geojson.dump(collection_dict, fh)
                 logger.debug("Collection '%s' saved to %s", collection, fh.name)
 
         return filename

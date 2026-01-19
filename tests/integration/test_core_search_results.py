@@ -131,6 +131,20 @@ class TestCoreSearchResults(EODagTestCase):
             with open(path, "r") as f:
                 self.make_assertions(f)
 
+            # check links
+            with open(path) as f:
+                serialized = json.load(f)
+            self.assertIn("links", serialized)
+            self.assertEqual(len(serialized["links"]), 1)
+            self.assertEqual(serialized["links"][0]["rel"], "self")
+            self.assertEqual(serialized["links"][0]["href"], f.name)
+            self.assertEqual(len(serialized["features"][0]["links"]), 1)
+            self.assertEqual(serialized["features"][0]["links"][0]["rel"], "collection")
+            self.assertEqual(
+                serialized["features"][0]["links"][0]["href"],
+                f"{self.search_result[0].collection}.json",
+            )
+
             # check associated serialized collection
             self.assertEqual(len(self.search_result), 1)
             collection_path = tmpdir_path / f"{self.search_result[0].collection}.json"
@@ -140,6 +154,14 @@ class TestCoreSearchResults(EODagTestCase):
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
+            with open(collection_path) as f:
+                collection_dict = json.load(f)
+            self.assertEqual(len(collection_dict["links"]), 1)
+            self.assertEqual(collection_dict["links"][0]["rel"], "self")
+            self.assertEqual(
+                collection_dict["links"][0]["href"],
+                f"{self.search_result[0].collection}.json",
+            )
 
     def test_core_serialize_search_results_unknown_collection(self):
         """The core api must serialize a search results with unknown collection to STAC feature collection"""
