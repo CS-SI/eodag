@@ -318,7 +318,7 @@ class EOProduct:
     def __repr__(self) -> str:
         try:
             return "{}(id={}, provider={})".format(
-                self.__class__.__name__, self.properties["id"], self.provider
+                self.__class__.__name__, self.properties.get("id", "?"), self.provider
             )
         except KeyError as e:
             raise MisconfiguredError(
@@ -675,8 +675,16 @@ class EOProduct:
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
         for driver_conf in DRIVERS:
-            if all([criteria(self) for criteria in driver_conf["criteria"]]):
+
+            # Select a driver if all criterias match
+            match = True
+            for criteria in driver_conf["criteria"]:
+                if not criteria(self):
+                    match = False
+                    break
+            if match:
                 return driver_conf["driver"]
+
         return GenericDriver()
 
     def _repr_html_(self):

@@ -34,9 +34,6 @@ except ImportError:
     from ._assets import Asset, AssetsDict  # type: ignore[assignment]
     from ._product import EOProduct  # type: ignore[assignment]
 
-# exportable content
-__all__ = ["Asset", "AssetsDict", "EOProduct"]
-
 
 def unregistered_product_from_item(
     feature: dict[str, Any], provider: str, plugins_manager: "PluginManager"
@@ -60,3 +57,7 @@ def unregistered_product_from_item(
                     products[0].collection = products[0].properties.get("collection")
                 return products[0]
     return None
+
+
+# exportable content
+__all__ = ["Asset", "AssetsDict", "EOProduct", "unregistered_product_from_item"]
