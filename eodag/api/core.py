@@ -1634,6 +1634,14 @@ class EODataAccessGateway:
             datetimes = get_datetime(kwargs)
             kwargs["start_datetime"] = datetimes[0]
             kwargs["end_datetime"] = datetimes[1]
+        if "sort_by" in kwargs:
+            new_sort_by = []
+            for param_tuple in kwargs["sort_by"]:
+                if param_tuple[0] == "datetime":
+                    new_sort_by.append(("start_datetime", param_tuple[1]))
+                else:
+                    new_sort_by.append(param_tuple)
+            kwargs["sort_by"] = new_sort_by
 
         if geom is not None:
             kwargs["geometry"] = geom

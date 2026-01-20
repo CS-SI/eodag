@@ -2665,6 +2665,13 @@ class TestCoreSearch(TestCoreBase):
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["start_datetime"], base["start"])
         self.assertEqual(prepared_search["end_datetime"], base["end"])
+        # with sort by datetime
+        base = {
+            "datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z",
+            "sort_by": [("datetime", "DESC")],
+        }
+        _, prepared_search = self.dag._prepare_search(**base)
+        self.assertListEqual([("start_datetime", "DESC")], prepared_search["sort_by"])
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
