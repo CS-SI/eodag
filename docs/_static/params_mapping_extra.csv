@@ -6,7 +6,7 @@ acquisitionInformation,,,,,,,metadata only,,,,,,
 assets,,,,metadata only,metadata only,,metadata only,metadata only,metadata only,,metadata only,,metadata only
 beginningDateTime,metadata only,,metadata only,,,,,,,,,,
 collection,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
-constellation,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
+constellation,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
 created,,,,,,,,,,metadata only,,metadata only,
 datetime,,,,metadata only,metadata only,,,metadata only,metadata only,,metadata only,,metadata only
 description,,,,,,,,,,metadata only,,metadata only,
