@@ -221,6 +221,7 @@ class EOProduct:
                 orjson.dumps(self.search_intersection.__geo_interface__)
             )
 
+        # product properties
         stac_properties = {
             **{
                 key: value
@@ -237,6 +238,18 @@ class EOProduct:
 
         props_model = cast(CommonStacMetadata, create_stac_metadata_model())
         props_validated = props_model.model_validate(stac_properties)
+        stac_extensions: set[str] = set(props_validated.get_conformance_classes())
+
+        # get conformance classes for assets properties
+        for asset_properties in self.assets.values():
+            asset_props_validated = props_model.model_validate(
+                {
+                    k: v
+                    for k, v in asset_properties.items()
+                    if k not in ["title", "roles", "type", "href", "bands"]
+                }
+            )
+            stac_extensions.update(asset_props_validated.get_conformance_classes())
 
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
@@ -252,7 +265,7 @@ class EOProduct:
                     "type": "application/json",
                 },
             ],
-            "stac_extensions": props_validated.get_conformance_classes(),
+            "stac_extensions": list(stac_extensions),
             "stac_version": STAC_VERSION,
             "collection": self.collection,
         }
