@@ -641,3 +641,25 @@ class TestEOProduct(EODagTestCase):
                 "datetime": None,
             },
         )
+
+    def test_eoproduct_serialize(self):
+        """eoproduct.as_dict must include the required STAC extensions"""
+        product = self._dummy_product()
+        product.properties["grid:code"] = "MGRS-31TCJ"
+        product.assets.update(
+            {
+                "foo": {
+                    "href": "https://example.com/asset/foo.tif",
+                    "title": "foo asset",
+                    "type": "image/tiff",
+                    "proj:shape": [3, 343, 343],
+                }
+            }
+        )
+        prod_dict = product.as_dict()
+        self.assertTrue(
+            any("grid" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        self.assertTrue(
+            any("proj" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
