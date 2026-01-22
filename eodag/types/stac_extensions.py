@@ -27,6 +27,48 @@ from eodag.utils import ONLINE_STATUS
 Percentage = Annotated[float, Ge(0), Le(100)]
 
 
+class Centroid(BaseModel):
+    """Centroid object for projection extension.
+
+    https://github.com/stac-extensions/projection#centroid-object
+    """
+
+    lat: Optional[float] = Field(None)
+    lon: Optional[float] = Field(None)
+
+
+class CubeDimension(BaseModel):
+    """Cube dimension object for datacube extension.
+
+    https://github.com/stac-extensions/datacube#dimension-object
+    """
+
+    type: Optional[str] = Field(None)
+    axis: Optional[str] = Field(None)
+    description: Optional[str] = Field(None)
+    extent: Optional[list[float]] = Field(None)
+    values: Optional[list[float]] = Field(None)
+    step: Optional[float] = Field(None)
+    unit: Optional[str] = Field(None)
+    reference_system: Optional[Union[str, int, dict[str, Any]]] = Field(None)
+
+
+class CubeVariable(BaseModel):
+    """Cube variable object for datacube extension.
+
+    https://github.com/stac-extensions/datacube#variable-object
+    """
+
+    dimensions: Optional[list[str]] = Field(None)
+    type: Optional[str] = Field(None)
+    description: Optional[str] = Field(None)
+    extent: Optional[list[Union[float, str, None]]] = Field(None)
+    values: Optional[list[Union[float, str]]] = Field(None)
+    unit: Optional[str] = Field(None)
+    nodata: Optional[Union[float, str]] = Field(None)
+    data_type: Optional[str] = Field(None)
+
+
 class BaseStacExtension(BaseModel):
     """Abstract base class for defining STAC extensions."""
 
@@ -306,6 +348,48 @@ class MgrsExtension(BaseStacExtension):
     field_name_prefix: Optional[str] = "mgrs"
 
 
+class ProjectionFields(BaseModel):
+    """
+    https://github.com/stac-extensions/projection
+    """
+
+    proj_code: Optional[str] = Field(default=None)
+    proj_wkt2: Optional[str] = Field(default=None)
+    proj_projjson: Optional[dict[str, Any]] = Field(default=None)
+    proj_geometry: Optional[dict[str, Any]] = Field(default=None)
+    proj_bbox: Optional[list[float]] = Field(default=None)
+    proj_centroid: Optional[Centroid] = Field(default=None)
+    proj_shape: Optional[list[int]] = Field(default=None)
+    proj_transform: Optional[list[float]] = Field(default=None)
+
+
+class ProjectionExtension(BaseStacExtension):
+    """STAC projection extension."""
+
+    FIELDS: type[BaseModel] = ProjectionFields
+
+    schema_href: str = "https://stac-extensions.github.io/projection/v2.0.0/schema.json"
+    field_name_prefix: Optional[str] = "proj"
+
+
+class DatacubeFields(BaseModel):
+    """
+    https://github.com/stac-extensions/datacube
+    """
+
+    cube_dimensions: Optional[dict[str, CubeDimension]] = Field(default=None)
+    cube_variables: Optional[dict[str, CubeVariable]] = Field(default=None)
+
+
+class DatacubeExtension(BaseStacExtension):
+    """STAC datacube extension."""
+
+    FIELDS: type[BaseModel] = DatacubeFields
+
+    schema_href: str = "https://stac-extensions.github.io/datacube/v2.3.0/schema.json"
+    field_name_prefix: Optional[str] = "cube"
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),
@@ -319,4 +403,6 @@ STAC_EXTENSIONS = [
     OrderExtension(),
     GridExtension(),
     MgrsExtension(),
+    ProjectionExtension(),
+    DatacubeExtension(),
 ]
