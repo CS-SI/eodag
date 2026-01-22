@@ -1738,6 +1738,11 @@ class PostJsonSearch(QueryStringSearch):
 
             qp, _ = self.build_query_string(collection, keywords)
 
+        # Force sort qp list parameters
+        for key in qp:
+            if isinstance(qp[key], list):
+                qp[key].sort()
+
         for query_param, query_value in qp.items():
             if (
                 query_param

@@ -23,14 +23,13 @@ import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from types import MethodType
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
 import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
-from dateutil.utils import today
 from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
@@ -52,7 +51,6 @@ from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import (
-    DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
@@ -395,7 +393,6 @@ class ECMWFSearch(PostJsonSearch):
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
-        * :attr:`~eodag.config.PluginConfig.dates_required` (``bool``): if date parameters are mandatory in the request
         * :attr:`~eodag.config.PluginConfig.discover_queryables`
           (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
           provider queryables endpoint; It has the following keys:
@@ -566,16 +563,22 @@ class ECMWFSearch(PostJsonSearch):
             if v is not None
         }
 
-        # dates
-        # check if default dates have to be added
-        if getattr(self.config, "dates_required", False):
-            self._check_date_params(params, collection)
-
         # read 'start_datetime' and 'end_datetime' from 'date' range
         if "date" in params:
             start_date, end_date = parse_date(params["date"])
             params[START] = format_date(start_date)
             params[END] = format_date(end_date)
+
+        # start_datetime /  computed from "date", "time", "year", "month", "day"
+        indirects = self._preprocess_indirect_date_parameters(params)
+        if params.get(START) is None:
+            value = indirects.get("start_datetime", None)
+            if value is not None:
+                params[START] = value
+        if params.get(END) is None:
+            value = indirects.get("end_datetime", None)
+            if value is not None:
+                params[END] = value
 
         # adapt end date if it is midnight
         if END in params:
@@ -623,51 +626,178 @@ class ECMWFSearch(PostJsonSearch):
 
         return params
 
-    def _check_date_params(
-        self, keywords: dict[str, Any], collection: Optional[str]
-    ) -> None:
-        """checks if start and end date are present in the keywords and adds them if not"""
+    def _preprocess_indirect_date_parameters(self, params: dict[str, Any]) -> dict:
+        """
+        Compute start_datetime / computed from "date", "time", "year", "month", "day"
+        """
+        indirects: dict[str, Any] = {}
 
-        if START in keywords and END in keywords:
-            return
-
-        collection_conf = getattr(self.config, "metadata_mapping", {})
-        if (
-            collection
-            and collection in self.config.products
-            and "metadata_mapping" in self.config.products[collection]
+        def __compute_indirect(
+            params: dict, param_name: str, formatters: list[str], indirect: dict
         ):
-            collection_conf = self.config.products[collection]["metadata_mapping"]
+            value = params.get(param_name, None)
+            if value is not None:
+                if not isinstance(value, list):
+                    value = [value]
+                buffer = []
+                has_error = None
+                for item in value:
+                    for formatter in formatters:
+                        try:
+                            _ = datetime.strptime(item, formatter)
+                            buffer.append(item)
+                        except Exception as e:
+                            has_error = e
 
-        # start time given, end time missing
-        if START in keywords:
-            keywords[END] = (
-                keywords[START]
-                if END in collection_conf
-                # else self.get_collection_cfg_value(
-                else self.get_collection_cfg_dates(None, today().isoformat())[1]
-            )
-            return
-
-        if END in collection_conf:
-            mapping = collection_conf[START]
-            if not isinstance(mapping, list):
-                mapping = collection_conf[END]
-            if isinstance(mapping, list):
-                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
-                # no default date is required
-                start, end = ecmwf_temporal_to_eodag(keywords)
-                if start is None:
-                    col_start, col_end = self.get_collection_cfg_dates(
-                        DEFAULT_MISSION_START_DATE, today().isoformat()
-                    )
-                    keywords[START] = col_start
-                    keywords[END] = (
-                        keywords[START] if END in collection_conf else col_end
+                if has_error is not None and len(buffer) == 0:
+                    raise ValidationError(
+                        'Malformed parameter "{}": {}'.format(
+                            param_name, str(has_error)
+                        )
                     )
                 else:
-                    keywords[START] = start
-                    keywords[END] = end
+                    buffer.sort()
+                    indirect[param_name] = buffer
+
+        __compute_indirect(
+            params, "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"], indirects
+        )
+        __compute_indirect(params, "year", ["%Y"], indirects)
+        __compute_indirect(params, "month", ["%m"], indirects)
+        __compute_indirect(params, "day", ["%d"], indirects)
+
+        # Post process
+        if "time" in indirects:
+            buffer = []
+            for time_str in indirects["time"]:
+                time_str = re.sub("[^0-9]+", "", time_str)
+                time_str = time_str.ljust(4, "0")
+                if time_str not in buffer:
+                    buffer.append(time_str)
+            indirects["time"] = buffer
+
+        date = params.get("date", None)
+        if date is not None:
+            try:
+                start, end = parse_date(date, indirects.get("time", None))
+                indirects["start_datetime"] = self._preprocess_parse_iso_date(start)
+                indirects["end_datetime"] = self._preprocess_parse_iso_date(end)
+                return indirects
+            except Exception as e:
+                raise ValidationError(
+                    'Malformed parameter "date" (date given "{}", time given: "{}"): {}'.format(
+                        params.get("date"), params.get("time"), str(e)
+                    )
+                )
+
+        year = indirects.get("year", None)
+        if year is not None:
+            min_year = year[0]
+            max_year = year[-1]
+
+            month = indirects.get("month", None)
+            if month is not None and len(month) > 0:
+                min_month = month[0]
+                max_month = month[-1]
+            else:
+                min_month = "01"
+                max_month = "12"
+
+            day = indirects.get("day", None)
+
+            # Day cleaver
+            min_day = "01"
+            max_day = None
+            if max_month in ["01", "03", "05", "07", "08", "10", "12"]:
+                max_day = "31"
+            elif max_month in ["04", "06", "09", "11"]:
+                max_day = "30"
+            elif max_month == "02":
+                int_year = int(max_year)
+                leap_year = ((int_year % 4) == 0) and (
+                    (int_year % 100) > 0 or (int_year % 400) == 0
+                )
+                if leap_year:
+                    max_day = "29"
+                else:
+                    max_day = "28"
+
+            # Not allow impossible day, trunc in possible day in month
+            if day is not None and len(day) > 0:
+                rmin_day = min_day
+                rmax_day = max_day
+                if day[0] >= min_day and day[0] <= max_day:
+                    rmin_day = day[0]
+                if day[-1] >= min_day and day[-1] <= max_day:
+                    rmax_day = day[-1]
+                min_day, max_day = (rmin_day, rmax_day)
+
+            time = indirects.get("time", None)
+            if time is not None and len(time) > 0:
+                min_hour = time[0][0:2]
+                min_min = time[0][2:4]
+                max_hour = time[-1][0:2]
+                max_min = time[-1][2:4]
+                min_sec = "00"
+                max_sec = "00"
+            else:
+                min_hour = "00"
+                min_min = "00"
+                max_hour = "23"
+                max_min = "59"
+                min_sec = "00"
+                max_sec = "59"
+
+            indirects["start_datetime"] = "{}-{}-{}T{}:{}:{}Z".format(
+                min_year, min_month, min_day, min_hour, min_min, min_sec
+            )
+            indirects["end_datetime"] = "{}-{}-{}T{}:{}:{}Z".format(
+                max_year, max_month, max_day, max_hour, max_min, max_sec
+            )
+
+        return indirects
+
+    def _preprocess_parse_iso_date(
+        self, raw: Optional[Union[datetime, str]]
+    ) -> Optional[str]:
+        """
+        Focrce mixed date format to iso format date
+        """
+        if raw is None:
+            return None
+        if isinstance(raw, datetime):
+            raw = raw.replace(tzinfo=tzutc())
+            return raw.strftime("%Y-%m-%dT%H:%M:%SZ")
+        if not isinstance(raw, str):
+            return None
+
+        for date_format in [
+            "%Y-%m-%d",
+            "%Y-%m-%dT",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%d %H:%M:%SZ",
+            "%Y-%m-%dT%H:%M:%SZ",
+            "%Y-%m-%d %H:%M:%S%Z",
+            "%Y-%m-%dT%H:%M:%S%Z",
+            "%Y-%m-%d %H:%M:%S.000Z",
+            "%Y-%m-%dT%H:%M:%S.000Z",
+            "%Y-%m-%d %H:%M:%S.%LZ",
+            "%Y-%m-%dT%H:%M:%S.%LZ",
+            "%Y-%m-%d %H:%M:%S.000%Z",
+            "%Y-%m-%dT%H:%M:%S.000%Z",
+            "%Y-%m-%d %H:%M:%S.%L%Z",
+            "%Y-%m-%dT%H:%M:%S.%L%Z",
+        ]:
+            try:
+                parsed_datetime = datetime.strptime(raw, date_format)
+                parsed_datetime = parsed_datetime.replace(tzinfo=tzutc())
+                return parsed_datetime.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )  # Force iso formatted
+            except Exception:
+                pass
+        return None
 
     def _get_collection_queryables(
         self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
