@@ -1901,6 +1901,44 @@ class TestCore(TestCoreBase):
             self.assertIn(original_url, form_url)
             mock__fetch_data.reset_mock()
 
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.queryables_by_values",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_list_queryables_date(
+        self,
+        mock__fetch_data: mock.Mock,
+        mock_queryables_by_values: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ):
+        """The date can be passed as string or list"""
+        mock__fetch_data.side_effect = [
+            [{"date": ["2025-01-01/2025-01-31"]}],  # constraints
+            {},  # form
+        ]
+        provider = "wekeo_ecmwf"
+        collection = "AG_ERA5"
+
+        params = {
+            "provider": provider,
+            "collection": collection,
+        }
+
+        params["ecmwf:date"] = "2025-01-01/2025-01-10"
+        self.dag.list_queryables(**params)
+        mock__fetch_data.reset_mock()
+
+        params["ecmwf:date"] = ["2025-01-01/2025-01-10"]
+        self.dag.list_queryables(**params)
+
     def test_queryables_repr(self):
         """The HTML representation of queryables must be correct"""
         queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
