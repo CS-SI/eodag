@@ -1905,22 +1905,20 @@ class TestCore(TestCoreBase):
         mock_auth_plugin: mock.Mock,
     ):
         """The date can be passed as string or list"""
-        mock__fetch_data.side_effect = [
+        side_effect = [
             [{"date": ["2025-01-01/2025-01-31"]}],  # constraints
             {},  # form
         ]
-        provider = "wekeo_ecmwf"
-        collection = "AG_ERA5"
-
         params = {
-            "provider": provider,
-            "collection": collection,
+            "provider": "wekeo_ecmwf",
+            "collection": "AG_ERA5",
         }
 
+        mock__fetch_data.side_effect = side_effect
         params["ecmwf:date"] = "2025-01-01/2025-01-10"
         self.dag.list_queryables(**params)
-        mock__fetch_data.reset_mock()
 
+        mock__fetch_data.side_effect = side_effect
         params["ecmwf:date"] = ["2025-01-01/2025-01-10"]
         self.dag.list_queryables(**params)
 
