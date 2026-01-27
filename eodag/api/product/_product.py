@@ -23,7 +23,7 @@ import os
 import re
 import tempfile
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Union, cast
 
 import orjson
 import requests
@@ -722,20 +722,37 @@ class EOProduct:
                 </tr>
             </table>"""
 
-    def to_xarray(self) -> None:
-        """Convert the EOProduct to an xarray Dataset.
+    def to_xarray(
+        self,
+        asset_key: Optional[str] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        roles: Iterable[str] = {"data", "data-mask"},
+        **xarray_kwargs: Any,
+    ):
+        """
+        Return product data as a dictionary of :class:`xarray.Dataset`.
 
-        This method is a placeholder and should be implemented in a subclass
-        or by installing the `eodag-cube` package. It is intended to provide
-        additional functionality for handling EOProduct data in an xarray context.
+        :param asset_key: (optional) key of the asset. If not specified the whole
+                          product data will be retrieved
+        :param wait: (optional) If order is needed, wait time in minutes between two
+                     order status check
+        :param timeout: (optional) If order is needed, maximum time in minutes before
+                        stop checking order status
+        :param roles: (optional) roles of assets that must be fetched
+        :param xarray_kwargs: (optional) keyword arguments passed to :func:`xarray.open_dataset`
+        :returns: a dictionary of :class:`xarray.Dataset`
         """
         raise NotImplementedError("Install eodag-cube to make this method available.")
 
-    def augment_to_xarray(self) -> None:
-        """Augment the EOProduct with xarray capabilities.
+    def augment_from_xarray(
+        self,
+        roles: Iterable[str] = {"data", "data-mask"},
+    ) -> EOProduct:
+        """
+        Annotate the product properties and assets with STAC metadata got by fetching its xarray representation.
 
-        This method is a placeholder and should be implemented in a subclass
-        or by installing the `eodag-cube` package. It is intended to provide
-        additional functionality for handling EOProduct data in an xarray context.
+        :param roles: (optional) roles of assets that must be fetched
+        :returns: updated EOProduct
         """
         raise NotImplementedError("Install eodag-cube to make this method available.")
