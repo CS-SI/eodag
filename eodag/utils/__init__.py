@@ -143,6 +143,10 @@ DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
 # knwown next page token keys used to guess key in STAC providers next link responses
 KNOWN_NEXT_PAGE_TOKEN_KEYS = ["token", "next", "page", "skip"]
 
+ONLINE_STATUS = "succeeded"
+
+STAC_VERSION = "1.1.0"
+
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
 mimetypes.add_type("application/x-grib", ".grib")

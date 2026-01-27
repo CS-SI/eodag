@@ -106,7 +106,7 @@ class EODagTestCase(unittest.TestCase):
             "collection": self.collection,
             "constellation": "Sentinel-2",
             "platform": self.platform,
-            "instruments": self.instrument,
+            "instruments": [self.instrument],
             "title": self.local_filename,
             "eodag:download_link": self.download_url,
         }

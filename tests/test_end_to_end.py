@@ -28,6 +28,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
+from stac_validator import stac_validator
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH
@@ -219,6 +220,10 @@ FEDEO_CEDA_SEARCH_ARGS = [
 
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.stac = stac_validator.StacValidate()
+
     def execute_search(
         self,
         provider,
@@ -262,6 +267,20 @@ class EndToEndBase(unittest.TestCase):
             self.assertGreater(len(results), 0)
             one_product = results[0]
             self.assertEqual(one_product.provider, provider)
+
+            # validate STAC serialization
+            self.stac.validate_item_collection_dict(results.as_geojson_object())
+            for msg in self.stac.message:
+                self.assertTrue(
+                    msg["valid_stac"],
+                    "%s %s" % (msg.get("error_message", msg), msg.get("failed_schema")),
+                )
+            self.stac.validate_dict(one_product.as_dict())
+            for msg in self.stac.message:
+                self.assertTrue(
+                    msg["valid_stac"],
+                    "%s %s" % (msg.get("error_message", msg), msg.get("failed_schema")),
+                )
             return one_product
         else:
             return results
@@ -305,6 +324,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
 
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -676,6 +696,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
 
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -861,6 +882,8 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
+
         tests_wrong_conf = os.path.join(
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )

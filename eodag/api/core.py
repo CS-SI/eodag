@@ -30,6 +30,7 @@ from copy import deepcopy
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import attrgetter, itemgetter
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import geojson
@@ -1783,14 +1784,15 @@ class EODataAccessGateway:
 
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
+            queryables_fields = Queryables.from_stac_models().model_fields
             ecmwf_queryables = [
                 f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
             ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
-                if param in Queryables.model_fields:
-                    param_alias = Queryables.model_fields[param].alias or param
+                if param in queryables_fields:
+                    param_alias = queryables_fields[param].alias or param
                     search_params[param_alias] = value
                 elif param in ecmwf_queryables:
                     # alias equivalent for ECMWF queryables
@@ -1985,8 +1987,42 @@ class EODataAccessGateway:
         :param filename: (optional) The name of the file to generate
         :returns: The name of the created file
         """
+        search_result_dict = search_result.as_geojson_object()
+        # add self link
+        search_result_dict.setdefault("links", [])
+        search_result_dict["links"].append(
+            {
+                "rel": "self",
+                "href": f"{filename}",
+                "type": "application/json",
+            },
+        )
+        # write search results
         with open(filename, "w") as fh:
-            geojson.dump(search_result.as_geojson_object(), fh)
+            geojson.dump(search_result_dict, fh)
+            logger.debug("Search results saved to %s", filename)
+        # write collection(s)
+        if search_result._dag is None:
+            return filename
+        collections = set(p.collection for p in search_result)
+        for collection in collections:
+            collection_obj = search_result._dag.collections_config.get(
+                collection, Collection(id=collection)
+            )
+            collection_dict = collection_obj.serialize()
+            # add links
+            collection_dict.setdefault("links", [])
+            collection_dict["links"].append(
+                {
+                    "rel": "self",
+                    "href": f"{collection}.json",
+                    "type": "application/json",
+                },
+            )
+            with open(Path(filename).parent / f"{collection}.json", "w") as fh:
+                geojson.dump(collection_dict, fh)
+                logger.debug("Collection '%s' saved to %s", collection, fh.name)
+
         return filename
 
     @staticmethod
@@ -2190,7 +2226,8 @@ class EODataAccessGateway:
 
             # use queryables aliases
             kwargs_alias = {**kwargs}
-            for search_param, field_info in Queryables.model_fields.items():
+            queryables_fields = Queryables.from_stac_models().model_fields
+            for search_param, field_info in queryables_fields.items():
                 if search_param in kwargs and field_info.alias:
                     kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
 

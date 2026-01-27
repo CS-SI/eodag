@@ -140,7 +140,7 @@ class TestEOProduct(EODagTestCase):
             properties["eodag:search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag:collection"], self.collection)
+        self.assertEqual(geo_interface["collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
@@ -618,6 +618,7 @@ class TestEOProduct(EODagTestCase):
                 "a_property",
                 "b_property",
                 "c_property",
+                "datetime",
                 "eodag:y_property",
                 "eodag:z_property",
                 "foo:property",
@@ -637,5 +638,42 @@ class TestEOProduct(EODagTestCase):
             product.properties,
             {
                 "b_property": "b_value",
+                "datetime": None,
             },
+        )
+
+    def test_eoproduct_serialize(self):
+        """eoproduct.as_dict must include the required STAC extensions"""
+        product = self._dummy_product()
+        product.properties["grid:code"] = "MGRS-31TCJ"
+        product.properties["eo:cloud_cover"] = "bad-formatted"
+        product.assets.update(
+            {
+                "foo": {
+                    "href": "https://example.com/asset/foo.tif",
+                    "title": "foo asset",
+                    "type": "image/tiff",
+                    "proj:shape": [3, 343, 343],
+                    "mgrs:utm_zone": "also-bad-formatted",
+                }
+            }
+        )
+        prod_dict = product.as_dict()
+        # well formatted properties must be present
+        self.assertEqual(prod_dict["properties"]["grid:code"], "MGRS-31TCJ")
+        self.assertEqual(prod_dict["assets"]["foo"]["proj:shape"], [3, 343, 343])
+        self.assertTrue(
+            any("grid" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        self.assertTrue(
+            any("proj" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        # badly formatted properties must be skipped
+        self.assertNotIn("eo:cloud_cover", prod_dict["properties"])
+        self.assertNotIn("mgrs:utm_zone", prod_dict["assets"]["foo"])
+        self.assertFalse(
+            any("eo" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        self.assertFalse(
+            any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
         )

@@ -1507,7 +1507,8 @@ class TestCore(TestCoreBase):
         # Only provider
         # when only a provider is specified, return the union of the queryables for all collections
         queryables_peps_none = self.dag.list_queryables(provider="peps")
-        expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
+        queryables_fields = Queryables.from_stac_models().model_fields
+        expected_longer_result = model_fields_to_annotated(queryables_fields)
         self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
         self.assertLess(len(queryables_peps_none), len(expected_longer_result))
         for key, queryable in queryables_peps_none.items():
@@ -1895,7 +1896,7 @@ class TestCore(TestCoreBase):
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
         id_present = False
         for i, span in enumerate(spans):
-            if "id" in span.text:
+            if "'id'" in span.text:
                 id_present = True
                 self.assertIn("str", spans[i + 1].text)
         self.assertTrue(id_present)
