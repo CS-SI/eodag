@@ -236,27 +236,40 @@ class EOProduct:
             stac_providers.append({"name": self.provider, "roles": ["host"]})
             stac_properties["providers"] = stac_providers
 
-        props_model = cast(CommonStacMetadata, create_stac_metadata_model())
-        props_validated = props_model.model_validate(stac_properties)
+        props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
+        props_validated = props_model.safe_validate(stac_properties)
         stac_extensions: set[str] = set(props_validated.get_conformance_classes())
 
+        # skip invalid properties
+        invalid_properties = {
+            k
+            for k in stac_properties.keys()
+            if k not in props_validated.to_dict() and props_model.has_field(k)
+        }
+        for key in invalid_properties:
+            stac_properties.pop(key, None)
+
         # get conformance classes for assets properties
-        for asset_properties in self.assets.values():
-            asset_props_validated = props_model.model_validate(
-                {
-                    k: v
-                    for k, v in asset_properties.items()
-                    if k not in ["title", "roles", "type", "href", "bands"]
-                }
-            )
+        assets_dict = {**self.assets.as_dict()}
+        for asset_key, asset_properties in self.assets.as_dict().items():
+            asset_props_validated = props_model.safe_validate(asset_properties)
             stac_extensions.update(asset_props_validated.get_conformance_classes())
+
+            # skip invalid assets properties
+            invalid_asset_properties = {
+                k
+                for k in asset_properties.keys()
+                if k not in asset_props_validated.to_dict() and props_model.has_field(k)
+            }
+            for key in invalid_asset_properties:
+                assets_dict[asset_key].pop(key, None)
 
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
             "geometry": orjson.loads(orjson.dumps(self.geometry.__geo_interface__)),
             "bbox": list(self.geometry.bounds),
             "id": self.properties["id"],
-            "assets": self.assets.as_dict(),
+            "assets": assets_dict,
             "properties": stac_properties,
             "links": [
                 {

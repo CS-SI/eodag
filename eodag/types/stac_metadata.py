@@ -17,15 +17,18 @@
 # limitations under the License.
 """property fields."""
 
+import logging
 from collections.abc import Callable
 from datetime import datetime as dt
-from typing import Annotated, Any, ClassVar, Optional, Union, cast
+from typing import Annotated, Any, ClassVar, Optional, Type, TypeVar, Union, cast
 
 from pydantic import (
     AliasChoices,
     AliasPath,
     BaseModel,
     Field,
+    TypeAdapter,
+    ValidationError,
     create_model,
     field_serializer,
     model_validator,
@@ -36,6 +39,10 @@ from stac_pydantic.shared import Provider
 from typing_extensions import Self
 
 from eodag.types.stac_extensions import STAC_EXTENSIONS, BaseStacExtension
+
+logger = logging.getLogger("eodag.types.stac_metadata")
+
+T = TypeVar("T", bound="CommonStacMetadata")
 
 
 class CommonStacMetadata(ItemProperties):
@@ -143,6 +150,24 @@ class CommonStacMetadata(ItemProperties):
         }
 
     @classmethod
+    def has_field(cls, field_name: str) -> bool:
+        """Check if a given string is in model fields or validation_alias.
+
+        :param field_name: Field name to check (can be STAC name or python-style name)
+        :returns: True if the field is accepted, False otherwise
+        """
+        # Check if it's a model field name
+        if field_name in cls.model_fields:
+            return True
+
+        # Check if it's a validation alias
+        for field_info in cls.model_fields.values():
+            if field_info.validation_alias == field_name:
+                return True
+
+        return False
+
+    @classmethod
     def from_stac(cls, field_name: str) -> str:
         """Convert a STAC parameter to its matching python-style name.
 
@@ -180,6 +205,33 @@ class CommonStacMetadata(ItemProperties):
         if field_dict:
             return list(field_dict.keys())[0]
         return field_name
+
+    @classmethod
+    def safe_validate(
+        cls: Type[T],
+        data: dict,
+    ) -> T:
+        """Validate only fields with correct types, drop others with a warning.
+
+        :param data: data to validate
+        :returns: validated model"""
+        valid = {}
+
+        for name, field in cls.model_fields.items():
+            value = data.get(name, data.get(field.validation_alias))
+            if value is None:
+                continue
+            try:
+                TypeAdapter(field.annotation).validate_python(value)
+                valid[name] = value
+            except ValidationError as e:
+                logger.warning(
+                    "Dropped property %s: %s, %s",
+                    name,
+                    value,
+                    e.errors()[0]["msg"],
+                )
+        return cls.model_validate(valid)
 
 
 def create_stac_metadata_model(

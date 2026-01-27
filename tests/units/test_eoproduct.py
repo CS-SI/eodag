@@ -646,6 +646,7 @@ class TestEOProduct(EODagTestCase):
         """eoproduct.as_dict must include the required STAC extensions"""
         product = self._dummy_product()
         product.properties["grid:code"] = "MGRS-31TCJ"
+        product.properties["eo:cloud_cover"] = "bad-formatted"
         product.assets.update(
             {
                 "foo": {
@@ -653,13 +654,26 @@ class TestEOProduct(EODagTestCase):
                     "title": "foo asset",
                     "type": "image/tiff",
                     "proj:shape": [3, 343, 343],
+                    "mgrs:utm_zone": "also-bad-formatted",
                 }
             }
         )
         prod_dict = product.as_dict()
+        # well formatted properties must be present
+        self.assertEqual(prod_dict["properties"]["grid:code"], "MGRS-31TCJ")
+        self.assertEqual(prod_dict["assets"]["foo"]["proj:shape"], [3, 343, 343])
         self.assertTrue(
             any("grid" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         self.assertTrue(
             any("proj" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        # badly formatted properties must be skipped
+        self.assertNotIn("eo:cloud_cover", prod_dict["properties"])
+        self.assertNotIn("mgrs:utm_zone", prod_dict["assets"]["foo"])
+        self.assertFalse(
+            any("eo" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        self.assertFalse(
+            any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
         )
