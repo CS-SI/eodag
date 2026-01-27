@@ -501,6 +501,9 @@ class CopMarineSearch(StaticStacSearch):
                             if product:
                                 products.append(product)
                     current_object = item_key
+                    if len(products) >= items_per_page and not prep.count:
+                        stop_search = True
+                        break
 
         search_params = (
             kwargs
