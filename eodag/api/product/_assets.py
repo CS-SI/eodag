@@ -129,7 +129,7 @@ class AssetsDict(UserDict):
                         ...
                     }}
                 </summary>
-                    {dict_to_html_table(v, depth=1)}
+                    {dict_to_html_table(v, depth=2)}
                 </details>
                 </td></tr>
                 """
