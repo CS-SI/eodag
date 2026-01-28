@@ -333,6 +333,8 @@ class CopMarineSearch(StaticStacSearch):
         start_index = items_per_page * (token - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
+            if len(products) >= items_per_page and not prep.count:
+                break
             # Filter by geometry
             if "id" not in kwargs and geometry:
                 dataset_geom = get_geometry_from_various(**dataset_item)
@@ -501,6 +503,9 @@ class CopMarineSearch(StaticStacSearch):
                             if product:
                                 products.append(product)
                     current_object = item_key
+                    if len(products) >= items_per_page and not prep.count:
+                        stop_search = True
+                        break
 
         search_params = (
             kwargs
