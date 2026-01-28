@@ -97,7 +97,7 @@ class BaseStacExtension(BaseModel):
 
 class SarFields(BaseModel):
     """
-    https://github.com/stac-extensions/sar#item-properties-or-asset-fields
+    https://github.com/stac-extensions/sar
     """
 
     sar_instrument_mode: Optional[str] = Field(None)
@@ -121,13 +121,13 @@ class SarExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = SarFields
 
-    schema_href: str = "https://stac-extensions.github.io/sar/v1.0.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/sar/v1.3.0/schema.json"
     field_name_prefix: Optional[str] = "sar"
 
 
 class SatelliteFields(BaseModel):
     """
-    https://github.com/stac-extensions/sat#item-properties
+    https://github.com/stac-extensions/sat
     """
 
     sat_platform_international_designator: Optional[str] = Field(None)
@@ -149,7 +149,7 @@ class SatelliteExtension(BaseStacExtension):
 
 class TimestampFields(BaseModel):
     """
-    https://github.com/stac-extensions/timestamps#item-properties
+    https://github.com/stac-extensions/timestamps
     """
 
     published: Optional[str] = Field(None)
@@ -162,12 +162,12 @@ class TimestampExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = TimestampFields
 
-    schema_href: str = "https://stac-extensions.github.io/timestamps/v1.0.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/timestamps/v1.1.0/schema.json"
 
 
 class ProcessingFields(BaseModel):
     """
-    https://github.com/stac-extensions/processing#item-properties
+    https://github.com/stac-extensions/processing
     """
 
     processing_expression: Optional[dict[str, Any]] = Field(None)
@@ -182,13 +182,13 @@ class ProcessingExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = ProcessingFields
 
-    schema_href: str = "https://stac-extensions.github.io/processing/v1.0.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/processing/v1.2.0/schema.json"
     field_name_prefix: Optional[str] = "processing"
 
 
 class ViewGeometryFields(BaseModel):
     """
-    https://github.com/stac-extensions/view#item-properties
+    https://github.com/stac-extensions/view
     """
 
     view_off_nadir: Optional[float] = Field(None)
@@ -203,13 +203,13 @@ class ViewGeometryExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = ViewGeometryFields
 
-    schema_href: str = "https://stac-extensions.github.io/view/v1.0.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/view/v1.1.0/schema.json"
     field_name_prefix: Optional[str] = "view"
 
 
 class ElectroOpticalFields(BaseModel):
     """
-    https://github.com/stac-extensions/eo#item-properties
+    https://github.com/stac-extensions/eo
     """
 
     eo_cloud_cover: Optional[Percentage] = Field(None)
@@ -222,13 +222,13 @@ class ElectroOpticalExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = ElectroOpticalFields
 
-    schema_href: str = "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/eo/v2.0.0/schema.json"
     field_name_prefix: Optional[str] = "eo"
 
 
 class ScientificCitationFields(BaseModel):
     """
-    https://github.com/stac-extensions/scientific#item-properties
+    https://github.com/stac-extensions/scientific
     """
 
     sci_doi: Optional[str] = Field(None)
@@ -247,7 +247,7 @@ class ScientificCitationExtension(BaseStacExtension):
 
 class ProductFields(BaseModel):
     """
-    https://github.com/stac-extensions/product#fields
+    https://github.com/stac-extensions/product
     """
 
     product_type: Optional[str] = Field(None)
@@ -261,13 +261,13 @@ class ProductExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = ProductFields
 
-    schema_href: str = "https://stac-extensions.github.io/product/v0.1.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/product/v1.0.0/schema.json"
     field_name_prefix: Optional[str] = "product"
 
 
 class StorageFields(BaseModel):
     """
-    https://github.com/stac-extensions/storage#fields
+    https://github.com/stac-extensions/storage
     """
 
     storage_platform: Optional[str] = Field(default=None)
@@ -287,13 +287,13 @@ class StorageExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = StorageFields
 
-    schema_href: str = "https://stac-extensions.github.io/storage/v1.0.0/schema.json"
+    schema_href: str = "https://stac-extensions.github.io/storage/v2.0.0/schema.json"
     field_name_prefix: Optional[str] = "storage"
 
 
 class OrderFields(BaseModel):
     """
-    https://github.com/stac-extensions/order#fields
+    https://github.com/stac-extensions/order
     """
 
     order_status: Optional[str] = Field(default=None)
