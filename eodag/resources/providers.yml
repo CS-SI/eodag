@@ -797,7 +797,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
@@ -2438,7 +2438,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
@@ -4060,7 +4060,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
