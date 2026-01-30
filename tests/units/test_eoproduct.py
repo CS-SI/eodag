@@ -26,6 +26,7 @@ import string
 import tempfile
 import time
 import zipfile
+from unittest.mock import patch
 
 import geojson
 import requests
@@ -47,6 +48,7 @@ from tests.context import (
     ProgressCallback,
     mock,
 )
+from tests.mocks import ResponseFile
 
 
 class TestEOProduct(EODagTestCase):
@@ -300,7 +302,7 @@ class TestEOProduct(EODagTestCase):
             """Emulation of a response to requests.get method for a quicklook"""
 
             def __init__(response):
-                response.headers = CaseInsensitiveDict({"content-length": 2**5})
+                response.headers = CaseInsensitiveDict({"Content-Length": 2**5})
 
             def __enter__(response):
                 return response
@@ -411,13 +413,81 @@ class TestEOProduct(EODagTestCase):
         product_zip_file = product_dir_path.with_suffix(".zip")
         self.assertTrue(product_zip_file.is_file)
 
+    # Stream download
+
+    def test_eoproduct_stream_download(self):
+        """eoproduct.stream_download return a product file as StreamResponse"""  # noqa
+        # Setup
+        product = self._dummy_downloadable_product()
+
+        # Download
+        product_stream = product.stream_download()
+        self.assertIn(
+            product_stream.headers["Content-Type"],
+            ["application/zip", "application/x-zip-compressed"],
+        )
+
+        # Check that the mocked request was properly called.
+        self.requests_request.assert_called_once()
+
+        # Download to tmp directory
+        filepath = os.path.join(self.output_dir, product_stream.filename)
+        with open(filepath, "wb") as fp:
+            for chunk in product_stream.content:
+                fp.write(chunk)
+
+        stat = os.stat(filepath)
+        self.assertEqual(stat.st_size, 2472275)
+        self.assertTrue(zipfile.is_zipfile(filepath))
+
+    def test_eoproduct_asset_stream_download(self):
+        """eoproduct.assets[x].stream_download return a asset file as StreamResponse"""  # noqa
+        # Setup
+        product = self._dummy_downloadable_asset()
+
+        def mocked_requests_get(*args, **kwargs):
+            return ResponseFile(
+                local_file=self.local_asset_path,
+                headers={
+                    "Content-Disposition": "attachment; filename=foo.jp2",
+                    "Content-Type": "image/jp2",
+                },
+                url="https://example.com/asset/foo.jp2",
+            )
+
+        with patch("requests.get", side_effect=mocked_requests_get):
+            # Download
+            asset_stream = product.assets["foo"].stream_download()
+
+        self.assertEqual(asset_stream.headers["Content-Type"], "image/jp2")
+        self.assertEqual(asset_stream.headers["Content-Length"], "2488555")
+
+        # Check that the mocked request was properly called.
+        self.requests_request.assert_called_once()
+
+        # Download to tmp directory
+        filepath = os.path.join(self.output_dir, asset_stream.filename)
+        with open(filepath, "wb") as fp:
+            for chunk in asset_stream.content:
+                fp.write(chunk)
+
+        self.assertTrue(os.path.isfile(filepath))
+        stat = os.stat(filepath)
+        self.assertEqual(stat.st_size, 2488555)
+
     # TODO: add a test on tarfiles extraction
 
     def test_eoproduct_download_http_dynamic_options(self):
         """eoproduct.download must accept the download options to be set automatically"""
         # Setup
         product = self._dummy_product()
-        self._set_download_simulation()
+
+        self.requests_request.return_value = ResponseFile(
+            local_file=self.local_product_as_archive_path,
+            headers={"Content-Disposition": "attachment; filename=foobar.zip"},
+            url="http://example.com/foobar.zip",
+        )
+
         dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",

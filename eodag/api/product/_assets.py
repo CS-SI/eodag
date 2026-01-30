@@ -190,6 +190,14 @@ class Asset(UserDict):
         """
         return self.product.download(asset=self.key, **kwargs)
 
+    def stream_download(self, **kwargs: Unpack[DownloadConf]) -> str:
+        """Downloads a single asset
+
+        :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
+        :returns: The absolute path to the downloaded product on the local filesystem
+        """
+        return self.product.stream_download(asset=self.key, **kwargs)
+
     def _repr_html_(self):
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
             {type(self).__name__}&ensp;-&ensp;{self.key}

@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import contextlib
-import io
 import os
 import random
 import shutil
@@ -30,12 +29,12 @@ from unittest import mock  # PY3
 
 from owslib.etree import etree
 from owslib.ows import ExceptionReport
-from requests.structures import CaseInsensitiveDict
 from shapely import wkt
 
 from eodag.api.product import EOProduct
 from eodag.config import PluginConfig
 from eodag.plugins.download.http import HTTPDownload
+from tests.mocks import ResponseFile
 
 jp = os.path.join
 dirn = os.path.dirname
@@ -46,6 +45,7 @@ RESOURCES_PATH = jp(dirn(__file__), "..", "eodag", "resources")
 
 class EODagTestCase(unittest.TestCase):
     def setUp(self):
+
         self.provider = "creodias"
         self.download_url = (
             "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
@@ -63,6 +63,15 @@ class EODagTestCase(unittest.TestCase):
                 "as_archive",
                 "{}.zip".format(self.local_filename),
             )
+        )
+        self.local_asset_path = os.path.join(
+            TEST_RESOURCES_PATH,
+            "products",
+            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911",
+            "GRANULE",
+            "L1C_T31TDH_A013204_20180101T105435",
+            "IMG_DATA",
+            "T31TDH_20180101T105441_B01.jp2",
         )
         self.local_band_file = jp(
             self.local_product_abspath,
@@ -292,7 +301,11 @@ class EODagTestCase(unittest.TestCase):
         extract=None,
         delete_archive=None,
     ):
-        self._set_download_simulation()
+        self.requests_request.return_value = ResponseFile(
+            local_file=self.local_product_as_archive_path,
+            headers={"Content-Disposition": "attachment; filename=foobar.zip"},
+            url="http://example.com/foobar.zip",
+        )
         self.tmp_download_dir = tempfile.TemporaryDirectory()
         if output_dir is None:
             output_dir = str(Path(self.tmp_download_dir.name))
@@ -311,52 +324,53 @@ class EODagTestCase(unittest.TestCase):
         product.register_downloader(downloader, None)
         return product
 
+    def _dummy_downloadable_asset(
+        self,
+        product=None,
+        base_uri=None,
+        output_dir=None,
+        extract=None,
+        delete_archive=None,
+    ):
+        self.requests_request.return_value = ResponseFile(
+            local_file=self.local_asset_path,
+            headers={
+                "Content-Disposition": "attachment; filename=foo.jp2",
+                "Content-Type": "image/jp2",
+            },
+            url="https://example.com/asset/foo.jp2",
+        )
+        self.tmp_download_dir = tempfile.TemporaryDirectory()
+        if output_dir is None:
+            output_dir = str(Path(self.tmp_download_dir.name))
+        dl_config = PluginConfig.from_mapping(
+            {
+                "type": "HTTPDownload",
+                "base_uri": "fake_base_uri" if base_uri is None else base_uri,
+                "output_dir": output_dir,
+                "extract": True if extract is None else extract,
+                "delete_archive": False if delete_archive is None else delete_archive,
+            }
+        )
+        downloader = HTTPDownload(provider=self.provider, config=dl_config)
+        if product is None:
+            product = self._dummy_product()
+            product.assets.update(
+                {
+                    "foo": {
+                        "href": "https://example.com/asset/foo.jp2",
+                        "title": "foo asset",
+                        "type": "image/jp2",
+                    }
+                }
+            )
+        product.register_downloader(downloader, None)
+        return product
+
     def _clean_product(self, product_path):
         if os.path.exists(product_path):
             shutil.rmtree(product_path)
         self.tmp_download_dir.cleanup()
-
-    def _set_download_simulation(self):
-        self.requests_request.return_value = self._download_response_archive()
-
-    def _download_response_archive(self):
-        class Response:
-            """Emulation of a response to requests.get method for a zipped product"""
-
-            def __init__(response):
-                # Using a zipped product file
-                with open(self.local_product_as_archive_path, "rb") as fh:
-                    response.__zip_buffer = io.BytesIO(fh.read())
-                cl = response.__zip_buffer.getbuffer().nbytes
-                response.headers = CaseInsensitiveDict(
-                    {
-                        "content-length": cl,
-                        "content-disposition": "attachment; filename=foobar.zip",
-                    }
-                )
-                response.url = "http://foo.bar"
-
-            def __enter__(response):
-                return response
-
-            def __exit__(response, *args):
-                pass
-
-            def iter_content(response, **kwargs):
-                with response.__zip_buffer as fh:
-                    while True:
-                        chunk = fh.read(kwargs["chunk_size"])
-                        if not chunk:
-                            break
-                        yield chunk
-
-            def raise_for_status(response):
-                pass
-
-            def close(response):
-                pass
-
-        return Response()
 
 
 @contextlib.contextmanager
