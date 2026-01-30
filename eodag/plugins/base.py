@@ -66,9 +66,12 @@ class PluginTopic(metaclass=EODAGPluginMount):
 
     def __repr__(self) -> str:
         config = getattr(self, "config", None)
+        priority = ""
+        if config is not None and hasattr(config, "priority"):
+            priority = str(config.priority)  # is an int
         return "{}(provider={}, priority={}, topic={})".format(
             self.__class__.__name__,
             getattr(self, "provider", ""),
-            config.priority if config else "",
+            priority,
             self.__class__.mro()[-3].__name__,
         )

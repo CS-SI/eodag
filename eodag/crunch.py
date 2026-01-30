@@ -17,8 +17,18 @@
 # limitations under the License.
 """Crunch filters import gateway"""
 
-from .plugins.crunch.filter_date import FilterDate  # noqa
-from .plugins.crunch.filter_latest_intersect import FilterLatestIntersect  # noqa
-from .plugins.crunch.filter_latest_tpl_name import FilterLatestByName  # noqa
-from .plugins.crunch.filter_overlap import FilterOverlap  # noqa
-from .plugins.crunch.filter_property import FilterProperty  # noqa
+from .plugins.crunch import (
+    FilterDate,
+    FilterLatestByName,
+    FilterLatestIntersect,
+    FilterOverlap,
+    FilterProperty,
+)
+
+__all__ = [
+    "FilterDate",
+    "FilterLatestIntersect",
+    "FilterLatestByName",
+    "FilterOverlap",
+    "FilterProperty",
+]
