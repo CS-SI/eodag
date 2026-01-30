@@ -123,14 +123,14 @@ def _deprecated_cli(message: str, version: Optional[str] = None) -> Callable[...
     help="Control the verbosity of the logs. For maximum verbosity, type -vvv",
 )
 @click.pass_context
-def eodag(ctx: Context, verbose: int) -> None:
+def eodag_cli(ctx: Context, verbose: int) -> None:
     """Earth Observation Data Access Gateway: work on EO products from any provider"""
     if ctx.obj is None:
         ctx.obj = {}
     ctx.obj["verbosity"] = verbose
 
 
-@eodag.command(name="version", help="Print eodag version and exit")
+@eodag_cli.command(name="version", help="Print eodag version and exit")
 def version() -> None:
     """Print eodag version and exit"""
     click.echo(
@@ -142,7 +142,7 @@ def version() -> None:
     )
 
 
-@eodag.command(
+@eodag_cli.command(
     name="search",
     help="Search satellite images by their collections, instruments, constellation, "
     "platform, processing level or sensor type. It is mandatory to provide "
@@ -407,7 +407,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     ctx.obj["search_results"] = results
 
 
-@eodag.command(name="list", help="List supported collections")
+@eodag_cli.command(name="list", help="List supported collections")
 @click.option("-p", "--provider", help="List collections supported by this provider")
 @click.option(
     "--instruments", help="List collections originating from these instruments"
@@ -489,7 +489,7 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
         sys.exit(1)
 
 
-@eodag.command(name="discover", help="Fetch providers to discover collections")
+@eodag_cli.command(name="discover", help="Fetch providers to discover collections")
 @click.option("-p", "--provider", help="Fetch only the given provider")
 @click.option(
     "--storage",
@@ -520,7 +520,7 @@ def discover_col(ctx: Context, **kwargs: Any) -> None:
     click.echo("Results stored at '{}'".format(storage_filepath))
 
 
-@eodag.command(
+@eodag_cli.command(
     help="""Download a list of products from a serialized search result or STAC items URLs/paths
 
 Examples:
@@ -626,4 +626,4 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
 
 if __name__ == "__main__":
-    eodag(obj={})
+    eodag_cli(obj={})

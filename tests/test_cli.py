@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import logging
 import os
 import re
@@ -24,8 +23,10 @@ from contextlib import contextmanager
 from datetime import datetime
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
+from typing import Optional, Tuple
 
 import click
+import shapely
 from click.testing import CliRunner
 from faker import Faker
 from packaging import version
@@ -33,6 +34,7 @@ from packaging import version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_COLLECTION
+from eodag.utils.exceptions import UnsupportedProvider
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -40,7 +42,7 @@ from tests.context import (
     MisconfiguredError,
     NoMatchingCollection,
     download,
-    eodag,
+    eodag_cli,
     mock,
     search_crunch,
 )
@@ -90,34 +92,64 @@ class TestEodagCli(unittest.TestCase):
         logger.handlers = []
         logger.level = 0
 
+    def eodag_command(
+        self, command_list: list = [], env: dict = {}
+    ) -> Tuple[int, str, Optional[Exception]]:
+        """Eodag command line
+
+        :param command_list: command line
+        :param env: environment variables
+        :returns: exit_code, stdout, stderr
+        """
+
+        # Force str parameters
+        str_command_list = list(map(lambda x: "{}".format(x), command_list))
+        result = self.runner.invoke(eodag_cli, str_command_list, env=env)
+
+        exit_code = 1
+        output = ""
+        error = RuntimeError(
+            "runner.invoke does not return expected result object, given {}".format(
+                type(result)
+            )
+        )
+        if isinstance(result, click.testing.Result):
+            exit_code = result.exit_code
+            output = result.output
+            error = result.exception
+
+        return exit_code, output, error
+
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
-        result = self.runner.invoke(eodag)
+        exit_code, output, _ = self.eodag_command()
         self.assertIn(
-            "Usage: eodag [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...",
-            result.output,
+            "Usage: eodag-cli [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...",
+            output,
         )
         # Exit status 2 with no_args_is_help starting click >= 8.2.0
-        self.assertIn(result.exit_code, (0, 2))
+        self.assertIn(exit_code, (0, 2))
 
     def test_eodag_with_only_verbose_opt(self):
         """Calling eodag only with -v option should print error message"""
-        result = self.runner.invoke(eodag, ["-v"])
-        self.assertIn("Error: Missing command.", result.output)
-        self.assertNotEqual(result.exit_code, 0)
+        exit_code, output, error = self.eodag_command(["-v"])
+        self.assertIn("Error: Missing command.", output)
+        self.assertNotEqual(exit_code, 0)
+        self.assertIsInstance(error, SystemExit)
 
     def test_eodag_cli_version(self):
         """Calling eodag version should return the version"""
-        result = self.runner.invoke(eodag, ["version"])
-        version_str = re.search(r"eodag .* version (.+)\s*$", result.output).group(1)
+        _, output, error = self.eodag_command(["version"])
+        version_str = re.search(r"eodag .* version (.+)\s*$", output).group(1)
+        self.assertIsNone(error)
         self.assertGreater(version.parse(version_str), version.parse("2.0.0"))
 
     def test_eodag_search_without_args(self):
         """Calling eodag search subcommand without arguments should print help message and return error code"""  # noqa
-        result = self.runner.invoke(eodag, ["search"])
+        exit_code, output, error = self.eodag_command(["search"])
         with click.Context(search_crunch) as ctx:
             self.assertEqual(
-                no_blanks(result.output),
+                no_blanks(output),
                 no_blanks(
                     "".join(
                         (
@@ -127,16 +159,19 @@ class TestEodagCli(unittest.TestCase):
                     )
                 ),
             )
-        self.assertNotEqual(result.exit_code, 0)
+        self.assertNotEqual(exit_code, 0)
+        self.assertIsInstance(error, SystemExit)
 
     def test_eodag_search_without_collection_arg(self):
         """Calling eodag search without -p | --collection should print the help message and return error code"""  # noqa
         start_date = self.faker.date()
         end_date = self.faker.date()
-        result = self.runner.invoke(eodag, ["search", "-s", start_date, "-e", end_date])
+        exit_code, output, error = self.eodag_command(
+            ["search", "-s", start_date, "-e", end_date]
+        )
         with click.Context(search_crunch) as ctx:
             self.assertEqual(
-                no_blanks(result.output),
+                no_blanks(output),
                 no_blanks(
                     "".join(
                         (
@@ -146,28 +181,27 @@ class TestEodagCli(unittest.TestCase):
                     )
                 ),
             )
-        self.assertNotEqual(result.exit_code, 0)
+        self.assertNotEqual(exit_code, 0)
+        self.assertIsInstance(error, SystemExit)
 
     def test_eodag_search_with_conf_file_inexistent(self):
         """Calling eodag search with --conf | -f set to a non-existent file should print error message"""  # noqa
         conf_file = "does_not_exist.yml"
-        result = self.runner.invoke(
-            eodag, ["search", "--conf", conf_file, "-p", "whatever"]
+        exit_code, output, error = self.eodag_command(
+            ["search", "--conf", conf_file, "-p", "whatever"]
         )
         expect_output = "Error: Invalid value for '-f' / '--conf': Path '{}' does not exist.".format(  # noqa
             conf_file
         )
-        self.assertTrue(
-            expect_output in result.output or expect_output.replace("'", '"')
-        )
-        self.assertNotEqual(result.exit_code, 0)
+        self.assertTrue(expect_output in output or expect_output.replace("'", '"'))
+        self.assertNotEqual(exit_code, 0)
+        self.assertIsInstance(error, SystemExit)
 
     def test_eodag_search_with_max_cloud_out_of_range(self):
         """Calling eodag search with -c | --maxCloud set to a value < 0 or > 100 should print error message"""  # noqa
         with self.user_conf() as conf_file:
             for max_cloud in (110, -1):
-                result = self.runner.invoke(
-                    eodag,
+                exit_code, output, error = self.eodag_command(
                     ["search", "--conf", conf_file, "-p", "whatever", "-c", max_cloud],
                 )
                 expect_output = (
@@ -175,29 +209,34 @@ class TestEodagCli(unittest.TestCase):
                     " valid range of 0 to 100."
                 ).format(max_cloud)
                 self.assertTrue(
-                    expect_output in result.output or expect_output.replace("'", '"')
+                    expect_output in output or expect_output.replace("'", '"')
                 )
-                self.assertNotEqual(result.exit_code, 0)
+                self.assertNotEqual(exit_code, 0)
+                self.assertIsInstance(error, UnsupportedProvider)
 
     def test_eodag_search_bbox_invalid(self):
         """Calling eodag search with -b | --bbox set with less than 4 params should print error message"""  # noqa
         with self.user_conf() as conf_file:
-            result = self.runner.invoke(
-                eodag, ["search", "--conf", conf_file, "-p", "whatever", "-b", 1, 2]
+            exit_code, output, error = self.eodag_command(
+                ["search", "--conf", conf_file, "-p", "whatever", "-b", 1, 2]
             )
-            self.assertIn("-b", result.output)
-            self.assertIn("requires 4 arguments", result.output)
-            self.assertNotEqual(result.exit_code, 0)
+            self.assertIn("-b", output)
+            self.assertIn("requires 4 arguments", output)
+            self.assertNotEqual(exit_code, 0)
+            self.assertIsInstance(error, SystemExit)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_bbox_valid(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
             collection = "whatever"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 ["search", "--conf", conf_file, "-c", collection, "-b", 1, 43, 2, 44],
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
@@ -223,21 +262,19 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_geom_wkt_invalid(self):
         """Calling eodag search with -g | --geom set with invalit WKT geometry string"""  # noqa
         with self.user_conf() as conf_file:
-            result = self.runner.invoke(
-                eodag,
-                ["search", "--conf", conf_file, "-c", "whatever", "-g", "not a wkt"],
+            exit_code, _, error = self.eodag_command(
+                ["search", "--conf", conf_file, "-c", "whatever", "-g", "not a wkt"]
             )
+            self.assertNotEqual(exit_code, 0)
             # GEOSException for shapely >= 2.0
-            assert "WKTReadingError" in str(result) or "GEOSException" in str(result)
-            self.assertNotEqual(result.exit_code, 0)
+            self.assertTrue(isinstance(error, shapely.errors.GEOSException))
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_geom_wkt_valid(self, dag):
         """Calling eodag search with --geom WKT argument valid"""
         with self.user_conf() as conf_file:
             collection = "whatever"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -248,6 +285,10 @@ class TestEodagCli(unittest.TestCase):
                     "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
                 ],
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
@@ -273,8 +314,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_bbox_geom_mutually_exclusive(self):
         """Calling eodag search with both --geom and --box"""  # noqa
         with self.user_conf() as conf_file:
-            result = self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -288,10 +328,11 @@ class TestEodagCli(unittest.TestCase):
                     4,
                     "-g",
                     "a wkt",
-                ],
+                ]
             )
-            self.assertIn("Illegal usage", result.output)
-            self.assertNotEqual(result.exit_code, 0)
+            self.assertIn("Illegal usage", output)
+            self.assertNotEqual(exit_code, 0)
+            self.assertIsInstance(error, SystemExit)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_storage_arg(self, dag):
@@ -299,8 +340,7 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             api_obj = dag.return_value
             api_obj.search.return_value = SearchResult([mock.MagicMock() * 2], 2)
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -309,8 +349,12 @@ class TestEodagCli(unittest.TestCase):
                     "whatever",
                     "--storage",
                     "results",
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj.serialize.assert_called_with(
                 api_obj.search.return_value, filename="results.geojson"
             )
@@ -341,10 +385,12 @@ class TestEodagCli(unittest.TestCase):
                     "eodag:sensor_type": None,
                 },
             )
-            self.runner.invoke(
-                eodag,
-                ["search", "-f", conf_file, "-c", collection, "--cruncher", cruncher],
+            exit_code, output, error = self.eodag_command(
+                ["search", "-f", conf_file, "-c", collection, "--cruncher", cruncher]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
 
             search_results = api_obj.search.return_value
             crunch_results = api_obj.crunch.return_value
@@ -365,8 +411,7 @@ class TestEodagCli(unittest.TestCase):
 
             # Call with a cruncher taking arguments
             cruncher = "FilterOverlap"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "-f",
@@ -379,8 +424,13 @@ class TestEodagCli(unittest.TestCase):
                     cruncher,
                     "minimum_overlap",
                     "10",
-                ],
+                ]
             )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj.crunch.assert_called_with(
                 search_results,
                 search_criteria=criteria,
@@ -415,7 +465,7 @@ class TestEodagCli(unittest.TestCase):
                 },
             )
             self.runner.invoke(
-                eodag,
+                eodag_cli,
                 ["search", "-f", conf_file, "-c", collection, "download"],
             )
 
@@ -434,8 +484,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
             collection = "whatever"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -445,8 +494,12 @@ class TestEodagCli(unittest.TestCase):
                     "-g",
                     "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
                     "--all",
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search_all.assert_called_once_with(
                 provider=None,
@@ -472,8 +525,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --query argument"""
         with self.user_conf() as conf_file:
             collection = "whatever"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -482,8 +534,12 @@ class TestEodagCli(unittest.TestCase):
                     collection,
                     "--query",
                     "foo=1&bar=2&bar=3",
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
@@ -513,8 +569,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --locations argument"""
         with self.user_conf() as conf_file:
             collection = "whatever"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -523,8 +578,12 @@ class TestEodagCli(unittest.TestCase):
                     collection,
                     "--locations",
                     "country=FRA&continent=Africa",
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
@@ -556,8 +615,7 @@ class TestEodagCli(unittest.TestCase):
             start_date_datetime = datetime.strptime(
                 start_date_str, "%Y-%m-%d"
             ).isoformat()
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -566,8 +624,12 @@ class TestEodagCli(unittest.TestCase):
                     collection,
                     "--start",
                     start_date_str,
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
@@ -599,8 +661,7 @@ class TestEodagCli(unittest.TestCase):
             stop_date_datetime = datetime.strptime(
                 stop_date_str, "%Y-%m-%d"
             ).isoformat()
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -610,8 +671,12 @@ class TestEodagCli(unittest.TestCase):
                     "--end",
                     stop_date_str,
                     "--count",
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
+
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
@@ -641,8 +706,7 @@ class TestEodagCli(unittest.TestCase):
             locs_file = os.path.join(TEST_RESOURCES_PATH, "file_locations_override.yml")
 
             collection = "whatever"
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "search",
                     "--conf",
@@ -651,8 +715,11 @@ class TestEodagCli(unittest.TestCase):
                     locs_file,
                     "-c",
                     collection,
-                ],
+                ]
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Results stored at", output)
+            self.assertIsNone(error)
 
             dag.assert_called_once_with(
                 user_conf_file_path=conf_file,
@@ -666,10 +733,11 @@ class TestEodagCli(unittest.TestCase):
             for col, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
             if len(provs) != 0 and col != GENERIC_COLLECTION
         ]
-        result = self.runner.invoke(eodag, ["list", "--no-fetch"])
-        self.assertEqual(result.exit_code, 0)
+        exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
         for col in all_supported_collections:
-            self.assertIn(col, result.output)
+            self.assertIn(col, output)
 
     def test_eodag_list_collection_with_provider_ok(self):
         """Calling eodag list with provider should return all supported collections of specified provider"""  # noqa
@@ -680,39 +748,55 @@ class TestEodagCli(unittest.TestCase):
                 if provider in provs
                 if col != GENERIC_COLLECTION
             ]
-            result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
-            self.assertEqual(result.exit_code, 0)
+            exit_code, output, error = self.eodag_command(
+                ["list", "-p", provider, "--no-fetch"]
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertIsNone(error)
             for col in provider_supported_collections:
                 self.assertIn(
                     col,
-                    result.output,
+                    output,
                     f"{col} was not found in {provider} supported collections",
                 )
 
     def test_eodag_list_collection_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa
         provider = "random"
-        result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
-        self.assertEqual(result.exit_code, 1)
-        self.assertIn("Unsupported provider. You may have a typo", result.output)
+        exit_code, output, error = self.eodag_command(
+            ["list", "-p", provider, "--no-fetch"]
+        )
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, SystemExit)
+        self.assertIn("Unsupported provider. You may have a typo", output)
         self.assertIn(
             f"Available providers: {', '.join(test_core.TestCore.SUPPORTED_PROVIDERS)}",
-            result.output,
+            output,
         )
 
     @mock.patch("eodag.cli.EODataAccessGateway.fetch_collections_list", autospec=True)
     def test_eodag_list_collection_fetch(self, mock_fetch_collections_list):
         """Calling eodag list should fetch for new collections depending on passed option"""
-        result = self.runner.invoke(eodag, ["list", "--no-fetch"])
-        self.assertEqual(result.exit_code, 0)
+
+        exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Listing available collections:", output)
+        self.assertIsNone(error)
+
         assert not mock_fetch_collections_list.called
 
-        result = self.runner.invoke(eodag, ["list"])
-        self.assertEqual(result.exit_code, 0)
+        exit_code, output, error = self.eodag_command(["list"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Listing available collections:", output)
+        self.assertIsNone(error)
+
         mock_fetch_collections_list.assert_called_once_with(mock.ANY, provider=None)
 
-        result = self.runner.invoke(eodag, ["list", "-p", "peps"])
-        self.assertEqual(result.exit_code, 0)
+        exit_code, output, error = self.eodag_command(["list", "-p", "peps"])
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Listing available collections:", output)
+        self.assertIsNone(error)
+
         mock_fetch_collections_list.assert_called_with(mock.ANY, provider="peps")
         self.assertEqual(mock_fetch_collections_list.call_count, 2)
 
@@ -737,16 +821,15 @@ class TestEodagCli(unittest.TestCase):
                 Collection.create_with_dag(dag=dag, id="baz", title="this is baz"),
             ]
         )
-
-        result = self.runner.invoke(
-            eodag,
-            ["list", "-p", provider, "--platform", "S2A", "--no-fetch"],
+        exit_code, output, error = self.eodag_command(
+            ["list", "-p", provider, "--platform", "S2A", "--no-fetch"]
         )
-        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
 
-        self.assertIn("foo", result.output)
-        self.assertIn("bar", result.output)
-        self.assertNotIn("baz", result.output)
+        self.assertIn("foo", output)
+        self.assertIn("bar", output)
+        self.assertNotIn("baz", output)
 
         dag.return_value.list_collections.assert_called_with(
             provider=provider, fetch_providers=False
@@ -761,15 +844,15 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag list with invalid collection feature(s) should print a
         'no matching' type message and return error code.
         """
-        result = self.runner.invoke(
-            eodag,
-            ["list", "--platform", "fake_identifier", "--no-fetch"],
+        exit_code, output, error = self.eodag_command(
+            ["list", "--platform", "fake_identifier", "--no-fetch"]
         )
+        self.assertNotEqual(exit_code, 0)
+        self.assertIsInstance(error, SystemExit)
         self.assertIn(
             "No collection match the following criteria you provided:\n",
-            result.output,
+            output,
         )
-        self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch(
         "eodag.cli.EODataAccessGateway.discover_collections",
@@ -787,14 +870,20 @@ class TestEodagCli(unittest.TestCase):
             self.assertFalse(os.path.isfile(default_output_path))
 
             # call without any arg
-            result = self.runner.invoke(eodag, ["discover"])
-            self.assertEqual(result.exit_code, 0)
+            exit_code, output, error = self.eodag_command(["discover"])
+            self.assertEqual(exit_code, 0)
+            self.assertIsNone(error)
+            self.assertIn("Results stored at", output)
+
             mock_discover_collections.assert_called_once_with(mock.ANY)
             self.assertTrue(os.path.isfile(default_output_path))
 
             # call with provider
-            result = self.runner.invoke(eodag, ["discover", "-p", "peps"])
-            self.assertEqual(result.exit_code, 0)
+            exit_code, output, error = self.eodag_command(["discover", "-p", "peps"])
+            self.assertEqual(exit_code, 0)
+            self.assertIsNone(error)
+            self.assertIn("Results stored at", output)
+
             mock_discover_collections.assert_called_with(mock.ANY, provider="peps")
             self.assertEqual(mock_discover_collections.call_count, 2)
             os.remove(default_output_path)
@@ -803,8 +892,14 @@ class TestEodagCli(unittest.TestCase):
             # call with filename without extension
             self.assertFalse(os.path.isfile(other_file_path))
             self.assertFalse(os.path.isfile(f"{other_file_path}.json"))
-            result = self.runner.invoke(eodag, ["discover", "--storage", "toto"])
-            self.assertEqual(result.exit_code, 0)
+
+            exit_code, output, error = self.eodag_command(
+                ["discover", "--storage", "toto"]
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertIsNone(error)
+            self.assertIn("Results stored at 'toto.json'", output)
+
             mock_discover_collections.assert_called_with(mock.ANY)
             self.assertEqual(mock_discover_collections.call_count, 3)
             self.assertFalse(os.path.isfile(other_file_path))
@@ -813,8 +908,14 @@ class TestEodagCli(unittest.TestCase):
 
             # call with filename with extension
             self.assertFalse(os.path.isfile(f"{other_file_path}.json"))
-            result = self.runner.invoke(eodag, ["discover", "--storage", "toto.json"])
-            self.assertEqual(result.exit_code, 0)
+
+            exit_code, output, error = self.eodag_command(
+                ["discover", "--storage", "toto.json"]
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertIsNone(error)
+            self.assertIn("Results stored at 'toto.json'", output)
+
             mock_discover_collections.assert_called_with(mock.ANY)
             self.assertEqual(mock_discover_collections.call_count, 4)
             self.assertTrue(os.path.isfile(f"{other_file_path}.json"))
@@ -824,10 +925,13 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_download_no_search_results_arg(self):
         """Calling eodag download without a path to a search result should fail"""
-        result = self.runner.invoke(eodag, ["download"])
+        exit_code, output, error = self.eodag_command(["download"])
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, SystemExit)
+
         with click.Context(download) as ctx:
             self.assertEqual(
-                no_blanks(result.output),
+                no_blanks(output),
                 no_blanks(
                     "".join(
                         (
@@ -837,7 +941,6 @@ class TestEodagCli(unittest.TestCase):
                     )
                 ),
             )
-        self.assertEqual(result.exit_code, 1)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_download_ok(self, dag):
@@ -847,31 +950,35 @@ class TestEodagCli(unittest.TestCase):
         )
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
         dag.return_value.download_all.return_value = ["/fake_path"]
-        result = self.runner.invoke(
-            eodag,
+
+        exit_code, output, error = self.eodag_command(
             ["download", "--search-results", search_results_path, "-f", config_path],
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertIn("Downloaded", output)
+
         dag.assert_called_once_with(user_conf_file_path=config_path)
         dag.return_value.deserialize_and_register.assert_called_once_with(
             search_results_path
         )
         self.assertEqual(dag.return_value.download_all.call_count, 1)
-        self.assertEqual("Downloaded /fake_path\n", result.output)
+        self.assertEqual("Downloaded /fake_path\n", output)
 
         # Testing the case when no downloaded path is returned
         dag.return_value.download_all.return_value = [None]
-        result = self.runner.invoke(
-            eodag,
+        exit_code, output, error = self.eodag_command(
             ["download", "--search-results", search_results_path, "-f", config_path],
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
         self.assertEqual(
-            "A file may have been downloaded but we cannot locate it\n", result.output
+            "A file may have been downloaded but we cannot locate it\n", output
         )
 
         # Testing output directory
         output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
-        result = self.runner.invoke(
-            eodag,
+        exit_code, output, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
@@ -882,6 +989,10 @@ class TestEodagCli(unittest.TestCase):
                 output_dir,
             ],
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertIn("A file may have been downloaded but we cannot locate it", output)
+
         dag.return_value.download_all.assert_called_with(
             mock.ANY, output_dir=output_dir, executor=mock.ANY
         )
@@ -894,13 +1005,14 @@ class TestEodagCli(unittest.TestCase):
         )
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
         dag.return_value.download_all.return_value = []
-        result = self.runner.invoke(
-            eodag,
+        exit_code, output, error = self.eodag_command(
             ["download", "--search-results", search_results_path, "-f", config_path],
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
         self.assertEqual(
             "Error during download, a file may have been downloaded but we cannot locate it\n",
-            result.output,
+            output,
         )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -909,8 +1021,7 @@ class TestEodagCli(unittest.TestCase):
         fake_result = SearchResult([mock.MagicMock() * 2], 2)
         dag.return_value.import_stac_items.return_value = fake_result
         with self.user_conf() as conf_file:
-            self.runner.invoke(
-                eodag,
+            exit_code, output, error = self.eodag_command(
                 [
                     "download",
                     "--conf",
@@ -921,6 +1032,13 @@ class TestEodagCli(unittest.TestCase):
                     "bar",
                 ],
             )
+            self.assertEqual(exit_code, 0)
+            self.assertIsNone(error)
+            self.assertIn(
+                "Error during download, a file may have been downloaded but we cannot locate it",
+                output,
+            )
+
             dag.return_value.import_stac_items.assert_called_once_with(
                 ["foo", "bar"],
             )
@@ -936,18 +1054,17 @@ class TestEodagCli(unittest.TestCase):
         default_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
-        result = self.runner.invoke(
-            eodag,
+        exit_code, _, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
                 search_results_path,
                 "-f",
                 default_conf_file,
-            ],
+            ]
         )
-        self.assertEqual(result.exit_code, 1)
-        self.assertIsInstance(result.exception, MisconfiguredError)
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, MisconfiguredError)
 
     @mock.patch("eodag.plugins.download.http.HTTPDownload.download", autospec=True)
     def test_eodag_download_wrongcredentials(self, download):
@@ -959,8 +1076,7 @@ class TestEodagCli(unittest.TestCase):
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
-        result = self.runner.invoke(
-            eodag,
+        exit_code, _, error = self.eodag_command(
             ["download", "--search-results", search_results_path],
             # We override the default (empty) credentials with dummy values not
             # to raise a MisconfiguredError.
@@ -969,8 +1085,8 @@ class TestEodagCli(unittest.TestCase):
                 "EODAG__PEPS__AUTH__CREDENTIALS__PASSWORD": "dummy",
             },
         )
-        self.assertEqual(result.exit_code, 1)
-        self.assertIsInstance(result.exception, AuthenticationError)
+        self.assertEqual(exit_code, 1)
+        self.assertIsInstance(error, AuthenticationError)
         self.assertEqual(download.call_count, 1)
 
     @mock.patch("eodag.api.product._product.EOProduct.get_quicklook", autospec=True)
@@ -981,8 +1097,7 @@ class TestEodagCli(unittest.TestCase):
         )
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
         mock_get_quicklook.return_value = "/fake_path"
-        result = self.runner.invoke(
-            eodag,
+        exit_code, output, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
@@ -992,19 +1107,20 @@ class TestEodagCli(unittest.TestCase):
                 "--quicklooks",
             ],
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
         self.assertIn(
             "Flag 'quicklooks' specified, downloading only quicklooks of products\n",
-            result.output,
+            output,
         )
 
         # 2 quicklooks are called in search_results_path
         self.assertEqual(mock_get_quicklook.call_count, 2)
-        self.assertIn("Downloaded /fake_path\n", result.output)
+        self.assertIn("Downloaded /fake_path\n", output)
 
         # change output dir
         output_dir = os.path.join(self.tmp_home_dir.name, "quicklooks")
-        result = self.runner.invoke(
-            eodag,
+        exit_code, output, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
@@ -1014,14 +1130,17 @@ class TestEodagCli(unittest.TestCase):
                 "--quicklooks",
                 "--output-dir",
                 output_dir,
-            ],
+            ]
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertIn("Downloaded", output)
+
         mock_get_quicklook.assert_called_with(mock.ANY, output_dir=output_dir)
 
         # Testing the case when no quicklook path is returned
         mock_get_quicklook.return_value = None
-        result = self.runner.invoke(
-            eodag,
+        exit_code, output, error = self.eodag_command(
             [
                 "download",
                 "--search-results",
@@ -1031,8 +1150,10 @@ class TestEodagCli(unittest.TestCase):
                 "--quicklooks",
             ],
         )
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
         self.assertIn(
             "A quicklook may have been downloaded but we cannot locate it. "
             "Increase verbosity for more details: `eodag -v download [OPTIONS]`",
-            result.output,
+            output,
         )

@@ -372,7 +372,3 @@ class TestProvidersDict:
             providers_dict.update_from_configs(invalid_configs)
             mock_logger.warning.assert_called()
             assert len(providers_dict) == 0
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])
