@@ -4584,7 +4584,7 @@
       fetch_url: null
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
-      form_url: "https://s3.central.data.destination-earth.eu/swift/v1/forms/common_dedt_lumi_dedt_mn5.json"
+      form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_{dataset}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4606,7 +4606,6 @@
     DT_EXTREMES:
       discover_queryables:
         constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
-        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/forms/dedt_lumi/dt_extremes.json"
       dataset: extremes-dt
       class: d1
       expver: "0001"
@@ -4705,7 +4704,7 @@
       model: IFS-FESOM
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       discover_queryables:
-        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/forms/dedt_lumi/dt_climate_g1_cmip6_hist_ifs_fesom_r1.json"
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1.json"
       dataset: climate-dt
       class: ng
       generation: "1"
@@ -4783,7 +4782,7 @@
       fetch_url: null
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
-      form_url: "https://s3.central.data.destination-earth.eu/swift/v1/forms/common_dedt_lumi_dedt_mn5.json"
+      form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_{dataset}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
