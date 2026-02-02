@@ -80,7 +80,6 @@ from eodag.utils.exceptions import (
     NoMatchingCollection,
     PluginImplementationError,
     RequestError,
-    UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
 )
@@ -2183,13 +2182,13 @@ class EODataAccessGateway:
                             provider=provider, fetch_providers=True
                         )
                     ]
-                raise UnsupportedCollection(f"{collection} is not available.")
             try:
                 kwargs["collection"] = collection = self.get_collection_from_alias(
                     collection
                 )
-            except NoMatchingCollection as e:
-                raise UnsupportedCollection(f"{collection} is not available.") from e
+            except NoMatchingCollection:
+                # try fetching queryables for custom collection even if not known
+                pass
 
         if not provider and not collection:
             return QueryablesDict(

@@ -32,6 +32,7 @@ import yaml
 from concurrent.futures import ThreadPoolExecutor
 from lxml import html
 from pydantic import ValidationError as PydanticValidationError
+from requests.exceptions import RequestException
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -53,7 +54,6 @@ from tests.context import (
     Queryables,
     RequestError,
     SearchResult,
-    UnsupportedCollection,
     UnsupportedProvider,
     get_geometry_from_various,
     load_default_config,
@@ -1470,6 +1470,11 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
     @mock.patch(
+        "eodag.utils.requests.requests.sessions.Session.get",
+        autospec=True,
+        side_effect=RequestException,
+    )
+    @mock.patch(
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
@@ -1486,13 +1491,14 @@ class TestCore(TestCoreBase):
         mock_stacsearch_discover_queryables: mock.Mock,
         mock_fetch_collections_list: mock.Mock,
         mock_auth_plugin: mock.Mock,
+        mock_requests_get: mock.Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and collection"""
 
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
 
-        with self.assertRaises(UnsupportedCollection):
+        with self.assertRaises(RequestError):
             self.dag.list_queryables(collection="not_supported_collection")
 
         # No provider & no collection
