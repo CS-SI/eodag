@@ -74,11 +74,15 @@ def _convert_bbox_to_lonlat_EPSG3035(bbox: list[str]) -> list[float]:
 
 
 def _get_available_values_from_constraints(
-    constraints: list[dict[str, Any]], filters: dict[str, Any], product_type: str
+    constraints: list[dict[str, Any]], filters: dict[str, Any], collection: str
 ) -> dict[str, list[Any]]:
     """get the available values for each parameter from the constraints"""
     available_values: dict[str, list[Any]] = {}
     constraint_keys = set([k for const in constraints for k in const.keys()])
+    if (
+        "tile_size" in constraint_keys
+    ):  # tiles are available -> filtering by geometry is possible
+        constraint_keys.add("geometry")
     not_found_keys = set(filters.keys()) - constraint_keys
     if "month" in not_found_keys and isinstance(filters["month"], list):
         # month added from datetime but filter not available
@@ -86,7 +90,7 @@ def _get_available_values_from_constraints(
         not_found_keys.remove("month")
     if not_found_keys and not_found_keys != {"id"}:
         raise ValidationError(
-            f"Parameters {not_found_keys} do not exist for product type {product_type}; "
+            f"Parameters {not_found_keys} do not exist for collection {collection}; "
             f"available parameters: {constraint_keys}"
         )
 
@@ -177,17 +181,17 @@ class CopGhslSearch(Search):
     Search plugin to fetch items from Copernicus Global Human Settlement Layer
     """
 
-    def _check_input_parameters_valid(self, product_type: str, params: Any):
+    def _check_input_parameters_valid(self, collection: str, params: Any):
         """
         Check if all required parameters are given and if the values are valid
         raises a ValidationError if this is not the case
         """
-        constraints_data = self._fetch_constraints(product_type)
+        constraints_data = self._fetch_constraints(collection)
         constraints_values = constraints_data["constraints"]
         # get available values - will raise error if wrong parameters or wrong parameter values in request
         grouped_by = params.pop("grouped_by", None)
         available_values = _get_available_values_from_constraints(
-            constraints_values, params, product_type
+            constraints_values, params, collection
         )
         if grouped_by and grouped_by not in params:
             params[grouped_by] = available_values[grouped_by]
@@ -250,7 +254,7 @@ class CopGhslSearch(Search):
         self,
         tiles: dict[str, list[dict[str, Any]]],
         unit: str,
-        product_type: str,
+        collection: str,
         params: dict[str, Any],
         additional_filter: Optional[str] = None,
     ) -> tuple[list[EOProduct], int]:
@@ -271,9 +275,7 @@ class CopGhslSearch(Search):
         # parameters that need formatting
         dataset = metadata_mapping.get("dataset", None)
         if not dataset:
-            raise MisconfiguredError(
-                f"dataset mapping not available for {product_type}"
-            )
+            raise MisconfiguredError(f"dataset mapping not available for {collection}")
         id_params = deepcopy(params)
         if "tile_size" in parsed_metadata_mapping:
             # format tile_size
@@ -309,10 +311,11 @@ class CopGhslSearch(Search):
             id_params["year"] = year
             id_params = {k: str(v) for k, v in id_params.items()}
             product_id_base = (
-                product_type + "__" + "_".join(v for v in id_params.values() if v)
+                collection + "__" + "_".join(v for v in id_params.values() if v)
             )
 
             params["year"] = year
+            params = {k.replace(":", "_"): v for k, v in params.items()}
             dataset = dataset.format(**params)
             dataset = dataset.replace(
                 "__", "_"
@@ -339,7 +342,7 @@ class CopGhslSearch(Search):
                 )
                 properties["eodag:download_link"] = download_link
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, collection=product_type
+                    provider="cop_ghsl", properties=properties, collection=collection
                 )
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
@@ -357,16 +360,16 @@ class CopGhslSearch(Search):
         ]
         properties = {}
         properties["geometry"] = default_geometry[1]
-        product_type_config = self.config.products.get(collection, {})
-        download_link = product_type_config.get("metadata_mapping", {}).get(
+        collection_config = self.config.products.get(collection, {})
+        download_link = collection_config.get("metadata_mapping", {}).get(
             "eodag:download_link", None
         )
         if not download_link:
             raise MisconfiguredError(
-                f"Download link configuration missing for product type {collection}"
+                f"Download link configuration missing for collection {collection}"
             )
 
-        # product type with assets mapping
+        # collection with assets mapping
         assets_mapping = filters.pop("assets_mapping", None)
         products = []
         per_page = getattr(prep, "items_per_page", DEFAULT_ITEMS_PER_PAGE)
@@ -415,7 +418,7 @@ class CopGhslSearch(Search):
                 products.append(product)
                 if i == end_index:
                     break
-        else:  # product type with only one file to download
+        else:  # collection with only one file to download
             product_id = f"{collection}_ALL"
             properties["id"] = properties["title"] = product_id
             datetimes = self._get_start_and_end_from_properties(properties)
@@ -446,13 +449,13 @@ class CopGhslSearch(Search):
         available_values = _get_available_values_from_constraints(
             constraints_values, {}, collection
         )
-        product_type_config = deepcopy(self.config.products.get(collection, {}))
+        collection_config = deepcopy(self.config.products.get(collection, {}))
         for key, values in available_values.items():
             for value in values:
                 if value in filter_part:
                     query_params[key] = value
                     break
-        tiles_or_none = self._get_tiles_for_filters(product_type_config, query_params)
+        tiles_or_none = self._get_tiles_for_filters(collection_config, query_params)
         if tiles_or_none:
             tiles, unit = tiles_or_none
             matching_tile = [
@@ -474,11 +477,11 @@ class CopGhslSearch(Search):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
-        # update filters with values from product type mapping
-        provider_product_type = collection_config.pop("product:type", None)
+        # update filters with values from collection mapping
+        provider_product_type = collection_config.pop("_collection", None)
         if not provider_product_type:
             raise MisconfiguredError(
-                f"provider product type mapping not available for {collection}"
+                f"provider collection mapping not available for {collection}"
             )
         filter_params = deepcopy(params)
         filter_params.pop("geometry", None)
@@ -505,7 +508,7 @@ class CopGhslSearch(Search):
             try:
                 filter_str = (
                     f"{provider_product_type}_{year}_"
-                    f"{filter_params['tile_size']}_{filter_params['coord_system']}"
+                    f"{filter_params['tile_size']}_{filter_params['proj:code']}"
                 )
             except KeyError:
                 logger.warning(f"no tiles available for {collection}")
@@ -517,7 +520,7 @@ class CopGhslSearch(Search):
                     return None
                 res.raise_for_status()
                 tiles = res.json()["grid"]
-                if filter_params["coord_system"] == "3035":
+                if filter_params["proj:code"] == "3035":
                     tiles = []
                     for t_id, bbox in res.json()["BBoxes"].items():
                         tiles.append({"tileID": t_id, "BBox_3035": bbox})
@@ -553,7 +556,7 @@ class CopGhslSearch(Search):
         if not collection:
             collection = kwargs["collection"] = prep.collection
         if not isinstance(collection, str):
-            raise MisconfiguredError("invalid product type %s", collection)
+            raise MisconfiguredError("invalid collection %s", collection)
         collection_config = deepcopy(self.config.products.get(collection, {}))
         if "id" in kwargs and "ALL" not in kwargs["id"]:
             tiles_or_none = self._get_tile_from_product_id(kwargs)
@@ -579,19 +582,15 @@ class CopGhslSearch(Search):
         kwargs["page"] = page
         kwargs["per_page"] = items_per_page
         constraints_filters = self._fetch_constraints(collection)
-        additional_filter = constraints_filters.get("additional_filter", None)
-        if additional_filter:
-            products, count = self._create_products_from_tiles(
-                tiles,
-                unit,
-                collection,
-                kwargs,
-                additional_filter=additional_filter,
-            )
-        else:
-            products, count = self._create_products_from_tiles(
-                tiles, unit, collection, kwargs
-            )
+        additional_filter = constraints_filters.get("additional_filter")
+        products, count = self._create_products_from_tiles(
+            tiles,
+            unit,
+            collection,
+            kwargs,
+            additional_filter=additional_filter,
+        )
+
         if prep.count:
             total_items = count
         else:
@@ -605,16 +604,16 @@ class CopGhslSearch(Search):
         )
 
     @instance_cached_method()
-    def _fetch_constraints(self, product_type: str) -> dict[str, Any]:
-        logger.debug(f"fetching constraints for {product_type}")
+    def _fetch_constraints(self, collection: str) -> dict[str, Any]:
+        logger.debug(f"fetching constraints for {collection}")
         constraints_url = self.config.discover_queryables["constraints_url"].format(
-            product_type=product_type
+            collection=collection
         )
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         try:
             res = requests.get(constraints_url)
             if res.status_code == 404:
-                logger.warning(f"no constraints found for {product_type}")
+                logger.warning(f"no constraints found for {collection}")
                 return {"constraints": {}}
             res.raise_for_status()
             return res.json()
@@ -636,7 +635,7 @@ class CopGhslSearch(Search):
         """
 
         collection = kwargs.pop("collection")
-        kwargs.pop("product:type")
+        kwargs.pop("_collection")
         grouped_by = kwargs.pop("grouped_by", None)
         _replace_datetimes(kwargs)
         constraints_values = self._fetch_constraints(collection)["constraints"]
