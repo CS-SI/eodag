@@ -16,10 +16,6 @@ Features
 Bug Fixes
 ---------
 
-* Docker image (`#1972`_, `fa3fe3f`_)
-
-* Replace product_type_fetch_url with collection_fetch_url (`#1995`_, `4559f41`_)
-
 * **core**: Add Collection property for server extended metadata (`#1947`_, `e9ffb17`_)
 
 * **core**: Asset name harmonization with query-string (`#1983`_, `a93c2c7`_)
@@ -44,10 +40,12 @@ Bug Fixes
 
 * **providers**: Search parameters parsing on hydroweb_next (`#1981`_, `ee21c4f`_)
 
+* **providers** Update wekeo_ecmwf collection_fetch_url (`#1995`_, `4559f41`_)
+
 Build System
 ------------
 
-* Add docker image (`#1971`_, `0c5ed7c`_)
+* Add docker image (`#1971`_, `0c5ed7c`_)(`#1972`_, `fa3fe3f`_)
 
 * Add python3.14 support (`#1973`_, `07f484b`_)
 
@@ -79,11 +77,11 @@ Documentation
 Refactoring
 -----------
 
-* Cli.py collision name on eodag (`#1993`_, `6d6f34f`_)
-
-* Updated STAC extensions schemas versions (`#2017`_, `5bc3f68`_)
+* **cli** Cli.py collision name on eodag (`#1993`_, `6d6f34f`_)
 
 * **collections**: Add processor for Sentinel and MAJA collections (`#1999`_, `f9a51f0`_)
+
+* **core** Updated STAC extensions schemas versions (`#2017`_, `5bc3f68`_)
 
 * **core**: Use collection alias in EOProduct (`#1968`_, `b242061`_)
 
