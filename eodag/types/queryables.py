@@ -1,22 +1,61 @@
+# -*- coding: utf-8 -*-
+# Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import annotations
 
+import re
 from collections import UserDict
-from typing import Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from annotated_types import Lt
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
 from shapely.geometry.base import BaseGeometry
+from typing_extensions import get_args
 
-from eodag.types import annotated_dict_to_model, model_fields_to_annotated
+from eodag.types import (
+    BaseModelCustomJsonSchema,
+    annotated_dict_to_model,
+    model_fields_to_annotated,
+)
+from eodag.types.stac_extensions import STAC_EXTENSIONS
+from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
+from eodag.utils.dates import (
+    COMPACT_DATE_PATTERN,
+    COMPACT_DATE_RANGE_PATTERN,
+    DATE_PATTERN,
+    DATE_RANGE_PATTERN,
+    datetime_range,
+    format_date,
+    format_date_range,
+    is_range_in_range,
+    parse_date,
+)
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
+
+if TYPE_CHECKING:
+    from eodag.types.stac_extensions import BaseStacExtension
 
 Percentage = Annotated[PositiveInt, Lt(100)]
 
 
-class CommonQueryables(BaseModel):
+class CommonQueryables(BaseModelCustomJsonSchema):
     """A class representing search common queryable properties."""
 
     collection: Annotated[str, Field()]
@@ -47,11 +86,33 @@ class CommonQueryables(BaseModel):
         f.__metadata__[0].default = default
         return f
 
+    @classmethod
+    def from_stac_models(
+        cls,
+        extensions: list[BaseStacExtension] = STAC_EXTENSIONS,
+        base_model: type[BaseModel] = CommonStacMetadata,
+    ) -> type[Queryables]:
+        """Creates Queryables from STAC models.
+
+        :param extensions: list of STAC extensions to include in the model
+        :param base_model: base STAC model to use
+        :return: Queryables model
+        """
+        return cast(
+            type[Queryables],
+            create_stac_metadata_model(
+                base_models=[cls, base_model],
+                extensions=extensions,
+                class_name="Queryables",
+            ),
+        )
+
 
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties.
 
     Parameters default value is set to ``None`` to have them not required.
+    Fields described here are queryables-specific and complete StacMetadata fields.
     """
 
     start: Annotated[
@@ -78,59 +139,68 @@ class Queryables(CommonQueryables):
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]
-    # common metadata
-    constellation: Annotated[str, Field(None)]
-    created: Annotated[str, Field(None)]
-    description: Annotated[str, Field(None)]
-    gsd: Annotated[int, Field(None)]
     id: Annotated[str, Field(None)]
-    instruments: Annotated[str, Field(None)]
-    keywords: Annotated[str, Field(None)]
-    license: Annotated[str, Field(None)]
-    platform: Annotated[str, Field(None)]
-    providers: Annotated[str, Field(None)]
-    title: Annotated[str, Field(None)]
-    uid: Annotated[str, Field(None)]
-    updated: Annotated[str, Field(None)]
-    # eo extension
-    eo_cloud_cover: Annotated[Percentage, Field(None, alias="eo:cloud_cover")]
-    eo_snow_cover: Annotated[Percentage, Field(None, alias="eo:snow_cover")]
-    # grid extension
-    grid_code: Annotated[
-        str, Field(None, alias="grid:code", pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$")
-    ]
-    # mgrs extension
-    mgrs_grid_square: Annotated[str, Field(None, alias="mgrs:grid_square")]
-    mgrs_latitude_band: Annotated[str, Field(None, alias="mgrs:latitude_band")]
-    mgrs_utm_zone: Annotated[str, Field(None, alias="mgrs:utm_zone")]
-    # order extension
-    order_status: Annotated[str, Field(None, alias="order:status")]
-    # processing extension
-    processing_level: Annotated[str, Field(None, alias="processing:level")]
-    # product extension
-    product_acquisition_type: Annotated[
-        str, Field(None, alias="product:acquisition_type")
-    ]
-    product_timeliness: Annotated[str, Field(None, alias="product:timeliness")]
-    product_type: Annotated[str, Field(None, alias="product:type")]
-    # sar extension
-    sar_beam_ids: Annotated[str, Field(None, alias="sar:beam_ids")]
-    sar_frequency_band: Annotated[float, Field(None, alias="sar:frequency_band")]
-    sar_instrument_mode: Annotated[str, Field(None, alias="sar:instrument_mode")]
-    sar_polarizations: Annotated[list[str], Field(None, alias="sar:polarizations")]
-    # sat extension
-    sat_absolute_orbit: Annotated[int, Field(None, alias="sat:absolute_orbit")]
-    sat_orbit_cycle: Annotated[int, Field(None, alias="sat:orbit_cycle")]
-    sat_orbit_state: Annotated[str, Field(None, alias="sat:orbit_state")]
-    sat_relative_orbit: Annotated[int, Field(None, alias="sat:relative_orbit")]
-    # sci extension
-    sci_doi: Annotated[str, Field(None, alias="sci:doi")]
-    # view extension
-    view_incidence_angle: Annotated[str, Field(None, alias="view:incidence_angle")]
-    view_sun_azimuth: Annotated[str, Field(None, alias="view:sun_azimuth")]
-    view_sun_elevation: Annotated[str, Field(None, alias="view:sun_elevation")]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @field_validator("ecmwf_date", mode="plain", check_fields=False)
+    @classmethod
+    def check_date_range(cls, v: str) -> str:
+        """Validate date ranges"""
+        if not isinstance(v, str):
+            raise ValueError(
+                "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')"
+            )
+        date_regex = [
+            re.compile(p)
+            for p in (
+                DATE_PATTERN,
+                COMPACT_DATE_PATTERN,
+                DATE_RANGE_PATTERN,
+                COMPACT_DATE_RANGE_PATTERN,
+            )
+        ]
+        if not any(r.match(v) is not None for r in date_regex):
+            raise ValueError(
+                "date must be a string formatted as single date ('yyyy-mm-dd') or range ('yyyy-mm-dd/yyyy-mm-dd')"
+            )
+        try:
+            start, end = parse_date(v)
+        except ValueError as e:
+            raise ValueError("date must follow 'yyyy-mm-dd' format") from e
+        if end < start:
+            raise ValueError("date range end must be after start")
+        # enumerate dates in range
+        v_set: set[str] = {format_date(d) for d in datetime_range(start, end)}
+        # is_range_in_range() support only ranges (no single date allowed) in the format 'yyyy-mm-dd/yyyy-mm-dd'
+        v_range: str = format_date_range(start, end)
+
+        field_info = cls.model_fields["ecmwf_date"]
+        literals = get_args(field_info.annotation)
+
+        # Collect missing values to report errors
+        missing_values = set(v_set)
+
+        # date constraint may be intervals. We identify intervals with a "/" in the value.
+        # date constraint can be a mixed list of single values (e.g "2023-06-27")
+        # and intervals (e.g. "2024-11-12/2025-11-20")
+        # collections with mixed values: CAMS_GAC_FORECAST, CAMS_EU_AIR_QUALITY_FORECAST
+        for literal in literals:
+            literal_start, literal_end = parse_date(literal)
+            if "/" in literal:
+                # range with separator / or /to/
+                literal_range: str = format_date_range(literal_start, literal_end)
+                if is_range_in_range(literal_range, v_range):
+                    return v
+            else:
+                # convert literal to the format 'yyyy-mm-dd'
+                literal_start_str = format_date(literal_start)
+                if literal_start_str in v_set:
+                    missing_values.remove(literal_start_str)
+                if not missing_values:
+                    return v
+
+        raise ValueError("date not allowed")
 
 
 class QueryablesDict(UserDict[str, Any]):
@@ -232,4 +302,4 @@ class QueryablesDict(UserDict[str, Any]):
         :param model_name: name used for :class:`pydantic.BaseModel` creation
         :return: pydantic BaseModel of the queryables dict
         """
-        return annotated_dict_to_model(model_name, self.data)
+        return annotated_dict_to_model(model_name, self.data, Queryables)

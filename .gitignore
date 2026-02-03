@@ -107,6 +107,7 @@ search_results.geojson
 ext_collections.json
 !eodag/resources/ext_collections.json
 !tests/resources/ext_collections.json
+eodag-config
 
 # IDE
 # Pycharm

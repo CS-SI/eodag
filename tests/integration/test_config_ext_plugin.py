@@ -25,8 +25,7 @@ from tempfile import TemporaryDirectory
 from pytest import MonkeyPatch
 
 from tests import TEST_RESOURCES_PATH
-from tests.context import EODataAccessGateway
-from tests.utils import mock
+from tests.context import EODataAccessGateway, mock
 
 
 class TestExternalPluginConfig(unittest.TestCase):

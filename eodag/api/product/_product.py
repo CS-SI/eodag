@@ -23,13 +23,17 @@ import os
 import re
 import tempfile
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Union, cast
 
+import orjson
 import requests
 from requests import RequestException
 from requests.auth import AuthBase
 from shapely import geometry
 from shapely.errors import ShapelyError
+
+from eodag.types.queryables import CommonStacMetadata
+from eodag.types.stac_metadata import create_stac_metadata_model
 
 try:
     # import from eodag-cube if installed
@@ -52,6 +56,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    STAC_VERSION,
     USER_AGENT,
     ProgressCallback,
     format_string,
@@ -146,6 +151,13 @@ class EOProduct:
             and not key.startswith("_")
             and value is not None
         }
+        self.properties.setdefault(
+            "datetime",
+            self.properties.get("start_datetime")
+            or self.properties.get("end_datetime"),
+        )
+
+        # sort properties to have common stac properties first
         common_stac_properties = {
             key: self.properties[key]
             for key in sorted(self.properties)
@@ -205,25 +217,71 @@ class EOProduct:
         """
         search_intersection = None
         if self.search_intersection is not None:
-            search_intersection = geometry.mapping(self.search_intersection)
+            search_intersection = orjson.loads(
+                orjson.dumps(self.search_intersection.__geo_interface__)
+            )
+
+        # product properties
+        stac_properties = {
+            **{
+                key: value
+                for key, value in self.properties.items()
+                if key not in ("geometry", "id")
+            },
+            "eodag:provider": self.provider,
+            "eodag:search_intersection": search_intersection,
+        }
+        stac_providers = self.properties.get("providers", [])
+        if not any("host" in p.get("roles", []) for p in stac_providers):
+            stac_providers.append({"name": self.provider, "roles": ["host"]})
+            stac_properties["providers"] = stac_providers
+
+        props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
+        props_validated = props_model.safe_validate(stac_properties)
+        stac_extensions: set[str] = set(props_validated.get_conformance_classes())
+
+        # skip invalid properties
+        invalid_properties = {
+            k
+            for k in stac_properties.keys()
+            if k not in props_validated.to_dict() and props_model.has_field(k)
+        }
+        for key in invalid_properties:
+            stac_properties.pop(key, None)
+
+        # get conformance classes for assets properties
+        assets_dict = {**self.assets.as_dict()}
+        for asset_key, asset_properties in self.assets.as_dict().items():
+            asset_props_validated = props_model.safe_validate(asset_properties)
+            stac_extensions.update(asset_props_validated.get_conformance_classes())
+
+            # skip invalid assets properties
+            invalid_asset_properties = {
+                k
+                for k in asset_properties.keys()
+                if k not in asset_props_validated.to_dict() and props_model.has_field(k)
+            }
+            for key in invalid_asset_properties:
+                assets_dict[asset_key].pop(key, None)
 
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
-            "geometry": geometry.mapping(self.geometry),
+            "geometry": orjson.loads(orjson.dumps(self.geometry.__geo_interface__)),
+            "bbox": list(self.geometry.bounds),
             "id": self.properties["id"],
-            "assets": self.assets.as_dict(),
-            "properties": {
-                "eodag:collection": self.collection,
-                "eodag:provider": self.provider,
-                "eodag:search_intersection": search_intersection,
-                **{
-                    key: value
-                    for key, value in self.properties.items()
-                    if key not in ("geometry", "id")
+            "assets": assets_dict,
+            "properties": stac_properties,
+            "links": [
+                {
+                    "rel": "collection",
+                    "href": f"{self.collection}.json",
+                    "type": "application/json",
                 },
-            },
+            ],
+            "stac_extensions": list(stac_extensions),
+            "stac_version": STAC_VERSION,
+            "collection": self.collection,
         }
-
         return geojson_repr
 
     @classmethod
@@ -237,11 +295,11 @@ class EOProduct:
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         try:
+            collection = feature.get("collection")
             properties = feature["properties"]
             properties["geometry"] = feature["geometry"]
             properties["id"] = feature["id"]
             provider = properties.pop("eodag:provider")
-            collection = properties.pop("eodag:collection")
             search_intersection = properties.pop("eodag:search_intersection")
         except KeyError as e:
             raise ValidationError(
@@ -663,3 +721,38 @@ class EOProduct:
                     <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
                 </tr>
             </table>"""
+
+    def to_xarray(
+        self,
+        asset_key: Optional[str] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        roles: Iterable[str] = {"data", "data-mask"},
+        **xarray_kwargs: Any,
+    ):
+        """
+        Return product data as a dictionary of :class:`xarray.Dataset`.
+
+        :param asset_key: (optional) key of the asset. If not specified the whole
+                          product data will be retrieved
+        :param wait: (optional) If order is needed, wait time in minutes between two
+                     order status check
+        :param timeout: (optional) If order is needed, maximum time in minutes before
+                        stop checking order status
+        :param roles: (optional) roles of assets that must be fetched
+        :param xarray_kwargs: (optional) keyword arguments passed to :func:`xarray.open_dataset`
+        :returns: a dictionary of :class:`xarray.Dataset`
+        """
+        raise NotImplementedError("Install eodag-cube to make this method available.")
+
+    def augment_from_xarray(
+        self,
+        roles: Iterable[str] = {"data", "data-mask"},
+    ) -> EOProduct:
+        """
+        Annotate the product properties and assets with STAC metadata got by fetching its xarray representation.
+
+        :param roles: (optional) roles of assets that must be fetched
+        :returns: updated EOProduct
+        """
+        raise NotImplementedError("Install eodag-cube to make this method available.")

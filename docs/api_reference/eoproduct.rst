@@ -57,3 +57,4 @@ Pixel access
 .. automethod:: eodag_cube.api.product._product.EOProduct.to_xarray
 .. automethod:: eodag_cube.api.product._product.EOProduct.get_file_obj
 .. automethod:: eodag_cube.api.product._product.EOProduct.rio_env
+.. automethod:: eodag_cube.api.product._product.EOProduct.augment_from_xarray

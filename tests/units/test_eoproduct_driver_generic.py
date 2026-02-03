@@ -70,7 +70,7 @@ class TestEOProductDriverGeneric(EODagTestCase):
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(
-                "2018/1/28/0/ew-hv.foo", self.product
+                "2018/1/28/0/ew-hv.foo?bar", self.product
             ),
             ("ew-hv.foo", ["auxiliary"]),
         )
@@ -79,6 +79,12 @@ class TestEOProductDriverGeneric(EODagTestCase):
                 "s3://foo/1/28/0/rfi-ew-hh.xml", self.product
             ),
             ("rfi-ew-hh.xml", ["metadata"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/tilejson.json?foo", self.product
+            ),
+            ("tilejson.json", ["metadata"]),
         )
         self.assertEqual(
             self.product.driver.guess_asset_key_and_roles(

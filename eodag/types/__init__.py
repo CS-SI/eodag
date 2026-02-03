@@ -19,24 +19,15 @@
 
 from __future__ import annotations
 
-from typing import (
-    Annotated,
-    Any,
-    Literal,
-    Optional,
-    Type,
-    TypedDict,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Annotated, Any, Literal, Optional, Type, Union, get_args, get_origin
 
 from annotated_types import Gt, Lt
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, create_model
 from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, PydanticUndefined
+from typing_extensions import TypedDict
 
 from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
@@ -153,7 +144,8 @@ def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
     default_value: Optional[Any] = None,
     required: Optional[bool] = False,
-    alias: Optional[str] = None,
+    validation_alias: Optional[Union[str, AliasChoices]] = None,
+    serialization_alias: Optional[str] = None,
 ) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object
 
@@ -171,6 +163,8 @@ def json_field_definition_to_python(
     :param json_field_definition: the json field definition
     :param default_value: default value of the field
     :param required: if the field is required
+    :param validation_alias: validation alias
+    :param serialization_alias: serialization alias
     :returns: the python field definition
     """
     python_type = json_type_to_python(json_field_definition.get("type"))
@@ -181,7 +175,8 @@ def json_field_definition_to_python(
         pattern=json_field_definition.get("pattern", PydanticUndefined),
         le=json_field_definition.get("maximum", PydanticUndefined),
         ge=json_field_definition.get("minimum", PydanticUndefined),
-        alias=alias or PydanticUndefined,
+        validation_alias=validation_alias or PydanticUndefined,
+        serialization_alias=serialization_alias or PydanticUndefined,
     )
 
     enum = json_field_definition.get("enum")
@@ -202,6 +197,14 @@ def json_field_definition_to_python(
                 enum = items.get("enum")
             elif "const" in items:
                 const = items.get("const")
+    elif python_type is dict:
+        properties = json_field_definition.get("properties")
+        if isinstance(properties, dict):
+            fields_type: dict = {
+                k: json_field_definition_to_python(v, required=required)
+                for k, v in properties.items()
+            }
+            python_type = TypedDict("dictionary", fields_type)  # type: ignore
 
     if enum:
         literal = Literal[tuple(sorted(enum))]  # type: ignore
@@ -386,7 +389,9 @@ class BaseModelCustomJsonSchema(BaseModel):
 
 
 def annotated_dict_to_model(
-    model_name: str, annotated_fields: dict[str, Annotated[Any, FieldInfo]]
+    model_name: str,
+    annotated_fields: dict[str, Annotated[Any, FieldInfo]],
+    model_class: Optional[type[BaseModel]] = BaseModelCustomJsonSchema,
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 
@@ -411,6 +416,7 @@ def annotated_dict_to_model(
     :param model_name: name of the model to be created
     :param annotated_fields: dict containing the parameters and annotated values that should become
                              the properties of the model
+    :param model_class: (optiional) base class of the returned model
     :returns: pydantic model
     """
     fields = {}
@@ -423,7 +429,7 @@ def annotated_dict_to_model(
 
     custom_model = create_model(
         model_name,
-        __base__=BaseModelCustomJsonSchema,
+        __base__=model_class,
         **fields,  # type: ignore
     )
 

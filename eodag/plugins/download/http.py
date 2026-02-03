@@ -27,16 +27,7 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterator,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Optional, Union, cast
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -46,6 +37,7 @@ from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
+from typing_extensions import TypedDict
 from zipstream import ZipStream
 
 from eodag.api.product.metadata_mapping import (
@@ -476,6 +468,8 @@ class HTTPDownload(Download):
         if (
             success_status and success_status != status_dict.get("eodag:order_status")
         ) or (success_code and success_code != response.status_code):
+            # Remove the download link if the order has not been completed or was not successful
+            product.properties.pop("eodag:download_link", None)
             return None
 
         product.properties["order:status"] = ONLINE_STATUS

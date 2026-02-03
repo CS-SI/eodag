@@ -18,16 +18,17 @@
 
 import datetime
 import hashlib
-import multiprocessing
 import os
 import re
 import shutil
+import threading
 import time
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
+from stac_validator import stac_validator
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from tests import TEST_RESOURCES_PATH
@@ -219,6 +220,10 @@ FEDEO_CEDA_SEARCH_ARGS = [
 
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.stac = stac_validator.StacValidate()
+
     def execute_search(
         self,
         provider,
@@ -262,6 +267,20 @@ class EndToEndBase(unittest.TestCase):
             self.assertGreater(len(results), 0)
             one_product = results[0]
             self.assertEqual(one_product.provider, provider)
+
+            # validate STAC serialization
+            self.stac.validate_item_collection_dict(results.as_geojson_object())
+            for msg in self.stac.message:
+                self.assertTrue(
+                    msg["valid_stac"],
+                    "%s %s" % (msg.get("error_message", msg), msg.get("failed_schema")),
+                )
+            self.stac.validate_dict(one_product.as_dict())
+            for msg in self.stac.message:
+                self.assertTrue(
+                    msg["valid_stac"],
+                    "%s %s" % (msg.get("error_message", msg), msg.get("failed_schema")),
+                )
             return one_product
         else:
             return results
@@ -305,6 +324,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
 
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -319,29 +339,6 @@ class TestEODagEndToEnd(EndToEndBase):
         cls.tmp_download_dir = TemporaryDirectory()
         cls.tmp_download_path = cls.tmp_download_dir.name
 
-        for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to cls.tmp_download_path for tests
-            if hasattr(conf, "download") and hasattr(conf.download, "output_dir"):
-                conf.download.output_dir = cls.tmp_download_path
-            elif hasattr(conf, "api") and hasattr(conf.api, "output_dir"):
-                conf.api.output_dir = cls.tmp_download_path
-            else:
-                # no output_dir found for provider
-                pass
-            # Force all providers implementing RestoSearch and defining how to retrieve
-            # products by specifying the
-            # location scheme to use https, enabling actual downloading of the product
-            if (
-                getattr(getattr(conf, "search", {}), "product_location_scheme", "https")
-                == "file"
-            ):
-                conf.search.product_location_scheme = "https"
-            # Disable extraction
-            try:  # Case HTTPDownload plugin
-                conf.download.extract = False
-            except (KeyError, AttributeError):  # case api plugin
-                conf.api.extract = False
-
     def setUp(self):
         self.downloaded_file_path = ""
 
@@ -349,20 +346,24 @@ class TestEODagEndToEnd(EndToEndBase):
     def tearDownClass(cls):
         cls.tmp_download_dir.cleanup()
 
-    def execute_download(self, product, expected_filename, wait_sec=5, timeout_sec=120):
-        """Download the product in a child process, avoiding to perform the entire
+    def execute_download(
+        self, product, expected_filename=None, wait_sec=5, timeout_sec=120
+    ):
+        """Download the product in a child thread, avoiding to perform the entire
         download, then do some checks and delete the downloaded result from the
         filesystem.
         """
 
         start_time = time.time()
 
-        dl_pool = multiprocessing.Pool()
-
-        dl_result = dl_pool.apply_async(
-            func=self.eodag.download,
-            args=(product, None, wait_sec / 60, timeout_sec / 60),
+        download_thread = threading.Thread(
+            target=self.eodag.download,
+            args=(product, None, None, wait_sec / 60, timeout_sec / 60),
+            kwargs={"output_dir": self.tmp_download_path, "extract": False},
+            daemon=True,
         )
+        download_thread.start()
+
         max_wait_time = timeout_sec
         while (
             sum(
@@ -373,26 +374,21 @@ class TestEODagEndToEnd(EndToEndBase):
             <= 0
             and max_wait_time > 0
         ):
-            # check every 2s if download has start
-            dl_result.wait(2)
+            time.sleep(2)
             max_wait_time -= 2
 
-        try:
-            dl_result.get(timeout=wait_sec)
-        except multiprocessing.TimeoutError:
-            pass
-
-        dl_pool.terminate()
-        dl_pool.close()
+        # Wait for the thread to complete or timeout
+        download_thread.join(timeout=wait_sec)
 
         stop_time = time.time()
         print(stop_time - start_time)
 
-        self.assertIn(
-            expected_filename, os.listdir(product.downloader.config.output_dir)
-        )
+        if expected_filename is None:
+            expected_filename = product.properties["title"]
+
+        self.assertIn(expected_filename, os.listdir(self.tmp_download_path))
         self.downloaded_file_path = os.path.join(
-            product.downloader.config.output_dir, expected_filename
+            self.tmp_download_path, expected_filename
         )
         # check whether expected_filename refers to a file or a dir
         if os.path.isdir(self.downloaded_file_path):
@@ -428,7 +424,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
-        self.eodag.providers_config["creodias"].auth.credentials[
+        self.eodag._providers.configs["creodias"].auth.credentials[
             "totp"
         ] = "PLEASE_CHANGE_ME"
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -597,32 +593,6 @@ class TestEODagEndToEnd(EndToEndBase):
                 msg=f"tileIdentifier not mapped for {provider}",
             )
 
-    def test_end_to_end_discover_collections_creodias(self):
-        """discover_collections() must return an external collections configuration for creodias"""
-        provider = "creodias"
-        ext_collections_conf = self.eodag.discover_collections(provider=provider)
-        self.assertEqual(
-            "SENTINEL-1",
-            ext_collections_conf[provider]["providers_config"]["SENTINEL-1"][
-                "collection"
-            ],
-        )
-        self.assertEqual(
-            "SENTINEL-1",
-            ext_collections_conf[provider]["collections_config"]["SENTINEL-1"]["title"],
-        )
-        # check that all pre-configured collections are listed by provider
-        provider_collections = [
-            v["collection"]
-            for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_COLLECTION
-        ]
-        for provider_collection in provider_collections:
-            self.assertIn(
-                provider_collection,
-                ext_collections_conf[provider]["providers_config"],
-            )
-
     def test_end_to_end_discover_collections_usgs_satapi_aws(self):
         """discover_collections() must return an external collections configuration for usgs_satapi_aws"""
         provider = "usgs_satapi_aws"
@@ -648,7 +618,7 @@ class TestEODagEndToEnd(EndToEndBase):
         # check that all pre-configured collections are listed by provider
         provider_collections = [
             v["_collection"]
-            for k, v in self.eodag.providers_config[provider].products.items()
+            for k, v in self.eodag.providers.configs[provider].products.items()
             if k != GENERIC_COLLECTION
         ]
         for provider_collection in provider_collections:
@@ -664,7 +634,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(
             "sentinel-2-l1c",
             ext_collections_conf[provider]["providers_config"]["sentinel-2-l1c"][
-                "collection"
+                "_collection"
             ],
         )
         self.assertEqual(
@@ -674,15 +644,15 @@ class TestEODagEndToEnd(EndToEndBase):
             ],
         )
         self.assertEqual(
-            "other",
+            "proprietary",
             ext_collections_conf[provider]["collections_config"]["sentinel-2-l1c"][
                 "license"
             ],
         )
         # check that all pre-configured collections are listed by provider
         provider_collections = [
-            v["collection"]
-            for k, v in self.eodag.providers_config[provider].products.items()
+            v["_collection"]
+            for k, v in self.eodag.providers.configs[provider].products.items()
             if k != GENERIC_COLLECTION
         ]
         for provider_collection in provider_collections:
@@ -695,7 +665,7 @@ class TestEODagEndToEnd(EndToEndBase):
         """discover_collections() must return None for earth_search_gcs"""
         provider = "earth_search_gcs"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
-        self.assertIsNone(ext_collections_conf[provider])
+        self.assertDictEqual(ext_collections_conf, {})
 
     def test_end_to_end_discover_collections_fedeo_ceda(self):
         """discover_collections() must return an external collections configuration for fedeo ceda"""
@@ -726,6 +696,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
 
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
@@ -739,30 +710,17 @@ class TestEODagEndToEndComplete(EndToEndBase):
         cls.tmp_download_dir = TemporaryDirectory()
         cls.tmp_download_path = cls.tmp_download_dir.name
 
-        for provider, conf in cls.eodag.providers_config.items():
-            # Change download directory to cls.tmp_download_path for tests
-            if hasattr(conf, "download") and hasattr(conf.download, "output_dir"):
-                conf.download.output_dir = cls.tmp_download_path
-            elif hasattr(conf, "api") and hasattr(conf.api, "output_dir"):
-                conf.api.output_dir = cls.tmp_download_path
-            else:
-                # no output_dir found for provider
-                pass
-            # Force all providers implementing RestoSearch and defining how to retrieve
-            # products by specifying the
-            # location scheme to use https, enabling actual downloading of the product
-            if (
-                getattr(getattr(conf, "search", {}), "product_location_scheme", "https")
-                == "file"
-            ):
-                conf.search.product_location_scheme = "https"
-
     @classmethod
     def tearDownClass(cls):
         cls.tmp_download_dir.cleanup()
 
     def test_end_to_end_complete_peps(self):
         """Complete end-to-end test with PEPS for download and download_all"""
+
+        self.eodag._providers.configs[
+            "peps"
+        ].download.output_dir = self.tmp_download_path
+
         # Search for products that are succeeded and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
@@ -775,7 +733,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
             provider="peps",
         )
         prods_sorted_by_size = SearchResult(
-            sorted(search_results, key=lambda p: p.properties["resourceSize"])
+            sorted(search_results, key=lambda p: p.properties["peps:resourceSize"])
         )
         prods_online = [
             p
@@ -901,9 +859,11 @@ class TestEODagEndToEndComplete(EndToEndBase):
 
         # The returned paths must point to the downloaded archives
         # Each product's location must be a URI path to the archive
-        for product, archive_path in zip(products, archive_paths):
+        self.assertEqual(len(archive_paths), len(products))
+        for archive_path in archive_paths:
             self.assertTrue(os.path.isfile(archive_path))
-            self.assertEqual(uri_to_path(product.location), archive_path)
+        for product in products:
+            self.assertIn(uri_to_path(product.location), archive_paths)
 
         # Downloading the product again should not download them, since
         # they are all already there.
@@ -922,6 +882,8 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
+
         tests_wrong_conf = os.path.join(
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )

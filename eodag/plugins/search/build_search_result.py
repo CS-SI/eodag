@@ -21,9 +21,9 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from types import MethodType
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -31,6 +31,7 @@ import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
+from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
 from typing_extensions import get_args  # noqa: F401
@@ -58,10 +59,18 @@ from eodag.utils import (
     format_string,
     get_geometry_from_ecmwf_area,
     get_geometry_from_ecmwf_feature,
+    get_geometry_from_ecmwf_location,
     get_geometry_from_various,
 )
 from eodag.utils.cache import instance_cached_method
-from eodag.utils.dates import is_range_in_range
+from eodag.utils.dates import (
+    COMPACT_DATE_RANGE_PATTERN,
+    DATE_RANGE_PATTERN,
+    format_date,
+    is_range_in_range,
+    parse_date,
+    parse_year_month_day,
+)
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
@@ -184,6 +193,7 @@ COP_DS_KEYWORDS = {
     "region",
     "release_version",
     "satellite",
+    "satellite_mission",
     "sensor",
     "sensor_and_algorithm",
     "soil_level",
@@ -285,6 +295,27 @@ def _update_properties_from_element(
     if element["type"] == "DateRangeWidget":
         prop["description"] = "date formatted like yyyy-mm-dd/yyyy-mm-dd"
 
+    # a single geographic location
+    if element["type"] == "GeographicLocationWidget":
+        prop.update(
+            {
+                "type": "object",
+                "description": "Longitude and latitude of a single location",
+                "properties": {
+                    "longitude": {
+                        "type": "number",
+                        "maximum": 180,
+                        "minimum": -180,
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                    },
+                },
+            }
+        )
+
     if description := element.get("help"):
         prop["description"] = description
 
@@ -305,93 +336,6 @@ def ecmwf_format(v: str, alias: bool = True) -> str:
     """
     separator = ":" if alias else "_"
     return f"{ECMWF_PREFIX[:-1]}{separator}{v}" if v in ALLOWED_KEYWORDS else v
-
-
-def get_min_max(
-    value: Optional[Union[str, list[str]]] = None,
-) -> tuple[Optional[str], Optional[str]]:
-    """Returns the min and max from a list of strings or the same string if a single string is given."""
-    if isinstance(value, list):
-        sorted_values = sorted(value)
-        return sorted_values[0], sorted_values[-1]
-    return value, value
-
-
-def append_time(input_date: date, time: Optional[str]) -> datetime:
-    """
-    Parses a time string in format HHMM and appends it to a date.
-
-    if the time string is in format HH:MM or HH_MM we convert it to HHMM
-    """
-    if not time:
-        time = "0000"
-    time = re.sub(":|_", "", time)
-    if time == "2400":
-        time = "0000"
-    dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
-    dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def parse_date(
-    date: str, time: Optional[Union[str, list[str]]]
-) -> tuple[datetime, datetime]:
-    """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
-    if "to" in date:
-        start_date_str, end_date_str = date.split("/to/")
-    elif "/" in date:
-        dates = date.split("/")
-        start_date_str = dates[0]
-        end_date_str = dates[-1]
-    else:
-        start_date_str = end_date_str = date
-
-    # Update YYYYMMDD formatted dates
-    if re.match(r"^\d{8}$", start_date_str):
-        start_date_str = (
-            f"{start_date_str[:4]}-{start_date_str[4:6]}-{start_date_str[6:]}"
-        )
-    if re.match(r"^\d{8}$", end_date_str):
-        end_date_str = f"{end_date_str[:4]}-{end_date_str[4:6]}-{end_date_str[6:]}"
-
-    start_date = datetime.fromisoformat(start_date_str.rstrip("Z"))
-    end_date = datetime.fromisoformat(end_date_str.rstrip("Z"))
-
-    if time:
-        start_t, end_t = get_min_max(time)
-        start_date = append_time(start_date.date(), start_t)
-        end_date = append_time(end_date.date(), end_t)
-
-    return start_date, end_date
-
-
-def parse_year_month_day(
-    year: Union[str, list[str]],
-    month: Optional[Union[str, list[str]]] = None,
-    day: Optional[Union[str, list[str]]] = None,
-    time: Optional[Union[str, list[str]]] = None,
-) -> tuple[datetime, datetime]:
-    """Extracts and returns the year, month, day, and time from the parameters."""
-
-    def build_date(year, month=None, day=None, time=None) -> datetime:
-        """Datetime from default_date with updated year, month, day and time."""
-        updated_date = datetime(int(year), 1, 1).replace(
-            month=int(month) if month is not None else 1,
-            day=int(day) if day is not None else 1,
-        )
-        if time is not None:
-            updated_date = append_time(updated_date.date(), time)
-        return updated_date
-
-    start_y, end_y = get_min_max(year)
-    start_m, end_m = get_min_max(month)
-    start_d, end_d = get_min_max(day)
-    start_t, end_t = get_min_max(time)
-
-    start_date = build_date(start_y, start_m, start_d, start_t)
-    end_date = build_date(end_y, end_m, end_d, end_t)
-
-    return start_date, end_date
 
 
 def ecmwf_temporal_to_eodag(
@@ -627,6 +571,12 @@ class ECMWFSearch(PostJsonSearch):
         if getattr(self.config, "dates_required", False):
             self._check_date_params(params, collection)
 
+        # read 'start_datetime' and 'end_datetime' from 'date' range
+        if "date" in params:
+            start_date, end_date = parse_date(params["date"])
+            params[START] = format_date(start_date)
+            params[END] = format_date(end_date)
+
         # adapt end date if it is midnight
         if END in params:
             end_date_excluded = getattr(self.config, "end_date_excluded", True)
@@ -666,6 +616,10 @@ class ECMWFSearch(PostJsonSearch):
         if "area" in params:
             params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
             params.pop("area")
+        # single location
+        if "location" in params:
+            params["geometry"] = get_geometry_from_ecmwf_location(params["location"])
+            params.pop("location")
 
         return params
 
@@ -870,9 +824,7 @@ class ECMWFSearch(PostJsonSearch):
                 )
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
-                raise ValidationError(
-                    f"'{keyword}' is not a queryable parameter", {keyword}
-                )
+                raise ValidationError("'%s' is not a queryable parameter" % keyword)
 
         # generate queryables
         if form:
@@ -890,7 +842,7 @@ class ECMWFSearch(PostJsonSearch):
         # start and end filters are supported whenever combinations of "year", "month", "day" filters exist
         queryable_prefix = f"{ECMWF_PREFIX[:-1]}_"
         if (
-            queryables.pop(f"{queryable_prefix}date", None)
+            f"{queryable_prefix}date" in queryables
             or f"{queryable_prefix}year" in queryables
             or f"{queryable_prefix}hyear" in queryables
         ):
@@ -959,13 +911,21 @@ class ECMWFSearch(PostJsonSearch):
                 )
 
             # We convert every single value to a list of string
-            filter_v = values if isinstance(values, (list, tuple)) else [values]
+            filter_v = list(values) if isinstance(values, tuple) else values
+            filter_v = filter_v if isinstance(filter_v, list) else [filter_v]
 
             # We strip values of superfluous quotes (added by mapping converter to_geojson).
-            # ECMWF accept values with /to/. We need to split it to an array
-            # ECMWF accept values in format val1/val2. We need to split it to an array
-            sep = re.compile(r"/to/|/")
-            filter_v = [i for v in filter_v for i in sep.split(str(v))]
+            # ECMWF accept date ranges with /to/. We need to split it to an array
+            # ECMWF accept date ranges in format val1/val2. We need to split it to an array
+            date_regex = [
+                re.compile(p) for p in (DATE_RANGE_PATTERN, COMPACT_DATE_RANGE_PATTERN)
+            ]
+            is_date = any(
+                any(r.match(v) is not None for r in date_regex) for v in filter_v
+            )
+            if is_date:
+                sep = re.compile(r"/to/|/")
+                filter_v = [i for v in filter_v for i in sep.split(str(v))]
 
             # special handling for time 0000 converted to 0 by pre-formating with metadata_mapping
             if keyword.split(":")[-1] == "time":
@@ -976,23 +936,35 @@ class ECMWFSearch(PostJsonSearch):
 
             # Filter constraints and check for missing values
             filtered_constraints = []
+            # True if some constraint is defined for this keyword.
+            # In other words: if no constraint defines a list of values
+            # then any value is allowed for this keyword
+            keyword_constrained = False
             for entry in constraints:
                 # Filter based on the presence of any value in filter_v
                 entry_values = entry.get(keyword, [])
+                if entry_values:
+                    keyword_constrained = True
 
-                # date constraint may be intervals. We identify intervals with a "/" in the value
-                # we assume that if the first value is an interval, all values are intervals
+                # date constraint may be intervals. We identify intervals with a "/" in the value.
+                # date constraint can be a mixed list of single values (e.g "2023-06-27")
+                # and intervals (e.g. "2024-11-12/2025-11-20").
+                # collections with mixed values: CAMS_GAC_FORECAST, CAMS_EU_AIR_QUALITY_FORECAST
                 present_values = []
-                if keyword == "date" and "/" in entry[keyword][0]:
-                    input_range = values
-                    if isinstance(values, list):
-                        input_range = values[0]
-                    if any(is_range_in_range(x, input_range) for x in entry[keyword]):
-                        present_values = filter_v
-                else:
-                    present_values = [
-                        value for value in filter_v if value in entry_values
-                    ]
+                for entry_value in entry_values:
+                    if keyword == "date" and "/" in entry_value:
+                        input_range = values
+                        if isinstance(values, list):
+                            input_range = values[0]
+                        if "/" not in input_range:
+                            input_range = f"{input_range}/{input_range}"
+                        if is_range_in_range(entry_value, input_range):
+                            present_values.extend(filter_v)
+                    else:
+                        new_values = [
+                            value for value in filter_v if value == entry_value
+                        ]
+                        present_values.extend(new_values)
 
                 # Remove present values from the missing_values set
                 missing_values -= set(present_values)
@@ -1002,7 +974,7 @@ class ECMWFSearch(PostJsonSearch):
 
             # raise an error as no constraint entry matched the input keywords
             # raise an error if one value from input is not allowed
-            if not filtered_constraints or missing_values:
+            if keyword_constrained and (not filtered_constraints or missing_values):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
@@ -1028,7 +1000,9 @@ class ECMWFSearch(PostJsonSearch):
                 )
 
             parsed_keywords.append(keyword)
-            constraints = filtered_constraints
+            # if the keyword is not constrained then any value is allowed
+            if keyword_constrained:
+                constraints = filtered_constraints
 
         available_values: dict[str, Any] = {k: set() for k in ordered_keywords}
 
@@ -1100,9 +1074,21 @@ class ECMWFSearch(PostJsonSearch):
             if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
-            is_required = bool(element.get("required")) and bool(
-                available_values.get(name)
-            )
+            is_required: bool
+            if available_values.get(name):
+                # required by the filtered constraints (available_values[name] is a not empty list)
+                is_required = True
+            elif bool(element.get("required")):
+                if name in available_values and not available_values[name]:
+                    # not required by the filtered constraints (available_values[name] is an empty list)
+                    is_required = False
+                else:
+                    # required only by form
+                    is_required = True
+            else:
+                # not required by form
+                is_required = False
+
             if is_required:
                 required_list.append(name)
 
@@ -1114,7 +1100,8 @@ class ECMWFSearch(PostJsonSearch):
                         prop,
                         default_value=default,
                         required=is_required,
-                        alias=formatted_alias,
+                        validation_alias=AliasChoices(formatted_alias, name),
+                        serialization_alias=formatted_alias,
                     )
                 )
             ]
@@ -1153,7 +1140,8 @@ class ECMWFSearch(PostJsonSearch):
                         {"type": "string", "title": name, "enum": values},
                         default_value=defaults.get(name),
                         required=bool(formatted_alias in required),
-                        alias=formatted_alias,
+                        validation_alias=AliasChoices(formatted_alias, name),
+                        serialization_alias=formatted_alias,
                     )
                 )
             ]
@@ -1279,7 +1267,7 @@ class ECMWFSearch(PostJsonSearch):
 
             # collection alias (required by opentelemetry-instrumentation-eodag)
             if alias := getattr(self.config, "collection_config", {}).get("alias"):
-                properties["eodag:alias"] = alias
+                kwargs["collection"] = alias
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
@@ -1521,7 +1509,7 @@ class MeteoblueSearch(ECMWFSearch):
         properties = {ecmwf_format(k): v for k, v in parsed_properties.items()}
         # collection alias (required by opentelemetry-instrumentation-eodag)
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
-            properties["eodag:alias"] = alias
+            collection = alias
 
         def slugify(date_str: str) -> str:
             return date_str.split("T")[0].replace("-", "")

@@ -33,7 +33,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.9, "3.13"]
+        python-version: [3.9, "3.14"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo
@@ -80,7 +80,7 @@ jobs:
       uses: insightsengineering/coverage-action@v2
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.13-ubuntu-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.14-ubuntu-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -112,7 +112,7 @@ jobs:
       uses: insightsengineering/coverage-action@v2
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.13-windows-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.14-windows-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.

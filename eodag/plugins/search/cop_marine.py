@@ -512,9 +512,11 @@ class CopMarineSearch(StaticStacSearch):
             else {}
         )
 
+        number_matched = num_total if prep.count else None
+
         formated_result = SearchResult(
             products,
-            num_total,
+            number_matched,
             search_params=search_params,
             next_page_token=str(start_index + 1),
         )

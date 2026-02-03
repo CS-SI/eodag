@@ -58,9 +58,10 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     makedirs,
+    mock,
     model_fields_to_annotated,
 )
-from tests.utils import mock, write_eodag_conf_with_fake_credentials
+from tests.utils import write_eodag_conf_with_fake_credentials
 
 
 class TestCoreBase(unittest.TestCase):
@@ -279,6 +280,11 @@ class TestCore(TestCoreBase):
         "MTG_FCI_GII": ["eumetsat_ds"],
         "MTG_FCI_OCA": ["eumetsat_ds"],
         "MTG_FCI_OLR": ["eumetsat_ds"],
+        "MSG_SEVIRI_RSS_AMV_CDR_V1": ["eumetsat_ds"],
+        "MSG_SEVIRI_RSS_HR_IMG_L1_5_V1": ["eumetsat_ds"],
+        "MSG_SEVIRI_SARAH_CDR_V003": ["eumetsat_ds"],
+        "MTG_FCI_ACTIVE_FIRE_L2_V1": ["eumetsat_ds"],
+        "MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001": ["eumetsat_ds"],
         "MODIS_MCD43A4": ["aws_eos", "planetary_computer"],
         "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024": ["cop_marine", "dedl"],
         "MO_GLOBAL_ANALYSISFORECAST_BGC_001_028": ["cop_marine", "dedl"],
@@ -556,6 +562,7 @@ class TestCore(TestCoreBase):
         "S5P_L1B_IR_ALL": ["dedl", "wekeo_main"],
         "S5P_L2_IR_ALL": ["dedl", "wekeo_main"],
         "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
+        "S3_OL_2_WFRBC003": ["eumetsat_ds"],
         "S3_OLCI_L2WRR_BC003": ["eumetsat_ds"],
         "S3_SRA_1A_BC004": ["eumetsat_ds"],
         "S3_SRA_1A_BC005": ["eumetsat_ds"],
@@ -1500,7 +1507,8 @@ class TestCore(TestCoreBase):
         # Only provider
         # when only a provider is specified, return the union of the queryables for all collections
         queryables_peps_none = self.dag.list_queryables(provider="peps")
-        expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
+        queryables_fields = Queryables.from_stac_models().model_fields
+        expected_longer_result = model_fields_to_annotated(queryables_fields)
         self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
         self.assertLess(len(queryables_peps_none), len(expected_longer_result))
         for key, queryable in queryables_peps_none.items():
@@ -1888,7 +1896,7 @@ class TestCore(TestCoreBase):
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
         id_present = False
         for i, span in enumerate(spans):
-            if "id" in span.text:
+            if "'id'" in span.text:
                 id_present = True
                 self.assertIn("str", spans[i + 1].text)
         self.assertTrue(id_present)

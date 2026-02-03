@@ -590,9 +590,6 @@
       version: '$.properties.version'
       created: '$.properties.dhusIngestDate'
       updated: '$.properties.updated'
-      sar:instrument_mode:
-        - 'sensorMode'
-        - '$.properties.sensorMode'
 
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       start_datetime:
@@ -800,7 +797,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
@@ -1676,12 +1673,9 @@
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       metadata_mapping:
-        latitude:
-          - '{{"location": {{"latitude": {"latitude"}, "longitude": {"longitude"}}}}}'
-          - $."latitude"
-        longitude:
-          - '{{"location": {{"latitude": {"latitude"}, "longitude": {"longitude"}}}}}'
-          - $."longitude"
+        geometry:
+          - '{{"location": {{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}}}'
+          - $.geometry
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: cams-global-ghg-reanalysis-egg4-monthly
       metadata_mapping:
@@ -2444,7 +2438,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
@@ -2972,8 +2966,8 @@
         platform: properties.platform
     metadata_mapping:
       grid:code:
-        - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code}"}}}}}}'
-        - '$.properties."s2:mgrs_tile"'
+        - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
+        - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
   products:
     S1_SAR_GRD:
       _collection: sentinel-1-grd
@@ -3044,6 +3038,18 @@
       end_datetime:
         - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
         - '$.properties.end_datetime'
+      processing:software:
+        - '{{"query":{{"processing:software":{{"eq":{processing:software}}}}}}}'
+        - '$.properties.processing:software'
+      spatial:cycle_id:
+        - '{{"query":{{"spatial:cycle_id":{{"eq":{spatial:cycle_id}}}}}}}'
+        - '$.properties.spatial:cycle_id'
+      spatial:pass_id:
+        - '{{"query":{{"spatial:pass_id":{{"eq":{spatial:pass_id}}}}}}}'
+        - '$.properties.spatial:pass_id'
+      spatial:scene_id:
+        - '{{"query":{{"spatial:scene_id":{{"eq":{spatial:scene_id}}}}}}}'
+        - '$.properties.spatial:scene_id'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -3550,7 +3556,7 @@
             prefix: EO:ECMWF:DAT:CAMS
         discover_queryables:
           fetch_url: null
-          product_type_fetch_url: null
+          collection_fetch_url: null
           constraints_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
           form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
       - collection_selector: # cop_cds
@@ -3576,7 +3582,7 @@
             prefix: EO:ECMWF:DAT:CEMS
         discover_queryables:
           fetch_url: null
-          product_type_fetch_url: null
+          collection_fetch_url: null
           constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
           form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
     metadata_mapping:
@@ -3587,7 +3593,8 @@
         - '{{"startdate": "{start_datetime#to_iso_utc_datetime}"}}'
         - $.properties.startdate
       end_datetime:
-        - '{{"enddate": "{end_datetime#to_iso_utc_datetime}"}}'
+        # map 'date' to validate request against copernicus queryables
+        - '{{"enddate": "{end_datetime#to_iso_utc_datetime}", "date": "{start_datetime#to_iso_date}/{end_datetime#to_iso_date}"}}'
         - $.properties.enddate
       product:type:
         - dataset_id
@@ -3762,7 +3769,8 @@
       dataset: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
       metadata_mapping:
         geometry:
-          - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}'
+          # longitude/latitude to order from wekeo_ecmwf, location to validate against cop_ads constraints
+          - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"], "location": {{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}}}'
           - '$.null'
   auth: !plugin
     type: TokenAuth
@@ -4052,7 +4060,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
@@ -5467,7 +5475,7 @@
       product:type:
         - type
         - '$.properties.productInformation.productType'
-      constellation: '$.properties.acquisitionInformation[0].platform.platformShortName'
+      platform: '$.properties.acquisitionInformation[0].platform.platformShortName'
       instruments: '{$.properties.acquisitionInformation[0].instrument.instrumentShortName#split( )}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.properties.title#sanitize}'
@@ -5630,6 +5638,15 @@
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
+    S3_OL_2_WFRBC003:
+      product:type: OL_2_WFR___
+      _collection: EO:EUM:DAT:0556
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+        platform:
+          - sat
+          - '$.properties.acquisitionInformation[0].platform.platformShortName'
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       product:type: SL_1_RBT___
@@ -5834,6 +5851,16 @@
       _collection: EO:EUM:DAT:0684
     MTG_FCI_OLR:
       _collection: EO:EUM:DAT:0685
+    MSG_SEVIRI_RSS_AMV_CDR_V1:
+      _collection: EO:EUM:DAT:1083
+    MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
+      _collection: EO:EUM:DAT:0962
+    MSG_SEVIRI_SARAH_CDR_V003:
+      _collection: EO:EUM:DAT:0863
+    MTG_FCI_ACTIVE_FIRE_L2_V1:
+      _collection: EO:EUM:DAT:0682
+    MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
+      _collection: EO:EUM:DAT:0921
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
@@ -6079,6 +6106,9 @@
       sat:absolute_orbit:
         - '{{"query":{{"sat:absolute_orbit":{{"eq":{sat:absolute_orbit}}}}}}}'
         - '$.properties."sat:absolute_orbit"'
+      sat:orbit_state:
+        - '{{"query":{{"sat:orbit_state":{{"eq":{sat:orbit_state}}}}}}}'
+        - '{$.properties.sat:orbit_state#to_lower}'
       sat:relative_orbit:
         - '{{"query":{{"sat:relative_orbit":{{"eq":{sat:relative_orbit}}}}}}}'
         - '$.properties."sat:relative_orbit"'
@@ -6106,6 +6136,7 @@
       grid:code:
         - '{{"query":{{"grid:code":{{"contains":"{grid:code#replace_str("MGRS-","T")}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
       eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
@@ -6131,11 +6162,11 @@
     S2_MSI_L1C:
       _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
-      _collection: MUSCATE_SENTINEL2_SENTINEL2_L2A
+      _collection: THEIA_REFLECTANCE_SENTINEL2_L2A
     S2_MSI_L2B_MAJA_SNOW:
-      _collection: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+      _collection: THEIA_SNOW_SENTINEL2_L2B
     S2_MSI_L2B_MAJA_WATER:
-      _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
+      _collection: THEIA_WATERQUAL_SENTINEL2_L2B
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
@@ -6209,6 +6240,9 @@
       sat:absolute_orbit:
         - '{{"query":{{"sat:absolute_orbit":{{"eq":{sat:absolute_orbit}}}}}}}'
         - '$.properties."sat:absolute_orbit"'
+      sat:orbit_state:
+        - '{{"query":{{"sat:orbit_state":{{"eq":{sat:orbit_state}}}}}}}'
+        - '{$.properties.sat:orbit_state#to_lower}'
       sat:relative_orbit:
         - '{{"query":{{"sat:relative_orbit":{{"eq":{sat:relative_orbit}}}}}}}'
         - '$.properties."sat:relative_orbit"'
@@ -6236,6 +6270,7 @@
       grid:code:
         - '{{"query":{{"grid:code":{{"contains":"{grid:code#replace_str("MGRS-","T")}"}}}}}}'
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
       eodag:download_link: '$.properties.endpoint_url'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
@@ -6261,11 +6296,11 @@
     S2_MSI_L1C:
       _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
-      _collection: MUSCATE_SENTINEL2_SENTINEL2_L2A
+      _collection: THEIA_REFLECTANCE_SENTINEL2_L2A
     S2_MSI_L2B_MAJA_SNOW:
-     _collection: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+      _collection: THEIA_SNOW_SENTINEL2_L2B
     S2_MSI_L2B_MAJA_WATER:
-      _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
+      _collection: THEIA_WATERQUAL_SENTINEL2_L2B
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin

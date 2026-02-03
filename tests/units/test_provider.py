@@ -20,10 +20,12 @@ from unittest.mock import patch
 
 import pytest
 
-from eodag.api.core import EODataAccessGateway
-from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
-from eodag.config import PluginConfig
-from eodag.utils.exceptions import (
+from tests.context import (
+    EODataAccessGateway,
+    PluginConfig,
+    Provider,
+    ProviderConfig,
+    ProvidersDict,
     UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
@@ -370,7 +372,3 @@ class TestProvidersDict:
             providers_dict.update_from_configs(invalid_configs)
             mock_logger.warning.assert_called()
             assert len(providers_dict) == 0
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])

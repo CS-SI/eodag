@@ -19,8 +19,10 @@
 
 import datetime
 import re
+from datetime import date
 from datetime import datetime as dt
-from typing import Any, Iterator, Optional
+from datetime import timezone
+from typing import Any, Iterator, Optional, Union
 
 import dateutil.parser
 from dateutil import tz
@@ -34,6 +36,18 @@ RFC3339_PATTERN = (
     r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
     r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
 )
+
+# yyyy-mm-dd
+DATE_PATTERN = r"\d{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[0-1])"
+
+# yyyymmdd
+COMPACT_DATE_PATTERN = r"\d{4}(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])"
+
+# yyyy-mm-dd/yyyy-mm-dd, yyyy-mm-dd/to/yyyy-mm-dd
+DATE_RANGE_PATTERN = DATE_PATTERN + r"(/to/|/)" + DATE_PATTERN
+
+# yyyymmdd/yyyymmdd, yyyymmdd/to/yyyymmdd
+COMPACT_DATE_RANGE_PATTERN = COMPACT_DATE_PATTERN + r"(/to/|/)" + COMPACT_DATE_PATTERN
 
 
 def get_timestamp(date_time: str) -> float:
@@ -59,7 +73,26 @@ def get_timestamp(date_time: str) -> float:
 
 
 def datetime_range(start: dt, end: dt) -> Iterator[dt]:
-    """Generator function for all dates in-between ``start`` and ``end`` date."""
+    """Generator function for all dates in-between ``start`` and ``end`` date.
+
+    :param start: Start date
+    :param end: End date
+    :returns: Generator of dates
+
+    Examples:
+        >>> from datetime import datetime
+        >>> dtr = datetime_range(datetime(2020, 12, 31), datetime(2021, 1, 2))
+        >>> next(dtr)
+        datetime.datetime(2020, 12, 31, 0, 0)
+        >>> next(dtr)
+        datetime.datetime(2021, 1, 1, 0, 0)
+        >>> next(dtr)
+        datetime.datetime(2021, 1, 2, 0, 0)
+        >>> next(dtr)
+        Traceback (most recent call last):
+        ...
+        StopIteration
+    """
     delta = end - start
     for nday in range(delta.days + 1):
         yield start + datetime.timedelta(days=nday)
@@ -150,6 +183,9 @@ def get_date(date: Optional[str]) -> Optional[str]:
     """
     Check if the input date can be parsed as a date
 
+    :param date: The date to parse
+    :returns: The datetime represented with ISO format
+
     Examples:
         >>> from eodag.utils.exceptions import ValidationError
         >>> get_date("2023-09-23")
@@ -202,3 +238,167 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
         raise ValidationError("Invalid RFC3339 datetime.")
 
     return dateutil.parser.isoparse(s).replace(tzinfo=datetime.timezone.utc)
+
+
+def get_min_max(
+    value: Optional[Union[str, list[str]]] = None,
+) -> tuple[Optional[str], Optional[str]]:
+    """Returns the min and max from a list of strings or the same string if a single string is given.
+
+    :param value: a single string or a list of strings
+    :returns: a tuple with the min and max values
+
+    Examples:
+        >>> get_min_max(["a", "c", "b"])
+        ('a', 'c')
+        >>> get_min_max(["a"])
+        ('a', 'a')
+        >>> get_min_max("a")
+        ('a', 'a')
+    """
+    if isinstance(value, list):
+        sorted_values = sorted(value)
+        return sorted_values[0], sorted_values[-1]
+    return value, value
+
+
+def append_time(input_date: date, time: Optional[str] = None) -> dt:
+    """Appends a string-formatted time to a date.
+
+    :param input_date: Date to combine with the time
+    :param time: (optional) time string in format HHMM, HH:MM or HH_MM
+    :returns: Datetime obtained by appenting the time to the date
+
+    Examples:
+        >>> from eodag.utils.dates import append_time
+        >>> from datetime import date
+        >>> append_time(date(2020, 12, 13))
+        datetime.datetime(2020, 12, 13, 0, 0)
+        >>> append_time(date(2020, 12, 13), "")
+        datetime.datetime(2020, 12, 13, 0, 0)
+        >>> append_time(date(2020, 12, 13), "2400")
+        datetime.datetime(2020, 12, 13, 0, 0)
+        >>> append_time(date(2020, 12, 13), "14_31")
+        datetime.datetime(2020, 12, 13, 14, 31)
+    """
+    if not time:
+        time = "0000"
+    time = re.sub(":|_", "", time)
+    if time == "2400":
+        time = "0000"
+    combined_dt = dt.combine(input_date, dt.strptime(time, "%H%M").time())
+    combined_dt.replace(tzinfo=timezone.utc)
+    return combined_dt
+
+
+def parse_date(
+    date: str, time: Optional[Union[str, list[str]]] = None
+) -> tuple[dt, dt]:
+    """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals.
+
+    :param date: Single or interval date string
+    :returns: A tuple with the start and end datetime
+
+    Examples:
+        >>> parse_date("2020-12-15")
+        (datetime.datetime(2020, 12, 15, 0, 0), datetime.datetime(2020, 12, 15, 0, 0))
+        >>> parse_date("2020-12-15/to/20201230")
+        (datetime.datetime(2020, 12, 15, 0, 0), datetime.datetime(2020, 12, 30, 0, 0))
+    """
+    if "to" in date:
+        start_date_str, end_date_str = date.split("/to/")
+    elif "/" in date:
+        dates = date.split("/")
+        start_date_str = dates[0]
+        end_date_str = dates[-1]
+    else:
+        start_date_str = end_date_str = date
+
+    # Update YYYYMMDD formatted dates
+    if re.match(r"^\d{8}$", start_date_str):
+        start_date_str = (
+            f"{start_date_str[:4]}-{start_date_str[4:6]}-{start_date_str[6:]}"
+        )
+    if re.match(r"^\d{8}$", end_date_str):
+        end_date_str = f"{end_date_str[:4]}-{end_date_str[4:6]}-{end_date_str[6:]}"
+
+    start_date = dt.fromisoformat(start_date_str.rstrip("Z"))
+    end_date = dt.fromisoformat(end_date_str.rstrip("Z"))
+
+    if time:
+        start_t, end_t = get_min_max(time)
+        start_date = append_time(start_date.date(), start_t)
+        end_date = append_time(end_date.date(), end_t)
+
+    return start_date, end_date
+
+
+def parse_year_month_day(
+    year: Union[str, list[str]],
+    month: Optional[Union[str, list[str]]] = None,
+    day: Optional[Union[str, list[str]]] = None,
+    time: Optional[Union[str, list[str]]] = None,
+) -> tuple[dt, dt]:
+    """Returns minimum and maximum datetimes from given lists of years, months, days, times.
+
+    :param year: List of years or a single one
+    :param month: (optional) List of months or a single one
+    :param day: (optional) List of days or a single one
+    :param time: (optional) List of times or a single one in the format HHMM, HH:MM or HH_MM
+    :returns: A tuple with the start and end datetime
+
+    Examples:
+        >>> parse_year_month_day(["2020", "2021", "2022"], ["01", "03", "05"], "01", ["0000", "1200"])
+        (datetime.datetime(2020, 1, 1, 0, 0), datetime.datetime(2022, 5, 1, 12, 0))
+    """
+
+    def build_date(year, month=None, day=None, time=None) -> dt:
+        """Datetime from default_date with updated year, month, day and time."""
+        updated_date = dt(int(year), 1, 1).replace(
+            month=int(month) if month is not None else 1,
+            day=int(day) if day is not None else 1,
+        )
+        if time is not None:
+            updated_date = append_time(updated_date.date(), time)
+        return updated_date
+
+    start_y, end_y = get_min_max(year)
+    start_m, end_m = get_min_max(month)
+    start_d, end_d = get_min_max(day)
+    start_t, end_t = get_min_max(time)
+
+    start_date = build_date(start_y, start_m, start_d, start_t)
+    end_date = build_date(end_y, end_m, end_d, end_t)
+
+    return start_date, end_date
+
+
+def format_date(date: dt) -> str:
+    """Format a ``datetime`` with the format 'YYYY-MM-DD'.
+
+    :param date: Datetime to format
+    :returns: Date string in the format 'YYYY-MM-DD'
+
+    Examples:
+        >>> from datetime import datetime
+        >>> format_date(datetime(2020, 12, 2))
+        '2020-12-02'
+        >>> format_date(datetime(2020, 12, 2, 11, 22, 33))
+        '2020-12-02'
+    """
+    return date.isoformat()[:10]
+
+
+def format_date_range(start: dt, end: dt) -> str:
+    """Format a range with the format 'YYYY-MM-DD/YYYY-MM-DD'.
+
+    :param start: Start datetime
+    :param end: End datetime
+    :returns: Date range in the format 'YYYY-MM-DD/YYYY-MM-DD'
+
+    Examples:
+        >>> from datetime import datetime
+        >>> format_date_range(datetime(2020, 12, 2, 11, 22, 33), datetime(2020, 12, 31))
+        '2020-12-02/2020-12-31'
+    """
+    return f"{format_date(start)}/{format_date(end)}"

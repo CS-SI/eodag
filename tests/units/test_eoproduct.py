@@ -24,6 +24,7 @@ import random
 import shutil
 import string
 import tempfile
+import time
 import zipfile
 
 import geojson
@@ -43,8 +44,8 @@ from tests.context import (
     EOProduct,
     HTTPDownload,
     ProgressCallback,
+    mock,
 )
-from tests.utils import mock
 
 
 class TestEOProduct(EODagTestCase):
@@ -140,7 +141,7 @@ class TestEOProduct(EODagTestCase):
             properties["eodag:search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag:collection"], self.collection)
+        self.assertEqual(geo_interface["collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
@@ -479,9 +480,14 @@ class TestEOProduct(EODagTestCase):
         # should be product id cast to str
         self.assertEqual(progress_callback.desc, "12345")
 
+        # Progressbar need at least "progress_callback.mininterval" seconds, here 0.1 second
+        # Wait 0.2 to be sure progress ends
+        time.sleep(0.2)
+
         # progress bar finished
-        self.assertEqual(progress_callback.n, progress_callback.total)
-        self.assertGreater(progress_callback.total, 0)
+        self.assertEqual(progress_callback.initial, 0)
+        self.assertEqual(progress_callback.total, 1)
+        self.assertEqual(progress_callback.pos, 1)
 
     def test_eoproduct_register_downloader(self):
         """eoproduct.register_donwloader must set download and auth plugins"""
@@ -618,6 +624,7 @@ class TestEOProduct(EODagTestCase):
                 "a_property",
                 "b_property",
                 "c_property",
+                "datetime",
                 "eodag:y_property",
                 "eodag:z_property",
                 "foo:property",
@@ -637,5 +644,42 @@ class TestEOProduct(EODagTestCase):
             product.properties,
             {
                 "b_property": "b_value",
+                "datetime": None,
             },
+        )
+
+    def test_eoproduct_serialize(self):
+        """eoproduct.as_dict must include the required STAC extensions"""
+        product = self._dummy_product()
+        product.properties["grid:code"] = "MGRS-31TCJ"
+        product.properties["eo:cloud_cover"] = "bad-formatted"
+        product.assets.update(
+            {
+                "foo": {
+                    "href": "https://example.com/asset/foo.tif",
+                    "title": "foo asset",
+                    "type": "image/tiff",
+                    "proj:shape": [3, 343, 343],
+                    "mgrs:utm_zone": "also-bad-formatted",
+                }
+            }
+        )
+        prod_dict = product.as_dict()
+        # well formatted properties must be present
+        self.assertEqual(prod_dict["properties"]["grid:code"], "MGRS-31TCJ")
+        self.assertEqual(prod_dict["assets"]["foo"]["proj:shape"], [3, 343, 343])
+        self.assertTrue(
+            any("grid" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        self.assertTrue(
+            any("proj" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        # badly formatted properties must be skipped
+        self.assertNotIn("eo:cloud_cover", prod_dict["properties"])
+        self.assertNotIn("mgrs:utm_zone", prod_dict["assets"]["foo"])
+        self.assertFalse(
+            any("eo" in ext for ext in prod_dict.get("stac_extensions", []))
+        )
+        self.assertFalse(
+            any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
         )

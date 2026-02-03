@@ -28,7 +28,6 @@ from typing import (
     Callable,
     Optional,
     Sequence,
-    TypedDict,
     cast,
     get_args,
 )
@@ -58,6 +57,7 @@ from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from typing_extensions import TypedDict
 from urllib3 import Retry
 
 from eodag.api.product import EOProduct
@@ -1283,7 +1283,7 @@ class QueryStringSearch(Search):
             )
             # collection alias (required by opentelemetry-instrumentation-eodag)
             if alias := getattr(self.config, "collection_config", {}).get("alias"):
-                properties["eodag:alias"] = alias
+                kwargs["collection"] = alias
             product = EOProduct(self.provider, properties, **kwargs)
 
             additional_assets = self.get_assets_from_mapping(result)
@@ -2166,17 +2166,18 @@ class StacSearch(PostJsonSearch):
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
             eodag_queryables_and_defaults: list[tuple[str, Any]] = []
+            StacQueryables = Queryables.from_stac_models()
             for json_param, json_mtd in json_queryables.items():
                 param = get_queryable_from_provider(
                     json_param, self.get_metadata_mapping(collection)
-                ) or Queryables.get_queryable_from_alias(json_param)
+                ) or StacQueryables.get_queryable_from_alias(json_param)
                 # do not expose internal parameters, neither datetime
                 if param == "datetime" or param.startswith("_"):
                     continue
 
                 default = kwargs.get(param, json_mtd.get("default"))
 
-                if param in Queryables.model_fields:
+                if param in StacQueryables.model_fields:
                     # use eodag queryable as default
                     eodag_queryables_and_defaults += [(param, default)]
                     continue
@@ -2195,12 +2196,12 @@ class StacSearch(PostJsonSearch):
 
             # append eodag queryables
             for param, default in eodag_queryables_and_defaults:
-                queryables_dict[param] = Queryables.get_with_default(param, default)
+                queryables_dict[param] = StacQueryables.get_with_default(param, default)
 
             # append "datetime" as "start" & "end" if needed
             if "datetime" in json_queryables:
                 eodag_queryables = copy_deepcopy(
-                    model_fields_to_annotated(Queryables.model_fields)
+                    model_fields_to_annotated(StacQueryables.model_fields)
                 )
                 queryables_dict.setdefault("start", eodag_queryables["start"])
                 queryables_dict.setdefault("end", eodag_queryables["end"])

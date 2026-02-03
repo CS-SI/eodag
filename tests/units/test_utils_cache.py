@@ -81,7 +81,3 @@ class TestCachedMethodDecorator(unittest.TestCase):
         # Calling with 1 again is a cache miss (evicted), so call_count increments
         obj.method(1)
         self.assertEqual(obj.call_count, 4)
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -18,11 +18,12 @@
 
 import json
 import os
-import shutil
 import tempfile
+from pathlib import Path
 
 from requests.models import Response
 from shapely import geometry
+from stac_validator import stac_validator
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
@@ -32,8 +33,8 @@ from tests.context import (
     EOProduct,
     PluginTopic,
     SearchResult,
+    mock,
 )
-from tests.utils import mock
 
 
 class TestCoreSearchResults(EODagTestCase):
@@ -59,12 +60,11 @@ class TestCoreSearchResults(EODagTestCase):
                             "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
                         ),
                         "eodag:provider": "peps",
-                        "eodag:collection": "S1_SAR_OCN",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
                         "orbitNumber": 20624,
-                        "instruments": "SAR-C SAR",
+                        "instruments": ["SAR-C", "SAR"],
                         "eodag:search_intersection": {
                             "coordinates": [
                                 [
@@ -81,6 +81,7 @@ class TestCoreSearchResults(EODagTestCase):
                     },
                     "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                     "type": "Feature",
+                    "collection": "S1_SAR_OCN",
                     "geometry": {
                         "coordinates": [
                             [
@@ -98,6 +99,7 @@ class TestCoreSearchResults(EODagTestCase):
             "type": "FeatureCollection",
         }
         self.search_result = SearchResult.from_geojson(self.geojson_repr)
+        self.search_result._dag = self.dag
         # Ensure that each product in a search result has geometry and search
         # intersection as a shapely geometry
         for product in self.search_result:
@@ -109,26 +111,108 @@ class TestCoreSearchResults(EODagTestCase):
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    def test_core_serialize_search_results(self):
-        """The core api must serialize a search results to geojson"""
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
-            # Serialization when the destination file is specified => goes to the
-            # specified file
-            path = self.dag.serialize(self.search_result, filename=f.name)
-            self.assertEqual(path, f.name)
-        with open(path, "r") as f:
-            self.make_assertions(f)
-        os.unlink(path)
-        # Serialization when the destination is not specified => goes to
-        # 'search_results.geojson' in the cur dir
-        tmpdirname = tempfile.mkdtemp()
-        current_dir = os.getcwd()
-        os.chdir(tmpdirname)
-        self.assertEqual(
-            self.dag.serialize(self.search_result), "search_results.geojson"
-        )
-        os.chdir(current_dir)
-        shutil.rmtree(tmpdirname)
+    def test_core_serialize_search_results_with_filename(self):
+        """The core api must serialize a search results to STAC feature collection with filename"""
+        # Serialization when the destination file is specified => goes to the specified file
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+                path = self.dag.serialize(self.search_result, filename=f.name)
+                self.assertEqual(path, f.name)
+            stac = stac_validator.StacValidate(
+                path, item_collection=True, links=True, assets=True
+            )
+            stac.validate_item_collection()
+            for msg in stac.message:
+                self.assertTrue(msg["valid_stac"], stac.message)
+            with open(path, "r") as f:
+                self.make_assertions(f)
+
+            # check links
+            with open(path) as f:
+                serialized = json.load(f)
+            self.assertIn("links", serialized)
+            self.assertEqual(len(serialized["links"]), 1)
+            self.assertEqual(serialized["links"][0]["rel"], "self")
+            self.assertEqual(serialized["links"][0]["href"], f.name)
+            self.assertEqual(len(serialized["features"][0]["links"]), 1)
+            self.assertEqual(serialized["features"][0]["links"][0]["rel"], "collection")
+            self.assertEqual(
+                serialized["features"][0]["links"][0]["href"],
+                f"{self.search_result[0].collection}.json",
+            )
+
+            # check associated serialized collection
+            self.assertEqual(len(self.search_result), 1)
+            collection_path = tmpdir_path / f"{self.search_result[0].collection}.json"
+            self.assertTrue(collection_path.exists())
+            # validate STAC collection
+            stac = stac_validator.StacValidate(str(collection_path))
+            stac.run()
+            for msg in stac.message:
+                self.assertTrue(msg["valid_stac"], stac.message)
+            with open(collection_path) as f:
+                collection_dict = json.load(f)
+            self.assertEqual(len(collection_dict["links"]), 1)
+            self.assertEqual(collection_dict["links"][0]["rel"], "self")
+            self.assertEqual(
+                collection_dict["links"][0]["href"],
+                f"{self.search_result[0].collection}.json",
+            )
+
+    def test_core_serialize_search_results_unknown_collection(self):
+        """The core api must serialize a search results with unknown collection to STAC feature collection"""
+        # add another product with unknown collection
+        self.search_result.append(self.search_result[0])
+        self.search_result[1].collection = "unknown_collection"
+        self.search_result[1].properties["id"] = "foo_id"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+                path = self.dag.serialize(self.search_result, filename=f.name)
+                self.assertEqual(path, f.name)
+            stac = stac_validator.StacValidate(
+                path, item_collection=True, links=True, assets=True
+            )
+            stac.validate_item_collection()
+            for msg in stac.message:
+                self.assertTrue(msg["valid_stac"], stac.message)
+
+            # check associated serialized collection
+            collection1_path = tmpdir_path / f"{self.search_result[0].collection}.json"
+            collection2_path = tmpdir_path / f"{self.search_result[1].collection}.json"
+            self.assertTrue(collection1_path.exists())
+            self.assertTrue(collection2_path.exists())
+            # validate STAC collections
+            stac = stac_validator.StacValidate(str(collection1_path))
+            stac.run()
+            for msg in stac.message:
+                self.assertTrue(msg["valid_stac"], stac.message)
+            stac = stac_validator.StacValidate(str(collection2_path))
+            stac.run()
+            for msg in stac.message:
+                self.assertTrue(msg["valid_stac"], stac.message)
+
+    def test_core_serialize_search_results_without_filename(self):
+        """The core api must serialize a search results to STAC feature collection without filename"""
+        # Serialization when the destination is not specified => goes to 'search_results.geojson' in the cur dir
+        with tempfile.TemporaryDirectory() as tmpdir:
+            current_dir = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                self.assertEqual(
+                    self.dag.serialize(self.search_result), "search_results.geojson"
+                )
+                self.assertTrue((Path(tmpdir) / "search_results.geojson").exists())
+            finally:
+                os.chdir(current_dir)
 
     def test_core_deserialize_search_results(self):
         """The core api must deserialize a search result from geojson"""
@@ -166,13 +250,13 @@ class TestCoreSearchResults(EODagTestCase):
         return {
             "properties": {
                 "eodag:provider": "peps",
-                "eodag:collection": "S1_SAR_OCN",
                 "eodag:search_intersection": {
                     "coordinates": geom_coords,
                     "type": geom_type,
                 },
             },
             "id": eo_id,
+            "collection": "S1_SAR_OCN",
             "geometry": {"coordinates": geom_coords, "type": geom_type},
         }
 

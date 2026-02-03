@@ -35,6 +35,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
+from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils import (
     GENERIC_COLLECTION,
     copy_deepcopy,
@@ -358,7 +359,7 @@ class Search(PluginTopic):
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError as e:
             if str(e):
-                logger.debug(str(e))
+                logger.debug("%s, configured metadata-mapping used", str(e))
             queryables = self.queryables_from_metadata_mapping(collection, alias)
 
         return QueryablesDict(**queryables)
@@ -408,9 +409,10 @@ class Search(PluginTopic):
                 col_queryables = self._get_collection_queryables(col, None, filters)
                 all_queryables.update(col_queryables)
             # reset defaults because they may vary between collections
+            queryables_fields = Queryables.from_stac_models().model_fields
             for k, v in all_queryables.items():
                 v.__metadata__[0].default = getattr(
-                    Queryables.model_fields.get(k, Field(None)), "default", None
+                    queryables_fields.get(k, Field(None)), "default", None
                 )
             return QueryablesDict(
                 additional_properties=auto_discovery,
@@ -468,8 +470,11 @@ class Search(PluginTopic):
             ):
                 del metadata_mapping[param]
 
+        queryables_model = create_stac_metadata_model(
+            base_models=[Queryables, CommonStacMetadata]
+        )
         eodag_queryables = copy_deepcopy(
-            model_fields_to_annotated(Queryables.model_fields)
+            model_fields_to_annotated(queryables_model.model_fields)
         )
         queryables["collection"] = eodag_queryables.pop("collection")
         # add default value for collection

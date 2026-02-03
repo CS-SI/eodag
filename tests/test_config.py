@@ -38,8 +38,8 @@ from tests.context import (
     config,
     get_ext_collections_conf,
     load_stac_provider_config,
+    mock,
 )
-from tests.utils import mock
 
 
 class TestProviderConfig(unittest.TestCase):

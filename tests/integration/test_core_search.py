@@ -34,8 +34,8 @@ from tests.context import (
     NoMatchingCollection,
     RequestError,
     USGSError,
+    mock,
 )
-from tests.utils import mock
 
 
 class TestCoreSearch(unittest.TestCase):

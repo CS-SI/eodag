@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
@@ -29,6 +29,9 @@ from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
 
+from eodag.types.queryables import CommonStacMetadata
+from eodag.types.stac_metadata import create_stac_metadata_model
+from eodag.utils import STAC_VERSION
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import ValidationError
 from eodag.utils.repr import dict_to_html_table
@@ -89,6 +92,11 @@ class Collection(BaseModel):
         default=None,
         description="An alias given by a user to use his customized id intead of the internal id of EODAG",
         repr=False,
+    )
+
+    # path to external collection metadata file (required by stac-fastapi-eodag)
+    eodag_stac_collection: Optional[str] = Field(
+        default=None, alias="stacCollection", exclude=True, repr=False
     )
 
     # Private property to store the eodag internal id value. Not part of the model schema.
@@ -275,6 +283,62 @@ class Collection(BaseModel):
             )
 
         return dag.list_queryables(collection=self.id, **kwargs)
+
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the Collection instance to a STAC dictionary.
+
+        :returns: A STAC dictionary representation of the Collection instance.
+        """
+        stac_dict: dict[str, Any] = {
+            "stac_version": STAC_VERSION,
+            "type": "Collection",
+        }
+
+        stac_dict |= self.model_dump(mode="json", exclude_none=True, exclude={"alias"})
+
+        stac_dict.setdefault("links", [])
+        stac_dict.setdefault("providers", [])
+
+        not_in_summaries = [
+            "stac_version",
+            "type",
+            "id",
+            "title",
+            "description",
+            "extent",
+            "keywords",
+            "license",
+            "links",
+            "providers",
+        ]
+        summaries = dict()
+        for k, v in stac_dict.items():
+            if k not in not_in_summaries:
+                if isinstance(v, list):
+                    summaries[k] = v
+                elif isinstance(v, str):
+                    summaries[k] = v.split(",")
+                else:
+                    summaries[k] = [v]
+        stac_dict["summaries"] = summaries
+
+        # Remove empty items and items moved to summaries
+        keys_to_remove = [
+            k
+            for k in stac_dict.keys()
+            if k not in not_in_summaries and k != "summaries"
+        ]
+        for k in keys_to_remove:
+            del stac_dict[k]
+
+        # add extensions
+        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
+        summaries_validated = summaries_model.model_construct(
+            _fields_set=None, **summaries
+        )
+        stac_dict["stac_extensions"] = summaries_validated.get_conformance_classes()
+
+        return stac_dict
 
 
 class CollectionsDict(UserDict[str, Collection]):
