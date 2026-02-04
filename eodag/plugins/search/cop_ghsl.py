@@ -109,6 +109,7 @@ def _get_available_values_from_constraints(
                         values_in_constraints.append(v)
                 if not value_found:
                     filtered_constraints.remove(constraint)
+                    continue
 
             elif filter_key in constraint:
                 available_values_key.extend(constraint[filter_key])
@@ -404,6 +405,7 @@ class CopGhslSearch(Search):
                 if assets_mapping:  # item with several assets
                     assets = AssetsDict(product=product)
                     for key, mapping in assets_mapping.items():
+                        filters = {k.replace(":", "_"): v for k, v in filters.items()}
                         download_link = mapping["href"].format(**filters)
                         assets.update(
                             {
@@ -483,32 +485,29 @@ class CopGhslSearch(Search):
             raise MisconfiguredError(
                 f"provider collection mapping not available for {collection}"
             )
-        filter_params = deepcopy(params)
-        filter_params.pop("geometry", None)
-        filter_params.update(collection_config)
-        filter_params.pop("metadata_mapping", None)
-        filter_params.pop("assets_mapping", None)
 
-        self._check_input_parameters_valid(collection, filter_params)
+        params.pop("geometry", None)
+        params.update(collection_config)
+        params.pop("metadata_mapping", None)
+        params.pop("assets_mapping", None)
+
+        self._check_input_parameters_valid(collection, params)
         # update parameters based on changes during validation
-        params.update(filter_params)
 
         # fetch available tiles based on filters
-        if "year" not in filter_params:
+        if "year" not in params:
             logger.warning(f"no tiles available for {collection}")
             return None
-        if isinstance(filter_params["year"], int) or isinstance(
-            filter_params["year"], str
-        ):
-            list_years = [str(filter_params["year"])]
+        if isinstance(params["year"], int) or isinstance(params["year"], str):
+            list_years = [str(params["year"])]
         else:
-            list_years = filter_params["year"]
+            list_years = params["year"]
         all_tiles = {}
         for year in list_years:
             try:
                 filter_str = (
                     f"{provider_product_type}_{year}_"
-                    f"{filter_params['tile_size']}_{filter_params['proj:code']}"
+                    f"{params['tile_size']}_{params['proj:code']}"
                 )
             except KeyError:
                 logger.warning(f"no tiles available for {collection}")
@@ -520,7 +519,7 @@ class CopGhslSearch(Search):
                     return None
                 res.raise_for_status()
                 tiles = res.json()["grid"]
-                if filter_params["proj:code"] == "3035":
+                if params["proj:code"] == "3035":
                     tiles = []
                     for t_id, bbox in res.json()["BBoxes"].items():
                         tiles.append({"tileID": t_id, "BBox_3035": bbox})

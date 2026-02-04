@@ -6460,7 +6460,7 @@
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
-      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/cop_ghsl/{collection}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/cop_ghsl_dev/{collection}.json"
   products:
     # product types with tiles
     GHS_BUILT_S:
@@ -6543,11 +6543,11 @@
         eodag:download_link: https://jeodpp.jrc.ec.europa.eu
       assets_mapping:
         day:
-          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{proj:code}_{tile_size}_V1_0.zip'
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
           type: "application/zip"
           title: Daytime grid
         night:
-          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_N{month}2011_EU28_R2020A_{proj:code}_{tile_size}_V1_0.zip'
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
           type: "application/zip"
           title: Nightime grid
     GHS_UCDB_DOMAIN:
