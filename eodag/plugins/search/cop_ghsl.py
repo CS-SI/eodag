@@ -545,11 +545,15 @@ class CopGhslSearch(Search):
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
-        page = getattr(prep, "page", 1)
-        items_per_page = getattr(prep, "items_per_page", DEFAULT_ITEMS_PER_PAGE)
+        page = int(getattr(prep, "next_page_token") or "1")
+        items_per_page = getattr(prep, "items_per_page") or DEFAULT_ITEMS_PER_PAGE
 
         # get year/month from start/end time if not given separately
         _replace_datetimes(kwargs)
+
+        # search params for SearchResult
+        search_params = deepcopy(kwargs)
+        search_params["items_per_page"] = items_per_page
 
         collection = kwargs.get("collection", None)
         if not collection:
@@ -570,9 +574,10 @@ class CopGhslSearch(Search):
             )
             return SearchResult(
                 products=products,
+                search_params=search_params,
                 number_matched=count,
                 next_page_token_key="page",
-                next_page_token=str(page),
+                next_page_token=str(page + 1),
                 raise_errors=True,
             )
 
@@ -596,9 +601,10 @@ class CopGhslSearch(Search):
             total_items = None
         return SearchResult(
             products=products,
+            search_params=search_params,
             number_matched=total_items,
             next_page_token_key="page",
-            next_page_token=str(page),
+            next_page_token=str(page + 1),
             raise_errors=True,
         )
 
