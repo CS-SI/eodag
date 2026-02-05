@@ -20,13 +20,14 @@ from __future__ import annotations
 import datetime
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dateutil.parser
-from shapely import geometry
+from shapely.errors import ShapelyError
 from shapely.geometry.base import BaseGeometry
 
 from eodag.plugins.crunch.base import Crunch
+from eodag.utils import get_geometry_from_various
 
 if TYPE_CHECKING:
     from datetime import datetime as dt
@@ -70,7 +71,7 @@ class FilterLatestIntersect(Crunch):
         # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered: list[EOProduct] = []
-        search_extent: BaseGeometry
+        search_extent: Optional[BaseGeometry]
         add_to_filtered = filtered.append
         footprint: Union[dict[str, Any], BaseGeometry, Any] = search_params.get(
             "geometry"
@@ -80,24 +81,25 @@ class FilterLatestIntersect(Crunch):
                 "geometry not found in cruncher arguments, filtering disabled."
             )
             return products
-        elif isinstance(footprint, dict):
-            search_extent = geometry.box(
-                footprint["lonmin"],
-                footprint["latmin"],
-                footprint["lonmax"],
-                footprint["latmax"],
-            )
-        elif not isinstance(footprint, BaseGeometry):
+        try:
+            search_extent = get_geometry_from_various(geometry=footprint)
+        except (ShapelyError, TypeError):
             logger.warning(
                 "geometry found in cruncher arguments did not match the expected format."
             )
             return products
-        else:
-            search_extent = footprint
+        if search_extent is None:
+            logger.warning("Could not build geometry from cruncher arguments")
+            return products
+
         logger.debug("Initial requested extent area: %s", search_extent.area)
         for product in products:
             logger.debug("Uncovered extent area: %s", search_extent.area)
-            if product.search_intersection:
+            try:
+                search_intersection = product.geometry.intersection(search_extent)
+            except ShapelyError:
+                search_intersection = None
+            if search_intersection:
                 logger.debug(
                     "Product %r intersects the requested extent. Adding it to the final result",
                     product,

@@ -1061,7 +1061,9 @@ def get_geometry_from_various(
     :param locations_config: (optional) EODAG locations configuration
     :param query_args: Query kwargs arguments from :meth:`~eodag.api.core.EODataAccessGateway.search`
     :returns: shapely Geometry found
-    :raises: :class:`ValueError`
+    :raises shapely.errors.ShapelyError: Error while creating shapely geometry
+    :raises TypeError: Unexpected geometry type
+    :raises ValueError: Location name is wrong or its value does not match
     """
     geom = None
 
