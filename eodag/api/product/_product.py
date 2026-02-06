@@ -244,7 +244,7 @@ class EOProduct:
         invalid_properties = {
             k
             for k in stac_properties.keys()
-            if k not in props_validated.to_dict() and props_model.has_field(k)
+            if k not in props_validated.model_dump() and props_model.has_field(k)
         }
         for key in invalid_properties:
             stac_properties.pop(key, None)
@@ -259,7 +259,8 @@ class EOProduct:
             invalid_asset_properties = {
                 k
                 for k in asset_properties.keys()
-                if k not in asset_props_validated.to_dict() and props_model.has_field(k)
+                if k not in asset_props_validated.model_dump()
+                and props_model.has_field(k)
             }
             for key in invalid_asset_properties:
                 assets_dict[asset_key].pop(key, None)

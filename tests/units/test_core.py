@@ -2259,10 +2259,9 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
 
     def tearDown(self):
         super().tearDown()
-        for old in glob.glob1(self.dag.conf_dir, "*.old") + glob.glob1(
-            self.dag.conf_dir, ".*.old"
+        for old_path in glob.glob(os.path.join(self.dag.conf_dir, "*.old")) + glob.glob(
+            os.path.join(self.dag.conf_dir, ".*.old")
         ):
-            old_path = os.path.join(self.dag.conf_dir, old)
             if os.path.exists(old_path):
                 try:
                     os.remove(old_path)
