@@ -136,8 +136,9 @@ stubs = [
     "types-urllib3",
 ]
 docs = [
-    "eodag[all,stubs]",
+    "eodag[all,stubs,tutorials]",
     "autodoc_pydantic",
+    "nbconvert > 6.3.0 ",
     "nbsphinx",
     "sphinx < 9.0.0",
     "sphinx-autodoc-typehints",
