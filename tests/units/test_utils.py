@@ -23,12 +23,13 @@ import ssl
 import sys
 import unittest
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime, timezone
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+from dateutil import parser as dateutil_parser
 from requests.exceptions import RequestException
 
 from tests.context import (
@@ -72,8 +73,8 @@ class TestUtils(unittest.TestCase):
         # Date to timestamp to date, this assumes the date is in UTC
         requested_date = "2020-08-08"  # Considered as 2020-08-08T00:00:00Z
         ts_in_secs = get_timestamp(requested_date)
-        expected_dt = datetime.strptime(requested_date, "%Y-%m-%d")
-        actual_utc_dt = datetime.utcfromtimestamp(ts_in_secs)
+        expected_dt = dateutil_parser.parse(requested_date).replace(tzinfo=timezone.utc)
+        actual_utc_dt = datetime.fromtimestamp(ts_in_secs, timezone.utc)
         self.assertEqual(actual_utc_dt, expected_dt)
 
         # Handle UTC datetime
