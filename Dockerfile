@@ -22,7 +22,7 @@ LABEL author="CS GROUP - France"
 WORKDIR /app
 
 COPY eodag/ eodag/
-COPY setup.cfg pyproject.toml README.rst LICENSE MANIFEST.in ./
+COPY pyproject.toml README.rst LICENSE MANIFEST.in ./
 
 # build-base is required to enable logging
 RUN apk add --no-cache build-base && \
