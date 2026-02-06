@@ -1,4 +1,4 @@
-include README.rst LICENSE NOTICE requirements.txt
+include README.rst LICENSE NOTICE
 recursive-include docs *.rst
 graft eodag/resources
 prune tests
