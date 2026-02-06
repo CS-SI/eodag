@@ -178,13 +178,11 @@ def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[...
 
         @functools.wraps(callable)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with warnings.catch_warnings():
-                warnings.simplefilter("always", DeprecationWarning)
-                warnings.warn(
-                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
+            warnings.warn(
+                f"Call to deprecated eodag {ctype} {cname} {reason_}{version_}",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
             return callable(*args, **kwargs)
 
         return wrapper
