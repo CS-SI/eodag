@@ -25,9 +25,15 @@ from tests.context import EOProduct, GenericDriver
 class TestEOProductDriverGeneric(EODagTestCase):
     def setUp(self):
         super(TestEOProductDriverGeneric, self).setUp()
+
+        # Drop specific fields could match with sentinel 2 driver
+        self.eoproduct_props["constellation"] = None
+        self.eoproduct_props["platform"] = None
+
         self.product = EOProduct(
             self.provider, self.eoproduct_props, collection="FAKE_COLLECTION"
         )
+        self.product.collection = "fake-collection"
         self.product.properties["title"] = os.path.join(
             TEST_RESOURCES_PATH,
             "products",

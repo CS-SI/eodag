@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import os
+from typing import Optional
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import EOProduct, Sentinel2Driver
@@ -36,7 +37,77 @@ class TestEOProductDriverSentinel2Driver(EODagTestCase):
 
     def test_driver_s2_init(self):
         """The appropriate driver must have been set"""
-        self.assertIsInstance(self.product.driver, Sentinel2Driver)
+
+        def make_product(
+            provider: str = "fake_provider",
+            properties: dict = {},
+            collection: Optional[str] = None,
+        ) -> EOProduct:
+
+            if "id" not in properties:
+                properties["id"] = "9deb7e78-9341-5530-8fe8-f81fd99c9f0f"
+
+            return EOProduct(provider, properties, collection=collection)
+
+        for test in [
+            {
+                "label": "Test match driver sentinel 2 by collection name",
+                "product": make_product(collection="S2_MSI_L1C"),
+                "match": True,
+            },
+            {
+                "label": "Test match driver sentinel 2 by collection name (sensitive case)",
+                "product": make_product(collection="s2_msi_l1c"),
+                "match": True,
+            },
+            {
+                "label": "Test mismatch driver sentinel 2 by collection name (sensitive case)",
+                "product": make_product(collection="s3_msi_l1c"),
+                "match": False,
+            },
+            {
+                "label": "Test match driver sentinel 2 by property constellation",
+                "product": make_product(properties={"constellation": "sentinel2"}),
+                "match": True,
+            },
+            {
+                "label": "Test match driver sentinel 2 by property constellation (sensitive case)",
+                "product": make_product(properties={"constellation": "SeNtInEl2"}),
+                "match": True,
+            },
+            {
+                "label": "Test match driver sentinel 2 by property constellation (specials chars)",
+                "product": make_product(
+                    properties={"constellation": "--[sentinel #2]--"}
+                ),
+                "match": True,
+            },
+            {
+                "label": "Test mismatch driver sentinel 2 by property constellation (specials chars)",
+                "product": make_product(properties={"constellation": "sentinel1"}),
+                "match": False,
+            },
+            {
+                "label": "Test match driver sentinel 2 by property platform",
+                "product": make_product(properties={"platform": "S2A"}),
+                "match": True,
+            },
+            {
+                "label": "Test match driver sentinel 2 by property platform (sensitive case)",
+                "product": make_product(properties={"platform": "s2b"}),
+                "match": True,
+            },
+            {
+                "label": "Test mismatch driver sentinel 2 by property platform",
+                "product": make_product(properties={"platform": "S3X"}),
+                "match": False,
+            },
+        ]:
+            self.assertEqual(
+                isinstance(test["product"].driver, Sentinel2Driver),
+                test["match"],
+                "Fail: {}".format(test["label"]),
+            )
 
     def test_driver_s2_guess_asset_key_and_roles(self):
         """The driver must guess appropriate asset key and roles"""

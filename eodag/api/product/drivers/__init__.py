@@ -22,10 +22,9 @@ from typing import Callable
 
 from typing_extensions import TypedDict
 
-from eodag.api.product.drivers.base import DatasetDriver
-from eodag.api.product.drivers.generic import GenericDriver
-from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
-from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
+from .generic import DatasetDriver, GenericDriver
+from .sentinel1 import Sentinel1Driver
+from .sentinel2 import Sentinel2Driver
 
 
 class DriverCriteria(TypedDict):
@@ -40,27 +39,26 @@ class DriverCriteria(TypedDict):
 #: list of drivers and their criteria
 DRIVERS: list[DriverCriteria] = [
     {
-        "criteria": [
-            lambda prod: True
-            if (prod.collection or "").startswith("S2_MSI_")
-            else False
-        ],
+        "criteria": [lambda product: Sentinel2Driver.match(product, by="collection")],
         "driver": Sentinel2Driver(),
     },
     {
-        "criteria": [
-            lambda prod: True
-            if (prod.collection or "").startswith("S1_SAR_")
-            else False
-        ],
+        "criteria": [lambda product: Sentinel1Driver.match(product, by="collection")],
         "driver": Sentinel1Driver(),
     },
     {
-        "criteria": [lambda prod: True],
+        "criteria": [lambda product: Sentinel2Driver.match(product, by="properties")],
+        "driver": Sentinel2Driver(),
+    },
+    {
+        "criteria": [lambda product: Sentinel1Driver.match(product, by="properties")],
+        "driver": Sentinel1Driver(),
+    },
+    {
+        "criteria": [lambda product: GenericDriver.match(product)],
         "driver": GenericDriver(),
     },
 ]
-
 
 # exportable content
 __all__ = ["DRIVERS", "DatasetDriver", "GenericDriver", "Sentinel2Driver"]

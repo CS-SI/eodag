@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import TypedDict
@@ -51,6 +52,20 @@ class DatasetDriver(metaclass=type):
 
     #: strip non-alphanumeric characters at the beginning and end of the key
     STRIP_SPECIAL_PATTERN = re.compile(r"^[^A-Z0-9]+|[^A-Z0-9]+$", re.IGNORECASE)
+
+    @staticmethod
+    @abstractmethod
+    def match(product: EOProduct, by: str = "*") -> bool:
+        """
+        Resolve if given product matches with current driver.
+
+        :param  product: product as reference use to extract criteria
+        :param  by: specific criteria match
+        :return: ``True`` if given product matches with current driver, else ``False``
+        """
+        raise NotImplementedError(
+            "Can't call abstract methods match from base class DatasetDriver"
+        )
 
     def _normalize_key(self, key, eo_product):
         # default cleanup
