@@ -1,3 +1,4 @@
+import datetime
 import io
 import os
 import re
@@ -182,32 +183,57 @@ class TestUtilsS3(TestCase):
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/product.zip"
         )
         self.assertEqual(len(self.prod.assets), 3)
+        now_utc = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         expected_assets = {
             "MTD_MSIL1C.xml": {
                 "title": "MTD_MSIL1C.xml",
                 "roles": ["metadata"],
                 "href": "zip+s3://mybucket/path/to/product.zip!MTD_MSIL1C.xml",
                 "type": "application/xml",
+                "file:checksum": "744297b8bff63e837cdbb702ade16b5d",
+                "file:size": 44319,
+                "updated": now_utc,
             },
             "MTD_TL.xml": {
                 "title": "MTD_TL.xml",
                 "roles": ["metadata"],
                 "href": "zip+s3://mybucket/path/to/product.zip!GRANULE/L1C_T31TDH_A013204_20180101T105435/MTD_TL.xml",
                 "type": "application/xml",
+                "file:checksum": "94f60458ab82fa68773cd44d3b7e34c0",
+                "file:size": 370717,
+                "updated": now_utc,
             },
             "T31TDH_20180101T105441_B01.jp2": {
                 "title": "T31TDH_20180101T105441_B01.jp2",
                 "roles": ["data"],
                 "href": (
-                    "zip+s3://mybucket/path/to/product.zip!"
-                    "GRANULE/L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
+                    "zip+s3://mybucket/path/to/product.zip!GRANULE/"
+                    "L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
                 ),
                 "type": "image/jp2",
+                "file:checksum": "f02ba0d4ac813ebf8394b29ea41a5e8c",
+                "file:size": 2488555,
+                "updated": now_utc,
             },
         }
         for asset_name, expected in expected_assets.items():
             with self.subTest(asset=asset_name):
-                self.assertDictEqual(self.prod.assets[asset_name].data, expected)
+                for key in self.prod.assets[asset_name].data:
+                    value = self.prod.assets[asset_name].data[key]
+                    expect_value = expected.get(key)
+                    if key == "updated":
+                        value_date = datetime.datetime.strptime(
+                            value, "%Y-%m-%dT%H:%M:%SZ"
+                        )
+                        expect_value_date = datetime.datetime.strptime(
+                            expect_value, "%Y-%m-%dT%H:%M:%SZ"
+                        )
+                        delay = (value_date - expect_value_date).total_seconds()
+                        self.assertLessEqual(delay, 2)
+                    else:
+                        self.assertEqual(value, expect_value)
 
     def test_utils_s3_update_assets_from_s3(self):
         """update_assets_from_s3 must update the assets of a product from a folder stored in S3"""
@@ -215,18 +241,27 @@ class TestUtilsS3(TestCase):
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/unzipped"
         )
         self.assertEqual(len(self.prod.assets), 3)
+        now_utc = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         expected_assets = {
             "MTD_MSIL1C.xml": {
                 "title": "MTD_MSIL1C.xml",
                 "roles": ["metadata"],
                 "href": "s3://mybucket/path/to/unzipped/MTD_MSIL1C.xml",
                 "type": "application/xml",
+                "file:checksum": "744297b8bff63e837cdbb702ade16b5d",
+                "file:size": 44315,
+                "updated": now_utc,
             },
             "MTD_TL.xml": {
                 "title": "MTD_TL.xml",
                 "roles": ["metadata"],
                 "href": "s3://mybucket/path/to/unzipped/GRANULE/L1C_T31TDH_A013204_20180101T105435/MTD_TL.xml",
                 "type": "application/xml",
+                "file:checksum": "94f60458ab82fa68773cd44d3b7e34c0",
+                "file:size": 370717,
+                "updated": now_utc,
             },
             "T31TDH_20180101T105441_B01.jp2": {
                 "title": "T31TDH_20180101T105441_B01.jp2",
@@ -236,11 +271,27 @@ class TestUtilsS3(TestCase):
                     "L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
                 ),
                 "type": "image/jp2",
+                "file:checksum": "f02ba0d4ac813ebf8394b29ea41a5e8c",
+                "file:size": 2488555,
+                "updated": now_utc,
             },
         }
         for asset_name, expected in expected_assets.items():
             with self.subTest(asset=asset_name):
-                self.assertDictEqual(self.prod.assets[asset_name].data, expected)
+                for key in self.prod.assets[asset_name].data:
+                    value = self.prod.assets[asset_name].data[key]
+                    expect_value = expected.get(key)
+                    if key == "updated":
+                        value_date = datetime.datetime.strptime(
+                            value, "%Y-%m-%dT%H:%M:%SZ"
+                        )
+                        expect_value_date = datetime.datetime.strptime(
+                            expect_value, "%Y-%m-%dT%H:%M:%SZ"
+                        )
+                        delay = (value_date - expect_value_date).total_seconds()
+                        self.assertLessEqual(delay, 2)
+                    else:
+                        self.assertEqual(value, expect_value)
 
     def test_utils_s3_file_position_from_s3_zip(self):
         # Prepare a zip with both uncompressed and compressed files

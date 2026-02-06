@@ -600,8 +600,8 @@ class EODataAccessGateway:
                     default_provider.search_config.discover_collections
                 )
 
-                # compare confs
-                if default_discovery_conf["result_type"] == "json" and isinstance(
+                # compare confs (care, some providers do not have result_type property)
+                if default_discovery_conf.get("result_type") == "json" and isinstance(
                     default_discovery_conf["results_entry"], str
                 ):
                     default_discovery_conf_parsed = cast(

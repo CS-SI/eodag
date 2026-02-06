@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import datetime
 import json
 import os
 import re
@@ -42,6 +43,7 @@ from typing_extensions import get_args
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
     _convert_bbox_to_lonlat_mollweide,
@@ -2828,6 +2830,283 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertEqual(results, [product])
         mock_set_availability.assert_called_once_with(self.search_plugin, [product])
 
+    @responses.activate
+    def test_plugins_search_geodes_normalize(self):
+
+        # Mock availability
+        responses.add(
+            responses.POST,
+            "https://geodes-portal.cnes.fr/fastavailability",
+            body=json.dumps(
+                {
+                    "products": [
+                        {
+                            "id": "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
+                            "files": [
+                                {
+                                    "checksum": "916d25f98b72543b7ed12902c394b7cc",
+                                    "available": True,
+                                }
+                            ],
+                        },
+                        {
+                            "id": "URN:FEATURE:DATA:gdh:0b9a70a6-5ef0-335d-be53-ff747a910657:V1",
+                            "files": [
+                                {
+                                    "checksum": "99bead26e0ac35055c152a6aa29499b0",
+                                    "available": True,
+                                }
+                            ],
+                        },
+                        {
+                            "id": "URN:FEATURE:DATA:gdh:aee10f1b-129f-3028-907a-7453638f8425:V1",
+                            "files": [
+                                {
+                                    "checksum": "33b083863d43d19f198e303d7f6560a7",
+                                    "available": True,
+                                }
+                            ],
+                        },
+                    ]
+                }
+            ).encode("utf-8"),
+            status=200,
+            content_type="application/json",
+            auto_calculate_content_length=True,
+        )
+
+        raw_result = RawSearchResult(
+            [
+                {
+                    "stac_version": "1.0.0-beta.2",
+                    "stac_extensions": [
+                        "https://stac-extensions.github.io/product/v0.1.0/schema.json",
+                        "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
+                        "https://stac-extensions.github.io/projection/v2.0.0/schema.json",
+                        "https://stac-extensions.github.io/sat/v1.1.0/schema.json",
+                        "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+                        "https://stac-extensions.github.io/sar/v1.1.0/schema.json",
+                        "https://stac-extensions.github.io/eo/v2.0.0/schema.json",
+                        "https://stac-extensions.github.io/sentinel-2/v1.0.0/schema.json",
+                        "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+                        "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
+                        "https://stac-extensions.github.io/raster/v2.0.0/schema.json",
+                    ],
+                    "id": "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
+                    "bbox": [87.279694, 37.634079, 90.64061, 39.766262],
+                    "geometry": {
+                        "coordinates": [
+                            [
+                                [90.142838, 37.634079],
+                                [90.64061, 39.368308999999996],
+                                [87.705925, 39.766262],
+                                [87.279694, 38.031849],
+                                [90.142838, 37.634079],
+                            ]
+                        ],
+                        "type": "Polygon",
+                    },
+                    "centroid": {"lon": 88.94447881390059, "lat": 38.70339029703974},
+                    "type": "Feature",
+                    "collection": "PEPS_S1_L1",
+                    "properties": {
+                        "mission_take_id": 461463,
+                        "product:type": "GRD",
+                        "sar:instrument_mode": "IW",
+                        "endpoint_url": "https://s3.datalake.cnes.fr/sentinel1-grd/2025/01/"
+                        + "01/S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6.zip",
+                        "proj:bbox": "90.142838,37.634079,87.705925,39.766262",
+                        "latest": True,
+                        "instrument": "SAR-C SAR",
+                        "references": [
+                            {
+                                "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/"
+                                + "10m-coastline/",
+                                "author": "Natural Earth",
+                                "dataset": "Coastline",
+                                "license": "Free of Charge",
+                            },
+                            {
+                                "url": "http://www.naturalearthdata.com/downloads/10m-cultural-vectors/"
+                                + "10m-admin-0-countries/",
+                                "author": "Natural Earth",
+                                "dataset": "Admin level 0 - Countries",
+                                "license": "Free of Charge",
+                            },
+                            {
+                                "url": "http://www.naturalearthdata.com/downloads/10m-cultural-vectors/"
+                                + "10m-admin-1-states-provinces/",
+                                "author": "Natural Earth",
+                                "dataset": "Admin level 1 - States, Provinces",
+                                "license": "Free of Charge",
+                            },
+                            {
+                                "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/"
+                                + "10m-rivers-lake-centerlines/",
+                                "author": "Natural Earth",
+                                "dataset": "Rivers and lake centerlines",
+                                "license": "Free of charge",
+                            },
+                            {
+                                "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/"
+                                + "10m-physical-labels/",
+                                "author": "Natural Earth",
+                                "dataset": "Marine Regions",
+                                "license": "Free of charge",
+                            },
+                        ],
+                        "sat:orbit_state": "Descending",
+                        "identifier": "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6",
+                        "keywords": ["location:northern", "season:winter"],
+                        "sat:relative_orbit": 121,
+                        "product:timeliness": "Fast24h",
+                        "area": 50134.00727,
+                        "swath": "IW",
+                        "processing:version": "01.00",
+                        "endpoint_description": "Link to product in datalake",
+                        "platform": "S1A",
+                        "sat:absolute_orbit": 57243,
+                        "sar:polarizations": "VV VH",
+                        "dataset": "PEPS_S1_L1",
+                        "version": "00.00",
+                        "continent_code": ["AS"],
+                        "start_datetime": "2025-01-01T00:08:31.992Z",
+                        "datetime": "2025-01-01T04:16:59.581Z",
+                        "processing:level": "L1",
+                        "eo:cloud_cover": 0,
+                        "sci:doi": "[]",
+                        "political": {
+                            "continents": [
+                                {
+                                    "id": "continent:Asia:6255147",
+                                    "name": "Asia",
+                                    "countries": [
+                                        {
+                                            "id": "country:China:1814991",
+                                            "name": "China",
+                                            "gcover": 0.53,
+                                            "pcover": 100,
+                                            "regions": [
+                                                {
+                                                    "id": "region:NorthwestChina:",
+                                                    "name": "Northwest China",
+                                                    "gcover": 1.66,
+                                                    "pcover": 100,
+                                                    "states": [
+                                                        {
+                                                            "id": "state:Xinjiang:1529047",
+                                                            "name": "Xinjiang",
+                                                            "gcover": 3.07,
+                                                            "pcover": 100,
+                                                        }
+                                                    ],
+                                                }
+                                            ],
+                                        }
+                                    ],
+                                }
+                            ]
+                        },
+                        "sat:orbit_cycle": 341,
+                        "end_datetime": "2025-01-01T00:09:01.008Z",
+                    },
+                    "links": [
+                        {
+                            "href": "https://geodes-portal.cnes.fr/api/stac",
+                            "rel": "root",
+                            "type": "application/json",
+                            "title": "STAC gdh root",
+                        },
+                        {
+                            "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S1_L1",
+                            "rel": "collection",
+                            "type": "application/json",
+                            "title": "Item collection",
+                        },
+                        {
+                            "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S1_L1/items/"
+                            + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
+                            "rel": "self",
+                            "type": "application/geo+json",
+                            "title": "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
+                        },
+                        {
+                            "href": "https://spdx.org/licenses/Apache-2.0.html",
+                            "rel": "license",
+                            "type": "application/html",
+                            "title": "Apache License 2.0",
+                        },
+                    ],
+                    "assets": {
+                        "2025/01/01/S1A/"
+                        + "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6_quicklook.jpg": {
+                            "href": "https://geodes-portal.cnes.fr/api/quicklook/"
+                            + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/files"
+                            + "/656095fb92081cc95d9c799cac81f903?scope=gdh",
+                            "title": "2025/01/01/S1A/"
+                            + "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6_quicklook.jpg",
+                            "description": "File size: 99059 bytes\n\nIs reference: false\n\nIs online: "
+                            + "true\n\nDatatype: QUICKLOOK_SD\n\nChecksum MD5: 656095fb92081cc95d9c799cac81f903",
+                            "type": "image/jpeg",
+                            "roles": ["overview"],
+                        },
+                        "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6.zip": {
+                            "href": "https://geodes-portal.cnes.fr/api/download/"
+                            + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/"
+                            + "files/916d25f98b72543b7ed12902c394b7cc",
+                            "title": "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6.zip",
+                            "description": "File size: 1999755054 bytes\n\nIs reference: false\n\nIs "
+                            + "online: false\n\nDatatype: RAWDATA\n\nChecksum MD5: 916d25f98b72543b7ed12902c394b7cc",
+                            "type": "application/zip",
+                            "roles": ["data"],
+                        },
+                    },
+                }
+            ]
+        )
+
+        search_plugin = self.get_search_plugin(provider="geodes")
+        normalized = search_plugin.normalize_results(raw_result)
+
+        self.assertTrue(len(normalized) > 0)
+
+        # Check for description parsed
+        self.assertDictEqual(
+            dict(normalized[0].assets),
+            {
+                "quicklook.jpg": {
+                    "href": "https://geodes-portal.cnes.fr/api/quicklook/"
+                    + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/files/"
+                    + "656095fb92081cc95d9c799cac81f903?scope=gdh",
+                    "title": "quicklook.jpg",
+                    "description": "File size: 99059 bytes\n\nIs reference: false\n\nIs online: true"
+                    + "\n\nDatatype: QUICKLOOK_SD\n\nChecksum MD5: 656095fb92081cc95d9c799cac81f903",
+                    "type": "image/jpeg",
+                    "roles": ["auxiliary"],
+                    "file:size": 99059,
+                    "geodes:reference": False,
+                    "geodes:online": True,
+                    "geodes:datatype": "QUICKLOOK_SD",
+                    "file:checksum": "656095fb92081cc95d9c799cac81f903",
+                },
+                "zip": {
+                    "href": "https://geodes-portal.cnes.fr/api/download/"
+                    + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/"
+                    + "files/916d25f98b72543b7ed12902c394b7cc",
+                    "title": "zip",
+                    "description": "File size: 1999755054 bytes\n\nIs reference: false\n\nIs online: false"
+                    + "\n\nDatatype: RAWDATA\n\nChecksum MD5: 916d25f98b72543b7ed12902c394b7cc",
+                    "type": "application/zip",
+                    "roles": ["auxiliary"],
+                    "file:size": 1999755054,
+                    "geodes:reference": False,
+                    "geodes:online": False,
+                    "geodes:datatype": "RAWDATA",
+                    "file:checksum": "916d25f98b72543b7ed12902c394b7cc",
+                },
+            },
+        )
+
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
@@ -4024,12 +4303,18 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             stubber.add_response(
                 "list_objects",
                 self.list_objects_response1,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-one",
+                },
             )
             stubber.add_response(
                 "list_objects",
                 self.list_objects_response2,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-two",
+                },
             )
             stubber.activate()
             result = search_plugin.query(
@@ -4363,6 +4648,148 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 collection="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_normalize_results(self, mock_requests_get):
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        def mock_make_api_call(self, operation_name, *args, **kwargs):
+            params: dict = args[0]
+            params.update(kwargs)
+
+            asset_filename = (
+                "20200115_dm-metno-MODEL-topaz5_ecosmo-ARC-b20200115-fv02.0.nc"
+            )
+            bucket = params.get("Bucket", "")
+            prefix = params.get("Prefix", "")
+            marker = params.get("Marker", "")
+
+            if (
+                operation_name == "ListObjects"
+                and params.get("Prefix") == "native/PRODUCT_A/dataset-number-one"
+            ):
+                if marker == "":
+                    return {
+                        "ResponseMetadata": {
+                            "RequestId": "tx00000939a913d4302d739-0069e23a41-bb4b7f3-default",
+                            "HTTPStatusCode": 200,
+                            "HTTPHeaders": {
+                                "content-type": "application/xml",
+                                "content-length": "13382",
+                            },
+                        },
+                        "IsTruncated": False,
+                        "Marker": "{}/{}".format(prefix, asset_filename),
+                        "Contents": [
+                            {
+                                "Key": "{}/{}".format(prefix, asset_filename),
+                                "LastModified": now,
+                                "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
+                                "Size": 666,
+                                "StorageClass": "STANDARD",
+                                "Owner": {
+                                    "DisplayName": "Data Access",
+                                    "ID": "data-access",
+                                },
+                            }
+                        ],
+                        "Name": bucket,
+                        "Prefix": prefix,
+                        "MaxKeys": 1000,
+                        "EncodingType": "url",
+                    }
+                else:
+                    return {
+                        "ResponseMetadata": {
+                            "RequestId": "tx00000939a913d4302d739-0069e23a41-bb4b7f3-default",
+                            "HTTPStatusCode": 200,
+                            "HTTPHeaders": {
+                                "content-type": "application/xml",
+                                "content-length": "13382",
+                            },
+                        },
+                        "IsTruncated": False,
+                        "Marker": "{}".format(prefix),
+                        "Contents": [],
+                        "Name": bucket,
+                        "Prefix": prefix,
+                        "MaxKeys": 1000,
+                        "EncodingType": "url",
+                    }
+
+            if (
+                operation_name == "ListObjects"
+                and params.get("Prefix") == "native/PRODUCT_A/dataset-number-two"
+            ):
+                return {
+                    "ResponseMetadata": {
+                        "RequestId": "tx00000939a913d4302d739-0069e23a41-bb4b7f3-default",
+                        "HTTPStatusCode": 200,
+                        "HTTPHeaders": {
+                            "content-type": "application/xml",
+                            "content-length": "13382",
+                        },
+                    },
+                    "IsTruncated": False,
+                    "Marker": "{}".format(prefix),
+                    "Contents": [],
+                    "Name": bucket,
+                    "Prefix": prefix,
+                    "MaxKeys": 1000,
+                    "EncodingType": "url",
+                }
+
+            raise NotImplementedError()
+
+        with mock.patch(
+            "botocore.client.BaseClient._make_api_call", new=mock_make_api_call
+        ):
+
+            result = search_plugin.query(
+                collection="PRODUCT_A",
+                start_datetime="2020-01-01T01:00:00Z",
+                end_datetime="2020-02-01T01:00:00Z",
+            )
+            mock_requests_get.assert_has_calls(
+                calls=[
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                    ),
+                    call().json(),
+                ]
+            )
+
+            self.assertIn("native", result[0].assets)
+            asset = result[0].assets["native"]
+            self.assertEqual(asset.get("title"), "native")
+            self.assertEqual(
+                asset.get("href"),
+                "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
+                + "20200115_dm-metno-MODEL-topaz5_ecosmo-ARC-b20200115-fv02.0.nc",
+            )
+            self.assertEqual(
+                asset.get("type"), "application/x-netcdf"
+            )  # hard configured
+            self.assertEqual(asset.get("file:size"), 666)
+            self.assertEqual(
+                asset.get("file:checksum"), "d41d8cd98f00b204e9800998ecf8427e"
+            )
+            self.assertEqual(asset.get("cop_marine:owner_id"), "data-access")
+            self.assertEqual(asset.get("cop_marine:owner_name"), "Data Access")
 
     def test_plugins_search_postjsonsearch_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
@@ -5172,3 +5599,128 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         ]
         for qu in expected_queryables:
             self.assertIn(qu, queryables)
+
+
+class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
+    def test_plugins_search_eumetsatds_normalize(self):
+
+        raw_result = RawSearchResult(
+            [
+                {
+                    "type": "Feature",
+                    "id": "PREmm20201201000000120IMPGS01GL",
+                    "geometry": {},
+                    "properties": {
+                        "type": "Properties",
+                        "identifier": "PREmm20201201000000120IMPGS01GL",
+                        "parentIdentifier": "EO:EUM:DAT:0921",
+                        "title": "PREmm20201201000000120IMPGS01GL",
+                        "date": "2020-12-01T00:00:00Z/2021-01-01T00:00:00Z",
+                        "updated": "2025-06-27T06:28:57.035Z",
+                        "acquisitionInformation": [
+                            {
+                                "platform": {"platformShortName": "multi platform"},
+                                "instrument": {"instrumentShortName": ""},
+                                "acquisitionParameters": {
+                                    "safAcquisition": {"statisticType": "mean"}
+                                },
+                            }
+                        ],
+                        "productInformation": {"productType": "PRE", "size": 353},
+                        "extraInformation": {
+                            "md5": "ef3ad778470d8206e98b649d9ed4bc4f",
+                            "compositeType": "P1M",
+                        },
+                        "links": {
+                            "type": "Links",
+                            "data": [
+                                {
+                                    "type": "Link",
+                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL",
+                                    "mediaType": "application/zip",
+                                    "title": "Product download",
+                                }
+                            ],
+                            "alternates": [
+                                {
+                                    "type": "Link",
+                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/metadata",
+                                    "mediaType": "application/xml",
+                                    "title": "Metadata",
+                                },
+                                {
+                                    "type": "Link",
+                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
+                                    + "metadata?format=json",
+                                    "mediaType": "application/json",
+                                    "title": "Metadata in JSON format",
+                                },
+                            ],
+                            "sip-entries": [
+                                {
+                                    "type": "Link",
+                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
+                                    + "entry?name=EOPMetadata.xml",
+                                    "mediaType": "application/xml",
+                                    "title": "EOPMetadata.xml",
+                                },
+                                {
+                                    "type": "Link",
+                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
+                                    + "entry?name=manifest.xml",
+                                    "mediaType": "application/xml",
+                                    "title": "manifest.xml",
+                                },
+                                {
+                                    "type": "Link",
+                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
+                                    + "entry?name=PREmm20201201000000120IMPGS01GL.nc",
+                                    "mediaType": "application/x-netcdf",
+                                    "title": "PREmm20201201000000120IMPGS01GL.nc",
+                                },
+                            ],
+                        },
+                    },
+                }
+            ]
+        )
+
+        search_plugin = self.get_search_plugin(provider="eumetsat_ds")
+        normalized = search_plugin.normalize_results(raw_result)
+
+        self.assertTrue(len(normalized) > 0)
+        self.assertDictEqual(
+            dict(normalized[0].assets),
+            {
+                "EOPMetadata.xml": {
+                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/EO%3AEUM%3ADAT%3A0921/products/"
+                    + "PREmm20201201000000120IMPGS01GL/entry?name=EOPMetadata.xml",
+                    "title": "EOPMetadata.xml",
+                    "roles": ["metadata"],
+                    "eumesat_ds:type": "Link",
+                    "type": "application/xml",
+                },
+                "manifest.xml": {
+                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/EO%3AEUM%3ADAT%3A0921/products/"
+                    + "PREmm20201201000000120IMPGS01GL/entry?name=manifest.xml",
+                    "title": "manifest.xml",
+                    "roles": ["metadata"],
+                    "eumesat_ds:type": "Link",
+                    "type": "application/xml",
+                },
+                "nc": {
+                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/EO%3AEUM%3ADAT%3A0921/products/"
+                    + "PREmm20201201000000120IMPGS01GL/entry?name=PREmm20201201000000120IMPGS01GL.nc",
+                    "title": "nc",
+                    "roles": ["data"],
+                    "eumesat_ds:type": "Link",
+                    "type": "application/x-netcdf",
+                },
+            },
+        )

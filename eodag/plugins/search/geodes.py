@@ -110,6 +110,36 @@ class GeodesSearch(StacSearch):
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
 
+        # Preprocess parsable description
+        for index in range(0, len(results)):
+            assets = results[index].get("assets", {})
+            for key in assets:
+                segments = assets[key].get("description", "").split("\n")
+
+                for segment in segments:
+                    segment = segment.strip("\r\t")
+
+                    if segment.startswith("File size") and (segment.endswith("byte")):
+                        filesize = segment[10:-4].strip()
+                        if filesize.isnumeric():
+                            assets[key]["file:size"] = int(filesize)
+                    elif segment.startswith("File size") and (
+                        segment.endswith("bytes")
+                    ):
+                        filesize = segment[10:-5].strip()
+                        if filesize.isnumeric():
+                            assets[key]["file:size"] = int(filesize)
+                    elif segment.startswith("Is reference:"):
+                        assets[key]["geodes:reference"] = segment[14:].lower() == "true"
+                    elif segment.startswith("Is online:"):
+                        assets[key]["geodes:online"] = segment[11:].lower() == "true"
+                    elif segment.startswith("Datatype:"):
+                        assets[key]["geodes:datatype"] = segment[10:]
+                    elif segment.startswith("Checksum MD5:"):
+                        assets[key]["file:checksum"] = segment[14:].lower()
+
+            results[index]["assets"] = assets
+
         products = super(GeodesSearch, self).normalize_results(results, **kwargs)
 
         self._set_availability(products)

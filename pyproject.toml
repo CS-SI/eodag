@@ -195,9 +195,10 @@ MeteoblueSearch = "eodag.plugins.search.build_search_result:MeteoblueSearch"
 WekeoECMWFSearch = "eodag.plugins.search.build_search_result:WekeoECMWFSearch"
 CreodiasS3Search = "eodag.plugins.search.creodias_s3:CreodiasS3Search"
 CopMarineSearch = "eodag.plugins.search.cop_marine:CopMarineSearch"
+GeodesSearch = "eodag.plugins.search.geodes:GeodesSearch"
+EumetsatDsSearch = "eodag.plugins.search.eumetsat_ds:EumetsatDsSearch"
 StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
 CopGhslSearch = "eodag.plugins.search.cop_ghsl:CopGhslSearch"
-GeodesSearch = "eodag.plugins.search.geodes:GeodesSearch"
 
 [tool.setuptools]
 include-package-data = true

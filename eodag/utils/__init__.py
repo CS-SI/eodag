@@ -131,7 +131,6 @@ REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
 DEFAULT_DOWNLOAD_WAIT = 0.2
 #: default timeout (in minutes) for download attempts
 DEFAULT_DOWNLOAD_TIMEOUT = 10
-
 #: default token expiration margin (in seconds). Safety buffer to prevent token rejection from unexpected expiry
 #: between validity check and request. Default value of :attr:`~eodag.config.PluginConfig.token_expiration_margin`
 DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
@@ -173,6 +172,7 @@ WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$
 #: regex to detect if a string is a JSONPath array field, used in :func:`eodag.utils.string_to_jsonpath`
 ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
+DEFAULT_MIME = "application/octet-stream"
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
 mimetypes.add_type("application/x-grib", ".grib")
@@ -1508,7 +1508,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
     return new_type(value)
 
 
-def guess_file_type(file: str) -> Optional[str]:
+def guess_file_type(file: str) -> str:
     """Guess the mime type of a file or URL based on its extension,
     using eodag extended mimetypes definition
 
@@ -1521,7 +1521,9 @@ def guess_file_type(file: str) -> Optional[str]:
     :returns: guessed mime type
     """
     mime_type, _ = mimetypes.guess_type(file, False)
-    if mime_type == "text/xml":
+    if mime_type is None:
+        mime_type = DEFAULT_MIME
+    elif mime_type == "text/xml":
         return "application/xml"
     return mime_type
 
