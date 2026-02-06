@@ -242,7 +242,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             if isinstance(key, str):
                 original_key = key.replace("__", ":")
                 key_with_COLON = key.replace("__", "_COLON_")
-                return kwargs.get(original_key) or kwargs.get(key_with_COLON)
+                result = kwargs.get(original_key)
+                if result is not None:
+                    return result
+                return kwargs.get(key_with_COLON)
             return super().get_value(key, args, kwargs)
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
