@@ -19,8 +19,12 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import TYPE_CHECKING
 
-from eodag.api.product.drivers.base import AssetPatterns, DatasetDriver
+from .base import AssetPatterns, DatasetDriver
+
+if TYPE_CHECKING:
+    from eodag.api.product._product import EOProduct
 
 logger = logging.getLogger("eodag.driver.generic")
 
@@ -71,3 +75,14 @@ class GenericDriver(DatasetDriver):
             "roles": ["auxiliary"],
         },
     ]
+
+    @staticmethod
+    def match(product: EOProduct, by: str = "*") -> bool:
+        """
+        Resolve if given product matches with current driver.
+
+        :param  product: product as reference use to extract criteria
+        :param  by: specific criteria match
+        :return: ``True`` if given product matches with current driver, else ``False``
+        """
+        return True
