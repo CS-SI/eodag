@@ -98,7 +98,7 @@ tutorials = [
     "rasterio",
     "netcdf4",
     "cartopy",
-    "covjsonkit",
+    "covjsonkit >= 0.0.18; python_version > '3.9'",
 ]
 dev = [
     "eodag[all-providers,csw,stubs]",
