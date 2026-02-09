@@ -1,0 +1,6 @@
+[pydocstyle]
+# Check for docstring presence only
+select = D1
+add_ignore = D107,D100,D105
+# Don't require docstrings for tests or setup
+match = (?!test|setup).*\.py

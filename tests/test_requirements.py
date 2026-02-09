@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import ast
-import configparser
 import os
 import re
 import sys
@@ -28,11 +27,16 @@ import importlib_metadata
 from packaging.requirements import Requirement
 from stdlib_list import stdlib_list
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 from eodag.config import PluginConfig, load_default_config
 from tests.context import MisconfiguredError
 
 project_path = "./eodag"
-setup_cfg_path = "./setup.cfg"
+pyproject_path = "./pyproject.toml"
 allowed_missing_imports = ["eodag"]
 
 
@@ -70,61 +74,55 @@ def get_project_imports(project_path: str) -> set[str]:
     return imports
 
 
-def get_setup_requires(setup_cfg_path: str):
-    """Get requirements from the given setup.cfg file path"""
-    config = configparser.ConfigParser()
-    config.read(setup_cfg_path)
-    return set(
-        [
-            Requirement(r).name
-            for r in config["options"]["install_requires"].split("\n")
-            if r
-        ]
-    )
+def get_setup_requires(pyproject_path: str):
+    """Get requirements from the given pyproject.toml file path"""
+    with open(pyproject_path, "rb") as f:
+        pyproject = tomllib.load(f)
+    return set([Requirement(r).name for r in pyproject["project"]["dependencies"]])
 
 
-def get_optional_dependencies(setup_cfg_path: str, extra: str) -> set[str]:
-    """Get extra requirements from the given setup.cfg file path"""
-    config = configparser.ConfigParser()
-    config.read(setup_cfg_path)
+def get_optional_dependencies(pyproject_path: str, extra: str) -> set[str]:
+    """Get extra requirements from the given pyproject.toml file path"""
+    with open(pyproject_path, "rb") as f:
+        pyproject = tomllib.load(f)
     deps = set()
-    for req in config["options.extras_require"][extra].split("\n"):
+    for req in pyproject["project"]["optional-dependencies"][extra]:
         if req.startswith("eodag["):
             for found_extra in re.findall(r"([\w-]+)[,\]]", req):
-                deps.update(get_optional_dependencies(setup_cfg_path, found_extra))
-        elif req:
+                deps.update(get_optional_dependencies(pyproject_path, found_extra))
+        else:
             deps.add(Requirement(req).name)
 
     return deps
 
 
-def get_resulting_extras(setup_cfg_path: str, extra: str) -> set[str]:
-    """Get resulting extras for a single extra from the given setup.cfg file path"""
-    config = configparser.ConfigParser()
-    config.read(setup_cfg_path)
+def get_resulting_extras(pyproject_path: str, extra: str) -> set[str]:
+    """Get resulting extras for a single extra from the given pyproject.toml file path"""
+    with open(pyproject_path, "rb") as f:
+        pyproject = tomllib.load(f)
     extras = set()
-    for req in config["options.extras_require"][extra].split("\n"):
+    for req in pyproject["project"]["optional-dependencies"][extra]:
         if req.startswith("eodag["):
             extras.update(re.findall(r"([\w-]+)[,\]]", req))
     return extras
 
 
-def get_entrypoints_extras(setup_cfg_path: str) -> dict[str, str]:
-    """Get entrypoints and associated extra from the given setup.cfg file path"""
-    config = configparser.ConfigParser()
-    config.read(setup_cfg_path)
+def get_entrypoints_extras(pyproject_path: str) -> dict[str, str]:
+    """Get entrypoints and associated extra from the given pyproject.toml file path"""
+    with open(pyproject_path, "rb") as f:
+        pyproject = tomllib.load(f)
     plugins_extras_dict = dict()
-    for group in config["options.entry_points"].keys():
-        for ep in config["options.entry_points"][group].split("\n"):
+    for group_name, group_entries in pyproject["project"]["entry-points"].items():
+        if not group_name.startswith("eodag.plugins."):
+            continue
+        for plugin_name, entry_value in group_entries.items():
             # plugin entrypoint with associated extra
-            match = re.search(r"^(\w+) = [\w\.:]+ \[(\w+)\]$", ep)
+            match = re.search(r"^[\w\.:]+\s+\[(\w+)\]$", entry_value)
             if match:
-                plugins_extras_dict[match.group(1)] = match.group(2)
+                plugins_extras_dict[plugin_name] = match.group(1)
                 continue
             # plugin entrypoint without extra
-            match = re.search(r"^(\w+) = [\w\.:]+$", ep)
-            if match:
-                plugins_extras_dict[match.group(1)] = None
+            plugins_extras_dict[plugin_name] = None
 
     return plugins_extras_dict
 
@@ -134,8 +132,8 @@ class TestRequirements(unittest.TestCase):
         """Needed libraries must be in project requirements"""
 
         project_imports = get_project_imports(project_path)
-        setup_requires = get_setup_requires(setup_cfg_path)
-        setup_requires.update(get_optional_dependencies(setup_cfg_path, "all"))
+        setup_requires = get_setup_requires(pyproject_path)
+        setup_requires.update(get_optional_dependencies(pyproject_path, "all"))
         import_required_dict = importlib_metadata.packages_distributions()
         try:
             default_libs = stdlib_list()
@@ -162,8 +160,8 @@ class TestRequirements(unittest.TestCase):
     def test_plugins_extras(self):
         """All optional dependencies needed by providers must be resolved with all-providers extra"""
 
-        plugins_extras_dict = get_entrypoints_extras(setup_cfg_path)
-        all_providers_extras = get_resulting_extras(setup_cfg_path, "all-providers")
+        plugins_extras_dict = get_entrypoints_extras(pyproject_path)
+        all_providers_extras = get_resulting_extras(pyproject_path, "all-providers")
 
         providers_config = load_default_config()
         plugins = set()

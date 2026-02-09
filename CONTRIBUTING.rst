@@ -36,7 +36,8 @@ If you intend to contribute to eodag source code:
 
     git clone https://github.com/CS-SI/eodag.git
     cd eodag
-    python -m pip install -r requirements-dev.txt
+    pip install -e ".[dev]"
+    prek install
 
 We use ``prek`` (faster ``pre-commit``) to run a suite of linters, formatters and pre-commit hooks (``black``, ``isort``
 , ``flake8``) to ensure the code base is homogeneously formatted and easier to read. It's important that you install it,

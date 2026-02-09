@@ -121,3 +121,6 @@ eodag-config
 
 # Helm chart dependencies
 charts/**/*.tgz
+
+# uv lock file
+uv.lock

@@ -1,3 +1,0 @@
-nbconvert>6.3.0      # Requirement for nbsphinx, and updated to avoid XSS vunerabilities
--r requirements-tutorials.txt
--e .[docs]
