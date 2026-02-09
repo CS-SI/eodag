@@ -29,7 +29,10 @@
 .. |versions-badge| image:: https://img.shields.io/pypi/pyversions/eodag.svg
     :target: https://pypi.org/project/eodag/
 
-|license-badge| |versions-badge|
+.. |zenodo-badge| image:: https://zenodo.org/badge/203819248.svg
+  :target: https://doi.org/10.5281/zenodo.18552649
+
+|license-badge| |versions-badge| |zenodo-badge|
 
 |
 
