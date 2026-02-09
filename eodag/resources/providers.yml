@@ -4870,7 +4870,7 @@
   anchor_orderable_mm: &orderable_mm
     _order_href: '$.links[?rel=="retrieve"].href'
     _order_body: '$.links[?rel=="retrieve"].body'
-    eodag:order_link: "{_order_href}?{{{_order_body#to_geojson}}}"
+    eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     eodag:download_link: '$.null'
     assets: '$.null'
   search: !plugin
@@ -4921,18 +4921,19 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        eodag:status_link: $.json.location
+        eodag:status_link: '$.json.links[?rel=="self"].href'
+        eodag:order_status: $.json.properties."order:status"
     order_status:
       request:
         method: GET
       metadata_mapping:
-        eodag:order_status: $.json.status
-        eodag:order_message: $.json.description
+        order:status: $.json.properties."order:status"
       success:
         http_code: 200
       on_success:
         metadata_mapping:
-          eodag:download_link: '{eodag:status_link}'
+          eodag:download_link: '$.json.assets.downloadLink.href'
+          order:status: $.json.properties."order:status"
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
