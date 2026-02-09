@@ -2158,13 +2158,8 @@ class EODataAccessGateway:
 
         :param provider: (optional) The provider.
         :param fetch_providers: If new collections should be fetched from the providers; default: True
-        :param kwargs: additional filters for queryables (`collection` or other search
-                       arguments)
-
-        :raises UnsupportedCollection: If the specified collection is not available for the
-                                        provider.
-
-        :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
+        :param kwargs: additional filters for queryables (`collection` or other search arguments)
+        :returns: A :class:`~eodag.api.product.queryables.QueryablesDict` containing the EODAG queryable
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         """
         # only fetch providers if collection is not found
