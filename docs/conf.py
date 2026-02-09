@@ -90,14 +90,24 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
 
 # General information about the project.
 project = metadata("eodag")["Name"]
-author = metadata("eodag")["Author"]
+# Extract author from authors list or fall back to default
+try:
+    author_email = metadata("eodag")["Author-Email"]
+    # Parse format: "Name <email>"
+    author = (
+        author_email.split("<")[0].strip()
+        if "<" in author_email
+        else "CS GROUP - France"
+    )
+except (KeyError, IndexError):
+    author = "CS GROUP - France"
 copyright = f"2018-{datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
