@@ -3950,29 +3950,27 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             ],
         )
 
-        # CLMS_GLO_LAI_333M has both metadata_mapping_from_product and metadata_mapping
+        # S3_SRA_BS has both metadata_mapping_from_product and metadata_mapping
         # "metadata_mapping" must override "metadata_mapping_from_product"
         self.assertIn(
             "eodag:order_link",
-            default_config.products["CLMS_GLO_LAI_333M"]["metadata_mapping"],
+            default_config.products["S3_SRA_BS"]["metadata_mapping"],
         )
         self.assertIn(
             "eodag:order_link",
-            default_config.products["CLMS_GLO_FCOVER_333M"]["metadata_mapping"],
+            default_config.products["S3_EFR"]["metadata_mapping"],
         )
         self.assertEqual(
-            default_config.products["CLMS_GLO_LAI_333M"][
-                "metadata_mapping_from_product"
-            ],
-            "CLMS_GLO_FCOVER_333M",
+            default_config.products["S3_SRA_BS"]["metadata_mapping_from_product"],
+            "S3_EFR",
         )
         self.assertNotEqual(
-            self.wekeomain_search_plugin.config.products["CLMS_GLO_LAI_333M"][
+            self.wekeomain_search_plugin.config.products["S3_SRA_BS"][
                 "metadata_mapping"
             ]["eodag:order_link"],
-            self.wekeomain_search_plugin.config.products["CLMS_GLO_FCOVER_333M"][
-                "metadata_mapping"
-            ]["eodag:order_link"],
+            self.wekeomain_search_plugin.config.products["S3_EFR"]["metadata_mapping"][
+                "eodag:order_link"
+            ],
         )
 
     @mock.patch(
