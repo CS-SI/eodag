@@ -94,8 +94,9 @@ if TYPE_CHECKING:
 
 logger = py_logging.getLogger("eodag.utils")
 
-#: default projection used in metadata-mapping converters and :class:`~eodag.plugins.search.csw.CSWSearch`
-DEFAULT_PROJ = "EPSG:4326"
+
+# Constants - Core
+# ---------------
 
 #: Used as template for unknown/custom collection usage
 GENERIC_COLLECTION = "GENERIC_COLLECTION"
@@ -109,6 +110,12 @@ STAC_SEARCH_PLUGINS = [
     "StacListAssets",
     "StaticStacSearch",
 ]
+
+#: actual STAC version in EODAG
+STAC_VERSION = "1.1.0"
+
+# Constants - HTTP requests
+# ------------------------
 
 eodag_version = metadata("eodag")["Version"]
 #: EODAG user agent used in HTTP requests
@@ -133,13 +140,12 @@ DEFAULT_DOWNLOAD_WAIT = 0.2
 #: default timeout (in minutes) for download attempts
 DEFAULT_DOWNLOAD_TIMEOUT = 10
 
-#: regex to detect if a string is a JSONPath expression, used in :func:`eodag.utils.string_to_jsonpath`
-JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
-#: regex to detect if a string is a simple/workable JSONPath expression, that can be parsed using a simpler, optimized
-#: approach. Used in :func:`eodag.utils.string_to_jsonpath`
-WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
-#: regex to detect if a string is an array field, used in :func:`eodag.utils.string_to_jsonpath`
-ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
+#: default token expiration margin (in seconds). Safety buffer to prevent token rejection from unexpected expiry
+#: between validity check and request. Default value of :attr:`~eodag.config.PluginConfig.token_expiration_margin`
+DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
+
+# Constants - Pagination
+# ---------------------
 
 #: pagination default starting page number
 DEFAULT_PAGE = 1
@@ -149,24 +155,31 @@ DEFAULT_ITEMS_PER_PAGE = 20
 #: 50 instead of 20 (:const:`~eodag.utils.DEFAULT_ITEMS_PER_PAGE`) to increase it to the known and current minimum
 #: value (mundi provider)
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
-
-#: default collections start date
-DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
-
-#: default geometry / whole world bounding box
-DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
-
-#: default token expiration margin (in seconds)
-DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
-
 #: known next page token keys used to guess key in STAC providers next link responses
 KNOWN_NEXT_PAGE_TOKEN_KEYS = ["token", "next", "page", "skip"]
 
+# Constants - Metadata-mapping / default values
+# --------------------------------------------
+
+#: default projection used in metadata-mapping converters and :class:`~eodag.plugins.search.csw.CSWSearch`
+DEFAULT_PROJ = "EPSG:4326"
+#: default collections start date
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
+#: default geometry / whole world bounding box
+DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
 #: Online status value for ``order:status`` property
 ONLINE_STATUS = "succeeded"
 
-#: actual STAC version in EODAG
-STAC_VERSION = "1.1.0"
+# Constants - Metadata-mapping / JSONPath regex
+# --------------------------------------------
+
+#: regex to detect if a string is a JSONPath expression, used in :func:`eodag.utils.string_to_jsonpath`
+JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
+#: regex to detect if a string is a simple/workable JSONPath expression, that can be parsed using a simpler, optimized
+#: approach. Used in :func:`eodag.utils.string_to_jsonpath`
+WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
+#: regex to detect if a string is a JSONPath array field, used in :func:`eodag.utils.string_to_jsonpath`
+ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
