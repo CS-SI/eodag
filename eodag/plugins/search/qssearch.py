@@ -2022,8 +2022,11 @@ class PostJsonSearch(QueryStringSearch):
 
 class StacSearch(PostJsonSearch):
     """A specialisation of :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses generic
-    STAC configuration, it therefore has the same configuration parameters (those inherited
+    STAC configuration.
+
+    It therefore has the same configuration parameters (those inherited
     from :class:`~eodag.plugins.search.qssearch.QueryStringSearch`).
+
     For providers using ``StacSearch`` default values are defined for most of the parameters
     (see ``stac_provider.yml``). If some parameters are different for a specific provider, they
     have to be overwritten. If certain functionalities are not available, their configuration
@@ -2031,6 +2034,9 @@ class StacSearch(PostJsonSearch):
     the :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` and
     :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` in the
     :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
+
+    Plugins inheriting from ``StacSearch`` have to be referenced in :const:`~eodag.utils.STAC_SEARCH_PLUGINS`
+    to be correctly initialized with the expected STAC configuration and features.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
