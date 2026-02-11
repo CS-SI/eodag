@@ -60,4 +60,39 @@ Misc
 
 .. automodule:: eodag.utils
    :members:
-   :exclude-members: DownloadedCallback, ProgressCallback, NotebookProgressCallback, get_progress_callback
+   :exclude-members: DownloadedCallback, ProgressCallback, NotebookProgressCallback, get_progress_callback,
+      DEFAULT_PROJ, GENERIC_COLLECTION, GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS, USER_AGENT,
+      HTTP_REQ_TIMEOUT, DEFAULT_SEARCH_TIMEOUT, DEFAULT_STREAM_REQUESTS_TIMEOUT, REQ_RETRY_TOTAL,
+      REQ_RETRY_BACKOFF_FACTOR, REQ_RETRY_STATUS_FORCELIST, DEFAULT_DOWNLOAD_WAIT, DEFAULT_DOWNLOAD_TIMEOUT,
+      JSONPATH_MATCH, WORKABLE_JSONPATH_MATCH, ARRAY_FIELD_MATCH, DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE,
+      DEFAULT_MAX_ITEMS_PER_PAGE, DEFAULT_MISSION_START_DATE, DEFAULT_SHAPELY_GEOMETRY,
+      DEFAULT_TOKEN_EXPIRATION_MARGIN, KNOWN_NEXT_PAGE_TOKEN_KEYS, ONLINE_STATUS, STAC_VERSION
+
+Constants
+---------
+
+.. autodata:: eodag.utils.DEFAULT_PROJ
+.. autodata:: eodag.utils.GENERIC_COLLECTION
+.. autodata:: eodag.utils.GENERIC_STAC_PROVIDER
+.. autodata:: eodag.utils.STAC_SEARCH_PLUGINS
+.. autodata:: eodag.utils.USER_AGENT
+.. autodata:: eodag.utils.HTTP_REQ_TIMEOUT
+.. autodata:: eodag.utils.DEFAULT_SEARCH_TIMEOUT
+.. autodata:: eodag.utils.DEFAULT_STREAM_REQUESTS_TIMEOUT
+.. autodata:: eodag.utils.REQ_RETRY_TOTAL
+.. autodata:: eodag.utils.REQ_RETRY_BACKOFF_FACTOR
+.. autodata:: eodag.utils.REQ_RETRY_STATUS_FORCELIST
+.. autodata:: eodag.utils.DEFAULT_DOWNLOAD_WAIT
+.. autodata:: eodag.utils.DEFAULT_DOWNLOAD_TIMEOUT
+.. autodata:: eodag.utils.JSONPATH_MATCH
+.. autodata:: eodag.utils.WORKABLE_JSONPATH_MATCH
+.. autodata:: eodag.utils.ARRAY_FIELD_MATCH
+.. autodata:: eodag.utils.DEFAULT_PAGE
+.. autodata:: eodag.utils.DEFAULT_ITEMS_PER_PAGE
+.. autodata:: eodag.utils.DEFAULT_MAX_ITEMS_PER_PAGE
+.. autodata:: eodag.utils.DEFAULT_MISSION_START_DATE
+.. autodata:: eodag.utils.DEFAULT_SHAPELY_GEOMETRY
+.. autodata:: eodag.utils.DEFAULT_TOKEN_EXPIRATION_MARGIN
+.. autodata:: eodag.utils.KNOWN_NEXT_PAGE_TOKEN_KEYS
+.. autodata:: eodag.utils.ONLINE_STATUS
+.. autodata:: eodag.utils.STAC_VERSION
