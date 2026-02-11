@@ -19,6 +19,7 @@
 import os
 import unittest
 from collections import UserDict, UserList
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 from lxml import html
@@ -35,6 +36,13 @@ from tests.context import (
 class TestCollection(unittest.TestCase):
     def setUp(self):
         super(TestCollection, self).setUp()
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = TemporaryDirectory()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        )
+        self.expanduser_mock.start()
+
         self.dag = EODataAccessGateway()
         self.collection = Collection.create_with_dag(self.dag, id="foo")
 
@@ -46,6 +54,10 @@ class TestCollection(unittest.TestCase):
         super(TestCollection, self).tearDown()
         # stop os.environ
         self.mock_os_environ.stop()
+
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        self.tmp_home_dir.cleanup()
 
     def test_collection_set_ids_and_alias(self):
         """Collection ids and alias must be correctly set"""
@@ -276,10 +288,11 @@ class TestCollection(unittest.TestCase):
 
 
 class TestCollectionsDict(unittest.TestCase):
-    def setUp(self):
-        super(TestCollectionsDict, self).setUp()
-        self.dag = EODataAccessGateway()
-        self.collections_dict = CollectionsDict([Collection(id="foo")])
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures for the class."""
+        super().setUpClass()
+        cls.collections_dict = CollectionsDict([Collection(id="foo")])
 
     def test_search_result_is_dict_like(self):
         """CollectionsDict must provide a dict interface"""
@@ -287,10 +300,11 @@ class TestCollectionsDict(unittest.TestCase):
 
 
 class TestCollectionsList(unittest.TestCase):
-    def setUp(self):
-        super(TestCollectionsList, self).setUp()
-        self.dag = EODataAccessGateway()
-        self.collections_list = CollectionsList([Collection(id="foo")])
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures for the class."""
+        super().setUpClass()
+        cls.collections_list = CollectionsList([Collection(id="foo")])
 
     def test_search_result_is_list_like(self):
         """CollectionsList must provide a list interface"""
