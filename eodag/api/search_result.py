@@ -146,9 +146,12 @@ class SearchResult(UserList[EOProduct]):
     def filter_property(
         self, operator: str = "eq", **search_property: Any
     ) -> SearchResult:
-        """
-        Apply :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch,
-        check its documentation to know more.
+        """Filter products, retaining only those whose property match criteria.
+
+        Applies :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch.
+
+        :param operator: Operator used for filtering (one of :mod:`python:operator` functions ``lt,le,eq,ne,ge,...``)
+        :param search_property: property key from ``product.properties``, associated to its filter value
         """
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
