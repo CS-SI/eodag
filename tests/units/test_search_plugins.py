@@ -4559,7 +4559,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         params["per_page"] = 5
         params["page"] = 1
         products, count = plugin._create_products_from_tiles(
-            tiles, "lat/lon", collection, params, "classification"
+            tiles, "lat/lon", collection, params, "classification", need_count=True
         )
         self.assertEqual(8, count)
         self.assertEqual(5, len(products))

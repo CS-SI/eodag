@@ -4,6 +4,7 @@ import math
 from calendar import monthrange
 from typing import Annotated, Any, Optional
 
+import dateutil
 import requests
 from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
@@ -157,12 +158,8 @@ def _replace_datetimes(params: dict[str, Any]):
     if not start_date_str:
         return
 
-    try:
-        start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%dT%H:%M:%SZ")
-        end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%dT%H:%M:%SZ")
-    except ValueError:
-        start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
-        end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d")
+    start_date = dateutil.parser.isoparse(start_date_str)
+    end_date = dateutil.parser.isoparse(end_date_str)
     start_year = start_date.year
     end_year = end_date.year
     years = [str(y) for y in range(start_year, end_year + 1)]
@@ -258,6 +255,7 @@ class CopGhslSearch(Search):
         collection: str,
         params: dict[str, Any],
         additional_filter: Optional[str] = None,
+        need_count=False,
     ) -> tuple[list[EOProduct], int]:
         """
         create EOProduct objects from the input parameters and the tiles containing bboxes
@@ -348,6 +346,8 @@ class CopGhslSearch(Search):
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
                         products.append(product)
+                    elif current_index > end_index and not need_count:
+                        break
                     current_index += 1
 
         return products, current_index
@@ -541,12 +541,14 @@ class CopGhslSearch(Search):
     ) -> SearchResult:
         """
         Implementation of search for the Copernicus GHSL provider
+
         :param prep: object containing search parameters
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
         page = int(getattr(prep, "next_page_token") or "1")
         items_per_page = getattr(prep, "items_per_page") or DEFAULT_ITEMS_PER_PAGE
+        number_matched = kwargs.pop("number_matched", None)
 
         # get year/month from start/end time if not given separately
         _replace_datetimes(kwargs)
@@ -587,16 +589,21 @@ class CopGhslSearch(Search):
         kwargs["per_page"] = items_per_page
         constraints_filters = self._fetch_constraints(collection)
         additional_filter = constraints_filters.get("additional_filter")
+        need_count = prep.count and not number_matched
         products, count = self._create_products_from_tiles(
             tiles,
             unit,
             collection,
             kwargs,
             additional_filter=additional_filter,
+            need_count=need_count,
         )
 
         if prep.count:
-            total_items = count
+            if number_matched:
+                total_items = number_matched
+            else:
+                total_items = count
         else:
             total_items = None
         return SearchResult(
