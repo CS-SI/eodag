@@ -1021,12 +1021,12 @@ class EODataAccessGateway:
                     filters_evaluators[filter_name](
                         {
                             filter_name: col_f.__dict__[
-                                Collection.get_collection_mtd_from_alias(filter_name)
+                                Collection.get_collection_field_from_alias(filter_name)
                             ]
                         }
                     )
                     for filter_name, value in filters.items()
-                    if Collection.get_collection_mtd_from_alias(filter_name)
+                    if Collection.get_collection_field_from_alias(filter_name)
                     in col_f.__dict__
                 ]
 
@@ -2011,9 +2011,8 @@ class EODataAccessGateway:
             collection_obj = search_result._dag.collections_config.get(
                 collection, Collection(id=collection)
             )
-            collection_dict = collection_obj.serialize()
+            collection_dict = collection_obj.model_dump(display_extensions=True, mode="json", exclude_none=True, exclude={"alias"})
             # add links
-            collection_dict.setdefault("links", [])
             collection_dict["links"].append(
                 {
                     "rel": "self",
