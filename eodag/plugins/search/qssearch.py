@@ -1821,6 +1821,7 @@ class PostJsonSearch(QueryStringSearch):
             if (
                 "eodag:order_link" in product.properties
                 and "collection" in product.properties["eodag:order_link"]
+                and "order" not in product.properties["eodag:order_link"]
             ):
                 product.properties["eodag:order_link"] = product.properties[
                     "eodag:order_link"

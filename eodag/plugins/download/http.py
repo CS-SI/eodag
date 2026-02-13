@@ -190,8 +190,12 @@ class HTTPDownload(Download):
             try:
                 query_dict = geojson.loads(parts.query)
             except JSONDecodeError:
-                if parts.query:
-                    query_dict = parse_qs(parts.query)
+                try:
+                    # due to the fact how metadata formatting works, there might be 2 {} around the string
+                    query_dict = geojson.loads(parts.query[1:-1])
+                except JSONDecodeError:
+                    if parts.query:
+                        query_dict = parse_qs(parts.query)
             order_url = parts._replace(query="").geturl()
             if query_dict:
                 order_kwargs["json"] = query_dict
@@ -544,6 +548,8 @@ class HTTPDownload(Download):
                 json_response = (
                     response.json()
                     if "application/json" in response.headers.get("Content-Type", "")
+                    or "application/geo+json"
+                    in response.headers.get("Content-Type", "")
                     else {}
                 )
                 if result_entry:

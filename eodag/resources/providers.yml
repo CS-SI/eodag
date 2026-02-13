@@ -4860,15 +4860,17 @@
   roles:
     - host
   description: DEDL STAC
-  url: https://hda.data.destination-earth.eu/stac/
+  url: https://hda.data.destination-earth.eu/stac/v2/
   # anchors to avoid duplications
   anchor_orderable_mm: &orderable_mm
-    eodag:order_link: '$.assets.eodag:download_link.href'
+    _order_href: '$.links[?rel=="retrieve"].href'
+    _order_body: '$.links[?rel=="retrieve"].body'
+    eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     eodag:download_link: '$.null'
     assets: '$.null'
   search: !plugin
     type: StacSearch
-    api_endpoint: https://hda.data.destination-earth.eu/stac/search
+    api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
     need_auth: true
     timeout: 60
     asset_key_from_href: false
@@ -4876,10 +4878,10 @@
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
-      eodag:download_link: '$.assets.eodag:download_link.href'
+      eodag:download_link: '$.assets.downloadLink.href'
       assets: '$.null'
     discover_collections:
-      fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
+      fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
       result_type: json
       results_entry: '$.collections[*]'
       generic_collection_id: '$.id'
@@ -4911,27 +4913,28 @@
     extract: true
     archive_depth: 2
     order_enabled: True
-    order_method: GET
+    order_method: POST
     order_on_response:
       metadata_mapping:
-        eodag:status_link: $.json.location
+        eodag:status_link: '$.json.links[?rel=="self"].href'
+        eodag:order_status: $.json.properties."order:status"
     order_status:
       request:
         method: GET
       metadata_mapping:
-        eodag:order_status: $.json.status
-        eodag:order_message: $.json.description
+        order:status: $.json.properties."order:status"
       success:
         http_code: 200
       on_success:
         metadata_mapping:
-          eodag:download_link: '{eodag:status_link}'
+          eodag:download_link: '$.json.assets.downloadLink.href'
+          order:status: $.json.properties."order:status"
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
     subject:
       oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
-      redirect_uri: https://hda.data.destination-earth.eu/stac
+      redirect_uri: https://hda.data.destination-earth.eu/stac/v2
       client_id: dedl-hda
       user_consent_needed: false
       exchange_url_error_pattern:
