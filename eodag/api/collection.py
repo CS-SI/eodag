@@ -20,14 +20,16 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import AnyUrl, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
-from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
-from stac_pydantic.links import Links
+from stac_pydantic.collection import Collection as StacCollection
+from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
+from stac_pydantic.links import Link
+from stac_pydantic.shared import SEMVER_REGEX
 
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
@@ -53,15 +55,17 @@ RFC3339_PATTERN = (
 )
 
 
-class Collection(BaseModel):
-    """A class representing a collection.
+class Collection(StacCollection):
+    """A class representing a collection, inherited from :class:`~stac_pydantic.collection.Collection`.
 
-    A Collection object is used to describe a group of related :class:`~eodag.api.product._product.EOProduct` objects.
+    A ``Collection`` object is used to describe a group of
+    related :class:`~eodag.api.product._product.EOProduct` objects.
     """
 
-    id: str = Field()
-    title: Optional[str] = Field(default=None)
-    description: Optional[str] = Field(default=None)
+    type: Literal["Collection"] = Field(default="Collection")
+    stac_version: str = Field(default=STAC_VERSION, pattern=SEMVER_REGEX)
+    description: Optional[str] = Field(default=None, min_length=1)  # type: ignore
+    license: str = Field(default="other", min_length=1)
     extent: Extent = Field(
         default=Extent(
             spatial=SpatialExtent(bbox=[[-180.0, -90.0, 180.0, 90.0]]),  # type: ignore
@@ -74,22 +78,26 @@ class Collection(BaseModel):
             "), with date/time strings in RFC 3339 format"
         ),
     )
-    keywords: Optional[list[str]] = Field(default=None)
-    license: Optional[str] = Field(default=None)
-    links: Optional[Links] = Field(default=None)
-    providers: Optional[list[Provider]] = Field(default=None)
+    links: list[Link] = Field(default=[])  # type: ignore
 
     # summaries
-    constellation: Optional[str] = Field(default=None)
-    instruments: Optional[list[str]] = Field(default=None)
-    platform: Optional[str] = Field(default=None)
-    processing_level: Optional[str] = Field(default=None, alias="processing:level")
-    sci_doi: Optional[str] = Field(default=None, alias="sci:doi")
-    eodag_sensor_type: Optional[str] = Field(default=None, alias="eodag:sensor_type")
+    constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
+    instruments: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
+    platform: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
+    processing_level: Optional[list[str]] = Field(
+        default=None, alias="processing:level", exclude=True, repr=False
+    )
+    sci_doi: Optional[list[str]] = Field(
+        default=None, alias="sci:doi", exclude=True, repr=False
+    )
+    eodag_sensor_type: Optional[list[str]] = Field(
+        default=None, alias="eodag:sensor_type", exclude=True, repr=False
+    )
 
     # eodag-specific attribute
     alias: Optional[str] = Field(
         default=None,
+        min_length=1,
         description="An alias given by a user to use his customized id intead of the internal id of EODAG",
         repr=False,
     )
@@ -103,13 +111,37 @@ class Collection(BaseModel):
     _id: str = PrivateAttr()
     _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
 
+    # only STAC fields
+    __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys())
+
+    # mandatory fields which not match eodag use and are fixed by their default value
+    __static_fields__: ClassVar[list[str]] = ["type", "stac_version", "links"]
+
+    # fields of the model that must be added to the field "summaries"
+    __summaries_fields__: ClassVar[Optional[list[str]]] = None
+
     model_config = ConfigDict(
-        extra="forbid", validate_by_name=True, serialize_by_alias=True
+        extra="forbid",
+        validate_return=True,
+        validate_by_name=True,
+        serialize_by_alias=True,
+        use_enum_values=True,
     )
 
     def model_post_init(self, context: Any) -> None:
         """Post-initialization method to set internal attributes."""
         self._id = self.id
+
+    @classmethod
+    def summaries_fields(cls) -> list[str]:
+        """Set and/or return ``__summaries_fields__`` class variable that requires computations"""
+        if cls.__summaries_fields__ is None:
+            cls.__summaries_fields__ = [
+                field
+                for field in cls.model_fields
+                if field not in cls.__stac_fields__ + ["alias", "eodag_stac_collection"]
+            ]
+        return cls.__summaries_fields__
 
     @classmethod
     def create_with_dag(cls, dag: EODataAccessGateway, **kwargs) -> Collection:
@@ -123,10 +155,10 @@ class Collection(BaseModel):
         return instance
 
     @classmethod
-    def get_collection_mtd_from_alias(cls, value: str) -> str:
-        """Get collection metadata from alias
+    def get_collection_field_from_alias(cls, value: str) -> str:
+        """Get name of a collection field from its alias
 
-        >>> Collection.get_collection_mtd_from_alias('processing:level')
+        >>> Collection.get_collection_field_from_alias('processing:level')
         'processing_level'
         """
         alias_map = {
@@ -136,12 +168,192 @@ class Collection(BaseModel):
         }
         return alias_map.get(value, value)
 
+    @classmethod
+    def get_collection_alias_from_field(cls, value: str) -> str:
+        """Get alias of a collection field from its name
+
+        >>> Collection.get_collection_alias_from_field('processing_level')
+        'processing:level'
+        """
+        field_map = {
+            name: field_info.alias
+            for name, field_info in cls.model_fields.items()
+            if field_info.alias
+        }
+        return field_map.get(value, value)
+
+    @model_validator(mode="before")
+    @classmethod
+    def format_eodag_summaries_values(cls, data: Any) -> Any:
+        """Format fields which will be used as properties of field ``summaries`` to make sure
+        their validation and the one of ``summaries`` will pass"""
+        if not isinstance(data, dict):
+            return data
+
+        if "summaries" not in data or data["summaries"] is None:
+            data["summaries"] = {}
+        elif not isinstance(data["summaries"], dict):
+            return data
+
+        # format fields for "summaries"
+        for field, v in data.copy().items():
+            field_from_alias = cls.get_collection_field_from_alias(field)
+
+            # do not use null values for field "summaries"
+            if v is None:
+                continue
+
+            if field_from_alias in cls.summaries_fields():
+                default = cls.model_fields[field_from_alias].get_default()
+                # set empty values ({}, [] or "") which are not the default values to None
+                # do not use it neither for field "summaries"
+                if not v and isinstance(v, (dict, list, str)) and default is None:
+                    data[field] = None
+                    continue
+
+                # keep values as they are when they are dictionaries or lists
+                # make lists with values of other types
+                if isinstance(v, dict) or isinstance(v, list):
+                    data[field] = data["summaries"][field] = v
+                elif isinstance(v, str):
+                    data[field] = data["summaries"][field] = v.split(",")
+                else:
+                    data[field] = data["summaries"][field] = [v]
+
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def allow_summaries_validation(cls, data: Any) -> Any:
+        """Add properties of field ``summaries`` that can be validated
+        in the model to the input and remove the other ones"""
+        if (
+            isinstance(data, dict)
+            and "summaries" in data
+            and isinstance(data["summaries"], dict)
+        ):
+            errors: list[InitErrorDetails] = []
+
+            for prop, v in data["summaries"].copy().items():
+                prop_from_alias = cls.get_collection_field_from_alias(prop)
+                # raise an error for each unknown "summaries" property
+                if prop_from_alias not in cls.summaries_fields():
+                    msg = (
+                        'Extra inputs are not permitted in collection field "summaries"'
+                    )
+                    error = InitErrorDetails(
+                        type=PydanticCustomError("extra_forbidden", msg),
+                        loc=("summaries", prop),
+                        input=data["summaries"][prop],
+                    )
+                    errors.append(error)
+                    continue
+
+                # remove null values and empty values ({}, [] or "") when there are not the default values
+                default = cls.model_fields[prop_from_alias].get_default()
+                if v is None or (
+                    not v and isinstance(v, (dict, list, str)) and default is None
+                ):
+                    del data["summaries"][prop]
+                    continue
+
+                add_prop = True
+
+                # values set in kwargs have priority over the ones in "summaries" except if they are null
+                for field, value in data.copy().items():
+                    # handle aliases
+                    field_from_alias = cls.get_collection_field_from_alias(field)
+                    if prop_from_alias == field_from_alias:
+                        if value is None:
+                            # use the name already used in kwargs
+                            data[field] = v
+                        else:
+                            del data["summaries"][prop]
+                        add_prop = False
+                        break
+
+                if add_prop:
+                    data[prop] = v
+
+            if errors:
+                raise PydanticValidationError.from_exception_data(
+                    title="Summaries field check", line_errors=errors
+                )
+
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def are_values_default(cls, data: Any) -> Any:
+        """Check if the value of static fields is their default value"""
+        if not isinstance(data, dict):
+            return data
+
+        errors: list[InitErrorDetails] = []
+
+        for field, v in data.copy().items():
+            field_from_alias = cls.get_collection_field_from_alias(field)
+
+            if field_from_alias not in cls.__static_fields__:
+                continue
+
+            default = cls.model_fields[field_from_alias].get_default()
+
+            # set static field to default value without raising an error if its value is null
+            if v is None:
+                data[field] = default
+                continue
+
+            # raise an error if its value is nor null nor the default value
+            if v != default:
+                msg = f"Input is fixed to its default value: {default}"
+                error = InitErrorDetails(
+                    type=PydanticCustomError("value_error", msg),
+                    loc=(field,),
+                    input=data[field],
+                )
+                errors.append(error)
+
+        if errors:
+            raise PydanticValidationError.from_exception_data(
+                title="Static fields check", line_errors=errors
+            )
+        return data
+
     @model_validator(mode="after")
     def set_id_from_alias(self) -> Self:
-        """If an alias exists, use it to update ``id`` attribute"""
+        """If an alias exists, use it to update field ``id``"""
         if self.alias is not None:
-            self._id = self.id
             self.id = self.alias
+        return self
+
+    @model_validator(mode="after")
+    def set_description_from_id(self) -> Self:
+        """Set field ``description`` to the value of ``id`` if it is not given or did not pass validation"""
+        if self.description is None:
+            self.description = self.id
+        return self
+
+    @model_validator(mode="after")
+    def finalize_summaries(self) -> Self:
+        """Update field ``summaries`̀  after all summaries fields have been validated"""
+        # reset summaries to later have only validated values and
+        # remove not-STAC-formatted values that "summaries" may contain
+        self.summaries = {}
+
+        # add "summaries" fields which are not null
+        for field in Collection.summaries_fields():
+            value = self.__dict__[field]
+
+            if value is not None:
+                # use aliases as key of field "summaries" to make sure having STAC field names
+                alias_from_field = Collection.get_collection_alias_from_field(field)
+                self.summaries[alias_from_field] = value
+
+        # set field "summaries" to its default value if it is empty
+        if not self.summaries:
+            self.summaries = Collection.model_fields["summaries"].get_default()
+
         return self
 
     @model_validator(mode="wrap")
@@ -149,8 +361,8 @@ class Collection(BaseModel):
     def validate_collection(
         cls, values: dict[str, Any] | Self, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        """Allow to create a collection instance with bad formatted attributes (except ``id``).
-        Set incorrectly formatted attributes to ``None`` and ignore extra attributes.
+        """Allow to create a collection instance with bad formatted field (except ``id``).
+        Set incorrectly formatted fields to their default value and ignore extra fields.
         Log a warning about validation errors if ``EODAG_VALIDATE_COLLECTIONS`` environment variable is set to ``True``.
         """
         errors: list[ErrorDetails] = []
@@ -169,19 +381,47 @@ class Collection(BaseModel):
                 # convert values to dict if it is a model instance
                 values_dict = values if isinstance(values, dict) else values.__dict__
 
-                # set incorrectly formatted attribute(s) to None and ignore its extra attribute(s)
                 for error in tmp_errors:
-                    wrong_param = error["loc"][0]
-                    if not isinstance(wrong_param, str):
+                    wrong_field = error["loc"][0]
+                    if not isinstance(wrong_field, str):
                         continue
-                    if (
-                        cls.get_collection_mtd_from_alias(wrong_param)
-                        not in cls.model_fields
+
+                    wrong_field_from_alias = cls.get_collection_field_from_alias(
+                        wrong_field
+                    )
+
+                    # if validation failed for a dictionary field for a specific key, remove only that key
+                    # same for a specific element of a list
+                    if len(error["loc"]) > 1 and (
+                        isinstance(values_dict[wrong_field], (dict, list))
                     ):
-                        del values_dict[wrong_param]
+                        # use methods to remove the wrong element which prevent errors if the element
+                        # have already been removed during a previous error handling
+                        if isinstance(values_dict[wrong_field], dict):
+                            values_dict[wrong_field].pop(error["loc"][1], None)
+                        else:
+                            try:
+                                values_dict[wrong_field].remove(error["input"])
+                            except ValueError:
+                                pass
+
+                        # as the error is at a sub-level, the field exists in the model
+
+                        # set the field to None if it become empty ({} or []) after the previous removal and
+                        # its default value is None
+                        if (
+                            not values_dict[wrong_field]
+                            and cls.model_fields[wrong_field_from_alias].get_default()
+                            is None
+                        ):
+                            values_dict[wrong_field] = None
+                    elif wrong_field_from_alias not in cls.model_fields:
+                        # ignore extra attribute(s)
+                        del values_dict[wrong_field]
                     else:
-                        values_dict[wrong_param] = cls.model_fields[
-                            cls.get_collection_mtd_from_alias(wrong_param)
+                        # set other incorrectly formatted attribute(s) to their default value
+                        values_dict[wrong_field] = cls.model_fields[
+                            wrong_field_from_alias
                         ].get_default()
 
                 errors.extend(tmp_errors)
@@ -208,12 +448,68 @@ class Collection(BaseModel):
         # Create a fresh instance with the cleaned values
         return handler(values)
 
+    def model_dump(
+        self, *, by_alias: bool = True, exclude_unset: bool = False, display_extensions: bool = False, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Overwrite the method from inherited class ``StacBaseModel()`` which excludes unset fields
+        and add the possibility to display the field ``stac_extensions`` or not"""
+        if self.summaries is None or not display_extensions:
+            return super().model_dump(
+                by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
+            )
+
+        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
+        summaries_validated = summaries_model.model_construct(
+            _fields_set=None, **self.summaries
+        )
+
+        # update directly the instance as the called method is applied on it
+        self.stac_extensions = cast(list[AnyUrl], summaries_validated.get_conformance_classes())
+
+        collection_dict = super().model_dump(
+            by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
+        )
+
+        # restore to default value
+        self.stac_extensions = Collection.model_fields["stac_extensions"].get_default()
+
+        return collection_dict
+
+    def model_dump_json(
+        self, *, by_alias: bool = True, exclude_unset: bool = False, display_extensions: bool = False, **kwargs: Any
+    ) -> str:
+        """Overwrite the method from inherited class ``StacBaseModel()`` which excludes unset fields
+        and add the possibility to display the field ``stac_extensions`` or not"""
+        if self.summaries is None or not display_extensions:
+            return super().model_dump_json(
+                by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
+            )
+
+        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
+        summaries_validated = summaries_model.model_construct(
+            _fields_set=None, **self.summaries
+        )
+
+        # update directly the instance as the called method is applied on it
+        self.stac_extensions = cast(list[AnyUrl], summaries_validated.get_conformance_classes())
+
+        collection_str = super().model_dump_json(
+            by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
+        )
+
+        # restore to default value
+        self.stac_extensions = Collection.model_fields["stac_extensions"].get_default()
+
+        return collection_str
+
     def __str__(self) -> str:
         return f'{type(self).__name__}("{self.id}")'
 
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(
-            repr(v) if a is None else f"{a}={v!r}" for a, v in self.__repr_args__() if v
+            repr(v) if a is None else f"{a}={v!r}"
+            for a, v in self.__repr_args__()
+            if v is not None
         )
 
     def _repr_html_(self, embedded: bool = False) -> str:
@@ -283,62 +579,6 @@ class Collection(BaseModel):
             )
 
         return dag.list_queryables(collection=self.id, **kwargs)
-
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the Collection instance to a STAC dictionary.
-
-        :returns: A STAC dictionary representation of the Collection instance.
-        """
-        stac_dict: dict[str, Any] = {
-            "stac_version": STAC_VERSION,
-            "type": "Collection",
-        }
-
-        stac_dict |= self.model_dump(mode="json", exclude_none=True, exclude={"alias"})
-
-        stac_dict.setdefault("links", [])
-        stac_dict.setdefault("providers", [])
-
-        not_in_summaries = [
-            "stac_version",
-            "type",
-            "id",
-            "title",
-            "description",
-            "extent",
-            "keywords",
-            "license",
-            "links",
-            "providers",
-        ]
-        summaries = dict()
-        for k, v in stac_dict.items():
-            if k not in not_in_summaries:
-                if isinstance(v, list):
-                    summaries[k] = v
-                elif isinstance(v, str):
-                    summaries[k] = v.split(",")
-                else:
-                    summaries[k] = [v]
-        stac_dict["summaries"] = summaries
-
-        # Remove empty items and items moved to summaries
-        keys_to_remove = [
-            k
-            for k in stac_dict.keys()
-            if k not in not_in_summaries and k != "summaries"
-        ]
-        for k in keys_to_remove:
-            del stac_dict[k]
-
-        # add extensions
-        summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
-        summaries_validated = summaries_model.model_construct(
-            _fields_set=None, **summaries
-        )
-        stac_dict["stac_extensions"] = summaries_validated.get_conformance_classes()
-
-        return stac_dict
 
 
 class CollectionsDict(UserDict[str, Collection]):
