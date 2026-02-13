@@ -26,15 +26,20 @@ Pagination
 Crunch
 ------
 
+Use one of the following ``filter_*`` methods to filter search results using advanced criteria. These methods simplify
+crunch plugins usage.
+
+Or manually run :meth:`~eodag.api.search_result.SearchResult.crunch` to apply a given :class:`eodag.plugins.crunch.base.Crunch` plugin.
+
 .. autosummary::
 
-   SearchResult.crunch
    SearchResult.filter_date
    SearchResult.filter_latest_intersect
    SearchResult.filter_latest_by_name
    SearchResult.filter_overlap
    SearchResult.filter_property
    SearchResult.filter_online
+   SearchResult.crunch
 
 Conversion
 ----------

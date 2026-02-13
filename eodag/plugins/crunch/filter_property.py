@@ -38,7 +38,8 @@ class FilterProperty(Crunch):
 
         * ``<property>`` ``(Any)`` (**mandatory**): property key from ``product.properties``, associated to its filter
           value
-        * ``operator`` (``str``): Operator used for filtering (one of ``lt,le,eq,ne,ge,gt``). Default is ``eq``
+        * ``operator`` (``str``): Operator used for filtering (one of :mod:`python:operator` functions
+          ``lt,le,eq,ne,ge,...``). Default is ``eq``
     """
 
     def proceed(
