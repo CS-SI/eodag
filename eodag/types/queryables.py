@@ -262,11 +262,32 @@ class QueryablesDict(UserDict[str, Any]):
             else ""
         )
         tr_style = "style='background-color: transparent;'" if embedded else ""
-        return (
-            f"<table>{thead}<tbody>"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+        table = f"<table>{thead}<tbody>"
+        table_rows = []
+        for k, v in self.items():
+            alias = v.__metadata__[0].validation_alias
+            if not alias or alias == PydanticUndefined:
+                alias = v.__metadata__[0].alias
+            if not alias or alias == PydanticUndefined:
+                alias = v.__metadata__[0].serialization_alias
+            if isinstance(alias, AliasChoices):
+                alias_str = (
+                    "'alias': '<span style='color:grey'>AliasChoices(choices=[</span>'"
+                    + "'<span style='color:black'>"
+                    + str(alias.convert_to_aliases())
+                    + "</span>'"
+                    + "'<span style='color:grey'>])</span>',&ensp;"
+                )
+            elif alias and alias != PydanticUndefined:
+                alias_str = (
+                    "'alias': '<span style='color:black'>"
+                    + str(alias)
+                    + "</span>',&ensp;"
+                )
+            else:
+                alias_str = ""
+
+            table_row = f"""<tr {tr_style}><td style='text-align: left;'>
                         <details><summary style='color: grey;'>
                         <span style='color: black'>'{k}'</span>:&ensp;
                         typing.Annotated[{
@@ -277,11 +298,9 @@ class QueryablesDict(UserDict[str, Any]):
                                if v.__metadata__[0].get_default()
                                and v.__metadata__[0].get_default() != PydanticUndefined else ""}
                             {"'required': <span style='color: black'>"
-                             + str(v.__metadata__[0].is_required()) + "</span>,"}
-                            {"'alias': '<span style='color: black'>"
-                             + str(v.__metadata__[0].alias) + "</span>',&ensp;"
-                             if v.__metadata__[0].alias
-                             and v.__metadata__[0].alias != PydanticUndefined else ""}
+                             + str(v.__metadata__[0].is_required()) + "</span>,"
+                               if v.__metadata__[0].is_required() else ""}
+                            {alias_str}
                             ...
                         )]
                     </summary>
@@ -297,11 +316,10 @@ class QueryablesDict(UserDict[str, Any]):
                     </details>
                     </td></tr>
                     """
-                    for k, v in self.items()
-                ]
-            )
-            + "</tbody></table>"
-        )
+            table_rows.append(table_row)
+        table += "".join(table_rows)
+        table += "</tbody></table>"
+        return table
 
     def get_model(self, model_name: str = "Queryables") -> BaseModel:
         """
