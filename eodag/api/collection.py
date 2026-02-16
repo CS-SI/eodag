@@ -448,7 +448,7 @@ class Collection(StacCollection):
         # Create a fresh instance with the cleaned values
         return handler(values)
 
-    def model_dump(
+    def model_dump(  # type: ignore[override]
         self,
         *,
         by_alias: bool = True,
@@ -482,7 +482,7 @@ class Collection(StacCollection):
 
         return collection_dict
 
-    def model_dump_json(
+    def model_dump_json(  # type: ignore[override]
         self,
         *,
         by_alias: bool = True,
