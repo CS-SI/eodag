@@ -133,7 +133,7 @@ class Sentinel2Driver(DatasetDriver):
                     return True
 
             platform = product.properties.get("platform", None)
-            if platform is not None:
+            if isinstance(platform, str):
                 platform = re.sub(r"([^a-z0-9]+)", "", platform.lower())
                 if re.match("s2[a-z]", platform):
                     return True
