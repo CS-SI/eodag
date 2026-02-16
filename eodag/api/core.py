@@ -2078,7 +2078,12 @@ class EODataAccessGateway:
             collection_obj = search_result._dag.collections_config.get(
                 collection, Collection(id=collection)
             )
-            collection_dict = collection_obj.model_dump(display_extensions=True, mode="json", exclude_none=True, exclude={"alias"})
+            collection_dict = collection_obj.model_dump(
+                display_extensions=True,
+                mode="json",
+                exclude_none=True,
+                exclude={"alias"},
+            )
             # add links
             collection_dict["links"].append(
                 {

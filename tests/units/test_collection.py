@@ -17,14 +17,14 @@
 # limitations under the License.
 
 import os
-from typing import cast
 import unittest
 from collections import UserDict, UserList
 from tempfile import TemporaryDirectory
+from typing import cast
 from unittest import mock
 
-from lxml import html
 import orjson
+from lxml import html
 
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils.exceptions import ValidationError
@@ -533,7 +533,10 @@ class TestCollection(unittest.TestCase):
 
         summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
 
-        self.assertDictEqual(summaries_model.model_fields["processing_level"].metadata[0], {"extension": "ProcessingExtension"})
+        self.assertDictEqual(
+            summaries_model.model_fields["processing_level"].metadata[0],
+            {"extension": "ProcessingExtension"},
+        )
         self.assertIn("processing", collection_dict["stac_extensions"][0])
 
         # there is no more extension since the only other "summaries" property does not have an extension
@@ -566,7 +569,10 @@ class TestCollection(unittest.TestCase):
 
         summaries_model = cast(CommonStacMetadata, create_stac_metadata_model())
 
-        self.assertDictEqual(summaries_model.model_fields["processing_level"].metadata[0], {"extension": "ProcessingExtension"})
+        self.assertDictEqual(
+            summaries_model.model_fields["processing_level"].metadata[0],
+            {"extension": "ProcessingExtension"},
+        )
         self.assertIn("processing", collection_dict["stac_extensions"][0])
 
         # there is no more extension since the only other "summaries" property does not have an extension
