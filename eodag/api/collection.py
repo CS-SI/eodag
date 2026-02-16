@@ -449,7 +449,12 @@ class Collection(StacCollection):
         return handler(values)
 
     def model_dump(
-        self, *, by_alias: bool = True, exclude_unset: bool = False, display_extensions: bool = False, **kwargs: Any
+        self,
+        *,
+        by_alias: bool = True,
+        exclude_unset: bool = False,
+        display_extensions: bool = False,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Overwrite the method from inherited class ``StacBaseModel()`` which excludes unset fields
         and add the possibility to display the field ``stac_extensions`` or not"""
@@ -464,7 +469,9 @@ class Collection(StacCollection):
         )
 
         # update directly the instance as the called method is applied on it
-        self.stac_extensions = cast(list[AnyUrl], summaries_validated.get_conformance_classes())
+        self.stac_extensions = cast(
+            list[AnyUrl], summaries_validated.get_conformance_classes()
+        )
 
         collection_dict = super().model_dump(
             by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
@@ -476,7 +483,12 @@ class Collection(StacCollection):
         return collection_dict
 
     def model_dump_json(
-        self, *, by_alias: bool = True, exclude_unset: bool = False, display_extensions: bool = False, **kwargs: Any
+        self,
+        *,
+        by_alias: bool = True,
+        exclude_unset: bool = False,
+        display_extensions: bool = False,
+        **kwargs: Any,
     ) -> str:
         """Overwrite the method from inherited class ``StacBaseModel()`` which excludes unset fields
         and add the possibility to display the field ``stac_extensions`` or not"""
@@ -491,7 +503,9 @@ class Collection(StacCollection):
         )
 
         # update directly the instance as the called method is applied on it
-        self.stac_extensions = cast(list[AnyUrl], summaries_validated.get_conformance_classes())
+        self.stac_extensions = cast(
+            list[AnyUrl], summaries_validated.get_conformance_classes()
+        )
 
         collection_str = super().model_dump_json(
             by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
