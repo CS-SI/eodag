@@ -291,31 +291,30 @@ class QueryablesDict(UserDict[str, Any]):
                         <details><summary style='color: grey;'>
                         <span style='color: black'>'{k}'</span>:&ensp;
                         typing.Annotated[{
-                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"
-                    }
-                    FieldInfo({"'default': '<span style='color: black'>"
-                               + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
-                               if v.__metadata__[0].get_default()
-                               and v.__metadata__[0].get_default() != PydanticUndefined else ""}
-                            {"'required': <span style='color: black'>"
-                             + str(v.__metadata__[0].is_required()) + "</span>,"
-                               if v.__metadata__[0].is_required() else ""}
-                            {alias_str}
-                            ...
-                        )]
-                    </summary>
-                        <span style='color: grey'>typing.Annotated[</span><table style='margin: 0;'>
-                            <tr style='background-color: transparent;'>
-                                <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
-                                {remove_class_repr(str(v.__args__[0]))},</td>
-                            </tr><tr style='background-color: transparent;'>
-                                <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
-                                {v.__metadata__[0].__repr__()}</td>
-                            </tr>
-                        </table><span style='color: grey'>]</span>
-                    </details>
-                    </td></tr>
-                    """
+                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"}
+                        FieldInfo({"'default': '<span style='color: black'>"
+                                   + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
+                                   if v.__metadata__[0].get_default()
+                                   and v.__metadata__[0].get_default() != PydanticUndefined else ""}
+                                  {"'required': <span style='color: black'>"
+                                   + str(v.__metadata__[0].is_required()) + "</span>,"
+                                   if v.__metadata__[0].is_required() else ""}
+                                  {alias_str}
+                                  ...
+                                 )]
+                        </summary>
+                            <span style='color: grey'>typing.Annotated[</span><table style='margin: 0;'>
+                                <tr style='background-color: transparent;'>
+                                    <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
+                                    {remove_class_repr(str(v.__args__[0]))},</td>
+                                </tr><tr style='background-color: transparent;'>
+                                    <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
+                                    {v.__metadata__[0].__repr__()}</td>
+                                </tr>
+                            </table><span style='color: grey'>]</span>
+                        </details>
+                        </td></tr>
+                        """
             table_rows.append(table_row)
         table += "".join(table_rows)
         table += "</tbody></table>"

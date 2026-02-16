@@ -3847,7 +3847,7 @@ class TestCoreSearch(TestCoreBase):
         return_value=(SearchResult([mock.Mock()], 1)),
     )
     def test_search_all_use_default_value(self, mock__do_search):
-        """search_all must use the DEFAULT_MAX_ITEMS_PER_PAGE if the provider's one wasn't configured"""
+        """search_all must use the DEFAULT_MAX_LIMIT if the provider's one wasn't configured"""
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:

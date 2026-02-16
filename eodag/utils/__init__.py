@@ -152,7 +152,7 @@ DEFAULT_PAGE = 1
 #: default number of items per page requested by :meth:`~eodag.api.core.EODataAccessGateway.search`
 DEFAULT_LIMIT = 20
 #: Default maximum number of items per page requested by :meth:`~eodag.api.core.EODataAccessGateway.search_all`.
-#: 50 instead of 20 (:const:`~eodag.utils.DEFAULT_ITEMS_PER_PAGE`) to increase it to the known and current minimum
+#: 50 instead of 20 (:const:`~eodag.utils.DEFAULT_LIMIT`) to increase it to the known and current minimum
 #: value (mundi provider)
 DEFAULT_MAX_LIMIT = 50
 #: known next page token keys used to guess key in STAC providers next link responses
