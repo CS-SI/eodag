@@ -432,7 +432,7 @@ class TestCollection(unittest.TestCase):
             # try to create a collection with wrong start and end temporal extent datetimes
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
-                Collection(
+                collection = Collection(
                     id="foo",
                     extent={
                         "spatial": {
@@ -482,6 +482,25 @@ class TestCollection(unittest.TestCase):
                 str(cm.output),
             )
 
+            # a field of type dictionary or model recovers only the default value of its
+            # sub-fields if they did not pass validation, its other sub-fields stay as they are
+            extent_default = (
+                Collection.model_fields["extent"].get_default().model_dump(mode="json")
+            )
+
+            self.assertDictEqual(
+                extent_default["spatial"], {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}
+            )
+            self.assertDictEqual(
+                collection.extent.model_dump(mode="json")["spatial"],
+                extent_default["spatial"],
+            )
+
+            self.assertDictEqual(
+                collection.extent.model_dump(mode="json")["temporal"],
+                {"interval": [["2025-01-01T00:00:00Z", "2025-01-02T00:00:00Z"]]},
+            )
+
         finally:
             # remove the environment variable
             os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
@@ -496,10 +515,10 @@ class TestCollection(unittest.TestCase):
             # try to create a collection with wrong start and end temporal extent datetimes
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
-                Collection(
+                collection = Collection(
                     id="foo",
                     extent={
-                        "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+                        "spatial": {"bbox": [[0.0, 0.0, 0.0, 0.0]]},
                         "temporal": {
                             "interval": [["not-a-datetime", "not-a-datetime"]]
                         },
@@ -513,6 +532,25 @@ class TestCollection(unittest.TestCase):
             self.assertIn(
                 "extent.temporal.interval.0.1\\n  Input should be a valid datetime or date, invalid character in year",
                 str(cm.output),
+            )
+
+            # a field of type dictionary or model recovers only the default value of its
+            # sub-fields if they did not pass validation, its other sub-fields stay as they are
+            extent_default = (
+                Collection.model_fields["extent"].get_default().model_dump(mode="json")
+            )
+
+            self.assertDictEqual(
+                extent_default["temporal"], {"interval": [[None, None]]}
+            )
+            self.assertDictEqual(
+                collection.extent.model_dump(mode="json")["temporal"],
+                extent_default["temporal"],
+            )
+
+            self.assertDictEqual(
+                collection.extent.model_dump(mode="json")["spatial"],
+                {"bbox": [[0.0, 0.0, 0.0, 0.0]]},
             )
 
         finally:

@@ -22,7 +22,7 @@ import re
 from collections import UserDict, UserList
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
 
-from pydantic import AnyUrl, ConfigDict, Field, PrivateAttr
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
@@ -395,26 +395,40 @@ class Collection(StacCollection):
                     if len(error["loc"]) > 1 and (
                         isinstance(values_dict[wrong_field], (dict, list))
                     ):
+                        # as the error is at a sub-level, the field exists in the model
+                        default = cls.model_fields[wrong_field_from_alias].get_default()
+
                         # use methods to remove the wrong element which prevent errors if the element
                         # have already been removed during a previous error handling
                         if isinstance(values_dict[wrong_field], dict):
+                            default_json = (
+                                default.model_dump(mode="json")
+                                if isinstance(default, BaseModel)
+                                else default
+                            )
+
                             values_dict[wrong_field].pop(error["loc"][1], None)
+
+                            # if the sub-field is in the default value of the field,
+                            # replace the wrong value by its default value
+                            if (
+                                default_json is not None
+                                and error["loc"][1] in default_json
+                            ):
+                                values_dict[wrong_field][
+                                    error["loc"][1]
+                                ] = default_json[error["loc"][1]]
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])
                             except ValueError:
                                 pass
 
-                        # as the error is at a sub-level, the field exists in the model
-
                         # set the field to None if it become empty ({} or []) after the previous removal and
                         # its default value is None
-                        if (
-                            not values_dict[wrong_field]
-                            and cls.model_fields[wrong_field_from_alias].get_default()
-                            is None
-                        ):
+                        if not values_dict[wrong_field] and default is None:
                             values_dict[wrong_field] = None
+
                     elif wrong_field_from_alias not in cls.model_fields:
                         # ignore extra attribute(s)
                         del values_dict[wrong_field]
