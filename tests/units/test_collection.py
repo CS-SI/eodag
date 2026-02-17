@@ -142,6 +142,28 @@ class TestCollection(unittest.TestCase):
             # remove the environment variable
             os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
 
+    def test_collection_strings_for_list_fields(self):
+        """Check that string values of fields whose type is list in the model are converted to lists of strings"""
+        collection = Collection(
+            id="foo", keywords="MSI,SENTINEL2,S2", platform="S2A,S2B,S2C"
+        )
+
+        # strings values of fields with list or optional list type in the model are converted to lists of strings
+        keywords_annotation = str(
+            Collection.model_fields["keywords"].annotation
+        ).lower()
+        self.assertEqual(keywords_annotation, "typing.optional[typing.list[str]]")
+        self.assertListEqual(collection.keywords, ["MSI", "SENTINEL2", "S2"])
+
+        platform_annotation = str(
+            Collection.model_fields["platform"].annotation
+        ).lower()
+        self.assertEqual(platform_annotation, "typing.optional[list[str]]")
+        self.assertListEqual(collection.platform, ["S2A", "S2B", "S2C"])
+
+        # TODO: when some fields of the model will allow it, add tests of fields
+        # whose annotation is "list[str]" and "typing.list[str]"
+
     def test_collection_summaries_fields(self):
         """Check that summaries fields are fields of the model"""
         for field in Collection.summaries_fields():

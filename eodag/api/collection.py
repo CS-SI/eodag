@@ -212,13 +212,36 @@ class Collection(StacCollection):
                     continue
 
                 # keep values as they are when they are dictionaries or lists
+                # string values have already been converted to lists in validator "format_strings_in_list_field()""
                 # make lists with values of other types
                 if isinstance(v, dict) or isinstance(v, list):
-                    data[field] = data["summaries"][field] = v
-                elif isinstance(v, str):
-                    data[field] = data["summaries"][field] = v.split(",")
+                    data["summaries"][field] = data[field]
                 else:
                     data[field] = data["summaries"][field] = [v]
+
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def format_strings_in_list_field(cls, data: Any) -> Any:
+        """Convert a string to a list of strings in fields whose type is list in the model"""
+        for field, v in data.copy().items():
+            if not isinstance(v, str) or not v:
+                continue
+
+            field_from_alias = cls.get_collection_field_from_alias(field)
+            if field_from_alias not in cls.model_fields:
+                continue
+
+            # check the type of the field, if it a list or an optional list, convert the string into a list of strings
+            annotation = str(cls.model_fields[field_from_alias].annotation).lower()
+            if annotation in [
+                "list[str]",
+                "typing.list[str]",
+                "typing.optional[list[str]]",
+                "typing.optional[typing.list[str]]",
+            ]:
+                data[field] = v.split(",")
 
         return data
 
