@@ -28,7 +28,7 @@ from pydantic import model_validator
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Collection as StacCollection
 from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
-from stac_pydantic.links import Link
+from stac_pydantic.links import Links
 from stac_pydantic.shared import SEMVER_REGEX
 
 from eodag.types.queryables import CommonStacMetadata
@@ -78,7 +78,9 @@ class Collection(StacCollection):
             "), with date/time strings in RFC 3339 format"
         ),
     )
-    links: list[Link] = Field(default=[])  # type: ignore
+    # overwrite field "keywords" with type "list" instead of "typing.List"
+    keywords: Optional[list[str]] = None
+    links: Links = Field(default=Links(root=[]))
 
     # summaries
     constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
@@ -114,8 +116,8 @@ class Collection(StacCollection):
     # only STAC fields
     __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys())
 
-    # mandatory fields which not match eodag use and are fixed by their default value
-    __static_fields__: ClassVar[list[str]] = ["type", "stac_version", "links"]
+    # mandatory STAC fields which are fixed by their default value
+    __static_fields__: ClassVar[list[str]] = ["type", "stac_version"]
 
     # fields of the model that must be added to the field "summaries"
     __summaries_fields__: ClassVar[Optional[list[str]]] = None
