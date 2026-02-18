@@ -21,6 +21,7 @@ import io
 import logging
 import os
 import uuid
+import zipfile
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 from zipfile import ZIP_STORED, ZipFile
@@ -702,13 +703,8 @@ def open_s3_zipped_object(
                 zip_size = int(response["ContentLength"])
             data = fetch_range(bucket_name, key_name, 0, zip_size - 1, s3_client)
             return ZipFile(io.BytesIO(data))
-    except Exception as e:
-        if not isinstance(e, (InvalidDataError, NotAvailableError)):
-            raise InvalidDataError(
-                f"EOCD signature not found in last 64KB of the file. "
-                f"Cannot open {key_name!r} as ZIP: {e}"
-            ) from e
-        raise
+    except zipfile.BadZipFile as e:
+        raise InvalidDataError(f"Cannot open {key_name!r} as ZIP: {e}") from e
 
 
 def file_position_from_s3_zip(

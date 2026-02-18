@@ -324,7 +324,7 @@ class TestUtilsS3(TestCase):
 
         with self.assertRaises(InvalidDataError) as e:
             open_s3_zipped_object("mybucket", "bad.zip", self.s3_client)
-        self.assertIn("EOCD signature not found", str(e.exception))
+        self.assertIn("Cannot open", str(e.exception))
 
     def test_utils_s3_empty_zip(self):
         """Test an empty ZIP file to ensure it returns an empty list."""
