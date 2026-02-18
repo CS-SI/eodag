@@ -618,7 +618,7 @@ class TestCore(TestCoreBase):
         "SPACENET_BUILDINGS_DETECTION_V1": ["dedl"],
         "SPACENET_ALL_WEATHER_MAPPING": ["dedl"],
         "SPACENET_BUILDINGS_DETECTION_V2": ["dedl"],
-        "SPACENET_ROADS_NETWORK_DETECTION": ["dedl"], 
+        "SPACENET_ROADS_NETWORK_DETECTION": ["dedl"],
         "SPACENET_OFF_NADIR_BUILDING": ["dedl"],
         "SPACENET_ROADS_NETWORK_ROUTE_TRAVEL": ["dedl"],
         GENERIC_COLLECTION: [
