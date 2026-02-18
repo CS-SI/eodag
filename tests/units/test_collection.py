@@ -475,6 +475,8 @@ class TestCollection(unittest.TestCase):
                     },
                 )
 
+            self.assertIn("18 validation errors for collection foo", str(cm.output))
+
             self.assertIn(
                 (
                     "extent.spatial.bbox.0.tuple[union[float,int], union[float,int], union[float,int], "
@@ -547,6 +549,8 @@ class TestCollection(unittest.TestCase):
                     },
                 )
 
+            self.assertIn("2 validation errors for collection foo", str(cm.output))
+
             self.assertIn(
                 "extent.temporal.interval.0.0\\n  Input should be a valid datetime or date, invalid character in year",
                 str(cm.output),
@@ -573,6 +577,51 @@ class TestCollection(unittest.TestCase):
             self.assertDictEqual(
                 collection.extent.model_dump(mode="json")["spatial"],
                 {"bbox": [[0.0, 0.0, 0.0, 0.0]]},
+            )
+
+        finally:
+            # remove the environment variable
+            os.environ.pop("EODAG_VALIDATE_COLLECTIONS", None)
+
+    def test_collection_wrong_links(self):
+        """Collection with wrong links must remove these links and
+        raise the custom pydantic error from their field validator"""
+        try:
+            # ensure validation is activated for collections
+            os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
+
+            wrong_link = {"rel": "describedby", "type": 1, "title": "User Manual"}
+
+            right_link = {
+                "rel": "describedby",
+                "href": "https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file",
+                "type": "application/pdf",
+                "title": "User Manual",
+            }
+
+            # try to create a collection with a wrong link and check that logs have been emitted
+            with self.assertLogs(level="DEBUG") as cm:
+                collection = Collection(
+                    id="foo",
+                    links=[wrong_link, right_link],
+                )
+
+            self.assertIn("3 validation errors for collection foo", str(cm.output))
+
+            self.assertIn(
+                "links.0.href\\n  Field required",
+                str(cm.output),
+            )
+
+            self.assertIn(
+                "links.0.type.str\\n  Input should be a valid string",
+                str(cm.output),
+            )
+
+            # the wrong link is removed from links
+            self.assertListEqual(
+                collection.links.model_dump(mode="json"),
+                [right_link],
             )
 
         finally:
