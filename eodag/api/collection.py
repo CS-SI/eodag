@@ -426,6 +426,9 @@ class Collection(StacCollection):
                         # use methods to remove the wrong element which prevent errors if the element
                         # have already been removed during a previous error handling
                         if isinstance(values_dict[wrong_field], dict):
+                            if not isinstance(error["loc"][1], str):
+                                continue
+
                             default_json = (
                                 default.model_dump(mode="json")
                                 if isinstance(default, BaseModel)
