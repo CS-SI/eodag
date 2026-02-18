@@ -6560,7 +6560,7 @@
       single_collection_parsable_metadata:
         platform: '{$.summaries.platform#csv_list}'
     metadata_mapping:
-      assets: '$.null'
+      assets: '{$.assets#dict_with_roles(["data"])}'
       downloadLink: '$.assets.enclosure.href'
       instrument: '{$.properties.instruments#csv_list}'
   products:
@@ -6568,5 +6568,8 @@
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
+    skip_head_request: true
   auth: !plugin
     type: EOIAMAuth
+    matching_url: https://[-\w\.]+.eo.esa.int
+    auth_uri: 'https://eoiam-idp.eo.esa.int'

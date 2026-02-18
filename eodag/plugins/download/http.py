@@ -1095,11 +1095,18 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = (
-            self._get_asset_sizes(assets_values, executor, auth, params) or None
-        )
+        skip_head = getattr(self.config, "skip_head_request", False)
 
-        progress_callback.reset(total=total_size)
+        if skip_head:
+            total_size = sum(
+                int(asset["file:size"])
+                for asset in assets_values
+                if asset.get("file:size") is not None
+            )
+        else:
+            total_size = self._get_asset_sizes(assets_values, executor, auth, params)
+
+        progress_callback.reset(total=total_size or None)
 
         # loop for assets paths and get common_subdir
         asset_rel_paths_list = []

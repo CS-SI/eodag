@@ -736,6 +736,25 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
 
         @staticmethod
+        def convert_dict_with_roles(
+            input_dict: dict[Any, Any], roles_str: str
+        ) -> dict[Any, Any]:
+            """Keep only dict items with given roles in their "roles" list"""
+            roles = ast.literal_eval(roles_str)
+            if not isinstance(roles, (list, tuple)):
+                raise TypeError(
+                    f"convert_keep_dict_with_roles expects a list/tuple of roles. Got {type(roles)}: {roles}"
+                )
+            result = {}
+            for k, v in input_dict.items():
+                if not isinstance(v, dict):
+                    continue
+                item_roles = v.get("roles", [])
+                if any(role in item_roles for role in roles):
+                    result[k] = v
+            return result
+
+        @staticmethod
         def convert_from_alternate(
             input_obj: dict[str, Any], value: str
         ) -> dict[str, Any]:
