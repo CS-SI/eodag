@@ -450,7 +450,7 @@ class AwsDownload(Download):
                 dest_abs_path_dir = os.path.dirname(dest_file)
                 os.makedirs(dest_abs_path_dir, exist_ok=True)
 
-                zip_file, _ = open_s3_zipped_object(
+                zip_file = open_s3_zipped_object(
                     bucket_name, zip_prefix, s3_client, partial=False
                 )
                 with zip_file:

@@ -168,12 +168,11 @@ class TestUtilsS3(TestCase):
         )
 
     def test_utils_s3_open_s3_zipped_object(self):
-        """list_files_in_s3_zipped_object must list the files in a zipped object stored in S3"""
-        zip_file, cd_data = open_s3_zipped_object(
+        """open_s3_zipped_object must open a zipped object stored in S3 as a ZipFile"""
+        zip_file = open_s3_zipped_object(
             "mybucket", "path/to/product.zip", self.s3_client
         )
         self.assertIsInstance(zip_file, zipfile.ZipFile)
-        self.assertIsInstance(cd_data, bytes)
         self.assertEqual(len(zip_file.filelist), 6)
 
     def test_utils_s3_update_assets_from_s3_zip(self):

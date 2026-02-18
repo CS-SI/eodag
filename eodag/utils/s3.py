@@ -31,13 +31,7 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from zipstream import ZipStream
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
-from eodag.utils import (
-    StreamResponse,
-    get_bucket_name_and_prefix,
-    guess_file_type,
-    parse_le_uint16,
-    parse_le_uint32,
-)
+from eodag.utils import StreamResponse, get_bucket_name_and_prefix, guess_file_type
 from eodag.utils.exceptions import (
     AuthenticationError,
     InvalidDataError,
@@ -55,6 +49,85 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.utils.s3")
 
 MIME_OCTET_STREAM = "application/octet-stream"
+
+
+class S3SeekableFile(io.RawIOBase):
+    """A seekable, read-only file-like object backed by S3 range requests.
+
+    Wraps an S3 object so that :class:`zipfile.ZipFile` (and any other code that
+    expects a seekable binary stream) can operate on it transparently — including
+    ZIP64 archives — without downloading the entire file.
+
+    :param bucket_name: S3 bucket containing the object.
+    :param key_name: Key (path) of the object inside the bucket.
+    :param s3_client: Boto3 S3 client used for range-GET and HEAD requests.
+    :param size: Object size in bytes.  Determined via HEAD if *None*.
+    """
+
+    def __init__(
+        self,
+        bucket_name: str,
+        key_name: str,
+        s3_client: S3Client,
+        size: Optional[int] = None,
+    ) -> None:
+        super().__init__()
+        self._bucket = bucket_name
+        self._key = key_name
+        self._client = s3_client
+        if size is None:
+            resp = s3_client.head_object(Bucket=bucket_name, Key=key_name)
+            size = int(resp["ContentLength"])
+        self._size = size
+        self._pos = 0
+
+    # -- io.RawIOBase interface ------------------------------------------
+
+    def readable(self) -> bool:
+        """Return whether the stream is readable."""
+        return True
+
+    def seekable(self) -> bool:
+        """Return whether the stream supports seeking."""
+        return True
+
+    def tell(self) -> int:
+        """Return the current stream position."""
+        return self._pos
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        """Seek to the given byte offset and return the new position."""
+        if whence == io.SEEK_SET:
+            self._pos = offset
+        elif whence == io.SEEK_CUR:
+            self._pos += offset
+        elif whence == io.SEEK_END:
+            self._pos = self._size + offset
+        self._pos = max(0, min(self._pos, self._size))
+        return self._pos
+
+    def readinto(self, b: bytearray | memoryview) -> int:  # type: ignore[override]
+        """Read bytes into a pre-allocated writable buffer and return the count."""
+        if self._pos >= self._size:
+            return 0
+        end = min(self._pos + len(b) - 1, self._size - 1)
+        data = fetch_range(self._bucket, self._key, self._pos, end, self._client)
+        n = len(data)
+        b[:n] = data
+        self._pos += n
+        return n
+
+    def read(self, size: int = -1) -> bytes:  # type: ignore[override]
+        """Read up to *size* bytes and return them; -1 reads until EOF."""
+        if self._pos >= self._size:
+            return b""
+        if size == -1 or size is None:
+            end = self._size - 1
+        else:
+            end = min(self._pos + size - 1, self._size - 1)
+        data = fetch_range(self._bucket, self._key, self._pos, end, self._client)
+        self._pos += len(data)
+        return data
 
 
 def fetch_range(
@@ -599,102 +672,49 @@ def open_s3_zipped_object(
     s3_client: S3Client,
     zip_size: Optional[int] = None,
     partial: bool = True,
-) -> tuple[ZipFile, bytes]:
+) -> ZipFile:
     """
-    Fetches the central directory and EOCD (End Of Central Directory) from an S3 object and opens a ZipFile in memory.
+    Open a ZIP archive stored as an S3 object, using range requests.
 
-    This function retrieves the ZIP file's central directory and EOCD by performing range requests on the S3 object.
-    It supports partial fetching (only the central directory and EOCD) for efficiency, or full ZIP download if needed.
+    When *partial* is ``True`` (the default), the S3 object is accessed via a
+    seekable file-like wrapper (:class:`S3SeekableFile`) so that only the bytes
+    actually needed by :class:`~zipfile.ZipFile` (EOCD, central directory, local
+    headers) are fetched — including **ZIP64** archives.  When *partial* is
+    ``False``, the entire object is downloaded into memory first.
 
     :param bucket_name: Name of the S3 bucket containing the ZIP file.
     :param key_name: Key (path) of the ZIP file in the S3 bucket.
     :param s3_client: S3 client instance used to perform range requests.
-    :param zip_size: Size of the ZIP file in bytes. If None, it will be determined via a HEAD request.
-    :param partial: If True, only fetch the central directory and EOCD. If False, fetch the entire ZIP file.
-    :return: Tuple containing the opened ZipFile object and the central directory bytes.
-    :raises InvalidDataError: If the EOCD signature is not found in the last 64KB of the file.
+    :param zip_size: Size of the ZIP file in bytes. If ``None``, determined
+        via a HEAD request.
+    :param partial: If ``True``, stream via range requests (efficient for
+        large files).  If ``False``, download the full object into memory.
+    :return: The opened :class:`~zipfile.ZipFile` object.
+    :raises InvalidDataError: If the file is not a valid ZIP archive.
     """
-    # EOCD is at least 22 bytes, but can be longer if ZIP comment exists.
-    # For simplicity, we fetch last 64KB max (max EOCD + comment length allowed by ZIP spec)
-    if zip_size is None:
-        response = s3_client.head_object(Bucket=bucket_name, Key=key_name)
-        zip_size = int(response["ContentLength"])
-
-    fetch_size = min(65536, zip_size)
-    eocd_search = fetch_range(
-        bucket_name, key_name, zip_size - fetch_size, zip_size - 1, s3_client
-    )
-
-    # Find EOCD signature from end: 0x06054b50 (little endian)
-    eocd_signature = b"\x50\x4b\x05\x06"
-    eocd_offset = eocd_search.rfind(eocd_signature)
-    if eocd_offset == -1:
-        raise InvalidDataError("EOCD signature not found in last 64KB of the file.")
-
-    eocd = eocd_search[eocd_offset : eocd_offset + 22]
-
-    cd_size = parse_le_uint32(eocd[12:16])
-    cd_start = parse_le_uint32(eocd[16:20])
-
-    # Fetch central directory
-    cd_data = fetch_range(
-        bucket_name, key_name, cd_start, cd_start + cd_size - 1, s3_client
-    )
-
-    zip_data = (
-        cd_data + eocd
-        if partial
-        else fetch_range(bucket_name, key_name, 0, zip_size - 1, s3_client)
-    )
-    zipf = ZipFile(io.BytesIO(zip_data))
-    return zipf, cd_data
-
-
-def _parse_central_directory_entry(cd_data: bytes, offset: int) -> dict[str, int]:
-    """
-    Parse one central directory file header entry starting at offset.
-    Returns dict with relative local header offset and sizes.
-    """
-    signature = cd_data[offset : offset + 4]
-    if signature != b"PK\x01\x02":
-        raise InvalidDataError("Bad central directory file header signature")
-
-    filename_len = parse_le_uint16(cd_data[offset + 28 : offset + 30])
-    extra_len = parse_le_uint16(cd_data[offset + 30 : offset + 32])
-    comment_len = parse_le_uint16(cd_data[offset + 32 : offset + 34])
-
-    relative_offset = parse_le_uint32(cd_data[offset + 42 : offset + 46])
-
-    header_size = 46 + filename_len + extra_len + comment_len
-
-    return {
-        "relative_offset": relative_offset,
-        "header_size": header_size,
-        "filename_len": filename_len,
-        "extra_len": extra_len,
-        "comment_len": comment_len,
-        "total_size": header_size,
-    }
-
-
-def _parse_local_file_header(local_header_bytes: bytes) -> int:
-    """
-    Parse local file header to find total header size:
-    fixed 30 bytes + filename length + extra field length
-    """
-    if local_header_bytes[0:4] != b"PK\x03\x04":
-        raise InvalidDataError("Bad local file header signature")
-
-    filename_len = parse_le_uint16(local_header_bytes[26:28])
-    extra_len = parse_le_uint16(local_header_bytes[28:30])
-    total_size = 30 + filename_len + extra_len
-    return total_size
+    try:
+        if partial:
+            s3_file = S3SeekableFile(bucket_name, key_name, s3_client, size=zip_size)
+            return ZipFile(s3_file)
+        else:
+            if zip_size is None:
+                response = s3_client.head_object(Bucket=bucket_name, Key=key_name)
+                zip_size = int(response["ContentLength"])
+            data = fetch_range(bucket_name, key_name, 0, zip_size - 1, s3_client)
+            return ZipFile(io.BytesIO(data))
+    except Exception as e:
+        if not isinstance(e, (InvalidDataError, NotAvailableError)):
+            raise InvalidDataError(
+                f"EOCD signature not found in last 64KB of the file. "
+                f"Cannot open {key_name!r} as ZIP: {e}"
+            ) from e
+        raise
 
 
 def file_position_from_s3_zip(
     s3_bucket: str,
     object_key: str,
-    s3_client,
+    s3_client: S3Client,
     target_filepath: str,
 ) -> tuple[int, int]:
     """
@@ -714,59 +734,37 @@ def file_position_from_s3_zip(
     :raises FileNotFoundError: If the target file is not found in the ZIP archive.
     :raises NotImplementedError: If the file is not uncompressed (ZIP_STORED)
     """
-    zipf, cd_data = open_s3_zipped_object(s3_bucket, object_key, s3_client)
+    with open_s3_zipped_object(s3_bucket, object_key, s3_client) as zipf:
+        try:
+            target_info = zipf.getinfo(target_filepath)
+        except KeyError:
+            raise FileNotFoundError(f"File {target_filepath} not found in ZIP archive")
 
-    # Find file in zipf.filelist to get its index and f_info
-    target_info = None
-    cd_offset = 0
-    for fi in zipf.filelist:
-        if fi.filename == target_filepath:
-            target_info = fi
-            break
-        # 46 is the fixed size (in bytes) of the Central Directory File Header according to the ZIP spec
-        cd_entry_len = (
-            46 + len(fi.filename.encode("utf-8")) + len(fi.extra) + len(fi.comment)
-        )
-        cd_offset += cd_entry_len
+        if target_info.compress_type != ZIP_STORED:
+            raise NotImplementedError(
+                "Only uncompressed files (ZIP_STORED) are supported."
+            )
 
-    zipf.close()
+        # ZipInfo.header_offset gives the local-file-header offset (ZIP64 aware).
+        local_header_offset = target_info.header_offset
 
-    if target_info is None:
-        raise FileNotFoundError(f"File {target_filepath} not found in ZIP archive")
-
-    if target_info.compress_type != ZIP_STORED:
-        raise NotImplementedError("Only uncompressed files (ZIP_STORED) are supported.")
-
-    # Parse central directory entry to get relative local header offset
-    cd_entry = cd_data[
-        cd_offset : cd_offset
-        + (
-            46
-            + len(target_info.filename.encode("utf-8"))
-            + len(target_info.extra)
-            + len(target_info.comment)
-        )
-    ]
-    cd_entry_info = _parse_central_directory_entry(cd_entry, 0)
-
-    local_header_offset = cd_entry_info["relative_offset"]
-
-    # Fetch local file header from S3 (at least 30 bytes + filename + extra field)
-    # We'll fetch 4 KB max to cover large filenames/extra fields safely
-    local_header_fetch_size = 4096
+    # Fetch local file header to determine its variable-length size
+    # (fixed 30 bytes + filename + extra field)
     local_header_bytes = fetch_range(
         s3_bucket,
         object_key,
         local_header_offset,
-        local_header_offset + local_header_fetch_size - 1,
+        local_header_offset + 29,  # fixed part is 30 bytes
         s3_client,
     )
+    if local_header_bytes[:4] != b"PK\x03\x04":
+        raise InvalidDataError("Bad local file header signature")
+    # filename length (offset 26) and extra field length (offset 28), little-endian uint16
+    filename_len = int.from_bytes(local_header_bytes[26:28], "little")
+    extra_len = int.from_bytes(local_header_bytes[28:30], "little")
+    local_header_size = 30 + filename_len + extra_len
 
-    local_header_size = _parse_local_file_header(local_header_bytes)
-
-    # Calculate file data start and end offsets
     file_data_start = local_header_offset + local_header_size
-
     return file_data_start, target_info.file_size
 
 
@@ -784,7 +782,7 @@ def list_files_in_s3_zipped_object(
     :param s3_resource: s3 resource used to fetch the object
     :returns: List of files in zip
     """
-    zip_file, _ = open_s3_zipped_object(bucket_name, key_name, s3_client)
+    zip_file = open_s3_zipped_object(bucket_name, key_name, s3_client)
     with zip_file:
         logger.debug("Found %s files in %s" % (len(zip_file.filelist), key_name))
         return zip_file.filelist
