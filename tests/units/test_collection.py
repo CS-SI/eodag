@@ -104,14 +104,35 @@ class TestCollection(unittest.TestCase):
         self.assertEqual(collection._id, "foo")
 
     def test_collection_stac_fields(self):
-        """Check that stac fields are fields of the model"""
+        """Check that stac fields are fields of the model and check the list"""
         for field in Collection.__stac_fields__:
             self.assertIn(field, Collection.model_fields)
 
+        self.assertListEqual(
+            Collection.__stac_fields__,
+            [
+                "id",
+                "description",
+                "stac_version",
+                "links",
+                "stac_extensions",
+                "title",
+                "type",
+                "assets",
+                "license",
+                "extent",
+                "keywords",
+                "providers",
+                "summaries",
+            ],
+        )
+
     def test_collection_static_fields(self):
-        """Check that static fields are fields of the model"""
+        """Check that static fields are part of STAC fields and check the list"""
         for field in Collection.__static_fields__:
-            self.assertIn(field, Collection.model_fields)
+            self.assertIn(field, Collection.__stac_fields__)
+
+        self.assertListEqual(Collection.__static_fields__, ["type", "stac_version"])
 
     def test_collection_wrong_static_fields(self):
         """Check that static fields are set to their default value"""
@@ -165,9 +186,21 @@ class TestCollection(unittest.TestCase):
         # whose annotation is "list[str]" and "typing.list[str]"
 
     def test_collection_summaries_fields(self):
-        """Check that summaries fields are fields of the model"""
+        """Check that summaries fields are fields of the model and check the list"""
         for field in Collection.summaries_fields():
             self.assertIn(field, Collection.model_fields)
+
+        self.assertListEqual(
+            Collection.summaries_fields(),
+            [
+                "constellation",
+                "instruments",
+                "platform",
+                "processing_level",
+                "sci_doi",
+                "eodag_sensor_type",
+            ],
+        )
 
     def test_collection_summaries(self):
         """Collection summaries must be correctly set"""
