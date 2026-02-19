@@ -357,7 +357,7 @@ class Collection(StacCollection):
 
     @model_validator(mode="after")
     def finalize_summaries(self) -> Self:
-        """Update field ``summaries`̀  after all summaries fields have been validated"""
+        """Update field ``summaries`` after all summaries fields have been validated"""
         # reset summaries to later have only validated values and
         # remove not-STAC-formatted values that "summaries" may contain
         self.summaries = {}
