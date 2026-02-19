@@ -20,7 +20,7 @@ import os
 import unittest
 from collections import UserDict, UserList
 from tempfile import TemporaryDirectory
-from typing import cast
+from typing import Optional, cast
 from unittest import mock
 
 import orjson
@@ -170,20 +170,24 @@ class TestCollection(unittest.TestCase):
         )
 
         # strings values of fields with list or optional list type in the model are converted to lists of strings
-        keywords_annotation = str(
-            Collection.model_fields["keywords"].annotation
-        ).lower()
-        self.assertEqual(keywords_annotation, "typing.optional[typing.list[str]]")
-        self.assertListEqual(collection.keywords, ["MSI", "SENTINEL2", "S2"])
 
-        platform_annotation = str(
-            Collection.model_fields["platform"].annotation
-        ).lower()
-        self.assertEqual(platform_annotation, "typing.optional[list[str]]")
+        # case with a "summaries" field
+        self.assertIn("platform", Collection.summaries_fields())
+        platform_annotation = Collection.model_fields["platform"].annotation
+
+        self.assertEqual(platform_annotation, Optional[list[str]])
+
         self.assertListEqual(collection.platform, ["S2A", "S2B", "S2C"])
 
-        # TODO: when some fields of the model will allow it, add tests of fields
-        # whose annotation is "list[str]" and "typing.list[str]"
+        # case with a not "summaries" field
+        self.assertNotIn("keywords", Collection.summaries_fields())
+
+        keywords_annotation = Collection.model_fields["keywords"].annotation
+
+        self.assertEqual(keywords_annotation, Optional[list[str]])
+        self.assertListEqual(collection.keywords, ["MSI", "SENTINEL2", "S2"])
+
+        # TODO: when some fields of the model will allow it, add tests of fields whose annotation is "list[str]"
 
     def test_collection_summaries_fields(self):
         """Check that summaries fields are fields of the model and check the list"""
