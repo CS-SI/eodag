@@ -37,7 +37,6 @@ dependencies = [
     "annotated-types",
     "boto3",
     "botocore",
-    "beautifulsoup4",
     "click",
     "geojson",
     "importlib_metadata >= 5.0",
