@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
-from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
+from pydantic_core import InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Collection as StacCollection
 from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
@@ -40,6 +40,7 @@ from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from pydantic import ModelWrapValidatorHandler
+    from pydantic_core import ErrorDetails
     from typing_extensions import Self
 
     from eodag.api.core import EODataAccessGateway
@@ -236,13 +237,8 @@ class Collection(StacCollection):
                 continue
 
             # check the type of the field, if it a list or an optional list, convert the string into a list of strings
-            annotation = str(cls.model_fields[field_from_alias].annotation).lower()
-            if annotation in [
-                "list[str]",
-                "typing.list[str]",
-                "typing.optional[list[str]]",
-                "typing.optional[typing.list[str]]",
-            ]:
+            annotation = cls.model_fields[field_from_alias].annotation
+            if annotation in [list[str], Optional[list[str]]]:
                 data[field] = v.split(",")
 
         return data
