@@ -1672,7 +1672,7 @@
         <<: *month_year
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
-      altitude: -999
+      altitude: "-999"
       metadata_mapping:
         geometry:
           - '{{"location": {{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}}}'
@@ -3763,7 +3763,7 @@
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
     CAMS_SOLAR_RADIATION:
       dataset: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
-      altitude: -999
+      altitude: "-999"
       metadata_mapping:
         geometry:
           # longitude/latitude to order from wekeo_ecmwf, location to validate against cop_ads constraints
