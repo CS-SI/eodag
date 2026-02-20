@@ -7194,8 +7194,6 @@ SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
   license: CC-BY-4.0
   title: "SpaceNet 5: Automated Road Network Extraction and Route Travel Time Estimation from Satellite Imagery"
   extent: {"spatial": {"bbox": [[-43.7753747662, -23.0106794336, 72.89403328656945, 55.746917105720065], [37.62123533463809, 55.60938704097397, 37.78303540799408, 55.746917105720065], [72.7844259905958, 18.885500500608433, 72.89403328656945, 19.0645257518164]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
-  missionStartDate: "2016-02-29T00:00:00Z"
-  missionEndDate:
 
 SPACENET_ALL_WEATHER_MAPPING:
   description: |
