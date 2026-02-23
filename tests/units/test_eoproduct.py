@@ -30,6 +30,7 @@ import zipfile
 import geojson
 import requests
 from lxml import html
+from requests.structures import CaseInsensitiveDict
 from shapely import geometry
 
 from eodag.config import PluginConfig
@@ -299,7 +300,7 @@ class TestEOProduct(EODagTestCase):
             """Emulation of a response to requests.get method for a quicklook"""
 
             def __init__(response):
-                response.headers = {"content-length": 2**5}
+                response.headers = CaseInsensitiveDict({"content-length": 2**5})
 
             def __enter__(response):
                 return response
