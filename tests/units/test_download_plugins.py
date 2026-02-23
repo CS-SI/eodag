@@ -29,6 +29,7 @@ from typing import Any, Callable
 from unittest import mock
 
 import responses
+from requests.structures import CaseInsensitiveDict
 
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
@@ -235,7 +236,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 with open(local_product_as_archive_path, "rb") as fh:
                     self.__zip_buffer = io.BytesIO(fh.read())
                 cl = self.__zip_buffer.getbuffer().nbytes
-                self.headers = {"content-length": cl}
+                self.headers = CaseInsensitiveDict({"content-length": cl})
                 self.url = "http://foo.bar/product.zip"
 
             def __enter__(self):
@@ -607,10 +608,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
             b"some content"
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": ""
-        }
-        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"content-disposition": ""})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": ""}
+        )
 
         path = plugin.download(self.product, output_dir=self.output_dir)
 
@@ -656,10 +659,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
             b"some content"
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": '; filename = "somethingelse"'
-        }
-        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"content-disposition": '; filename = "somethingelse"'})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": ""}
+        )
 
         path = plugin.download(self.product, output_dir=self.output_dir)
 
@@ -687,7 +692,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.assets.update({"bar": {"href": "http://somewhere/anotherthing"}})
         res = MockResponse({"a": "a"}, 400)
         mock_requests_get.side_effect = res
-        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": ""}
+        )
         with self.assertRaises(DownloadError):
             plugin.download(self.product, output_dir=self.output_dir)
 
@@ -713,10 +720,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 b"content",
             ]
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": '; filename = "somethingelse"'
-        }
-        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"content-disposition": '; filename = "somethingelse"'})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": ""}
+        )
         # ProgressCallback is called twice in HTTPDownload._download_assets. The
         # temporary asset file is created after the first call.
         progress_callback_exception = Exception("Interrupt assets download")
@@ -764,10 +773,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # first asset returns error
         mock_requests_get.return_value = MockResponse(status_code=404)
-        mock_requests_head.return_value.headers = {
-            "content-disposition": "",
-            "Content-length": "10",
-        }
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {
+                "content-disposition": "",
+                "Content-length": "10",
+            }
+        )
 
         with self.assertRaises(DownloadError):
             plugin._stream_download_dict(self.product, output_dir=self.output_dir)
@@ -956,10 +967,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
             b"some content"
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": '; filename = "somethingelse"'
-        }
-        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"content-disposition": '; filename = "somethingelse"'})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": ""}
+        )
         # Create directory structure and temp file
         os.makedirs(os.path.join(self.output_dir, "dummy_product"))
         with open(
@@ -1004,10 +1017,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
             b"some content"
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": '; filename = "somethingelse"'
-        }
-        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"content-disposition": '; filename = "somethingelse"'})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": ""}
+        )
 
         path = plugin.download(self.product, output_dir=self.output_dir, asset="else.*")
 
@@ -1038,12 +1053,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
             b"some content"
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": '; filename = "somethingelse"'
-        }
-        mock_requests_head.return_value.headers = {
-            "content-disposition": '; filename = "anotherthing"'
-        }
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict({"content-disposition": '; filename = "somethingelse"'})
+        )
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"content-disposition": '; filename = "anotherthing"'}
+        )
 
         path = plugin.download(self.product, output_dir=self.output_dir)
 
@@ -1073,17 +1088,23 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
 
-        mock_requests_head.return_value.headers = {
-            "Content-length": "1",
-            "content-disposition": '; size = "2"',
-        }
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {
+                "Content-length": "1",
+                "content-disposition": '; size = "2"',
+            }
+        )
         mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
             b"some content"
         )
-        mock_requests_get.return_value.__enter__.return_value.headers = {
-            "Content-length": "3",
-            "content-disposition": '; size = "4"',
-        }
+        mock_requests_get.return_value.__enter__.return_value.headers = (
+            CaseInsensitiveDict(
+                {
+                    "Content-length": "3",
+                    "content-disposition": '; size = "4"',
+                }
+            )
+        )
 
         # size from HEAD / Content-length
         with TemporaryDirectory() as temp_dir:
@@ -1290,7 +1311,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 "http://somewhere/download/dummy_request_id",
                 status=200,
                 content_type="application/octet-stream",
-                adding_headers={"content-disposition": "", "PRIVATE-TOKEN": "anicekey"},
+                adding_headers=CaseInsensitiveDict(
+                    {"content-disposition": "", "PRIVATE-TOKEN": "anicekey"}
+                ),
                 body=b"some content",
                 auto_calculate_content_length=True,
             )
