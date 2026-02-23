@@ -6541,3 +6541,21 @@
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
+---
+!provider # MARK: DLR EOC Geoservice
+name:
+  name: dlr_eoc_geoservice
+  priority: 0
+  description: DLR Earth Observation Center (EOC) Geoservice
+  roles:
+    - host
+  url: https://geoservice.dlr.de
+  search:
+    type: StacSearch
+    api_endpoint: https://geoservice.dlr.de/eoc/ogc/stac/v1/search
+    need_auth: true
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download:
+    type: HTTPDownload
