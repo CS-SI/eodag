@@ -75,7 +75,7 @@ class CommonStacMetadata(ItemProperties):
     )
     def format_datetime(self, value: dt):
         """format datetime properties"""
-        if value is None:
+        if not value:
             return None
         return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
@@ -281,7 +281,7 @@ def create_stac_metadata_model(
         __base__=tuple(models),
         _conformance_classes=(
             ClassVar[dict[str, str]],
-            {e.__class__.__name__: e.schema_href for e in extensions},
+            {e.__class__.__name__: getattr(e, "schema_href", "") for e in extensions},
         ),
         get_conformance_classes=(
             ClassVar[Callable[[Any], list[str]]],

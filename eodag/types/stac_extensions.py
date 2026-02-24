@@ -390,6 +390,99 @@ class DatacubeExtension(BaseStacExtension):
     field_name_prefix: Optional[str] = "cube"
 
 
+class LabelCountObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]
+    count: Annotated[int, Field(None)]
+
+
+class LabelStatsObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]
+    value: Annotated[float, Field(None)]
+
+
+class LabelClassObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]  # required but may be null
+    classes: Annotated[list[Union[str, int]], Field(None)]
+
+
+class LabelOverview(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    property_key: Annotated[str, Field(None)]
+    counts: Annotated[list[LabelCountObject], Field(None)]
+    statistics: Annotated[list[LabelStatsObject], Field(None)]
+
+
+class LabelFields(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_methods(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """
+        Convert methods ``str`` to ``list``.
+        """
+        if methods := values.get("methods"):
+            values["methods"] = (
+                ",".join(methods.split()).split(",")
+                if isinstance(methods, str)
+                else methods
+            )
+            if None in values["methods"]:
+                values["methods"].remove(None)
+        return values
+
+    label_properties: Annotated[list[str], Field(None)]
+    label_classes: Optional[list[LabelClassObject]] = Field(default=None)
+    label_description: str = Field(default="")
+    label_type: str = Field(default="")
+    label_tasks: Annotated[list[str], Field(None)]
+    label_methods: Annotated[list[str], Field(None)]
+    label_overviews: Annotated[list[LabelOverview], Field(None)]
+
+
+class LabelExtension(BaseStacExtension):
+    """STAC label extension."""
+
+    FIELDS: type[BaseModel] = LabelFields
+
+    schema_href: str = "https://stac-extensions.github.io/label/v1.0.1/schema.json"
+    field_name_prefix: Optional[str] = "label"
+
+
+class FederationFields(BaseModel):
+    """
+    https://github.com/Open-EO/openeo-api/tree/master/extensions/federation
+    """
+
+    federation_backends: Annotated[list[str], Field(None)]
+
+
+class FederationExtension(BaseStacExtension):
+    """STAC federation extension."""
+
+    FIELDS: type[BaseModel] = FederationFields
+
+    schema_href: str = "https://api.openeo.org/extensions/federation/0.1.0"
+    field_name_prefix: Optional[str] = "federation"
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),
@@ -405,4 +498,6 @@ STAC_EXTENSIONS = [
     MgrsExtension(),
     ProjectionExtension(),
     DatacubeExtension(),
+    LabelExtension(),
+    FederationExtension(),
 ]

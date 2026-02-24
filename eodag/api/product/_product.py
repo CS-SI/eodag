@@ -242,6 +242,8 @@ class EOProduct:
             },
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
+            "federation:backends": [self.provider],
+            "storage:tier": self.properties["order:status"],
         }
         stac_providers = self.properties.get("providers", [])
         if not any("host" in p.get("roles", []) for p in stac_providers):
