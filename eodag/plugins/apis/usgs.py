@@ -45,6 +45,7 @@ from eodag.utils import (
     GENERIC_COLLECTION,
     USER_AGENT,
     ProgressCallback,
+    deepcopy,
     format_dict_items,
     path_to_uri,
 )
@@ -110,6 +111,28 @@ class UsgsApi(Api):
             result_type=getattr(self.config, "result_type", "json"),
         )
 
+        # parse jsonpath on init: product type specific metadata-mapping
+        for product_type in self.config.products.keys():
+            if "metadata_mapping" in self.config.products[product_type].keys():
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
+                # Complete and ready to use product type specific metadata-mapping
+                product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
+
+                # from current product, updated mapping at the end
+                for metadata, mapping in self.config.products[product_type][
+                    "metadata_mapping"
+                ].items():
+                    product_type_metadata_mapping.pop(metadata, None)
+                    product_type_metadata_mapping[metadata] = mapping
+
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = product_type_metadata_mapping
+
     def authenticate(self) -> None:
         """Login to usgs api
 
@@ -162,9 +185,9 @@ class UsgsApi(Api):
 
         self.authenticate()
 
-        collection_def_params = self.config.products.get(  # type: ignore
+        collection_def_params: dict[str, Any] = self.config.products.get(
             collection,
-            self.config.products[GENERIC_COLLECTION],  # type: ignore
+            self.config.products[GENERIC_COLLECTION],
         )
         usgs_collection = format_dict_items(collection_def_params, **kwargs)[
             "_collection"
@@ -273,7 +296,7 @@ class UsgsApi(Api):
                 result["collection"] = usgs_collection
 
                 product_properties = properties_from_json(
-                    result, self.config.metadata_mapping
+                    result, self.get_metadata_mapping(product_type)
                 )
 
                 final.append(
