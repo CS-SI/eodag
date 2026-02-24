@@ -255,9 +255,12 @@ class HTTPDownload(Download):
             {"json": json_response, "headers": {**response.headers}},
             on_response_mm_jsonpath,
         )
+
+        # update product with available properties
         product.properties.update(
             {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
+
         # the job id becomes the product id for EcmwfSearch products
         if "ORDERABLE" in product.properties.get("id", ""):
             product.properties["id"] = product.properties.get(
@@ -268,9 +271,19 @@ class HTTPDownload(Download):
                 + "_"
                 + product.properties["id"]
             )
+
+        # if "eodag:download_link" property has been found from the response,
+        # update the asset "eodag:download_link" and product locations.
+        # Then remove the property since it will not be useful anymore
         if "eodag:download_link" in product.properties:
-            product.remote_location = product.location = product.properties[
-                "eodag:download_link"
+            product.assets["eodag:download_link"] = {
+                "href": product.properties.pop("eodag:download_link"),
+                "title": properties_update["title"],
+                "type": product.assets["eodag:download_link"]["type"],
+                "roles": ["data"],
+            }
+            product.remote_location = product.location = product.assets["eodag:download_link"][
+                "href"
             ]
             logger.debug(f"Product location updated to {product.location}")
 
@@ -579,12 +592,23 @@ class HTTPDownload(Download):
                 f"Could not parse result after order success. Please search and download {product} again"
             ) from e
 
-        # update product
+        # update product with updated properties
         product.properties.update(properties_update)
+
+        # if "eodag:download_link" property has been found from the response,
+        # update asset "eodag:download_link" and product locations.
+        # Then remove the property since it will not be useful anymore
         if "eodag:download_link" in properties_update:
-            product.location = product.remote_location = product.properties[
-                "eodag:download_link"
+            product.assets["eodag:download_link"] = {
+                "href": product.properties.pop("eodag:download_link"),
+                "title": properties_update["title"],
+                "type": product.assets["eodag:download_link"]["type"],
+                "roles": ["data"],
+            }
+            product.location = product.remote_location = product.assets["eodag:download_link"][
+                "href"
             ]
+            logger.debug(f"Product location updated to {product.location}")
         else:
             self.order_response_process(response, product)
 
