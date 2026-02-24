@@ -282,9 +282,9 @@ class HTTPDownload(Download):
                 "type": product.assets["eodag:download_link"]["type"],
                 "roles": ["data"],
             }
-            product.remote_location = product.location = product.assets["eodag:download_link"][
-                "href"
-            ]
+            product.remote_location = product.location = product.assets[
+                "eodag:download_link"
+            ]["href"]
             logger.debug(f"Product location updated to {product.location}")
 
         return json_response
@@ -605,9 +605,9 @@ class HTTPDownload(Download):
                 "type": product.assets["eodag:download_link"]["type"],
                 "roles": ["data"],
             }
-            product.location = product.remote_location = product.assets["eodag:download_link"][
-                "href"
-            ]
+            product.location = product.remote_location = product.assets[
+                "eodag:download_link"
+            ]["href"]
             logger.debug(f"Product location updated to {product.location}")
         else:
             self.order_response_process(response, product)
@@ -1023,7 +1023,7 @@ class HTTPDownload(Download):
             product.properties.get("eodag:download_method", "").lower()
             or getattr(self.config, "method", "GET").lower()
         )
-        url = product.assets["downloadLink"].remote_location
+        url = product.assets["eodag:download_link"].remote_location
         if req_method == "post":
             # separate url & parameters
             parts = urlparse(url)
@@ -1270,7 +1270,7 @@ class HTTPDownload(Download):
         assets_urls = [
             a["href"]
             for a in getattr(product, "assets", {}).values()
-            if "href" in a and a.key != "downloadLink"
+            if "href" in a and a.key != "eodag:download_link"
         ]
 
         assets_values = product.assets.get_values(kwargs.get("asset"))

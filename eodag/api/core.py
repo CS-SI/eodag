@@ -1853,8 +1853,8 @@ class EODataAccessGateway:
                     else:
                         eo_product.collection = guesses[0].id
 
-                # remove property "downloadLink" which may have been useful to create its matching asset
-                eo_product.properties.pop("downloadLink", None)
+                # remove property "eodag:download_link" which may have been useful to create its matching asset
+                eo_product.properties.pop("eodag:download_link", None)
 
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)

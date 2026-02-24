@@ -1090,7 +1090,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
                 {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
                 {"href": "qux", "title": "asset3", "name": "qux-name"},
-            ], asset_name_key == "title" and args == '[["downloadLink",[
+            ], asset_name_key == "title" and args == '[["eodag:download_link",[
                 ["title","Full product download"],
                 ["href","https://downloadlink.foo"],
                 ["roles",["data"]],
@@ -1100,7 +1100,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 "path/to/asset1": {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
                 "asset2": {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
                 "asset3": {"href": "qux", "title": "asset3", "name": "qux-name"},
-                "downloadLink": {"title": "Full product download", "href": "https://downloadlink.foo",
+                "eodag:download_link": {"title": "Full product download", "href": "https://downloadlink.foo",
                     "roles": ["data"], "type": "application/zip"
                 }
             }
@@ -1109,7 +1109,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
                 {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
                 {"href": "qux", "title": "qux-title", "name": "asset3"},
-            ], asset_name_key == "name" and args == '[["downloadLink",[
+            ], asset_name_key == "name" and args == '[["eodag:download_link",[
                 ["title","Full product download"],
                 ["href","https://downloadlink.foo"],
                 ["roles",["data"]],
@@ -1119,7 +1119,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 "path/to/asset1": {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
                 "asset2": {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
                 "asset3": {"href": "qux", "title": "qux-title", "name": "asset3"},
-                "downloadLink": {"title": "Full product download", "href": "https://downloadlink.foo",
+                "eodag:download_link": {"title": "Full product download", "href": "https://downloadlink.foo",
                     "roles": ["data"], "type": "application/zip"
                 }
             }

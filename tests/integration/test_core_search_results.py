@@ -433,7 +433,7 @@ class TestCoreSearchResults(EODagTestCase):
                     },
                     "collection": "foo-collection",
                     "assets": {
-                        "downloadLink": {
+                        "eodag:download_link": {
                             "title": "Download link",
                             "href": "https://stac-fastapi-eodag-server/download-link",
                             "type": "application/zip",
