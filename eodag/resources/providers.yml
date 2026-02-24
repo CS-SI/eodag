@@ -43,10 +43,18 @@
       eodag:thumbnail: '$.browse[0].thumbnailPath'
       eodag:quicklook: '$.browse[0].browsePath'
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
-      eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
       # metadata needed for download
       usgs:entityId: '$.entityId'
       usgs:productId: '$.id'
+      # create asset "eodag:download_link" using the above metadata
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","https://earthexplorer.usgs.gov/download/external/options/{productType}/{entityId}/M2M/"],
+          ["title","Full product download"],
+          ["type","application/gzip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
     extract: True
     order_enabled: true
     max_workers: 2
@@ -71,6 +79,15 @@
       _collection: landsat_etm_c2_l2
     S2_MSI_L1C:
       _collection: SENTINEL_2A
+      metadata_mapping:
+        assets: '{$.null#dict_update(
+          [["eodag:download_link",[
+            ["href","https://earthexplorer.usgs.gov/download/external/options/{productType}/{entityId}/M2M/"],
+            ["title","Full product download"],
+            ["type","application/zip"],
+            ["roles",["data"]]
+          ]]]
+        )}'
     GENERIC_COLLECTION:
       _collection: '{collection}'
 
@@ -618,6 +635,14 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: '$.properties.services.download.url'
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","{eodag:download_link}"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.properties.storage.mode#get_group_name((?P<succeeded>disk|tier2)|(?P<ordered>staging)|(?P<orderable>unknown|tape|tier3))}'
 
@@ -653,6 +678,7 @@
     order_enabled: true
     auth_error_code: 401
     ssl_verify: true
+    timeout: 60
     dl_url_params:
       issuerId: peps
   auth: !plugin
@@ -1650,6 +1676,15 @@
         - $.geometry
       qs: $.qs
       eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","Not Available"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
+
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
@@ -1817,6 +1852,14 @@
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","Not Available"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
       qs: $.qs
       eodag:order_link: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
   products:
@@ -3149,6 +3192,14 @@
       eodag:download_link: '$.properties.location'
       eodag:quicklook: '$.properties.thumbnail'
       eodag:thumbnail: '$.properties.thumbnail'
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","{eodag:download_link}"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
       title: '$.id'
       order:status: 'orderable'
       processing:level:
@@ -3875,6 +3926,14 @@
         - '{{"variable": "{variable}"}}'
         - '{$.properties.location#get_variables_from_path}'
       eodag:download_link: '$.properties.location'
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","{eodag:download_link}"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
       title: '$.id'
       order:status: 'orderable'
       eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
@@ -4867,7 +4926,14 @@
     _order_body: '$.links[?rel=="retrieve"].body'
     eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     eodag:download_link: '$.null'
-    assets: '$.null'
+    assets: '{$.null#dict_update(
+      [["eodag:download_link",[
+        ["href","{eodag:order_link}"],
+        ["title","Full product download"],
+        ["type","application/zip"],
+        ["roles",["data"]]
+      ]]]
+    )}'
   search: !plugin
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
@@ -4879,7 +4945,14 @@
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.downloadLink.href'
-      assets: '$.null'
+      assets: '{$.null#dict_update(
+        [["eodag:download_link",[
+          ["href","{eodag:download_link}"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
     discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
       result_type: json
@@ -5509,7 +5582,14 @@
       eodag:download_link: '$.properties.links.data[?(@.title="Product download")].href'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
-      assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
+      assets: '{$.properties.links.sip-entries#assets_list_to_dict_and_update(
+        [["eodag:download_link",[
+          ["href","{eodag:download_link}"],
+          ["title","Full product download"],
+          ["type","application/zip"],
+          ["roles",["data"]]
+        ]]]
+      )}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       size: '$.properties.productInformation.size'
       type: '$.null'

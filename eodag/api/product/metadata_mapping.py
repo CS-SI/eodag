@@ -165,6 +165,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``literalize_unicode``: convert a string to its raw Unicode literal form
         - ``not_available``: replace value with "Not Available"
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
+        - ``dict_update``: update a dictionary with a list converted to a dictionary
         - ``remove_extension``: on a string that contains dots, only take the first part of the list obtained by
           splitting the string on dots
         - ``replace_str``: execute "string".replace(old, new)
@@ -189,6 +190,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_rounded_wkt``: simplify the WKT of a geometry
         - ``to_title``: Convert a string to title case
         - ``to_upper``: Convert a string to uppercase
+        - ``assets_list_to_dict``: convert a list of assets into a dictionary
+        - ``assets_list_to_dict_and_update``: convert a list of assets into a dictionary and update it with
+          another dictionary
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -695,8 +699,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_dict_update(
             input_dict: dict[Any, Any], args: str
         ) -> dict[Any, Any]:
-            """Converts"""
-            new_items_list = ast.literal_eval(args)
+            """Updates a dictionary with a list converted to a dictionary"""
+            # if the value was not found, consider it as an empty dictionary
+            if input_dict == NOT_AVAILABLE:
+                input_dict = {}
+
+            new_items_list = ast.literal_eval(args.strip())
 
             new_items_dict = nested_pairs2dict(new_items_list)
 
@@ -706,7 +714,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_dict_filter(
             input_dict: dict[Any, Any], jsonpath_filter_str: str
         ) -> dict[Any, Any]:
-            """Fitlers dict items using jsonpath"""
+            """Filters dict items using jsonpath"""
 
             jsonpath_filter = string_to_jsonpath(jsonpath_filter_str, force=True)
             if isinstance(jsonpath_filter, str) or not isinstance(input_dict, dict):
@@ -1022,51 +1030,104 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 {"href": "foo", "title": "asset1", "name": "foo-name"},
                 {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
                 {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
-                {"href": "qux", "title": "asset3", "name": "qux-name"},
+                {"href": "qux", "title": "asset3", "name": "qux-name"}
             ] and asset_name_key == "title" => {
                 "asset1": {"href": "foo", "title": "asset1", "name": "foo-name"},
                 "path/to/asset1": {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
                 "asset2": {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+                "asset3": {"href": "qux", "title": "asset3", "name": "qux-name"}
+            }
+            assets_list == [
+                {"href": "foo", "title": "foo-title", "name": "asset1"},
+                {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+                {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+                {"href": "qux", "title": "qux-title", "name": "asset3"}
+            ] and asset_name_key == "name" => {
+                "asset1": {"href": "foo", "title": "foo-title", "name": "asset1"},
+                "path/to/asset1": {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+                "asset2": {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+                "asset3": {"href": "qux", "title": "qux-title", "name": "asset3"}
+            }
+            """
+            asset_names: list[str] = []
+            assets_dict: dict[str, dict[str, str]] = {}
+
+            # create dictionary with assets full name
+            for asset in assets_list:
+                asset_name = asset[asset_name_key]
+                asset_names.append(asset_name)
+                assets_dict[asset_name] = asset
+
+            # when an asset name has a path pattern, we update its value with its basename if
+            # this basename is found for the first time. Otherwise, we keep it as a full path
+            immutable_asset_indexes: list[int] = []
+            for i, asset_name in enumerate(asset_names):
+                if i in immutable_asset_indexes:
+                    continue
+                update_asset_name = True
+                asset_basename = asset_name.split("/")[-1]
+                j = i + 1
+                while update_asset_name and j < len(asset_names):
+                    asset_tmp_basename = asset_names[j].split("/")[-1]
+                    if asset_basename == asset_tmp_basename:
+                        update_asset_name = False
+                        immutable_asset_indexes.extend([i, j])
+                    j += 1
+                if update_asset_name:
+                    assets_dict[asset_basename] = assets_dict.pop(asset_name)
+            return assets_dict
+
+        @staticmethod
+        def convert_assets_list_to_dict_and_update(
+            assets_list: list[dict[str, str]], args: str, asset_name_key: str = "title"
+        ) -> dict[str, dict[str, str]]:
+            """Combine two MetadataFormatter class methods in the following order:
+            - convert_assets_list_to_dict()
+            - convert_dict_update()
+
+            assets_list == [
+                {"href": "foo", "title": "asset1", "name": "foo-name"},
+                {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+                {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+                {"href": "qux", "title": "asset3", "name": "qux-name"},
+            ], asset_name_key == "title" and args == '[["downloadLink",[
+                ["title","Full product download"],
+                ["href","https://downloadlink.foo"],
+                ["roles",["data"]],
+                ["type","application/zip"]
+            ]]]' => {
+                "asset1": {"href": "foo", "title": "asset1", "name": "foo-name"},
+                "path/to/asset1": {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+                "asset2": {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
                 "asset3": {"href": "qux", "title": "asset3", "name": "qux-name"},
+                "downloadLink": {"title": "Full product download", "href": "https://downloadlink.foo",
+                    "roles": ["data"], "type": "application/zip"
+                }
             }
             assets_list == [
                 {"href": "foo", "title": "foo-title", "name": "asset1"},
                 {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
                 {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
                 {"href": "qux", "title": "qux-title", "name": "asset3"},
-            ] and asset_name_key == "name" => {
+            ], asset_name_key == "name" and args == '[["downloadLink",[
+                ["title","Full product download"],
+                ["href","https://downloadlink.foo"],
+                ["roles",["data"]],
+                ["type","application/zip"]
+            ]]]' => {
                 "asset1": {"href": "foo", "title": "foo-title", "name": "asset1"},
                 "path/to/asset1": {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
                 "asset2": {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
                 "asset3": {"href": "qux", "title": "qux-title", "name": "asset3"},
+                "downloadLink": {"title": "Full product download", "href": "https://downloadlink.foo",
+                    "roles": ["data"], "type": "application/zip"
+                }
             }
             """
-            asset_names: list[str] = []
-            assets_dict: dict[str, dict[str, str]] = {}
-
-            for asset in assets_list:
-                asset_name = asset[asset_name_key]
-                asset_names.append(asset_name)
-                assets_dict[asset_name] = asset
-
-            # we only keep the equivalent of the path basename in the case where the
-            # asset name has a path pattern and this basename is only found once
-            immutable_asset_indexes: list[int] = []
-            for i, asset_name in enumerate(asset_names):
-                if i in immutable_asset_indexes:
-                    continue
-                change_asset_name = True
-                asset_basename = asset_name.split("/")[-1]
-                j = i + 1
-                while change_asset_name and j < len(asset_names):
-                    asset_tmp_basename = asset_names[j].split("/")[-1]
-                    if asset_basename == asset_tmp_basename:
-                        change_asset_name = False
-                        immutable_asset_indexes.extend([i, j])
-                    j += 1
-                if change_asset_name:
-                    assets_dict[asset_basename] = assets_dict.pop(asset_name)
-            return assets_dict
+            assets_dict = MetadataFormatter.convert_assets_list_to_dict(
+                assets_list, asset_name_key
+            )
+            return MetadataFormatter.convert_dict_update(assets_dict, args)
 
         @staticmethod
         def convert_wekeo_to_cop_collection(val: str, prefix: str) -> str:
