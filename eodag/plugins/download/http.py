@@ -1023,7 +1023,7 @@ class HTTPDownload(Download):
             product.properties.get("eodag:download_method", "").lower()
             or getattr(self.config, "method", "GET").lower()
         )
-        url = product.remote_location
+        url = product.assets["downloadLink"].remote_location
         if req_method == "post":
             # separate url & parameters
             parts = urlparse(url)
