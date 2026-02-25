@@ -338,7 +338,9 @@ class EOProduct:
         download_plugin = plugins_manager.get_download_plugin(self)
 
         assets_values = self.assets.values()
-        is_there_download_link = any(assets_val.key == "eodag:download_link" for assets_val in assets_values)
+        is_there_download_link = any(
+            assets_val.key == "eodag:download_link" for assets_val in assets_values
+        )
 
         # check url of property "order:status" and asset "eodag:download_link" first
         # since other assets can have paths not matching plugin matching_url pattern

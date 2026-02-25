@@ -533,7 +533,10 @@ class Download(PluginTopic):
             if (
                 product.downloader
                 and product.downloader.config.type == "AwsDownload"
-                or all([assets_val.key != "downloadLink" for assets_val in assets_values])
+                or not any(
+                    assets_val.key == "eodag:download_link"
+                    for assets_val in assets_values
+                )
             )
         )
 

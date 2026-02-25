@@ -253,7 +253,13 @@ class PluginManager:
 
         # check url of asset "eodag:download_link" first since other assets
         # can have paths not matching plugin matching_url pattern
-        if product is not None and (assets_values := product.assets.values()) and any(assets_val.key == "eodag:download_link" for assets_val in assets_values):
+        if (
+            product is not None
+            and (assets_values := product.assets.values())
+            and any(
+                assets_val.key == "eodag:download_link" for assets_val in assets_values
+            )
+        ):
             product.assets["eodag:download_link"]["href"]
         elif product is not None:
             matching_url = next(iter(assets_values))["href"]
