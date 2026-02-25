@@ -6558,3 +6558,6 @@
       productType: '{productType}'
   download: !plugin
     type: HTTPDownload
+  auth:
+    type: GenericAuth
+    matching_url: https://download.geoservice.dlr.de
