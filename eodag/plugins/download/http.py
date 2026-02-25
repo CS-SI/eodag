@@ -656,7 +656,9 @@ class HTTPDownload(Download):
             skip_assets_download = True
 
         # download single assets if there is no the full product asset
-        if not skip_assets_download and not any(assets_val.key == "eodag:download_link" for assets_val in assets_values):
+        if not skip_assets_download and not any(
+            assets_val.key == "eodag:download_link" for assets_val in assets_values
+        ):
             try:
                 fs_path = self._download_assets(
                     product,
@@ -812,6 +814,15 @@ class HTTPDownload(Download):
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
+        if not getattr(product, "assets", None) or len(product.assets) == 0:
+            logger.error(
+                "No asset available to download, please check the provider configuration \
+                         (An asset_mapping must be added if the provider does not return any assets)!"
+            )
+            raise MisconfiguredError(
+                "No asset available to download, please check the provider configuration!"
+            )
+
         try:
             skip_assets_download = False
             assets_values = product.assets.get_values(kwargs.get("asset"))
@@ -821,7 +832,9 @@ class HTTPDownload(Download):
             skip_assets_download = True
 
         # download assets if exist instead of remote_location
-        if not skip_assets_download and not any(assets_val.key == "eodag:download_link" for assets_val in assets_values):
+        if not skip_assets_download and not any(
+            assets_val.key == "eodag:download_link" for assets_val in assets_values
+        ):
             executor = ThreadPoolExecutor(
                 max_workers=getattr(self.config, "max_workers", None)
             )
@@ -876,7 +889,9 @@ class HTTPDownload(Download):
             logger.info("Download only the full product asset, ignoring the other ones")
 
         # download the full product asset
-        chunk_iterator = self._stream_download_full_product_asset(product, auth, None, **kwargs)
+        chunk_iterator = self._stream_download_full_product_asset(
+            product, auth, None, **kwargs
+        )
 
         # start reading chunks to set product.headers
         try:
