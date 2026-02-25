@@ -100,20 +100,20 @@ class SarFields(BaseModel):
     https://github.com/stac-extensions/sar
     """
 
-    sar_instrument_mode: Optional[str] = Field(None)
-    sar_frequency_band: Optional[str] = Field(None)
-    sar_center_frequency: Optional[float] = Field(None)
-    sar_polarizations: Optional[list[str]] = Field(None)
-    sar_resolution_range: Optional[float] = Field(None)
-    sar_resolution_azimuth: Optional[float] = Field(None)
-    sar_pixel_spacing_range: Optional[float] = Field(None)
-    sar_pixel_spacing_azimuth: Optional[float] = Field(None)
-    sar_looks_range: Optional[int] = Field(None)
-    sar_looks_azimuth: Optional[int] = Field(None)
-    sar_looks_equivalent_number: Optional[float] = Field(None)
-    sar_observation_direction: Optional[str] = Field(None)
-    sar_relative_burst: Optional[int] = Field(None)
-    sar_beam_ids: Optional[list[str]] = Field(None)
+    sar_instrument_mode: Annotated[str, Field(None)]
+    sar_frequency_band: Annotated[str, Field(None)]
+    sar_center_frequency: Annotated[float, Field(None)]
+    sar_polarizations: Annotated[list[str], Field(None)]
+    sar_resolution_range: Annotated[float, Field(None)]
+    sar_resolution_azimuth: Annotated[float, Field(None)]
+    sar_pixel_spacing_range: Annotated[float, Field(None)]
+    sar_pixel_spacing_azimuth: Annotated[float, Field(None)]
+    sar_looks_range: Annotated[int, Field(None)]
+    sar_looks_azimuth: Annotated[int, Field(None)]
+    sar_looks_equivalent_number: Annotated[float, Field(None)]
+    sar_observation_direction: Annotated[str, Field(None)]
+    sar_relative_burst: Annotated[int, Field(None)]
+    sar_beam_ids: Annotated[list[str], Field(None)]
 
 
 class SarExtension(BaseStacExtension):
@@ -130,12 +130,12 @@ class SatelliteFields(BaseModel):
     https://github.com/stac-extensions/sat
     """
 
-    sat_platform_international_designator: Optional[str] = Field(None)
-    sat_orbit_cycle: Optional[int] = Field(None)
-    sat_orbit_state: Optional[str] = Field(None)
-    sat_absolute_orbit: Optional[int] = Field(None)
-    sat_relative_orbit: Optional[int] = Field(None)
-    sat_anx_datetime: Optional[str] = Field(None)
+    sat_platform_international_designator: Annotated[str, Field(None)]
+    sat_orbit_cycle: Annotated[int, Field(None)]
+    sat_orbit_state: Annotated[str, Field(None)]
+    sat_absolute_orbit: Annotated[int, Field(None)]
+    sat_relative_orbit: Annotated[int, Field(None)]
+    sat_anx_datetime: Annotated[str, Field(None)]
 
 
 class SatelliteExtension(BaseStacExtension):
@@ -152,9 +152,9 @@ class TimestampFields(BaseModel):
     https://github.com/stac-extensions/timestamps
     """
 
-    published: Optional[str] = Field(None)
-    unpublished: Optional[str] = Field(None)
-    expires: Optional[str] = Field(None)
+    published: Annotated[str, Field(None)]
+    unpublished: Annotated[str, Field(None)]
+    expires: Annotated[str, Field(None)]
 
 
 class TimestampExtension(BaseStacExtension):
@@ -170,11 +170,11 @@ class ProcessingFields(BaseModel):
     https://github.com/stac-extensions/processing
     """
 
-    processing_expression: Optional[dict[str, Any]] = Field(None)
-    processing_lineage: Optional[str] = Field(None)
-    processing_level: Optional[str] = Field(None)
-    processing_facility: Optional[str] = Field(None)
-    processing_software: Optional[dict[str, str]] = Field(None)
+    processing_expression: Annotated[dict[str, Any], Field(None)]
+    processing_lineage: Annotated[str, Field(None)]
+    processing_level: Annotated[str, Field(None)]
+    processing_facility: Annotated[str, Field(None)]
+    processing_software: Annotated[dict[str, str], Field(None)]
 
 
 class ProcessingExtension(BaseStacExtension):
@@ -191,11 +191,11 @@ class ViewGeometryFields(BaseModel):
     https://github.com/stac-extensions/view
     """
 
-    view_off_nadir: Optional[float] = Field(None)
-    view_incidence_angle: Optional[float] = Field(None)
-    view_azimuth: Optional[float] = Field(None)
-    view_sun_azimuth: Optional[float] = Field(None)
-    view_sun_elevation: Optional[float] = Field(None)
+    view_off_nadir: Annotated[float, Field(None)]
+    view_incidence_angle: Annotated[float, Field(None)]
+    view_azimuth: Annotated[float, Field(None)]
+    view_sun_azimuth: Annotated[float, Field(None)]
+    view_sun_elevation: Annotated[float, Field(None)]
 
 
 class ViewGeometryExtension(BaseStacExtension):
@@ -212,9 +212,9 @@ class ElectroOpticalFields(BaseModel):
     https://github.com/stac-extensions/eo
     """
 
-    eo_cloud_cover: Optional[Percentage] = Field(None)
-    eo_snow_cover: Optional[Percentage] = Field(None)
-    eo_bands: Optional[list[dict[str, Union[str, int]]]] = Field(None)
+    eo_cloud_cover: Annotated[Percentage, Field(None)]
+    eo_snow_cover: Annotated[Percentage, Field(None)]
+    eo_bands: Annotated[list[dict[str, Union[str, int]]], Field(None)]
 
 
 class ElectroOpticalExtension(BaseStacExtension):
@@ -231,9 +231,9 @@ class ScientificCitationFields(BaseModel):
     https://github.com/stac-extensions/scientific
     """
 
-    sci_doi: Optional[str] = Field(None)
-    sci_citation: Optional[str] = Field(None)
-    sci_publications: Optional[list[dict[str, str]]] = Field(None)
+    sci_doi: Annotated[str, Field(None)]
+    sci_citation: Annotated[str, Field(None)]
+    sci_publications: Annotated[list[dict[str, str]], Field(None)]
 
 
 class ScientificCitationExtension(BaseStacExtension):
@@ -250,10 +250,10 @@ class ProductFields(BaseModel):
     https://github.com/stac-extensions/product
     """
 
-    product_type: Optional[str] = Field(None)
-    product_timeliness: Optional[str] = Field(None)
-    product_timeliness_category: Optional[str] = Field(None)
-    product_acquisition_type: Optional[str] = Field(None)
+    product_type: Annotated[str, Field(None)]
+    product_timeliness: Annotated[str, Field(None)]
+    product_timeliness_category: Annotated[str, Field(None)]
+    product_acquisition_type: Annotated[str, Field(None)]
 
 
 class ProductExtension(BaseStacExtension):
@@ -270,10 +270,10 @@ class StorageFields(BaseModel):
     https://github.com/stac-extensions/storage
     """
 
-    storage_platform: Optional[str] = Field(default=None)
-    storage_region: Optional[str] = Field(default=None)
-    storage_requester_pays: Optional[bool] = Field(default=None)
-    storage_tier: Optional[str] = Field(default=None, validation_alias="storage:tier")
+    storage_platform: Annotated[str, Field(None)]
+    storage_region: Annotated[str, Field(None)]
+    storage_requester_pays: Annotated[bool, Field(None)]
+    storage_tier: Annotated[str, Field(None)]
 
     @field_validator("storage_tier")
     @classmethod
@@ -296,9 +296,9 @@ class OrderFields(BaseModel):
     https://github.com/stac-extensions/order
     """
 
-    order_status: Optional[str] = Field(default=None)
-    order_id: Optional[str] = Field(default=None, validation_alias="eodag:order_id")
-    order_date: Optional[bool] = Field(default=None)
+    order_status: Annotated[str, Field(None)]
+    order_id: Annotated[str, Field(None)]
+    order_date: Annotated[str, Field(None)]
 
 
 class OrderExtension(BaseStacExtension):
@@ -315,9 +315,9 @@ class GridFields(BaseModel):
     https://github.com/stac-extensions/grid
     """
 
-    grid_code: Optional[str] = Field(
-        default=None, pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$"
-    )
+    grid_code: Annotated[
+        str, Field(default=None, pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$")
+    ]
 
 
 class GridExtension(BaseStacExtension):
@@ -334,9 +334,9 @@ class MgrsFields(BaseModel):
     https://github.com/stac-extensions/mgrs
     """
 
-    mgrs_grid_square: Optional[str] = Field(default=None)
-    mgrs_latitude_band: Optional[str] = Field(default=None)
-    mgrs_utm_zone: Optional[int] = Field(default=None)
+    mgrs_grid_square: Annotated[str, Field(None)]
+    mgrs_latitude_band: Annotated[str, Field(None)]
+    mgrs_utm_zone: Annotated[int, Field(None)]
 
 
 class MgrsExtension(BaseStacExtension):
@@ -353,14 +353,14 @@ class ProjectionFields(BaseModel):
     https://github.com/stac-extensions/projection
     """
 
-    proj_code: Optional[str] = Field(default=None)
-    proj_wkt2: Optional[str] = Field(default=None)
-    proj_projjson: Optional[dict[str, Any]] = Field(default=None)
-    proj_geometry: Optional[dict[str, Any]] = Field(default=None)
-    proj_bbox: Optional[list[float]] = Field(default=None)
-    proj_centroid: Optional[Centroid] = Field(default=None)
-    proj_shape: Optional[list[int]] = Field(default=None)
-    proj_transform: Optional[list[float]] = Field(default=None)
+    proj_code: Annotated[str, Field(None)]
+    proj_wkt2: Annotated[str, Field(None)]
+    proj_projjson: Annotated[dict[str, Any], Field(None)]
+    proj_geometry: Annotated[dict[str, Any], Field(None)]
+    proj_bbox: Annotated[list[float], Field(None)]
+    proj_centroid: Annotated[Centroid, Field(None)]
+    proj_shape: Annotated[list[int], Field(None)]
+    proj_transform: Annotated[list[float], Field(None)]
 
 
 class ProjectionExtension(BaseStacExtension):
@@ -377,8 +377,8 @@ class DatacubeFields(BaseModel):
     https://github.com/stac-extensions/datacube
     """
 
-    cube_dimensions: Optional[dict[str, CubeDimension]] = Field(default=None)
-    cube_variables: Optional[dict[str, CubeVariable]] = Field(default=None)
+    cube_dimensions: Annotated[dict[str, CubeDimension], Field(None)]
+    cube_variables: Annotated[dict[str, CubeVariable], Field(None)]
 
 
 class DatacubeExtension(BaseStacExtension):
