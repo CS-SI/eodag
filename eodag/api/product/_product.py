@@ -254,6 +254,15 @@ class EOProduct:
         props_validated = props_model.safe_validate(
             stac_properties, skip_invalid=skip_invalid
         )
+        try:
+            props_model.model_validate(
+                stac_properties
+            )  # triggers before_validate actions
+        except ValidationError as e:
+            logger.warning("Validation failed: %s", e)
+        props_validated = props_model.safe_validate(
+            stac_properties, skip_invalid=skip_invalid
+        )
         stac_extensions: set[str] = set(props_validated.get_conformance_classes())
 
         # skip invalid properties

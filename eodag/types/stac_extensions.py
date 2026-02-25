@@ -483,6 +483,83 @@ class FederationExtension(BaseStacExtension):
     field_name_prefix: Optional[str] = "federation"
 
 
+class EcmwfItemProperties(BaseModel):
+    """
+    STAC extension from ECMWF MARS keywords.
+
+    https://confluence.ecmwf.int/display/UDOC/Keywords+in+MARS+and+Dissemination+requests
+    """
+
+    ecmwf_accuracy: Annotated[str, Field(None)]
+    ecmwf_anoffset: Annotated[str, Field(None)]
+    ecmwf_area: Annotated[str, Field(None)]
+    ecmwf_bitmap: Annotated[str, Field(None)]
+    ecmwf_block: Annotated[str, Field(None)]
+    ecmwf_channel: Annotated[str, Field(None)]
+    ecmwf_class: Optional[str] = Field(default=None, alias="class")
+    ecmwf_database: Annotated[str, Field(None)]
+    ecmwf_date: Annotated[str, Field(None)]
+    ecmwf_diagnostic: Annotated[str, Field(None)]
+    ecmwf_direction: Annotated[str, Field(None)]
+    ecmwf_domain: Annotated[str, Field(None)]
+    ecmwf_duplicates: Annotated[str, Field(None)]
+    ecmwf_expect: Annotated[str, Field(None)]
+    ecmwf_expver: Annotated[str, Field(None)]
+    ecmwf_fcmonth: Annotated[str, Field(None)]
+    ecmwf_fcperiod: Annotated[str, Field(None)]
+    ecmwf_fieldset: Annotated[str, Field(None)]
+    ecmwf_filter: Annotated[str, Field(None)]
+    ecmwf_format: Annotated[str, Field(None)]
+    ecmwf_frame: Annotated[str, Field(None)]
+    ecmwf_frequency: Annotated[str, Field(None)]
+    ecmwf_grid: Annotated[str, Field(None)]
+    ecmwf_hdate: Annotated[str, Field(None)]
+    ecmwf_ident: Annotated[str, Field(None)]
+    ecmwf_interpolation: Annotated[str, Field(None)]
+    ecmwf_intgrid: Annotated[str, Field(None)]
+    ecmwf_iteration: Annotated[str, Field(None)]
+    ecmwf_latitude: Annotated[str, Field(None)]
+    ecmwf_levelist: Annotated[str, Field(None)]
+    ecmwf_levtype: Annotated[str, Field(None)]
+    ecmwf_longitude: Annotated[str, Field(None)]
+    ecmwf_lsm: Annotated[str, Field(None)]
+    ecmwf_method: Annotated[str, Field(None)]
+    ecmwf_number: Annotated[str, Field(None)]
+    ecmwf_obsgroup: Annotated[str, Field(None)]
+    ecmwf_obstype: Annotated[str, Field(None)]
+    ecmwf_origin: Annotated[str, Field(None)]
+    ecmwf_packing: Annotated[str, Field(None)]
+    ecmwf_padding: Annotated[str, Field(None)]
+    ecmwf_param: Annotated[str, Field(None)]
+    ecmwf_priority: Annotated[str, Field(None)]
+    ecmwf_product: Annotated[str, Field(None)]
+    ecmwf_range: Annotated[str, Field(None)]
+    ecmwf_refdate: Annotated[str, Field(None)]
+    ecmwf_reference: Annotated[str, Field(None)]
+    ecmwf_reportype: Annotated[str, Field(None)]
+    ecmwf_repres: Annotated[str, Field(None)]
+    ecmwf_resol: Annotated[str, Field(None)]
+    ecmwf_rotation: Annotated[str, Field(None)]
+    ecmwf_section: Annotated[str, Field(None)]
+    ecmwf_source: Annotated[str, Field(None)]
+    ecmwf_step: Annotated[str, Field(None)]
+    ecmwf_stream: Annotated[str, Field(None)]
+    ecmwf_system: Annotated[str, Field(None)]
+    ecmwf_target: Annotated[str, Field(None)]
+    ecmwf_time: Annotated[str, Field(None)]
+    ecmwf_truncation: Annotated[str, Field(None)]
+    ecmwf_type: Annotated[str, Field(None)]
+    ecmwf_use: Annotated[str, Field(None)]
+
+
+class EcmwfExtension(BaseStacExtension):
+    """STAC SAR extension."""
+
+    FIELDS: type[BaseModel] = EcmwfItemProperties
+
+    field_name_prefix: Optional[str] = "ecmwf"
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),
