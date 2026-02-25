@@ -905,12 +905,15 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     Child(Child(Root(), Fields('foo')), Fields('bar'))
     >>> string_to_jsonpath("$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
-    >>> string_to_jsonpath('$.foo[0][*]')
-    Child(Child(Child(Root(), Fields('foo')), Index(index=0)), Slice(start=None,end=None,step=None))
     >>> string_to_jsonpath("foo")
     'foo'
     >>> string_to_jsonpath("foo", force=True)
     Fields('foo')
+    >>> string_to_jsonpath('$.foo[0][*]') == Child(
+    ...     Child(Child(Root(), Fields('foo')), Index(0)),
+    ...     Slice(start=None, end=None, step=None),
+    ... )
+    True
 
     :param args: Last arg as input string value, to be converted
     :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
@@ -956,7 +959,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
                             # integer index
                             parsed_path = Child(
                                 parsed_path,
-                                Index(index=index),
+                                Index(index),
                             )
                     elif "[" in path_split:
                         # unsupported array field
