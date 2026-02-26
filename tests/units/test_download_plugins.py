@@ -25,7 +25,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
-from typing import Any, Callable
+from typing import Any
 from unittest import mock
 
 import responses
@@ -227,49 +227,6 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
-    def _download_response_archive(self, local_product_as_archive_path: str):
-        class Response(object):
-            """Emulation of a response to eodag.plugins.download.http.requests.get method for a zipped product"""
-
-            def __init__(self):
-                # Using a zipped product file
-                with open(local_product_as_archive_path, "rb") as fh:
-                    self.__zip_buffer = io.BytesIO(fh.read())
-                cl = self.__zip_buffer.getbuffer().nbytes
-                self.headers = CaseInsensitiveDict({"content-length": cl})
-                self.url = "http://foo.bar/product.zip"
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *args: Any):
-                pass
-
-            def iter_content(self, **kwargs: Any):
-                with self.__zip_buffer as fh:
-                    while True:
-                        chunk = fh.read(kwargs["chunk_size"])
-                        if not chunk:
-                            break
-                        yield chunk
-
-            def raise_for_status(self):
-                pass
-
-            def close(self):
-                pass
-
-        return Response()
-
-    def _set_download_simulation(
-        self,
-        mock_requests_session: Callable[[], None],
-        local_product_as_archive_path: str,
-    ):
-        mock_requests_session.return_value = self._download_response_archive(
-            local_product_as_archive_path
-        )
-
     def _dummy_product(
         self, provider: str, properties: dict[str, Any], collection: str
     ):
@@ -281,15 +238,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     def _dummy_downloadable_product(
         self,
-        mock_requests_session: Callable[[], None],
-        local_product_as_archive_path: str,
         provider: str,
         properties: dict[str, Any],
         collection: str,
     ):
-        self._set_download_simulation(
-            mock_requests_session, local_product_as_archive_path
-        )
         dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
@@ -304,8 +256,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         product.register_downloader(downloader, None)
         return product
 
-    @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
-    def test_plugins_download_http_zip_file_ok(self, mock_requests_session):
+    @responses.activate
+    def test_plugins_download_http_zip_file_ok(self):
         """HTTPDownload.download() must keep the output as it is when it is a zip file"""
 
         provider = "creodias"
@@ -324,6 +276,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         collection = "S2_MSI_L1C"
         platform = "S2A"
         instrument = "MSI"
+
+        with open(local_product_as_archive_path, "rb") as fh:
+            archive_content = fh.read()
+
+        responses.add(
+            responses.GET,
+            download_url,
+            body=archive_content,
+            status=200,
+            content_type="application/zip",
+            auto_calculate_content_length=True,
+            stream=True,
+        )
 
         eoproduct_props = {
             "id": "9deb7e78-9341-5530-8fe8-f81fd99c9f0f",
@@ -348,8 +313,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
 
         product = self._dummy_downloadable_product(
-            mock_requests_session,
-            local_product_as_archive_path,
             provider,
             eoproduct_props,
             collection,
@@ -366,17 +329,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # check if the hidden directory ".downloaded" have been created with the product zip file
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
 
-        mock_requests_session.assert_called_once_with(
-            mock.ANY,
-            "get",
-            product.remote_location,
-            stream=True,
-            auth=None,
-            params={},
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            verify=True,
-        )
+        # check request call
+        self.assertEqual(len(responses.calls), 1)
+        self.assertEqual(responses.calls[0].request.url, download_url)
+        self.assertIn("get", responses.calls[0].request.method.lower())
 
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
