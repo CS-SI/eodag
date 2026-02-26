@@ -21,9 +21,10 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from types import MethodType
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Tuple
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -560,11 +561,8 @@ class ECMWFSearch(PostJsonSearch):
             if "/" in _dc_qp.get("area", ""):
                 params["geometry"] = _dc_qp["area"].split("/")
 
-        params = {
-            k.removeprefix(ECMWF_PREFIX).removeprefix(f"{ECMWF_PREFIX[:-1]}_"): v
-            for k, v in params.items()
-            if v is not None
-        }
+        # Remove parameters prefix
+        params = self._params_remove_prefixes(params)
 
         # dates
         # check if default dates have to be added
@@ -622,6 +620,29 @@ class ECMWFSearch(PostJsonSearch):
             params.pop("location")
 
         return params
+
+    def _params_remove_prefixes(self, params: dict = {}):
+        """Search key as recursive to remove prefixs"""
+
+        # Remove parameter name prefix
+        def remove_prefixes(name: str, value: Any) -> Tuple[str, Any]:
+            new_name = name
+            if value is not None:
+                for prefix in [ECMWF_PREFIX, f"{ECMWF_PREFIX[:-1]}_"]:
+                    new_name = new_name.removeprefix(prefix)
+            return new_name, value
+
+        # Recursive dict/tree crawl
+        def dict_walk(data, on_item: Callable):
+            if isinstance(data, dict):
+                formatted = {}
+                for name in data:
+                    new_name, new_value = on_item(name, data[name])
+                    formatted[new_name] = dict_walk(new_value, on_item)
+                data = formatted
+            return data
+
+        return dict_walk(params, remove_prefixes)
 
     def _check_date_params(
         self, keywords: dict[str, Any], collection: Optional[str]
@@ -754,9 +775,8 @@ class ECMWFSearch(PostJsonSearch):
             collection, deepcopy(processed_filters)
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
-        for k, v in {**default_values, **kwargs}.items():
-            key = k.removeprefix(ECMWF_PREFIX).removeprefix(f"{ECMWF_PREFIX[:-1]}_")
-
+        params = self._params_remove_prefixes({**default_values, **kwargs})
+        for key, value in params.items():
             if key not in ALLOWED_KEYWORDS | {
                 START,
                 END,
@@ -766,7 +786,7 @@ class ECMWFSearch(PostJsonSearch):
                     f"'{key}' is not a queryable parameter for {self.provider}", {key}
                 )
 
-            formated_filters[key] = v
+            formated_filters[key] = value
 
         # we use non empty filters as default to integrate user inputs
         # it is needed because pydantic json schema does not represent "value"
