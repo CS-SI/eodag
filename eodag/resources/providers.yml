@@ -5720,6 +5720,7 @@
     type: TokenAuth
     matching_url: https://api.eumetsat.int
     auth_uri: 'https://api.eumetsat.int/token'
+    auth_tuple: [username, password]
     auth_error_code: 401
     req_data:
       grant_type: client_credentials

@@ -69,6 +69,8 @@ class TokenAuth(Authentication):
           keys/value pairs that should be added to the headers for token retrieve only
         * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
           access token with a refresh token
+        * :attr:`~eodag.config.PluginConfig.auth_tuple` (``list[str]``) : If expected, list of keys to be sent as a
+          tuple through the 'auth' parameter of the request
         * :attr:`~eodag.config.PluginConfig.token_type` (``str``): type of the token (``json``
           or ``text``); default: ``text``
         * :attr:`~eodag.config.PluginConfig.token_key` (``str``): (mandatory if token_type=json)
@@ -301,17 +303,15 @@ class TokenAuth(Authentication):
 
         set_request_data(call_refresh=False)
 
-        # credentials as auth tuple if possible
-        req_kwargs["auth"] = (
-            (
-                self.config.credentials["username"],
-                self.config.credentials["password"],
+        # credentials as auth tuple if needed
+        auth_tuple = getattr(self.config, "auth_tuple", None)
+        if auth_tuple and all(k in self.config.credentials for k in auth_tuple):
+            req_kwargs["auth"] = tuple(self.config.credentials[k] for k in auth_tuple)
+        elif auth_tuple:
+            missing_keys = [k for k in auth_tuple if k not in self.config.credentials]
+            raise MisconfiguredError(
+                f"Missing credentials inputs for provider {self.provider}: {missing_keys}"
             )
-            if all(
-                k in self.config.credentials.keys() for k in ["username", "password"]
-            )
-            else None
-        )
 
         return session.request(
             method=method,
