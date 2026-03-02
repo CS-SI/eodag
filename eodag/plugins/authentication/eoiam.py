@@ -5,7 +5,7 @@ from lxml import html
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
 
 
 class EOIAMAuth(Authentication):
@@ -100,13 +100,13 @@ class EOIAMAuth(Authentication):
         resp_post = self.session.post(saml_url, data=saml_data, allow_redirects=False)
 
         if not resp_post.is_redirect:
-            raise MisconfiguredError(
+            raise AuthenticationError(
                 f"Unexpected response after SAML login: {resp_post.status_code}"
             )
 
         final_url = resp_post.headers.get("Location")
         if not final_url:
-            raise MisconfiguredError("Final redirect URL not found after SAML login")
+            raise AuthenticationError("Final redirect URL not found after SAML login")
 
         resp_final = self.session.get(final_url, stream=True)
 
@@ -116,7 +116,7 @@ class EOIAMAuth(Authentication):
             error_text = resp_final.text
 
             if "wants to access your account" in error_text:
-                raise MisconfiguredError(
+                raise AuthenticationError(
                     "Consent required: please log in to the EOIAM portal and grant consent to EO Data Access Gateway"
                 )
 
@@ -124,11 +124,11 @@ class EOIAMAuth(Authentication):
                 "not yet performed the necessary steps in order to access this data."
                 in error_text
             ):
-                raise MisconfiguredError(
+                raise AuthenticationError(
                     "Data access request required: please log in to the EOIAM portal and request access to the data"
                 )
 
-            raise MisconfiguredError("Unexpected HTML response after SAML login")
+            raise AuthenticationError("Unexpected HTML response after SAML login")
 
         return resp_final
 

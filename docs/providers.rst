@@ -937,6 +937,38 @@ No credentials are needed
 
 No credentials are needed
 
+**eocat**
+----------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      EOCAT (Earth Observation Catalogue) providing access to ESA Earth observation missions and climate monitoring datasets.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://climate.esa.int/en/
+        :color: primary
+        :outline:
+        :tooltip: EOCAT website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account `here <https://www.ecmwf.int/user/login>`__.
+
+  Then use *email* as ``username`` and *key* as ``password`` from `here <https://eoiam-idp.eo.esa.int/>`__ in eodag credentials.
+  Consent is also required to access data for certain datasets.
+
 ----
 
 **EUMETSAT**

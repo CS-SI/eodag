@@ -217,7 +217,7 @@ FEDEO_CEDA_SEARCH_ARGS = [
     None,
 ]
 
-eocat_SEARCH_ARGS = [
+EOCAT_SEARCH_ARGS = [
     "eocat",
     "GOCE_Thermosphere_Data",
     "2009-03-17",
@@ -458,8 +458,8 @@ class TestEODagEndToEnd(EndToEndBase):
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_eocat(self):
-        self.eodag.discover_product_types(provider="eocat")
-        products = self.execute_search(*eocat_SEARCH_ARGS, check_product=False)
+        self.eodag.discover_collections(provider="eocat")
+        products = self.execute_search(*EOCAT_SEARCH_ARGS, check_product=False)
         expected_filename = "{}".format(products[2].properties["title"])
         self.execute_download(products[2], expected_filename)
 

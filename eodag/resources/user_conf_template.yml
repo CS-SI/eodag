@@ -145,7 +145,6 @@ ecmwf:
 eocat:
     priority: # Lower value means lower priority (Default: 0)
     auth:
-        output_dir:
         credentials:
             username:
             password:
