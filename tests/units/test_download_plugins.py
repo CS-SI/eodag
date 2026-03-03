@@ -55,7 +55,6 @@ from tests.context import (
     path_to_uri,
     uri_to_path,
 )
-from tests.mocks import ResponseFile
 
 
 class BaseDownloadPluginTest(unittest.TestCase):
@@ -265,41 +264,6 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
-
-    def _download_response_archive(self, local_product_as_archive_path: str):
-        class Response(object):
-            """Emulation of a response to eodag.plugins.download.http.requests.get method for a zipped product"""
-
-            def __init__(self):
-                # Using a zipped product file
-                with open(local_product_as_archive_path, "rb") as fh:
-                    self.__zip_buffer = io.BytesIO(fh.read())
-                cl = self.__zip_buffer.getbuffer().nbytes
-                self.headers = CaseInsensitiveDict({"Content-Length": cl})
-                self.url = "http://foo.bar/product.zip"
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *args: Any):
-                pass
-
-            def iter_content(self, **kwargs: Any):
-                with self.__zip_buffer as fh:
-                    while True:
-                        chunk = fh.read(kwargs["chunk_size"])
-                        if not chunk:
-                            break
-                        yield chunk
-
-            def raise_for_status(self):
-                pass
-
-            def close(self):
-                pass
-
-        return Response()
-
     def _dummy_product(
         self, provider: str, properties: dict[str, Any], collection: str
     ):
