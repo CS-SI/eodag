@@ -557,7 +557,7 @@ class EOProduct:
                         f"Failed to get resource with authentication: {e} \n \
                         Failed to get resource even without authentication. {e_no_auth}"
                     )
-                    return str(e)
+                    return ""
 
             # close progress bar if needed
             if close_progress_callback:
