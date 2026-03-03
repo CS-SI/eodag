@@ -6571,7 +6571,6 @@
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
-    skip_head_request: true
   auth: !plugin
     type: EOIAMAuth
     matching_url: https://[-\w\.]+.eo.esa.int

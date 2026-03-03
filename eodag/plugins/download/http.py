@@ -1095,16 +1095,7 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        skip_head = getattr(self.config, "skip_head_request", False)
-
-        if skip_head:
-            total_size = sum(
-                int(asset["file:size"])
-                for asset in assets_values
-                if asset.get("file:size") is not None
-            )
-        else:
-            total_size = self._get_asset_sizes(assets_values, executor, auth, params)
+        total_size = self._get_asset_sizes(assets_values, executor, auth, params)
 
         progress_callback.reset(total=total_size or None)
 
@@ -1388,6 +1379,17 @@ class HTTPDownload(Download):
         params: Optional[dict[str, str]],
         zipped: bool = False,
     ) -> int:
+
+        # Try to get sizes from metadata first
+        sizes_from_metadata = [
+            int(asset["file:size"])
+            for asset in assets_values
+            if asset.get("file:size") is not None
+        ]
+        # If available, use the sum of sizes from metadata to avoid making HEAD requests for each asset
+        if sizes_from_metadata:
+            return sum(sizes_from_metadata)
+
         total_size = 0
 
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
