@@ -7,6 +7,11 @@ EODAG uses a two-level plugin system. *Plugin topics* are abstract interfaces fo
 like *Search* or *Download*. EODAG providers are implementations of at least one plugin topic. The more plugin topics
 are implemented by a provider, the more functionality of eodag are available for this provider.
 
+.. image:: _static/plugins_architecture.png
+   :width: 800
+   :alt: EODAG plugins architecture
+   :class: no-scaled-link
+
 Plugin Management
 ^^^^^^^^^^^^^^^^^
 
