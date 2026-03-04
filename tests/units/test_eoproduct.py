@@ -780,7 +780,7 @@ class TestEOProduct(EODagTestBase):
         self.assertNotIn("eo:cloud_cover", prod_dict["properties"])
         self.assertNotIn("mgrs:utm_zone", prod_dict["assets"]["foo"])
         self.assertFalse(
-            any("eo" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("eo/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         self.assertFalse(
             any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))

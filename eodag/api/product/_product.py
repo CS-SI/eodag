@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import geojson
 import orjson
+import pydantic_core
 import requests
 from pystac import Item
 from requests import RequestException
@@ -51,6 +52,7 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
+    OFFLINE_STATUS,
     ONLINE_STATUS,
 )
 from eodag.utils import (
@@ -243,7 +245,9 @@ class EOProduct:
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
             "federation:backends": [self.provider],
-            "storage:tier": self.properties["order:status"],
+            "storage:tier": self.properties["order:status"]
+            if "order:status" in self.properties
+            else OFFLINE_STATUS,
         }
         stac_providers = self.properties.get("providers", [])
         if not any("host" in p.get("roles", []) for p in stac_providers):
@@ -258,7 +262,7 @@ class EOProduct:
             props_model.model_validate(
                 stac_properties
             )  # triggers before_validate actions
-        except ValidationError as e:
+        except pydantic_core._pydantic_core.ValidationError as e:
             logger.warning("Validation failed: %s", e)
         props_validated = props_model.safe_validate(
             stac_properties, skip_invalid=skip_invalid
