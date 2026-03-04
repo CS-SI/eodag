@@ -738,6 +738,11 @@ class HTTPDownload(Download):
         if not filename:
             # default filename extracted from path
             filename = str(os.path.basename(self.stream.url))
+
+            # remove http get params and anchors
+            filename = filename.split("?")[0]
+            filename = filename.split("#")[0]
+
             filename_extension = os.path.splitext(filename)[1]
             if not filename_extension:
                 if content_type := getattr(product, "headers", {}).get("Content-Type"):
