@@ -751,12 +751,8 @@ class HTTPDownload(Download):
             filename = str(os.path.basename(product._stream.url))
 
             # remove http get params and anchors
-            pos = filename.find("?")
-            if pos > 0:
-                filename = filename[0:pos]
-            pos = filename.find("#")
-            if pos > 0:
-                filename = filename[0:pos]
+            filename = filename.split("?")[0]
+            filename = filename.split("#")[0]
 
             filename_extension = os.path.splitext(filename)[1]
             if not filename_extension:
