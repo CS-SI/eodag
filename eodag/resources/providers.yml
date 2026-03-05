@@ -4885,8 +4885,6 @@
       result_type: json
       results_entry: '$.collections[*]'
       generic_collection_id: '$.id'
-      generic_collection_parsable_properties:
-        collection: '$.id'
       generic_collection_parsable_metadata:
         description: '$.description'
         keywords: '{$.keywords#csv_list}'
