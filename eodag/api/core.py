@@ -2238,7 +2238,7 @@ class EODataAccessGateway:
                 if search_param in kwargs and field_info.alias:
                     if isinstance(field_info.alias, AliasChoices):
                         kwargs_alias[
-                            str(field_info.alias.convert_to_aliases()[0][0])
+                            str(field_info.alias.choices[0])
                         ] = kwargs_alias.pop(search_param)
                     else:
                         kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)

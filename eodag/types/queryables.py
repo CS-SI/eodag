@@ -70,7 +70,7 @@ class CommonQueryables(BaseModelCustomJsonSchema):
         for name, field_info in cls.model_fields.items():
             if field_info.alias:
                 if isinstance(field_info.alias, AliasChoices):
-                    aliases = [a[0] for a in field_info.alias.convert_to_aliases()]
+                    aliases = field_info.alias.choices
                     if value in aliases:
                         return name
                 else:
@@ -274,7 +274,7 @@ class QueryablesDict(UserDict[str, Any]):
                 alias_str = (
                     "'alias': '<span style='color:grey'>AliasChoices(choices=[</span>'"
                     + "'<span style='color:black'>"
-                    + str(alias.convert_to_aliases())
+                    + '", "'.join([str(c) for c in alias.choices])
                     + "</span>'"
                     + "'<span style='color:grey'>])</span>',&ensp;"
                 )
