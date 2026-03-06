@@ -39,7 +39,7 @@ dependencies = [
     "click",
     "geojson",
     "importlib_metadata >= 5.0",
-    "jsonpath-ng",
+    "jsonpath-ng <= 1.7.0",
     "lxml",
     "orjson",
     "pydantic >= 2.1.0, != 2.10.0",
