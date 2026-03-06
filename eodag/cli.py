@@ -243,6 +243,15 @@ def version() -> None:
     "--items",
     type=int,
     show_default=False,
+    help="(deprecated, use limit instead) The number of items to return. Eodag is bound to "
+    "whatever limitation the providers have on the number of results they return. This option "
+    "allows to control how many items eodag should request "
+    f"[default: {DEFAULT_LIMIT}]",
+)
+@click.option(
+    "--limit",
+    type=int,
+    show_default=False,
     help="The number of items to return. Eodag is bound to whatever limitation the "
     "providers have on the number of results they return. This option allows "
     "to control how many items eodag should request "
@@ -363,7 +372,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         for cruncher, argname, argval in cruncher_args:
             cruncher_args_dict.setdefault(cruncher, {}).setdefault(argname, argval)
 
-    limit = kwargs.pop("items")
+    limit = kwargs.pop("limit") or kwargs.pop("items")
     page = kwargs.pop("page") or 1
 
     gateway = EODataAccessGateway(
