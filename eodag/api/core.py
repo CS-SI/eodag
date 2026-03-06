@@ -1082,6 +1082,7 @@ class EODataAccessGateway:
         self,
         page: int = DEFAULT_PAGE,
         limit: Optional[int] = DEFAULT_LIMIT,
+        items_per_page: Optional[int] = DEFAULT_LIMIT,
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1105,6 +1106,9 @@ class EODataAccessGateway:
                      :meth:`eodag.api.search_result.SearchResult.next_page` instead)
         :param limit: (optional) The number of results that must appear in one single
                                page. If ``None``, the maximum number possible will be used.
+        :param items_per_page: (optional) The number of results that must appear in one single
+                               page. If ``None``, the maximum number possible will be used.
+                               (**deprecated**, use ``limit`` instead)
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
                               True, the error is raised
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1182,7 +1186,11 @@ class EODataAccessGateway:
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
 
-            # add appropriate limit value
+            # add appropriate limit value, use deprecated items_per_page if no limit given
+            if (not limit or limit == DEFAULT_LIMIT) and (
+                items_per_page and items_per_page != DEFAULT_LIMIT
+            ):
+                limit = items_per_page
             search_kwargs["limit"] = (
                 limit
                 if limit is not None
@@ -1225,6 +1233,7 @@ class EODataAccessGateway:
     def search_iter_page(
         self,
         limit: int = DEFAULT_LIMIT,
+        items_per_page: Optional[int] = DEFAULT_LIMIT,
         start: Optional[str] = None,
         end: Optional[str] = None,
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
@@ -1237,6 +1246,8 @@ class EODataAccessGateway:
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param limit: (optional) The number of results requested per page
+        :param items_per_page: (optional) The number of results requested per page
+                               (**deprecated**, use ``limit`` instead)
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
@@ -1265,6 +1276,11 @@ class EODataAccessGateway:
         search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
+        # use deprecated items_per_page if limit is not given
+        if (not limit or limit == DEFAULT_LIMIT) and (
+            items_per_page and items_per_page != DEFAULT_LIMIT
+        ):
+            limit = items_per_page
         for i, search_plugin in enumerate(search_plugins):
             try:
                 return self.search_iter_page_plugin(
@@ -1294,6 +1310,7 @@ class EODataAccessGateway:
         self,
         search_plugin: Union[Search, Api],
         limit: int = DEFAULT_LIMIT,
+        items_per_page: Optional[int] = DEFAULT_LIMIT,
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
@@ -1302,12 +1319,19 @@ class EODataAccessGateway:
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
         :param limit: (optional) The number of results requested per page
+        :param items_per_page: (optional) The number of results requested per page
+                               (**deprecated**, use ``limit`` instead)
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatibles with the provider
         :param search_plugin: search plugin to be used
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
+        # use deprecated items_per_page if limit is not given
+        if (not limit or limit == DEFAULT_LIMIT) and (
+            items_per_page and items_per_page != DEFAULT_LIMIT
+        ):
+            limit = items_per_page
         kwargs.update(
             page=1,
             limit=limit,
@@ -1346,6 +1370,7 @@ class EODataAccessGateway:
     def search_all(
         self,
         limit: Optional[int] = None,
+        items_per_page: Optional[int] = None,
         start: Optional[str] = None,
         end: Optional[str] = None,
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
@@ -1369,6 +1394,8 @@ class EODataAccessGateway:
                                matching the search criteria. If this number is not
                                available, a default value of 50 is used instead.
                                limit can also be set to any arbitrary value.
+        :param items_per_page: (optional) The number of results requested internally per page
+                               (**deprecated**, use ``limit`` instead)
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
@@ -1396,7 +1423,9 @@ class EODataAccessGateway:
         """
         # remove unwanted count
         kwargs.pop("count", None)
-
+        # use deprecated items_per_page if limit is not given
+        if not limit and items_per_page:
+            limit = items_per_page
         # First search
         search_results = self.search(
             limit=limit,
