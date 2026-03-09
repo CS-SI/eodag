@@ -812,3 +812,55 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(1, len(result))
         self.assertEqual("123-456", result[0].properties["id"])
         self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.post",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
+    )
+    def test_core_search_geodes(
+        self,
+        mock_fetch_collections_list,
+        mock_post,
+    ):
+        """Search geodes with mocked response"""
+        geodes_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "geodes_search.json"
+        )
+        with open(geodes_resp_search_file, encoding="utf-8") as f:
+            geodes_resp_search_file_content = json.load(f)
+
+        mock_post.return_value = MockResponse(geodes_resp_search_file_content)
+
+        search_result = self.dag.search(
+            collection="S2_MSI_L1C", provider="geodes", count=True
+        )
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 37273723)
+
+        product = search_result[0]
+        self.assertEqual(product.provider, "geodes")
+        self.assertEqual(
+            product.properties["id"],
+            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035",
+        )
+        self.assertEqual(
+            product.properties["title"],
+            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035",
+        )
+        self.assertAlmostEqual(product.properties["eo:cloud_cover"], 67.55, places=2)
+        self.assertEqual(
+            product.properties["start_datetime"], "2025-04-02T17:57:41.024Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2025-04-02T17:57:41.024Z")
+        self.assertEqual(product.properties["sat:relative_orbit"], 141)
+        self.assertEqual(product.properties["sat:absolute_orbit"], 51075)
+        self.assertEqual(product.properties["sat:orbit_state"], "descending")
+        self.assertEqual(product.properties["grid:code"], "MGRS-14ULD")
+        self.assertIsNotNone(product.geometry)
+        # download link from assets
+        self.assertIn("api/download", product.properties.get("eodag:download_link", ""))
+        # quicklook from assets
+        self.assertIn("api/quicklook", product.properties.get("eodag:quicklook", ""))
