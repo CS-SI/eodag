@@ -39,7 +39,8 @@ dependencies = [
     "click",
     "geojson",
     "importlib_metadata >= 5.0",
-    "jsonpath-ng <= 1.7.0",
+    # temporarily pinned, see https://github.com/h2non/jsonpath-ng/issues/216
+    "jsonpath-ng < 1.8.0",
     "lxml",
     "orjson",
     "pydantic >= 2.1.0, != 2.10.0",
