@@ -97,6 +97,7 @@ GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
 #: List of known STAC search plugins. Required to complete plugin configuration with STAC plugins specific features.
 STAC_SEARCH_PLUGINS = [
+    "GeodesSearch",
     "StacSearch",
     "StacListAssets",
     "StaticStacSearch",
