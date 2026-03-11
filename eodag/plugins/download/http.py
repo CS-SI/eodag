@@ -1137,6 +1137,7 @@ class HTTPDownload(Download):
             # Make the request inside the generator
             partial_result = b""
             continue_requests = True
+            retries = 0
             while continue_requests:
                 continue_requests = False
                 headers = USER_AGENT
@@ -1207,12 +1208,21 @@ class HTTPDownload(Download):
                         )
                         continue_requests = True
                     else:
-                        logger.error(
-                            "Unexpected error at download of asset %s: %s",
-                            asset["href"],
-                            e,
-                        )
-                        raise DownloadError(e)
+                        if retries > 2:
+                            logger.error(
+                                "Unexpected error at download of asset %s: %s",
+                                asset["href"],
+                                e,
+                            )
+                            raise DownloadError(e)
+                        else:
+                            logger.warning(
+                                "Retry because of unexpected error at download of asset %s: %s",
+                                asset["href"],
+                                e,
+                            )
+                            continue_requests = True
+                            retries += 1
                 except RequestException as e:
                     self._handle_asset_exception(e, asset)
 
