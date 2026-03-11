@@ -2,7 +2,7 @@ import json
 import sqlite3
 from typing import Any
 
-type CollectionDict = dict[str, Any]
+CollectionDict = dict[str, Any]
 
 
 def load_spatialite(connection: sqlite3.Connection) -> None:
@@ -30,18 +30,18 @@ def create_collections_table(cur: sqlite3.Cursor) -> None:
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS collections (
-            key INTEGER PRIMARY KEY AUTOINCREMENT,
-            content TEXT NOT NULL CHECK (json_valid(content)),
-            id TEXT GENERATED ALWAYS AS (json_extract(content, '$.id')) STORED UNIQUE,
+            key INTEGER PRIMARY KEY,
+            content JSONB NOT NULL CHECK (json_valid(content, 4)),
+            id TEXT GENERATED ALWAYS AS (jsonb_extract(content, '$.id')) STORED UNIQUE,
             datetime TEXT GENERATED ALWAYS AS (
-                COALESCE(json_extract(content, '$.extent.temporal.interval[0][0]'), '-infinity')
+                COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][0]'), '-infinity')
             ) STORED
                 CHECK (
                     datetime IN ('-infinity', 'infinity')
                     OR datetime(datetime) IS NOT NULL
                 ),
             end_datetime TEXT GENERATED ALWAYS AS (
-                COALESCE(json_extract(content, '$.extent.temporal.interval[0][1]'), 'infinity')
+                COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][1]'), 'infinity')
             ) STORED
                 CHECK (
                     end_datetime IN ('-infinity', 'infinity')
@@ -54,49 +54,29 @@ def create_collections_table(cur: sqlite3.Cursor) -> None:
 
 def create_bbox_to_geometry_triggers(cur: sqlite3.Cursor) -> None:
     """Create triggers that derive geometry from content.extent.spatial.bbox[0]."""
-    cur.execute(
-        """
-        CREATE TRIGGER IF NOT EXISTS tr_collections_geom_after_insert
-        AFTER INSERT ON collections
-        FOR EACH ROW
+    _SET_GEOMETRY_BODY = """
         WHEN json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array'
         BEGIN
             UPDATE collections
             SET geometry = CastToMulti(
                 BuildMbr(
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][0]') AS REAL),
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][1]') AS REAL),
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][2]') AS REAL),
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL),
+                    CAST(jsonb_extract(NEW.content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                    CAST(jsonb_extract(NEW.content, '$.extent.spatial.bbox[0][1]') AS REAL),
+                    CAST(jsonb_extract(NEW.content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                    CAST(jsonb_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL),
                     4326
                 )
             )
             WHERE key = NEW.key;
-        END;
-        """
-    )
+        END;"""
 
-    cur.execute(
-        """
-        CREATE TRIGGER IF NOT EXISTS tr_collections_geom_after_update_content
-        AFTER UPDATE OF content ON collections
-        FOR EACH ROW
-        WHEN json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array'
-        BEGIN
-            UPDATE collections
-            SET geometry = CastToMulti(
-                BuildMbr(
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][0]') AS REAL),
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][1]') AS REAL),
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][2]') AS REAL),
-                    CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL),
-                    4326
-                )
-            )
-            WHERE key = NEW.key;
-        END;
-        """
-    )
+    for name, event in [
+        ("tr_collections_geom_after_insert", "AFTER INSERT ON collections"),
+        ("tr_collections_geom_after_update_content", "AFTER UPDATE OF content ON collections"),
+    ]:
+        cur.execute(
+            f"CREATE TRIGGER IF NOT EXISTS {name} {event} FOR EACH ROW {_SET_GEOMETRY_BODY}"
+        )
 
     cur.execute(
         """
@@ -188,7 +168,7 @@ def update_collections(
     cur.executemany(
         f"""
         INSERT INTO collections (content)
-        VALUES (?)
+        VALUES (jsonb(?))
         {on_conflict}
         """,
         rows,
