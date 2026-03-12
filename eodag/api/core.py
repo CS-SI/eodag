@@ -51,6 +51,7 @@ from eodag.config import (
     load_default_config,
     load_yml_config,
 )
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -112,11 +113,19 @@ class EODataAccessGateway:
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
     ) -> None:
+        # handle database initialization
+        self.db = SQLiteDatabase.create_with_dag(self)
+        self.db.prepare_database()
+
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
         collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
-        self.collections_config = self._collections_config_init(collections_config_dict)
+
+        collections_config_obj = self._collections_config_init(collections_config_dict)
+        self.db.upsert_collections(collections_config_obj)
+
+        self.collections_config = collections_config_obj
 
         self._providers = ProvidersDict.from_configs(load_default_config())
 
