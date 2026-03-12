@@ -237,7 +237,7 @@ def version() -> None:
     type=click.Path(dir_okay=False, writable=True, readable=False),
     default="search_results.geojson",
     help="Path to the file where to store search results (.geojson extension will be "
-    "automatically appended to the filename). DEFAULT: search_results.geojson",
+    "automatically appended to the filename). [default: search_results.geojson]",
 )
 @click.option(
     "--items",
@@ -512,7 +512,7 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
     default="ext_collections.json",
     help="Path to the file where to store external collections configuration "
     "(.json extension will be automatically appended to the filename). "
-    "DEFAULT: ext_collections.json",
+    "[default: ext_collections.json]",
 )
 @click.pass_context
 def discover_col(ctx: Context, **kwargs: Any) -> None:
@@ -559,7 +559,7 @@ Examples:
     "-f",
     "--conf",
     type=click.Path(exists=True),
-    help="File path to the user configuration file with its credentials, default is ~/.config/eodag/eodag.yml",
+    help="File path to the user configuration file with its credentials [default: ~/.config/eodag/eodag.yml]",
 )
 @click.option(
     "--quicklooks",
@@ -570,7 +570,7 @@ Examples:
 @click.option(
     "--output-dir",
     type=click.Path(dir_okay=True, file_okay=False),
-    help="Products or quicklooks download directory (Default: local temporary directory)",
+    help="Products or quicklooks download directory [default: local temporary directory]",
 )
 @click.option(
     "--max-workers",
