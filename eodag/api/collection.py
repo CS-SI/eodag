@@ -440,9 +440,9 @@ class Collection(StacCollection):
                                 default_json is not None
                                 and error["loc"][1] in default_json
                             ):
-                                values_dict[wrong_field][
-                                    error["loc"][1]
-                                ] = default_json[error["loc"][1]]
+                                values_dict[wrong_field][error["loc"][1]] = (
+                                    default_json[error["loc"][1]]
+                                )
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])
@@ -709,3 +709,15 @@ class CollectionsList(UserList[Collection]):
             )
             + "</tbody></table></details>"
         )
+
+    def get(self, collection: str) -> Optional[Collection]:
+        """
+        Get an instance of :class:`~eodag.api.collection.Collection`.
+
+        :param collection: The collection name.
+        :return: An instance of :class:`~eodag.api.collection.Collection` if the given id is found, otherwise None.
+        """
+        for coll in self:
+            if collection == coll.id:
+                return coll
+        return None
