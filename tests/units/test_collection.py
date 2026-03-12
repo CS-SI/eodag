@@ -799,7 +799,7 @@ class TestCollection(unittest.TestCase):
             str(context.exception),
         )
 
-    def test_search_result_repr_html(self):
+    def test_collection_repr_html(self):
         """Collection html repr must be correctly formatted"""
         sr_repr = html.fromstring(self.collection._repr_html_())
         self.assertIn("Collection", sr_repr.xpath("//thead/tr/td")[0].text)
@@ -812,7 +812,7 @@ class TestCollectionsDict(unittest.TestCase):
         super().setUpClass()
         cls.collections_dict = CollectionsDict([Collection(id="foo")])
 
-    def test_search_result_is_dict_like(self):
+    def test_collections_dict_is_dict_like(self):
         """CollectionsDict must provide a dict interface"""
         self.assertIsInstance(self.collections_dict, UserDict)
 
@@ -824,11 +824,16 @@ class TestCollectionsList(unittest.TestCase):
         super().setUpClass()
         cls.collections_list = CollectionsList([Collection(id="foo")])
 
-    def test_search_result_is_list_like(self):
+    def test_collections_list_is_list_like(self):
         """CollectionsList must provide a list interface"""
         self.assertIsInstance(self.collections_list, UserList)
 
-    def test_search_result_repr_html(self):
+    def test_collections_list_get(self):
+        """CollectionsList.get() must return a collection of the list if the given id exists or None"""
+        self.assertEqual(self.collections_list.get("foo"), Collection(id="foo"))
+        self.assertIsNone(self.collections_list.get("bar"))
+
+    def test_collections_list_repr_html(self):
         """CollectionsList html repr must be correctly formatted"""
         sr_repr = html.fromstring(self.collections_list._repr_html_())
         self.assertIn("CollectionsList", sr_repr.xpath("//details/summary")[0].text)
