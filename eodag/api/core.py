@@ -93,6 +93,7 @@ if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product import EOProduct
+    from eodag.databases.base import Database
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
@@ -115,10 +116,10 @@ class EODataAccessGateway:
         self,
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
+        db: Optional[Database] = None,
     ) -> None:
         # handle database initialization
-        self.db = SQLiteDatabase.create_with_dag(self)
-        self.db.prepare_database()
+        self.db = db if db is not None else SQLiteDatabase.create_with_dag(self)
 
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
