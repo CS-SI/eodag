@@ -369,7 +369,7 @@ class SearchResult(UserList[EOProduct]):
             #  or if the current one returned less than the maximum number of items asked for.
             if (
                 new_results.next_page_token is None
-                or len(new_results) < new_results.search_params["items_per_page"]
+                or len(new_results) < new_results.search_params["limit"]
             ):
                 break
             old_results = new_results

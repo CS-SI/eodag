@@ -152,7 +152,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         products = self.mundi_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.mundi_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -194,7 +194,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
             prep=PreparedSearch(
                 count=False,
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.mundi_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -280,7 +280,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         products = self.peps_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.peps_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -320,7 +320,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             prep=PreparedSearch(
                 count=False,
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.peps_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -376,7 +376,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             self.peps_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
-                    items_per_page=2,
+                    limit=2,
                     auth_plugin=self.peps_auth_plugin,
                 ),
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
@@ -404,7 +404,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             self.peps_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
-                    items_per_page=2,
+                    limit=2,
                     auth_plugin=self.peps_auth_plugin,
                 ),
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
@@ -1031,7 +1031,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                     products, estimate = self.awseos_search_plugin.query(
                         prep=PreparedSearch(
                             page=1,
-                            items_per_page=2,
+                            limit=2,
                             auth_plugin=self.awseos_auth_plugin,
                         ),
                         raise_errors=True,
@@ -1054,7 +1054,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 products, estimate = self.awseos_search_plugin.query(
                     prep=PreparedSearch(
                         page=1,
-                        items_per_page=2,
+                        limit=2,
                         auth_plugin=self.awseos_auth_plugin,
                     ),
                     **self.search_criteria_s2_msi_l1c,
@@ -1074,7 +1074,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         products = self.awseos_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.awseos_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -1142,7 +1142,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             prep=PreparedSearch(
                 count=False,
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.awseos_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -1409,7 +1409,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
-                    items_per_page=10,
+                    limit=10,
                     auth_plugin=auth_plugin,
                 ),
                 **search_criteria,
@@ -1574,7 +1574,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         products = self.onda_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth=self.onda_auth_plugin,
             ),
             # custom query argument that must be mapped using discovery_metata.search_param
@@ -1634,7 +1634,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.onda_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth=self.onda_auth_plugin,
             ),
             # custom query argument that must be mapped using discovery_metata.search_param
@@ -1686,7 +1686,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         products = self.onda_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth=self.onda_auth_plugin,
             ),
             # custom query argument that must be mapped using discovery_metata.search_param
@@ -1768,7 +1768,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             self.onda_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
-                    items_per_page=2,
+                    limit=2,
                     auth=self.onda_auth_plugin,
                 ),
                 # custom query argument that must be mapped using discovery_metata.search_param
@@ -1914,7 +1914,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, "earth_search")
 
         products = search_plugin.query(
-            prep=PreparedSearch(page=1, items_per_page=2),
+            prep=PreparedSearch(page=1, limit=2),
             **self.search_criteria_s2_msi_l1c,
         )
         self.assertEqual(
@@ -1957,7 +1957,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         products = search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=3,
+                limit=3,
             )
         )
         self.assertEqual(
@@ -4005,7 +4005,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.wekeomain_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
-                items_per_page=2,
+                limit=2,
                 auth_plugin=self.wekeomain_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
@@ -4030,7 +4030,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             self.wekeomain_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
-                    items_per_page=2,
+                    limit=2,
                     auth_plugin=self.wekeomain_auth_plugin,
                 ),
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
@@ -4058,7 +4058,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             self.wekeomain_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
-                    items_per_page=2,
+                    limit=2,
                     auth_plugin=self.wekeomain_auth_plugin,
                 ),
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},

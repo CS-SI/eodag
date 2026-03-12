@@ -21,6 +21,7 @@ import logging
 from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
+from pydantic import AliasChoices
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
@@ -489,9 +490,20 @@ class Search(PluginTopic):
             )
             if not isinstance(eodag_queryable_field_info, FieldInfo):
                 continue
-            if eodag_queryable_field_info.is_required() or (
-                (eodag_queryable_field_info.alias or k) in metadata_mapping
-            ):
+            queryable_alias = eodag_queryable_field_info.alias
+            if isinstance(queryable_alias, AliasChoices):
+                in_metadata = (
+                    any(
+                        [
+                            a[0] in metadata_mapping
+                            for a in queryable_alias.convert_to_aliases()
+                        ]
+                    )
+                    or k in metadata_mapping
+                )
+            else:
+                in_metadata = (queryable_alias or k) in metadata_mapping
+            if eodag_queryable_field_info.is_required() or in_metadata:
                 queryables[k] = v
         return queryables
 

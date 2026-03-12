@@ -236,8 +236,8 @@ return a list of mocked EOProducts on search requests.
                   },
                **kwargs
             }
-            ) for i in range(0, prep.items_per_page)],
-            prep.items_per_page if prep.count else None
+            ) for i in range(0, prep.limit)],
+            prep.limit if prep.count else None
          )
 
 4. Create a `pyproject.toml` file in the package folder and paste in it the following

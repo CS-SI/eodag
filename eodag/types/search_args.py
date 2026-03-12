@@ -27,7 +27,7 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 
 from eodag.types.bbox import BBox
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 from eodag.utils.exceptions import ValidationError
 
 NumType = Union[float, int]
@@ -50,7 +50,7 @@ class SearchArgs(BaseModel):
     geom: Optional[BaseGeometry] = Field(None)
     locations: Optional[dict[str, str]] = Field(None)
     page: Optional[int] = Field(DEFAULT_PAGE, gt=0)  # type: ignore
-    items_per_page: Optional[PositiveInt] = Field(DEFAULT_ITEMS_PER_PAGE)  # type: ignore
+    limit: Optional[PositiveInt] = Field(DEFAULT_LIMIT)  # type: ignore
     sort_by: Optional[SortByList] = Field(None)  # type: ignore
 
     @field_validator("start", "end", mode="before")

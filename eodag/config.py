@@ -105,7 +105,7 @@ class PluginConfig(yaml.YAMLObject):
         """Search pagination configuration"""
 
         #: The maximum number of items per page that the provider can handle
-        max_items_per_page: int
+        max_limit: int
         #: Key path for the number of total items in the provider result
         total_items_nb_key_path: Union[str, JSONPath]
         #: Key path for the next page URL

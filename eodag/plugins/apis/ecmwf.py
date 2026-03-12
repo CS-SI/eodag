@@ -106,7 +106,7 @@ class EcmwfApi(Api, ECMWFSearch):
         self.config.__dict__.setdefault("api_endpoint", "")
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
     ) -> RawSearchResult:
         """Should perform the actual search request."""
         raw_search_results = RawSearchResult([{}])

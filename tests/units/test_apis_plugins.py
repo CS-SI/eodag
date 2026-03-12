@@ -543,7 +543,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "end_datetime": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
             "prep": PreparedSearch(
-                items_per_page=5,
+                limit=5,
             ),
         }
         search_kwargs["prep"].next_page_token = "6"
@@ -621,7 +621,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "collection": "LANDSAT_C2L1",
             "id": "SOME_PRODUCT_ID",
             "prep": PreparedSearch(
-                items_per_page=500,
+                limit=500,
             ),
         }
         search_kwargs["prep"].next_page_token = "1"

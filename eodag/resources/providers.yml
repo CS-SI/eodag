@@ -27,7 +27,7 @@
     type: UsgsApi
     need_auth: true
     pagination:
-      max_items_per_page: 5000
+      max_limit: 5000
       total_items_nb_key_path: '$.totalHits'
     metadata_mapping:
       id:
@@ -92,12 +92,12 @@
     results_entry: 'results'
     ssl_verify: true
     pagination:
-      next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
+      next_page_query_obj: '{{"limit":{limit},"page":{next_page_token}}}'
       total_items_nb_key_path: '$.meta.found'
       # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
       # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
       # Let's set it to this value for now
-      max_items_per_page: 500
+      max_limit: 500
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^[a-zA-Z0-9_]+$'
@@ -523,11 +523,11 @@
     ssl_verify: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={limit}&page={next_page_token}'
       next_page_token_key: page
 
       # 2021/03/19: 500 is the max, no error if greater
-      max_items_per_page: 500
+      max_limit: 500
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -681,13 +681,13 @@
       - ':'
       - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
       next_page_url_key_path: '$.["@odata.nextLink"]'
       next_page_token_key: skip
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -1332,7 +1332,7 @@
       # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
-      max_items_per_page: 500
+      max_limit: 500
       next_page_token_key: next
     # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
@@ -1404,7 +1404,7 @@
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -1495,7 +1495,7 @@
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -1941,11 +1941,11 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={limit}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_token_key: page
       # 2021/03/19: 500 is the max, no error if greater
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -2324,13 +2324,13 @@
       - ':'
       - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
       next_page_url_key_path: '$.["@odata.nextLink"]'
       next_page_token_key: skip
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -2957,7 +2957,7 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      max_items_per_page: 1000
+      max_limit: 1000
       next_page_token_key: token
     sort:
       sort_param_mapping:
@@ -3018,7 +3018,7 @@
       fetch_url: null
       collection_fetch_url: null
     pagination:
-      max_items_per_page: 10_000
+      max_limit: 10_000
       next_page_url_key_path: null
       next_page_query_obj_key_path: null
       next_page_token_key: page
@@ -3119,8 +3119,8 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
-      max_items_per_page: 200
+      next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
+      max_limit: 200
       next_page_token_key: skip
     discover_collections:
       fetch_url: null
@@ -3540,9 +3540,9 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
-      max_items_per_page: 200
+      max_limit: 200
     discover_collections:
       fetch_url: null
     dynamic_discover_queryables:
@@ -3826,7 +3826,7 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
     discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
@@ -3939,13 +3939,13 @@
       - ':'
       - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       next_page_url_key_path: '$.["@odata.nextLink"]'
       next_page_token_key: skip
       parse_url_key: $skip
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -4892,7 +4892,7 @@
         title: '$.title'
         extent: '$.extent'
     pagination:
-      max_items_per_page: 100
+      max_limit: 100
       next_page_token_key: page
     sort:
       sort_param_mapping:
@@ -5427,11 +5427,11 @@
       - '&'
     asset_key_from_href: false
     pagination:
-      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={next_page_token}'
+      next_page_url_tpl: '{url}?{search}&c={limit}&pw={next_page_token}'
       start_page: 0
       total_items_nb_key_path: '$.totalResults'
       # 2024/02/01: 500 is the max, no error if greater
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -6076,7 +6076,7 @@
       next_page_query_obj_key_path: null
       next_page_token_key: page
       # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
-      max_items_per_page: 80
+      max_limit: 80
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
@@ -6210,7 +6210,7 @@
       next_page_query_obj_key_path: null
       next_page_token_key: page
       # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
-      max_items_per_page: 80
+      max_limit: 80
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
@@ -6504,7 +6504,7 @@
     timeout: 60
     pagination:
       next_page_url_tpl: '{url}?startRecord={next_page_token}'
-      next_page_query_obj: '{{"limit":{items_per_page}}}'
+      next_page_query_obj: '{{"limit":{limit}}}'
       next_page_token_key: skip
       # startRecord is equivalent to skip + 1, so make skip start at page 2
       start_page: 2

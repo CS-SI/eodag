@@ -287,7 +287,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             status=200,
             content_type="application/zip",
             auto_calculate_content_length=True,
-            stream=True,
         )
 
         eoproduct_props = {

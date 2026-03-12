@@ -37,7 +37,7 @@ from eodag.utils import GENERIC_COLLECTION
 from eodag.utils.exceptions import UnsupportedProvider
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
-    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
     AuthenticationError,
     MisconfiguredError,
     NoMatchingCollection,
@@ -240,7 +240,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                limit=DEFAULT_LIMIT,
                 page=1,
                 start_datetime=None,
                 end_datetime=None,
@@ -292,7 +292,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                limit=DEFAULT_LIMIT,
                 page=1,
                 start_datetime=None,
                 end_datetime=None,
@@ -400,7 +400,7 @@ class TestEodagCli(unittest.TestCase):
                 user_conf_file_path=conf_file, locations_conf_path=None
             )
             api_obj.search.assert_called_once_with(
-                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+                count=False, limit=DEFAULT_LIMIT, page=1, **criteria
             )
             api_obj.crunch.assert_called_once_with(
                 search_results, search_criteria=criteria, **{cruncher: {}}
@@ -473,7 +473,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertEqual(dag.call_count, 2)
             dag.assert_any_call(user_conf_file_path=conf_file, locations_conf_path=None)
             api_obj.search.assert_called_once_with(
-                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+                count=False, limit=DEFAULT_LIMIT, page=1, **criteria
             )
             api_obj.download_all.assert_called_once_with(
                 search_results, output_dir=None, executor=mock.ANY
@@ -503,7 +503,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search_all.assert_called_once_with(
                 provider=None,
-                items_per_page=None,
+                limit=None,
                 start_datetime=None,
                 end_datetime=None,
                 geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
@@ -544,7 +544,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=None,
@@ -588,7 +588,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=None,
@@ -634,7 +634,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=start_date_datetime,
                 end_datetime=None,
@@ -681,7 +681,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=stop_date_datetime,
