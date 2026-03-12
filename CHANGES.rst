@@ -4,6 +4,49 @@ Release history
 
 .. _changelog-unreleased:
 
+v3.10.2 (2026-03-12)
+====================
+
+Bug Fixes
+---------
+
+* **core**: Jsonpath-ng 1.8.0 Index indices (`#2059`_, `71bada7`_)
+
+* **core**: Make get_quicklook return empty str on error (`#2063`_, `498fcb7`_)
+
+* **core**: TypedDict from typing_extensions required by pydantic (`#1986`_, `a39b473`_)
+
+* **crunch**: Filter_latest_intersect used geometry (`#2030`_, `baa6d39`_)
+
+* **download**: Wrong filename with dl_url_params (`#2064`_, `ebf5172`_)
+
+* **plugins**: Delete download link when order not finish (`#1952`_, `d842f62`_)
+
+Build System
+------------
+
+* Avoid jsonpath-ng 1.8.0 which breaks assets parsing (`#2078`_, `6f930cc`_)
+
+* Bump alpine version on Dockerfile to prevent certificate error on geodes (`#2004`_, `bdc6b86`_)
+
+.. _#1952: https://github.com/CS-SI/eodag/pull/1952
+.. _#1986: https://github.com/CS-SI/eodag/pull/1986
+.. _#2004: https://github.com/CS-SI/eodag/pull/2004
+.. _#2030: https://github.com/CS-SI/eodag/pull/2030
+.. _#2059: https://github.com/CS-SI/eodag/pull/2059
+.. _#2063: https://github.com/CS-SI/eodag/pull/2063
+.. _#2064: https://github.com/CS-SI/eodag/pull/2064
+.. _#2078: https://github.com/CS-SI/eodag/pull/2078
+.. _498fcb7: https://github.com/CS-SI/eodag/commit/498fcb78bdc262804a78ce1edc3da2b259b94276
+.. _6f930cc: https://github.com/CS-SI/eodag/commit/6f930cc5545cf2733c1dee1f70025207c2a1f0aa
+.. _71bada7: https://github.com/CS-SI/eodag/commit/71bada72f62910e217e0b49174c271f9962a8ad3
+.. _a39b473: https://github.com/CS-SI/eodag/commit/a39b4739c6efbdf36d1546a2740340a1587a407c
+.. _baa6d39: https://github.com/CS-SI/eodag/commit/baa6d39d665236688b8b0b262b3c13d7bc436d90
+.. _bdc6b86: https://github.com/CS-SI/eodag/commit/bdc6b861c8fc9ea8901a1813b04600ebd865f416
+.. _d842f62: https://github.com/CS-SI/eodag/commit/d842f6295840ddf21b3940f926197447013426f2
+.. _ebf5172: https://github.com/CS-SI/eodag/commit/ebf51725920d44df758d9cb0c99e33d586481236
+
+
 v3.10.1 (2025-12-11)
 ====================
 
