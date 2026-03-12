@@ -25,8 +25,15 @@ from datetime import datetime
 from importlib.metadata import metadata
 from typing import Any
 
+# Make JsonValue resolvable in pydantic.fields for sphinx_autodoc_typehints:
+# JsonDict (used in Field annotations) contains a forward reference to JsonValue
+# that isn't in the pydantic.fields namespace.
+import pydantic.fields
 from docutils import nodes
+from pydantic import JsonValue
 from sphinx.writers.html import HTMLTranslator
+
+pydantic.fields.JsonValue = JsonValue
 
 # -- General configuration ------------------------------------------------
 
