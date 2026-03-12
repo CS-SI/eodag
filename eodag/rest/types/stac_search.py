@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union, cast
 
 import geojson
 from pydantic import (
@@ -174,7 +174,7 @@ class SearchPostRequest(BaseModel):
             return v
 
         if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:  # type: ignore
-            return shape(v)
+            return cast(Geometry, shape(v))
 
         raise ValueError("Not a valid geometry")
 
