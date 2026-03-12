@@ -707,3 +707,15 @@ class CollectionsList(UserList[Collection]):
                     """ for i, col in enumerate(self)])
             + "</tbody></table></details>"
         )
+
+    def get(self, collection: str) -> Optional[Collection]:
+        """
+        Get an instance of :class:`~eodag.api.collection.Collection`.
+
+        :param collection: The collection name.
+        :return: An instance of :class:`~eodag.api.collection.Collection` if the given id is found, otherwise None.
+        """
+        for coll in self:
+            if collection == coll.id:
+                return coll
+        return None
