@@ -1191,6 +1191,13 @@ class EODataAccessGateway:
                 items_per_page and items_per_page != DEFAULT_LIMIT
             ):
                 limit = items_per_page
+                warnings.warn(
+                    "Usage of deprecated search parameter 'items_per_page' "
+                    "(Please use 'limit' instead)"
+                    " -- Deprecated since v4.0.0",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             search_kwargs["limit"] = (
                 limit
                 if limit is not None
@@ -1281,6 +1288,13 @@ class EODataAccessGateway:
             items_per_page and items_per_page != DEFAULT_LIMIT
         ):
             limit = items_per_page
+            warnings.warn(
+                "Usage of deprecated search parameter 'items_per_page' "
+                "(Please use 'limit' instead)"
+                " -- Deprecated since v4.0.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         for i, search_plugin in enumerate(search_plugins):
             try:
                 return self.search_iter_page_plugin(
@@ -1332,6 +1346,13 @@ class EODataAccessGateway:
             items_per_page and items_per_page != DEFAULT_LIMIT
         ):
             limit = items_per_page
+            warnings.warn(
+                "Usage of deprecated search parameter 'items_per_page' "
+                "(Please use 'limit' instead)"
+                " -- Deprecated since v4.0.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         kwargs.update(
             page=1,
             limit=limit,
@@ -1426,6 +1447,13 @@ class EODataAccessGateway:
         # use deprecated items_per_page if limit is not given
         if not limit and items_per_page:
             limit = items_per_page
+            warnings.warn(
+                "Usage of deprecated search parameter 'items_per_page' "
+                "(Please use 'limit' instead)"
+                " -- Deprecated since v4.0.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         # First search
         search_results = self.search(
             limit=limit,
