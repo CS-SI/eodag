@@ -88,6 +88,7 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.databases.base import Database
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
@@ -129,6 +130,7 @@ class EODataAccessGateway:
         user_conf_file_path: str | None = None,
         locations_conf_path: str | None = None,
         settings: EODAGSettings | None = None,
+        db: Optional[Database] = None,
     ) -> None:
         if user_conf_file_path is not None:
             warnings.warn(
@@ -165,8 +167,7 @@ class EODataAccessGateway:
         )
 
         # handle database initialization
-        self.db = SQLiteDatabase.create_with_dag(self)
-        self.db.prepare_database()
+        self.db = db if db is not None else SQLiteDatabase.create_with_dag(self)
 
         collections_config_dict = SimpleYamlProxyConfig(
             str(self.settings.collections_cfg_file)
