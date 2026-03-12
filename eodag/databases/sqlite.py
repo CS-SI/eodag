@@ -25,14 +25,10 @@ from sqlite3 import Connection
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import orjson
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-from pydantic import ValidationError as PydanticValidationError
-from pydantic import model_validator
-from pydantic_core import InitErrorDetails, PydanticCustomError
 from shapely import Geometry, wkt
 
 from eodag.api.collection import Collection, CollectionsDict
-from eodag.api.provider import ProviderConfig
+from eodag.databases.base import Database
 from eodag.databases.sqlite_functions import register_sqlite_functions
 from eodag.utils import get_geometry_from_various
 from eodag.utils.dates import get_datetime
@@ -45,55 +41,37 @@ if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.core import EODataAccessGateway
+    from eodag.api.provider import ProviderConfig
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
 
 
-class SQLiteDatabase(BaseModel):
-    """Base for classes representing a database.
+class SQLiteDatabase(Database):
+    """Class representing a SQLite database."""
 
-    A Database object is used to store information about :class:`~eodag.api.collection.Collection` objects.
-    """
+    con: Connection
+    _dag: Optional[EODataAccessGateway] = None
 
-    type: str = Field(
-        default="sqlite", description="The type of database backend to use"
-    )
-
-    con: Optional[Connection] = Field(default=None)
-
-    # Private attribute to store the eodag gateway. Not part of the model schema.
-    _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
-
-    @model_validator(mode="before")
-    @classmethod
-    def forbid_existing_connection(cls, data: Any) -> Any:
-        """Prevent connection initialization during the creation of the instance
-        since the way the connection is established is forced by eodag"""
-        if isinstance(data, dict):
-            # the connection to the database must be done by eodag
-            if (con_key := "con") in data:
-                msg = "Input initialization is handled by eodag"
-                error = InitErrorDetails(
-                    type=PydanticCustomError("value_error", msg),
-                    loc=(con_key,),
-                    input=data[con_key],
-                )
-                raise PydanticValidationError.from_exception_data(
-                    title="Database connection", line_errors=[error]
-                )
-
-        return data
-
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    def __init__(self, db_path: Optional[str] = None) -> None:
+        """Initialize database by creating a connection and preparing the database."""
+        self.type = "sqlite"
+        if db_path is None:
+            db_path = os.path.join(
+                os.path.expanduser("~"), ".config", "eodag", "eodag.db"
+            )
+        self.con = self._get_connection(db_path)
+        self.prepare_database()
 
     @classmethod
-    def create_with_dag(cls, dag: EODataAccessGateway, **kwargs) -> SQLiteDatabase:
+    def create_with_dag(
+        cls, dag: EODataAccessGateway, db_path: Optional[str] = None, **kwargs
+    ) -> SQLiteDatabase:
         """Create a SQLiteDatabase with a EODataAccessGateway instance.
 
         :param dag: The gateway instance to use to create collections with it
         :param kwargs: The database attributes
         """
-        instance = cls(**kwargs)
+        instance = cls(db_path, **kwargs)
         instance._dag = dag
         return instance
 
@@ -105,15 +83,6 @@ class SQLiteDatabase(BaseModel):
                 "Create with: SQLiteDatabase.create_with_dag(dag)"
             )
         return self._dag
-
-    def _ensure_con(self) -> Connection:
-        """Ensure that a connection is present in the instance before some operations"""
-        if self.con is None:
-            raise RuntimeError(
-                "SQLiteDatabase instance needs Connection to perform this operation. "
-                "After creation of the instance, use: <instance>._get_connection()"
-            )
-        return self.con
 
     def _adapt_collection(self, collection: Collection) -> str:
         """An adapter to automatically convert from a ``Collection``
@@ -134,7 +103,7 @@ class SQLiteDatabase(BaseModel):
         """Do what is required (or better) to do before sending queries to the database:
 
         * register adapters and converters to make processes before and after queries easier
-        * connect to the database
+        * register custom SQLite functions
         * create tables if do not exist
         """
         # register the adapter and converter
@@ -142,22 +111,23 @@ class SQLiteDatabase(BaseModel):
         # set the key "collection" to convert SQLite values to a ``Collection`` instance
         sqlite3.register_converter("collection", self._convert_collection)
 
-        self._get_connection()
-
         # register custom SQLite functions
-        register_sqlite_functions(self._ensure_con())
+        register_sqlite_functions(self.con)
 
         self._create_col_table()
         self._create_col_config_table()
 
-    def _get_connection(self) -> None:
-        """Get a connection to the database."""
+    def _get_connection(self, db_path: str) -> Connection:
+        """Get a connection to a database.
+
+        :param db_path: Path to use to create a database or to connect to it
+
+        :returns: The connection instance
+        """
         # connect to the database
         # set parsing using column names for the adapter and converter
         con = sqlite3.connect(
-            database=os.path.join(
-                os.path.expanduser("~"), ".config", "eodag", "eodag.db"
-            ),
+            database=db_path,
             detect_types=sqlite3.PARSE_COLNAMES,
             check_same_thread=True,
         )
@@ -166,14 +136,11 @@ class SQLiteDatabase(BaseModel):
         # ensure the connection is closed on exit
         atexit.register(self._close_connection)
 
-        self.con = con
+        return con
 
     def _close_connection(self) -> None:
         """Close the connection to the database."""
-        con = self._ensure_con()
-        con.close()
-
-        self.con = None
+        self.con.close()
 
     def _execute(
         self, con: Connection, sql: str, parameters: Optional[_Parameters] = None
@@ -218,10 +185,8 @@ class SQLiteDatabase(BaseModel):
 
     def _create_col_table(self) -> None:
         """Create the collections table in the database."""
-        con = self._ensure_con()
-
         self._execute(
-            con,
+            self.con,
             """
             CREATE TABLE IF NOT EXISTS collections (
                 id TEXT PRIMARY KEY,
@@ -232,10 +197,8 @@ class SQLiteDatabase(BaseModel):
 
     def _create_col_config_table(self) -> None:
         """Create the collections configuration table in the database."""
-        con = self._ensure_con()
-
         self._execute(
-            con,
+            self.con,
             """
             CREATE TABLE IF NOT EXISTS providers_config (
                 provider TEXT,
@@ -249,10 +212,8 @@ class SQLiteDatabase(BaseModel):
 
     def get_collection(self, collection_name: str) -> Optional[Collection]:
         """Retrieve a collection from the database."""
-        con = self._ensure_con()
-
         collection_row = self._execute(
-            con,
+            self.con,
             'SELECT json(collection) AS "collection [collection]" FROM collections WHERE id = ?;',
             (collection_name,),
         ).fetchone()
@@ -268,10 +229,8 @@ class SQLiteDatabase(BaseModel):
                             method will directly return the collection of given value.
         :returns: The collection having  Internal name of the collection.
         """
-        con = self._ensure_con()
-
         collection_rows = self._execute(
-            con,
+            self.con,
             'SELECT json(collection) AS "collection [collection]" FROM collections '
             "WHERE jsonb_extract(collection, '$.id') = ?;",
             (alias_or_id,),
@@ -295,10 +254,8 @@ class SQLiteDatabase(BaseModel):
 
     def delete_collection(self, collection_name: str) -> None:
         """Delete a collection from the database."""
-        con = self._ensure_con()
-
         deleted_coll_nb = self._execute(
-            con,
+            self.con,
             """
             DELETE FROM collections
             WHERE id = ?;
@@ -307,7 +264,7 @@ class SQLiteDatabase(BaseModel):
         ).rowcount
 
         self._execute(
-            con,
+            self.con,
             """
             DELETE FROM providers_config
             WHERE collection = ?;
@@ -315,7 +272,7 @@ class SQLiteDatabase(BaseModel):
             (collection_name,),
         )
 
-        con.commit()
+        self.con.commit()
 
         if deleted_coll_nb > 0:
             msg = f"{deleted_coll_nb} collection(s) have been deleted from the database"
@@ -323,12 +280,10 @@ class SQLiteDatabase(BaseModel):
 
     def rename_collection(self, old_name: str, new_name: str) -> None:
         """Rename a collection in the database."""
-        con = self._ensure_con()
-
         # TODO: maybe change id attribute in column "collection",
         # and in that case it is not needed to update providers_config
         renamed_coll_nb = self._execute(
-            con,
+            self.con,
             """
             UPDATE collections
             SET id = ?
@@ -338,7 +293,7 @@ class SQLiteDatabase(BaseModel):
         ).rowcount
 
         self._execute(
-            con,
+            self.con,
             """
             UPDATE providers_config
             SET collection = ?
@@ -347,7 +302,7 @@ class SQLiteDatabase(BaseModel):
             (new_name, old_name),
         )
 
-        con.commit()
+        self.con.commit()
 
         if renamed_coll_nb > 0:
             msg = f"{renamed_coll_nb} collection(s) have been renamed in the database"
@@ -363,14 +318,12 @@ class SQLiteDatabase(BaseModel):
 
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
-        con = self._ensure_con()
-
         collection_tuples_list: list[tuple[str, Collection]] = []
         for id, coll in collections.items():
             collection_tuples_list.append((id, coll))
 
         upserted_coll_nb = self._executemany(
-            con,
+            self.con,
             """
             INSERT INTO collections (id, collection) VALUES (?, jsonb(?))
             ON CONFLICT(id) DO UPDATE SET collection=excluded.collection;
@@ -378,7 +331,7 @@ class SQLiteDatabase(BaseModel):
             collection_tuples_list,
         ).rowcount
 
-        con.commit()
+        self.con.commit()
 
         if upserted_coll_nb > 0:
             msg = f"{upserted_coll_nb} collection(s) have been updated or added to the database"
@@ -386,13 +339,11 @@ class SQLiteDatabase(BaseModel):
 
     def upsert_providers_config(self, providers_config: list[ProviderConfig]) -> None:
         """Add or update providers configurations in the database"""
-        con = self._ensure_con()
-
         for p_config in providers_config:
             for coll, coll_config in p_config.products.items():
                 # TODO: better use executemany
                 self._execute(
-                    con,
+                    self.con,
                     """
                     INSERT INTO providers_config (provider, collection, config, priority)
                         VALUES (?, ?, jsonb(?), ?)
@@ -407,7 +358,7 @@ class SQLiteDatabase(BaseModel):
                         p_config.priority,
                     ),
                 )
-        con.commit()
+        self.con.commit()
 
         # free memory taken by "products" in providers config
         p_config.__dict__["products"] = {}
@@ -426,8 +377,6 @@ class SQLiteDatabase(BaseModel):
         """
         :returns: Collections matching all the given parameters.
         """
-        con = self._ensure_con()
-
         where_conditions_list = []
         parameters: dict[str, Any] = {}
 
@@ -484,7 +433,7 @@ class SQLiteDatabase(BaseModel):
             f"WHERE {where_conditions_intersection};"
         )
 
-        collection_rows = self._execute(con, sql, parameters).fetchall()
+        collection_rows = self._execute(self.con, sql, parameters).fetchall()
 
         if not collection_rows:
             if collection:
@@ -505,7 +454,7 @@ class SQLiteDatabase(BaseModel):
                 "SELECT COUNT(collection) FROM collections "
                 f"WHERE {where_conditions_intersection};"
             )
-            number_matched_row = self._execute(con, sql).fetchone()
+            number_matched_row = self._execute(self.con, sql).fetchone()
 
             number_matched = 0 if number_matched_row is None else number_matched_row[0]
 
