@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.core import EODataAccessGateway
     from eodag.api.provider import ProviderConfig
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
@@ -55,7 +54,6 @@ class SQLiteDatabase(Database):
     """Class representing a SQLite database."""
 
     con: Connection
-    _dag: Optional[EODataAccessGateway] = None
 
     def __init__(self, db_path: Optional[str] = None) -> None:
         """Initialize database by creating a connection and preparing the database."""
@@ -67,42 +65,17 @@ class SQLiteDatabase(Database):
         self.con = self._get_connection(db_path)
         self.prepare_database()
 
-    @classmethod
-    def create_with_dag(
-        cls, dag: EODataAccessGateway, db_path: Optional[str] = None, **kwargs
-    ) -> SQLiteDatabase:
-        """Create a SQLiteDatabase with a EODataAccessGateway instance.
-
-        :param dag: The gateway instance to use to create collections with it
-        :param kwargs: The database attributes
-        """
-        instance = cls(db_path, **kwargs)
-        instance._dag = dag
-        return instance
-
-    def _ensure_dag(self) -> EODataAccessGateway:
-        """Ensure that a dag is present in the instance before some operations"""
-        if self._dag is None:
-            raise RuntimeError(
-                "SQLiteDatabase instance needs EODataAccessGateway to perform this operation. "
-                "Create with: SQLiteDatabase.create_with_dag(dag)"
-            )
-        return self._dag
-
     def _adapt_collection(self, collection: Collection) -> str:
         """An adapter to automatically convert from a ``Collection``
         instance to an SQLite-compatible type when injected to queries"""
         return collection.model_dump_json()
 
-    def _convert_collection(self, coll_bytes: bytes) -> Collection:
-        """A converter to convert from SQLite values to the ``Collection`` instance
-        when called in queries by its key wrapped in square brackets.
+    def _convert_collection(self, coll_bytes: bytes) -> dict[str, Any]:
+        """A converter to convert from SQLite bytes values of a collection to a dictionary
+        of this collection when called in queries by its key wrapped in square brackets.
         Its key is set during its registration.
         """
-        dag = self._ensure_dag()
-        coll_dict = orjson.loads(coll_bytes)
-        coll_obj = Collection.create_with_dag(dag, **coll_dict)
-        return coll_obj
+        return orjson.loads(coll_bytes)
 
     def prepare_database(self) -> None:
         """Do what is required (or better) to do before sending queries to the database:
@@ -113,8 +86,8 @@ class SQLiteDatabase(Database):
         """
         # register the adapter and converter
         sqlite3.register_adapter(Collection, self._adapt_collection)
-        # set the key "collection" to convert SQLite values to a ``Collection`` instance
-        sqlite3.register_converter("collection", self._convert_collection)
+        # set the key "collection_dict" to convert SQLite bytes values to a dictionary
+        sqlite3.register_converter("collection_dict", self._convert_collection)
 
         # register custom SQLite functions
         register_custom_functions(self.con)
@@ -152,7 +125,6 @@ class SQLiteDatabase(Database):
         """
         Return the cursor from a SQLite query ``execute()`` and rollback the connection if the query failed
 
-        :param con: The connection to the database
         :param sql: A single SQL statement
         :param parameters: Python values to bind to placeholders in ``sql``
 
@@ -172,7 +144,6 @@ class SQLiteDatabase(Database):
         """
         Return the cursor from a SQLite query ``execute_all()`` and rollback the connection if the query failed
 
-        :param con: The connection to the database
         :param sql: A single SQL statement
         :param parameters: Python values to bind to placeholders in ``sql``
 
@@ -188,7 +159,6 @@ class SQLiteDatabase(Database):
     def _create_col_config_table(self) -> None:
         """Create the collections configuration table in the database."""
         self._execute(
-            self.con,
             """
             CREATE TABLE IF NOT EXISTS providers_config (
                 provider TEXT,
@@ -200,23 +170,23 @@ class SQLiteDatabase(Database):
             """,
         )
 
-    def get_collection(self, collection_id: str) -> Optional[Collection]:
+    def get_collection(self, collection_id: str) -> Optional[dict[str, Any]]:
         """Retrieve a collection from the database."""
         row = self._execute(
-            'SELECT json(content) AS "collection [collection]" FROM collections WHERE id = ?',
+            'SELECT json(content) AS "collection [collection_dict]" FROM collections WHERE id = ?',
             (collection_id,),
         ).fetchone()
         return row["collection"] if row else None
 
-    def get_collection_from_alias(self, alias_or_id: str) -> Collection:
+    def get_collection_from_alias(self, alias_or_id: str) -> dict[str, Any]:
         """Retrieve a collection from the database by either its id or alias.
 
         :param alias_or_id: Alias of the collection. If an existing id is given, this
                             method will directly return the collection of given value.
-        :returns: The collection having  Internal name of the collection.
+        :returns: A dictionary of the collection having ``alias_or_id`` as alias or id.
         """
         collection_rows = self._execute(
-            'SELECT json(content) AS "collection [collection]" FROM collections '
+            'SELECT json(content) AS "collection [collection_dict]" FROM collections '
             "WHERE id = ?;",
             (alias_or_id,),
         ).fetchall()
@@ -296,10 +266,10 @@ class SQLiteDatabase(Database):
         q: Optional[list[str]] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
-    ) -> tuple[CollectionsDict, int]:
+    ) -> tuple[list[dict[str, Any]], int]:
         """Search collections matching the given parameters.
 
-        :returns: A tuple of (returned collections, total number matched).
+        :returns: A tuple of (returned collections as dictionaries, total number matched).
         """
         where = _stac_search_to_where(geometry, datetime, cql2_text, cql2_json)
 
@@ -330,7 +300,7 @@ class SQLiteDatabase(Database):
         number_matched = count_row[0] if count_row else 0
 
         sql = (
-            f'SELECT json(c.content) AS "collection [collection]"{select_score} '
+            f'SELECT json(c.content) AS "collection [collection_dict]"{select_score} '
             f"{from_clause} WHERE {full_where}{order_by}"
         )
         if limit is not None:
@@ -406,20 +376,20 @@ def _make_spatial_func(
     return func
 
 
-def register_custom_functions(conn: sqlite3.Connection) -> None:
+def register_custom_functions(con: sqlite3.Connection) -> None:
     """Register custom SQL functions needed for CQL2 evaluation in SQLite.
 
     This includes spatial predicates (via Shapely), array comparisons,
     accent-insensitive helpers, bounding-box conversion, and integer division.
     """
     # GeoJSON passthrough – cql2 emits st_geomfromgeojson('...')
-    conn.create_function("st_geomfromgeojson", 1, lambda x: x)
+    con.create_function("st_geomfromgeojson", 1, lambda x: x)
 
     # Bounding-box literal – cql2 emits st_makeenvelope(xmin, ymin, xmax, ymax)
-    conn.create_function("st_makeenvelope", 4, _st_makeenvelope)
+    con.create_function("st_makeenvelope", 4, _st_makeenvelope)
 
     # Accent-insensitive comparison – cql2 emits strip_accents(x)
-    conn.create_function("strip_accents", 1, _strip_accents)
+    con.create_function("strip_accents", 1, _strip_accents)
 
     # Spatial predicates
     for sql_name, shapely_method in [
@@ -432,7 +402,7 @@ def register_custom_functions(conn: sqlite3.Connection) -> None:
         ("st_touches", "touches"),
         ("st_crosses", "crosses"),
     ]:
-        conn.create_function(sql_name, 2, _make_spatial_func(shapely_method))
+        con.create_function(sql_name, 2, _make_spatial_func(shapely_method))
 
     # Array predicates – rewritten from Postgres @>, <@, @@, = ARRAY[]
     for func_name, predicate in [
@@ -441,10 +411,10 @@ def register_custom_functions(conn: sqlite3.Connection) -> None:
         ("a_equals", lambda a, b: a == b),
         ("a_overlaps", lambda a, b: bool(a & b)),
     ]:
-        conn.create_function(func_name, 2, _make_array_func(predicate))
+        con.create_function(func_name, 2, _make_array_func(predicate))
 
     # Integer division – cql2 emits div(a, b)
-    conn.create_function(
+    con.create_function(
         "div", 2, lambda a, b: None if a is None or b is None or b == 0 else a // b
     )
 
