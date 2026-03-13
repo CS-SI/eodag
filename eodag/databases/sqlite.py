@@ -32,7 +32,7 @@ import shapely
 from shapely.geometry import shape
 
 from eodag.api.collection import Collection, CollectionsDict
-from eodag.databases.base import Database
+from eodag.databases.base import DEFAULT_COLLECTIONS_PER_PAGE, Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
 from eodag.utils import get_geometry_from_various
@@ -186,7 +186,7 @@ class SQLiteDatabase(Database):
         :returns: A dictionary of the collection having ``alias_or_id`` as alias or id.
         """
         collection_rows = self._execute(
-            'SELECT json(content) AS "c.content [collection_dict]" FROM collections '
+            'SELECT json(content) AS "collection [collection_dict]" FROM collections '
             "WHERE id = ?;",
             (alias_or_id,),
         ).fetchall()
@@ -262,13 +262,17 @@ class SQLiteDatabase(Database):
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         datetime: Optional[str] = None,
-        limit: Optional[int] = 10,
+        limit: int = DEFAULT_COLLECTIONS_PER_PAGE,
         q: Optional[list[str]] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
+        sortby: Optional[list[dict[str, str]]] = None,
     ) -> tuple[list[dict[str, Any]], int]:
         """Search collections matching the given parameters.
 
+        :param sortby: STAC sort extension objects, e.g.
+            ``[{"field": "datetime", "direction": "desc"}]``.
+            Allowed fields: ``id``, ``datetime``, ``end_datetime``.
         :returns: A tuple of (returned collections as dictionaries, total number matched).
         """
         where = _stac_search_to_where(geometry, datetime, cql2_text, cql2_json)
@@ -276,7 +280,7 @@ class SQLiteDatabase(Database):
         from_clause = "FROM collections c"
         where_parts = [where]
         params: list[Any] = []
-        order_by = ""
+        order_terms: list[str] = []
         select_score = ""
 
         if q:
@@ -288,7 +292,13 @@ class SQLiteDatabase(Database):
 
                 # Weighted relevance: title > description > keywords
                 select_score = ", bm25(collections_fts, 10.0, 3.0, 1.0) AS rank_score"
-                order_by = " ORDER BY rank_score ASC, c.id ASC"
+                order_terms = ["rank_score ASC"]
+
+        if sortby:
+            order_terms = _stac_sortby_to_order_by(sortby)
+
+        order_terms.append("c.id ASC")
+        order_by = " ORDER BY " + ", ".join(order_terms)
 
         full_where = " AND ".join(where_parts)
 
@@ -300,7 +310,7 @@ class SQLiteDatabase(Database):
         number_matched = cast(int, count_row[0]) if count_row else 0
 
         sql = (
-            f'SELECT json(c.content) AS "c.content [collection_dict]"{select_score} '
+            f'SELECT json(c.content) AS "collection [collection_dict]"{select_score} '
             f"{from_clause} WHERE {full_where}{order_by}"
         )
         if limit is not None:
@@ -313,6 +323,12 @@ class SQLiteDatabase(Database):
 
         return collections_list, number_matched
 
+    def collections_sortables(self) -> list[str]:
+        """Return the list of fields that can be used in ``sortby``.
+
+        See https://github.com/stac-api-extensions/sort#sortables
+        """
+        return list(COLLECTIONS_SORTABLES)
 
 def _strip_accents(text: str | None) -> str | None:
     """Remove diacritical marks for accent-insensitive comparison (CQL2 accenti)."""
@@ -593,3 +609,38 @@ def _stac_search_to_where(
         )
         where_clause = cql2_json_to_sql(combined)
     return where_clause
+
+COLLECTIONS_SORTABLES: dict[str, str] = {
+    "id": "c.id",
+    "datetime": "c.datetime",
+    "end_datetime": "c.end_datetime",
+}
+
+_VALID_DIRECTIONS = {"asc", "desc"}
+
+def _stac_sortby_to_order_by(sortby: list[dict[str, str]]) -> list[str]:
+    """Convert a STAC ``sortby`` list to SQL ORDER BY clauses.
+
+    :param sortby: e.g. ``[{"field": "datetime", "direction": "desc"}]``
+    :returns: list of SQL order expressions, e.g. ``["c.datetime DESC"]``
+    :raises ValueError: on unknown field or invalid direction
+    """
+    clauses: list[str] = []
+    for item in sortby:
+        field = item.get("field", "")
+        direction = item.get("direction", "asc").lower()
+
+        if field not in COLLECTIONS_SORTABLES:
+            raise ValueError(
+                f"Unsupported sortby field: {field}. "
+                f"Allowed fields: {', '.join(sorted(COLLECTIONS_SORTABLES))}"
+            )
+        if direction not in _VALID_DIRECTIONS:
+            raise ValueError(
+                f"Invalid sortby direction: {direction}. "
+                f"Allowed values: {', '.join(sorted(_VALID_DIRECTIONS))}"
+            )
+
+        clauses.append(f"{COLLECTIONS_SORTABLES[field]} {direction.upper()}")
+
+    return clauses

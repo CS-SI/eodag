@@ -15,18 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""SQLite database layer tests - CQL2 JSON and STAC free-text (``q``).
-
-CQL2 tests are organized by conformance class as defined in OGC 21-065r2
-Annex A.  FTS tests exercise the STAC ``q`` → FTS5 expression translation.
-Both suites are parametrized via ``subTest``.
-
-References
-----------
-* https://docs.ogc.org/is/21-065r2/21-065r2.html
-* https://github.com/radiantearth/stac-api-spec/tree/main/fragments/free-text
-* https://www.sqlite.org/fts5.html
-"""
+"""SQLite database layer tests."""
 
 from __future__ import annotations
 
@@ -35,15 +24,15 @@ import unittest
 from typing import Any
 
 import orjson
+import shapely.geometry
 
-from eodag.databases.sqlite import create_collections_table, register_custom_functions
+from eodag.databases.sqlite import (
+    SQLiteDatabase,
+    create_collections_table,
+    register_custom_functions,
+)
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 
 def _norm(sql: str) -> str:
     """Collapse whitespace for SQL comparison."""
@@ -51,7 +40,7 @@ def _norm(sql: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Fixture – one unified set of collections covering all conformance classes.
+# Fixture – one unified set of collections
 #
 #   ONE   – full properties, open-ended temporal, tags=earth+observation
 #   TWO   – full properties, closed temporal,     tags=ml+observation
@@ -63,12 +52,14 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "ONE",
+        "title": "Optical satellite one",
         "extent": {
             "spatial": {"bbox": [[0.0, 0.0, 10.0, 10.0]]},
             "temporal": {"interval": [["2020-01-01T00:00:00Z", None]]},
         },
         "license": "proprietary",
         "description": "sample one",
+        "keywords": ["optical", "satellite"],
         "tags": ["earth", "observation"],
         "count": 10,
         "score": 3.5,
@@ -76,6 +67,7 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "TWO",
+        "title": "Radar satellite two",
         "extent": {
             "spatial": {"bbox": [[20.0, 20.0, 30.0, 30.0]]},
             "temporal": {
@@ -84,6 +76,7 @@ COLLECTIONS = [
         },
         "license": "MIT",
         "description": "sample two",
+        "keywords": ["radar", "satellite"],
         "tags": ["ml", "observation"],
         "count": 5,
         "score": 2.0,
@@ -91,6 +84,7 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "THREE",
+        "title": "Climate reanalysis three",
         "extent": {
             "spatial": {"bbox": [[40.0, 40.0, 50.0, 50.0]]},
             "temporal": {
@@ -99,6 +93,7 @@ COLLECTIONS = [
         },
         "license": "CC-BY-4.0",
         "description": "Région de Chișinău",
+        "keywords": ["climate", "reanalysis"],
         "tags": ["earth"],
         "count": 3,
         "score": 9.0,
@@ -106,11 +101,13 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "FOUR",
+        "title": "Radar generation four",
         "extent": {
             "spatial": {"bbox": [[60.0, 60.0, 70.0, 70.0]]},
             "temporal": {"interval": [["2023-01-01T00:00:00Z", None]]},
         },
         "description": "no license field",
+        "keywords": ["radar", "satellite"],
     },
 ]
 
@@ -185,13 +182,13 @@ def _arith(arith_op: str, prop: str, operand, cmp_op: str, value):
     }
 
 
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
-
-
 class TestCQL2JsonToSql(unittest.TestCase):
     """Comprehensive CQL2 JSON → SQLite conformance tests.
+
+    CQL2 tests are organized by conformance class as defined in OGC 21-065r2
+    Annex A.
+    
+    * https://docs.ogc.org/is/21-065r2/21-065r2.html
 
     A single in-memory database is created once for the entire class,
     loaded with :data:`COLLECTIONS`.
@@ -788,14 +785,13 @@ def _make_fts_conn(collections: list[dict[str, Any]]) -> sqlite3.Connection:
     conn.commit()
     return conn
 
-
-# ---------------------------------------------------------------------------
-# FTS test class
-# ---------------------------------------------------------------------------
-
-
 class TestStacQToFts5(unittest.TestCase):
     """Comprehensive tests for :func:`stac_q_to_fts5`.
+
+    FTS tests exercise the STAC ``q`` → FTS5 expression translation.
+
+    * https://github.com/radiantearth/stac-api-spec/tree/main/fragments/free-text
+    * https://www.sqlite.org/fts5.html
 
     Uses real collections inserted via ``create_collections_table`` triggers
     so the FTS index is populated exactly as in production.
@@ -1062,6 +1058,226 @@ class TestStacQToFts5(unittest.TestCase):
                 ).fetchall()
                 self.assertEqual(sorted(r[0] for r in rows), sorted(ids))
         conn.close()
+
+
+# ===========================================================================
+# collections_search integration tests
+# ===========================================================================
+
+
+class TestCollectionsSearch(unittest.TestCase):
+    """Integration tests for :meth:`SQLiteDatabase.collections_search`.
+
+    Uses the shared :data:`COLLECTIONS` fixture.  Exercises sortby, geometry,
+    datetime, limit, q, cql2, and their combinations.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.db = SQLiteDatabase(":memory:")
+        cls.db._con.executemany(
+            "INSERT INTO collections (content) VALUES (jsonb(?))",
+            [(orjson.dumps(c),) for c in COLLECTIONS],
+        )
+        cls.db._con.commit()
+
+    def _ids(self, result: tuple[list[dict[str, Any]], int]) -> list[str]:
+        """Extract ordered list of ids from collections_search result."""
+        return [c["id"] for c in result[0]]
+
+    def _matched(self, result: tuple[list[dict[str, Any]], int]) -> int:
+        return result[1]
+
+    def test_no_params(self):
+        """No parameters returns all collections, default order by id ASC."""
+        result = self.db.collections_search()
+        self.assertEqual(self._ids(result), ALL_IDS)
+        self.assertEqual(self._matched(result), 4)
+
+    def test_returns_dicts(self):
+        """collections_search returns list of dicts with 'id' keys."""
+        collections, _ = self.db.collections_search(limit=1)
+        self.assertIsInstance(collections, list)
+        self.assertIsInstance(collections[0], dict)
+        self.assertIn("id", collections[0])
+
+    def test_limit(self):
+        cases = [
+            ("limit=2", 2, 2, 4),
+            ("limit=1", 1, 1, 4),
+        ]
+        for name, limit, expected_len, expected_matched in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(limit=limit)
+                self.assertEqual(len(result[0]), expected_len)
+                self.assertEqual(self._matched(result), expected_matched)
+
+    def test_datetime(self):
+        cases = [
+            ("single instant", "2021-06-01T00:00:00Z", ["ONE", "TWO"]),
+            (
+                "closed range",
+                "2021-06-01T00:00:00Z/2022-06-01T00:00:00Z",
+                ["ONE", "THREE", "TWO"],
+            ),
+            ("open start", "../2020-06-01T00:00:00Z", ["ONE"]),
+            ("open end", "2022-06-01T00:00:00Z/..", ["FOUR", "ONE", "THREE"]),
+        ]
+        for name, dt, expected_ids in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(datetime=dt)
+                self.assertEqual(sorted(self._ids(result)), sorted(expected_ids))
+
+    def test_geometry(self):
+        cases = [
+            ("point in ONE", shapely.geometry.Point(5.0, 5.0), ["ONE"]),
+            (
+                "box ONE+TWO",
+                shapely.geometry.box(5.0, 5.0, 25.0, 25.0),
+                ["ONE", "TWO"],
+            ),
+            ("no match", shapely.geometry.Point(100.0, 100.0), []),
+        ]
+        for name, geom, expected_ids in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(geometry=geom)
+                self.assertEqual(sorted(self._ids(result)), sorted(expected_ids))
+
+    def test_sortby(self):
+        cases = [
+            (
+                "id asc",
+                [{"field": "id", "direction": "asc"}],
+                {},
+                ALL_IDS,
+            ),
+            (
+                "id desc",
+                [{"field": "id", "direction": "desc"}],
+                {},
+                ["TWO", "THREE", "ONE", "FOUR"],
+            ),
+            (
+                "id default direction",
+                [{"field": "id"}],
+                {},
+                ALL_IDS,
+            ),
+            (
+                "id case-insensitive DESC",
+                [{"field": "id", "direction": "DESC"}],
+                {},
+                ["TWO", "THREE", "ONE", "FOUR"],
+            ),
+            (
+                "datetime asc",
+                [{"field": "datetime", "direction": "asc"}],
+                {},
+                ["ONE", "TWO", "THREE", "FOUR"],
+            ),
+            (
+                "datetime desc",
+                [{"field": "datetime", "direction": "desc"}],
+                {},
+                ["FOUR", "THREE", "TWO", "ONE"],
+            ),
+            (
+                "end_datetime asc",
+                [{"field": "end_datetime", "direction": "asc"}],
+                {},
+                ["TWO", "THREE", "FOUR", "ONE"],
+            ),
+            (
+                "multiple fields",
+                [{"field": "datetime", "direction": "desc"}, {"field": "id", "direction": "asc"}],
+                {},
+                ["FOUR", "THREE", "TWO", "ONE"],
+            ),
+            (
+                "with datetime filter",
+                [{"field": "id", "direction": "desc"}],
+                {"datetime": "2021-06-01T00:00:00Z/2022-06-01T00:00:00Z"},
+                ["TWO", "THREE", "ONE"],
+            ),
+        ]
+        for name, sortby, kwargs, expected_ids in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(sortby=sortby, **kwargs)
+                self.assertEqual(self._ids(result), expected_ids)
+
+    def test_sortby_errors(self):
+        cases = [
+            ("invalid field", [{"field": "title", "direction": "asc"}], "Unsupported sortby field"),
+            ("invalid direction", [{"field": "id", "direction": "sideways"}], "Invalid sortby direction"),
+            ("missing field", [{"direction": "asc"}], "Unsupported sortby field"),
+        ]
+        for name, sortby, msg in cases:
+            with self.subTest(name):
+                with self.assertRaises(ValueError) as ctx:
+                    self.db.collections_search(sortby=sortby)
+                self.assertIn(msg, str(ctx.exception))
+
+    def test_q(self):
+        cases = [
+            ("radar", ["radar"], {}, ["FOUR", "TWO"]),
+            ("no match", ["nonexistent"], {}, []),
+            (
+                "satellite + datetime",
+                ["satellite"],
+                {"datetime": "../2021-06-01T00:00:00Z"},
+                ["ONE", "TWO"],
+            ),
+        ]
+        for name, q, kwargs, expected_ids in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(q=q, **kwargs)
+                self.assertEqual(sorted(self._ids(result)), sorted(expected_ids))
+
+    def test_q_sortby_overrides_bm25(self):
+        """Explicit sortby overrides BM25 ranking order."""
+        result = self.db.collections_search(
+            q=["satellite"],
+            sortby=[{"field": "id", "direction": "desc"}],
+        )
+        # satellite in keywords: ONE, TWO, FOUR → sorted id desc
+        self.assertEqual(self._ids(result), ["TWO", "ONE", "FOUR"])
+
+    def test_cql2(self):
+        cases = [
+            ("json", {"cql2_json": _cmp("=", "id", "THREE")}, ["THREE"]),
+            ("text", {"cql2_text": "id = 'THREE'"}, ["THREE"]),
+        ]
+        for name, kwargs, expected_ids in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(**kwargs)
+                self.assertEqual(self._ids(result), expected_ids)
+
+    def test_cql2_text_and_json_raises(self):
+        with self.assertRaises(ValueError):
+            self.db.collections_search(
+                cql2_text="id = 'ONE'",
+                cql2_json=_cmp("=", "id", "ONE"),
+            )
+
+    def test_all_combined(self):
+        """Geometry + datetime + CQL2 + sortby + limit."""
+        result = self.db.collections_search(
+            geometry=shapely.geometry.box(-10, -10, 80, 80),  # covers all
+            datetime="2021-06-01T00:00:00Z/2022-06-01T00:00:00Z",
+            cql2_json=_cmp("<>", "id", "THREE"),
+            sortby=[{"field": "datetime", "direction": "desc"}],
+            limit=10,
+        )
+        # Spatial: all 4.  Temporal: ONE, TWO, THREE.  CQL2: not THREE → ONE, TWO.
+        # Sorted datetime desc: TWO(2021), ONE(2020)
+        self.assertEqual(self._ids(result), ["TWO", "ONE"])
+        self.assertEqual(self._matched(result), 2)
+
+    def test_collections_sortables(self):
+        self.assertEqual(
+            sorted(self.db.collections_sortables()),
+            ["datetime", "end_datetime", "id"],
+        )
 
 
 if __name__ == "__main__":

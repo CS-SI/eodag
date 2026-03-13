@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from eodag.api.collection import CollectionsDict
     from eodag.api.provider import ProviderConfig
 
+DEFAULT_COLLECTIONS_PER_PAGE = 10
 
 class Database:
     """Base for classes representing a database.
@@ -75,12 +76,13 @@ class Database:
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         datetime: Optional[str] = None,
-        limit: Optional[int] = 10,
+        limit: int = DEFAULT_COLLECTIONS_PER_PAGE,
         q: Optional[list[str]] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
+        sortby: Optional[list[dict[str, str]]] = None,
     ) -> tuple[list[dict[str, Any]], int]:
         """
-        :returns: Collections matching all the given parameters.
+        :returns: A tuple of (returned collections as dictionaries, total number matched).
         """
         raise NotImplementedError
