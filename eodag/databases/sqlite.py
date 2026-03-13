@@ -34,6 +34,7 @@ from shapely.geometry import shape
 from eodag.api.collection import Collection, CollectionsDict
 from eodag.databases.base import Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
+from eodag.databases.sqlite_fts import stac_q_to_fts5
 from eodag.utils import get_geometry_from_various
 from eodag.utils.dates import get_datetime
 from eodag.utils.exceptions import NoMatchingCollection
@@ -287,85 +288,57 @@ class SQLiteDatabase(Database):
         p_config.__dict__["products"] = {}
         pass
 
-    def search_collections(
+    def collections_search(
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         datetime: Optional[str] = None,
         limit: Optional[int] = 10,
-        q: Optional[list[str]] = None,  # Free-Text Search
-        cql2_text: Optional[str] = None,  # cql2
-        cql2_json: Optional[dict[str, Any]] = None,  # cql2
+        q: Optional[list[str]] = None,
+        cql2_text: Optional[str] = None,
+        cql2_json: Optional[dict[str, Any]] = None,
     ) -> tuple[CollectionsDict, int]:
         """Search collections matching the given parameters.
 
         :returns: A tuple of (returned collections, total number matched).
         """
-        if cql2_text and cql2_json:
-            raise ValueError("Cannot provide both cql2_text and cql2_json")
+        where = _stac_search_to_where(geometry, datetime, cql2_text, cql2_json)
 
-        if cql2_text:
-            cql2_json = cql2.parse_text(cql2_text).to_json()
+        from_clause = "FROM collections c"
+        where_parts = [where]
+        params: list[Any] = []
+        order_by = ""
+        select_score = ""
 
-        cql2_conditions: list[dict[str, Any]] = []
+        if q:
+            fts_expr = stac_q_to_fts5(" ".join(q))
+            if fts_expr:
+                from_clause += " JOIN collections_fts cf ON cf.rowid = c.key"
+                where_parts.append("collections_fts MATCH ?")
+                params.append(fts_expr)
 
-        if cql2_json:
-            cql2_conditions.append(cql2_json)
+                # Weighted relevance: title > description > keywords
+                select_score = ", bm25(collections_fts, 10.0, 3.0, 1.0) AS rank_score"
+                order_by = " ORDER BY rank_score ASC, c.id ASC"
 
-        if geometry:
-            geom = get_geometry_from_various(geometry=geometry)
-            if geom is not None:
-                cql2_conditions.append(
-                    {
-                        "op": "s_intersects",
-                        "args": [
-                            {"property": "geometry"},
-                            shapely.geometry.mapping(geom),
-                        ],
-                    }
-                )
-
-        if datetime:
-            start_date_str, end_date_str = get_datetime({"datetime": datetime})
-            if end_date_str:
-                cql2_conditions.append(
-                    {
-                        "op": "<=",
-                        "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
-                    }
-                )
-            if start_date_str:
-                cql2_conditions.append(
-                    {
-                        "op": ">=",
-                        "args": [
-                            {"property": "end_datetime"},
-                            {"timestamp": start_date_str},
-                        ],
-                    }
-                )
-
-        # Merge all conditions into one CQL2 AND filter
-        where_clause = "True"
-        if cql2_conditions:
-            combined = (
-                cql2_conditions[0]
-                if len(cql2_conditions) == 1
-                else {"op": "and", "args": cql2_conditions}
-            )
-            where_clause = cql2_json_to_sql(combined)
-
-        from_where = f"FROM collections WHERE {where_clause}"
+        full_where = " AND ".join(where_parts)
 
         # Total matches (before limit)
-        count_row = self._execute(f"SELECT COUNT(*) {from_where}").fetchone()
+        count_row = self._execute(
+            f"SELECT COUNT(*) {from_clause} WHERE {full_where}",
+            tuple(params) or None,
+        ).fetchone()
         number_matched = count_row[0] if count_row else 0
 
-        sql = f'SELECT json(collection) AS "collection [collection]" {from_where}'
+        sql = (
+            f'SELECT json(c.content) AS "collection [collection]"{select_score} '
+            f"{from_clause} WHERE {full_where}{order_by}"
+        )
         if limit is not None:
             sql += f" LIMIT {limit}"
 
         collections_list: list[Collection] = [
-            row["collection"] for row in self._execute(sql).fetchall()
+            row["collection"]
+            for row in self._execute(sql, tuple(params) or None).fetchall()
         ]
 
         return CollectionsDict(collections_list), number_matched
@@ -471,11 +444,13 @@ def register_custom_functions(conn: sqlite3.Connection) -> None:
         conn.create_function(func_name, 2, _make_array_func(predicate))
 
     # Integer division – cql2 emits div(a, b)
-    conn.create_function("div", 2, lambda a, b: int(a // b) if b else None)
+    conn.create_function(
+        "div", 2, lambda a, b: None if a is None or b is None or b == 0 else a // b
+    )
 
 
 def create_collections_table(con: sqlite3.Connection) -> None:
-    """Create the core collections table for STAC payload and metadata."""
+    """Create the core collections table and FTS5 index for STAC payload and metadata."""
     cur = con.cursor()
     cur.execute(
         """
@@ -529,3 +504,122 @@ def create_collections_table(con: sqlite3.Connection) -> None:
         );
         """
     )
+
+    # FTS5 virtual table for full-text search on title, description, keywords
+    cur.execute(
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS collections_fts USING fts5(
+            title,
+            description,
+            keywords,
+            content='',
+            tokenize='unicode61 remove_diacritics 2'
+        );
+        """
+    )
+
+    # Helper: FTS extraction values for a given row reference (NEW/OLD/bare column)
+    def _fts_vals(ref: str) -> str:
+        sep = "." if ref in ("NEW", "OLD") else ""
+        r = f"{ref}{sep}" if ref else ""
+        return f"""
+                {r}key,
+                COALESCE(json_extract({r}content, '$.title'), ''),
+                COALESCE(json_extract({r}content, '$.description'), ''),
+                COALESCE((
+                    SELECT group_concat(value, ' ')
+                    FROM json_each({r}content, '$.keywords')
+                ), '')"""
+
+    # Triggers to keep FTS index in sync with collections table
+    cur.execute(
+        f"""
+        CREATE TRIGGER IF NOT EXISTS collections_ai AFTER INSERT ON collections BEGIN
+            INSERT INTO collections_fts(rowid, title, description, keywords)
+            VALUES ({_fts_vals("NEW")});
+        END;
+    """
+    )
+    cur.execute(
+        f"""
+        CREATE TRIGGER IF NOT EXISTS collections_ad AFTER DELETE ON collections BEGIN
+            INSERT INTO collections_fts(collections_fts, rowid, title, description, keywords)
+            VALUES ('delete', {_fts_vals("OLD")});
+        END;
+    """
+    )
+    cur.execute(
+        f"""
+        CREATE TRIGGER IF NOT EXISTS collections_au AFTER UPDATE OF content ON collections BEGIN
+            INSERT INTO collections_fts(collections_fts, rowid, title, description, keywords)
+            VALUES ('delete', {_fts_vals("OLD")});
+            INSERT INTO collections_fts(rowid, title, description, keywords)
+            VALUES ({_fts_vals("NEW")});
+        END;
+    """
+    )
+
+    con.commit()
+
+
+def _stac_search_to_where(
+    geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
+    datetime: Optional[str] = None,
+    cql2_text: Optional[str] = None,
+    cql2_json: Optional[dict[str, Any]] = None,
+) -> str:
+    """Build the WHERE clause for the collections search query based on the provided parameters."""
+    if cql2_text and cql2_json:
+        raise ValueError("Cannot provide both cql2_text and cql2_json")
+
+    if cql2_text:
+        cql2_json = cql2.parse_text(cql2_text).to_json()
+
+    cql2_conditions: list[dict[str, Any]] = []
+
+    if cql2_json:
+        cql2_conditions.append(cql2_json)
+
+    if geometry:
+        geom = get_geometry_from_various(geometry=geometry)
+        if geom is not None:
+            cql2_conditions.append(
+                {
+                    "op": "s_intersects",
+                    "args": [
+                        {"property": "geometry"},
+                        shapely.geometry.mapping(geom),
+                    ],
+                }
+            )
+
+    if datetime:
+        start_date_str, end_date_str = get_datetime({"datetime": datetime})
+        if end_date_str:
+            cql2_conditions.append(
+                {
+                    "op": "<=",
+                    "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
+                }
+            )
+        if start_date_str:
+            cql2_conditions.append(
+                {
+                    "op": ">=",
+                    "args": [
+                        {"property": "end_datetime"},
+                        {"timestamp": start_date_str},
+                    ],
+                }
+            )
+
+    # Merge all conditions into one CQL2 AND filter
+    where_clause = "True"
+    if cql2_conditions:
+        combined = (
+            cql2_conditions[0]
+            if len(cql2_conditions) == 1
+            else {"op": "and", "args": cql2_conditions}
+        )
+        where_clause = cql2_json_to_sql(combined)
+    return where_clause
