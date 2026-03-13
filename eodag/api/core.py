@@ -118,8 +118,7 @@ class EODataAccessGateway:
         locations_conf_path: Optional[str] = None,
         db: Optional[Database] = None,
     ) -> None:
-        # handle database initialization
-        self.db = db if db is not None else SQLiteDatabase.create_with_dag(self)
+        self.db = db if db is not None else SQLiteDatabase()
 
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
