@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.collection import Collection, CollectionsDict
+    from eodag.api.collection import CollectionsDict
     from eodag.api.provider import ProviderConfig
 
 
@@ -42,11 +42,11 @@ class Database:
         """Create the collections configuration table in the database."""
         raise NotImplementedError
 
-    def get_collection(self, collection_name: str) -> Optional[Collection]:
+    def get_collection(self, collection_name: str) -> Optional[dict[str, Any]]:
         """Retrieve a collection from the database."""
         raise NotImplementedError
 
-    def get_collection_from_alias(self, alias_or_id: str) -> Collection:
+    def get_collection_from_alias(self, alias_or_id: str) -> dict[str, Any]:
         """Retrieve a collection from the database by either its id or alias.
 
         :param alias_or_id: Alias of the collection. If an existing id is given, this
@@ -79,8 +79,7 @@ class Database:
         q: Optional[list[str]] = None,  # Free-Text Search
         query: Optional[str] = None,  # STACQL
         filter_: Optional[dict[str, Any]] = None,  # cql2
-        count: bool = False,
-    ) -> tuple[CollectionsDict, Optional[int]]:
+    ) -> tuple[list[dict[str, Any]], int]:
         """
         :returns: Collections matching all the given parameters.
         """
