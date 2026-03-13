@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+# Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""CQL2 to SQLite SQL translator for EODAG's SQLite backend."""
 from __future__ import annotations
 
 import re
@@ -6,7 +24,14 @@ from typing import Any
 import cql2
 import orjson
 
-BASE_COLUMNS = {"key", "id", "datetime", "end_datetime", "geometry", "content"}
+BASE_COLLECTION_TABLE_COLUMNS = {
+    "key",
+    "id",
+    "datetime",
+    "end_datetime",
+    "geometry",
+    "content",
+}
 
 SUPPORTED_CONFORMANCE_CLASSES = (
     "http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2",
@@ -81,6 +106,7 @@ SUPPORTED_OPS = {
 
 
 def _extract_ops(node: Any, out: set[str]) -> None:
+    """Walk the CQL2 JSON to find all operators used."""
     if isinstance(node, dict):
         op = node.get("op")
         if isinstance(op, str):
@@ -93,6 +119,7 @@ def _extract_ops(node: Any, out: set[str]) -> None:
 
 
 def _validate_supported_ops(cql2_json: dict[str, Any]) -> None:
+    """Validate that all operators in the CQL2 JSON are supported."""
     ops: set[str] = set()
     _extract_ops(cql2_json, ops)
     unsupported_ops = sorted(op for op in ops if op not in SUPPORTED_OPS)
@@ -106,7 +133,7 @@ def _validate_supported_ops(cql2_json: dict[str, Any]) -> None:
 
 
 def _extract_properties(node: Any, out: set[str]) -> None:
-    """Walk the CQL2 JSON to find all property names used, so we can rewrite them to json_extract."""
+    """Walk the CQL2 JSON to find all property names used."""
     if isinstance(node, dict):
         if "property" in node and isinstance(node["property"], str):
             out.add(node["property"])
@@ -121,7 +148,7 @@ def _replace_properties(sql: str, properties: set[str]) -> str:
     """Rewrite property references in the SQL to json_extract(content, '$.property')."""
     result = sql
     for prop in sorted(properties, key=len, reverse=True):
-        if prop in BASE_COLUMNS:
+        if prop in BASE_COLLECTION_TABLE_COLUMNS:
             continue
 
         prop_expr = f"json_extract(content, '$.{prop}')"
