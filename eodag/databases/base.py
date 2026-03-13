@@ -71,14 +71,14 @@ class Database:
         """Add or update providers configurations in the database"""
         raise NotImplementedError
 
-    def search_collections(
+    def collections_search(
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         datetime: Optional[str] = None,
         limit: Optional[int] = 10,
-        q: Optional[list[str]] = None,  # Free-Text Search
-        query: Optional[str] = None,  # STACQL
-        filter_: Optional[dict[str, Any]] = None,  # cql2
+        q: Optional[list[str]] = None,
+        cql2_text: Optional[str] = None,
+        cql2_json: Optional[dict[str, Any]] = None,
     ) -> tuple[list[dict[str, Any]], int]:
         """
         :returns: Collections matching all the given parameters.
