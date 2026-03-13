@@ -439,9 +439,9 @@ class Collection(StacCollection):
                                 default_json is not None
                                 and error["loc"][1] in default_json
                             ):
-                                values_dict[wrong_field][error["loc"][1]] = (
-                                    default_json[error["loc"][1]]
-                                )
+                                values_dict[wrong_field][
+                                    error["loc"][1]
+                                ] = default_json[error["loc"][1]]
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])
@@ -660,15 +660,16 @@ class CollectionsList(UserList[Collection]):
     """An object representing a collection of :class:`~eodag.api.collection.Collection`.
 
     :param collections: A list of collections
+    :param number_matched: (optional) The total number of matching results of a collection search
 
     :cvar data: List of collections
     """
 
     def __init__(
-        self,
-        collections: list[Collection],
+        self, collections: list[Collection], number_matched: Optional[int] = None
     ) -> None:
         super().__init__(collections)
+        self.number_matched = number_matched
 
     def __str__(self) -> str:
         return f"{type(self).__name__}([{', '.join(str(col) for col in self)}])"
