@@ -255,14 +255,14 @@ class SQLiteDatabase(Database):
         number_matched = cast(int, count_row[0]) if count_row else 0
 
         sql = (
-            f'SELECT json(c.content) AS "collection [collection_dict]"{select_score} '
+            f'SELECT json(c.content) AS "c.content [collection_dict]"{select_score} '
             f"{from_clause} WHERE {full_where}{order_by}"
         )
         if limit is not None:
             sql += f" LIMIT {limit}"
 
         collections_list: list[dict[str, Any]] = [
-            row["collection"]
+            row["c.content"]
             for row in self._execute(sql, tuple(params) or None).fetchall()
         ]
 
