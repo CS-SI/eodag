@@ -21,15 +21,19 @@ import atexit
 import logging
 import os
 import sqlite3
+import unicodedata
+from collections.abc import Callable
 from sqlite3 import Connection
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union
 
+import cql2
 import orjson
-from shapely import Geometry, wkt
+import shapely
+from shapely.geometry import shape
 
 from eodag.api.collection import Collection, CollectionsDict
 from eodag.databases.base import Database
-from eodag.databases.sqlite_functions import register_sqlite_functions
+from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.utils import get_geometry_from_various
 from eodag.utils.dates import get_datetime
 from eodag.utils.exceptions import NoMatchingCollection
@@ -112,9 +116,10 @@ class SQLiteDatabase(Database):
         sqlite3.register_converter("collection", self._convert_collection)
 
         # register custom SQLite functions
-        register_sqlite_functions(self.con)
+        register_custom_functions(self.con)
 
-        self._create_col_table()
+        create_collections_table(self.con)
+
         self._create_col_config_table()
 
     def _get_connection(self, db_path: str) -> Connection:
@@ -142,9 +147,7 @@ class SQLiteDatabase(Database):
         """Close the connection to the database."""
         self.con.close()
 
-    def _execute(
-        self, con: Connection, sql: str, parameters: Optional[_Parameters] = None
-    ) -> Cursor:
+    def _execute(self, sql: str, parameters: Optional[_Parameters] = None) -> Cursor:
         """
         Return the cursor from a SQLite query ``execute()`` and rollback the connection if the query failed
 
@@ -156,17 +159,15 @@ class SQLiteDatabase(Database):
         """
         try:
             if parameters is None:
-                return con.execute(sql)
+                return self.con.execute(sql)
             else:
-                return con.execute(sql, parameters)
+                return self.con.execute(sql, parameters)
         except sqlite3.DatabaseError as e:
             # rollback manually as connection parameter "isolation_level" is set to "DEFERRED"
-            con.rollback()
+            self.con.rollback()
             raise e
 
-    def _executemany(
-        self, con: Connection, sql: str, parameters: Iterable[_Parameters]
-    ) -> Cursor:
+    def _executemany(self, sql: str, parameters: Iterable[_Parameters]) -> Cursor:
         """
         Return the cursor from a SQLite query ``execute_all()`` and rollback the connection if the query failed
 
@@ -177,23 +178,11 @@ class SQLiteDatabase(Database):
         :raises: :class:`~sqlite3.DatabaseError`
         """
         try:
-            return con.executemany(sql, parameters)
+            return self.con.executemany(sql, parameters)
         except sqlite3.DatabaseError as e:
             # rollback manually as connection parameter "isolation_level" is set to "DEFERRED"
-            con.rollback()
+            self.con.rollback()
             raise e
-
-    def _create_col_table(self) -> None:
-        """Create the collections table in the database."""
-        self._execute(
-            self.con,
-            """
-            CREATE TABLE IF NOT EXISTS collections (
-                id TEXT PRIMARY KEY,
-                collection BLOB NOT NULL
-            );
-            """,
-        )
 
     def _create_col_config_table(self) -> None:
         """Create the collections configuration table in the database."""
@@ -210,17 +199,13 @@ class SQLiteDatabase(Database):
             """,
         )
 
-    def get_collection(self, collection_name: str) -> Optional[Collection]:
+    def get_collection(self, collection_id: str) -> Optional[Collection]:
         """Retrieve a collection from the database."""
-        collection_row = self._execute(
-            self.con,
-            'SELECT json(collection) AS "collection [collection]" FROM collections WHERE id = ?;',
-            (collection_name,),
+        row = self._execute(
+            'SELECT json(content) AS "collection [collection]" FROM collections WHERE id = ?',
+            (collection_id,),
         ).fetchone()
-
-        if collection_row is None:
-            return None
-        return collection_row["collection"]
+        return row["collection"] if row else None
 
     def get_collection_from_alias(self, alias_or_id: str) -> Collection:
         """Retrieve a collection from the database by either its id or alias.
@@ -230,9 +215,8 @@ class SQLiteDatabase(Database):
         :returns: The collection having  Internal name of the collection.
         """
         collection_rows = self._execute(
-            self.con,
-            'SELECT json(collection) AS "collection [collection]" FROM collections '
-            "WHERE jsonb_extract(collection, '$.id') = ?;",
+            'SELECT json(content) AS "collection [collection]" FROM collections '
+            "WHERE id = ?;",
             (alias_or_id,),
         ).fetchall()
 
@@ -252,83 +236,23 @@ class SQLiteDatabase(Database):
 
         return collection_rows[0]["collection"]
 
-    def delete_collection(self, collection_name: str) -> None:
-        """Delete a collection from the database."""
-        deleted_coll_nb = self._execute(
-            self.con,
-            """
-            DELETE FROM collections
-            WHERE id = ?;
-            """,
-            (collection_name,),
-        ).rowcount
-
+    def delete_collection(self, collection_id: str) -> None:
+        """Remove a collection and its provider configs from the database."""
+        self._execute("DELETE FROM collections WHERE id = ?", (collection_id,))
         self._execute(
-            self.con,
-            """
-            DELETE FROM providers_config
-            WHERE collection = ?;
-            """,
-            (collection_name,),
+            "DELETE FROM providers_config WHERE collection = ?", (collection_id,)
         )
-
         self.con.commit()
-
-        if deleted_coll_nb > 0:
-            msg = f"{deleted_coll_nb} collection(s) have been deleted from the database"
-            logger.debug(msg)
-
-    def rename_collection(self, old_name: str, new_name: str) -> None:
-        """Rename a collection in the database."""
-        # TODO: maybe change id attribute in column "collection",
-        # and in that case it is not needed to update providers_config
-        renamed_coll_nb = self._execute(
-            self.con,
-            """
-            UPDATE collections
-            SET id = ?
-            WHERE id = ?;
-            """,
-            (new_name, old_name),
-        ).rowcount
-
-        self._execute(
-            self.con,
-            """
-            UPDATE providers_config
-            SET collection = ?
-            WHERE collection = ?;
-            """,
-            (new_name, old_name),
-        )
-
-        self.con.commit()
-
-        if renamed_coll_nb > 0:
-            msg = f"{renamed_coll_nb} collection(s) have been renamed in the database"
-            logger.debug(msg)
-
-    def update(self, collection_conf: dict[str, Any]) -> None:
-        """Update a collection in the database."""
-        raise NotImplementedError
-
-    def insert_collection(self, collection: Collection) -> None:
-        """Insert a collection in the database."""
-        raise NotImplementedError
 
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
-        collection_tuples_list: list[tuple[str, Collection]] = []
-        for id, coll in collections.items():
-            collection_tuples_list.append((id, coll))
 
         upserted_coll_nb = self._executemany(
-            self.con,
             """
-            INSERT INTO collections (id, collection) VALUES (?, jsonb(?))
-            ON CONFLICT(id) DO UPDATE SET collection=excluded.collection;
+            INSERT INTO collections (content) VALUES (jsonb(?))
+            ON CONFLICT(id) DO UPDATE SET content=excluded.content;
             """,
-            collection_tuples_list,
+            [(c,) for c in collections.values()],
         ).rowcount
 
         self.con.commit()
@@ -343,7 +267,6 @@ class SQLiteDatabase(Database):
             for coll, coll_config in p_config.products.items():
                 # TODO: better use executemany
                 self._execute(
-                    self.con,
                     """
                     INSERT INTO providers_config (provider, collection, config, priority)
                         VALUES (?, ?, jsonb(?), ?)
@@ -370,92 +293,239 @@ class SQLiteDatabase(Database):
         datetime: Optional[str] = None,
         limit: Optional[int] = 10,
         q: Optional[list[str]] = None,  # Free-Text Search
-        query: Optional[str] = None,  # STACQL
-        filter_: Optional[dict[str, Any]] = None,  # cql2
-        count: bool = False,
-    ) -> tuple[CollectionsDict, Optional[int]]:
+        cql2_text: Optional[str] = None,  # cql2
+        cql2_json: Optional[dict[str, Any]] = None,  # cql2
+    ) -> tuple[CollectionsDict, int]:
+        """Search collections matching the given parameters.
+
+        :returns: A tuple of (returned collections, total number matched).
         """
-        :returns: Collections matching all the given parameters.
-        """
-        where_conditions_list = []
-        parameters: dict[str, Any] = {}
+        if cql2_text and cql2_json:
+            raise ValueError("Cannot provide both cql2_text and cql2_json")
 
-        # TODO: create q_to_dict
-        q_dict = {}  # q_to_dict(q) if q else {}
+        if cql2_text:
+            cql2_json = cql2.parse_text(cql2_text).to_json()
 
-        if collection := q_dict.get("id"):
-            try:
-                self.get_collection_from_alias(collection)
-            except NoMatchingCollection:
-                return (CollectionsDict([]), 0 if count else None)
+        cql2_conditions: list[dict[str, Any]] = []
 
-            parameters.update({"id": collection})
-            where_conditions_list.append("id = :id")
-
-        if "provider" in q_dict or "federation:backends" in q_dict:
-            provider = q_dict.get("provider", q_dict.get["federation:backends"])
-            provider = provider[0] if isinstance(provider, list) else provider
-            if provider is not None:
-                parameters.update({"provider": provider})
-                where_conditions_list.append(
-                    "jsonb_extract(collection, '$.id') IN "
-                    "("
-                    "   SELECT collection FROM providers_config "
-                    "   WHERE provider = :provider"
-                    ");",
-                )
+        if cql2_json:
+            cql2_conditions.append(cql2_json)
 
         if geometry:
-            geom = cast(Geometry, get_geometry_from_various(geometry=geometry))
-            geom_wkt = wkt.dumps(geom, rounding_precision=4)
+            geom = get_geometry_from_various(geometry=geometry)
             if geom is not None:
-                parameters.update({"geom": geom_wkt})
-                where_conditions_list.append(
-                    "check_collection_geom_intersection(json(collection), :geom)"
+                cql2_conditions.append(
+                    {
+                        "op": "s_intersects",
+                        "args": [
+                            {"property": "geometry"},
+                            shapely.geometry.mapping(geom),
+                        ],
+                    }
                 )
 
         if datetime:
             start_date_str, end_date_str = get_datetime({"datetime": datetime})
-            parameters.update(
-                {"start_date_str": start_date_str, "end_date_str": end_date_str}
-            )
-            where_conditions_list.append(
-                "check_collection_interval_intersection(json(collection), :start_date_str, :end_date_str)"
-            )
-
-        where_conditions_intersection = (
-            " AND ".join(where_conditions_list) if where_conditions_list else "True"
-        )
-
-        # execute
-        sql = (
-            'SELECT json(collection) AS "collection [collection]" FROM collections '
-            f"WHERE {where_conditions_intersection};"
-        )
-
-        collection_rows = self._execute(self.con, sql, parameters).fetchall()
-
-        if not collection_rows:
-            if collection:
-                msg = (
-                    f"Collection {collection} exists but does not match other criteria"
+            if end_date_str:
+                cql2_conditions.append(
+                    {
+                        "op": "<=",
+                        "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
+                    }
                 )
-                logger.info(msg)
+            if start_date_str:
+                cql2_conditions.append(
+                    {
+                        "op": ">=",
+                        "args": [
+                            {"property": "end_datetime"},
+                            {"timestamp": start_date_str},
+                        ],
+                    }
+                )
 
-            return (CollectionsDict([]), 0 if count else None)
+        # Merge all conditions into one CQL2 AND filter
+        where_clause = "True"
+        if cql2_conditions:
+            combined = (
+                cql2_conditions[0]
+                if len(cql2_conditions) == 1
+                else {"op": "and", "args": cql2_conditions}
+            )
+            where_clause = cql2_json_to_sql(combined)
+
+        from_where = f"FROM collections WHERE {where_clause}"
+
+        # Total matches (before limit)
+        count_row = self._execute(f"SELECT COUNT(*) {from_where}").fetchone()
+        number_matched = count_row[0] if count_row else 0
+
+        sql = f'SELECT json(collection) AS "collection [collection]" {from_where}'
+        if limit is not None:
+            sql += f" LIMIT {limit}"
 
         collections_list: list[Collection] = [
-            coll_row["collection"] for coll_row in collection_rows
+            row["collection"] for row in self._execute(sql).fetchall()
         ]
 
-        number_matched: Optional[int] = None
-        if count:
-            sql = (
-                "SELECT COUNT(collection) FROM collections "
-                f"WHERE {where_conditions_intersection};"
-            )
-            number_matched_row = self._execute(self.con, sql).fetchone()
-
-            number_matched = 0 if number_matched_row is None else number_matched_row[0]
-
         return CollectionsDict(collections_list), number_matched
+
+
+def _strip_accents(text: str | None) -> str | None:
+    """Remove diacritical marks for accent-insensitive comparison (CQL2 accenti)."""
+    if text is None:
+        return None
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFD", str(text))
+        if unicodedata.category(c) != "Mn"
+    )
+
+
+def _st_makeenvelope(xmin: float, ymin: float, xmax: float, ymax: float) -> str:
+    """Convert bounding-box coordinates to a GeoJSON Polygon string."""
+    return orjson.dumps(
+        {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [xmin, ymin],
+                    [xmax, ymin],
+                    [xmax, ymax],
+                    [xmin, ymax],
+                    [xmin, ymin],
+                ]
+            ],
+        }
+    ).decode()
+
+
+def _make_array_func(
+    predicate: Callable[[set[Any], set[Any]], bool],
+) -> Callable[[str | None, str | None], int | None]:
+    """Create an array comparison function for SQLite registration.
+
+    Both arguments are JSON array strings.
+    """
+
+    def func(left_json: str | None, right_json: str | None) -> int | None:
+        if left_json is None or right_json is None:
+            return None
+        left = set(orjson.loads(left_json))
+        right = set(orjson.loads(right_json))
+        return int(predicate(left, right))
+
+    return func
+
+
+def _make_spatial_func(
+    method_name: str,
+) -> Callable[[str | None, str | None], int | None]:
+    """Create a spatial predicate function for SQLite registration."""
+
+    def func(g1_json: str | None, g2_json: str | None) -> int | None:
+        if g1_json is None or g2_json is None:
+            return None
+        g1 = shape(orjson.loads(g1_json))
+        g2 = shape(orjson.loads(g2_json))
+        return int(getattr(g1, method_name)(g2))
+
+    return func
+
+
+def register_custom_functions(conn: sqlite3.Connection) -> None:
+    """Register custom SQL functions needed for CQL2 evaluation in SQLite.
+
+    This includes spatial predicates (via Shapely), array comparisons,
+    accent-insensitive helpers, bounding-box conversion, and integer division.
+    """
+    # GeoJSON passthrough – cql2 emits st_geomfromgeojson('...')
+    conn.create_function("st_geomfromgeojson", 1, lambda x: x)
+
+    # Bounding-box literal – cql2 emits st_makeenvelope(xmin, ymin, xmax, ymax)
+    conn.create_function("st_makeenvelope", 4, _st_makeenvelope)
+
+    # Accent-insensitive comparison – cql2 emits strip_accents(x)
+    conn.create_function("strip_accents", 1, _strip_accents)
+
+    # Spatial predicates
+    for sql_name, shapely_method in [
+        ("st_intersects", "intersects"),
+        ("st_equals", "equals"),
+        ("st_disjoint", "disjoint"),
+        ("st_within", "within"),
+        ("st_contains", "contains"),
+        ("st_overlaps", "overlaps"),
+        ("st_touches", "touches"),
+        ("st_crosses", "crosses"),
+    ]:
+        conn.create_function(sql_name, 2, _make_spatial_func(shapely_method))
+
+    # Array predicates – rewritten from Postgres @>, <@, @@, = ARRAY[]
+    for func_name, predicate in [
+        ("a_contains", lambda a, b: b.issubset(a)),
+        ("a_containedby", lambda a, b: a.issubset(b)),
+        ("a_equals", lambda a, b: a == b),
+        ("a_overlaps", lambda a, b: bool(a & b)),
+    ]:
+        conn.create_function(func_name, 2, _make_array_func(predicate))
+
+    # Integer division – cql2 emits div(a, b)
+    conn.create_function("div", 2, lambda a, b: int(a // b) if b else None)
+
+
+def create_collections_table(con: sqlite3.Connection) -> None:
+    """Create the core collections table for STAC payload and metadata."""
+    cur = con.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS collections (
+            key INTEGER PRIMARY KEY,
+            content JSONB NOT NULL CHECK (json_valid(content, 4)),
+            id TEXT GENERATED ALWAYS AS (jsonb_extract(content, '$.id')) STORED UNIQUE,
+            datetime TEXT GENERATED ALWAYS AS (
+                COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][0]'), '-infinity')
+            ) STORED
+                CHECK (
+                    datetime IN ('-infinity', 'infinity')
+                    OR datetime(datetime) IS NOT NULL
+                ),
+            end_datetime TEXT GENERATED ALWAYS AS (
+                COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][1]'), 'infinity')
+            ) STORED
+                CHECK (
+                    end_datetime IN ('-infinity', 'infinity')
+                    OR datetime(end_datetime) IS NOT NULL
+                ),
+            geometry TEXT GENERATED ALWAYS AS (
+                CASE WHEN json_type(content, '$.extent.spatial.bbox[0]') = 'array' THEN
+                    json_object(
+                        'type', 'Polygon',
+                        'coordinates', json_array(json_array(
+                            json_array(
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][1]') AS REAL)
+                            ),
+                            json_array(
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][1]') AS REAL)
+                            ),
+                            json_array(
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][3]') AS REAL)
+                            ),
+                            json_array(
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][3]') AS REAL)
+                            ),
+                            json_array(
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][1]') AS REAL)
+                            )
+                        ))
+                    )
+                END
+            ) STORED
+        );
+        """
+    )
