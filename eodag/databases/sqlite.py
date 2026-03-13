@@ -24,7 +24,7 @@ import sqlite3
 import unicodedata
 from collections.abc import Callable
 from sqlite3 import Connection
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import cql2
 import orjson
@@ -173,7 +173,7 @@ class SQLiteDatabase(Database):
     def get_collection(self, collection_id: str) -> Optional[dict[str, Any]]:
         """Retrieve a collection from the database."""
         row = self._execute(
-            'SELECT json(content) AS "collection [collection_dict]" FROM collections WHERE id = ?',
+            'SELECT json(content) AS "c.content [collection_dict]" FROM collections WHERE id = ?',
             (collection_id,),
         ).fetchone()
         return row["collection"] if row else None
@@ -186,7 +186,7 @@ class SQLiteDatabase(Database):
         :returns: A dictionary of the collection having ``alias_or_id`` as alias or id.
         """
         collection_rows = self._execute(
-            'SELECT json(content) AS "collection [collection_dict]" FROM collections '
+            'SELECT json(content) AS "c.content [collection_dict]" FROM collections '
             "WHERE id = ?;",
             (alias_or_id,),
         ).fetchall()
@@ -297,21 +297,21 @@ class SQLiteDatabase(Database):
             f"SELECT COUNT(*) {from_clause} WHERE {full_where}",
             tuple(params) or None,
         ).fetchone()
-        number_matched = count_row[0] if count_row else 0
+        number_matched = cast(int, count_row[0]) if count_row else 0
 
         sql = (
-            f'SELECT json(c.content) AS "collection [collection_dict]"{select_score} '
+            f'SELECT json(c.content) AS "c.content [collection_dict]"{select_score} '
             f"{from_clause} WHERE {full_where}{order_by}"
         )
         if limit is not None:
             sql += f" LIMIT {limit}"
 
-        collections_list: list[Collection] = [
+        collections_list: list[dict[str, Any]] = [
             row["collection"]
             for row in self._execute(sql, tuple(params) or None).fetchall()
         ]
 
-        return CollectionsDict(collections_list), number_matched
+        return collections_list, number_matched
 
 
 def _strip_accents(text: str | None) -> str | None:
