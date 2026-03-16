@@ -205,7 +205,7 @@ exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.0.0.dev0"
+fallback_version = "4.0.1.dev0"
 
 [tool.isort]
 multi_line_output = 3
