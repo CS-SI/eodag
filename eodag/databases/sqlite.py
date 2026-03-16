@@ -17,9 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import atexit
 import logging
-import os
 import sqlite3
 import unicodedata
 from collections.abc import Callable
@@ -32,12 +30,11 @@ import shapely
 from shapely.geometry import shape
 
 from eodag.api.collection import Collection, CollectionsDict
-from eodag.databases.base import DEFAULT_COLLECTIONS_PER_PAGE, Database
+from eodag.databases.base import Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
 from eodag.utils import get_geometry_from_various
 from eodag.utils.dates import get_datetime
-from eodag.utils.exceptions import NoMatchingCollection
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -53,73 +50,31 @@ logger = logging.getLogger("eodag.databases.sqlite_database")
 class SQLiteDatabase(Database):
     """Class representing a SQLite database."""
 
-    con: Connection
+    _con: Connection
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
+    def __init__(self, db_path: str) -> None:
         """Initialize database by creating a connection and preparing the database."""
-        self.type = "sqlite"
-        if db_path is None:
-            db_path = os.path.join(
-                os.path.expanduser("~"), ".config", "eodag", "eodag.db"
-            )
-        self.con = self._get_connection(db_path)
-        self.prepare_database()
-
-    def _adapt_collection(self, collection: Collection) -> str:
-        """An adapter to automatically convert from a ``Collection``
-        instance to an SQLite-compatible type when injected to queries"""
-        return collection.model_dump_json()
-
-    def _convert_collection(self, coll_bytes: bytes) -> dict[str, Any]:
-        """A converter to convert from SQLite bytes values of a collection to a dictionary
-        of this collection when called in queries by its key wrapped in square brackets.
-        Its key is set during its registration.
-        """
-        return orjson.loads(coll_bytes)
-
-    def prepare_database(self) -> None:
-        """Do what is required (or better) to do before sending queries to the database:
-
-        * register adapters and converters to make processes before and after queries easier
-        * register custom SQLite functions
-        * create tables if do not exist
-        """
-        # register the adapter and converter
-        sqlite3.register_adapter(Collection, self._adapt_collection)
-        # set the key "collection_dict" to convert SQLite bytes values to a dictionary
-        sqlite3.register_converter("collection_dict", self._convert_collection)
-
-        # register custom SQLite functions
-        register_custom_functions(self.con)
-
-        create_collections_table(self.con)
-
-        self._create_col_config_table()
-
-    def _get_connection(self, db_path: str) -> Connection:
-        """Get a connection to a database.
-
-        :param db_path: Path to use to create a database or to connect to it
-
-        :returns: The connection instance
-        """
-        # connect to the database
-        # set parsing using column names for the adapter and converter
-        con = sqlite3.connect(
+        self._con = sqlite3.connect(
             database=db_path,
             detect_types=sqlite3.PARSE_COLNAMES,
             check_same_thread=True,
         )
-        con.row_factory = sqlite3.Row
+        self._con.row_factory = sqlite3.Row
 
-        # ensure the connection is closed on exit
-        atexit.register(self._close_connection)
+        sqlite3.register_adapter(Collection, _adapt_collection)
+        # set the key "collection_dict" to convert SQLite bytes values to a dictionary
+        sqlite3.register_converter("collection_dict", _convert_collection)
 
-        return con
+        register_custom_functions(self._con)
 
-    def _close_connection(self) -> None:
+        create_collections_table(self._con)
+        create_providers_config_table(self._con)
+
+    def close(self) -> None:
         """Close the connection to the database."""
-        self.con.close()
+        if self._con:
+            self._con.close()
+            self._con = None
 
     def _execute(self, sql: str, parameters: Optional[_Parameters] = None) -> Cursor:
         """
@@ -132,12 +87,12 @@ class SQLiteDatabase(Database):
         """
         try:
             if parameters is None:
-                return self.con.execute(sql)
+                return self._con.execute(sql)
             else:
-                return self.con.execute(sql, parameters)
+                return self._con.execute(sql, parameters)
         except sqlite3.DatabaseError as e:
             # rollback manually as connection parameter "isolation_level" is set to "DEFERRED"
-            self.con.rollback()
+            self._con.rollback()
             raise e
 
     def _executemany(self, sql: str, parameters: Iterable[_Parameters]) -> Cursor:
@@ -150,27 +105,13 @@ class SQLiteDatabase(Database):
         :raises: :class:`~sqlite3.DatabaseError`
         """
         try:
-            return self.con.executemany(sql, parameters)
+            return self._con.executemany(sql, parameters)
         except sqlite3.DatabaseError as e:
             # rollback manually as connection parameter "isolation_level" is set to "DEFERRED"
-            self.con.rollback()
+            self._con.rollback()
             raise e
 
-    def _create_col_config_table(self) -> None:
-        """Create the collections configuration table in the database."""
-        self._execute(
-            """
-            CREATE TABLE IF NOT EXISTS providers_config (
-                provider TEXT,
-                collection TEXT,
-                config BLOB NOT NULL,
-                priority INTEGER,
-                PRIMARY KEY (provider, collection)
-            );
-            """,
-        )
-
-    def get_collection(self, collection_id: str) -> Optional[dict[str, Any]]:
+    def _get_collection(self, collection_id: str) -> Optional[dict[str, Any]]:
         """Retrieve a collection from the database."""
         row = self._execute(
             'SELECT json(content) AS "c.content [collection_dict]" FROM collections WHERE id = ?',
@@ -178,42 +119,13 @@ class SQLiteDatabase(Database):
         ).fetchone()
         return row["collection"] if row else None
 
-    def get_collection_from_alias(self, alias_or_id: str) -> dict[str, Any]:
-        """Retrieve a collection from the database by either its id or alias.
-
-        :param alias_or_id: Alias of the collection. If an existing id is given, this
-                            method will directly return the collection of given value.
-        :returns: A dictionary of the collection having ``alias_or_id`` as alias or id.
-        """
-        collection_rows = self._execute(
-            'SELECT json(content) AS "collection [collection_dict]" FROM collections '
-            "WHERE id = ?;",
-            (alias_or_id,),
-        ).fetchall()
-
-        if len(collection_rows) > 1:
-            coll_with_alias = ", ".join(
-                [str(coll_row["collection"]) for coll_row in collection_rows]
-            )
-            msg = f"Too many matching collections for alias {alias_or_id}: {coll_with_alias}"
-            raise NoMatchingCollection(msg)
-
-        if len(collection_rows) == 0:
-            if (coll := self.get_collection(alias_or_id)) is not None:
-                return coll
-            else:
-                msg = f"Could not find collection from alias or id {alias_or_id}"
-                raise NoMatchingCollection(msg)
-
-        return collection_rows[0]["collection"]
-
     def delete_collection(self, collection_id: str) -> None:
         """Remove a collection and its provider configs from the database."""
         self._execute("DELETE FROM collections WHERE id = ?", (collection_id,))
         self._execute(
             "DELETE FROM providers_config WHERE collection = ?", (collection_id,)
         )
-        self.con.commit()
+        self._con.commit()
 
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
@@ -226,7 +138,7 @@ class SQLiteDatabase(Database):
             [(c,) for c in collections.values()],
         ).rowcount
 
-        self.con.commit()
+        self._con.commit()
 
         if upserted_coll_nb > 0:
             msg = f"{upserted_coll_nb} collection(s) have been updated or added to the database"
@@ -252,7 +164,7 @@ class SQLiteDatabase(Database):
                         p_config.priority,
                     ),
                 )
-        self.con.commit()
+        self._con.commit()
 
         # free memory taken by "products" in providers config
         p_config.__dict__["products"] = {}
@@ -262,8 +174,9 @@ class SQLiteDatabase(Database):
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         datetime: Optional[str] = None,
-        limit: int = DEFAULT_COLLECTIONS_PER_PAGE,
-        q: Optional[list[str]] = None,
+        limit: Optional[int] = None,
+        q: Optional[str] = None,
+        ids: Optional[list[str]] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
         sortby: Optional[list[dict[str, str]]] = None,
@@ -275,7 +188,13 @@ class SQLiteDatabase(Database):
             Allowed fields: ``id``, ``datetime``, ``end_datetime``.
         :returns: A tuple of (returned collections as dictionaries, total number matched).
         """
-        where = _stac_search_to_where(geometry, datetime, cql2_text, cql2_json)
+        if cql2_text and cql2_json:
+            raise ValueError("Cannot provide both cql2_text and cql2_json")
+
+        if cql2_text:
+            cql2_json = cql2.parse_text(cql2_text).to_json()
+
+        where = _stac_search_to_where(geometry, datetime, ids, cql2_json)
 
         from_clause = "FROM collections c"
         where_parts = [where]
@@ -284,7 +203,7 @@ class SQLiteDatabase(Database):
         select_score = ""
 
         if q:
-            fts_expr = stac_q_to_fts5(" ".join(q))
+            fts_expr = stac_q_to_fts5(q)
             if fts_expr:
                 from_clause += " JOIN collections_fts cf ON cf.rowid = c.key"
                 where_parts.append("collections_fts MATCH ?")
@@ -323,12 +242,20 @@ class SQLiteDatabase(Database):
 
         return collections_list, number_matched
 
-    def collections_sortables(self) -> list[str]:
-        """Return the list of fields that can be used in ``sortby``.
 
-        See https://github.com/stac-api-extensions/sort#sortables
-        """
-        return list(COLLECTIONS_SORTABLES)
+def _adapt_collection(collection: Collection) -> str:
+    """An adapter to automatically convert from a ``Collection``
+    instance to an SQLite-compatible type when injected to queries"""
+    return collection.model_dump_json()
+
+
+def _convert_collection(coll_bytes: bytes) -> dict[str, Any]:
+    """A converter to convert from SQLite bytes values of a collection to a dictionary
+    of this collection when called in queries by its key wrapped in square brackets.
+    Its key is set during its registration.
+    """
+    return orjson.loads(coll_bytes)
+
 
 def _strip_accents(text: str | None) -> str | None:
     """Remove diacritical marks for accent-insensitive comparison (CQL2 accenti)."""
@@ -548,23 +475,43 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     con.commit()
 
 
+def create_providers_config_table(con: sqlite3.Connection) -> None:
+    """Create the providers configuration table in the database."""
+    cur = con.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS providers_config (
+            provider TEXT,
+            collection TEXT,
+            config BLOB NOT NULL,
+            priority INTEGER,
+            PRIMARY KEY (provider, collection)
+        );
+        """,
+    )
+    con.commit()
+
+
 def _stac_search_to_where(
     geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
     datetime: Optional[str] = None,
-    cql2_text: Optional[str] = None,
+    ids: Optional[list[str]] = None,
     cql2_json: Optional[dict[str, Any]] = None,
 ) -> str:
     """Build the WHERE clause for the collections search query based on the provided parameters."""
-    if cql2_text and cql2_json:
-        raise ValueError("Cannot provide both cql2_text and cql2_json")
-
-    if cql2_text:
-        cql2_json = cql2.parse_text(cql2_text).to_json()
 
     cql2_conditions: list[dict[str, Any]] = []
 
     if cql2_json:
         cql2_conditions.append(cql2_json)
+
+    if ids:
+        cql2_conditions.append(
+            {
+                "op": "in",
+                "args": [{"property": "id"}, ids],
+            }
+        )
 
     if geometry:
         geom = get_geometry_from_various(geometry=geometry)
@@ -610,6 +557,7 @@ def _stac_search_to_where(
         where_clause = cql2_json_to_sql(combined)
     return where_clause
 
+
 COLLECTIONS_SORTABLES: dict[str, str] = {
     "id": "c.id",
     "datetime": "c.datetime",
@@ -617,6 +565,7 @@ COLLECTIONS_SORTABLES: dict[str, str] = {
 }
 
 _VALID_DIRECTIONS = {"asc", "desc"}
+
 
 def _stac_sortby_to_order_by(sortby: list[dict[str, str]]) -> list[str]:
     """Convert a STAC ``sortby`` list to SQL ORDER BY clauses.
