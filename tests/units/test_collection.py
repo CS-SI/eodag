@@ -26,6 +26,7 @@ from unittest import mock
 import orjson
 from lxml import html
 
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils.exceptions import ValidationError
 from tests.context import (
@@ -37,16 +38,34 @@ from tests.context import (
 
 
 class TestCollection(unittest.TestCase):
-    def setUp(self):
-        super(TestCollection, self).setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = TemporaryDirectory()
-        self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        cls.tmp_home_dir = TemporaryDirectory()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
-        self.expanduser_mock.start()
+        cls.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
-        self.dag = EODataAccessGateway()
+        cls.dag = EODataAccessGateway()
+
+    @classmethod
+    def tearDownClass(cls):
+        # stop Mock and remove tmp config dir
+        cls.sqlite_mock.stop()
+        cls.expanduser_mock.stop()
+        cls.tmp_home_dir.cleanup()
+        super().tearDownClass()
+
+    def setUp(self):
+        super().setUp()
         self.collection = Collection.create_with_dag(self.dag, id="foo")
 
         # mock os.environ to empty env
@@ -54,13 +73,9 @@ class TestCollection(unittest.TestCase):
         self.mock_os_environ.start()
 
     def tearDown(self):
-        super(TestCollection, self).tearDown()
+        super().tearDown()
         # stop os.environ
         self.mock_os_environ.stop()
-
-        # stop Mock and remove tmp config dir
-        self.expanduser_mock.stop()
-        self.tmp_home_dir.cleanup()
 
     def test_collection_enable_validation(self):
         """Collection validation is enabled by an environment variable.

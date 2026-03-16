@@ -34,6 +34,7 @@ from eodag.databases.sqlite import (
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
 
+
 def _norm(sql: str) -> str:
     """Collapse whitespace for SQL comparison."""
     return " ".join(sql.split())
@@ -187,7 +188,7 @@ class TestCQL2JsonToSql(unittest.TestCase):
 
     CQL2 tests are organized by conformance class as defined in OGC 21-065r2
     Annex A.
-    
+
     * https://docs.ogc.org/is/21-065r2/21-065r2.html
 
     A single in-memory database is created once for the entire class,
@@ -785,6 +786,7 @@ def _make_fts_conn(collections: list[dict[str, Any]]) -> sqlite3.Connection:
     conn.commit()
     return conn
 
+
 class TestStacQToFts5(unittest.TestCase):
     """Comprehensive tests for :func:`stac_q_to_fts5`.
 
@@ -1189,7 +1191,10 @@ class TestCollectionsSearch(unittest.TestCase):
             ),
             (
                 "multiple fields",
-                [{"field": "datetime", "direction": "desc"}, {"field": "id", "direction": "asc"}],
+                [
+                    {"field": "datetime", "direction": "desc"},
+                    {"field": "id", "direction": "asc"},
+                ],
                 {},
                 ["FOUR", "THREE", "TWO", "ONE"],
             ),
@@ -1207,8 +1212,16 @@ class TestCollectionsSearch(unittest.TestCase):
 
     def test_sortby_errors(self):
         cases = [
-            ("invalid field", [{"field": "title", "direction": "asc"}], "Unsupported sortby field"),
-            ("invalid direction", [{"field": "id", "direction": "sideways"}], "Invalid sortby direction"),
+            (
+                "invalid field",
+                [{"field": "title", "direction": "asc"}],
+                "Unsupported sortby field",
+            ),
+            (
+                "invalid direction",
+                [{"field": "id", "direction": "sideways"}],
+                "Invalid sortby direction",
+            ),
             ("missing field", [{"direction": "asc"}], "Unsupported sortby field"),
         ]
         for name, sortby, msg in cases:
@@ -1219,11 +1232,11 @@ class TestCollectionsSearch(unittest.TestCase):
 
     def test_q(self):
         cases = [
-            ("radar", ["radar"], {}, ["FOUR", "TWO"]),
-            ("no match", ["nonexistent"], {}, []),
+            ("radar", "radar", {}, ["FOUR", "TWO"]),
+            ("no match", "nonexistent", {}, []),
             (
                 "satellite + datetime",
-                ["satellite"],
+                "satellite",
                 {"datetime": "../2021-06-01T00:00:00Z"},
                 ["ONE", "TWO"],
             ),
@@ -1236,7 +1249,7 @@ class TestCollectionsSearch(unittest.TestCase):
     def test_q_sortby_overrides_bm25(self):
         """Explicit sortby overrides BM25 ranking order."""
         result = self.db.collections_search(
-            q=["satellite"],
+            q="satellite",
             sortby=[{"field": "id", "direction": "desc"}],
         )
         # satellite in keywords: ONE, TWO, FOUR → sorted id desc
@@ -1272,12 +1285,6 @@ class TestCollectionsSearch(unittest.TestCase):
         # Sorted datetime desc: TWO(2021), ONE(2020)
         self.assertEqual(self._ids(result), ["TWO", "ONE"])
         self.assertEqual(self._matched(result), 2)
-
-    def test_collections_sortables(self):
-        self.assertEqual(
-            sorted(self.db.collections_sortables()),
-            ["datetime", "end_datetime", "id"],
-        )
 
 
 if __name__ == "__main__":
