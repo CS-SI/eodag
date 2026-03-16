@@ -414,49 +414,54 @@ class PluginConfig(yaml.YAMLObject):
     dynamic_discover_queryables: list[PluginConfig.DynamicDiscoverQueryables]
 
     # download ---------------------------------------------------------------------------------------------------------
-    #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
+    #: :class:`~eodag.plugins.download.protocol.base.Download` Default endpoint url
     base_uri: str
-    #: :class:`~eodag.plugins.download.base.Download` Where to store downloaded products, as an absolute file path
+    #: :class:`~eodag.plugins.download.protocol.base.Download`
+    #: Where to store downloaded products, as an absolute file path
     output_dir: str
-    #: :class:`~eodag.plugins.download.base.Download`
+    #: :class:`~eodag.plugins.download.protocol.base.Download`
     #: Whether the content of the downloaded file should be extracted or not
     extract: bool
-    #: :class:`~eodag.plugins.download.base.Download` Which extension should be used for the downloaded file
+    #: :class:`~eodag.plugins.download.protocol.base.Download` Which extension should be used for the downloaded file
     output_extension: str
-    #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not
+    #: :class:`~eodag.plugins.download.protocol.base.Download`
+    #: Whether the directory structure should be flattened or not
     flatten_top_dirs: bool
-    #: :class:`~eodag.plugins.download.base.Download` Level in extracted path tree where to find data
+    #: :class:`~eodag.plugins.download.protocol.base.Download` Level in extracted path tree where to find data
     archive_depth: int
-    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``eodag:download_link``
-    #: or not
+    #: :class:`~eodag.plugins.download.protocol.base.Download`
+    #:  Whether ignore assets and download using ``eodag:download_link`` or not
     ignore_assets: bool
-    #: :class:`~eodag.plugins.download.base.Download` Collection specific configuration
+    #: :class:`~eodag.plugins.download.protocol.base.Download` Collection specific configuration
     products: dict[str, dict[str, Any]]
-    #: :class:`~eodag.plugins.download.base.Download` Number of maximum workers allowed for parallel downloads
+    #: :class:`~eodag.plugins.download.protocol.base.Download` Number of maximum workers allowed for parallel downloads
     max_workers: int
-    #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload`
+    #: Whether the product has to be ordered to download it or not
     order_enabled: bool
-    #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload` HTTP request method for the order request
     order_method: str
-    #: :class:`~eodag.plugins.download.http.HTTPDownload` Headers to be added to the order request
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload` Headers to be added to the order request
     order_headers: dict[str, str]
-    #: :class:`~eodag.plugins.download.http.HTTPDownload`
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload`
     #: Dictionary containing the key :attr:`~eodag.config.PluginConfig.metadata_mapping` which can be used to add new
     #: product properties based on the data in response to the order request
     order_on_response: PluginConfig.OrderOnResponse
-    #: :class:`~eodag.plugins.download.http.HTTPDownload` Order status handling
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload` Order status handling
     order_status: PluginConfig.OrderStatus
-    #: :class:`~eodag.plugins.download.http.HTTPDownload`
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload`
     #: Do not authenticate the download request but only the order and order status ones
     no_auth_download: bool
-    #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
+    #: :class:`~eodag.plugins.download.protocol.http.HTTPDownload`
+    #: Parameters to be added to the query params of the request
     dl_url_params: dict[str, str]
-    #: :class:`~eodag.plugins.download.aws.AwsDownload`
+    #: :class:`~eodag.plugins.download.protocol.aws.AwsDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
-    #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
+    #: :class:`~eodag.plugins.download.protocol.aws.AwsDownload`
+    #: Whether download is done from a requester-pays bucket or not
     requester_pays: bool
-    #: :class:`~eodag.plugins.download.aws.AwsDownload` S3 endpoint
+    #: :class:`~eodag.plugins.download.protocol.aws.AwsDownload` S3 endpoint
     s3_endpoint: str
 
     # auth -------------------------------------------------------------------------------------------------------------
@@ -584,7 +589,7 @@ class PluginConfig(yaml.YAMLObject):
 
     def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
         """Return a new PluginConfig with merged values."""
-        new_config = self.__class__.from_mapping(self.__dict__)
+        new_config: Self = self.__class__.from_mapping(self.__dict__)
         new_config.update(other)
         return new_config
 

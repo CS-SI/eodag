@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Earth_Explorer_File xmlns="http://gs2.esa.int/DATA_STRUCTURE/olqcReport">
+    <Earth_Explorer_Header>
+        <Fixed_Header>
+            <File_Name>S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_RADIOMETRIC_QUALITY_report.xml</File_Name>
+            <File_Description>Report produced by OLQC-SC</File_Description>
+            <Notes></Notes>
+            <Mission>S2B</Mission>
+            <File_Class>OPER</File_Class>
+            <File_Type>REP_OLQCPA</File_Type>
+            <Validity_Period>
+                <Validity_Start>UTC=2021-03-30T01:00:00</Validity_Start>
+                <Validity_Stop>UTC=2100-01-01T00:00:00</Validity_Stop>
+            </Validity_Period>
+            <File_Version>2</File_Version>
+            <Source>
+                <System>OLQC-SC</System>
+                <Creator>OLQC-SC</Creator>
+                <Creator_Version>04.04.00</Creator_Version>
+                <Creation_Date>UTC=2021-12-01T01:45:48</Creation_Date>
+            </Source>
+        </Fixed_Header>
+    </Earth_Explorer_Header>
+    <Data_Block type="xml">
+        <report gippVersion="1.0" globalStatus="PASSED" date="2021-12-01T01:45:48.854Z">
+            <checkList>
+                <parentID>S2B_OPER_GIP_OLQCPA_MPC__20210326T000023_V20210330T010000</parentID>
+                <name>RADIOMETRIC_QUALITY</name>
+                <version>1.0</version>
+                <item url="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/" className="PDI Level 1C Datastrip Folder" name="S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01" class="http://www.esa.int/s2#pdi_level_1c_datastrip_container"/>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.846Z" duration="1" execution="2021-12-01T01:45:48.852Z" id="Radiometric_Quality_Indicators_Multi_Temporal" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check on the Radiometric Quality Indicators : Multi-Temporal Calibration Accuracy. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Multi-temporal calibration accuracy is correct.</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.855Z" duration="13" execution="2021-12-01T01:45:48.865Z" id="IntegrationTime" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check INTEGRATION_TIME " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">INTEGRATION_TIME is OK</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.893Z" duration="0" execution="2021-12-01T01:45:48.898Z" id="EqualizationFlag" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check EQUALIZATION_MODE " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Equalization Mode is set to TRUE</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.899Z" duration="1" execution="2021-12-01T01:45:48.905Z" id="Radiometric_Quality_Indicators_Absolute" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check on the Radiometric Quality Indicators : Absolute Calibration Accuracy. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Absolute calibration accuracy is correct.</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.989Z" duration="6" execution="2021-12-01T01:45:48.997Z" id="SolarRadiance" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check Solar Radiance " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">SOLAR RADIANCE is OK</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:50.266Z" duration="1" execution="2021-12-01T01:45:50.271Z" id="Radiometric_Quality_Indicators_Cross_Band" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check on the Radiometric Quality Indicators : Cross Band Calibration Accuracy. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Cross band calibration accuracy is correct.</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:50.304Z" duration="0" execution="2021-12-01T01:45:50.308Z" id="QuantificationValue" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check QUANTIFICATION_VALUE " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">QUANTIFICATION_VALUE is OK</message>
+                </check>
+            </checkList>
+        </report>
+    </Data_Block>
+</Earth_Explorer_File>

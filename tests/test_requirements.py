@@ -30,110 +30,28 @@ from stdlib_list import stdlib_list
 try:
     import tomllib
 except ModuleNotFoundError:
-    import tomli as tomllib
+    import tomli as tomllib  # type: ignore
 
 from eodag.config import PluginConfig, load_default_config
-from tests.context import MisconfiguredError
+from eodag.utils.exceptions import MisconfiguredError
 
-project_path = "./eodag"
-pyproject_path = "./pyproject.toml"
-allowed_missing_imports = ["eodag"]
-
-
-def get_imports(filepath: str) -> Iterator[Any]:
-    """Get python imports from the given file path"""
-    with open(filepath, "r") as file:
-        try:
-            root = ast.parse(file.read())
-        except UnicodeDecodeError as e:
-            raise MisconfiguredError(
-                f"UnicodeDecodeError in {filepath}: {e.object[max(e.start - 50, 0):min(e.end + 50, len(e.object))]!r}"
-            ) from e
-
-    for node in ast.iter_child_nodes(root):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                if alias.name.split(".")[0] == "utils":
-                    pass
-
-                yield alias.name.split(".")[0]
-        elif isinstance(node, ast.ImportFrom) and node.level == 0:
-            if node.module.split(".")[0] == "utils":
-                pass
-            yield node.module.split(".")[0]
-
-
-def get_project_imports(project_path: str) -> set[str]:
-    """Get python imports from the project path"""
-    imports: set[str] = set()
-    for dirpath, dirs, files in os.walk(project_path):
-        for filename in files:
-            if filename.endswith(".py"):
-                filepath = os.path.join(dirpath, filename)
-                imports.update(get_imports(filepath))
-    return imports
-
-
-def get_setup_requires(pyproject_path: str):
-    """Get requirements from the given pyproject.toml file path"""
-    with open(pyproject_path, "rb") as f:
-        pyproject = tomllib.load(f)
-    return set([Requirement(r).name for r in pyproject["project"]["dependencies"]])
-
-
-def get_optional_dependencies(pyproject_path: str, extra: str) -> set[str]:
-    """Get extra requirements from the given pyproject.toml file path"""
-    with open(pyproject_path, "rb") as f:
-        pyproject = tomllib.load(f)
-    deps = set()
-    for req in pyproject["project"]["optional-dependencies"][extra]:
-        if req.startswith("eodag["):
-            for found_extra in re.findall(r"([\w-]+)[,\]]", req):
-                deps.update(get_optional_dependencies(pyproject_path, found_extra))
-        else:
-            deps.add(Requirement(req).name)
-
-    return deps
-
-
-def get_resulting_extras(pyproject_path: str, extra: str) -> set[str]:
-    """Get resulting extras for a single extra from the given pyproject.toml file path"""
-    with open(pyproject_path, "rb") as f:
-        pyproject = tomllib.load(f)
-    extras = set()
-    for req in pyproject["project"]["optional-dependencies"][extra]:
-        if req.startswith("eodag["):
-            extras.update(re.findall(r"([\w-]+)[,\]]", req))
-    return extras
-
-
-def get_entrypoints_extras(pyproject_path: str) -> dict[str, str]:
-    """Get entrypoints and associated extra from the given pyproject.toml file path"""
-    with open(pyproject_path, "rb") as f:
-        pyproject = tomllib.load(f)
-    plugins_extras_dict = dict()
-    for group_name, group_entries in pyproject["project"]["entry-points"].items():
-        if not group_name.startswith("eodag.plugins."):
-            continue
-        for plugin_name, entry_value in group_entries.items():
-            # plugin entrypoint with associated extra
-            match = re.search(r"^[\w\.:]+\s+\[(\w+)\]$", entry_value)
-            if match:
-                plugins_extras_dict[plugin_name] = match.group(1)
-                continue
-            # plugin entrypoint without extra
-            plugins_extras_dict[plugin_name] = None
-
-    return plugins_extras_dict
+BASE_PATH = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestRequirements(unittest.TestCase):
+    def setUp(self):
+        self.project_path = os.path.join(BASE_PATH, "eodag")
+        self.pyproject_path = os.path.join(BASE_PATH, "pyproject.toml")
+        self.allowed_missing_imports = ["eodag", "mypy_boto3_s3"]
+
     def test_all_requirements(self):
         """Needed libraries must be in project requirements"""
 
-        project_imports = get_project_imports(project_path)
-        setup_requires = get_setup_requires(pyproject_path)
-        setup_requires.update(get_optional_dependencies(pyproject_path, "all"))
+        project_imports = self.get_project_imports(self.project_path)
+        setup_requires = self.get_setup_requires(self.pyproject_path)
+        setup_requires.update(
+            self.get_optional_dependencies(self.pyproject_path, "all")
+        )
         import_required_dict = importlib_metadata.packages_distributions()
         try:
             default_libs = stdlib_list()
@@ -147,7 +65,7 @@ class TestRequirements(unittest.TestCase):
             required = import_required_dict.get(project_import, [project_import])
             if (
                 not set(required).intersection(setup_requires)
-                and project_import not in default_libs + allowed_missing_imports
+                and project_import not in default_libs + self.allowed_missing_imports
             ):
                 missing_imports.append(project_import)
 
@@ -160,8 +78,10 @@ class TestRequirements(unittest.TestCase):
     def test_plugins_extras(self):
         """All optional dependencies needed by providers must be resolved with all-providers extra"""
 
-        plugins_extras_dict = get_entrypoints_extras(pyproject_path)
-        all_providers_extras = get_resulting_extras(pyproject_path, "all-providers")
+        plugins_extras_dict = self.get_entrypoints_extras(self.pyproject_path)
+        all_providers_extras = self.get_resulting_extras(
+            self.pyproject_path, "all-providers"
+        )
 
         providers_config = load_default_config()
         plugins = set()
@@ -177,3 +97,93 @@ class TestRequirements(unittest.TestCase):
         for plugin in plugins:
             if extra := plugins_extras_dict.get(plugin):
                 self.assertIn(extra, all_providers_extras)
+
+    def get_setup_requires(self, pyproject_path: str):
+        """Get requirements from the given pyproject.toml file path"""
+        with open(pyproject_path, "rb") as f:
+            pyproject = tomllib.load(f)
+        return set([Requirement(r).name for r in pyproject["project"]["dependencies"]])
+
+    def get_optional_dependencies(self, pyproject_path: str, extra: str) -> set[str]:
+        """Get extra requirements from the given pyproject.toml file path"""
+        with open(pyproject_path, "rb") as f:
+            pyproject = tomllib.load(f)
+        deps = set()
+        for req in pyproject["project"]["optional-dependencies"][extra]:
+            if req.startswith("eodag["):
+                for found_extra in re.findall(r"([\w-]+)[,\]]", req):
+                    deps.update(
+                        self.get_optional_dependencies(pyproject_path, found_extra)
+                    )
+            else:
+                deps.add(Requirement(req).name)
+
+        return deps
+
+    def get_resulting_extras(self, pyproject_path: str, extra: str) -> set[str]:
+        """Get resulting extras for a single extra from the given pyproject.toml file path"""
+        with open(pyproject_path, "rb") as f:
+            pyproject = tomllib.load(f)
+        extras = set()
+        for req in pyproject["project"]["optional-dependencies"][extra]:
+            if req.startswith("eodag["):
+                extras.update(re.findall(r"([\w-]+)[,\]]", req))
+        return extras
+
+    def get_entrypoints_extras(self, pyproject_path: str) -> dict[str, str]:
+        """Get entrypoints and associated extra from the given pyproject.toml file path"""
+        with open(pyproject_path, "rb") as f:
+            pyproject = tomllib.load(f)
+        plugins_extras_dict = dict()
+        for group_name, group_entries in pyproject["project"]["entry-points"].items():
+            if not group_name.startswith("eodag.plugins."):
+                continue
+            for plugin_name, entry_value in group_entries.items():
+                # plugin entrypoint with associated extra
+                match = re.search(r"^[\w\.:]+\s+\[(\w+)\]$", entry_value)
+                if match:
+                    plugins_extras_dict[plugin_name] = match.group(1)
+                    continue
+                # plugin entrypoint without extra
+                plugins_extras_dict[plugin_name] = None
+
+        return plugins_extras_dict
+
+    def get_project_imports(self, project_path: str) -> set[str]:
+        """Get python imports from the project path"""
+        imports: set[str] = set()
+        for dirpath, dirs, files in os.walk(project_path):
+            for filename in files:
+                if filename.endswith(".py"):
+                    filepath = os.path.join(dirpath, filename)
+                    imports.update(self.get_imports(filepath))
+        return imports
+
+    def get_imports(self, filepath: str) -> Iterator[Any]:
+        """Get python imports from the given file path"""
+        with open(filepath, "r") as file:
+            try:
+                root = ast.parse(file.read())
+            except UnicodeDecodeError as e:
+                raise MisconfiguredError(
+                    "UnicodeDecodeError in {}: {}".format(
+                        filepath,
+                        f"{e.object[max(e.start - 50, 0):min(e.end + 50, len(e.object))]!r}",
+                    )
+                ) from e
+
+        for node in ast.iter_child_nodes(root):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name.split(".")[0] == "utils":
+                        pass
+
+                    yield alias.name.split(".")[0]
+            elif (
+                isinstance(node, ast.ImportFrom)
+                and node.level == 0
+                and node.module is not None
+            ):
+                if node.module.split(".")[0] == "utils":
+                    pass
+                yield node.module.split(".")[0]

@@ -212,7 +212,7 @@ class Collection(BaseModel):
     def __str__(self) -> str:
         return f'{type(self).__name__}("{self.id}")'
 
-    def __repr_str__(self, join_str: str) -> str:
+    def __repr_str__(self, join_str: str) -> str:  # type: ignore
         return join_str.join(
             repr(v) if a is None else f"{a}={v!r}" for a, v in self.__repr_args__() if v
         )

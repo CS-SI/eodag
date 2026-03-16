@@ -21,14 +21,11 @@ from unittest import TestCase, mock
 
 from jsonpath_ng.jsonpath import Child, Fields, Root
 
-from tests.context import (
-    DEFAULT_SEARCH_TIMEOUT,
-    USER_AGENT,
-    AuthenticationError,
-    EODataAccessGateway,
-    HeaderAuth,
-    PluginConfig,
-)
+from eodag import EODataAccessGateway
+from eodag.config import PluginConfig
+from eodag.plugins.authentication import HeaderAuth
+from eodag.utils import DEFAULT_SEARCH_TIMEOUT, USER_AGENT
+from eodag.utils.exceptions import AuthenticationError
 
 
 class TestCoreProvidersConfig(TestCase):
@@ -49,7 +46,7 @@ class TestCoreProvidersConfig(TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
@@ -474,11 +471,16 @@ class TestCoreCollectionsConfig(TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.adapters.HTTPAdapter.build_response",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.adapters.HTTPAdapter.build_response",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
-    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.querystringsearch.urlopen", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Session.get",
+        autospec=True,
+    )
     def test_core_discover_collections_auth(
         self, mock_requests_get, mock_urlopen, mock_build_response
     ):

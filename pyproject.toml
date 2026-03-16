@@ -156,31 +156,31 @@ docs = [
 eodag = "eodag.cli:eodag_cli"
 
 [project.entry-points."eodag.plugins.api"]
-UsgsApi = "eodag.plugins.apis.usgs:UsgsApi [usgs]"
-EcmwfApi = "eodag.plugins.apis.ecmwf:EcmwfApi [ecmwf]"
+UsgsApi = "eodag.plugins.apis:UsgsApi [usgs]"
+EcmwfApi = "eodag.plugins.apis:EcmwfApi [ecmwf]"
 
 [project.entry-points."eodag.plugins.auth"]
-GenericAuth = "eodag.plugins.authentication.generic:GenericAuth"
-EOIAMAuth = "eodag.plugins.authentication.eoiam:EOIAMAuth"
-HTTPHeaderAuth = "eodag.plugins.authentication.header:HTTPHeaderAuth"
-AwsAuth = "eodag.plugins.authentication.aws_auth:AwsAuth"
-TokenAuth = "eodag.plugins.authentication.token:TokenAuth"
-OIDCAuthorizationCodeFlowAuth = "eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth"
-OIDCTokenExchangeAuth = "eodag.plugins.authentication.token_exchange:OIDCTokenExchangeAuth"
-KeycloakOIDCPasswordAuth = "eodag.plugins.authentication.keycloak:KeycloakOIDCPasswordAuth"
-HttpQueryStringAuth = "eodag.plugins.authentication.qsauth:HttpQueryStringAuth"
-SASAuth = "eodag.plugins.authentication.sas_auth:SASAuth"
+GenericAuth = "eodag.plugins.authentication:GenericAuth"
+HTTPHeaderAuth = "eodag.plugins.authentication:HTTPHeaderAuth"
+AwsAuth = "eodag.plugins.authentication:AwsAuth"
+TokenAuth = "eodag.plugins.authentication:TokenAuth"
+OIDCAuthorizationCodeFlowAuth = "eodag.plugins.authentication:OIDCAuthorizationCodeFlowAuth"
+OIDCTokenExchangeAuth = "eodag.plugins.authentication:OIDCTokenExchangeAuth"
+KeycloakOIDCPasswordAuth = "eodag.plugins.authentication:KeycloakOIDCPasswordAuth"
+HttpQueryStringAuth = "eodag.plugins.authentication:HttpQueryStringAuth"
+SASAuth = "eodag.plugins.authentication:SASAuth"
+EOIAMAuth = "eodag.plugins.authentication:EOIAMAuth"
 
 [project.entry-points."eodag.plugins.crunch"]
-FilterLatestIntersect = "eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect"
-FilterLatestByName = "eodag.plugins.crunch.filter_latest_tpl_name:FilterLatestByName"
-FilterOverlap = "eodag.plugins.crunch.filter_overlap:FilterOverlap"
-FilterProperty = "eodag.plugins.crunch.filter_property:FilterProperty"
-FilterDate = "eodag.plugins.crunch.filter_date:FilterDate"
+FilterLatestIntersect = "eodag.plugins.crunch:FilterLatestIntersect"
+FilterLatestByName = "eodag.plugins.crunch:FilterLatestByName"
+FilterOverlap = "eodag.plugins.crunch:FilterOverlap"
+FilterProperty = "eodag.plugins.crunch:FilterProperty"
+FilterDate = "eodag.plugins.crunch:FilterDate"
 
 [project.entry-points."eodag.plugins.download"]
-AwsDownload = "eodag.plugins.download.aws:AwsDownload"
-HTTPDownload = "eodag.plugins.download.http:HTTPDownload"
+AwsDownload = "eodag.plugins.download:AwsDownload"
+HTTPDownload = "eodag.plugins.download:HTTPDownload"
 
 [project.entry-points."eodag.plugins.search"]
 CSWSearch = "eodag.plugins.search.csw:CSWSearch [csw]"
@@ -196,8 +196,8 @@ WekeoECMWFSearch = "eodag.plugins.search.build_search_result:WekeoECMWFSearch"
 CreodiasS3Search = "eodag.plugins.search.creodias_s3:CreodiasS3Search"
 CopMarineSearch = "eodag.plugins.search.cop_marine:CopMarineSearch"
 StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
-CopGhslSearch = "eodag.plugins.search.cop_ghsl:CopGhslSearch"
-GeodesSearch = "eodag.plugins.search.geodes:GeodesSearch"
+CopGhslSearch = "eodag.plugins.search:CopGhslSearch"
+GeodesSearch = "eodag.plugins.search:GeodesSearch"
 
 [tool.setuptools]
 include-package-data = true

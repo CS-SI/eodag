@@ -995,3 +995,12 @@ class ProvidersDict(UserDict[str, Provider]):
         providers = cls()
         providers.update_from_configs(configs)
         return providers
+
+
+__all__ = [
+    "ProviderConfig",
+    "Provider",
+    "ProvidersDict",
+    "AUTH_TOPIC_KEYS",
+    "PLUGINS_TOPICS_KEYS",
+]

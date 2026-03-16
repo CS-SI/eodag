@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Earth_Explorer_File xmlns="http://gs2.esa.int/DATA_STRUCTURE/olqcReport">
+    <Earth_Explorer_Header>
+        <Fixed_Header>
+            <File_Name>S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_GENERAL_QUALITY_report.xml</File_Name>
+            <File_Description>Report produced by OLQC-SC</File_Description>
+            <Notes></Notes>
+            <Mission>S2B</Mission>
+            <File_Class>OPER</File_Class>
+            <File_Type>REP_OLQCPA</File_Type>
+            <Validity_Period>
+                <Validity_Start>UTC=2021-03-30T01:00:00</Validity_Start>
+                <Validity_Stop>UTC=2100-01-01T00:00:00</Validity_Stop>
+            </Validity_Period>
+            <File_Version>2</File_Version>
+            <Source>
+                <System>OLQC-SC</System>
+                <Creator>OLQC-SC</Creator>
+                <Creator_Version>04.04.00</Creator_Version>
+                <Creation_Date>UTC=2021-12-01T01:45:48</Creation_Date>
+            </Source>
+        </Fixed_Header>
+    </Earth_Explorer_Header>
+    <Data_Block type="xml">
+        <report gippVersion="1.0" globalStatus="PASSED" date="2021-12-01T01:45:48.591Z">
+            <checkList>
+                <parentID>S2B_OPER_GIP_OLQCPA_MPC__20210326T000023_V20210330T010000</parentID>
+                <name>GENERAL_QUALITY</name>
+                <version>1.0</version>
+                <item url="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/" className="PDI Level 1C Datastrip Folder" name="S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01" class="http://www.esa.int/s2#pdi_level_1c_datastrip_container"/>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.262Z" duration="315" execution="2021-12-01T01:45:48.271Z" id="checkMetadata" item="S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/" name="Metadata file check. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Metadata file is present.</message>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.962Z" duration="1" execution="2021-12-01T01:45:48.970Z" id="Relative_Orbit_Number_SENSING" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check the consistency of relative imaging orbit number. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Sensing orbit number (116) is in range [1,143] </message>
+                    <extraValues>
+                        <value name="SENSING_ORBIT_NUMBER">116</value>
+                    </extraValues>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:48.980Z" duration="1" execution="2021-12-01T01:45:48.987Z" id="Degraded_Packets" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check the number of degraded packets " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">NUMBER_OF_TOO_DEGRADED_PACKETS value 0 does not exceed the threshold (0) </message>
+                    <extraValues>
+                        <value name="NUMBER_OF_TOO_DEGRADED_PACKETS">0</value>
+                    </extraValues>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:50.273Z" duration="1" execution="2021-12-01T01:45:50.279Z" id="Processor_Version" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check the processor version. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Processor version is valid (03.01) </message>
+                    <extraValues>
+                        <value name="PROCESSOR_VERSION">03.01</value>
+                    </extraValues>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:50.281Z" duration="3" execution="2021-12-01T01:45:50.287Z" id="Lost_Packets" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check the number of lost packets " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">NUMBER_OF_LOST_PACKETS value 0 does not exceed the threshold (0) </message>
+                    <extraValues>
+                        <value name="NUMBER_OF_LOST_PACKETS">0</value>
+                    </extraValues>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:50.290Z" duration="0" execution="2021-12-01T01:45:50.296Z" id="Orbit_Number_DOWNLINK" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check the consistency of downlink orbit number. " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Downlink Orbit number (24739) is in range [1,99999] </message>
+                    <extraValues>
+                        <value name="DOWNLINK_ORBIT_NUMBER">24739</value>
+                    </extraValues>
+                </check>
+                <check>
+                    <inspection creation="2021-12-01T01:45:50.297Z" duration="0" execution="2021-12-01T01:45:50.303Z" id="List_Fake_Decompressed_Source_Frames" item="S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" itemURL="/gpfs/dpc/data/phoebus-share/PHOEBUS-4.5.005/wp_in_progress/l1c_20211201_5/app_data/steps_data/DS/GET_TILE_LIST_OUTPUT/S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01/S2B_OPER_MTD_L1C_DS_VGS4_20211201T012623_S20211130T235940.xml" name="Check list of fake decompressed sources frames  " priority="5" processingStatus="done" status="PASSED"/>
+                    <message contentType="text/plain">Fake decompressed source frames are valid. </message>
+                </check>
+            </checkList>
+        </report>
+    </Data_Block>
+</Earth_Explorer_File>

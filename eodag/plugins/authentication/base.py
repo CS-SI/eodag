@@ -19,13 +19,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from eodag.api.product._assets import Asset
 from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
+
+    from eodag.api.product import Asset
 
 
 class Authentication(PluginTopic):

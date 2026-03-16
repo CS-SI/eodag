@@ -24,14 +24,15 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import importlib_metadata
 
+from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.api.provider import ProvidersDict
 from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, load_config
-from eodag.plugins.apis.base import Api
-from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.apis import Api
+from eodag.plugins.authentication import Authentication
 from eodag.plugins.base import EODAGPluginMount
-from eodag.plugins.crunch.base import Crunch
-from eodag.plugins.download.base import Download
-from eodag.plugins.search.base import Search
+from eodag.plugins.crunch import Crunch
+from eodag.plugins.download import Download
+from eodag.plugins.search import Search
 from eodag.utils import GENERIC_COLLECTION, deepcopy, dict_md5sum
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -43,7 +44,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product import EOProduct
+    from eodag.api.product import Asset
     from eodag.api.provider import ProviderConfig
     from eodag.config import PluginConfig
     from eodag.plugins.base import PluginTopic
@@ -207,27 +208,27 @@ class PluginManager:
         for config in sorted(configs, key=attrgetter("priority"), reverse=True):
             yield get_plugin()
 
-    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
+    def get_download_plugin(self, provider: str) -> Union[Download, Api]:
         """Build and return the download plugin capable of downloading the given
         product.
 
         :param product: The product to get a download plugin for
         :returns: The download plugin capable of downloading the product
         """
-        plugin_conf = self.providers.get_config(product.provider)
+        plugin_conf = self.providers.get_config(provider)
         if plugin_conf is None:
-            msg = f"Provider {product.provider} not found"
+            msg = "Provider {} not found".format(provider)
             raise UnsupportedProvider(msg)
         if download := getattr(plugin_conf, "download", None):
             plugin_conf.download.priority = plugin_conf.priority
             plugin = cast(
                 Download,
-                self._build_plugin(product.provider, download, Download),
+                self._build_plugin(provider, download, Download),
             )
         elif api := getattr(plugin_conf, "api", None):
             plugin_conf.api.products = plugin_conf.products
             plugin_conf.api.priority = plugin_conf.priority
-            plugin = cast(Api, self._build_plugin(product.provider, api, Api))
+            plugin = cast(Api, self._build_plugin(provider, api, Api))
         else:
             raise MisconfiguredError(
                 f"No download plugin configured for provider {plugin_conf.name}."
@@ -235,31 +236,29 @@ class PluginManager:
         return plugin
 
     def get_auth_plugin(
-        self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
+        self, associated_plugin: PluginTopic, asset: Optional[Asset] = None
     ) -> Optional[Authentication]:
-        """Build and return the authentication plugin associated to the given
-        search/download plugin
+        """Build and return the authentication plugin associated to the given search/download plugin
 
-        .. versionchanged:: v3.0.0
+                .. versionchanged:: v3.0.0
             ``get_auth_plugin()`` now needs ``associated_plugin`` instead of ``provider``
             as argument.
 
         :param associated_plugin: The search/download plugin to which the authentication
                                   plugin is linked
-        :param product: The product to download. ``None`` for search authentication
+        :param asset: The asset to download. ``None`` for search authentication
         :returns: The Authentication plugin
         """
-        # matching url from product to download
-        if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
-        elif product is not None:
-            matching_url = product.properties.get(
-                "eodag:download_link"
-            ) or product.properties.get("eodag:order_link")
-        else:
-            # search auth
-            matching_url = getattr(associated_plugin.config, "api_endpoint", None)
 
+        # Search auth
+        matching_url = getattr(associated_plugin.config, "api_endpoint", None)
+
+        if asset is not None:
+            order_status = asset.get("order:status")
+            order_link = asset.get("order_link")
+            matching_url = asset.get("href")
+            if order_status != ONLINE_STATUS and order_link is not None:
+                matching_url = order_link
         try:
             auth_plugin = next(
                 self.get_auth_plugins(

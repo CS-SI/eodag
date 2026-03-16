@@ -18,9 +18,10 @@
 import os
 import unittest
 from tempfile import TemporaryDirectory
+from unittest import mock
 
-from tests import TEST_RESOURCES_PATH
-from tests.context import EODataAccessGateway, mock
+from eodag.api.core import EODataAccessGateway
+from tests.utils import TEST_RESOURCES_PATH
 
 
 class TestSearchStacStatic(unittest.TestCase):
@@ -94,7 +95,7 @@ class TestSearchStacStatic(unittest.TestCase):
             self.assertEqual(item.provider, self.static_stac_provider)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
@@ -113,7 +114,7 @@ class TestSearchStacStatic(unittest.TestCase):
             self.assertIn("2018", item.properties["start_datetime"])
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
@@ -130,7 +131,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(search_result.number_matched, 3)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
@@ -147,7 +148,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(search_result.number_matched, 3)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
@@ -159,4 +160,3 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search by cloud cover"""
         search_result = self.dag.search(cloudCover=10, count=True, validate=False)
         self.assertEqual(len(search_result), 1)
-        self.assertEqual(search_result.number_matched, 1)

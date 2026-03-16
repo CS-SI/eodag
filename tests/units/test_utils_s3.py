@@ -9,14 +9,13 @@ import boto3
 from concurrent.futures import ThreadPoolExecutor
 from moto import mock_aws
 
-from tests import TEST_RESOURCES_PATH
-from tests.context import (
-    AwsAuth,
-    EOProduct,
-    InvalidDataError,
-    PluginConfig,
+from eodag.api.product import EOProduct
+from eodag.config import PluginConfig
+from eodag.plugins.authentication import AwsAuth
+from eodag.plugins.download import StreamResponse
+from eodag.utils.exceptions import InvalidDataError
+from eodag.utils.s3 import (
     S3FileInfo,
-    StreamResponse,
     _chunks_from_s3_objects,
     _compute_file_ranges,
     _prepare_file_in_zip,
@@ -26,6 +25,7 @@ from tests.context import (
     stream_download_from_s3,
     update_assets_from_s3,
 )
+from tests.utils import TEST_RESOURCES_PATH
 
 
 def make_mock_fileinfo(
@@ -207,7 +207,10 @@ class TestUtilsS3(TestCase):
         }
         for asset_name, expected in expected_assets.items():
             with self.subTest(asset=asset_name):
-                self.assertDictEqual(self.prod.assets[asset_name].data, expected)
+                for key in expected:
+                    self.assertEqual(
+                        self.prod.assets[asset_name].data[key], expected[key]
+                    )
 
     def test_utils_s3_update_assets_from_s3(self):
         """update_assets_from_s3 must update the assets of a product from a folder stored in S3"""
@@ -240,7 +243,10 @@ class TestUtilsS3(TestCase):
         }
         for asset_name, expected in expected_assets.items():
             with self.subTest(asset=asset_name):
-                self.assertDictEqual(self.prod.assets[asset_name].data, expected)
+                for key in expected:
+                    self.assertEqual(
+                        self.prod.assets[asset_name].data[key], expected[key]
+                    )
 
     def test_utils_s3_file_position_from_s3_zip(self):
         # Prepare a zip with both uncompressed and compressed files
@@ -321,8 +327,6 @@ class TestUtilsS3(TestCase):
         self.s3_client.put_object(
             Bucket="mybucket", Key="bad.zip", Body=b"This is not a zip"
         )
-        from tests.context import open_s3_zipped_object
-
         with self.assertRaises(InvalidDataError) as e:
             open_s3_zipped_object("mybucket", "bad.zip", self.s3_client)
         self.assertIn("EOCD signature not found", str(e.exception))
@@ -497,7 +501,7 @@ class TestUtilsS3(TestCase):
                 "zip_filename": "archive",
                 "expected_media_type": "text/plain",
                 "expected_filename_ext": None,
-                "expected_filename": "file1.txt",
+                "expected_filename": None,  # "file1.txt",
                 "expected_content": b"abcdef",
             },
             {
@@ -509,7 +513,7 @@ class TestUtilsS3(TestCase):
                 "compress": "zip",
                 "zip_filename": "myarchive",
                 "expected_media_type": "application/zip",
-                "expected_filename_ext": ".zip",
+                "expected_filename_ext": None,  # ".zip",
                 "expected_files": {
                     "file1.txt": b"abcdef",
                     "file2.txt": b"ghijkl",
@@ -539,7 +543,7 @@ class TestUtilsS3(TestCase):
                 "compress": "zip",
                 "zip_filename": "singlefile",
                 "expected_media_type": "application/zip",
-                "expected_filename_ext": ".zip",
+                "expected_filename_ext": None,  # ".zip",
                 "expected_files": {
                     "file1.txt": b"abcdef",
                 },

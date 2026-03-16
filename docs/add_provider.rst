@@ -8,7 +8,7 @@ providers themselves, they just implement generic methods required to talk to di
 
 * :class:`~eodag.plugins.search.qssearch.QueryStringSearch`: Search plugin that implements a search protocol that relies on `query strings <https://en.wikipedia.org/wiki/Query_string>`_
 * :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth`: Authentication plugin that implements `HTTP authentication using headers <https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication>`_
-* :class:`~eodag.plugins.download.http.HTTPDownload`: Download plugin that implements download over `HTTP protocol <https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol>`_
+* :class:`~eodag.plugins.download.protocol.http.HTTPDownload`: Download plugin that implements download over `HTTP protocol <https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol>`_
 
 Dynamically add a new provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -44,7 +44,7 @@ provide the new provider's configuration in a ``YAML`` format. The following exa
             aws_secret_access_key: PLEASE_CHANGE_ME
 
 It configures the following existing plugins: :class:`~eodag.plugins.search.qssearch.StacSearch` (search),
-:class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.aws.AwsDownload` (download).
+:class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.protocol.aws.AwsDownload` (download).
 
 Each plugin configuration is inserted following the appropriate plugin topic key:
 

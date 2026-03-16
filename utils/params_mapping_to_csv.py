@@ -66,10 +66,14 @@ def params_mapping_to_csv(
     stac_mapping = load_stac_provider_config()["search"]["metadata_mapping"]
     for p in dag._providers.keys():
         if getattr(dag._providers[p].search_config, "type", None) == "StacSearch":
-            dag._providers[p].search_config.metadata_mapping = dict(
-                stac_mapping,
-                **dag._providers[p].search_config.__dict__.get("metadata_mapping", {}),
-            )
+            plugin_config = dag._providers[p].search_config
+            if plugin_config is not None:
+                plugin_config.metadata_mapping = dict(
+                    stac_mapping,
+                    **dag._providers[p].search_config.__dict__.get(
+                        "metadata_mapping", {}
+                    ),
+                )
 
     # list of lists of all parameters per provider
     params_list_of_lists: list[list[str]] = []
@@ -107,7 +111,7 @@ def params_mapping_to_csv(
                 for param in global_keys:
                     params_rows[param] = {
                         "parameter": param,
-                        "open-search": "",
+                        "open-search": False,
                         "class": "",
                         "description": "",
                         "type": "",
@@ -131,13 +135,12 @@ def params_mapping_to_csv(
                             )[1].strip(": ")
 
                             # description formatting
-                            params_rows[param]["description"] = param_node.xpath(
-                                "../../td[2]/p/text()"
-                            )[0].replace("\n", " ")
+                            description: str = param_node.xpath("../../td[2]/p/text()")[
+                                0
+                            ].replace("\n", " ")
                             # multiple spaces to 1
-                            params_rows[param]["description"] = " ".join(
-                                params_rows[param]["description"].split()
-                            )
+                            description = " ".join(description.split())
+                            params_rows[param]["description"] = description
 
                             params_rows[param]["type"] = param_node.xpath(
                                 "../../td[3]/p/text()"

@@ -26,14 +26,13 @@ from pydantic.fields import FieldInfo
 
 from eodag.api.product.metadata_mapping import get_metadata_path_value
 from eodag.api.search_result import SearchResult
-from eodag.plugins.crunch.filter_date import FilterDate
-from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.plugins.crunch.filter_property import FilterProperty
-from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.qssearch import StacSearch
+from eodag.plugins.crunch import FilterDate, FilterOverlap, FilterProperty
 from eodag.types.queryables import Queryables
 from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
+
+from .preparesearch import PreparedSearch
+from .qssearch import StacSearch
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -244,3 +243,6 @@ class StaticStacSearch(StacSearch):
         if prep.count:
             search_result.number_matched = len(search_result.data)
         return search_result
+
+
+__all__ = ["StaticStacSearch"]

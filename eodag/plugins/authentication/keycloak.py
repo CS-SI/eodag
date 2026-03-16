@@ -22,12 +22,10 @@ from typing import TYPE_CHECKING, Any
 
 import requests
 
-from eodag.plugins.authentication.openid_connect import (
-    CodeAuthorizedAuth,
-    OIDCRefreshTokenBase,
-)
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import MisconfiguredError, TimeOutError
+
+from .openid_connect import CodeAuthorizedAuth, OIDCRefreshTokenBase
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -65,7 +63,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
         * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds)
           before a token is considered expired. Default: 60 seconds
 
-    Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
+    Using :class:`~eodag.plugins.download.protocol.http.HTTPDownload` a download link
     ``http://example.com?foo=bar`` will become
     ``http://example.com?foo=bar&my-token=obtained-token`` if associated to the following
     configuration::
@@ -181,3 +179,6 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             )
             return self._request_new_token()
         return response.json()
+
+
+__all__ = ["KeycloakOIDCPasswordAuth"]

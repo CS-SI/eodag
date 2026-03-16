@@ -22,8 +22,9 @@ from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from tests import TEST_RESOURCES_PATH
-from tests.context import EODataAccessGateway, MisconfiguredError
+from eodag.api.core import EODataAccessGateway
+from eodag.utils.exceptions import MisconfiguredError
+from tests.utils import TEST_RESOURCES_PATH
 
 
 class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
@@ -61,20 +62,24 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         cls.tmp_home_dir.cleanup()
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.get",
+        autospec=True,
     )
     def test_eodag_download_missing_credentials_cop_dataspace(self, mock_requests):
         search_resuls = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )
         products = self.eodag.deserialize_and_register(search_resuls)
+        # no assets mean no auth_plugin
+        self.eodag.download(products[0])
         with self.assertRaises(MisconfiguredError):
-            self.eodag.download(products[0])
+            self.eodag.download(products[1])
         with self.assertRaises(MisconfiguredError):
             self.eodag.download_all(products)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.get",
+        autospec=True,
     )
     def test_eodag_download_missing_credentials_creodias(self, mock_requests):
         search_resuls = os.path.join(

@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 from .base import AssetPatterns, DatasetDriver
 
 if TYPE_CHECKING:
-    from eodag.api.product._product import EOProduct
+    from eodag.api.product import EOProduct
 
 logger = logging.getLogger("eodag.driver.generic")
 

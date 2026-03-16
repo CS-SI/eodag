@@ -18,8 +18,9 @@
 import os
 import unittest
 
-from tests import TEST_RESOURCES_PATH
-from tests.context import STACOpenerError, _TextOpener, fetch_stac_items
+from eodag.utils.exceptions import STACOpenerError
+from eodag.utils.stac_reader import _TextOpener, fetch_stac_items
+from tests.utils import TEST_RESOURCES_PATH
 
 
 class TestStacReader(unittest.TestCase):

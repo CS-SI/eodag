@@ -36,10 +36,11 @@ from shapely import geometry, wkt
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_xml
 from eodag.api.search_result import SearchResult
-from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.base import Search
 from eodag.utils import DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
+
+from .base import Search
+from .preparesearch import PreparedSearch
 
 if TYPE_CHECKING:
     from owslib.fes import OgcExpression
@@ -226,14 +227,15 @@ class CSWSearch(Search):
         # to be a wkt)
         else:
             properties["geometry"] = wkt.loads(properties["geometry"])
+
+        # TODO: EOProduct has no more *args in its __init__ (search_args attribute removed)
+        # Not sure why download_url was here in the first place, needs to be updated,
+        # possibly by having instead 'eodag:download_link' in the properties
+        # download_url,
         return EOProduct(
-            collection,
-            self.provider,
-            # TODO: EOProduct has no more *args in its __init__ (search_args attribute removed)
-            # Not sure why download_url was here in the first place, needs to be updated,
-            # possibly by having instead 'eodag:download_link' in the properties
-            # download_url,
-            properties,
+            provider=self.provider,
+            properties=properties,
+            collection=collection,
             searched_bbox=kwargs.get("footprints"),
         )
 
@@ -286,3 +288,6 @@ class CSWSearch(Search):
             )
         # [[a, b]] is interpreted as a && b while [a, b] is interpreted as a || b
         return [constraints] if len(constraints) > 1 else constraints
+
+
+__all__ = ["CSWSearch"]

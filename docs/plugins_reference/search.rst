@@ -14,17 +14,18 @@ This table lists all the search plugins currently available:
 .. autosummary::
    :toctree: generated/
 
-   qssearch.QueryStringSearch
-   qssearch.ODataV4Search
-   qssearch.PostJsonSearch
-   qssearch.StacSearch
-   qssearch.WekeoSearch
+   qssearch.querystringsearch.QueryStringSearch
+   qssearch.odatav4search.ODataV4Search
+   qssearch.postjsonsearch.PostJsonSearch
+   qssearch.stacsearch.StacSearch
+   qssearch.wekeosearch.WekeoSearch
+   qssearch.geodessearch.GeodesSearch
    static_stac_search.StaticStacSearch
    stac_list_assets.StacListAssets
    cop_marine.CopMarineSearch
    cop_ghsl.CopGhslSearch
    creodias_s3.CreodiasS3Search
-   build_search_result.ECMWFSearch
-   build_search_result.MeteoblueSearch
-   build_search_result.WekeoECMWFSearch
+   build_search_result.ecmwfsearch.ECMWFSearch
+   build_search_result.meteobluesearch.MeteoblueSearch
+   build_search_result.wekeoecmwfsearch.WekeoECMWFSearch
    csw.CSWSearch

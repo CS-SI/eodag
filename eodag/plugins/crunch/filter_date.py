@@ -29,7 +29,7 @@ from dateutil import tz
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
 
-from eodag.plugins.crunch.base import Crunch
+from .base import Crunch
 
 logger = logging.getLogger("eodag.crunch.date")
 

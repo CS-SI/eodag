@@ -98,27 +98,27 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |EcmwfApi| replace:: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi`
 
 .. |GenericAuth| replace:: :class:`~eodag.plugins.authentication.generic.GenericAuth`
-.. |HTTPHeaderAuth| replace:: :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth`
+.. |HTTPHeaderAuth| replace:: :class:`~eodag.plugins.authentication.header.httpheaderauth.HTTPHeaderAuth`
 .. |AwsAuth| replace:: :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`
-.. |TokenAuth| replace:: :class:`~eodag.plugins.authentication.token.TokenAuth`
-.. |OIDCAuthorizationCodeFlowAuth| replace:: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+.. |TokenAuth| replace:: :class:`~eodag.plugins.authentication.token.tokenauth.TokenAuth`
+.. |OIDCAuthorizationCodeFlowAuth| replace:: :class:`~eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.OIDCAuthorizationCodeFlowAuth`
 .. |OIDCTokenExchangeAuth| replace:: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
 .. |KeycloakOIDCPasswordAuth| replace:: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
-.. |HttpQueryStringAuth| replace:: :class:`~eodag.plugins.authentication.qsauth.HttpQueryStringAuth`
-.. |SASAuth| replace:: :class:`~eodag.plugins.authentication.sas_auth.SASAuth`
-.. |EOIAMAuth| replace:: :class:`~eodag.plugins.authentication.eoiam.EOIAMAuth`
+.. |HttpQueryStringAuth| replace:: :class:`~eodag.plugins.authentication.qsauth.httpquerystringauth.HttpQueryStringAuth`
+.. |SASAuth| replace:: :class:`~eodag.plugins.authentication.sas_auth.sasauth.SASAuth`
+.. |EOIAMAuth| replace:: :class:`~eodag.plugins.authentication.eoiam.eoiamauth.EOIAMAuth`
 
-.. |AwsDownload| replace:: :class:`~eodag.plugins.download.aws.AwsDownload`
-.. |HTTPDownload| replace:: :class:`~eodag.plugins.download.http.HTTPDownload`
+.. |AwsDownload| replace:: :class:`~eodag.plugins.download.protocol.aws.AwsDownload`
+.. |HTTPDownload| replace:: :class:`~eodag.plugins.download.protocol.http.HTTPDownload`
 
-.. |QueryStringSearch| replace:: :class:`~eodag.plugins.search.qssearch.QueryStringSearch`
-.. |ODataV4Search| replace:: :class:`~eodag.plugins.search.qssearch.ODataV4Search`
-.. |PostJsonSearch| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearch`
-.. |StacSearch| replace:: :class:`~eodag.plugins.search.qssearch.StacSearch`
-.. |WekeoSearch| replace:: :class:`~eodag.plugins.search.qssearch.WekeoSearch`
-.. |ECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
-.. |MeteoblueSearch| replace:: :class:`~eodag.plugins.search.build_search_result.MeteoblueSearch`
-.. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
+.. |QueryStringSearch| replace:: :class:`~eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch`
+.. |ODataV4Search| replace:: :class:`~eodag.plugins.search.qssearch.odatav4search.ODataV4Search`
+.. |PostJsonSearch| replace:: :class:`~eodag.plugins.search.qssearch.postjsonsearch.PostJsonSearch`
+.. |StacSearch| replace:: :class:`~eodag.plugins.search.qssearch.stacsearch.StacSearch`
+.. |WekeoSearch| replace:: :class:`~eodag.plugins.search.qssearch.wekeosearch.WekeoSearch`
+.. |ECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.ecmwfsearch.ECMWFSearch`
+.. |MeteoblueSearch| replace:: :class:`~eodag.plugins.search.build_search_result.meteobluesearch.MeteoblueSearch`
+.. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.wekeoecmwfsearch.WekeoECMWFSearch`
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
 .. |CopGhslSearch| replace:: :class:`~eodag.plugins.search.cop_ghsl.CopGhslSearch`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
@@ -187,7 +187,7 @@ which they map:
 * `eodag.plugins.api`            : :class:`~eodag.plugins.apis.base.Api`
 * `eodag.plugins.authentication` : :class:`~eodag.plugins.authentication.base.Authentication`
 * `eodag.plugins.crunch`         : :class:`~eodag.plugins.crunch.base.Crunch`
-* `eodag.plugins.download`       : :class:`~eodag.plugins.download.base.Download`
+* `eodag.plugins.download`       : :class:`~eodag.plugins.download.protocol.base.Download`
 * `eodag.plugins.search`         : :class:`~eodag.plugins.search.base.Search`
 
 

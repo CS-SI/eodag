@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xfdu:XFDU xmlns:gml="http://www.opengis.net/gml" xmlns:safe="http://www.esa.int/safe/sentinel/1.1" xmlns:xfdu="urn:ccsds:schema:xfdu:1" version="esa/safe/sentinel/1.1/sentinel-2/msi/archive_l1c_user_product">
+    <dataObjectSection>
+        <dataObject ID="S2_Level-1C_Product_Metadata">
+            <byteStream mimeType="text/xml" size="44149">
+                <fileLocation href="./MTD_MSIL1C.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">9a061599ffe8974726a7634b913bfac3fa681fae256ea4a5b37fc3ef566e0ccc</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="INSPIRE_Metadata">
+            <byteStream mimeType="text/xml" size="18794">
+                <fileLocation href="./INSPIRE.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">835fcd53523ecd60b3e07dbaaf466d3c4cda401f27dc42677c0f0c6e994158cf</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="HTML_Presentation">
+            <byteStream mimeType="octet" size="5930">
+                <fileLocation href="./HTML/UserProduct_index.html" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">1fbe42af04f51decc5a3fe5dfbfc13c51853455ed22c7748ca20ce05ecaeff65</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="HTML_Presentation_Stylesheet">
+            <byteStream mimeType="octet" size="10034">
+                <fileLocation href="./HTML/UserProduct_index.xsl" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">19ec86d5d77055c742fbe694ee1658b657fd172fe73875d34735b327f6b4b6c4</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="S2_Level-1C_Datastrip1_Metadata"> <byteStream mimeType="application/xml" size="5212943">
+                <fileLocation href="./DATASTRIP/DS_VGS4_20211201T012623_S20211130T235940/MTD_DS.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">494fab897d5ba3cc0591279f6aa1cfa6b9baab5bbdd99890597509aaae6b63d0</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Format_OLQC_Report_Datastrip1_InformationData">
+            <byteStream mimeType="application/xml" size="22657">
+                <fileLocation href="./DATASTRIP/DS_VGS4_20211201T012623_S20211130T235940/QI_DATA/FORMAT_CORRECTNESS.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">7fcf6f3ba10fb68e977e3a750c6fc78e149d65edcb2eb9086fa9d78fa636870a</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="General_OLQC_Report_Datastrip1_InformationData">
+            <byteStream mimeType="application/xml" size="7676">
+                <fileLocation href="./DATASTRIP/DS_VGS4_20211201T012623_S20211130T235940/QI_DATA/GENERAL_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">3b6be121f7a983fd1bd3da0e3c1bf2fb347174a0e308e99fc73ee3822895f2b6</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Geometric_OLQC_Report_Datastrip1_InformationData">
+            <byteStream mimeType="application/xml" size="8512">
+                <fileLocation href="./DATASTRIP/DS_VGS4_20211201T012623_S20211130T235940/QI_DATA/GEOMETRIC_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">d755964c93cdcd4ae617a88b91d8ac70c71b919a6b090072e235973de40399a9</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Radiometric_OLQC_Report_Datastrip1_InformationData">
+            <byteStream mimeType="application/xml" size="7028">
+                <fileLocation href="./DATASTRIP/DS_VGS4_20211201T012623_S20211130T235940/QI_DATA/RADIOMETRIC_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">87e0f61b4c0d56b138ed77958302203ba4adb4757931694165ee53673b4bf74a</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Sensor_OLQC_Report_Datastrip1_InformationData">
+            <byteStream mimeType="application/xml" size="4660">
+                <fileLocation href="./DATASTRIP/DS_VGS4_20211201T012623_S20211130T235940/QI_DATA/SENSOR_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">22593a79c7ba11561f2d9ab8c9d0f356b0a88c11466e1688e639223fa7753b77</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="ECMWF_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="810">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/AUX_DATA/AUX_ECMWFT" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">8ff2b5713ca5fb89720104252a73335245ae6f667cf388f43696dbf672d1534a</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_60m_1_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="3769209">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B01.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">eb5dd66f3450509ae6b6c6e216a3a87800f8cab4ccb76124c3781b2e72f81302</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_10m_1_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="108759296">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B02.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">4677d1857a52c35594644785290b5b60cb15036247031c2816b88d3a74e63ab4</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_10m_2_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="104263917">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B03.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">7ddeea32592b82a3fc4a01ce6f9e21a6f015288ad95b00b9977e1dafa0697572</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_10m_3_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="107116334">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B04.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">390502ff7bc564b8a03f62c30f1341c03df716961f9860d0f7be1a72551b38f3</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_20m_1_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="30398704">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B05.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">a36b9fdde4a4ec593e4e7d1c1cb99c387b22931d40bac1bc0acf46919e6a5e3c</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_20m_2_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="30697046">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B06.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">73b3596213d2932cff4f65947e1e974001ed8db8500f5af02f32d48198b541df</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_20m_3_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="30959657">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B07.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">c8cc0a1173c415cd587adc95d1d83aead81ea775cc2952d8b7b1653430f800cd</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_10m_4_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="110385470">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B08.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">d80ceb4a93392bfb48d2a751769f31370572272cf2a851415d1dc0933c2f4bf4</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_60m_2_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="3743243">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B09.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">ec2601c886943f6b54ffe34d166032dcec70a023aad345e4ae046007c55a8fca</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_60m_3_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="3051125">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B10.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">eb785881198a3830eec6abeea2631254fb6afba4fcb0f1bc7398bd7c4019150e</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_20m_5_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="28569890">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B11.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">2990dd809987049a49d3d38e16b8feae7a3be119b293835958e83aa74cf828e1</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_20m_6_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="28320820">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B12.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">73ce6e7b59f91074ad1c969c7acc5cbd53577128fc69fa9654acd1fe36313ea8</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_20m_4_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="31567016">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_B8A.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">b396f472386078e437913606b17897327bfbeea1ef6f8ebc15e3e2e177ffa6d0</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="IMG_DATA_Band_TCI_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="135298060">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/IMG_DATA/T59VMF_20211130T235939_TCI.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">9768cfead86cb139ecfc332fe9512f5faeed7a7032d67d81f5bc20af3d4e7d65</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="S2_Level-1C_Tile1_Metadata"> <byteStream mimeType="application/xml" size="469832">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/MTD_TL.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">bf4a5648cd147f6479439f5e87cd9a4dc9f75f014efbf9206e7af940d3b0292b</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Format_OLQC_Report_Tile1_InformationData">
+            <byteStream mimeType="application/xml" size="28469">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/FORMAT_CORRECTNESS.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">40d3ceae92a2e41996fabe390f11d8c3fadb1b53078947035c5b4e14265bec6d</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="General_OLQC_Report_Tile1_InformationData">
+            <byteStream mimeType="application/xml" size="3979">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/GENERAL_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">3b0e2e1b3a08c377e33682f3b8e24035b2a43a3e06bf1fb1ba115624ab4b3726</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Geometric_OLQC_Report_Tile1_InformationData">
+            <byteStream mimeType="application/xml" size="4783">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/GEOMETRIC_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">d3e4512f17da9e197b5c5f9f3c08f234ccf67d531ca69f909de17bcee48a0c29</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="FineCloudMask_Tile1_Data">
+            <byteStream mimeType="application/xml" size="1026754">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_CLOUDS_B00.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">dd165f4a6e5af19e0fde5471f79e9a0c71520bee23fe1109eb64a7e19bbd8111</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_60m_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B01.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">0e9ae34fdccb905d42f9662a8fbeebc0c9f9885dcdbc1398fef85e304f02f084</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_10m_1_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B02.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">e52ca378dd47ff84de75309831419eeb11e3e4fe66247e52d930856af4d4335d</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_10m_2_2_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B03.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">edc8a9d4288818d025d7d22c5c82a1abaeaa6a19e0c22839603058a92b9abb59</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_10m_3_3_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B04.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">42836e56afad10b9a33833a7c39ff96f34ce9ed49a1131af744aa96132f05ba3</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_20m_1_4_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B05.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">fbb90fdd2030c553593bb5dd079cc142cb264395c4f47f30217bac91a7a9872c</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_20m_2_5_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B06.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">4f2401989cc781e8dc607930294e22907669ba48894221961648e4b68bc3bc92</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_20m_3_6_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B07.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">5ca51c559791b02713493d76b28cb52f34d048d3af9f08b963d26680b4897657</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_10m_4_7_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B08.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">bc3450dc85bdaef3c4f2ddec9d540d5164847204f32873028848300b43a10b19</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_60m_2_8_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B09.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">5b52fe5bfb0b20fb0da8522b14c50b2646a6a48b9fcd708bae33f7c7c3e33143</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_60m_3_9_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B10.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">654528ad6e512d47781ed78836ef5e8bbe543f692ea31cdcb42044fb950fffe5</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_20m_5_10_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B11.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">c9ef48ab6911b35261a365fab38aea32d6b70a3c59c993f1033d00b4cfd517b5</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_20m_6_11_Tile1_Data">
+            <byteStream mimeType="application/xml" size="1456">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B12.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">013d91531b5fd8d7fbaadf17e32a8db4acc8fd1e130715cf0a3750aeffc9dcbd</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DefectivePixelsMask_Band_20m_4_12_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DEFECT_B8A.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">50ee65e94d3023308e5fa21ca31a8dbc192a6033f13a20f92cc8d3cacd487473</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_60m_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="158884">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B01.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">f3d723af31af61bbb4ce61844ba02a11f68fcc25db50f9bb561e28ec3f153abe</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_10m_1_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="937025">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B02.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">f7b80143c686aa2b40a3dec40742fdfd5b767471250ea0d659a4f3c827684723</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_10m_2_2_Tile1_Data">
+            <byteStream mimeType="application/xml" size="936770">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B03.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">545340ec6f0540fcbed6e18fba254908fddda105ab1a5ab0bfb390fe64ba47fe</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_10m_3_3_Tile1_Data">
+            <byteStream mimeType="application/xml" size="936889">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B04.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">d57ff26a02c57ba8e2ec680c63c08f633e6a54489a2538d9e50797a55a4072bf</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_20m_1_4_Tile1_Data">
+            <byteStream mimeType="application/xml" size="470137">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B05.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">a89de11c3d682d363a262eb9616f9eaa6c9b78a1f058d5b08a546581bef08100</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_20m_2_5_Tile1_Data">
+            <byteStream mimeType="application/xml" size="470120">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B06.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">b85ef9f4ac92bca3f99094a5f00cf077cfc5287c6fedc7576b858959ff662315</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_20m_3_6_Tile1_Data">
+            <byteStream mimeType="application/xml" size="470154">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B07.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">b3556f3891ef378b896d6cc83fbb9f30ddc88fc2538d31c54d69d95eab9af4fc</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_10m_4_7_Tile1_Data">
+            <byteStream mimeType="application/xml" size="936838">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B08.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">b0c9aa43995cd6cc06027334fc1997a8dffe3ae32769d30e36220d8f3705b433</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_60m_2_8_Tile1_Data">
+            <byteStream mimeType="application/xml" size="158884">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B09.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">1972ebc1ecd7edf2dbc5db622780b392f7e40e62e1f494e8ca7a626370bb5aa9</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_60m_3_9_Tile1_Data">
+            <byteStream mimeType="application/xml" size="159054">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B10.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">9564dea9c72e6a861087e8550635167baae306f6b6e8f99a11320fdfda9d0b82</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_20m_5_10_Tile1_Data">
+            <byteStream mimeType="application/xml" size="470137">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B11.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">0689445b63ab4c972b80341f2352d3b5acd8778a522b4f2002c32f744f41a97a</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_20m_6_11_Tile1_Data">
+            <byteStream mimeType="application/xml" size="470086">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B12.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">42d55b7d1248bd455ad1ec44aba47e4d7bfba5c6fcbd82b0826e4e0e180b79fa</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="DetectorFootprintMask_Band_20m_4_12_Tile1_Data">
+            <byteStream mimeType="application/xml" size="470137">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_DETFOO_B8A.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">c70d20f1e7a0e6c9c02ca27bd764d038ddff76541d7d580ad80701c9ef4133ce</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_60m_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="1485">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B01.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">3430a91968e0edbe589995bbe228d5bdc3ed957d00e5cd5096cd6f68c7d92ffb</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_10m_1_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B02.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">6970a7c5039c9a1f5dfd80cc1796c08e92ebe11c7266ae2ce080ded15aa82620</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_10m_2_2_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B03.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">998eb48e83a5b57ad26b491be9340abd68fa0b8821df6ecf75595361ff575466</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_10m_3_3_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B04.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">8080438ee38f98ac3f6f5b1b061d641df15fc0d71de25f95268c813476d624a0</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_20m_1_4_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B05.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">f32096f90bdfff05e0275e08794dc8a9744d5a9e74905a87719d9e52de363b2a</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_20m_2_5_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B06.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">8bc557085a26f4d22143f45abfdf26b79cd0f229549e5ff45069cbc66669614b</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_20m_3_6_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B07.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">4d27d0a686b2d31c26df1d62648af315656841ef033f49c11ab4114bf034f6a5</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_10m_4_7_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B08.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">a34b91386f9af678fe7694386c74caf69e0d70bc9e05897f57cd566ceec3cef0</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_60m_2_8_Tile1_Data">
+            <byteStream mimeType="application/xml" size="1486">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B09.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">6a18076f1947cc7828944c465fdd608dfb2a595a6b6f598a8c5f958dc8d52d4e</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_60m_3_9_Tile1_Data">
+            <byteStream mimeType="application/xml" size="1485">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B10.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">dbccb2fb65c99ce974dcf049460c7117e2bf040a1334465101acaf4b401628aa</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_20m_5_10_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B11.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">a7ccf1980570428ba13c469bb4440186366503b140a24915ae0bc80b528a0738</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_20m_6_11_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B12.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">18d274a2173b782d2d35536e19df54976f62ca6220df2eadc55a7d9f30498e67</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="NodataPixelsMask_Band_20m_4_12_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_NODATA_B8A.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">a0ab543113b819c72d5fb5af22da96745cdfbc50498d660db2c30151799c906a</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_60m_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B01.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">c7a0342015f0576624cc4aa367d122651f8f38bdbfb0866b4261e25f9ff1cc0b</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_10m_1_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B02.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">b61004e858b0c2f75eaa0b7de8c1166c463e6db72b07ea32f94d6358ebecff02</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_10m_2_2_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B03.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">f1fb66c3cc15f672342397125ec5a71ee3662788f7941e56d966acbab6294870</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_10m_3_3_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B04.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">7ece116be2a60150fcf9f4c01a2fb35a08413f6cf21d8b176db0bc23e4cc2fc8</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_20m_1_4_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B05.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">ae269e4c5af6550aaa79e9274bbbf7cd6cd3857fa5b178b1a80564e955f3a7cd</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_20m_2_5_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B06.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">5820d39361c4125b070aad1d7b2be36aebe517098a93b376815b06c61e6d63c9</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_20m_3_6_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B07.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">c7b66356e13370d4429393335ad54d4306f8bc6c0ef4a4bd5a8819e8d57748c7</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_10m_4_7_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B08.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">7ff952054c8de1cc2e86c47b898fed07ff6f06fcc5818e1fa41d1f9fb26dffc8</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_60m_2_8_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B09.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">c45a7bc647c19cf3c078061633f3860b80e141843b3c3ac3f0698989c212e177</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_60m_3_9_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B10.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">40bf7d54240f7dbcb9aa4e46c137c54d3f41c400ad4e71f375156152b69635b1</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_20m_5_10_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B11.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">84aacaf145de5d09361409652d8d4fe0092210a20a8f9224dd0b082cbb9f16db</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_20m_6_11_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B12.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">ee0b5b705d4ec5654d7d08359fdebfae2146d3e3538d94a7318d7805be8f2a93</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="SaturatedPixelsMask_Band_20m_4_12_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_SATURA_B8A.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">7e35dbd5133473f56fc4eb82f27628f74cc55b97c2a09aa46aef1b856edb82d5</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_60m_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B01.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">3e5d73d2cd5d2d8efe935bc1c60c67c596794324361f721bda20a5d5b82f2ddf</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_10m_1_1_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B02.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">b1dc1e8033a743b1dd788a6b07e7a9fb45b7711a95331304851861d791a30cad</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_10m_2_2_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B03.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">d2d65fc6facb4cbe38ecca71dc007a777250275e38ea7c6ccde90a011f4a7a65</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_10m_3_3_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B04.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">304a0172d85a1316c80030f100fad7c9ff2b9c2183183053650fea41c750e7be</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_20m_1_4_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B05.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">403ccce4d8903230ee20ea2aaf51bcbef4e9cc129e2a0fcd58178d7add7cb207</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_20m_2_5_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B06.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">2c9d5b50675996d0a2f54d1bb4968bb6cf5e7211f0c0c71f156ef5a6e72fed41</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_20m_3_6_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B07.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">0f6ef392220c486337f59575a7e556c61c2737c3095b462b1751e11d2a424dbd</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_10m_4_7_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B08.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">1673a67c65f4828b5624feb6e5f1ec64bcdbe171a62c3145b964a60754d3116f</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_60m_2_8_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B09.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">0f4ee69b3f644d71d92845646bcd4e37c7de9ff267ed95c64909a4608b021995</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_60m_3_9_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B10.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">864c7d27c6e70486a04f4950de76076aaa36e9c800a00823298cf09f07c4c7bc</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_20m_5_10_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B11.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">7ab765669da9eab719ab3f471ddb42302efe8b030b30b3a30ddf413ba4f79035</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_20m_6_11_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B12.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">06fc7542823a810bdf8130bc97382b962d37ec8ecd34b856f1a5bee385a8bbda</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="TechQualityMask_Band_20m_4_12_Tile1_Data">
+            <byteStream mimeType="application/xml" size="428">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/MSK_TECQUA_B8A.gml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">984254ce79f0744a88ec9a8f2160a8bfc2b194ce8b040504329c81c71f11a2b1</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Sensor_OLQC_Report_Tile1_InformationData">
+            <byteStream mimeType="application/xml" size="4870">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/SENSOR_QUALITY.xml" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">ff0ca4d600c36fb67d29fa31da7c719bbdd633834d6c24978975eaca1a87aee6</checksum>
+            </byteStream>
+        </dataObject>
+        <dataObject ID="Preview_0_Tile1_Data">
+            <byteStream mimeType="application/octet-stream" size="166803">
+                <fileLocation href="./GRANULE/L1C_T59VMF_A024738_20211130T235940/QI_DATA/T59VMF_20211130T235939_PVI.jp2" locatorType="URL"/>
+                <checksum checksumName="SHA3-256">949ec477704b82c5e9da0814862cbbc9b8a34412ca844e6d24803a8444da7f83</checksum>
+            </byteStream>
+        </dataObject>
+    </dataObjectSection>
+</xfdu:XFDU>

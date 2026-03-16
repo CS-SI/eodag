@@ -23,13 +23,11 @@ import requests
 from requests import RequestException
 
 from eodag.config import PluginConfig
-from eodag.plugins.authentication import Authentication
-from eodag.plugins.authentication.openid_connect import (
-    CodeAuthorizedAuth,
-    OIDCAuthorizationCodeFlowAuth,
-)
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
+
+from .base import Authentication
+from .openid_connect import CodeAuthorizedAuth, OIDCAuthorizationCodeFlowAuth
 
 logger = logging.getLogger("eodag.auth.token_exchange")
 
@@ -119,3 +117,6 @@ class OIDCTokenExchangeAuth(Authentication):
         token = auth_response.json()[self.config.token_key]
 
         return CodeAuthorizedAuth(token, where="header")
+
+
+__all__ = ["OIDCTokenExchangeAuth"]

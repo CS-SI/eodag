@@ -1,4 +1,4 @@
-.. module:: eodag.plugins.download
+.. module:: eodag.plugins.download.protocol
 
 ================
 Download Plugins

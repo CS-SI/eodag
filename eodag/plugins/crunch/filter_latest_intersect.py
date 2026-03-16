@@ -26,8 +26,9 @@ import dateutil.parser
 from shapely.errors import ShapelyError
 from shapely.geometry.base import BaseGeometry
 
-from eodag.plugins.crunch.base import Crunch
 from eodag.utils import get_geometry_from_various
+
+from .base import Crunch
 
 if TYPE_CHECKING:
     from datetime import datetime as dt

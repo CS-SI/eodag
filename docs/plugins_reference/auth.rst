@@ -23,13 +23,13 @@ This table lists all the authentication plugins currently available:
    :toctree: generated/
 
    generic.GenericAuth
-   token.TokenAuth
-   header.HTTPHeaderAuth
+   token.tokenauth.TokenAuth
+   header.httpheaderauth.HTTPHeaderAuth
    aws_auth.AwsAuth
-   openid_connect.OIDCRefreshTokenBase
-   openid_connect.OIDCAuthorizationCodeFlowAuth
+   openid_connect.oidcrefreshtokenbase.OIDCRefreshTokenBase
+   openid_connect.oidcauthorizationcodeflowauth.OIDCAuthorizationCodeFlowAuth
    keycloak.KeycloakOIDCPasswordAuth
    token_exchange.OIDCTokenExchangeAuth
-   qsauth.HttpQueryStringAuth
-   sas_auth.SASAuth
-   eoiam.EOIAMAuth
+   qsauth.httpquerystringauth.HttpQueryStringAuth
+   sas_auth.sasauth.SASAuth
+   eoiam.eoiamauth.EOIAMAuth

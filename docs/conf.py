@@ -25,8 +25,8 @@ from datetime import datetime
 from importlib.metadata import metadata
 from typing import Any
 
-from docutils import nodes
-from sphinx.writers.html import HTMLTranslator
+from docutils import nodes  # type: ignore
+from sphinx.writers.html import HTMLTranslator  # type: ignore
 
 # -- General configuration ------------------------------------------------
 

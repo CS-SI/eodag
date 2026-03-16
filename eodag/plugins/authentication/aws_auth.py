@@ -24,18 +24,17 @@ import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 
-from eodag.api.product._assets import Asset
-from eodag.plugins.authentication.base import Authentication
 from eodag.types import S3SessionKwargs
 from eodag.utils import get_bucket_name_and_prefix
 from eodag.utils.exceptions import AuthenticationError, EodagError
 
+from .base import Authentication
+
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client, S3ServiceResource
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
+    from eodag.api.product import Asset
     from eodag.config import PluginConfig
-
 
 logger = logging.getLogger("eodag.download.aws_auth")
 
@@ -165,107 +164,6 @@ class AwsAuth(Authentication):
         self.s3_resource = self._create_s3_resource()
         return self.s3_resource
 
-    def _get_authenticated_objects(
-        self, bucket_name: str, prefix: str
-    ) -> BucketObjectsCollection:
-        """Get boto3 authenticated objects for the given bucket
-
-        :param bucket_name: Bucket containg objects
-        :param prefix: Prefix used to filter objects
-        :returns: The boto3 authenticated objects
-        """
-        if not self.s3_resource:
-            self.s3_resource = self._create_s3_resource()
-        try:
-            if self.config.requester_pays:
-                objects = self.s3_resource.Bucket(bucket_name).objects.filter(
-                    RequestPayer="requester"
-                )
-            else:
-                objects = self.s3_resource.Bucket(bucket_name).objects
-            list(objects.filter(Prefix=prefix).limit(1))
-            if objects:
-                logger.debug(
-                    "Authentication for bucket %s succeeded; returning available objects",
-                    bucket_name,
-                )
-                return objects
-        except ClientError as e:
-            if e.response.get("Error", {}).get("Code", {}) in AWS_AUTH_ERROR_MESSAGES:
-                pass
-            else:
-                raise e
-        logger.debug(
-            "Authentication for bucket %s failed, please check the credentials",
-            bucket_name,
-        )
-
-        raise AuthenticationError(
-            "Unable do authenticate on s3://%s using credendials configuration"
-            % bucket_name
-        )
-
-    def authenticate_objects(
-        self,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-    ) -> dict[str, BucketObjectsCollection]:
-        """
-        Authenticates with s3 and retrieves the available objects
-
-        :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
-        :raises AuthenticationError: authentication is not possible
-        :return: authenticated objects per bucket
-        """
-
-        authenticated_objects: dict[str, Any] = {}
-        auth_error_messages: set[str] = set()
-        for _, pack in enumerate(bucket_names_and_prefixes):
-
-            bucket_name, prefix = pack
-            if not prefix:
-                continue
-            if bucket_name not in authenticated_objects:
-                # get Prefixes longest common base path
-                common_prefix = ""
-                prefix_split = prefix.split("/")
-                prefixes_in_bucket = len(
-                    [p for b, p in bucket_names_and_prefixes if b == bucket_name]
-                )
-                for i in range(1, len(prefix_split)):
-                    common_prefix = "/".join(prefix_split[0:i])
-                    if (
-                        len(
-                            [
-                                p
-                                for b, p in bucket_names_and_prefixes
-                                if p and b == bucket_name and common_prefix in p
-                            ]
-                        )
-                        < prefixes_in_bucket
-                    ):
-                        common_prefix = "/".join(prefix_split[0 : i - 1])
-                        break
-                try:
-                    # connect to aws s3 and get bucket auhenticated objects
-                    authenticated_objects[
-                        bucket_name
-                    ] = self._get_authenticated_objects(bucket_name, common_prefix)
-
-                except AuthenticationError as e:
-                    logger.warning("Unexpected error: %s" % e)
-                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                    auth_error_messages.add(str(e))
-                except ClientError as e:
-                    raise_if_auth_error(e, self.provider)
-                    logger.warning("Unexpected error: %s" % e)
-                    logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                    auth_error_messages.add(str(e))
-
-        # could not auth on any bucket
-        if not authenticated_objects:
-            raise AuthenticationError(", ".join(auth_error_messages))
-        return authenticated_objects
-
     def get_rio_env(self) -> dict[str, Any]:
         """Get rasterio environment variables needed for data access authentication.
 
@@ -318,3 +216,6 @@ class AwsAuth(Authentication):
             return presigned_url
         except ClientError:
             raise EodagError(f"Couldn't get a presigned URL for '{asset}'.")
+
+
+__all__ = ["raise_if_auth_error", "create_s3_session", "AwsAuth"]

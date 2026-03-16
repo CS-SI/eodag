@@ -21,8 +21,9 @@ from typing import TYPE_CHECKING
 
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
-from eodag.plugins.authentication.base import Authentication
 from eodag.utils.exceptions import MisconfiguredError
+
+from .base import Authentication
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -66,3 +67,6 @@ class GenericAuth(Authentication):
                 f"Cannot authenticate with {self.provider}",
                 f"Method {method} is not supported; it must be one of 'digest' or 'basic'.",
             )
+
+
+__all__ = ["GenericAuth"]

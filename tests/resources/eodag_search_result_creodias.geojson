@@ -1,1 +1,214 @@
-{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0.495928592903789, 44.2259641547634], [0.536772323136669, 43.2382625533271], [1.8886830141923, 43.2593919105371], [1.87023728676149, 44.2478306839688], [0.495928592903789, 44.2259641547634]]]}, "id": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCJ_20221113T065937", "assets": {}, "properties": {"eodag:collection": "S2_MSI_L1C", "eodag:provider": "creodias", "eodag:search_intersection": {"type": "Polygon", "coordinates": [[[1.8886830141923, 43.2593919105371], [0.536772323136669, 43.2382625533271], [0.509087099926865, 43.907759172380565], [1.876583523451459, 43.907759172380565], [1.8886830141923, 43.2593919105371]]]}, "constellation": "SENTINEL-2", "end_datetime": "2019-03-02T10:50:29.024000Z", "instruments": ["MSI"], "platform": "S2B", "providers": [{"name": "ESA", "roles": ["producer"]}], "published": "2024-07-01T13:11:44.547184Z", "start_datetime": "2019-03-02T10:50:29.024000Z", "title": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCJ_20221113T065937", "uid": "1fd94a5e-11bb-42b6-826a-4413a6a4ed2d", "updated": "2024-07-01T13:11:53.874689Z", "eo:cloud_cover": 99.0289945952402, "eodag:download_link": "https://zipper.creodias.eu/odata/v1/Products(1fd94a5e-11bb-42b6-826a-4413a6a4ed2d)/$value", "eodag:quicklook": "https://datahub.creodias.eu/odata/v1/Assets(df600af8-02ce-4289-bbba-2c08bd68cbf2)/$value", "eodag:thumbnail": "https://datahub.creodias.eu/odata/v1/Assets(df600af8-02ce-4289-bbba-2c08bd68cbf2)/$value", "grid:code": "MGRS-31TCJ", "order:status": "succeeded", "processing:datetime": "2022-11-13T06:59:37.000000Z", "processing:level": "S2MSI1C", "processing:version": 5.0, "product:type": "S2MSI1C", "s2:datastrip_id": "S2B_OPER_MSI_L1C_DS_S2RP_20221113T065937_S20190302T105637_N05.00", "s2:datatake_id": "GS2B_20190302T105029_010373_N05.00", "s2:datatake_type": "INS-NOBS", "sat:absolute_orbit": 10373, "sat:relative_orbit": 51}}, {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0.533217951221217, 43.3262463358657], [0.572219317968977, 42.3383618251542], [1.90469075283303, 42.3588399177066], [1.8870778350223, 43.3474403888254], [0.533217951221217, 43.3262463358657]]]}, "id": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCH_20221113T065937", "assets": {}, "properties": {"eodag:collection": "S2_MSI_L1C", "eodag:provider": "creodias", "eodag:search_intersection": {"type": "Polygon", "coordinates": [[[0.533217951221217, 43.3262463358657], [1.8870778350223, 43.3474403888254], [1.8897839144525685, 43.19555008715042], [0.5383777976136153, 43.19555008715042], [0.533217951221217, 43.3262463358657]]]}, "constellation": "SENTINEL-2", "end_datetime": "2019-03-02T10:50:29.024000Z", "instruments": ["MSI"], "platform": "S2B", "providers": [{"name": "ESA", "roles": ["producer"]}], "published": "2024-07-01T13:12:44.760776Z", "start_datetime": "2019-03-02T10:50:29.024000Z", "title": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCH_20221113T065937", "uid": "31768a81-c4f4-4310-8312-ddd84b86a17d", "updated": "2024-07-01T13:12:57.061569Z", "eo:cloud_cover": 35.1675176923766, "eodag:download_link": "https://zipper.creodias.eu/odata/v1/Products(31768a81-c4f4-4310-8312-ddd84b86a17d)/$value", "eodag:quicklook": "https://datahub.creodias.eu/odata/v1/Assets(dc0af419-128e-4b60-8442-19aa823bf57d)/$value", "eodag:thumbnail": "https://datahub.creodias.eu/odata/v1/Assets(dc0af419-128e-4b60-8442-19aa823bf57d)/$value", "grid:code": "MGRS-31TCH", "order:status": "succeeded", "processing:datetime": "2022-11-13T06:59:37.000000Z", "processing:level": "S2MSI1C", "processing:version": 5.0, "product:type": "S2MSI1C", "s2:datastrip_id": "S2B_OPER_MSI_L1C_DS_S2RP_20221113T065937_S20190302T105637_N05.00", "s2:datatake_id": "GS2B_20190302T105029_010373_N05.00", "s2:datatake_type": "INS-NOBS", "sat:absolute_orbit": 10373, "sat:relative_orbit": 51}}]}
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              0.495928592903789,
+              44.2259641547634
+            ],
+            [
+              0.536772323136669,
+              43.2382625533271
+            ],
+            [
+              1.8886830141923,
+              43.2593919105371
+            ],
+            [
+              1.87023728676149,
+              44.2478306839688
+            ],
+            [
+              0.495928592903789,
+              44.2259641547634
+            ]
+          ]
+        ]
+      },
+      "id": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCJ_20221113T065937",
+      "assets": {
+        "download_link": {
+          "href": "https://zipper.creodias.eu/odata/v1/Products(31768a81-c4f4-4310-8312-ddd84b86a17d)/$value",
+          "roles": ["archive", "data"],
+          "type": "application/zip",
+          "order:status": "succeeded"
+        },
+        "quicklook": {
+          "href": "https://datahub.creodias.eu/odata/v1/Assets(dc0af419-128e-4b60-8442-19aa823bf57d)/$value",
+          "title": "quicklook",
+          "roles": ["overwiev"],
+          "type": "image/jpeg"
+        },
+        "thumbnail": {
+          "href": "https://datahub.creodias.eu/odata/v1/Assets(dc0af419-128e-4b60-8442-19aa823bf57d)/$value",
+          "title": "thumbnail",
+          "roles": ["thumbnail"],
+          "type": "image/jpeg"
+        }
+      },
+      "properties": {
+        "eodag:collection": "S2_MSI_L1C",
+        "eodag:provider": "creodias",
+        "eodag:search_intersection": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                1.8886830141923,
+                43.2593919105371
+              ],
+              [
+                0.536772323136669,
+                43.2382625533271
+              ],
+              [
+                0.509087099926865,
+                43.907759172380565
+              ],
+              [
+                1.876583523451459,
+                43.907759172380565
+              ],
+              [
+                1.8886830141923,
+                43.2593919105371
+              ]
+            ]
+          ]
+        },
+        "constellation": "SENTINEL-2",
+        "end_datetime": "2019-03-02T10:50:29.024000Z",
+        "instruments": [
+          "MSI"
+        ],
+        "platform": "S2B",
+        "providers": [
+          {
+            "name": "ESA",
+            "roles": [
+              "producer"
+            ]
+          }
+        ],
+        "published": "2024-07-01T13:11:44.547184Z",
+        "start_datetime": "2019-03-02T10:50:29.024000Z",
+        "title": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCJ_20221113T065937",
+        "uid": "1fd94a5e-11bb-42b6-826a-4413a6a4ed2d",
+        "updated": "2024-07-01T13:11:53.874689Z",
+        "eo:cloud_cover": 99.0289945952402,
+        "eodag:download_link": "https://zipper.creodias.eu/odata/v1/Products(1fd94a5e-11bb-42b6-826a-4413a6a4ed2d)/$value",
+        "eodag:quicklook": "https://datahub.creodias.eu/odata/v1/Assets(df600af8-02ce-4289-bbba-2c08bd68cbf2)/$value",
+        "eodag:thumbnail": "https://datahub.creodias.eu/odata/v1/Assets(df600af8-02ce-4289-bbba-2c08bd68cbf2)/$value",
+        "grid:code": "MGRS-31TCJ",
+        "order:status": "succeeded",
+        "processing:datetime": "2022-11-13T06:59:37.000000Z",
+        "processing:level": "S2MSI1C",
+        "processing:version": 5,
+        "product:type": "S2MSI1C",
+        "s2:datastrip_id": "S2B_OPER_MSI_L1C_DS_S2RP_20221113T065937_S20190302T105637_N05.00",
+        "s2:datatake_id": "GS2B_20190302T105029_010373_N05.00",
+        "s2:datatake_type": "INS-NOBS",
+        "sat:absolute_orbit": 10373,
+        "sat:relative_orbit": 51
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              0.533217951221217,
+              43.3262463358657
+            ],
+            [
+              0.572219317968977,
+              42.3383618251542
+            ],
+            [
+              1.90469075283303,
+              42.3588399177066
+            ],
+            [
+              1.8870778350223,
+              43.3474403888254
+            ],
+            [
+              0.533217951221217,
+              43.3262463358657
+            ]
+          ]
+        ]
+      },
+      "id": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCH_20221113T065937",
+      "assets": {},
+      "properties": {
+        "eodag:collection": "S2_MSI_L1C",
+        "eodag:provider": "creodias",
+        "eodag:search_intersection": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                0.533217951221217,
+                43.3262463358657
+              ],
+              [
+                1.8870778350223,
+                43.3474403888254
+              ],
+              [
+                1.8897839144525685,
+                43.19555008715042
+              ],
+              [
+                0.5383777976136153,
+                43.19555008715042
+              ],
+              [
+                0.533217951221217,
+                43.3262463358657
+              ]
+            ]
+          ]
+        },
+        "constellation": "SENTINEL-2",
+        "end_datetime": "2019-03-02T10:50:29.024000Z",
+        "instruments": [
+          "MSI"
+        ],
+        "platform": "S2B",
+        "providers": [
+          {
+            "name": "ESA",
+            "roles": [
+              "producer"
+            ]
+          }
+        ],
+        "published": "2024-07-01T13:12:44.760776Z",
+        "start_datetime": "2019-03-02T10:50:29.024000Z",
+        "title": "S2B_MSIL1C_20190302T105029_N0500_R051_T31TCH_20221113T065937",
+        "uid": "31768a81-c4f4-4310-8312-ddd84b86a17d",
+        "updated": "2024-07-01T13:12:57.061569Z",
+        "eo:cloud_cover": 35.1675176923766,
+        "grid:code": "MGRS-31TCH",
+        "processing:datetime": "2022-11-13T06:59:37.000000Z",
+        "processing:level": "S2MSI1C",
+        "processing:version": 5,
+        "product:type": "S2MSI1C",
+        "s2:datastrip_id": "S2B_OPER_MSI_L1C_DS_S2RP_20221113T065937_S20190302T105637_N05.00",
+        "s2:datatake_id": "GS2B_20190302T105029_010373_N05.00",
+        "s2:datatake_type": "INS-NOBS",
+        "sat:absolute_orbit": 10373,
+        "sat:relative_orbit": 51
+      }
+    }
+  ]
+}

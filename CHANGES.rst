@@ -1371,7 +1371,7 @@ v3.3.0 (2025-04-10)
 Features
 --------
 
-* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
+* **plugins**: :class:`~eodag.plugins.search.build_search_result.ecmwfsearch.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
 
 Bug Fixes
 ---------
@@ -1469,9 +1469,9 @@ Providers and product types updates
 Plugins new features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **[v3.1.0]** :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`: simplified configuration (:pull:`1433`),
+* **[v3.1.0]** :class:`~eodag.plugins.search.build_search_result.ecmwfsearch.ECMWFSearch`: simplified configuration (:pull:`1433`),
   fixed queryables issues (:pull:`1509`), mapped geometry metadata (:pull:`1555`)
-* [v3.1.0b1] Removed default :class:`~eodag.plugins.download.http.HTTPDownload` zip extension (:pull:`1400`)
+* [v3.1.0b1] Removed default :class:`~eodag.plugins.download.protocol.http.HTTPDownload` zip extension (:pull:`1400`)
 * [v3.1.0b1] Order and poll without downloading (:pull:`1437`)
 
 Remaining changes since `v3.1.0b2 <changelog.rst#v3-1-0b2-2025-02-03>`_
@@ -1495,7 +1495,7 @@ Providers and product types updates
 Plugins new features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* :class:`~eodag.plugins.download.aws.AwsDownload`: zip partial download (:pull:`1561`), `InvalidRequest` handle
+* :class:`~eodag.plugins.download.protocol.aws.AwsDownload`: zip partial download (:pull:`1561`), `InvalidRequest` handle
   (:pull:`1532`)
 * Already authenticated user fix on openid authentication plugins (:pull:`1524`)
 * Fixes missing file error on ``usgs`` authentication during attempts (:pull:`1550`)
@@ -1568,7 +1568,7 @@ Providers and product types updates
 Plugins new features and fixes
 ------------------------------
 
-* Removed default :class:`~eodag.plugins.download.http.HTTPDownload` zip extension (:pull:`1400`)
+* Removed default :class:`~eodag.plugins.download.protocol.http.HTTPDownload` zip extension (:pull:`1400`)
 * Order and poll without downloading (:pull:`1437`)
 * :class:`~eodag.plugins.authentication.token.TokenAuth` distinct headers for token retrieve and authentication
   (:pull:`1451`, thanks `@jgaucher-cs <https://github.com/jgaucher-cs>`_)
@@ -1606,11 +1606,11 @@ Providers and product types updates
 Plugins new features and fixes
 ------------------------------
 
-* Authenticate only when needed in :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`1370`)
+* Authenticate only when needed in :class:`~eodag.plugins.downloadprotocol.http.HTTPDownload` (:pull:`1370`)
 * Various fixes for ``cop_marine`` (:pull:`1336`)(:pull:`1364`)
 * OpenID token expiration fix and ``oidc_config_url`` usage (:pull:`1346`)
 * Concurrent requests for ``wekeo_cmems`` product-types fetch (:pull:`1374`)
-* Error is raised when :class:`~eodag.plugins.download.http.HTTPDownload` order fails (:pull:`1338`)
+* Error is raised when :class:`~eodag.plugins.download.protocol.http.HTTPDownload` order fails (:pull:`1338`)
 
 Miscellaneous
 -------------
@@ -1680,7 +1680,7 @@ Plugins new features and fixes
 * [v3.0.0b1] Standardized download output tree (:pull:`746`)
 * [v3.0.0b1] ``flatten_top_dirs`` download plugins option set to true by default (:pull:`1220`)
 * [v3.0.0b1] ``base_uri`` download plugins setting is not systematically mandatory any more (:pull:`1230`)
-* [v3.0.0b1] Allow no auth for :class:`~eodag.plugins.download.http.HTTPDownload` download requests (:pull:`1196`)
+* [v3.0.0b1] Allow no auth for :class:`~eodag.plugins.download.protocol.http.HTTPDownload` download requests (:pull:`1196`)
 
 Server mode
 ^^^^^^^^^^^
@@ -1715,7 +1715,7 @@ Providers and product types updates
 Plugins new features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Raise an error if no data available on :class:`~eodag.plugins.download.aws.AwsDownload` (:pull:`1257`)
+* Raise an error if no data available on :class:`~eodag.plugins.download.protocol.aws.AwsDownload` (:pull:`1257`)
 
 Server mode
 ^^^^^^^^^^^
@@ -1763,7 +1763,7 @@ Plugins new features and fixes
 ------------------------------
 
 * ``aws_session_token`` support in :class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (:pull:`1267`)
-* :class:`~eodag.plugins.download.http.HTTPDownload` asset ``HEAD`` check and ``ssl_verify`` (:pull:`1266`)
+* :class:`~eodag.plugins.download.protocol.http.HTTPDownload` asset ``HEAD`` check and ``ssl_verify`` (:pull:`1266`)
 * Product types discovery disabled by default on :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
   (:pull:`1259`)
 
@@ -1846,7 +1846,7 @@ Providers and product types updates
 * `OData` API usage for ``creodias`` & ``cop_dataspace`` (:pull:`1149`), fixes for empty geometries (:pull:`1186`),
   search datetime intervals (:pull:`1158`), and removed `discover_product_types` (:pull:`1112`)
 * ``cop_ads`` and ``cop_cds`` now use :class:`~eodag.plugins.search.build_search_result.BuildSearchResult` and
-  :class:`~eodag.plugins.download.http.HTTPDownload` instead of move ``CdsApi`` (:pull:`1029`), `EFAS` dates formatting
+  :class:`~eodag.plugins.download.protocol.http.HTTPDownload` instead of move ``CdsApi`` (:pull:`1029`), `EFAS` dates formatting
   (:pull:`1178`), ``area`` metadata mapping fix (:pull:`1225`)
 * ``wekeo`` now uses `hda-broker 2.0` API (:pull:`1034`), lists queryables (:pull:`1104`), has fixed pagination
   (:pull:`1098`) and CLMS search by id (:pull:`1100`)
@@ -1865,10 +1865,10 @@ Plugins new features and fixes
 * ``flatten_top_dirs`` download plugins option set to true by default (:pull:`1220`)
 * ``base_uri`` download plugins setting is not systematically mandatory any more (:pull:`1230`)
 * Re-login in :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin on api file error (:pull:`1046`)
-* Allow no auth for :class:`~eodag.plugins.download.http.HTTPDownload` download requests (:pull:`1196`)
+* Allow no auth for :class:`~eodag.plugins.download.protocol.http.HTTPDownload` download requests (:pull:`1196`)
 * Refactorization of ``Api`` base plugin that now inherits from ``Search`` and ``Download`` (:pull:`1051`)
 * ``orderLink`` support in `build_search_result.*` plugins (:pull:`1082`), and parsing fix (:pull:`1091`)
-* Fixed resume interrupted assets download using :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`1017`)
+* Fixed resume interrupted assets download using :class:`~eodag.plugins.download.protocol.http.HTTPDownload` (:pull:`1017`)
 
 Server mode
 -----------
@@ -1928,7 +1928,7 @@ v2.12.0 (2024-02-19)
 * Adds missing `tileIdentifier` and `quicklook` for `creodias`, `creodias_s3` and `cop_dataspace` (:pull:`957`)
   (:pull:`1014`)
 * HTTP download with `CdsApi` (:pull:`946`)
-* Download streaming available for :class:`~eodag.plugins.download.aws.AwsDownload` plugin (:pull:`997`)
+* Download streaming available for :class:`~eodag.plugins.download.protocol.aws.AwsDownload` plugin (:pull:`997`)
 * Lists STAC alternate assets in server mode (:pull:`961`)
 * `_dc_qs` used in server-mode to store `CdsApi` search criteria (:pull:`958`)(:pull:`1000`)
 * New eodag exception :class:`~eodag.utils.exceptions.TimeOutError` (:pull:`982`)
@@ -2061,7 +2061,7 @@ v2.8.0 (2023-01-17)
 * Metadata mapping `to_geo_interface()` renamed to `to_geojson()`
   (`d7565a4 <https://github.com/CS-SI/eodag/pull/604/commits/d7565a4984d356aca20310a87c02692cb879427e>`_)
 * Added support for `python3.11` (:pull:`552`)
-* Improved http asset size discovery in :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`566`)
+* Improved http asset size discovery in :class:`~eodag.plugins.download.protocol.http.HTTPDownload` (:pull:`566`)
 * Various minor fixes and improvements (:pull:`572`)(:pull:`574`)(:pull:`576`)(:pull:`579`)(:pull:`580`)(:pull:`582`)
   (:pull:`586`)(:pull:`588`)(:pull:`589`)(:pull:`590`)(:pull:`592`)(:pull:`593`)(:pull:`595`)(:pull:`597`)(:pull:`598`)
   (:pull:`599`)(:pull:`609`)(:pull:`610`)
@@ -2070,7 +2070,7 @@ v2.7.0 (2022-11-29)
 ===================
 
 * Fetch external product types before searching for an unkown product type (:pull:`559`)
-* Handle local assets in :class:`~eodag.plugins.download.http.HTTPDownload` plugin (:pull:`561`)
+* Handle local assets in :class:`~eodag.plugins.download.protocol.http.HTTPDownload` plugin (:pull:`561`)
 * Fetch external product types only for given provider if one is specified (:pull:`557`)
 * Fixed request error handling during :meth:`~eodag.api.core.EODataAccessGateway.search_all` (:pull:`554`)
 * Various minor fixes and improvements (:pull:`555`)(:pull:`558`)(:pull:`562`)
@@ -2120,7 +2120,7 @@ v2.5.2 (2022-07-05)
 v2.5.1 (2022-06-27)
 ===================
 
-* Fixed broken :class:`~eodag.plugins.download.aws.AwsDownload` configuration for STAC providers (:pull:`475`)
+* Fixed broken :class:`~eodag.plugins.download.protocol.aws.AwsDownload` configuration for STAC providers (:pull:`475`)
 * Set ``setuptools_scm`` max version for python3.6 (:pull:`477`)
 
 v2.5.0 (2022-06-07)
@@ -2137,7 +2137,7 @@ v2.5.0 (2022-06-07)
 * New packaging using `pyproject.toml` and `setup.cfg`, following `PEP 517 <https://peps.python.org/pep-0517/>`_
   recommendations and `setuptools build_meta <https://setuptools.pypa.io/en/latest/build_meta.html>`_ (:pull:`435`)
 * `setuptools_scm` usage to have intermediate `dev` versions between releases (:pull:`431`)
-* New options for :class:`~eodag.plugins.download.aws.AwsDownload` plugin: `requester_pays`, `base_uri`,
+* New options for :class:`~eodag.plugins.download.protocol.aws.AwsDownload` plugin: `requester_pays`, `base_uri`,
   and `ignore_assets` (:pull:`456`, thanks `@robert-werner <https://github.com/robert-werner>`_)
 * :meth:`~eodag.api.search_result.SearchResult.filter_online` and additional convert methods added to
   :class:`~eodag.api.search_result.SearchResult` (:pull:`458`)(:pull:`450`)
@@ -2266,7 +2266,7 @@ v2.1.0 (2021-03-09)
 
 - `earth_search <https://www.element84.com/earth-search>`_ and
   `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api>`_ as new providers
-- Updated :class:`~eodag.plugins.download.http.HTTPDownload` plugin, handling products with multiple assets
+- Updated :class:`~eodag.plugins.download.protocol.http.HTTPDownload` plugin, handling products with multiple assets
 - New plugin :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`, enables AWS authentication using no-sign-request,
   profile, ``~/.aws/*``
 - New search plugin :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` and updated

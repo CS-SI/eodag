@@ -78,11 +78,7 @@
         "uid": "8a84f4dc-86e6-47d6-ae92-e2040873405d",
         "updated": "2024-05-08T15:16:29.710841Z",
         "eo:cloud_cover": 0.0,
-        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(8a84f4dc-86e6-47d6-ae92-e2040873405d)/$value",
-        "eodag:quicklook": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
-        "eodag:thumbnail": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
         "grid:code": "MGRS-55PBS",
-        "order:status": "succeeded",
         "processing:datetime": "2023-04-05T15:58:30.000000Z",
         "processing:level": "S2MSI1C",
         "processing:version": "05.00",
@@ -219,7 +215,26 @@
         13.568451278586
       ],
       "id": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PEQ_20230405T155830",
-      "assets": {},
+      "assets": {
+        "download_link": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(8a84f4dc-86e6-47d6-ae92-e2040873405d)/$value",
+          "roles": ["archive", "data"],
+          "type": "application/zip",
+          "order:status": "succeeded"
+        },
+        "quicklook": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
+          "title": "quicklook",
+          "roles": ["overwiev"],
+          "type": "image/jpeg"
+        },
+        "thumbnail": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
+          "title": "thumbnail",
+          "roles": ["thumbnail"],
+          "type": "image/jpeg"
+        }
+      },
       "properties": {
         "constellation": "SENTINEL-2",
         "datetime": "2020-08-15T00:52:51.024000Z",

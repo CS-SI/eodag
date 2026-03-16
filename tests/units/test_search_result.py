@@ -24,7 +24,8 @@ from lxml import html
 from pystac import ItemCollection
 from shapely.geometry.collection import GeometryCollection
 
-from tests.context import EOProduct, SearchResult
+from eodag.api.product import EOProduct
+from eodag.api.search_result import SearchResult
 
 
 class TestSearchResult(unittest.TestCase):

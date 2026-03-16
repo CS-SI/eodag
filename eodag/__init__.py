@@ -24,10 +24,11 @@
 """EODAG package"""
 from importlib.metadata import PackageNotFoundError, version
 
-from .api.core import EODataAccessGateway
-from .api.product import EOProduct
-from .api.search_result import SearchResult
-from .utils.logging import setup_logging
+# Base class is a public aggregator, do not use private path
+from eodag.api.core import EODataAccessGateway
+from eodag.api.product import EOProduct
+from eodag.api.search_result import SearchResult
+from eodag.utils.logging import setup_logging
 
 try:
     __version__ = version(__name__)

@@ -18,24 +18,22 @@
 
 import json
 import os
+import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 import responses
 from requests.models import Response
 from shapely import geometry
-from stac_validator import stac_validator
+from stac_validator import stac_validator  # type: ignore
 
-from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import (
-    GENERIC_STAC_PROVIDER,
-    Download,
-    EODataAccessGateway,
-    EOProduct,
-    PluginTopic,
-    SearchResult,
-    mock,
-)
+from eodag.api.core import EODataAccessGateway
+from eodag.api.product import Asset, EOProduct
+from eodag.api.search_result import SearchResult
+from eodag.plugins.base import PluginTopic
+from eodag.utils import GENERIC_STAC_PROVIDER
+from tests.utils import TEST_RESOURCES_PATH, EODagTestCase
 
 STAC_SCHEMAS_DIR = os.path.join(TEST_RESOURCES_PATH, "stac", "schemas")
 
@@ -59,14 +57,36 @@ STAC_SCHEMA_MAP = _build_stac_schema_map()
 
 
 class TestCoreSearchResults(EODagTestCase):
-    def setUp(self):
-        super(TestCoreSearchResults, self).setUp()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
         # Mock home and eodag conf directory to tmp dir
-        self.tmp_home_dir = tempfile.TemporaryDirectory()
-        self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        cls.tmp_home_dir = tempfile.TemporaryDirectory()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
-        self.expanduser_mock.start()
+        cls.expanduser_mock.start()
+        cls.maxDiff = None
+
+    @classmethod
+    def tearDownClass(cls):
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        path = cls.tmp_home_dir.name
+        for item in os.listdir(cls.tmp_home_dir.name):
+            subpath = os.path.join(path, item)
+            try:
+                if os.path.isdir(subpath):
+                    shutil.rmtree(subpath)
+            except Exception:
+                # windows platform does not like parallelized rmtree
+                pass
+
+        cls.tmp_home_dir.cleanup()
+        super().tearDownClass()
+
+    def setUp(self):
+        super().setUp()
         self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
@@ -76,10 +96,6 @@ class TestCoreSearchResults(EODagTestCase):
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "product:type": "OCN",
-                        "eodag:download_link": (
-                            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
-                            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
-                        ),
                         "eodag:provider": "cop_dataspace",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
@@ -127,10 +143,43 @@ class TestCoreSearchResults(EODagTestCase):
             product.search_intersection = geometry.shape(product.search_intersection)
 
     def tearDown(self):
-        super(TestCoreSearchResults, self).tearDown()
-        # stop Mock and remove tmp config dir
-        self.expanduser_mock.stop()
-        self.tmp_home_dir.cleanup()
+        super().tearDown()
+
+    def make_assertions(self, f):
+        d = json.load(f)
+        self.assertEqual(d["type"], self.geojson_repr["type"])
+        self.assertEqual(len(d["features"]), len(self.geojson_repr["features"]))
+        feature = d["features"][0]
+        self.assertEqual(feature["id"], self.geojson_repr["features"][0]["id"])
+        self.assertEqual(feature["type"], self.geojson_repr["features"][0]["type"])
+        self.assertDictEqual(
+            feature["geometry"], self.geojson_repr["features"][0]["geometry"]
+        )
+        for key, value in self.geojson_repr["features"][0]["properties"].items():
+            if key not in ("geometry", "id"):
+                if isinstance(value, dict):
+                    self.assertDictEqual(value, feature["properties"][key])
+                elif isinstance(value, list):
+                    self.assertListEqual(value, feature["properties"][key])
+                else:
+                    self.assertEqual(value, feature["properties"][key])
+            else:
+                self.assertEqual(value, feature[key])
+
+    @staticmethod
+    def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
+        return {
+            "properties": {
+                "eodag:provider": "cop_dataspace",
+                "eodag:search_intersection": {
+                    "coordinates": geom_coords,
+                    "type": geom_type,
+                },
+            },
+            "id": eo_id,
+            "collection": "S1_SAR_OCN",
+            "geometry": {"coordinates": geom_coords, "type": geom_type},
+        }
 
     def test_core_serialize_search_results_with_filename(self):
         """The core api must serialize a search results to STAC feature collection with filename"""
@@ -435,42 +484,6 @@ class TestCoreSearchResults(EODagTestCase):
         with open(search_results_geojson_path, "r") as f:
             self.make_assertions(f)
 
-    def make_assertions(self, f):
-        d = json.load(f)
-        self.assertEqual(d["type"], self.geojson_repr["type"])
-        self.assertEqual(len(d["features"]), len(self.geojson_repr["features"]))
-        feature = d["features"][0]
-        self.assertEqual(feature["id"], self.geojson_repr["features"][0]["id"])
-        self.assertEqual(feature["type"], self.geojson_repr["features"][0]["type"])
-        self.assertDictEqual(
-            feature["geometry"], self.geojson_repr["features"][0]["geometry"]
-        )
-        for key, value in self.geojson_repr["features"][0]["properties"].items():
-            if key not in ("geometry", "id"):
-                if isinstance(value, dict):
-                    self.assertDictEqual(value, feature["properties"][key])
-                elif isinstance(value, list):
-                    self.assertListEqual(value, feature["properties"][key])
-                else:
-                    self.assertEqual(value, feature["properties"][key])
-            else:
-                self.assertEqual(value, feature[key])
-
-    @staticmethod
-    def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
-        return {
-            "properties": {
-                "eodag:provider": "cop_dataspace",
-                "eodag:search_intersection": {
-                    "coordinates": geom_coords,
-                    "type": geom_type,
-                },
-            },
-            "id": eo_id,
-            "collection": "S1_SAR_OCN",
-            "geometry": {"coordinates": geom_coords, "type": geom_type},
-        }
-
     def test_group_by_extent(self):
         geom_coords_1 = [[[89, 2], [90, 2], [90, 3], [89, 3], [89, 2]]]
         geom_coords_2 = [[[90, 3], [91, 3], [91, 4], [90, 4], [90, 3]]]
@@ -512,55 +525,101 @@ class TestCoreSearchResults(EODagTestCase):
 
     @responses.activate
     def test_download_all_callback(self):
-        product = self._dummy_downloadable_product()
+
+        output_dir = os.path.join(self.tmp_home_dir.name, "output_all_callback")
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+
+        # Fake local product / asset
+        product = EOProduct(provider="cop_dataspace", properties={})
+        product.register_plugin_manager(self.plugins_manager)
+        asset = Asset(product=product, key="my_asset_name")
+        asset.update({"title": "asset title", "href": "http://asset.location/"})
+        product.assets.update({asset.key: asset})
+
         search_result = SearchResult([product])
 
-        def downloaded_callback_func(product):
-            self.assertTrue(product in search_result)
-            downloaded_callback_func.times_called += 1
+        responses.add(
+            responses.GET,
+            "http://asset.location/",
+            body=b"This is some content",
+            status=200,
+            content_type="text/plain",
+            auto_calculate_content_length=True,
+        )
 
-        downloaded_callback_func.times_called = 0
+        shared: dict = {"callback_products": []}
 
-        try:
-            self.assertEqual(downloaded_callback_func.times_called, 0)
-            products_paths = self.dag.download_all(
-                search_result, downloaded_callback=downloaded_callback_func
-            )
-            self.assertEqual(downloaded_callback_func.times_called, len(search_result))
-        finally:
-            for product_path in products_paths:
-                self._clean_product(product_path)
+        def downloaded_callback(product):
+            shared["callback_products"].append(product)
+
+        _ = self.dag.download_all(
+            search_result,
+            downloaded_callback=downloaded_callback,
+            output_dir=output_dir,
+        )
+
+        self.assertEqual(len(search_result), len(shared["callback_products"]))
+        self.assertEqual(search_result[0], shared["callback_products"][0])
 
     @responses.activate
     def test_download_all_callback_and_skipped(self):
         """Download.download_all must skip products on download error and update callback on downloaded"""
-        product = self._dummy_downloadable_product()
-        product_skipped = self._dummy_downloadable_product(
-            self._dummy_product(
-                properties={**self.eoproduct_props, "id": "undownloadable"}
-            )
+
+        output_dir = os.path.join(
+            self.tmp_home_dir.name, "output_all_callback_and_skipped"
         )
-        product_skipped.downloader.download = mock.MagicMock(side_effect=Exception)
-        search_result = SearchResult([product_skipped, product])
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
 
-        def downloaded_callback_func(product):
-            self.assertTrue(product in search_result)
-            downloaded_callback_func.times_called += 1
+        # Fake local product / asset
+        product1 = EOProduct(provider="cop_dataspace", properties={})
+        product1.register_plugin_manager(self.plugins_manager)
+        asset1 = Asset(product=product1, key="my_asset_name")
+        asset1.update({"title": "asset title", "href": "http://asset.location/asset1"})
+        product1.assets.update({asset1.key: asset1})
 
-        downloaded_callback_func.times_called = 0
+        product2 = EOProduct(provider="cop_dataspace", properties={})
+        product2.register_plugin_manager(self.plugins_manager)
+        asset2 = Asset(product=product2, key="my_asset_name")
+        asset2.update({"title": "asset title", "href": "http://asset.location/asset2"})
+        product2.assets.update({asset2.key: asset2})
+
+        search_result = SearchResult([product1, product2])
+
+        responses.add(
+            responses.GET,
+            "http://asset.location/asset1",
+            body=b"This is some content",
+            status=200,
+            content_type="text/plain",
+            auto_calculate_content_length=True,
+        )
+        responses.add(
+            responses.GET,
+            "http://asset.location/asset2",
+            status=503,
+            content_type="text/plain",
+            auto_calculate_content_length=True,
+        )
+
+        shared: dict = {"callback_products": []}
+
+        def downloaded_callback(product):
+            shared["callback_products"].append(product)
 
         try:
-            self.assertEqual(downloaded_callback_func.times_called, 0)
-            with self.assertLogs(level="ERROR") as cm:
-                products_paths = self.dag.download_all(
-                    search_result, downloaded_callback=downloaded_callback_func
-                )
-                self.assertIn("EOProduct(id=undownloadable", str(cm.output))
-            self.assertEqual(len(products_paths), 1)
-            self.assertEqual(downloaded_callback_func.times_called, 1)
-        finally:
-            for product_path in products_paths:
-                self._clean_product(product_path)
+            _ = self.dag.download_all(
+                search_result,
+                downloaded_callback=downloaded_callback,
+                output_dir=output_dir,
+            )
+            self.fail("except InterruptedError")
+        except InterruptedError:
+            pass
+
+        # First can be interrupt by second if still in progress
+        self.assertTrue(len(shared["callback_products"]) < 2)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
@@ -608,7 +667,9 @@ class TestCoreSearchResults(EODagTestCase):
         # use given provider and not preferred provider
         self.assertEqual("cop_dataspace", search_results[0].provider)
 
-    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.querystringsearch.urlopen", autospec=True
+    )
     def test_core_search_with_count(self, mock_urlopen):
         """The core search must use the count parameter"""
 
@@ -737,9 +798,6 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
         self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
-        self.assertEqual(results[0].location, "https://provider-url/origin-link")
-        self.assertIsInstance(results[0].downloader, Download)
-
         self.assertEqual(results[1].provider, "earth_search")
         self.assertEqual(results[1].properties["id"], "legacy-server-id")
         self.assertEqual(results[1].collection, "bar-collection")
@@ -752,7 +810,6 @@ class TestCoreSearchResults(EODagTestCase):
             results[1].assets["asset-2"]["href"],
             "https://provider-url/asset-2-link",
         )
-        self.assertIsInstance(results[1].downloader, Download)
 
     @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_known_provider(
@@ -777,10 +834,10 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "S2B_27VWK_20240206_0_L1C")
         self.assertEqual(results[0].collection, "S2_MSI_L1C")
         self.assertEqual(len(results[0].assets), 17)
-        self.assertTrue(
-            all(v["href"].startswith("s3://") for v in results[0].assets.values())
-        )
-        self.assertIsInstance(results[0].downloader, Download)
+
+        for key in results[0].assets:
+            if key not in ["download_link", "thumbnail", "quicklook"]:
+                self.assertTrue(results[0].assets[key].get("href").startswith("s3://"))
 
     @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_unknown_provider(self, mock_fetch_stac_items):
@@ -800,4 +857,3 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "S2B_9VXK_20171013_0")
         self.assertEqual(results[0].collection, "sentinel-2-l1c")
         self.assertEqual(len(results[0].assets), 1)
-        self.assertIsInstance(results[0].downloader, Download)

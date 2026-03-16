@@ -21,7 +21,7 @@ import logging
 import operator
 from typing import TYPE_CHECKING, Any
 
-from eodag.plugins.crunch.base import Crunch
+from .base import Crunch
 
 logger = logging.getLogger("eodag.crunch.property")
 

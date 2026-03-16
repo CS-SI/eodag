@@ -77,12 +77,19 @@
         "keyword": {},
         "processing:level": null,
         "eodag:sensor_type": null,
-        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value",
         "product:type": "OCN",
         "orbitNumber": 20624,
         "end_datetime": "2018-02-16T00:12:14.035Z",
         "resolution": null,
         "eodag:quicklook": null
+      },
+      "assets": {
+        "download_link": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value",
+          "roles": ["archive", "data"],
+          "type": "application/zip",
+          "order:status": "succeeded"
+        }
       },
       "id": "578f1768-e66e-5b86-9363-b19f8931cc7b"
     }

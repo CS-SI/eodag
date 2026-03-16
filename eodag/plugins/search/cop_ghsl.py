@@ -36,8 +36,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.api.search_result import SearchResult
-from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
@@ -48,6 +46,9 @@ from eodag.utils.exceptions import (
     TimeOutError,
     ValidationError,
 )
+
+from .base import Search
+from .preparesearch import PreparedSearch
 
 logger = logging.getLogger("eodag.search.cop_ghsl")
 
@@ -283,6 +284,7 @@ class CopGhslSearch(Search):
         """
         products = []
         metadata_mapping = params.pop("metadata_mapping", {})
+        assets_mapping = params.pop("assets_mapping", {})
         parsed_metadata_mapping = mtd_cfg_as_conversion_and_querypath(metadata_mapping)
 
         filter_geometry = params.pop("geometry", None)
@@ -360,13 +362,18 @@ class CopGhslSearch(Search):
                 # create id
                 product_id = f"{product_id_base}__{tile['tileID']}"
                 properties["id"] = properties["title"] = product_id
-                download_link = metadata_mapping.get("eodag:download_link").format(
-                    dataset=dataset, tile_id=tile["tileID"]
-                )
-                properties["eodag:download_link"] = download_link
+
                 product = EOProduct(
                     provider="cop_ghsl", properties=properties, collection=collection
                 )
+
+                if "download_link" in assets_mapping:
+                    asset_props: dict = assets_mapping.get("download_link", {})
+                    asset_props["href"] = asset_props["href"].format(
+                        dataset=dataset, tile_id=tile["tileID"]
+                    )
+                    product.assets.update({"download_link": asset_props})
+
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
                         products.append(product)
@@ -389,9 +396,8 @@ class CopGhslSearch(Search):
         if "proj:code" in filters:
             filters["proj:code"] = filters["proj:code"].replace("EPSG:", "")
         collection_config = self.config.products.get(collection, {})
-        download_link = collection_config.get("metadata_mapping", {}).get(
-            "eodag:download_link", None
-        )
+        asset_mapping = collection_config.get("assets_mapping", {})
+        download_link = asset_mapping.get("download_link", {}).get("href")
         if not download_link:
             raise MisconfiguredError(
                 f"Download link configuration missing for collection {collection}"
@@ -421,9 +427,6 @@ class CopGhslSearch(Search):
                 properties.update(format_params)
                 if "proj:code" in filter_params:
                     properties["proj:code"] = filter_params["proj:code"]
-                properties["eodag:download_link"] = download_link.format(
-                    **format_params
-                )
                 datetimes = self._get_start_and_end_from_properties(format_params)
                 properties["start_datetime"] = datetimes["start_date"]
                 properties["end_datetime"] = datetimes["end_date"]
@@ -455,10 +458,24 @@ class CopGhslSearch(Search):
             datetimes = self._get_start_and_end_from_properties(properties)
             properties["start_datetime"] = datetimes["start_date"]
             properties["end_datetime"] = datetimes["end_date"]
-            properties["eodag:download_link"] = download_link
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, collection=collection
             )
+            if assets_mapping:  # item with several assets
+                assets = AssetsDict(product=product)
+                for key, mapping in assets_mapping.items():
+                    filters = {k.replace(":", "_"): v for k, v in filters.items()}
+                    download_link = mapping["href"].format(**filters)
+                    assets.update(
+                        {
+                            key: {
+                                "href": download_link,
+                                "title": mapping["title"],
+                                "type": mapping["type"],
+                            }
+                        }
+                    )
+                product.assets = assets
             products.append(product)
             num_products = 1
         if prep.count:
