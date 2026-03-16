@@ -29,7 +29,7 @@ from collections import deque
 from copy import deepcopy
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import attrgetter, itemgetter
+from operator import itemgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
@@ -75,7 +75,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
-from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
+from eodag.utils.dates import get_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -85,7 +85,6 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
 )
-from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
@@ -118,20 +117,6 @@ class EODataAccessGateway:
         locations_conf_path: Optional[str] = None,
         db: Optional[Database] = None,
     ) -> None:
-        self.db = db if db is not None else SQLiteDatabase()
-
-        collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
-            res_files("eodag") / "resources" / "collections.yml"
-        )
-        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
-
-        collections_config_obj = self._collections_config_init(collections_config_dict)
-        self.db.upsert_collections(collections_config_obj)
-
-        self.collections_config = collections_config_obj
-
-        self._providers = ProvidersDict.from_configs(load_default_config())
-
         env_var_cfg_dir = "EODAG_CFG_DIR"
         self.conf_dir = os.getenv(
             env_var_cfg_dir,
@@ -153,6 +138,22 @@ class EODataAccessGateway:
                 )
             self.conf_dir = tmp_conf_dir
             makedirs(self.conf_dir)
+
+        self.db = (
+            db
+            if db is not None
+            else SQLiteDatabase(self.conf_dir + os.path.sep + "eodag.db")
+        )
+
+        collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
+            res_files("eodag") / "resources" / "collections.yml"
+        )
+        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
+
+        collections_dict = CollectionsDict.from_config(collections_config_dict)
+        self.db.upsert_collections(collections_dict)
+
+        self._providers = ProvidersDict.from_configs(load_default_config())
 
         self._plugins_manager = PluginManager(self._providers)
         self._providers = self._plugins_manager.providers
@@ -506,46 +507,60 @@ class EODataAccessGateway:
             )
             self.locations_config = []
 
-    def list_collections(
-        self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> CollectionsList:
-        """Lists supported collections.
+    def get_collection(self, id: str) -> Optional[Collection]:
+        """Get a collection by its id.
 
-        :param provider: (optional) The name of a provider that must support the product
-                         types we are about to list
-        :param fetch_providers: (optional) Whether to fetch providers for new product
-                                types or not
-        :returns: The list of the collections that can be accessed using eodag.
-        :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
+        :param id: The collection id
+        :returns: The collection having the given id if it exists, None otherwise
         """
-        if fetch_providers:
-            # First, update collections list if possible
-            self.fetch_collections_list(provider=provider)
+        return self.list_collections(ids=[id]).get(id)
 
-        providers_iter, providers_check = itertools.tee(
-            self._providers.filter_by_name_or_group(provider)
-        )
+    def list_collections(
+        self,
+        geometry: Optional[Union[BaseGeometry, dict[str, Any], str]] = None,
+        datetime: Optional[Union[datetime.datetime, str]] = None,
+        limit: Optional[int] = None,
+        q: Optional[str] = None,
+        ids: Optional[list[str]] = None,
+        cql2_text: Optional[str] = None,
+        cql2_json: Optional[dict[str, Any]] = None,
+        sortby: Optional[list[dict[str, str]]] = None,
+    ) -> CollectionsList:
+        """Search and list collections matching the given filters.
 
-        if provider and not any(providers_check):
-            raise UnsupportedProvider(
-                f"The requested provider is not (yet) supported: {provider}"
+        :param geometry: (optional) Search area as a Shapely geometry, a bounding-box
+                         dict, or a WKT string
+        :param datetime: (optional) Temporal filter as an RFC 3339 string or interval
+                         (e.g. ``"2021-01-01T00:00:00Z/2022-01-01T00:00:00Z"``,
+                         ``"../2021-06-01T00:00:00Z"``, ``"2022-01-01T00:00:00Z/.."``).
+        :param limit: (optional) Maximum number of collections to return
+        :param q: (optional) Free-text search terms (STAC ``q`` parameter)
+        :param cql2_text: (optional) CQL2 text filter expression
+        :param cql2_json: (optional) CQL2 JSON filter expression
+        :param sortby: (optional) STAC sort extension objects, e.g.
+                       ``[{"field": "datetime", "direction": "desc"}]``
+        :returns: A :class:`~eodag.api.collection.CollectionsList` of matching
+                  collections with a ``number_matched`` attribute.
+        :raises ValueError: If both ``cql2_text`` and ``cql2_json`` are provided,
+                            or if ``sortby`` contains invalid fields/directions.
+        """
+        try:
+            collections, number_matched = self.db.collections_search(
+                geometry=geometry,
+                datetime=datetime,
+                limit=limit,
+                q=q,
+                ids=ids,
+                cql2_text=cql2_text,
+                cql2_json=cql2_json,
+                sortby=sortby,
             )
+        except ValueError as e:
+            raise ValidationError(f"Invalid input for listing collections: {e}")
 
-        # unique collection ids from providers configs
-        collection_ids = {
-            collection_id
-            for p in providers_iter
-            for collection_id in p.collections_config
-            if collection_id != GENERIC_COLLECTION
-        }
-
-        collections = CollectionsList(
-            [self.collections_config[collection_id] for collection_id in collection_ids]
+        return CollectionsList(
+            [Collection.create_with_dag(**c) for c in collections], number_matched
         )
-
-        # Return the collections sorted in lexicographic order of their id
-        collections.sort(key=attrgetter("id"))
-        return collections
 
     def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch collections list and update if needed.
@@ -792,6 +807,7 @@ class EODataAccessGateway:
                                         new_collection
                                     ],
                                 )
+                                # TODO: add to db BUT only ONCE and not in loop
                                 self.collections_config[new_coll_obj._id] = new_coll_obj
                             except ValidationError:
                                 # skip collection if there is a problem with its id (missing or not a string)
@@ -922,6 +938,10 @@ class EODataAccessGateway:
 
         return [name for name, _ in candidates]
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.get_collection' instead",
+        version="5.0.0",
+    )
     def get_collection_from_alias(self, alias_or_id: str) -> str:
         """Return the id of a collection by either its id or alias
 
@@ -929,9 +949,7 @@ class EODataAccessGateway:
                             method will directly return the given value.
         :returns: Internal name of the collection.
         """
-        collections = [
-            v for k, v in self.collections_config.items() if v.id == alias_or_id
-        ]
+        collections = self.list_collections(ids=[alias_or_id])
 
         if len(collections) > 1:
             raise NoMatchingCollection(
@@ -940,6 +958,7 @@ class EODataAccessGateway:
 
         if len(collections) == 0:
             if alias_or_id in self.collections_config:
+                # TODO: when do we enter here ??
                 return alias_or_id
             else:
                 raise NoMatchingCollection(
@@ -948,6 +967,10 @@ class EODataAccessGateway:
 
         return collections[0]._id or collections[0].id
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.get_collection' instead",
+        version="5.0.0",
+    )
     def get_alias_from_collection(self, collection: str) -> str:
         """Return the alias of a collection by its id. If no alias was defined for the
         given collection, its id is returned instead.
@@ -955,13 +978,17 @@ class EODataAccessGateway:
         :param collection: collection id
         :returns: Alias of the collection or its id if no alias has been defined for it.
         """
-        if collection not in self.collections_config:
+        if not self.get_collection(collection):
             raise NoMatchingCollection(collection)
 
-        if alias := self.collections_config[collection].alias:
+        if alias := self.get_collection(collection).alias:
             return alias
         return collection
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.list_collections' instead.",
+        version="5.0.0",
+    )
     def guess_collection(
         self,
         free_text: Optional[str] = None,
@@ -977,152 +1004,71 @@ class EODataAccessGateway:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         **kwargs: Any,
-    ) -> CollectionsList:
-        """
-        Find EODAG collection IDs that best match a set of search parameters.
+    ) -> list[str]:
+        """Find collections best matching a set of search parameters.
 
-        When using several filters, collections that match most of them will be returned at first.
+        .. deprecated:: v5.0.0
+            Use :meth:`list_collections` with ``q`` / ``datetime`` instead.
 
-        :param free_text: Free text search filter used to search accross all the following parameters. Handles logical
-                          operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
-                          ``*`` and ``?`` wildcards.
-        :param intersect: Join results for each parameter using INTERSECT instead of UNION.
-        :param instruments: Instruments parameter.
-        :param platform: Platform parameter.
-        :param constellation: Constellation parameter.
-        :param processing_level: Processing level parameter.
-        :param sensor_type: Sensor type parameter.
-        :param keywords: Keywords parameter.
-        :param description: description parameter.
-        :param title: Title parameter.
-        :param start_date: start date for datetime filtering. Not used by free_text
-        :param end_date: end date for datetime filtering. Not used by free_text
-        :returns: The best match for the given parameters.
+        Delegates to :meth:`list_collections` using ``q`` for free-text /
+        filter values and ``datetime`` for temporal bounds.
+
+        :param free_text: Free text search terms (supports ``AND``/``OR``,
+                          quoted phrases, ``*``/``?`` wildcards).
+        :param intersect: (ignored, kept for backwards compatibility)
+        :param instruments: Instruments value added to ``q``.
+        :param platform: Platform value added to ``q``.
+        :param constellation: Constellation value added to ``q``.
+        :param processing_level: Processing level value added to ``q``.
+        :param sensor_type: Sensor type value added to ``q``.
+        :param keywords: Keywords value added to ``q``.
+        :param description: Description value added to ``q``.
+        :param title: Title value added to ``q``.
+        :param start_date: Start date for datetime filtering (RFC 3339).
+        :param end_date: End date for datetime filtering (RFC 3339).
+        :returns: Matching collections ranked by FTS relevance.
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
-        if collection := kwargs.get("collection"):
-            if collection in self.collections_config:
-                return CollectionsList([self.collections_config[collection]])
-            else:
-                try:
-                    collection = self.get_collection_from_alias(collection)
-                    return CollectionsList([self.collections_config[collection]])
-                except NoMatchingCollection:
-                    return CollectionsList(
-                        [Collection.create_with_dag(self, id=collection)]
-                    )
+        # TODO: what is the point of this condition ???
+        # Shortcut: explicit collection id/alias
+        if coll_id := kwargs.get("collection"):
+            return [coll_id]
 
-        filters: dict[str, str] = {
-            k: v
-            for k, v in {
-                "instruments": instruments,
-                "constellation": constellation,
-                "platform": platform,
-                "processing:level": processing_level,
-                "eodag:sensor_type": sensor_type,
-                "keywords": keywords,
-                "description": description,
-                "title": title,
-            }.items()
-            if v is not None
-        }
+        q_sep = " AND " if intersect else " OR "
+        q_terms: list[str] = []
+        if free_text:
+            q_terms.append(free_text)
+        for value in (
+            instruments,
+            platform,
+            constellation,
+            processing_level,
+            sensor_type,
+            keywords,
+            description,
+            title,
+        ):
+            if value is not None:
+                q_terms.append(value)
 
-        only_dates = (
-            True
-            if (not free_text and not filters and (start_date or end_date))
-            else False
+        # Build datetime string from start_date / end_date
+        dt: Optional[str] = None
+        if start_date and end_date:
+            dt = f"{start_date}/{end_date}"
+        elif start_date:
+            dt = f"{start_date}/.."
+        elif end_date:
+            dt = f"../{end_date}"
+
+        results = self.list_collections(
+            q=q_sep.join(q_terms) if q_terms else None,
+            datetime=dt,
         )
 
-        free_text_evaluator = (
-            compile_free_text_query(free_text) if free_text else lambda _: True
-        )
+        if not results:
+            raise NoMatchingCollection()
 
-        guesses_with_score: list[tuple[str, int]] = []
-
-        for col, col_f in self.collections_config.items():
-            if (
-                col == GENERIC_COLLECTION
-                or col not in self._plugins_manager.collection_to_provider_config_map
-            ):
-                continue
-            score = 0  # how many filters matched
-
-            # free text search
-            if free_text:
-                match = free_text_evaluator(col_f.model_dump())
-                if match:
-                    score += 1
-                elif intersect:
-                    continue  # must match all filters
-
-            # individual filters
-            if filters:
-                filters_matching_method = all if intersect else any
-                filters_evaluators = {
-                    filter_name: compile_free_text_query(value)
-                    for filter_name, value in filters.items()
-                    if value is not None
-                }
-
-                filter_matches = [
-                    filters_evaluators[filter_name](
-                        {
-                            filter_name: col_f.__dict__[
-                                Collection.get_collection_field_from_alias(filter_name)
-                            ]
-                        }
-                    )
-                    for filter_name, value in filters.items()
-                    if Collection.get_collection_field_from_alias(filter_name)
-                    in col_f.__dict__
-                ]
-
-                if filters_matching_method(filter_matches):
-                    # add number of True matches to score
-                    score += sum(filter_matches)
-                elif intersect:
-                    continue  # must match all filters
-
-            if score == 0 and not only_dates:
-                continue
-
-            # datetime filtering
-            if start_date or end_date:
-                min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-                max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
-
-                col_start_str = col_f.extent.temporal.interval[0][0]
-                if col_start_str and isinstance(col_start_str, str):
-                    col_start = rfc3339_str_to_datetime(col_start_str)
-                else:
-                    col_start = col_start_str or min_aware
-                col_end_str = col_f.extent.temporal.interval[0][1]
-                if col_end_str and isinstance(col_end_str, str):
-                    col_end = rfc3339_str_to_datetime(col_end_str)
-                else:
-                    col_end = col_end_str or max_aware
-
-                max_start = max(
-                    rfc3339_str_to_datetime(start_date) if start_date else min_aware,
-                    col_start,
-                )
-                min_end = min(
-                    rfc3339_str_to_datetime(end_date) if end_date else max_aware,
-                    col_end,
-                )
-                if not (max_start <= min_end):
-                    continue
-
-            guesses_with_score.append((col_f._id, score))
-
-        if guesses_with_score:
-            # sort by score descending, then col for stability
-            guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return CollectionsList(
-                [self.collections_config[col] for col, _ in guesses_with_score]
-            )
-
-        raise NoMatchingCollection()
+        return results.ids
 
     def search(
         self,
@@ -1555,13 +1501,13 @@ class EODataAccessGateway:
         :param kwargs: Search criteria to help finding the right product
         :returns: A search result with one EO product or None at all
         """
-        collection = kwargs.get("collection")
-        if collection is not None:
-            try:
-                collection = self.get_collection_from_alias(collection)
-            except NoMatchingCollection:
-                logger.debug("collection %s not found", collection)
+        collection_id = kwargs.get("collection")
+        coll = self.get_collection(collection_id) if collection_id else None
+        collection = coll._id if coll else collection_id
+        if collection_id and not coll:
+            logger.debug("collection %s not found", collection_id)
         get_search_plugins_kwargs = dict(provider=provider, collection=collection)
+
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
         )
@@ -1719,10 +1665,12 @@ class EODataAccessGateway:
                     return [], kwargs
 
         if collection is not None:
-            try:
-                collection = self.get_collection_from_alias(collection)
-            except NoMatchingCollection:
+            coll = self.get_collection(collection)
+            if coll:
+                collection = coll._id
+            else:
                 logger.info("unknown collection " + collection)
+
         kwargs["collection"] = collection
 
         if start is not None:
@@ -1792,6 +1740,8 @@ class EODataAccessGateway:
 
         preferred_provider = self.get_preferred_provider()[0]
 
+        collection_exists = bool(self.get_collection(collection))
+
         search_plugins: list[Union[Search, Api]] = []
         for plugin in self._plugins_manager.get_search_plugins(
             collection=collection, provider=provider
@@ -1800,7 +1750,7 @@ class EODataAccessGateway:
             if (
                 provider != plugin.provider
                 and preferred_provider != plugin.provider
-                and collection not in self.collections_config
+                and not collection_exists
                 and isinstance(plugin, MeteoblueSearch)
             ):
                 continue
@@ -2120,9 +2070,12 @@ class EODataAccessGateway:
         if search_result._dag is None:
             return filename
         collections = set(p.collection for p in search_result)
+        existing_collections = search_result._dag.list_collections(
+            ids=list(collections)
+        )
         for collection in collections:
-            collection_obj = search_result._dag.collections_config.get(
-                collection, Collection(id=collection)
+            collection_obj = existing_collections.get(collection) or Collection(
+                id=collection
             )
             collection_dict = collection_obj.model_dump(
                 display_extensions=True,
@@ -2280,30 +2233,21 @@ class EODataAccessGateway:
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         """
         # only fetch providers if collection is not found
-        available_collections: list[str] = [
-            col.id
-            for col in self.list_collections(provider=provider, fetch_providers=False)
-        ]
+        # TODO: we need the provider parameter in collections filter
+        available_collections = self.list_collections(provider=provider).ids
         collection: Optional[str] = kwargs.get("collection")
         coll_alias: Optional[str] = collection
 
         if collection:
-            if collection not in available_collections:
-                if fetch_providers:
-                    # fetch providers and try again
-                    available_collections = [
-                        col.id
-                        for col in self.list_collections(
-                            provider=provider, fetch_providers=True
-                        )
-                    ]
-            try:
-                kwargs["collection"] = collection = self.get_collection_from_alias(
-                    collection
-                )
-            except NoMatchingCollection:
-                # try fetching queryables for custom collection even if not known
-                pass
+            # TODO: provider parameter does not exist in get_collection()
+            # maybe call self.providers.get("provider").get_collection(collection) instead?
+            coll = self.get_collection(collection, provider=provider)
+            if not collection and fetch_providers:
+                # fetch providers and try again
+                self.fetch_collections_list(provider)
+                # TODO: we need the provider parameter in collections filter
+                coll = self.get_collection(collection, provider=provider)
+            kwargs["collection"] = collection = coll._id if coll else collection
 
         if not provider and not collection:
             return QueryablesDict(
@@ -2410,21 +2354,19 @@ class EODataAccessGateway:
         Attach collections_config to plugin config. This dict contains product
         type metadata that will also be stored in each product's properties.
         """
-        try:
-            plugin.config.collection_config = dict(
-                [
-                    c.model_dump(mode="json", exclude={"id"})
-                    for c in self.list_collections(
-                        plugin.provider, fetch_providers=False
-                    )
-                    if c._id == collection
-                ][0],
-                **{"collection": collection},
-            )
-            # If the product isn't in the catalog, it's a generic collection.
-        except IndexError:
+        # TODO: parameter provider does not exists yet
+        coll = self.get_collection(collection, provider=plugin.provider)
+
+        if coll:
+            plugin.config.collection_config = coll.model_dump(
+                mode="json", exclude={"id"}
+            ) | {"collection": coll._id}
+
+        # If the product isn't in the catalog, it's a generic collection.
+        else:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
+                # TODO: how do we handle the generic collection now with the db ??
                 **self.collections_config[GENERIC_COLLECTION].model_dump(
                     mode="json", exclude={"id"}
                 ),
