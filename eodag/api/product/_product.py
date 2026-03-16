@@ -66,6 +66,11 @@ from eodag.utils import (
     format_string,
     get_geometry_from_various,
 )
+from eodag.utils.deserialize import (
+    _import_stac_item_from_eodag_server,
+    _import_stac_item_from_known_provider,
+    _import_stac_item_from_unknown_provider,
+)
 from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
 from eodag.utils.repr import dict_to_html_table
 
@@ -860,3 +865,29 @@ class EOProduct:
         :returns: updated EOProduct
         """
         raise NotImplementedError("Install eodag-cube to make this method available.")
+
+    @classmethod
+    def _from_stac_item(
+        cls,
+        feature: dict[str, Any],
+        plugins_manager: PluginManager,
+        provider: Optional[str] = None,
+    ) -> Optional[EOProduct]:
+        """Create a SearchResult from a STAC item.
+
+        :param feature: A STAC item as a dictionary
+        :param plugins_manager: The EODAG plugin manager instance
+        :provider: (optional) The provider to which the STAC item belongs, if known. If not provided, the method will
+                   try to determine it from the STAC item properties.
+        :returns: An EOProduct created from the STAC item
+        """
+        # Try importing from EODAG Server
+        if result := _import_stac_item_from_eodag_server(feature, plugins_manager):
+            return result
+
+        # try importing from a known STAC provider
+        if result := _import_stac_item_from_known_provider(feature, plugins_manager):
+            return result
+
+        # try importing from an unknown STAC provider
+        return _import_stac_item_from_unknown_provider(feature, plugins_manager)

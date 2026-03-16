@@ -38,6 +38,7 @@ import yaml
 from pydantic import AliasChoices
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
@@ -91,7 +92,6 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.product import EOProduct
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
@@ -2381,7 +2381,9 @@ class EODataAccessGateway:
                 collection=collection,
             )
 
-    def import_stac_items(self, items_urls: list[str]) -> SearchResult:
+    def import_stac_items(
+        self, items_urls: list[str], provider: Optional[str] = None
+    ) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
 
         - Origin provider and download links will be set if item comes from an EODAG
@@ -2391,6 +2393,7 @@ class EODataAccessGateway:
         - If item comes from an unknown provider, a generic STAC provider will be used.
 
         :param items_urls: A list of STAC items URLs to import
+        :param provider: (optional) The EODAG provider to which the STAC items belong, if known.
         :returns: A SearchResult containing the imported STAC items
         """
         json_items = []
@@ -2402,9 +2405,9 @@ class EODataAccessGateway:
 
         results = SearchResult([])
         for json_item in json_items:
-            if search_result := SearchResult._from_stac_item(
-                json_item, self._plugins_manager
+            if product := EOProduct._from_stac_item(
+                json_item, self._plugins_manager, provider
             ):
-                results.extend(search_result)
+                results.append(product)
 
         return results
