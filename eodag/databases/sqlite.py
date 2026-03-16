@@ -111,19 +111,27 @@ class SQLiteDatabase(Database):
             self._con.rollback()
             raise e
 
-    def _get_collection(self, collection_id: str) -> Optional[dict[str, Any]]:
-        """Retrieve a collection from the database."""
-        row = self._execute(
-            'SELECT json(content) AS "c.content [collection_dict]" FROM collections WHERE id = ?',
-            (collection_id,),
-        ).fetchone()
-        return row["collection"] if row else None
+    def delete_collections(self, collection_ids: list[str]) -> None:
+        """Remove collections and their provider configs from the database.
 
-    def delete_collection(self, collection_id: str) -> None:
-        """Remove a collection and its provider configs from the database."""
-        self._execute("DELETE FROM collections WHERE id = ?", (collection_id,))
+        Matches against both ``id`` and ``internal_id`` columns to handle aliases.
+        """
+        if not collection_ids:
+            raise ValueError("collection_ids cannot be empty")
+
+        placeholders = ", ".join("?" * len(collection_ids))
+        params = tuple(collection_ids)
+        match_clause = f"id IN ({placeholders}) OR internal_id IN ({placeholders})"
+        # Delete provider configs using internal_id lookup (providers_config.collection
+        # stores the internal id, not the alias)
         self._execute(
-            "DELETE FROM providers_config WHERE collection = ?", (collection_id,)
+            f"DELETE FROM providers_config WHERE collection IN "
+            f"(SELECT internal_id FROM collections WHERE {match_clause})",
+            params + params,
+        )
+        self._execute(
+            f"DELETE FROM collections WHERE {match_clause}",
+            params + params,
         )
         self._con.commit()
 
@@ -133,7 +141,7 @@ class SQLiteDatabase(Database):
         upserted_coll_nb = self._executemany(
             """
             INSERT INTO collections (content) VALUES (jsonb(?))
-            ON CONFLICT(id) DO UPDATE SET content=excluded.content;
+            ON CONFLICT(internal_id) DO UPDATE SET content=excluded.content;
             """,
             [(c,) for c in collections.values()],
         ).rowcount
@@ -146,29 +154,27 @@ class SQLiteDatabase(Database):
 
     def upsert_providers_config(self, providers_config: list[ProviderConfig]) -> None:
         """Add or update providers configurations in the database"""
-        for p_config in providers_config:
-            for coll, coll_config in p_config.products.items():
-                # TODO: better use executemany
-                self._execute(
-                    """
-                    INSERT INTO providers_config (provider, collection, config, priority)
-                        VALUES (?, ?, jsonb(?), ?)
-                        ON CONFLICT(provider, collection) DO UPDATE SET
-                            config=excluded.config,
-                            priority=excluded.priority;
-                    """,
-                    (
-                        p_config.name,
-                        coll,
-                        coll_config,
-                        p_config.priority,
-                    ),
-                )
-        self._con.commit()
+        rows = [
+            (p_config.name, coll, coll_config, p_config.priority)
+            for p_config in providers_config
+            for coll, coll_config in p_config.products.items()
+        ]
+        if rows:
+            self._executemany(
+                """
+                INSERT INTO providers_config (provider, collection, config, priority)
+                    VALUES (?, ?, jsonb(?), ?)
+                    ON CONFLICT(provider, collection) DO UPDATE SET
+                        config=excluded.config,
+                        priority=excluded.priority;
+                """,
+                rows,
+            )
+            self._con.commit()
 
         # free memory taken by "products" in providers config
-        p_config.__dict__["products"] = {}
-        pass
+        for p_config in providers_config:
+            p_config.__dict__["products"] = {}
 
     def collections_search(
         self,
@@ -177,6 +183,7 @@ class SQLiteDatabase(Database):
         limit: Optional[int] = None,
         q: Optional[str] = None,
         ids: Optional[list[str]] = None,
+        federation_backends: Optional[list[str]] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
         sortby: Optional[list[dict[str, str]]] = None,
@@ -194,7 +201,9 @@ class SQLiteDatabase(Database):
         if cql2_text:
             cql2_json = cql2.parse_text(cql2_text).to_json()
 
-        where = _stac_search_to_where(geometry, datetime, ids, cql2_json)
+        where = _stac_search_to_where(
+            geometry, datetime, ids, federation_backends, cql2_json
+        )
 
         from_clause = "FROM collections c"
         where_parts = [where]
@@ -246,15 +255,24 @@ class SQLiteDatabase(Database):
 def _adapt_collection(collection: Collection) -> str:
     """An adapter to automatically convert from a ``Collection``
     instance to an SQLite-compatible type when injected to queries"""
-    return collection.model_dump_json()
+    data = collection.model_dump(mode="json")
+    data["_id"] = collection._id
+    return orjson.dumps(data).decode()
 
 
 def _convert_collection(coll_bytes: bytes) -> dict[str, Any]:
     """A converter to convert from SQLite bytes values of a collection to a dictionary
     of this collection when called in queries by its key wrapped in square brackets.
     Its key is set during its registration.
+
+    Remaps ``_id`` (internal id) back to ``id`` so that
+    ``Collection(**data)`` reconstructs correctly via ``model_post_init``
+    and ``set_id_from_alias``.
     """
-    return orjson.loads(coll_bytes)
+    data = orjson.loads(coll_bytes)
+    if "_id" in data:
+        data["id"] = data.pop("_id")
+    return data
 
 
 def _strip_accents(text: str | None) -> str | None:
@@ -371,6 +389,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
             key INTEGER PRIMARY KEY,
             content JSONB NOT NULL CHECK (json_valid(content, 4)),
             id TEXT GENERATED ALWAYS AS (jsonb_extract(content, '$.id')) STORED UNIQUE,
+            internal_id TEXT GENERATED ALWAYS AS (jsonb_extract(content, '$._id')) STORED UNIQUE,
             datetime TEXT GENERATED ALWAYS AS (
                 COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][0]'), '-infinity')
             ) STORED
@@ -496,6 +515,7 @@ def _stac_search_to_where(
     geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
     datetime: Optional[str] = None,
     ids: Optional[list[str]] = None,
+    federation_backends: Optional[list[str]] = None,
     cql2_json: Optional[dict[str, Any]] = None,
 ) -> str:
     """Build the WHERE clause for the collections search query based on the provided parameters."""
@@ -508,8 +528,28 @@ def _stac_search_to_where(
     if ids:
         cql2_conditions.append(
             {
+                "op": "or",
+                "args": [
+                    {
+                        "op": "in",
+                        "args": [{"property": "id"}, ids],
+                    },
+                    {
+                        "op": "in",
+                        "args": [{"property": "internal_id"}, ids],
+                    },
+                ],
+            }
+        )
+
+    if federation_backends:
+        cql2_conditions.append(
+            {
                 "op": "in",
-                "args": [{"property": "id"}, ids],
+                "args": [
+                    {"property": "federation:backends"},
+                    federation_backends,
+                ],
             }
         )
 
