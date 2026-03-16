@@ -51,8 +51,8 @@ class Database(ABC):
         pass
 
     @abstractmethod
-    def delete_collection(self, collection_name: str) -> None:
-        """Delete a collection from the database."""
+    def delete_collections(self, collection_ids: list[str]) -> None:
+        """Delete collections from the database by their IDs or aliases."""
         pass
 
     @abstractmethod

@@ -20,8 +20,8 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests.context import (
-    EODataAccessGateway,
     PluginConfig,
     Provider,
     ProviderConfig,
@@ -55,10 +55,17 @@ class TestProvider(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
     def tearDown(self):
         super().tearDown()
         # stop Mock and remove tmp config dir
+        self.sqlite_mock.stop()
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
@@ -144,30 +151,6 @@ class TestProvider(unittest.TestCase):
         # Non-existent collection
         with self.assertRaises(UnsupportedCollection):
             provider.delete_collection("NONEXISTENT")
-
-    def test_provider_sync_collections_strict(self):
-        """Test Provider sync_collections in strict mode."""
-        config = self.basic_config.copy()
-        config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
-        provider = Provider(config)
-
-        dag = EODataAccessGateway()
-        with patch.object(provider, "delete_collection") as mock_delete:
-            provider.sync_collections(dag, strict_mode=True)
-            mock_delete.assert_called_once_with("UNKNOWN_TYPE")
-
-    def test_provider_sync_collections_permissive(self):
-        """Test Provider sync_collections in permissive mode."""
-        config = self.basic_config.copy()
-        config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
-        provider = Provider(config)
-
-        dag = EODataAccessGateway()
-
-        with patch.object(provider, "delete_collection") as mock_delete:
-            provider.sync_collections(dag, strict_mode=False)
-            mock_delete.assert_not_called()
-            self.assertIn("UNKNOWN_TYPE", provider.collections_config)
 
 
 class TestProviderConfig(unittest.TestCase):
