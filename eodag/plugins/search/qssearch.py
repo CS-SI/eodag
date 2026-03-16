@@ -411,9 +411,6 @@ class QueryStringSearch(Search):
                     other_collection_mtd_mapping = mtd_cfg_as_conversion_and_querypath(
                         other_collection_def_params.get("metadata_mapping", {})
                     )
-                else:
-                    msg = f"Cannot reuse empty metadata_mapping from {other_product_for_mapping} for {collection}"
-                    raise MisconfiguredError(msg)
                 # update mapping
                 for metadata, mapping in other_collection_mtd_mapping.items():
                     collection_metadata_mapping.pop(metadata, None)
@@ -1271,7 +1268,6 @@ class QueryStringSearch(Search):
             % normalize_remaining_count
         )
         products: list[EOProduct] = []
-        asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         product_kwargs = deepcopy(kwargs)
         # collection alias as collection property for product
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
@@ -1284,21 +1280,10 @@ class QueryStringSearch(Search):
             )
             product = EOProduct(self.provider, properties, **product_kwargs)
 
-            additional_assets = self.get_assets_from_mapping(result)
-            product.assets.update(additional_assets)
-            # move assets from properties to product's attr, normalize keys & roles
-            for key, asset in product.properties.pop("assets", {}).items():
-                norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
-                    asset.get("href", "") if asset_key_from_href else key,
-                    product,
-                )
-                if norm_key:
-                    product.assets[norm_key] = asset
-                    # Normalize title with key
-                    product.assets[norm_key]["title"] = norm_key
-            # sort assets
-            product.assets.data = dict(sorted(product.assets.data.items()))
+            # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+            product.assets.update(self.get_assets_from_mapping(result, product))
             products.append(product)
+
         return products
 
     def count_hits(self, count_url: str, result_type: Optional[str] = "json") -> int:

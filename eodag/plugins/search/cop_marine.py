@@ -33,7 +33,6 @@ from dateutil.tz import tzutc
 from dateutil.utils import today
 
 from eodag import EOProduct
-from eodag.api.product import AssetsDict
 from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
@@ -227,9 +226,17 @@ class CopMarineSearch(StaticStacSearch):
             "id": item_id,
             "title": item_id,
             "geometry": geometry,
-            "eodag:download_link": download_url,
             "dataset": dataset_item["id"],
         }
+        assets = {
+            "download_link": {
+                "title": "downloadlink",
+                "href": download_url,
+                "roles": ["archive", "data"],
+                "type": "application/x-netcdf",
+            }
+        }
+
         if use_dataset_dates:
             dates = _get_dates_from_dataset_data(dataset_item)
             if not dates:
@@ -276,22 +283,25 @@ class CopMarineSearch(StaticStacSearch):
 
         _check_int_values_properties(properties)
 
-        properties["eodag:thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
-        if "omiFigure" in collection_dict["assets"]:
-            properties["eodag:quicklook"] = collection_dict["assets"]["omiFigure"][
-                "href"
-            ]
-        assets = {
-            "native": {
-                "title": "native",
-                "href": download_url,
-                "type": "application/x-netcdf",
-            }
+        assets["thumbnail"] = {
+            "title": "thumbnail",
+            "href": collection_dict["assets"]["thumbnail"]["href"],
+            "roles": ["thumbnail"],
+            "type": "image/jpeg",
         }
-        additional_assets = self.get_assets_from_mapping(dataset_item)
-        assets.update(additional_assets)
+        if "omiFigure" in collection_dict["assets"]:
+            assets["quicklook"] = {
+                "title": "quicklook",
+                "href": collection_dict["assets"]["omiFigure"]["href"],
+                "roles": ["overview"],
+                "type": "image/jpeg",
+            }
+
+        # List current asset urls
         product = EOProduct(self.provider, properties, collection=collection)
-        product.assets = AssetsDict(product, assets)
+        merged_assets = self.get_assets_from_mapping(dataset_item, product)
+        merged_assets.update(assets)
+        product.assets.update(merged_assets)
         return product
 
     def query(

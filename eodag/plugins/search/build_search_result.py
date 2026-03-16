@@ -40,7 +40,6 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
-    OFFLINE_STATUS,
     STAGING_STATUS,
     format_metadata,
     mtd_cfg_as_conversion_and_querypath,
@@ -436,8 +435,6 @@ class ECMWFSearch(PostJsonSearch):
             **{
                 "id": "$.id",
                 "title": "$.id",
-                "order:status": OFFLINE_STATUS,
-                "eodag:download_link": "$.null",
                 "geometry": ["feature", "$.geometry"],
                 "eodag:default_geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
             },
@@ -1280,6 +1277,9 @@ class ECMWFSearch(PostJsonSearch):
             properties={ecmwf_format(k): v for k, v in properties.items()},
             **kwargs,
         )
+
+        # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+        product.assets.update(self.get_assets_from_mapping(result, product))
 
         # backup original register_downloader to register_downloader_only
         product.register_downloader_only = product.register_downloader

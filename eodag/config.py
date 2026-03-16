@@ -580,7 +580,7 @@ class PluginConfig(yaml.YAMLObject):
 
     def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
         """Return a new PluginConfig with merged values."""
-        new_config = self.__class__.from_mapping(self.__dict__)
+        new_config: Self = self.__class__.from_mapping(self.__dict__)
         new_config.update(other)
         return new_config
 
