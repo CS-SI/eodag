@@ -732,6 +732,6 @@ class CollectionsList(UserList[Collection]):
         :return: An instance of :class:`~eodag.api.collection.Collection` if the given id is found, otherwise None.
         """
         for coll in self:
-            if collection == coll.id:
+            if collection in (coll.id, coll._id):
                 return coll
         return None
