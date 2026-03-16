@@ -135,6 +135,8 @@ class UsgsApi(Api):
                     os.remove(api.TMPFILE)
                     continue
                 raise AuthenticationError("Please check your USGS credentials.") from e
+            except Exception as e:
+                raise AuthenticationError("Authentication failure") from e
 
     def query(
         self,
