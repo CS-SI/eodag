@@ -1045,12 +1045,12 @@ class EODataAccessGateway:
         :param collection: collection id
         :returns: Alias of the collection or its id if no alias has been defined for it.
         """
-        if not self.get_collection(collection):
+        coll_id = self.get_collection(collection)
+
+        if not coll_id:
             raise NoMatchingCollection(collection)
 
-        if alias := self.get_collection(collection).id:
-            return alias
-        return collection
+        return coll_id.id
 
     @_deprecated(
         reason="Please use 'EODataAccessGateway.list_collections' instead.",

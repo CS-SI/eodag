@@ -37,6 +37,7 @@ dependencies = [
     "boto3",
     "botocore",
     "click",
+    "cql2",
     "geojson",
     "importlib_metadata >= 5.0",
     "jsonpath-ng",
