@@ -23,6 +23,7 @@ import re
 import shutil
 import tarfile
 import zipfile
+from copy import deepcopy
 from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
@@ -1140,7 +1141,7 @@ class HTTPDownload(Download):
             retries = 0
             while continue_requests:
                 continue_requests = False
-                headers = USER_AGENT
+                headers = deepcopy(USER_AGENT)
                 if partial_result:
                     headers["Range"] = "bytes=%d-" % len(partial_result)
                 try:
@@ -1208,6 +1209,7 @@ class HTTPDownload(Download):
                         )
                         continue_requests = True
                     else:
+                        # if range requests are not supported retry twice
                         if retries > 2:
                             logger.error(
                                 "Unexpected error at download of asset %s: %s",
@@ -1222,6 +1224,7 @@ class HTTPDownload(Download):
                                 e,
                             )
                             continue_requests = True
+                            partial_result = b""
                             retries += 1
                 except RequestException as e:
                     self._handle_asset_exception(e, asset)
