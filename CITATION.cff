@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "EODAG: Earth Observation Data Access Gateway"
+doi: 10.5281/zenodo.18552861
+abstract: >
+  A command line tool and a plugin-oriented Python framework for searching,
+  aggregating results and downloading remote sensed images while offering a
+  unified API for data access regardless of the data provider.
+authors:
+  - name: "CS GROUP - France"
+    email: eodag@csgroup.space
+repository-code: "https://github.com/CS-SI/eodag"
+url: "https://eodag.readthedocs.io"
+license: Apache-2.0
+keywords:
+  - eodag
+  - earth-observation
+  - remote-sensing
+  - satellite-imagery
+  - data-access
+  - geospatial
+  - python

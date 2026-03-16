@@ -97,25 +97,38 @@ class SearchResult(UserList[EOProduct]):
     def filter_date(
         self, start: Optional[str] = None, end: Optional[str] = None
     ) -> SearchResult:
-        """
-        Apply :class:`~eodag.plugins.crunch.filter_date.FilterDate` crunch,
-        check its documentation to know more.
+        """Filter products by date.
+
+        Allows to filter out products that are older than a start date (optional) or more recent than an end date
+        (optional).
+
+        Applies :class:`~eodag.plugins.crunch.filter_date.FilterDate` crunch.
+
+        :param start: start sensing time in iso format
+        :param end: end sensing time in iso format
+        :returns: The result of the application of the crunching method to the EO products
         """
         return self.crunch(FilterDate(dict(start=start, end=end)))
 
     def filter_latest_intersect(
         self, geometry: Union[dict[str, Any], BaseGeometry, Any]
     ) -> SearchResult:
-        """
-        Apply :class:`~eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect` crunch,
-        check its documentation to know more.
+        """Filter latest products (the ones with a the highest start date) that intersect search extent.
+
+        Applies :class:`~eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect` crunch.
+
+        :param geometry: geometry used as search extent.
+        :returns: The result of the application of the crunching method to the EO products
         """
         return self.crunch(FilterLatestIntersect({}), geometry=geometry)
 
     def filter_latest_by_name(self, name_pattern: str) -> SearchResult:
-        """
-        Apply :class:`~eodag.plugins.crunch.filter_latest_tpl_name.FilterLatestByName` crunch,
-        check its documentation to know more.
+        """Filter Search results to get only the latest product, based on the name of the product.
+
+        Applies :class:`~eodag.plugins.crunch.filter_latest_tpl_name.FilterLatestByName` crunch.
+
+        :param name_pattern: 6 digits product name pattern (tile id)
+        :returns: The result of the application of the crunching method to the EO products
         """
         return self.crunch(FilterLatestByName(dict(name_pattern=name_pattern)))
 
@@ -127,9 +140,16 @@ class SearchResult(UserList[EOProduct]):
         intersects: bool = False,
         within: bool = False,
     ) -> SearchResult:
-        """
-        Apply :class:`~eodag.plugins.crunch.filter_overlap.FilterOverlap` crunch,
-        check its documentation to know more.
+        """Filter products, retaining only those that are overlapping with the search_extent.
+
+        Applies :class:`~eodag.plugins.crunch.filter_overlap.FilterOverlap` crunch.
+
+        :param geometry: geometry used as search extent
+        :param minimum_overlap: minimal overlap percentage
+        :param contains: ``True`` if product geometry contains the search area
+        :param intersects: ``True`` if product geometry intersects the search area
+        :param within: ``True`` if product geometry is within the search area
+        :returns: The result of the application of the crunching method to the EO products
         """
         return self.crunch(
             FilterOverlap(
@@ -146,16 +166,21 @@ class SearchResult(UserList[EOProduct]):
     def filter_property(
         self, operator: str = "eq", **search_property: Any
     ) -> SearchResult:
-        """
-        Apply :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch,
-        check its documentation to know more.
+        """Filter products, retaining only those whose property match criteria.
+
+        Applies :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch.
+
+        :param operator: Operator used for filtering (one of :mod:`python:operator` functions ``lt,le,eq,ne,ge,...``)
+        :param search_property: property key from ``product.properties``, associated to its filter value
         """
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
     def filter_online(self) -> SearchResult:
-        """
-        Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
-        filter for online products.
+        """Filter to only keep online products.
+
+        Applies :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch for ``order:status == succeeded``.
+
+        :returns: The result of the application of the crunching method to the EO products
         """
         return self.filter_property(**{"order:status": "succeeded"})
 
@@ -344,7 +369,7 @@ class SearchResult(UserList[EOProduct]):
             #  or if the current one returned less than the maximum number of items asked for.
             if (
                 new_results.next_page_token is None
-                or len(new_results) < new_results.search_params["items_per_page"]
+                or len(new_results) < new_results.search_params["limit"]
             ):
                 break
             old_results = new_results

@@ -30,6 +30,7 @@ from unittest import mock  # PY3
 
 from owslib.etree import etree
 from owslib.ows import ExceptionReport
+from requests.structures import CaseInsensitiveDict
 from shapely import wkt
 
 from eodag.api.product import EOProduct
@@ -327,10 +328,12 @@ class EODagTestCase(unittest.TestCase):
                 with open(self.local_product_as_archive_path, "rb") as fh:
                     response.__zip_buffer = io.BytesIO(fh.read())
                 cl = response.__zip_buffer.getbuffer().nbytes
-                response.headers = {
-                    "content-length": cl,
-                    "content-disposition": "attachment; filename=foobar.zip",
-                }
+                response.headers = CaseInsensitiveDict(
+                    {
+                        "content-length": cl,
+                        "content-disposition": "attachment; filename=foobar.zip",
+                    }
+                )
                 response.url = "http://foo.bar"
 
             def __enter__(response):

@@ -26,7 +26,7 @@ import sys
 from unittest import mock
 
 from eodag import EODataAccessGateway, api, config, setup_logging
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
+from eodag.api.core import DEFAULT_LIMIT, DEFAULT_MAX_LIMIT
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver

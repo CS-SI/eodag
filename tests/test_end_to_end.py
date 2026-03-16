@@ -233,7 +233,7 @@ class EndToEndBase(unittest.TestCase):
         geom,
         offline=False,
         page=None,
-        items_per_page=None,
+        limit=None,
         check_product=True,
         search_kwargs_dict={},
     ):
@@ -252,8 +252,8 @@ class EndToEndBase(unittest.TestCase):
             "raise_errors": True,
             **search_kwargs_dict,
         }
-        if items_per_page:
-            search_criteria["items_per_page"] = items_per_page
+        if limit:
+            search_criteria["limit"] = limit
         if page:
             search_criteria["page"] = page
         results = self.eodag.search(provider=provider, **search_criteria)
@@ -292,7 +292,7 @@ class EndToEndBase(unittest.TestCase):
         start,
         end,
         geom,
-        items_per_page=None,
+        limit=None,
         check_products=True,
     ):
         """Search all the products on provider:
@@ -309,7 +309,7 @@ class EndToEndBase(unittest.TestCase):
         }
         self.eodag.set_preferred_provider(provider)
         results = self.eodag.search_all(
-            collection=collection, items_per_page=items_per_page, **search_criteria
+            collection=collection, limit=limit, **search_criteria
         )
         if check_products:
             self.assertGreater(len(results), 0)
@@ -460,7 +460,7 @@ class TestEODagEndToEnd(EndToEndBase):
         # As of 2021-03-19 this search at page 1 returns 31 products, so at page 2 there
         # are no products available and creodias returns a response without products (`hits`).
         product = self.execute_search(
-            *CREODIAS_SEARCH_ARGS, page=2, items_per_page=50, check_product=False
+            *CREODIAS_SEARCH_ARGS, page=2, limit=50, check_product=False
         )
         self.assertEqual(len(product), 0)
 
@@ -522,7 +522,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_wekeo_main(self):
-        product = self.execute_search(*WEKEO_MAIN_SEARCH_ARGS, page=2, items_per_page=4)
+        product = self.execute_search(*WEKEO_MAIN_SEARCH_ARGS, page=2, limit=4)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
 
@@ -729,7 +729,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
-            items_per_page=100,
+            limit=100,
             provider="peps",
         )
         prods_sorted_by_size = SearchResult(

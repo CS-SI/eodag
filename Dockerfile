@@ -15,14 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:alpine3.13
+FROM python:alpine3.23
 
 LABEL author="CS GROUP - France"
 
 WORKDIR /app
 
 COPY eodag/ eodag/
-COPY setup.cfg pyproject.toml README.rst LICENSE MANIFEST.in ./
+COPY pyproject.toml README.rst LICENSE MANIFEST.in ./
 
 # build-base is required to enable logging
 RUN apk add --no-cache build-base && \

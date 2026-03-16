@@ -22,7 +22,7 @@ from collections import UserDict
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from annotated_types import Lt
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
@@ -67,12 +67,17 @@ class CommonQueryables(BaseModelCustomJsonSchema):
         >>> CommonQueryables.get_queryable_from_alias('collection')
         'collection'
         """
-        alias_map = {
-            field_info.alias: name
-            for name, field_info in cls.model_fields.items()
-            if field_info.alias
-        }
-        return alias_map.get(value, value)
+        for name, field_info in cls.model_fields.items():
+            if field_info.alias:
+                if isinstance(field_info.alias, AliasChoices):
+                    aliases = field_info.alias.choices
+                    if value in aliases:
+                        return name
+                else:
+                    if value == field_info.alias:
+                        return name
+
+        return value
 
     @classmethod
     def get_with_default(
@@ -119,7 +124,7 @@ class Queryables(CommonQueryables):
         str,
         Field(
             None,
-            alias="start_datetime",
+            alias=AliasChoices("start_datetime", "datetime"),
             description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
         ),
     ]
@@ -135,7 +140,7 @@ class Queryables(CommonQueryables):
         Union[str, dict[str, float], BaseGeometry],
         Field(
             None,
-            alias="geometry",
+            alias=AliasChoices("geometry", "intersects"),
             description="Read EODAG documentation for all supported geometry format.",
         ),
     ]
@@ -257,42 +262,63 @@ class QueryablesDict(UserDict[str, Any]):
             else ""
         )
         tr_style = "style='background-color: transparent;'" if embedded else ""
-        return (
-            f"<table>{thead}<tbody>"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+        table = f"<table>{thead}<tbody>"
+        table_rows = []
+        for k, v in self.items():
+            alias = v.__metadata__[0].validation_alias
+            if not alias or alias == PydanticUndefined:
+                alias = v.__metadata__[0].alias
+            if not alias or alias == PydanticUndefined:
+                alias = v.__metadata__[0].serialization_alias
+            if isinstance(alias, AliasChoices):
+                alias_str = (
+                    "'alias': '<span style='color:grey'>AliasChoices(choices=[</span>'"
+                    + "'<span style='color:black'>"
+                    + '", "'.join([str(c) for c in alias.choices])
+                    + "</span>'"
+                    + "'<span style='color:grey'>])</span>',&ensp;"
+                )
+            elif alias and alias != PydanticUndefined:
+                alias_str = (
+                    "'alias': '<span style='color:black'>"
+                    + str(alias)
+                    + "</span>',&ensp;"
+                )
+            else:
+                alias_str = ""
+
+            table_row = f"""<tr {tr_style}><td style='text-align: left;'>
                         <details><summary style='color: grey;'>
                         <span style='color: black'>'{k}'</span>:&ensp;
                         typing.Annotated[{
-                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"
-                    }
-                    FieldInfo({"'default': '<span style='color: black'>"
-                               + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
-                               if v.__metadata__[0].get_default()
-                               and v.__metadata__[0].get_default() != PydanticUndefined else ""}
-                            {"'required': <span style='color: black'>"
-                             + str(v.__metadata__[0].is_required()) + "</span>,"}
-                            ...
-                        )]
-                    </summary>
-                        <span style='color: grey'>typing.Annotated[</span><table style='margin: 0;'>
-                            <tr style='background-color: transparent;'>
-                                <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
-                                {remove_class_repr(str(v.__args__[0]))},</td>
-                            </tr><tr style='background-color: transparent;'>
-                                <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
-                                {v.__metadata__[0].__repr__()}</td>
-                            </tr>
-                        </table><span style='color: grey'>]</span>
-                    </details>
-                    </td></tr>
-                    """
-                    for k, v in self.items()
-                ]
-            )
-            + "</tbody></table>"
-        )
+                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"}
+                        FieldInfo({"'default': '<span style='color: black'>"
+                                   + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
+                                   if v.__metadata__[0].get_default()
+                                   and v.__metadata__[0].get_default() != PydanticUndefined else ""}
+                                  {"'required': <span style='color: black'>"
+                                   + str(v.__metadata__[0].is_required()) + "</span>,"
+                                   if v.__metadata__[0].is_required() else ""}
+                                  {alias_str}
+                                  ...
+                                 )]
+                        </summary>
+                            <span style='color: grey'>typing.Annotated[</span><table style='margin: 0;'>
+                                <tr style='background-color: transparent;'>
+                                    <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
+                                    {remove_class_repr(str(v.__args__[0]))},</td>
+                                </tr><tr style='background-color: transparent;'>
+                                    <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
+                                    {v.__metadata__[0].__repr__()}</td>
+                                </tr>
+                            </table><span style='color: grey'>]</span>
+                        </details>
+                        </td></tr>
+                        """
+            table_rows.append(table_row)
+        table += "".join(table_rows)
+        table += "</tbody></table>"
+        return table
 
     def get_model(self, model_name: str = "Queryables") -> BaseModel:
         """

@@ -40,7 +40,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     USER_AGENT,
@@ -146,12 +146,8 @@ class UsgsApi(Api):
             if prep.next_page_token is not None
             else DEFAULT_PAGE
         )
-        items_per_page = (
-            prep.items_per_page
-            or kwargs.pop("max_results", None)
-            or DEFAULT_ITEMS_PER_PAGE
-        )
-        search_params = {"items_per_page": items_per_page} | kwargs
+        limit = prep.limit or kwargs.pop("max_results", None) or DEFAULT_LIMIT
+        search_params = {"limit": limit} | kwargs
         collection = kwargs.get("collection")
         if collection is None:
             raise NoMatchingCollection(
@@ -201,7 +197,7 @@ class UsgsApi(Api):
                 end_date=end_date,
                 ll=lower_left,
                 ur=upper_right,
-                max_results=items_per_page,
+                max_results=limit,
                 starting_number=token,
             )
 

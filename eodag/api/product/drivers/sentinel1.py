@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from eodag.api.product.drivers.base import AssetPatterns, DatasetDriver
+from .base import AssetPatterns, DatasetDriver
 
 if TYPE_CHECKING:
     from eodag.api.product._product import EOProduct
@@ -100,3 +100,41 @@ class Sentinel1Driver(DatasetDriver):
             key = pattern.sub(replacement, key)
 
         return super()._normalize_key(key, eo_product)
+
+    @staticmethod
+    def match(product: EOProduct, by: str = "*") -> bool:
+        """
+        Resolve if given product matches with current driver.
+
+        :param  product: product as reference use to extract criteria
+        :param  by: specific criteria match
+        :return: ``True`` if given product matches with current driver, else ``False``
+        """
+        if (
+            by == "collection"
+            and hasattr(product, "collection")
+            and isinstance(product.collection, str)
+        ):
+            collection = product.collection.lower()
+            if collection.startswith("s1_sar_"):
+                return True
+
+        if (
+            by == "properties"
+            and hasattr(product, "properties")
+            and isinstance(product.properties, dict)
+        ):
+
+            constellation = product.properties.get("constellation", None)
+            if isinstance(constellation, str):
+                constellation = re.sub(r"([^a-z0-9]+)", "", constellation.lower())
+                if constellation == "sentinel1":
+                    return True
+
+            platform = product.properties.get("platform", None)
+            if isinstance(platform, str):
+                platform = re.sub(r"([^a-z0-9]+)", "", platform.lower())
+                if re.match("s1[a-z]", platform):
+                    return True
+
+        return False

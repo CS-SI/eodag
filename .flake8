@@ -1,0 +1,11 @@
+[flake8]
+ignore = E203, W503
+max_line_length = 120
+exclude =
+    .git,
+    __pycache__,
+    .tox,
+    build,
+    dist,
+    docs/conf.py,
+    tests/context.py

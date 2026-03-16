@@ -27,7 +27,7 @@
     type: UsgsApi
     need_auth: true
     pagination:
-      max_items_per_page: 5000
+      max_limit: 5000
       total_items_nb_key_path: '$.totalHits'
     metadata_mapping:
       id:
@@ -92,12 +92,12 @@
     results_entry: 'results'
     ssl_verify: true
     pagination:
-      next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
+      next_page_query_obj: '{{"limit":{limit},"page":{next_page_token}}}'
       total_items_nb_key_path: '$.meta.found'
       # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
       # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
       # Let's set it to this value for now
-      max_items_per_page: 500
+      max_limit: 500
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^[a-zA-Z0-9_]+$'
@@ -523,11 +523,11 @@
     ssl_verify: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={limit}&page={next_page_token}'
       next_page_token_key: page
 
       # 2021/03/19: 500 is the max, no error if greater
-      max_items_per_page: 500
+      max_limit: 500
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
@@ -681,13 +681,13 @@
       - ':'
       - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
       next_page_url_key_path: '$.["@odata.nextLink"]'
       next_page_token_key: skip
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -1332,7 +1332,7 @@
       # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
       # about 500 products.
-      max_items_per_page: 500
+      max_limit: 500
       next_page_token_key: next
     # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
@@ -1404,7 +1404,7 @@
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -1495,7 +1495,7 @@
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -1941,11 +1941,11 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={limit}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_token_key: page
       # 2021/03/19: 500 is the max, no error if greater
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -2324,13 +2324,13 @@
       - ':'
       - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
       next_page_url_key_path: '$.["@odata.nextLink"]'
       next_page_token_key: skip
       parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -2957,7 +2957,7 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      max_items_per_page: 1000
+      max_limit: 1000
       next_page_token_key: token
     sort:
       sort_param_mapping:
@@ -3018,7 +3018,7 @@
       fetch_url: null
       collection_fetch_url: null
     pagination:
-      max_items_per_page: 10_000
+      max_limit: 10_000
       next_page_url_key_path: null
       next_page_query_obj_key_path: null
       next_page_token_key: page
@@ -3119,8 +3119,8 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
-      max_items_per_page: 200
+      next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
+      max_limit: 200
       next_page_token_key: skip
     discover_collections:
       fetch_url: null
@@ -3369,17 +3369,20 @@
       product:type: DTE_90
       metadata_mapping_from_product: COP_DEM_GLO30_DGED
     CLMS_GLO_NDVI_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
-      product:type: NDVI300
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_indices
+      _product_identifier: ndvi_global_300m_10daily_v1
       metadata_mapping:
-        <<: *id_from_date
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
+        _product_identifier:
+        - '{{"productIdentifier": "{_product_identifier}"}}'
+        - '$.null'
+        id: '$.id'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
     CLMS_GLO_NDVI_1KM_LTS:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
-      product:type: NDVI
-      metadata_mapping:
-        <<: *id_from_date
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_indices
+      _product_identifier: ndvi-lts_global_1km_10daily_v2
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
       product:type: Corine Land Cover 2018
@@ -3397,38 +3400,30 @@
         eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
-      product:type: FCOVER300
-      metadata_mapping:
-        <<: *id_from_date
-        productGroupId:
-          - '{{"productGroupId": "{productGroupId}"}}'
-          - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_properties
+      _product_identifier: fcover_global_300m_10daily_v1
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_DMP_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF
-      product:type: DMP300
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: dry-gross_dry_matter_productivity
+      _product_identifier: dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_GDMP_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF
-      product:type: GDMP300
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: dry-gross_dry_matter_productivity
+      _product_identifier: gdmp_global_300m_10daily_v1
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_FAPAR_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF
-      product:type: FAPAR300
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_properties
+      _product_identifier: fapar_global_300m_10daily_v1
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_LAI_333M:
-      _collection: EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF
-      product:type: LAI300
-      metadata_mapping_from_product: CLMS_GLO_FCOVER_333M
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
+      _collection: EO:JRC:DAT:CLMS
+      product:type: vegetation_properties
+      _product_identifier: lai_global_300m_10daily_v1
+      metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_HRVPP_ST:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST
       metadata_mapping:
@@ -3545,9 +3540,9 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
-      max_items_per_page: 200
+      max_limit: 200
     discover_collections:
       fetch_url: null
     dynamic_discover_queryables:
@@ -3831,7 +3826,7 @@
     results_entry: 'features'
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{next_page_token}}}'
+      next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
     discover_collections:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
@@ -3944,13 +3939,13 @@
       - ':'
       - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       next_page_url_key_path: '$.["@odata.nextLink"]'
       next_page_token_key: skip
       parse_url_key: $skip
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -4584,6 +4579,7 @@
       fetch_url: null
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
+      form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_{dataset}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4702,6 +4698,8 @@
       realization: "1"
       model: IFS-FESOM
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
+      discover_queryables:
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1.json"
       dataset: climate-dt
       class: ng
       generation: "1"
@@ -4779,6 +4777,7 @@
       fetch_url: null
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
+      form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_{dataset}.json"
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4861,15 +4860,17 @@
   roles:
     - host
   description: DEDL STAC
-  url: https://hda.data.destination-earth.eu/stac/
+  url: https://hda.data.destination-earth.eu/stac/v2/
   # anchors to avoid duplications
   anchor_orderable_mm: &orderable_mm
-    eodag:order_link: '$.assets.eodag:download_link.href'
+    _order_href: '$.links[?rel=="retrieve"].href'
+    _order_body: '$.links[?rel=="retrieve"].body'
+    eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     eodag:download_link: '$.null'
     assets: '$.null'
   search: !plugin
     type: StacSearch
-    api_endpoint: https://hda.data.destination-earth.eu/stac/search
+    api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
     need_auth: true
     timeout: 60
     asset_key_from_href: false
@@ -4877,15 +4878,13 @@
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
-      eodag:download_link: '$.assets.eodag:download_link.href'
+      eodag:download_link: '$.assets.downloadLink.href'
       assets: '$.null'
     discover_collections:
-      fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
+      fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
       result_type: json
       results_entry: '$.collections[*]'
       generic_collection_id: '$.id'
-      generic_collection_parsable_properties:
-        collection: '$.id'
       generic_collection_parsable_metadata:
         description: '$.description'
         keywords: '{$.keywords#csv_list}'
@@ -4893,7 +4892,7 @@
         title: '$.title'
         extent: '$.extent'
     pagination:
-      max_items_per_page: 100
+      max_limit: 100
       next_page_token_key: page
     sort:
       sort_param_mapping:
@@ -4912,27 +4911,28 @@
     extract: true
     archive_depth: 2
     order_enabled: True
-    order_method: GET
+    order_method: POST
     order_on_response:
       metadata_mapping:
-        eodag:status_link: $.json.location
+        eodag:status_link: '$.json.links[?rel=="self"].href'
+        eodag:order_status: $.json.properties."order:status"
     order_status:
       request:
         method: GET
       metadata_mapping:
-        eodag:order_status: $.json.status
-        eodag:order_message: $.json.description
+        order:status: $.json.properties."order:status"
       success:
         http_code: 200
       on_success:
         metadata_mapping:
-          eodag:download_link: '{eodag:status_link}'
+          eodag:download_link: '$.json.assets.downloadLink.href'
+          order:status: $.json.properties."order:status"
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
     subject:
       oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
-      redirect_uri: https://hda.data.destination-earth.eu/stac
+      redirect_uri: https://hda.data.destination-earth.eu/stac/v2
       client_id: dedl-hda
       user_consent_needed: false
       exchange_url_error_pattern:
@@ -5427,11 +5427,11 @@
       - '&'
     asset_key_from_href: false
     pagination:
-      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={next_page_token}'
+      next_page_url_tpl: '{url}?{search}&c={limit}&pw={next_page_token}'
       start_page: 0
       total_items_nb_key_path: '$.totalResults'
       # 2024/02/01: 500 is the max, no error if greater
-      max_items_per_page: 500
+      max_limit: 500
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -6076,7 +6076,7 @@
       next_page_query_obj_key_path: null
       next_page_token_key: page
       # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
-      max_items_per_page: 80
+      max_limit: 80
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
@@ -6210,7 +6210,7 @@
       next_page_query_obj_key_path: null
       next_page_token_key: page
       # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
-      max_items_per_page: 80
+      max_limit: 80
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
@@ -6504,7 +6504,7 @@
     timeout: 60
     pagination:
       next_page_url_tpl: '{url}?startRecord={next_page_token}'
-      next_page_query_obj: '{{"limit":{items_per_page}}}'
+      next_page_query_obj: '{{"limit":{limit}}}'
       next_page_token_key: skip
       # startRecord is equivalent to skip + 1, so make skip start at page 2
       start_page: 2

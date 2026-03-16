@@ -2,8 +2,231 @@
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "eodag"
+description = "Earth Observation Data Access Gateway"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+authors = [
+    {name = "CS GROUP - France", email = "eodag@csgroup.space"}
+]
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "annotated-types",
+    "boto3",
+    "botocore",
+    "click",
+    "geojson",
+    "importlib_metadata >= 5.0",
+    # temporarily pinned, see https://github.com/h2non/jsonpath-ng/issues/216
+    "jsonpath-ng < 1.8.0",
+    "lxml",
+    "orjson",
+    "pydantic >= 2.1.0, != 2.10.0",
+    "pydantic_core",
+    "PyJWT[crypto] >= 2.5.0",
+    "pyproj >= 2.1.0",
+    "pyshp",
+    "pystac >= 1.0.0b1",
+    "python-dateutil",
+    "PyYAML",
+    "requests",
+    "shapely >= 2.0.6",
+    "stac-pydantic",
+    "tqdm",
+    "typing_extensions >= 4.8.0",
+    "urllib3",
+    "zipstream-ng",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/CS-SI/eodag"
+Repository = "https://github.com/CS-SI/eodag.git"
+Issues = "https://github.com/CS-SI/eodag/issues/"
+Documentation = "https://eodag.readthedocs.io"
+Changelog = "https://eodag.readthedocs.io/en/stable/changelog.html"
+
+[project.optional-dependencies]
+all = [
+    "eodag[all-providers,csw,tutorials]",
+]
+all-providers = [
+    "eodag[ecmwf,usgs]",
+]
+csw = [
+    "OWSLib >=0.27.1",
+]
+ecmwf = [
+    "ecmwf-api-client",
+]
+usgs = [
+    "usgs >= 0.3.6",
+]
+notebook = [
+    "tqdm[notebook]",
+]
+tutorials = [
+    "eodag[ecmwf,notebook]",
+    "eodag-cube >= 0.6.0b2",
+    "jupyter",
+    "ipyleaflet >= 0.10.0",
+    "ipywidgets",
+    "matplotlib",
+    "folium",
+    "imageio",
+    "rasterio",
+    "netcdf4",
+    "cartopy",
+    "covjsonkit >= 0.0.18; python_version > '3.9'",
+]
+dev = [
+    "eodag[all-providers,csw,stubs]",
+    "faker",
+    "flake8",
+    "moto >=5",
+    "mypy",
+    "prek",
+    "py >= 1.8.2",
+    "pytest-cov",
+    "pytest-html != 3.2.0",
+    "pytest-instafail",
+    "pytest-socket",
+    "pytest-xdist",
+    "pytest",
+    "responses != 0.24.0",
+    "stac-validator",
+    "stdlib-list",
+    "tomli; python_version < '3.11'",
+    "tox-uv",
+    "tox",
+    "twine",
+    "wheel",
+]
+stubs = [
+    "boto3-stubs[essential]",
+    "types-lxml",
+    "types-cachetools",
+    "types-requests",
+    "types-python-dateutil",
+    "types-PyYAML",
+    "types-setuptools",
+    "types-shapely",
+    "types-tqdm",
+    "types-urllib3",
+]
+docs = [
+    "eodag[all,stubs,tutorials]",
+    "autodoc_pydantic",
+    "nbconvert > 6.3.0 ",
+    "nbsphinx",
+    "sphinx < 9.0.0",
+    "sphinx-autodoc-typehints",
+    "sphinx-book-theme >= 1.0.0",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-tabs",
+    "sphinxcontrib-programoutput",
+    "sphinxemoji",
+]
+
+[project.scripts]
+eodag = "eodag.cli:eodag_cli"
+
+[project.entry-points."eodag.plugins.api"]
+UsgsApi = "eodag.plugins.apis.usgs:UsgsApi [usgs]"
+EcmwfApi = "eodag.plugins.apis.ecmwf:EcmwfApi [ecmwf]"
+
+[project.entry-points."eodag.plugins.auth"]
+GenericAuth = "eodag.plugins.authentication.generic:GenericAuth"
+HTTPHeaderAuth = "eodag.plugins.authentication.header:HTTPHeaderAuth"
+AwsAuth = "eodag.plugins.authentication.aws_auth:AwsAuth"
+TokenAuth = "eodag.plugins.authentication.token:TokenAuth"
+OIDCAuthorizationCodeFlowAuth = "eodag.plugins.authentication.openid_connect:OIDCAuthorizationCodeFlowAuth"
+OIDCTokenExchangeAuth = "eodag.plugins.authentication.token_exchange:OIDCTokenExchangeAuth"
+KeycloakOIDCPasswordAuth = "eodag.plugins.authentication.keycloak:KeycloakOIDCPasswordAuth"
+HttpQueryStringAuth = "eodag.plugins.authentication.qsauth:HttpQueryStringAuth"
+SASAuth = "eodag.plugins.authentication.sas_auth:SASAuth"
+
+[project.entry-points."eodag.plugins.crunch"]
+FilterLatestIntersect = "eodag.plugins.crunch.filter_latest_intersect:FilterLatestIntersect"
+FilterLatestByName = "eodag.plugins.crunch.filter_latest_tpl_name:FilterLatestByName"
+FilterOverlap = "eodag.plugins.crunch.filter_overlap:FilterOverlap"
+FilterProperty = "eodag.plugins.crunch.filter_property:FilterProperty"
+FilterDate = "eodag.plugins.crunch.filter_date:FilterDate"
+
+[project.entry-points."eodag.plugins.download"]
+AwsDownload = "eodag.plugins.download.aws:AwsDownload"
+HTTPDownload = "eodag.plugins.download.http:HTTPDownload"
+
+[project.entry-points."eodag.plugins.search"]
+CSWSearch = "eodag.plugins.search.csw:CSWSearch [csw]"
+QueryStringSearch = "eodag.plugins.search.qssearch:QueryStringSearch"
+ODataV4Search = "eodag.plugins.search.qssearch:ODataV4Search"
+PostJsonSearch = "eodag.plugins.search.qssearch:PostJsonSearch"
+StacSearch = "eodag.plugins.search.qssearch:StacSearch"
+WekeoSearch = "eodag.plugins.search.qssearch:WekeoSearch"
+StaticStacSearch = "eodag.plugins.search.static_stac_search:StaticStacSearch"
+ECMWFSearch = "eodag.plugins.search.build_search_result:ECMWFSearch"
+MeteoblueSearch = "eodag.plugins.search.build_search_result:MeteoblueSearch"
+WekeoECMWFSearch = "eodag.plugins.search.build_search_result:WekeoECMWFSearch"
+CreodiasS3Search = "eodag.plugins.search.creodias_s3:CreodiasS3Search"
+CopMarineSearch = "eodag.plugins.search.cop_marine:CopMarineSearch"
+StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+
+[tool.setuptools.package-data]
+"*" = ["LICENSE", "NOTICE", "py.typed"]
+
 [tool.setuptools_scm]
-fallback_version = "4.0.0.dev0"
+fallback_version = "4.0.1.dev0"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+ensure_newline_before_comments = true
+known_first_party = ["eodag", "tests"]
+known_third_party = ["concurrent.futures"]
+default_section = "THIRDPARTY"
+skip = [
+    ".git",
+    "__pycache__",
+    ".tox",
+    "build",
+    "dist",
+    "docs/conf.py",
+    "tests/utils.py",
+    "eodag/utils/__init__.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -53,3 +276,10 @@ insertion_flag = "===============\nRelease history\n==============="
 [tool.semantic_release.changelog.default_templates]
 changelog_file = "CHANGES.rst"
 output_format = "rst"
+
+[tool.pytest.ini_options]
+testpaths = ["eodag/api", "eodag/types", "eodag/utils", "tests"]
+addopts = "--doctest-modules --disable-socket --allow-unix-socket"
+# logging disabled to prevent conflicts with click, see https://github.com/pallets/click/issues/824
+log_cli = false
+filterwarnings = ["ignore:Call to deprecated eodag:DeprecationWarning"]

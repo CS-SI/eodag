@@ -305,16 +305,11 @@ class CopMarineSearch(StaticStacSearch):
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         """
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         token_value = getattr(prep, "next_page_token") or prep.page
 
         # only return 1 page if pagination is disabled
-        if (
-            token_value is None
-            or items_per_page is None
-            or int(token_value) > 1
-            and items_per_page <= 0
-        ):
+        if token_value is None or limit is None or int(token_value) > 1 and limit <= 0:
             result = SearchResult([])
             if prep.count:
                 result.number_matched = 0
@@ -330,7 +325,7 @@ class CopMarineSearch(StaticStacSearch):
         collection_dict, datasets_items_list = self._get_collection_info(collection)
         geometry = kwargs.pop("geometry", None)
         products: list[EOProduct] = []
-        start_index = items_per_page * (token - 1) + 1
+        start_index = limit * (token - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
             # Filter by geometry
@@ -380,7 +375,7 @@ class CopMarineSearch(StaticStacSearch):
                 num_total += 1
                 if num_total < start_index:
                     continue
-                if len(products) < items_per_page or items_per_page < 0:
+                if len(products) < limit or limit < 0:
                     product = self._create_product(
                         collection,
                         collection_path,
@@ -489,7 +484,7 @@ class CopMarineSearch(StaticStacSearch):
                         num_total += 1
                         if num_total < start_index:
                             continue
-                        if len(products) < items_per_page or items_per_page < 0:
+                        if len(products) < limit or limit < 0:
                             product = self._create_product(
                                 collection,
                                 item_key,
@@ -504,7 +499,7 @@ class CopMarineSearch(StaticStacSearch):
 
         search_params = (
             kwargs
-            | {"items_per_page": prep.items_per_page}
+            | {"limit": prep.limit}
             | {"collection": collection}
             | {"provider": self.provider}
             | {"geometry": geometry}

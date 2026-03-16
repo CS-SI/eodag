@@ -76,7 +76,7 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
     DEFAULT_PAGE,
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_COLLECTION,
@@ -153,7 +153,7 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` (``str``) (**mandatory**): The template for
             pagination requests. This is a simple Python format string which will be resolved using the following
             keywords: ``url`` (the base url of the search endpoint), ``search`` (the query string corresponding
-            to the search request), ``items_per_page`` (the number of items to return per page),
+            to the search request), ``limit`` (the number of items to return per page),
             ``skip`` (the number of items to skip).
           * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
             leading to the total number of results satisfying a request. This is used for providers which provides the
@@ -166,7 +166,7 @@ class QueryStringSearch(Search):
             should be added to the search request
           * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_key_path` (``str``): A JsonPath expression used
             to retrieve the URL of the next page in the response of the current page.
-          * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items per
+          * :attr:`~eodag.config.PluginConfig.Pagination.max_limit` (``int``): The maximum number of items per
             page that the provider can handle; default: ``50``
           * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the first page; default: ``1``
 
@@ -884,12 +884,12 @@ class QueryStringSearch(Search):
 
     def collect_search_urls(
         self,
-        prep: PreparedSearch = PreparedSearch(page=None, items_per_page=None),
+        prep: PreparedSearch = PreparedSearch(page=None, limit=None),
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
         token = getattr(prep, "next_page_token", None)
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         count = prep.count
         next_page_token_key = str(
             self.config.pagination.get("next_page_token_key", "page")
@@ -923,7 +923,7 @@ class QueryStringSearch(Search):
             # numeric page token
             if (
                 next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and items_per_page is not None:
+            ) and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = 0
@@ -959,7 +959,7 @@ class QueryStringSearch(Search):
                 next_page_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=qs_with_sort,
-                    items_per_page=items_per_page,
+                    limit=limit,
                     next_page_token=token,
                     skip=token,
                 )
@@ -971,7 +971,7 @@ class QueryStringSearch(Search):
         return list(dict.fromkeys(urls)), total_results
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
     ) -> RawSearchResult:
         """Perform the actual search request.
 
@@ -980,7 +980,7 @@ class QueryStringSearch(Search):
 
         :param prep: Object collecting needed information for search.
         """
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         total_items_nb = 0
         if getattr(prep, "need_count", False):
             # extract total_items_nb from search results
@@ -1133,15 +1133,15 @@ class QueryStringSearch(Search):
                 and len(results) > 0
             ):
                 del prep.total_items_nb
-            if items_per_page is not None and len(results) == items_per_page:
+            if limit is not None and len(results) == limit:
 
                 raw_search_results = self._build_raw_search_results(
-                    results, resp_as_json, kwargs, items_per_page, prep
+                    results, resp_as_json, kwargs, limit, prep
                 )
                 return raw_search_results
 
         raw_search_results = self._build_raw_search_results(
-            results, resp_as_json, kwargs, items_per_page, prep
+            results, resp_as_json, kwargs, limit, prep
         )
         return raw_search_results
 
@@ -1150,7 +1150,7 @@ class QueryStringSearch(Search):
         results: list[dict[str, Any]],
         resp_as_json: dict[str, Any],
         search_kwargs: dict[str, Any],
-        items_per_page: Optional[int],
+        limit: Optional[int],
         prep: PreparedSearch,
     ):
         """
@@ -1163,15 +1163,13 @@ class QueryStringSearch(Search):
         :param results: Raw results returned by the search.
         :param resp_as_json: The search response parsed as JSON.
         :param search_kwargs: Search parameters used for the query.
-        :param items_per_page: Number of items per page.
+        :param limit: Number of items per page.
         :param prep: Request preparation object containing query parameters.
         :returns: An object containing the raw results, search parameters, and the next page token if available.
         """
         # Create the RawSearchResult object and populate basic fields
         raw_search_results = RawSearchResult(results)
-        raw_search_results.search_params = search_kwargs | {
-            "items_per_page": items_per_page
-        }
+        raw_search_results.search_params = search_kwargs | {"limit": limit}
         raw_search_results.query_params = prep.query_params
         raw_search_results.collection_def_params = prep.collection_def_params
         raw_search_results.next_page_token_key = prep.next_page_token_key
@@ -1256,8 +1254,7 @@ class QueryStringSearch(Search):
             # skip as next_page_token_key
             elif next_page_token is not None and next_page_token_key == "skip":
                 raw_search_results.next_page_token = str(
-                    int(next_page_token)
-                    + int(prep.items_per_page or DEFAULT_ITEMS_PER_PAGE)
+                    int(next_page_token) + int(prep.limit or DEFAULT_LIMIT)
                 )
             else:
                 raw_search_results.next_page_token = None
@@ -1275,16 +1272,17 @@ class QueryStringSearch(Search):
         )
         products: list[EOProduct] = []
         asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
+        product_kwargs = deepcopy(kwargs)
+        # collection alias as collection property for product
+        if alias := getattr(self.config, "collection_config", {}).get("alias"):
+            product_kwargs["collection"] = alias
         for result in results:
             properties = QueryStringSearch.extract_properties[self.config.result_type](
                 result,
                 self.get_metadata_mapping(kwargs.get("collection")),
                 discovery_config=getattr(self.config, "discover_metadata", {}),
             )
-            # collection alias (required by opentelemetry-instrumentation-eodag)
-            if alias := getattr(self.config, "collection_config", {}).get("alias"):
-                kwargs["collection"] = alias
-            product = EOProduct(self.provider, properties, **kwargs)
+            product = EOProduct(self.provider, properties, **product_kwargs)
 
             additional_assets = self.get_assets_from_mapping(result)
             product.assets.update(additional_assets)
@@ -1644,7 +1642,7 @@ class PostJsonSearch(QueryStringSearch):
           which provides the total results metadata along with the result of the query and don't
           have an endpoint for querying the number of items satisfying a request, or for providers
           for which the count endpoint returns a json or xml document
-        * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items
+        * :attr:`~eodag.config.PluginConfig.Pagination.max_limit` (``int``): The maximum number of items
           per page that the provider can handle; default: ``50``
 
     """
@@ -1820,6 +1818,7 @@ class PostJsonSearch(QueryStringSearch):
             if (
                 "eodag:order_link" in product.properties
                 and "collection" in product.properties["eodag:order_link"]
+                and "order" not in product.properties["eodag:order_link"]
             ):
                 product.properties["eodag:order_link"] = product.properties[
                     "eodag:order_link"
@@ -1833,7 +1832,7 @@ class PostJsonSearch(QueryStringSearch):
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
         token = getattr(prep, "next_page_token", None)
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         count = prep.count
         urls: list[str] = []
         total_results = 0 if count else None
@@ -1864,7 +1863,7 @@ class PostJsonSearch(QueryStringSearch):
             # numeric page token
             if (
                 next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and items_per_page is not None:
+            ) and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = max(
@@ -1896,7 +1895,7 @@ class PostJsonSearch(QueryStringSearch):
             if "next_page_url_tpl" in self.config.pagination:
                 search_endpoint = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
-                    items_per_page=items_per_page,
+                    limit=limit,
                     next_page_token=token,
                 )
 
@@ -1924,7 +1923,7 @@ class PostJsonSearch(QueryStringSearch):
                 # next_page_query_obj needs to be parsed
                 next_page_query_obj_str = self.config.pagination[
                     "next_page_query_obj"
-                ].format(items_per_page=items_per_page, **next_page_token_kwargs)
+                ].format(limit=limit, **next_page_token_kwargs)
                 next_page_query_obj = orjson.loads(next_page_query_obj_str)
                 # remove NOT_AVAILABLE entries
                 next_page_query_obj.pop(NOT_AVAILABLE, None)
@@ -2021,8 +2020,11 @@ class PostJsonSearch(QueryStringSearch):
 
 class StacSearch(PostJsonSearch):
     """A specialisation of :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses generic
-    STAC configuration, it therefore has the same configuration parameters (those inherited
+    STAC configuration.
+
+    It therefore has the same configuration parameters (those inherited
     from :class:`~eodag.plugins.search.qssearch.QueryStringSearch`).
+
     For providers using ``StacSearch`` default values are defined for most of the parameters
     (see ``stac_provider.yml``). If some parameters are different for a specific provider, they
     have to be overwritten. If certain functionalities are not available, their configuration
@@ -2030,6 +2032,9 @@ class StacSearch(PostJsonSearch):
     the :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` and
     :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` in the
     :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
+
+    Plugins inheriting from ``StacSearch`` have to be referenced in :const:`~eodag.utils.STAC_SEARCH_PLUGINS`
+    to be correctly initialized with the expected STAC configuration and features.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

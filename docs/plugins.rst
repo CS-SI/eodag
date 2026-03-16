@@ -7,6 +7,11 @@ EODAG uses a two-level plugin system. *Plugin topics* are abstract interfaces fo
 like *Search* or *Download*. EODAG providers are implementations of at least one plugin topic. The more plugin topics
 are implemented by a provider, the more functionality of eodag are available for this provider.
 
+.. image:: _static/plugins_architecture.png
+   :width: 800
+   :alt: EODAG plugins architecture
+   :class: no-scaled-link
+
 Plugin Management
 ^^^^^^^^^^^^^^^^^
 
@@ -231,8 +236,8 @@ return a list of mocked EOProducts on search requests.
                   },
                **kwargs
             }
-            ) for i in range(0, prep.items_per_page)],
-            prep.items_per_page if prep.count else None
+            ) for i in range(0, prep.limit)],
+            prep.limit if prep.count else None
          )
 
 4. Create a `pyproject.toml` file in the package folder and paste in it the following

@@ -94,58 +94,92 @@ if TYPE_CHECKING:
 
 logger = py_logging.getLogger("eodag.utils")
 
-DEFAULT_PROJ = "EPSG:4326"
 
+# Constants - Core
+# ---------------
+
+#: Used as template for unknown/custom collection usage
 GENERIC_COLLECTION = "GENERIC_COLLECTION"
+#: Generic provider used in :meth:`~eodag.api.core.EODataAccessGateway.import_stac_items`
+#: if no existing provider can be used
 GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
+#: List of known STAC search plugins. Required to complete plugin configuration with STAC plugins specific features.
 STAC_SEARCH_PLUGINS = [
     "StacSearch",
     "StacListAssets",
     "StaticStacSearch",
 ]
 
+#: actual STAC version in EODAG
+STAC_VERSION = "1.1.0"
+
+# Constants - HTTP requests
+# ------------------------
+
 eodag_version = metadata("eodag")["Version"]
+#: EODAG user agent used in HTTP requests
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
-HTTP_REQ_TIMEOUT = 5  # in seconds
-DEFAULT_SEARCH_TIMEOUT = 20  # in seconds
-DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
+#: default timeout for HTTP requests (in seconds)
+HTTP_REQ_TIMEOUT = 5
+#: default timeout for search requests (in seconds)
+DEFAULT_SEARCH_TIMEOUT = 20
+#: default timeout for stream requests (in seconds)
+DEFAULT_STREAM_REQUESTS_TIMEOUT = 60
 
+#: default count for HTTP requests retry strategy
 REQ_RETRY_TOTAL = 3
+#: default backoff factor for HTTP requests retry strategy
 REQ_RETRY_BACKOFF_FACTOR = 2
+#: default status codes for which HTTP requests retry strategy is applied
 REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
 
-# default wait times in minutes
-DEFAULT_DOWNLOAD_WAIT = 0.2  # in minutes
-DEFAULT_DOWNLOAD_TIMEOUT = 10  # in minutes
+#: default wait time (in minutes) between download attempts
+DEFAULT_DOWNLOAD_WAIT = 0.2
+#: default timeout (in minutes) for download attempts
+DEFAULT_DOWNLOAD_TIMEOUT = 10
 
-JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
-WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
-ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
-
-# pagination defaults
-DEFAULT_PAGE = 1
-DEFAULT_ITEMS_PER_PAGE = 20
-# Default maximum number of items per page requested by search_all. 50 instead of 20
-# (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
-DEFAULT_MAX_ITEMS_PER_PAGE = 50
-
-# default collections start date
-DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
-
-# default geometry / whole world bounding box
-DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
-
-# default token expiration margin in seconds
+#: default token expiration margin (in seconds). Safety buffer to prevent token rejection from unexpected expiry
+#: between validity check and request. Default value of :attr:`~eodag.config.PluginConfig.token_expiration_margin`
 DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
 
-# knwown next page token keys used to guess key in STAC providers next link responses
+# Constants - Pagination
+# ---------------------
+
+#: pagination default starting page number
+DEFAULT_PAGE = 1
+#: default number of items per page requested by :meth:`~eodag.api.core.EODataAccessGateway.search`
+DEFAULT_LIMIT = 20
+#: Default maximum number of items per page requested by :meth:`~eodag.api.core.EODataAccessGateway.search_all`.
+#: 50 instead of 20 (:const:`~eodag.utils.DEFAULT_LIMIT`) to increase it to the known and current minimum
+#: value (mundi provider)
+DEFAULT_MAX_LIMIT = 50
+#: known next page token keys used to guess key in STAC providers next link responses
 KNOWN_NEXT_PAGE_TOKEN_KEYS = ["token", "next", "page", "skip"]
 
+# Constants - Metadata-mapping / default values
+# --------------------------------------------
+
+#: default projection used in metadata-mapping converters and :class:`~eodag.plugins.search.csw.CSWSearch`
+DEFAULT_PROJ = "EPSG:4326"
+#: default collections start date
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
+#: default geometry / whole world bounding box
+DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
+#: Online status value for ``order:status`` property
 ONLINE_STATUS = "succeeded"
 
-STAC_VERSION = "1.1.0"
+# Constants - Metadata-mapping / JSONPath regex
+# --------------------------------------------
+
+#: regex to detect if a string is a JSONPath expression, used in :func:`eodag.utils.string_to_jsonpath`
+JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
+#: regex to detect if a string is a simple/workable JSONPath expression, that can be parsed using a simpler, optimized
+#: approach. Used in :func:`eodag.utils.string_to_jsonpath`
+WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
+#: regex to detect if a string is a JSONPath array field, used in :func:`eodag.utils.string_to_jsonpath`
+ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
@@ -178,13 +212,11 @@ def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[...
 
         @functools.wraps(callable)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with warnings.catch_warnings():
-                warnings.simplefilter("always", DeprecationWarning)
-                warnings.warn(
-                    f"Call to deprecated {ctype} {cname} {reason_}{version_}",
-                    category=DeprecationWarning,
-                    stacklevel=2,
-                )
+            warnings.warn(
+                f"Call to deprecated eodag {ctype} {cname} {reason_}{version_}",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
             return callable(*args, **kwargs)
 
         return wrapper
@@ -900,12 +932,15 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     Child(Child(Root(), Fields('foo')), Fields('bar'))
     >>> string_to_jsonpath("$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
-    >>> string_to_jsonpath('$.foo[0][*]')
-    Child(Child(Child(Root(), Fields('foo')), Index(index=0)), Slice(start=None,end=None,step=None))
     >>> string_to_jsonpath("foo")
     'foo'
     >>> string_to_jsonpath("foo", force=True)
     Fields('foo')
+    >>> string_to_jsonpath('$.foo[0][*]') == Child(
+    ...     Child(Child(Root(), Fields('foo')), Index(0)),
+    ...     Slice(start=None, end=None, step=None),
+    ... )
+    True
 
     :param args: Last arg as input string value, to be converted
     :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
@@ -951,7 +986,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
                             # integer index
                             parsed_path = Child(
                                 parsed_path,
-                                Index(index=index),
+                                Index(index),
                             )
                     elif "[" in path_split:
                         # unsupported array field
@@ -1079,7 +1114,9 @@ def get_geometry_from_various(
     :param locations_config: (optional) EODAG locations configuration
     :param query_args: Query kwargs arguments from :meth:`~eodag.api.core.EODataAccessGateway.search`
     :returns: shapely Geometry found
-    :raises: :class:`ValueError`
+    :raises shapely.errors.ShapelyError: Error while creating shapely geometry
+    :raises TypeError: Unexpected geometry type
+    :raises ValueError: Location name is wrong or its value does not match
     """
     geom = None
 

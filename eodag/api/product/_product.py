@@ -244,7 +244,7 @@ class EOProduct:
         invalid_properties = {
             k
             for k in stac_properties.keys()
-            if k not in props_validated.to_dict() and props_model.has_field(k)
+            if k not in props_validated.model_dump() and props_model.has_field(k)
         }
         for key in invalid_properties:
             stac_properties.pop(key, None)
@@ -259,7 +259,8 @@ class EOProduct:
             invalid_asset_properties = {
                 k
                 for k in asset_properties.keys()
-                if k not in asset_props_validated.to_dict() and props_model.has_field(k)
+                if k not in asset_props_validated.model_dump()
+                and props_model.has_field(k)
             }
             for key in invalid_asset_properties:
                 assets_dict[asset_key].pop(key, None)
@@ -318,7 +319,7 @@ class EOProduct:
     def __repr__(self) -> str:
         try:
             return "{}(id={}, provider={})".format(
-                self.__class__.__name__, self.properties["id"], self.provider
+                self.__class__.__name__, self.properties.get("id", "?"), self.provider
             )
         except KeyError as e:
             raise MisconfiguredError(
@@ -664,7 +665,7 @@ class EOProduct:
                         f"Failed to get resource with authentication: {e} \n \
                         Failed to get resource even without authentication. {e_no_auth}"
                     )
-                    return str(e)
+                    return ""
 
             # close progress bar if needed
             if close_progress_callback:
@@ -675,8 +676,16 @@ class EOProduct:
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
         for driver_conf in DRIVERS:
-            if all([criteria(self) for criteria in driver_conf["criteria"]]):
+
+            # Select a driver if all criterias match
+            match = True
+            for criteria in driver_conf["criteria"]:
+                if not criteria(self):
+                    match = False
+                    break
+            if match:
                 return driver_conf["driver"]
+
         return GenericDriver()
 
     def _repr_html_(self):

@@ -1,8 +1,4 @@
-include README.rst LICENSE NOTICE requirements.txt
-include eodag/rest/server.wsgi
+include README.rst LICENSE NOTICE
 recursive-include docs *.rst
 graft eodag/resources
-graft eodag/rest/templates
-recursive-include eodag *.proto
-recursive-include examples *.ipynb
 prune tests
