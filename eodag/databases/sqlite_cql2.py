@@ -27,6 +27,7 @@ import orjson
 BASE_COLLECTION_TABLE_COLUMNS = {
     "key",
     "id",
+    "internal_id",
     "datetime",
     "end_datetime",
     "geometry",
@@ -153,12 +154,39 @@ def _replace_properties(sql: str, properties: set[str]) -> str:
 
         prop_expr = f"json_extract(content, '$.{prop}')"
         quoted = f'"{prop}"'
-        result = result.replace(quoted, prop_expr)
 
-        # Also handle bare identifiers with word boundaries (to avoid partial matches)
-        result = re.sub(rf"\b{re.escape(prop)}\b", prop_expr, result)
+        if quoted in result:
+            # CQL2 quotes properties that contain special characters (e.g. ':').
+            # Replace the quoted form and skip the bare-identifier regex to avoid
+            # double-wrapping the property inside the already-inserted json_extract.
+            result = result.replace(quoted, prop_expr)
+        else:
+            # Handle bare identifiers with word boundaries (to avoid partial matches)
+            result = re.sub(rf"\b{re.escape(prop)}\b", prop_expr, result)
 
     return result
+
+
+# Pre-compiled patterns for _sqlite_compat.
+# LHS of Postgres array operators is always a SQL identifier or a function call
+# like json_extract(content, '$.prop'). We use (?:\w+\([^)]*\)|\w+) to match
+# either form without backtracking across AND/OR boundaries.
+_SQL_EXPR = r"(?:\w+\([^)]*\)|\w+)"
+
+_RE_CAST_TIMESTAMP = re.compile(
+    r"CAST\('([^']+)'\s+AS\s+TIMESTAMP\s+WITH\s+TIME\s+ZONE\)",
+    re.IGNORECASE,
+)
+_RE_SOME_ARRAY = re.compile(
+    r"(\S+)\s*=\s*SOME\s*\(\s*ARRAY\[([^\]]*)\]\s*\)",
+    re.IGNORECASE,
+)
+_RE_ARRAY_OPS = {
+    "@@": re.compile(rf"({_SQL_EXPR})\s*@@\s*ARRAY\[([^\]]*)\]"),
+    "@>": re.compile(rf"({_SQL_EXPR})\s*@>\s*ARRAY\[([^\]]*)\]"),
+    "<@": re.compile(rf"({_SQL_EXPR})\s*<@\s*ARRAY\[([^\]]*)\]"),
+}
+_RE_ARRAY_EQUALS = re.compile(rf"({_SQL_EXPR})\s*=\s*ARRAY\[([^\]]*)\]")
 
 
 def _sqlite_compat(sql: str) -> str:
@@ -166,41 +194,24 @@ def _sqlite_compat(sql: str) -> str:
     result = sql
 
     # cql2 emits Postgres CAST('...' AS TIMESTAMP WITH TIME ZONE); strip for SQLite.
-    result = re.sub(
-        r"CAST\('([^']+)'\s+AS\s+TIMESTAMP\s+WITH\s+TIME\s+ZONE\)",
-        r"'\1'",
-        result,
-        flags=re.IGNORECASE,
-    )
+    result = _RE_CAST_TIMESTAMP.sub(r"'\1'", result)
 
     # cql2 emits Postgres form: x = SOME(ARRAY['a', 'b'])
-    result = re.sub(
-        r"([^\s\(][^=]*?)\s*=\s*SOME\s*\(\s*ARRAY\[(.*?)\]\s*\)",
-        r"\1 IN (\2)",
-        result,
-        flags=re.IGNORECASE,
-    )
+    result = _RE_SOME_ARRAY.sub(r"\1 IN (\2)", result)
 
     # cql2 emits Postgres array operators (@>, <@, @@, = ARRAY[...]).
     # Rewrite to custom SQLite functions that compare JSON arrays.
-    # Process @@ before @> to avoid partial matches.
-    for pg_op, func_name in [
-        ("@@", "a_overlaps"),
-        ("@>", "a_contains"),
-        ("<@", "a_containedby"),
-    ]:
-        result = re.sub(
-            rf"(.+?)\s*{re.escape(pg_op)}\s*ARRAY\[(.*?)\]",
-            rf"{func_name}(\1, json_array(\2))",
-            result,
-        )
+    # Skip entirely if no ARRAY[ remains after SOME rewriting (avoids catastrophic backtracking).
+    if "ARRAY[" in result:
+        for pg_op, (func_name, pattern) in {
+            "@@": ("a_overlaps", _RE_ARRAY_OPS["@@"]),
+            "@>": ("a_contains", _RE_ARRAY_OPS["@>"]),
+            "<@": ("a_containedby", _RE_ARRAY_OPS["<@"]),
+        }.items():
+            result = pattern.sub(rf"{func_name}(\1, json_array(\2))", result)
 
-    # a_equals: prop = ARRAY[...] → a_equals(prop, json_array(...))
-    result = re.sub(
-        r"(.+?)\s*=\s*ARRAY\[(.*?)\]",
-        r"a_equals(\1, json_array(\2))",
-        result,
-    )
+        # a_equals: prop = ARRAY[...] → a_equals(prop, json_array(...))
+        result = _RE_ARRAY_EQUALS.sub(r"a_equals(\1, json_array(\2))", result)
 
     return result
 
