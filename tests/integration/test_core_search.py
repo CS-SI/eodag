@@ -44,7 +44,7 @@ class TestCoreSearch(unittest.TestCase):
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = tempfile.TemporaryDirectory()
         self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+            "os.path.expanduser", return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
         # load fake credentials to prevent providers needing auth for search to be pruned
