@@ -36,7 +36,7 @@ from typing import (
 
 import yaml
 
-from eodag.api.collection import Collection
+from eodag.api.collection import Collection, CollectionsDict
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
@@ -480,39 +480,33 @@ class Provider:
         :param dag: The gateway instance to use to list existing collections and to create new collection instances.
         :param strict_mode: If ``True``, remove unknown collections; if ``False``, add empty configs for them.
         """
-        products_to_remove: list[str] = []
-        products_to_add: list[str] = []
+        config_ids = set(self.collections_config.keys()) - {GENERIC_COLLECTION}
 
-        for product_id in self.collections_config:
-            if product_id == GENERIC_COLLECTION:
-                continue
+        known_ids = set(dag.list_collections(ids=list(config_ids)).ids)
+        missing_ids = config_ids - known_ids
 
-            if product_id not in dag.collections_config:
-                if strict_mode:
-                    products_to_remove.append(product_id)
-                    continue
+        if not missing_ids:
+            return
 
-                empty_product = Collection.create_with_dag(
-                    dag, id=product_id, title=product_id, description=NOT_AVAILABLE
-                )
-                dag.collections_config[product_id] = empty_product
-                products_to_add.append(product_id)
-
-        if products_to_add:
-            logger.debug(
-                "Collections permissive mode, %s added (provider %s)",
-                ", ".join(products_to_add),
-                self,
-            )
-
-        if products_to_remove:
+        if strict_mode:
             logger.debug(
                 "Collections strict mode, ignoring %s (provider %s)",
-                ", ".join(products_to_remove),
+                ", ".join(missing_ids),
                 self,
             )
-            for id in products_to_remove:
-                self.delete_collection(id)
+            for coll_id in missing_ids:
+                del self.collections_config[coll_id]
+        else:
+            collections_to_add = [
+                Collection(id=coll_id, title=coll_id, description=NOT_AVAILABLE)
+                for coll_id in missing_ids
+            ]
+            dag.db.upsert_collections(CollectionsDict(collections_to_add))
+            logger.debug(
+                "Collections permissive mode, %s added (provider %s)",
+                ", ".join(missing_ids),
+                self,
+            )
 
     def _mm_already_built(self) -> bool:
         """Check if metadata mapping is already built (converted to querypaths/conversion)."""
