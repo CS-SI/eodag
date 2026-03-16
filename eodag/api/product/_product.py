@@ -25,6 +25,7 @@ import tempfile
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
+import geojson
 import orjson
 import requests
 from requests import RequestException
@@ -60,6 +61,8 @@ from eodag.utils import (
     USER_AGENT,
     ProgressCallback,
     StreamResponse,
+    _deprecated,
+    deepcopy,
     format_string,
     get_geometry_from_various,
 )
@@ -70,6 +73,7 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
+    from eodag import EODataAccessGateway
     from eodag.api.product.drivers.base import DatasetDriver
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
@@ -286,6 +290,68 @@ class EOProduct:
         return geojson_repr
 
     @classmethod
+    def from_dict(
+        cls, feature: dict[str, Any], dag: Optional[EODataAccessGateway] = None
+    ) -> EOProduct:
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
+        serialized representation as a Python dict.
+
+        :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
+                        as a Python dict
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
+                    provided, the downloader and authenticator will not be registered.
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        try:
+            collection = feature.get("collection")
+            properties = deepcopy(feature["properties"])
+            properties["geometry"] = feature["geometry"]
+            properties["id"] = feature["id"]
+            provider = properties.pop("eodag:provider")
+            search_intersection = properties.pop("eodag:search_intersection")
+        except KeyError as e:
+            raise ValidationError(
+                "Key %s not found in geojson, make sure it comes from a serialized SearchResult or EOProduct"
+                % e.args[0]
+            ) from e
+        obj = cls(provider, properties, collection=collection)
+        obj.search_intersection = geometry.shape(search_intersection)
+        obj.assets = AssetsDict(obj, feature.get("assets", {}))
+
+        if dag is not None:
+            # register
+            downloader = dag._plugins_manager.get_download_plugin(obj)
+            auth = obj.downloader_auth
+            if auth is None:
+                auth = dag._plugins_manager.get_auth_plugin(downloader, obj)
+            obj.register_downloader(downloader, auth)
+
+        return obj
+
+    @classmethod
+    def from_file(
+        cls, filepath: str, dag: Optional[EODataAccessGateway] = None
+    ) -> EOProduct:
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
+        serialized representation as a Python dict.
+
+        :param filepath: The path to the file containing the serialized representation of a product
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
+                    provided, the downloader and authenticator will not be registered.
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        with open(filepath, "r") as fh:
+            feature = geojson.load(fh)
+
+        return cls.from_dict(feature, dag=dag)
+
+    @classmethod
+    @_deprecated(
+        reason="Please use 'EOProduct.from_file' instead",
+        version="4.1.0",
+    )
     def from_geojson(cls, feature: dict[str, Any]) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
@@ -295,22 +361,7 @@ class EOProduct:
         :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
-        try:
-            collection = feature.get("collection")
-            properties = feature["properties"]
-            properties["geometry"] = feature["geometry"]
-            properties["id"] = feature["id"]
-            provider = properties.pop("eodag:provider")
-            search_intersection = properties.pop("eodag:search_intersection")
-        except KeyError as e:
-            raise ValidationError(
-                "Key %s not found in geojson, make sure it comes from a serialized SearchResult"
-                % e.args[0]
-            ) from e
-        obj = cls(provider, properties, collection=collection)
-        obj.search_intersection = geometry.shape(search_intersection)
-        obj.assets = AssetsDict(obj, feature.get("assets", {}))
-        return obj
+        return cls.from_dict(feature)
 
     # Implementation of geo-interface protocol (See
     # https://gist.github.com/sgillies/2217756)
