@@ -36,14 +36,9 @@ from typing import (
 
 import yaml
 
-from eodag.api.collection import Collection, CollectionsDict
-from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
-    mtd_cfg_as_conversion_and_querypath,
-)
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.config import PluginConfig, credentials_in_auth, load_stac_provider_config
 from eodag.utils import (
-    GENERIC_COLLECTION,
     STAC_SEARCH_PLUGINS,
     cast_scalar_value,
     deepcopy,
@@ -61,8 +56,6 @@ from eodag.utils.repr import dict_to_html_table, str_as_href
 
 if TYPE_CHECKING:
     from typing_extensions import Self
-
-    from eodag.api.core import EODataAccessGateway
 
 logger = logging.getLogger("eodag.provider")
 
@@ -465,48 +458,6 @@ class Provider:
         except KeyError:
             msg = f"Collection '{name}' not found in provider '{self.name}'."
             raise UnsupportedCollection(msg)
-
-    def sync_collections(
-        self,
-        dag: EODataAccessGateway,
-        strict_mode: bool,
-    ) -> None:
-        """
-        Synchronize collections for a provider based on strict or permissive mode.
-
-        In strict mode, removes collections not in :attr:`~eodag.api.core.EODataAccessGateway.collections_config`.
-        In permissive mode, adds empty collection to config for missing types.
-
-        :param dag: The gateway instance to use to list existing collections and to create new collection instances.
-        :param strict_mode: If ``True``, remove unknown collections; if ``False``, add empty configs for them.
-        """
-        config_ids = set(self.collections_config.keys()) - {GENERIC_COLLECTION}
-
-        known_ids = set(dag.list_collections(ids=list(config_ids)).ids)
-        missing_ids = config_ids - known_ids
-
-        if not missing_ids:
-            return
-
-        if strict_mode:
-            logger.debug(
-                "Collections strict mode, ignoring %s (provider %s)",
-                ", ".join(missing_ids),
-                self,
-            )
-            for coll_id in missing_ids:
-                del self.collections_config[coll_id]
-        else:
-            collections_to_add = [
-                Collection(id=coll_id, title=coll_id, description=NOT_AVAILABLE)
-                for coll_id in missing_ids
-            ]
-            dag.db.upsert_collections(CollectionsDict(collections_to_add))
-            logger.debug(
-                "Collections permissive mode, %s added (provider %s)",
-                ", ".join(missing_ids),
-                self,
-            )
 
     def _mm_already_built(self) -> bool:
         """Check if metadata mapping is already built (converted to querypaths/conversion)."""

@@ -37,7 +37,8 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.api.collection import Collection, CollectionsList
+from eodag.api.collection import Collection, CollectionsDict, CollectionsList
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
@@ -74,6 +75,12 @@ class TestCoreBase(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
         )
         cls.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
         # create eodag conf dir in tmp home dir
         eodag_conf_dir = os.path.join(cls.tmp_home_dir.name, ".config", "eodag")
@@ -88,6 +95,7 @@ class TestCoreBase(unittest.TestCase):
     def tearDownClass(cls):
         super(TestCoreBase, cls).tearDownClass()
         # stop Mock and remove tmp config dir
+        cls.sqlite_mock.stop()
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
         # reset logging
@@ -684,7 +692,7 @@ class TestCore(TestCoreBase):
 
     def test_supported_collections_in_unit_test(self):
         """Every collection must be referenced in the core unit test SUPPORTED_COLLECTIONS class attribute"""
-        for collection in self.dag.list_collections(fetch_providers=False):
+        for collection in self.dag.list_collections():
             assert (
                 collection.id in self.SUPPORTED_COLLECTIONS.keys()
                 or collection._id in self.SUPPORTED_COLLECTIONS.keys()
@@ -692,24 +700,25 @@ class TestCore(TestCoreBase):
 
     def test_list_collections_ok(self):
         """Core api must correctly return the list of supported collections"""
-        collections = self.dag.list_collections(fetch_providers=False)
+        collections = self.dag.list_collections()
         self.assertIsInstance(collections, CollectionsList)
         for collection in collections:
             self.assertIsInstance(collection, Collection)
         # There should be no repeated collection in the output
         self.assertEqual(len(collections), len(set(col.id for col in collections)))
         # add alias for collection - should still work
-        products = self.dag.collections_config
-        products.update(
-            {
-                "S2_MSI_L1C": Collection.create_with_dag(
-                    self.dag,
-                    alias="S2_MSI_ALIAS",
-                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
-                )
-            }
+        product = self.dag.get_collection("S2_MSI_L1C")
+        self.dag.db.upsert_collections(
+            CollectionsDict(
+                [
+                    Collection(
+                        alias="S2_MSI_ALIAS", **product.model_dump(exclude={"alias"})
+                    )
+                ]
+            )
         )
-        collections = self.dag.list_collections(fetch_providers=False)
+
+        collections = self.dag.list_collections()
         for collection in collections:
             self.assertIsInstance(collection, Collection)
         # There should be no repeated collection in the output
@@ -718,37 +727,33 @@ class TestCore(TestCoreBase):
         self.assertIn("S2_MSI_ALIAS", [col.id for col in collections])
 
         # restore the original collection instance in the config
-        products.update(
-            {
-                "S2_MSI_L1C": Collection.create_with_dag(
-                    self.dag,
-                    id="S2_MSI_L1C",
-                    **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
-                )
-            }
+        self.dag.db.upsert_collections(
+            CollectionsDict(
+                [
+                    Collection(
+                        id="S2_MSI_L1C", **product.model_dump(exclude={"id", "alias"})
+                    )
+                ]
+            )
         )
 
     def test_list_collections_for_provider_ok(self):
         """Core api must correctly return the list of supported collections for a given provider"""
-        for provider in self.SUPPORTED_PROVIDERS:
-            collections = self.dag.list_collections(
-                provider=provider, fetch_providers=False
+        collections = self.dag.list_collections(providers=self.SUPPORTED_PROVIDERS)
+
+        self.assertIsInstance(collections, CollectionsList)
+        for collection in collections:
+            self.assertIsInstance(collection, Collection)
+            key = (
+                collection.id
+                if collection.id in self.SUPPORTED_COLLECTIONS
+                else collection._id
             )
-            self.assertIsInstance(collections, CollectionsList)
-            for collection in collections:
-                self.assertIsInstance(collection, Collection)
-                if collection.id in self.SUPPORTED_COLLECTIONS:
-                    self.assertIn(
-                        provider,
-                        self.SUPPORTED_COLLECTIONS[collection.id],
-                        f"missing in supported providers for {collection.id}",
-                    )
-                else:
-                    self.assertIn(
-                        provider,
-                        self.SUPPORTED_COLLECTIONS[collection._id],
-                        f"missing in supported providers for {collection._id}",
-                    )
+            self.assertListEqual(
+                collection.providers,
+                self.SUPPORTED_COLLECTIONS[key],
+                f"missing in supported providers for {key}",
+            )
 
     def test_list_collections_for_unsupported_provider(self):
         """Core api must raise UnsupportedProvider error for list_collections with unsupported provider"""
@@ -756,7 +761,7 @@ class TestCore(TestCoreBase):
         self.assertRaises(
             UnsupportedProvider,
             self.dag.list_collections,
-            provider=unsupported_provider,
+            providers=[unsupported_provider],
         )
 
     @mock.patch(
@@ -764,9 +769,10 @@ class TestCore(TestCoreBase):
     )
     def test_list_collections_fetch_providers(self, mock_fetch_collections_list):
         """Core api must fetch providers for new collections if option is passed to list_collections"""
-        self.dag.list_collections(fetch_providers=False)
+        self.dag.list_collections()
         assert not mock_fetch_collections_list.called
-        self.dag.list_collections(provider="peps", fetch_providers=True)
+        self.dag.fetch_collections_list(provider="peps")
+        self.dag.list_collections(providers=["peps"])
         mock_fetch_collections_list.assert_called_once_with(self.dag, provider="peps")
 
     def test_guess_collection_with_filter(self):
@@ -780,54 +786,46 @@ class TestCore(TestCoreBase):
 
         # Search any filter contains filter value
         filter = "ABSTRACTFOO"
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(collections_ids, ["foo"])
+        self.assertListEqual(self.dag.guess_collection(filter), ["foo"])
         # Search the exact phrase. Search is case insensitive
         filter = '"THIS IS FOO. fooandbar"'
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(collections_ids, ["foo"])
+        self.assertListEqual(self.dag.guess_collection(filter), ["foo"])
 
         # Free text search: match in the keywords
         filter = "LECTUS_BAR_KEY"
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(collections_ids, ["bar"])
+        self.assertListEqual(self.dag.guess_collection(filter), ["bar"])
 
         # Free text search: match the phrase in title
         filter = '"FOOBAR COLLECTION"'
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(collections_ids, ["foobar_alias"])
+        self.assertListEqual(self.dag.guess_collection(filter), ["foobar_alias"])
 
         # Free text search: Using OR term match
         filter = "FOOBAR OR BAR"
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(sorted(collections_ids), ["bar", "foobar_alias"])
+        self.assertListEqual(
+            sorted(self.dag.guess_collection(filter)), ["bar", "foobar_alias"]
+        )
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
-        collections_ids = [
-            col.id for col in self.dag.guess_collection(filter, title="FOO")
-        ]
-        self.assertListEqual(sorted(collections_ids), ["bar", "foo", "foobar_alias"])
+        self.assertListEqual(
+            sorted(self.dag.guess_collection(filter, title="FOO")),
+            ["bar", "foo", "foobar_alias"],
+        )
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(collections_ids, ["foo"])
+        self.assertListEqual(self.dag.guess_collection(filter), ["foo"])
 
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
-        collections_ids = [col.id for col in self.dag.guess_collection(filter)]
-        self.assertListEqual(collections_ids, ["foobar_alias"])
+        self.assertListEqual(self.dag.guess_collection(filter), ["foobar_alias"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
-        collections_ids = [
-            col.id
-            for col in self.dag.guess_collection(
-                filter, intersect=True, title="titleFOO*"
-            )
-        ]
-        self.assertListEqual(collections_ids, ["foobar_alias"])
+        self.assertListEqual(
+            self.dag.guess_collection(filter, intersect=True, title="titleFOO*"),
+            ["foobar_alias"],
+        )
 
     def test_guess_collection_with_mission_dates(self):
         """Testing the datetime interval"""
@@ -838,43 +836,31 @@ class TestCore(TestCoreBase):
             ext_collections_conf = json.load(f)
         self.dag.update_collections_list(ext_collections_conf)
 
-        collections_ids = [
-            col.id
-            for col in self.dag.guess_collection(
-                title="TEST DATES",
-                start_date="2013-02-01",
-                end_date="2013-02-05",
-            )
-        ]
+        collections_ids = self.dag.guess_collection(
+            title="TEST DATES",
+            start_date="2013-02-01",
+            end_date="2013-02-05",
+        )
         self.assertListEqual(collections_ids, ["interval_end"])
-        collections_ids = [
-            col.id
-            for col in self.dag.guess_collection(
-                title="TEST DATES",
-                start_date="2013-02-01",
-                end_date="2013-02-15",
-            )
-        ]
+        collections_ids = self.dag.guess_collection(
+            title="TEST DATES",
+            start_date="2013-02-01",
+            end_date="2013-02-15",
+        )
         self.assertListEqual(
             sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
-        collections_ids = [
-            col.id
-            for col in self.dag.guess_collection(
-                title="TEST DATES", start_date="2013-02-01"
-            )
-        ]
+        collections_ids = self.dag.guess_collection(
+            title="TEST DATES", start_date="2013-02-01"
+        )
         self.assertListEqual(
             sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
         )
-        collections_ids = [
-            col.id
-            for col in self.dag.guess_collection(
-                title="TEST DATES", end_date="2013-02-20"
-            )
-        ]
+        collections_ids = self.dag.guess_collection(
+            title="TEST DATES", end_date="2013-02-20"
+        )
         self.assertListEqual(
             sorted(collections_ids),
             ["interval_end", "interval_start", "interval_start_end"],
@@ -887,10 +873,10 @@ class TestCore(TestCoreBase):
             ext_collections_conf = json.load(f)
 
         self.assertNotIn("foo", self.dag._providers[provider].collections_config)
-        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("foo"))
 
         self.assertNotIn("bar", self.dag._providers[provider].collections_config)
-        self.assertNotIn("bar", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("bar"))
 
         # log a message to tell that external collections have been added to the provider config
         with self.assertLogs(level="DEBUG") as cm:
@@ -900,10 +886,10 @@ class TestCore(TestCoreBase):
 
         # check that collections have been added to configs
         self.assertIn("foo", self.dag._providers[provider].collections_config)
-        self.assertIn("foo", self.dag.collections_config)
+        self.assertIsNotNone(self.dag.get_collection("foo"))
 
         self.assertIn("bar", self.dag._providers[provider].collections_config)
-        self.assertIn("bar", self.dag.collections_config)
+        self.assertIsNotNone(self.dag.get_collection("bar"))
 
     def test_update_collections_list_unknown_provider(self):
         """Core api.update_collections_list on unkwnown provider must not crash and not update conf"""
@@ -929,10 +915,10 @@ class TestCore(TestCoreBase):
         ext_collections_conf["ecmwf"] = ext_collections_conf.pop("earth_search")
 
         self.assertNotIn("foo", self.dag._providers["ecmwf"].collections_config)
-        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("foo"))
 
         self.assertNotIn("bar", self.dag._providers["ecmwf"].collections_config)
-        self.assertNotIn("bar", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("bar"))
 
         # update existing provider conf and check that update_collections_list() is launched for it
         self.dag.update_providers_config(
@@ -948,10 +934,10 @@ class TestCore(TestCoreBase):
         self.dag.update_collections_list(ext_collections_conf)
 
         self.assertIn("foo", self.dag._providers["ecmwf"].collections_config)
-        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
+        self.assertEqual(self.dag.get_collection("foo").license, "WTFPL")
 
         self.assertIn("bar", self.dag._providers["ecmwf"].collections_config)
-        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
+        self.assertEqual(self.dag.get_collection("bar").title, "Bar collection")
 
     def test_update_collections_list_without_plugin(self):
         """Core api.update_collections_list without search and api plugin do nothing"""
@@ -959,20 +945,20 @@ class TestCore(TestCoreBase):
             ext_collections_conf = json.load(f)
 
         self.assertNotIn("foo", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("foo"))
 
         self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("bar", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("bar"))
 
         delattr(self.dag._providers["earth_search"].config, "search")
 
         self.dag.update_collections_list(ext_collections_conf)
 
         self.assertNotIn("foo", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("foo"))
 
         self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("bar", self.dag.collections_config)
+        self.assertIsNone(self.dag.get_collection("bar"))
 
     def test_update_collections_list_errors_handling(self):
         """Core api.update_collections_list must skip a collection with a log if its id is not a string and
@@ -1114,7 +1100,7 @@ class TestCore(TestCoreBase):
                 self.assertIn(
                     new_coll, self.dag._providers["earth_search"].collections_config
                 )
-                self.assertIn(new_coll, self.dag.collections_config)
+                self.assertIsNotNone(self.dag.get_collection(new_coll))
 
             # case when id is not a string case
 
@@ -1153,7 +1139,7 @@ class TestCore(TestCoreBase):
             self.assertNotIn(
                 100, self.dag._providers["earth_search"].collections_config
             )
-            self.assertNotIn(100, self.dag.collections_config)
+            self.assertIsNone(self.dag.get_collection(100))
 
         finally:
             # remove the environment variable
@@ -1266,7 +1252,7 @@ class TestCore(TestCoreBase):
             {"_collection": "foo"},
         )
         self.assertEqual(
-            self.dag.collections_config.data["foo"],
+            self.dag.get_collection("foo"),
             Collection.create_with_dag(self.dag, id="foo", title="Foo collection"),
         )
 
@@ -1721,13 +1707,10 @@ class TestCore(TestCoreBase):
                 end_datetime="2025-01-31",
                 geometry=[-10, 35, 10, 45],
             ),
-            [
-                col.id
-                for col in self.dag.list_collections("peps", fetch_providers=False)
-            ],
+            [col.id for col in self.dag.list_collections(providers=["peps"])],
             {
                 "S2_MSI_L1C": {
-                    **self.dag.collections_config["S2_MSI_L1C"].model_dump(
+                    **self.dag.get_collection("S2_MSI_L1C").model_dump(
                         mode="json", exclude={"id"}
                     ),
                     "collection": "S2_MSI_L1C",
@@ -2334,7 +2317,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         # check collections
         try:
             self.dag = EODataAccessGateway()
-            col = self.dag.list_collections(fetch_providers=False)
+            col = self.dag.list_collections()
             self.assertEqual(2, len(col))
             self.assertEqual("TEST_PRODUCT_1", col[0].id)
             self.assertEqual("TEST_PRODUCT_2", col[1].id)
@@ -2344,7 +2327,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ.pop("EODAG_COLLECTIONS_CFG_FILE", None)
 
 
-class TestCoreInvolvingConfDir(unittest.TestCase):
+class TestCoreInvolvingConfDir(TestCoreBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -2355,9 +2338,9 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         # stop os.environ
         cls.mock_os_environ.stop()
+        super().tearDownClass()
 
     def setUp(self):
         super().setUp()
@@ -2634,63 +2617,65 @@ class TestCoreSearch(TestCoreBase):
         )
         actual = self.dag.guess_collection(**kwargs)
         expected = [
-            "S2_MSI_L1C",
             "S2_MSI_L2A",
+            "S2_MSI_L2A_JP2",
+            "S2_MSI_L2B_MAJA_WATER",
             "S2_MSI_L2A_COG",
+            "S2_MSI_L1C",
+            "S2_MSI_L1C_JP2",
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
-            "S2_MSI_L2B_MAJA_WATER",
+            "EEA_HRL_TCF",
             "CLMS_HRVPP_ST",
             "CLMS_HRVPP_ST_LAEA",
             "CLMS_HRVPP_VPP",
             "CLMS_HRVPP_VPP_LAEA",
-            "EEA_HRL_TCF",
         ]
-        self.assertListEqual([col.id for col in actual], expected)
+        self.assertListEqual(actual, expected)
 
         # with collection specified
 
         # unkwown collection and alias
         actual = self.dag.guess_collection(collection="foo")
-        self.assertListEqual([actual[0].id], ["foo"])
+        self.assertListEqual(actual, ["foo"])
 
         # known collection which does not have an alias
         actual = self.dag.guess_collection(collection="S2_MSI_L1C")
-        self.assertListEqual([actual[0].id], ["S2_MSI_L1C"])
+        self.assertListEqual(actual, ["S2_MSI_L1C"])
 
         # known collection which has an alias
         actual = self.dag.guess_collection(collection="foobar")
-        self.assertListEqual([actual[0].id], ["foobar_alias"])
+        self.assertListEqual(actual, ["foobar_alias"])
 
         # known alias
         actual = self.dag.guess_collection(collection="foobar_alias")
-        self.assertListEqual([actual[0].id], ["foobar_alias"])
+        self.assertListEqual(actual, ["foobar_alias"])
 
         # with dates
         self.assertEqual(
-            self.dag.collections_config["S2_MSI_L1C"].extent.temporal.interval[0][0],
+            self.dag.get_collection("S2_MSI_L1C").extent.temporal.interval[0][0],
             datetime(2015, 6, 23, 0, 0, tzinfo=timezone.utc),
         )
         self.assertNotIn(
             "S2_MSI_L1C",
-            [col.id for col in self.dag.guess_collection(end_date="2015-06-01")],
+            self.dag.guess_collection(end_date="2015-06-01"),
         )
         self.assertIn(
             "S2_MSI_L1C",
-            [col.id for col in self.dag.guess_collection(end_date="2015-07-01")],
+            self.dag.guess_collection(end_date="2015-07-01"),
         )
 
         # with individual filters
         actual = self.dag.guess_collection(
             constellation="SENTINEL1", processing_level="L2", intersect=True
         )
-        self.assertListEqual([col.id for col in actual], ["S1_SAR_OCN"])
+        self.assertListEqual(actual, ["S1_SAR_OCN"])
         # without intersect, the most appropriate collection must be at first position
         actual = self.dag.guess_collection(
             constellation="SENTINEL1", processing_level="L2"
         )
         self.assertGreater(len(actual), 1)
-        self.assertEqual(actual[0].id, "S1_SAR_OCN")
+        self.assertEqual(actual[0], "S1_SAR_OCN")
 
     def test_guess_collection_without_kwargs(self):
         """guess_collection must raise an exception when no kwargs are provided"""
@@ -2701,9 +2686,7 @@ class TestCoreSearch(TestCoreBase):
         """guess_collection must run a whoosh search without any limit"""
         # Filter that should give more than 10 products referenced in the catalog.
         opt_prods = [
-            c
-            for c in self.dag.list_collections(fetch_providers=False)
-            if c.eodag_sensor_type == "OPTICAL"
+            c for c in self.dag.list_collections() if c.eodag_sensor_type == "OPTICAL"
         ]
         if len(opt_prods) <= 10:
             self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
@@ -2857,7 +2840,7 @@ class TestCoreSearch(TestCoreBase):
             platform="S2A",
         )
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["collection"], "S2_MSI_L1C")
+        self.assertEqual(prepared_search["collection"], "S2_MSI_L2A")
 
     def test__prepare_search_remove_guess_kwargs(self):
         """_prepare_search must remove the guess kwargs"""
@@ -2938,16 +2921,17 @@ class TestCoreSearch(TestCoreBase):
 
     def test__prepare_search_peps_plugins_product_available_with_alias(self):
         """_prepare_search must return the search plugins when collection is defined and alias is used"""
-        products = self.dag.collections_config
-        products.update(
-            {
-                "S2_MSI_L1C": Collection.create_with_dag(
-                    self.dag,
-                    alias="S2_MSI_ALIAS",
-                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
-                )
-            }
+        s2_msi_l1c = self.dag.get_collection("S2_MSI_L1C")
+        self.dag.db.upsert_collections(
+            CollectionsDict(
+                [
+                    Collection(
+                        alias="S2_MSI_ALIAS", **s2_msi_l1c.model_dump(exclude={"alias"})
+                    )
+                ]
+            )
         )
+
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
@@ -2958,14 +2942,8 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
         # restore the original collection instance in the config
-        products.update(
-            {
-                "S2_MSI_L1C": Collection.create_with_dag(
-                    self.dag,
-                    id="S2_MSI_L1C",
-                    **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
-                )
-            }
+        self.dag.db.upsert_collections(
+            CollectionsDict([Collection(**s2_msi_l1c.model_dump())])
         )
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
@@ -4277,15 +4255,15 @@ class TestCoreProductAlias(TestCoreBase):
     def setUpClass(cls):
         super().setUpClass()
         cls.dag = EODataAccessGateway()
-        products = cls.dag.collections_config
-        products.update(
-            {
-                "S2_MSI_L1C": Collection.create_with_dag(
-                    cls.dag,
-                    alias="S2_MSI_ALIAS",
-                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
-                )
-            }
+        s2_msi_l1c = cls.dag.get_collection("S2_MSI_L1C")
+        cls.dag.db.upsert_collections(
+            CollectionsDict(
+                [
+                    Collection(
+                        alias="S2_MSI_ALIAS", **s2_msi_l1c.model_dump(exclude={"alias"})
+                    )
+                ]
+            )
         )
 
     def test_get_alias_from_collection(self):
@@ -4350,17 +4328,11 @@ class TestCoreProviderGroup(TestCoreBase):
         EODAG return the merged list of collections from both providers of the group.
         """
 
-        search_products = []
-        for provider in self.group:
-            search_products.extend(
-                self.dag.list_collections(provider, fetch_providers=False)
-            )
-
-        merged_list = list({d.id: d for d in search_products}.values())
+        search_products = self.dag.list_collections(providers=self.group).ids
 
         self.assertCountEqual(
-            self.dag.list_collections(self.group_name, fetch_providers=False),
-            merged_list,
+            self.dag.list_collections(providers=[self.group_name]).ids,
+            search_products,
         )
 
     @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
@@ -4424,7 +4396,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 )
 
         self.assertEqual(
-            self.dag.collections_config.data["foo"],
+            self.dag.get_collection("foo"),
             Collection.create_with_dag(self.dag, id="foo", title="Foo collection"),
         )
 
@@ -4523,9 +4495,13 @@ class TestCoreStrictMode(TestCoreBase):
             dag = EODataAccessGateway()
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
-            collections = dag.list_collections(fetch_providers=False)
-            ids = [col.id for col in collections]
-            self.assertNotIn("TEST_PRODUCT_2", ids)
+            self.assertNotIn("TEST_PRODUCT_2", dag.list_collections().ids)
+
+            # The provider's config should also have been pruned
+            foo_provider = dag._providers["foo_provider"]
+            self.assertNotIn("TEST_PRODUCT_2", foo_provider.collections_config)
+            # Known collection should still be present
+            self.assertIn("TEST_PRODUCT_1", foo_provider.collections_config)
 
         finally:
             os.environ.pop("EODAG_STRICT_COLLECTIONS", None)
@@ -4538,6 +4514,8 @@ class TestCoreStrictMode(TestCoreBase):
         dag = EODataAccessGateway()
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
-        collections = dag.list_collections(fetch_providers=False)
-        ids = [col.id for col in collections]
-        self.assertIn("TEST_PRODUCT_2", ids)
+        self.assertIn("TEST_PRODUCT_2", dag.list_collections().ids)
+
+        # The provider's config should still have TEST_PRODUCT_2
+        foo_provider = dag._providers["foo_provider"]
+        self.assertIn("TEST_PRODUCT_2", foo_provider.collections_config)
