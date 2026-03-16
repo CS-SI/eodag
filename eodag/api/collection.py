@@ -656,6 +656,14 @@ class CollectionsDict(UserDict[str, Collection]):
     def __repr__(self) -> str:
         return str(self)
 
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> CollectionsDict:
+        """Create a CollectionsDict instance from a configuration dictionary."""
+        collections = []
+        for collection_id, collection_conf in config.items():
+            collections.append(Collection(**(collection_conf | {"id": collection_id})))
+        return cls(collections)
+
 
 class CollectionsList(UserList[Collection]):
     """An object representing a collection of :class:`~eodag.api.collection.Collection`.
@@ -710,6 +718,11 @@ class CollectionsList(UserList[Collection]):
             )
             + "</tbody></table></details>"
         )
+
+    @property
+    def ids(self) -> list[str]:
+        """Get the list of collection IDs."""
+        return [col.id for col in self]
 
     def get(self, collection: str) -> Optional[Collection]:
         """
