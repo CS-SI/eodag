@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
@@ -25,59 +26,52 @@ if TYPE_CHECKING:
     from eodag.api.collection import CollectionsDict
     from eodag.api.provider import ProviderConfig
 
-DEFAULT_COLLECTIONS_PER_PAGE = 10
 
-class Database:
+class Database(ABC):
     """Base for classes representing a database.
 
     A Database object is used to store information about :class:`~eodag.api.collection.Collection` objects.
     """
 
-    type: str
+    def __del__(self):
+        """Close the database connection when the object is deleted."""
+        self.close()
 
-    def _create_col_table(self) -> None:
-        """Create the collections table in the database."""
-        raise NotImplementedError
+    def __enter__(self) -> Database:
+        """Enter the runtime context related to this object."""
+        return self
 
-    def _create_col_config_table(self) -> None:
-        """Create the collections configuration table in the database."""
-        raise NotImplementedError
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the runtime context related to this object."""
+        self.close()
 
-    def get_collection(self, collection_name: str) -> Optional[dict[str, Any]]:
-        """Retrieve a collection from the database."""
-        raise NotImplementedError
+    @abstractmethod
+    def close(self) -> None:
+        """Close the database connection."""
+        pass
 
-    def get_collection_from_alias(self, alias_or_id: str) -> dict[str, Any]:
-        """Retrieve a collection from the database by either its id or alias.
-
-        :param alias_or_id: Alias of the collection. If an existing id is given, this
-                            method will directly return the collection of given value.
-        :returns: The collection having  Internal name of the collection.
-        """
-        raise NotImplementedError
-
+    @abstractmethod
     def delete_collection(self, collection_name: str) -> None:
         """Delete a collection from the database."""
-        raise NotImplementedError
+        pass
 
-    def rename_collection(self, old_name: str, new_name: str) -> None:
-        """Rename a collection in the database."""
-        raise NotImplementedError
-
+    @abstractmethod
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def upsert_providers_config(self, providers_config: list[ProviderConfig]) -> None:
         """Add or update providers configurations in the database"""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def collections_search(
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         datetime: Optional[str] = None,
-        limit: int = DEFAULT_COLLECTIONS_PER_PAGE,
-        q: Optional[list[str]] = None,
+        limit: Optional[int] = None,
+        q: Optional[str] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
         sortby: Optional[list[dict[str, str]]] = None,
@@ -85,4 +79,4 @@ class Database:
         """
         :returns: A tuple of (returned collections as dictionaries, total number matched).
         """
-        raise NotImplementedError
+        pass
