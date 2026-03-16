@@ -38,6 +38,7 @@ dependencies = [
     "boto3",
     "botocore",
     "click",
+    "cql2",
     "geojson",
     "importlib_metadata >= 5.0",
     # temporarily pinned, see https://github.com/h2non/jsonpath-ng/issues/216
