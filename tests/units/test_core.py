@@ -2524,7 +2524,7 @@ class TestCoreSearch(TestCoreBase):
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
-        cls.search_results = SearchResult.from_geojson(search_results_geojson)
+        cls.search_results = SearchResult.from_dict(search_results_geojson)
         cls.search_results_size = len(cls.search_results)
         # Change the id of these products, to emulate different products
         search_results_data_2 = copy.deepcopy(cls.search_results.data)

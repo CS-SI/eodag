@@ -142,7 +142,7 @@ class TestEOProduct(EODagTestBase):
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""
         product = self._dummy_product()
-        same_product = EOProduct.from_geojson(geojson.loads(geojson.dumps(product)))
+        same_product = EOProduct.from_dict(geojson.loads(geojson.dumps(product)))
         self.assertSequenceEqual(
             [
                 product.provider,

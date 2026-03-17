@@ -2056,7 +2056,7 @@ class EODataAccessGateway:
         :param filename: (optional) The name of the file to generate
         :returns: The name of the created file
         """
-        search_result_dict = search_result.as_geojson_object()
+        search_result_dict = search_result.as_dict()
         # add self link
         search_result_dict.setdefault("links", [])
         search_result_dict["links"].append(
@@ -2102,7 +2102,7 @@ class EODataAccessGateway:
         :returns: The search results encoded in `filename`
         """
         with open(filename, "r") as fh:
-            return SearchResult.from_geojson(geojson.load(fh))
+            return SearchResult.from_dict(geojson.load(fh))
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register

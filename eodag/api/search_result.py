@@ -32,7 +32,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
-from eodag.utils import STAC_VERSION
+from eodag.utils import STAC_VERSION, _deprecated
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
@@ -182,16 +182,21 @@ class SearchResult(UserList[EOProduct]):
         """
         return self.filter_property(**{"order:status": "succeeded"})
 
-    @staticmethod
-    def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:
+    @classmethod
+    def from_dict(
+        cls,
+        feature_collection: dict[str, Any],
+        dag: Optional[EODataAccessGateway] = None,
+    ) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
 
         :param feature_collection: A collection representing a search result.
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
         :returns: An eodag representation of a search result
         """
 
         products = [
-            EOProduct.from_geojson(feature)
+            EOProduct.from_dict(feature, dag=dag)
             for feature in feature_collection.get("features", [])
         ]
         props = feature_collection.get("metadata", {}) or {}
@@ -200,7 +205,7 @@ class SearchResult(UserList[EOProduct]):
         if eodag_search_params and eodag_search_params.get("geometry"):
             eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
 
-        return SearchResult(
+        return cls(
             products=products,
             number_matched=props.get("eodag:number_matched"),
             next_page_token=props.get("eodag:next_page_token"),
@@ -209,7 +214,20 @@ class SearchResult(UserList[EOProduct]):
             raise_errors=props.get("eodag:raise_errors"),
         )
 
-    def as_geojson_object(self) -> dict[str, Any]:
+    @staticmethod
+    @_deprecated(
+        reason="Please use 'SearchResult.from_dict' instead",
+        version="4.1.0",
+    )
+    def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
+
+        :param feature_collection: A collection representing a search result.
+        :returns: An eodag representation of a search result
+        """
+        return SearchResult.from_dict(feature_collection)
+
+    def as_dict(self) -> dict[str, Any]:
         """GeoJSON representation of SearchResult"""
 
         geojson_search_params = {} | (self.search_params or {})
@@ -234,12 +252,20 @@ class SearchResult(UserList[EOProduct]):
             "stac_version": STAC_VERSION,
         }
 
+    @_deprecated(
+        reason="Please use 'SearchResult.as_dict' instead",
+        version="4.1.0",
+    )
+    def as_geojson_object(self) -> dict[str, Any]:
+        """GeoJSON representation of SearchResult"""
+        return self.as_dict()
+
     def as_shapely_geometry_object(self) -> GeometryCollection:
         """:class:`shapely.GeometryCollection` representation of SearchResult"""
         return GeometryCollection(
             [
                 shape(feature["geometry"]).buffer(0)
-                for feature in self.as_geojson_object()["features"]
+                for feature in self.as_dict()["features"]
             ]
         )
 
