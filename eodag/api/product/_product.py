@@ -338,8 +338,8 @@ class EOProduct:
     def from_file(
         cls, filepath: str, dag: Optional[EODataAccessGateway] = None
     ) -> EOProduct:
-        """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
-        serialized representation as a Python dict.
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from a file containing its serialized
+        representation as geojson.
 
         :param filepath: The path to the file containing the serialized representation of a product
         :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
@@ -354,7 +354,7 @@ class EOProduct:
 
     @classmethod
     @_deprecated(
-        reason="Please use 'EOProduct.from_file' instead",
+        reason="Please use 'EOProduct.from_dict' instead",
         version="4.1.0",
     )
     def from_geojson(cls, feature: dict[str, Any]) -> EOProduct:
