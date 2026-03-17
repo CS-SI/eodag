@@ -198,9 +198,9 @@ class EODataAccessGateway:
         # Environment overrides still apply to providers
         self._providers.update_from_env()
 
-        # init updated providers conf
-        self._bulk_sync_collections(self.settings.strict_collections)
+        self._bulk_sync_collections()
 
+        # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self._providers)
 
         # filter out providers needing auth that have no credentials set
@@ -212,14 +212,14 @@ class EODataAccessGateway:
             str(self.settings.resolved_locations_cfg_file)
         )
 
-    def _bulk_sync_collections(self, strict_mode: bool) -> None:
+    def _bulk_sync_collections(self) -> None:
         """Synchronize collections for all providers in a single DB query.
 
         In strict mode, removes collections not in the collections table.
         In permissive mode, adds empty collection to config for missing types.
-
-        :param strict_mode: If ``True``, remove unknown collections; if ``False``, add empty configs for them.
         """
+
+        strict_mode = self.settings.strict_collections
         all_config_ids: set[str] = set()
         for provider in self._providers.values():
             all_config_ids.update(
@@ -1765,33 +1765,6 @@ class EODataAccessGateway:
             kwargs.pop(arg, None)
         del kwargs["locations"]
 
-        # fetch collections list if collection is unknown
-        if (
-            collection
-            not in self._plugins_manager.collection_to_provider_config_map.keys()
-        ):
-            if provider and collection:
-                # fetch ref for given provider and collection
-                logger.debug(
-                    f"Fetching external collections sources to find {provider} {collection} collection"
-                )
-                self.fetch_collections_list(provider)
-                if (
-                    collection
-                    not in self._plugins_manager.collection_to_provider_config_map.keys()
-                ):
-                    # Try to get specific collection from external provider
-                    logger.debug(
-                        "Fetching %s to find %s collection", provider, collection
-                    )
-                    self._fetch_external_collection(provider, collection)
-            if not provider:
-                # no provider or still not found -> fetch all external collections
-                logger.debug(
-                    f"Fetching external collections sources to find {collection} collection"
-                )
-                self.fetch_collections_list()
-
         preferred_provider = self.get_preferred_provider()[0]
 
         collection_exists = bool(self.get_collection(collection))
@@ -2261,13 +2234,11 @@ class EODataAccessGateway:
     def list_queryables(
         self,
         provider: Optional[str] = None,
-        fetch_providers: bool = True,
         **kwargs: Any,
     ) -> QueryablesDict:
         """Fetch the queryable properties for a given collection and/or provider.
 
         :param provider: (optional) The provider.
-        :param fetch_providers: If new collections should be fetched from the providers; default: True
         :param kwargs: additional filters for queryables (`collection` or other search arguments)
         :returns: A :class:`~eodag.api.product.queryables.QueryablesDict` containing the EODAG queryable
                   properties, associating parameters to their annotated type, and a additional_properties attribute
@@ -2284,12 +2255,6 @@ class EODataAccessGateway:
             coll = self.get_collection(
                 collection, providers=[provider] if provider else None
             )
-            if not collection and fetch_providers:
-                # fetch providers and try again
-                self.fetch_collections_list(provider)
-                coll = self.get_collection(
-                    collection, providers=[provider] if provider else None
-                )
             kwargs["collection"] = collection = coll._id if coll else collection
 
         if not provider and not collection:
@@ -2397,7 +2362,6 @@ class EODataAccessGateway:
         Attach collections_config to plugin config. This dict contains product
         type metadata that will also be stored in each product's properties.
         """
-        # TODO: parameter provider does not exists yet
         coll = self.get_collection(collection, providers=[plugin.provider])
 
         if coll:
