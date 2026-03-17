@@ -21,6 +21,7 @@ import logging
 from collections import UserList
 from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
 
+import geojson
 from shapely.geometry import GeometryCollection
 from shapely.geometry import mapping as shapely_mapping
 from shapely.geometry import shape
@@ -213,6 +214,23 @@ class SearchResult(UserList[EOProduct]):
             search_params=eodag_search_params or None,
             raise_errors=props.get("eodag:raise_errors"),
         )
+
+    @classmethod
+    def from_file(
+        cls,
+        filepath: str,
+        dag: Optional[EODataAccessGateway] = None,
+    ) -> SearchResult:
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from a geojson file
+
+        :param filepath: Path to the file containing the feature collection.
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
+        :returns: An eodag representation of a search result
+        """
+        with open(filepath, "r") as fh:
+            feature = geojson.load(fh)
+
+        return cls.from_dict(feature, dag=dag)
 
     @staticmethod
     @_deprecated(

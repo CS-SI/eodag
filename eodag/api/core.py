@@ -2101,8 +2101,7 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`
         """
-        with open(filename, "r") as fh:
-            return SearchResult.from_dict(geojson.load(fh))
+        return SearchResult.from_file(filename)
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register
@@ -2114,17 +2113,7 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`, ready for download and pagination
         """
-        products = self.deserialize(filename)
-        products._dag = self
-        for i, product in enumerate(products):
-            if product.downloader is None:
-                downloader = self._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
-                products[i].register_downloader(downloader, auth)
-
-        return products
+        return SearchResult.from_file(filename, self)
 
     def download(
         self,
