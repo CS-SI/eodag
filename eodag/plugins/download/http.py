@@ -1076,6 +1076,24 @@ class HTTPDownload(Download):
             product.filename = filename
             return product._stream.iter_content(chunk_size=64 * 1024)
 
+    def _handle_retry(self, asset_href: str, e: Exception, retries_sofar: int) -> int:
+        retries = retries_sofar
+        if retries > 2:
+            logger.error(
+                "Unexpected error at download of asset %s: %s",
+                asset_href,
+                e,
+            )
+            raise DownloadError(e)
+        else:
+            logger.warning(
+                "Retry because of unexpected error at download of asset %s: %s",
+                asset_href,
+                e,
+            )
+            retries += 1
+        return retries
+
     def _stream_download_assets(
         self,
         product: EOProduct,
@@ -1221,22 +1239,14 @@ class HTTPDownload(Download):
                         continue_requests = True
                     else:
                         # if range requests are not supported retry twice
-                        if retries > 2:
-                            logger.error(
-                                "Unexpected error at download of asset %s: %s",
-                                asset["href"],
-                                e,
-                            )
-                            raise DownloadError(e)
-                        else:
-                            logger.warning(
-                                "Retry because of unexpected error at download of asset %s: %s",
-                                asset["href"],
-                                e,
-                            )
-                            continue_requests = True
-                            partial_result = b""
-                            retries += 1
+                        continue_requests = True
+                        partial_result = b""
+                        retries = self._handle_retry(asset["href"], e, retries)
+                except requests.exceptions.ConnectionError as ce:
+                    # retry in case of connection problem
+                    continue_requests = True
+                    partial_result = b""
+                    retries = self._handle_retry(asset["href"], ce, retries)
                 except RequestException as e:
                     self._handle_asset_exception(e, asset)
 
