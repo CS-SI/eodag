@@ -46,6 +46,23 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
 
+# Runtime JSONB support detection (jsonb introduced in SQLite 3.45.0)
+_SQLITE_VERSION = tuple(int(x) for x in sqlite3.sqlite_version.split("."))
+_HAS_JSONB = _SQLITE_VERSION >= (3, 45, 0)
+
+if not _HAS_JSONB:
+    logger.info(
+        "SQLite %s does not support JSONB; falling back to text JSON (slower).",
+        sqlite3.sqlite_version,
+    )
+
+# Conditional SQL fragments
+_JSON_STORE = "jsonb(?)" if _HAS_JSONB else "json(?)"
+_JSON_EXTRACT = "jsonb_extract" if _HAS_JSONB else "json_extract"
+_CONTENT_TYPE = "JSONB" if _HAS_JSONB else "TEXT"
+_CONFIG_TYPE = "BLOB" if _HAS_JSONB else "TEXT"
+_JSON_VALID_CHECK = "json_valid(content, 4)" if _HAS_JSONB else "json_valid(content)"
+
 
 class SQLiteDatabase(Database):
     """Class representing a SQLite database."""
@@ -139,8 +156,8 @@ class SQLiteDatabase(Database):
         """Add or update collections in the database"""
 
         upserted_coll_nb = self._executemany(
-            """
-            INSERT INTO collections (content) VALUES (jsonb(?))
+            f"""
+            INSERT INTO collections (content) VALUES ({_JSON_STORE})
             ON CONFLICT(internal_id) DO UPDATE SET content=excluded.content;
             """,
             [(c,) for c in collections.values()],
@@ -161,9 +178,9 @@ class SQLiteDatabase(Database):
         ]
         if rows:
             self._executemany(
-                """
+                f"""
                 INSERT INTO providers_config (provider, collection, config, priority)
-                    VALUES (?, ?, jsonb(?), ?)
+                    VALUES (?, ?, {_JSON_STORE}, ?)
                     ON CONFLICT(provider, collection) DO UPDATE SET
                         config=excluded.config,
                         priority=excluded.priority;
@@ -384,21 +401,21 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     """Create the core collections table and FTS5 index for STAC payload and metadata."""
     cur = con.cursor()
     cur.execute(
-        """
+        f"""
         CREATE TABLE IF NOT EXISTS collections (
             key INTEGER PRIMARY KEY,
-            content JSONB NOT NULL CHECK (json_valid(content, 4)),
-            id TEXT GENERATED ALWAYS AS (jsonb_extract(content, '$.id')) STORED UNIQUE,
-            internal_id TEXT GENERATED ALWAYS AS (jsonb_extract(content, '$._id')) STORED UNIQUE,
+            content {_CONTENT_TYPE} NOT NULL CHECK ({_JSON_VALID_CHECK}),
+            id TEXT GENERATED ALWAYS AS ({_JSON_EXTRACT}(content, '$.id')) STORED UNIQUE,
+            internal_id TEXT GENERATED ALWAYS AS ({_JSON_EXTRACT}(content, '$._id')) STORED UNIQUE,
             datetime TEXT GENERATED ALWAYS AS (
-                COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][0]'), '-infinity')
+                COALESCE({_JSON_EXTRACT}(content, '$.extent.temporal.interval[0][0]'), '-infinity')
             ) STORED
                 CHECK (
                     datetime IN ('-infinity', 'infinity')
                     OR datetime(datetime) IS NOT NULL
                 ),
             end_datetime TEXT GENERATED ALWAYS AS (
-                COALESCE(jsonb_extract(content, '$.extent.temporal.interval[0][1]'), 'infinity')
+                COALESCE({_JSON_EXTRACT}(content, '$.extent.temporal.interval[0][1]'), 'infinity')
             ) STORED
                 CHECK (
                     end_datetime IN ('-infinity', 'infinity')
@@ -410,24 +427,24 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                         'type', 'Polygon',
                         'coordinates', json_array(json_array(
                             json_array(
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][0]') AS REAL),
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][1]') AS REAL)
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][1]') AS REAL)
                             ),
                             json_array(
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][2]') AS REAL),
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][1]') AS REAL)
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][1]') AS REAL)
                             ),
                             json_array(
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][2]') AS REAL),
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][3]') AS REAL)
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][3]') AS REAL)
                             ),
                             json_array(
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][0]') AS REAL),
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][3]') AS REAL)
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][3]') AS REAL)
                             ),
                             json_array(
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][0]') AS REAL),
-                                CAST(jsonb_extract(content, '$.extent.spatial.bbox[0][1]') AS REAL)
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                                CAST({_JSON_EXTRACT}(content, '$.extent.spatial.bbox[0][1]') AS REAL)
                             )
                         ))
                     )
@@ -498,11 +515,11 @@ def create_providers_config_table(con: sqlite3.Connection) -> None:
     """Create the providers configuration table in the database."""
     cur = con.cursor()
     cur.execute(
-        """
+        f"""
         CREATE TABLE IF NOT EXISTS providers_config (
             provider TEXT,
             collection TEXT,
-            config BLOB NOT NULL,
+            config {_CONFIG_TYPE} NOT NULL,
             priority INTEGER,
             PRIMARY KEY (provider, collection)
         );

@@ -72,6 +72,8 @@ class Database(ABC):
         datetime: Optional[str] = None,
         limit: Optional[int] = None,
         q: Optional[str] = None,
+        ids: Optional[list[str]] = None,
+        federation_backends: Optional[list[str]] = None,
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
         sortby: Optional[list[dict[str, str]]] = None,
