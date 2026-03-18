@@ -22,12 +22,8 @@
 # depends on numpy and ship with a pre-built version of numpy that is older than 1.15.1 (where the warning is silenced
 # exactly as below)
 """EODAG package"""
-from importlib.metadata import PackageNotFoundError, version
 
-from .api.core import EODataAccessGateway
-from .api.product import EOProduct
-from .api.search_result import SearchResult
-from .utils.logging import setup_logging
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version(__name__)
@@ -41,3 +37,27 @@ __all__ = [
     "SearchResult",
     "setup_logging",
 ]
+
+# Lazy imports (PEP 562) — avoid loading heavy dependencies on ``import eodag``
+_LAZY_IMPORTS: dict[str, tuple[str, str]] = {
+    "EODataAccessGateway": (".api.core", "EODataAccessGateway"),
+    "EOProduct": (".api.product", "EOProduct"),
+    "SearchResult": (".api.search_result", "SearchResult"),
+    "setup_logging": (".utils.logging", "setup_logging"),
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_IMPORTS:
+        from importlib import import_module
+
+        module_path, attr_name = _LAZY_IMPORTS[name]
+        module = import_module(module_path, __name__)
+        value = getattr(module, attr_name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return __all__ + ["__version__"]

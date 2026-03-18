@@ -48,13 +48,8 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
-from concurrent.futures import ThreadPoolExecutor
 
-from eodag.api.collection import CollectionsList
-from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
-from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
-from eodag.utils.logging import setup_logging
 
 if TYPE_CHECKING:
     from click import Context
@@ -310,6 +305,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
             click.echo(search_crunch.get_help(ctx))
         sys.exit(-1)
 
+    from eodag.api.core import EODataAccessGateway
+    from eodag.utils.logging import setup_logging
+
     setup_logging(verbose=ctx.obj["verbosity"])
 
     if kwargs["box"] != (None,) * 4:
@@ -442,6 +440,11 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 @click.pass_context
 def list_col(ctx: Context, **kwargs: Any) -> None:
     """Print the list of supported collections"""
+    from eodag.api.collection import CollectionsList
+    from eodag.api.core import EODataAccessGateway
+    from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
+    from eodag.utils.logging import setup_logging
+
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
@@ -517,6 +520,9 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
 @click.pass_context
 def discover_col(ctx: Context, **kwargs: Any) -> None:
     """Fetch external collections configuration and save result"""
+    from eodag.api.core import EODataAccessGateway
+    from eodag.utils.logging import setup_logging
+
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
@@ -588,6 +594,13 @@ def download(ctx: Context, **kwargs: Any) -> None:
             click.echo("Nothing to do (no search results file or stac item provided)")
             click.echo(download.get_help(ctx))
         sys.exit(1)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    from eodag.api.core import EODataAccessGateway
+    from eodag.api.search_result import SearchResult
+    from eodag.utils.logging import setup_logging
+
     setup_logging(verbose=ctx.obj["verbosity"])
     conf_file = kwargs.pop("conf")
     if conf_file:

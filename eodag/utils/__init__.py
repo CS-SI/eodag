@@ -63,31 +63,21 @@ from typing import (
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
-from pydantic import ValidationError as PydanticValidationError
-
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
     from typing_extensions import Unpack  # noqa
 
-import click
 import orjson
-import shapefile
-import shapely.wkt
-import yaml
-from jsonpath_ng import jsonpath
-from jsonpath_ng.ext import parse
-from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
-from requests import HTTPError, Response
-from shapely.geometry import Polygon, box, shape
-from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
-    from jsonpath_ng import JSONPath
+    from jsonpath_ng import JSONPath, jsonpath
+    from pydantic import ValidationError as PydanticValidationError
+    from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product._product import EOProduct
 
@@ -166,7 +156,7 @@ DEFAULT_PROJ = "EPSG:4326"
 #: default collections start date
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
 #: default geometry / whole world bounding box
-DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
+# DEFAULT_SHAPELY_GEOMETRY is lazily computed via __getattr__ to defer shapely import
 #: Online status value for ``order:status`` property
 ONLINE_STATUS = "succeeded"
 
@@ -187,6 +177,25 @@ mimetypes.add_type("application/x-grib", ".grib")
 mimetypes.add_type("application/x-grib2", ".grib2")
 # jp2 is missing on windows
 mimetypes.add_type("image/jp2", ".jp2")
+
+
+# ---------------------------------------------------------------------------
+# PEP 562 lazy module attributes
+# ---------------------------------------------------------------------------
+
+_DEFAULT_SHAPELY_GEOMETRY = None
+
+
+def __getattr__(name: str):
+    if name == "DEFAULT_SHAPELY_GEOMETRY":
+        global _DEFAULT_SHAPELY_GEOMETRY
+        if _DEFAULT_SHAPELY_GEOMETRY is None:
+            from shapely.geometry import box
+
+            _DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
+        globals()["DEFAULT_SHAPELY_GEOMETRY"] = _DEFAULT_SHAPELY_GEOMETRY
+        return _DEFAULT_SHAPELY_GEOMETRY
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
@@ -222,58 +231,6 @@ def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[...
         return wrapper
 
     return decorator
-
-
-class FloatRange(click.types.FloatParamType):
-    """A parameter that works similar to :data:`click.FLOAT` but restricts the
-    value to fit into a range. Fails if the value doesn't fit into the range.
-    """
-
-    name = "percentage"
-
-    def __init__(
-        self, min: Optional[float] = None, max: Optional[float] = None
-    ) -> None:
-        self.min = min
-        self.max = max
-
-    def convert(
-        self,
-        value: Any,
-        param: Optional[click.core.Parameter],
-        ctx: Optional[click.core.Context],
-    ) -> Any:
-        """Convert value"""
-        rv = click.types.FloatParamType.convert(self, value, param, ctx)
-        if (
-            self.min is not None
-            and rv < self.min
-            or self.max is not None
-            and rv > self.max
-        ):
-            if self.min is None:
-                self.fail(
-                    "%s is bigger than the maximum valid value %s." % (rv, self.max),
-                    param,
-                    ctx,
-                )
-            elif self.max is None:
-                self.fail(
-                    "%s is smaller than the minimum valid value %s." % (rv, self.min),
-                    param,
-                    ctx,
-                )
-            else:
-                self.fail(
-                    "%s is not in the valid range of %s to %s."
-                    % (rv, self.min, self.max),
-                    param,
-                    ctx,
-                )
-        return rv
-
-    def __repr__(self) -> str:
-        return "FloatRange(%r, %r)" % (self.min, self.max)
 
 
 def slugify(value: Any, allow_unicode: bool = False) -> str:
@@ -644,6 +601,7 @@ def jsonpath_parse_dict_items(
     """Recursively parse :class:`jsonpath_ng.JSONPath` elements in dict
 
     >>> import jsonpath_ng.ext as jsonpath
+    >>> from jsonpath_ng.ext import parse
     >>> jsonpath_parse_dict_items(
     ...     {"foo": {"bar": parse("$.a.b")}, "qux": [parse("$.c"), parse("$.c")]},
     ...     {"a":{"b":"baz"}, "c":"quux"}
@@ -928,6 +886,7 @@ def list_items_recursive_sort(config_list: list[Any]) -> list[Any]:
 def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     """Get :class:`jsonpath_ng.JSONPath` for ``$.foo.bar`` like string
 
+    >>> from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
     >>> string_to_jsonpath(None, "$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
     >>> string_to_jsonpath("$.foo.bar")
@@ -946,6 +905,8 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
     :returns: Parsed value
     """
+    from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
+
     path_str: str = args[-1]
     if JSONPATH_MATCH.match(str(path_str)) or force:
         try:
@@ -1070,6 +1031,7 @@ def parse_jsonpath(
     """Parse jsonpah in ``jsonpath_obj`` using ``values_dict``
 
     >>> import jsonpath_ng.ext as jsonpath
+    >>> from jsonpath_ng.ext import parse
     >>> parse_jsonpath(None, parse("$.foo.bar"), **{"foo": {"bar": "baz"}})
     'baz'
 
@@ -1078,6 +1040,8 @@ def parse_jsonpath(
     :param values_dict: Values used as args for parsing
     :returns: Parsed value
     """
+    from jsonpath_ng import jsonpath
+
     if isinstance(jsonpath_obj, jsonpath.Child):
         match = jsonpath_obj.find(values_dict)
         return match[0].value if len(match) == 1 else None
@@ -1118,6 +1082,11 @@ def get_geometry_from_various(
     :raises TypeError: Unexpected geometry type
     :raises ValueError: Location name is wrong or its value does not match
     """
+    import shapefile
+    import shapely.wkt
+    from shapely.geometry import Polygon, shape
+    from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
+
     geom = None
 
     if "geometry" in query_args:
@@ -1211,6 +1180,8 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry:
     if not isinstance(geom["shape"], list):
         raise TypeError("Geometry shape must be a list")
 
+    from shapely.geometry import Polygon
+
     shape: list = geom["shape"]
     polygon_args = [(p[1], p[0]) for p in shape]
     return Polygon(polygon_args)
@@ -1233,7 +1204,7 @@ def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
 
 
 def get_geometry_from_ecmwf_location(
-    location: dict[str, float]
+    location: dict[str, float],
 ) -> Optional[BaseGeometry]:
     """
     Creates a ``shapely.geometry`` from a single location.
@@ -1283,6 +1254,8 @@ class MockResponse:
     def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
+            from requests import HTTPError, Response
+
             response = Response()
             response.status_code = self.status_code
             raise HTTPError(response=response)
@@ -1338,11 +1311,15 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     :param str_to_parse: string to parse as :class:`jsonpath_ng.JSONPath`
     :returns: parsed :class:`jsonpath_ng.JSONPath`
     """
+    from jsonpath_ng.ext import parse
+
     return parse(str_to_parse)
 
 
 @functools.lru_cache()
 def _mutable_cached_yaml_load(config_path: str) -> Any:
+    import yaml
+
     with open(
         os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
     ) as fh:
@@ -1360,6 +1337,8 @@ def cached_yaml_load(config_path: str) -> dict[str, Any]:
 
 @functools.lru_cache()
 def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
+    import yaml
+
     with open(config_path, "r") as fh:
         return list(yaml.load_all(fh, Loader=yaml.Loader))
 
@@ -1743,14 +1722,14 @@ def format_pydantic_error(e: PydanticValidationError) -> str:
         return ".".join(str_loc)
 
     error_messages = [
-        f'{concat_loc_names(err["loc"])}: {err["msg"]}' if err["loc"] else err["msg"]
+        f"{concat_loc_names(err['loc'])}: {err['msg']}" if err["loc"] else err["msg"]
         for err in e.errors()
     ]
     return error_header + "; ".join(set(error_messages))
 
 
 def get_collection_dates(
-    collection_dict: dict[str, Any]
+    collection_dict: dict[str, Any],
 ) -> tuple[Optional[str], Optional[str]]:
     """Extract mission start and end dates from collection configuration.
 

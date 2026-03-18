@@ -22,8 +22,6 @@ import os
 from importlib.resources import files as res_files
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
-import orjson
-import requests
 import yaml
 import yaml.parser
 from annotated_types import Gt
@@ -758,6 +756,8 @@ def get_ext_collections_conf(
     if conf_uri.lower().startswith("http"):
         # read from remote
         try:
+            import requests
+
             response = requests.get(
                 conf_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
             )
@@ -774,6 +774,8 @@ def get_ext_collections_conf(
 
     # read from local
     try:
+        import orjson
+
         with open(conf_uri, "rb") as f:
             return orjson.loads(f.read())
     except (orjson.JSONDecodeError, FileNotFoundError) as e:
