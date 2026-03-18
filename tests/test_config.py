@@ -23,7 +23,7 @@ from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
-import yaml.parser
+import yaml
 
 from eodag.api.provider import ProvidersDict
 from eodag.config import PluginConfig
