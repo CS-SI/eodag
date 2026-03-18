@@ -74,6 +74,8 @@ class CommonStacMetadata(ItemProperties):
     )
     def format_datetime(self, value: dt):
         """format datetime properties"""
+        if value is None:
+            return None
         return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     @model_validator(mode="before")
