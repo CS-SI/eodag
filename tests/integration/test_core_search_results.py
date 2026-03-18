@@ -214,6 +214,105 @@ class TestCoreSearchResults(EODagTestCase):
             finally:
                 os.chdir(current_dir)
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch._request",
+        autospec=True,
+    )
+    def test_core_serialize_deserialize_aws_eos_results(self, mock__request):
+        """The core api must be able to serialize and deserialize a search result from aws_eos provider"""
+        self.dag.update_providers_config(
+            dict_conf={"aws_eos": {"search_auth": {"credentials": {"foo": "bar"}}}}
+        )
+        aws_eos_resp_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "awseos_search.json"
+        )
+        mock__request.return_value = mock.Mock()
+        with open(aws_eos_resp_file) as f:
+            mock__request.return_value.json.side_effect = [
+                json.load(f),
+            ]
+        prods = self.dag.search(
+            provider="aws_eos", collection="S2_MSI_L1C", raise_errors=True
+        )
+        self.assertGreater(len(prods), 0)
+
+        filepath = Path(self.tmp_home_dir.name) / "search_result.geojson"
+        self.dag.serialize(prods, filepath)
+        deserialized_search_result = self.dag.deserialize(filepath)
+        self.assertIsInstance(deserialized_search_result, SearchResult)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch._request",
+        autospec=True,
+    )
+    def test_core_serialize_deserialize_earth_search_results(self, mock__request):
+        """The core api must be able to serialize and deserialize a search result from earth_search provider"""
+        earth_search_resp_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "earth_search_search.json"
+        )
+        mock__request.return_value = mock.Mock()
+        with open(earth_search_resp_file) as f:
+            mock__request.return_value.json.side_effect = [
+                json.load(f),
+            ]
+        prods = self.dag.search(
+            provider="earth_search", collection="S2_MSI_L1C", raise_errors=True
+        )
+        self.assertGreater(len(prods), 0)
+
+        filepath = Path(self.tmp_home_dir.name) / "search_result.geojson"
+        self.dag.serialize(prods, filepath)
+        deserialized_search_result = self.dag.deserialize(filepath)
+        self.assertIsInstance(deserialized_search_result, SearchResult)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch._request",
+        autospec=True,
+    )
+    def test_core_serialize_deserialize_geodes_results(self, mock__request):
+        """The core api must be able to serialize and deserialize a search result from geodes provider"""
+        geodes_resp_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "geodes_search.json"
+        )
+        mock__request.return_value = mock.Mock()
+        with open(geodes_resp_file) as f:
+            mock__request.return_value.json.side_effect = [
+                json.load(f),
+            ]
+        prods = self.dag.search(
+            provider="geodes", collection="S2_MSI_L1C", raise_errors=True
+        )
+        self.assertGreater(len(prods), 0)
+
+        filepath = Path(self.tmp_home_dir.name) / "search_result.geojson"
+        self.dag.serialize(prods, filepath)
+        deserialized_search_result = self.dag.deserialize(filepath)
+        self.assertIsInstance(deserialized_search_result, SearchResult)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        autospec=True,
+    )
+    def test_core_serialize_deserialize_peps_results(self, mock__request):
+        """The core api must be able to serialize and deserialize a search result from peps provider"""
+        peps_resp_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "peps_search.json"
+        )
+        mock__request.return_value = mock.Mock()
+        with open(peps_resp_file) as f:
+            mock__request.return_value.json.side_effect = [
+                json.load(f),
+            ]
+        prods = self.dag.search(
+            provider="peps", collection="S2_MSI_L1C", raise_errors=True
+        )
+        self.assertGreater(len(prods), 0)
+
+        filepath = Path(self.tmp_home_dir.name) / "search_result.geojson"
+        self.dag.serialize(prods, filepath)
+        deserialized_search_result = self.dag.deserialize(filepath)
+        self.assertIsInstance(deserialized_search_result, SearchResult)
+
     def test_core_deserialize_search_results(self):
         """The core api must deserialize a search result from geojson"""
         search_results_geojson_path = os.path.join(
