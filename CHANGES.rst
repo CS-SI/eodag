@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.0.1 (2026-03-18)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Empty datetime handling in serialization (`#2095`_, `91c6709`_)
+
+.. _#2095: https://github.com/CS-SI/eodag/pull/2095
+.. _91c6709: https://github.com/CS-SI/eodag/commit/91c67092ea5da1e005c2adcb1a6fbc84d9ca1b07
+
+
 v4.0.0 (2026-03-16)
 ===================
 
