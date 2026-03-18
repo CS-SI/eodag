@@ -2074,6 +2074,8 @@ class EODataAccessGateway:
             return filename
         collections = set(p.collection for p in search_result)
         for collection in collections:
+            if collection is None:
+                continue
             collection_obj = search_result._dag.collections_config.get(
                 collection, Collection(id=collection)
             )

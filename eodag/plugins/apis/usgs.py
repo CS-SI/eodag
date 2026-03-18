@@ -325,7 +325,8 @@ class UsgsApi(Api):
         output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.collection, self.config.products[GENERIC_COLLECTION]  # type: ignore
+                product.collection or "",
+                self.config.products[GENERIC_COLLECTION],  # type: ignore
             ).get("output_extension", ".tar.gz"),
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
@@ -346,7 +347,7 @@ class UsgsApi(Api):
             raise NotAvailableError(
                 f"No USGS products found for {product.properties['id']}"
             )
-        usgs_dataset = self.config.products.get(product.collection, {}).get(
+        usgs_dataset = self.config.products.get(product.collection or "", {}).get(
             "_collection", GENERIC_COLLECTION
         )
         download_request_results = api.download_request(

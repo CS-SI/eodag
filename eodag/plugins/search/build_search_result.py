@@ -339,7 +339,7 @@ def ecmwf_format(v: str, alias: bool = True) -> str:
 
 
 def ecmwf_temporal_to_eodag(
-    params: dict[str, Any]
+    params: dict[str, Any],
 ) -> tuple[Optional[str], Optional[str]]:
     """
     Converts ECMWF temporal parameters to EODAG temporal parameters.
@@ -1282,9 +1282,9 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # backup original register_downloader to register_downloader_only
-        product.register_downloader_only = product.register_downloader
+        product.register_downloader_only = product.register_downloader  # type: ignore[attr-defined]
         # patched register_downloader that will also update properties
-        product.register_downloader = MethodType(patched_register_downloader, product)
+        product.register_downloader = MethodType(patched_register_downloader, product)  # type: ignore[method-assign]
 
         return [product]
 
@@ -1314,6 +1314,8 @@ def _check_id(product: EOProduct) -> EOProduct:
     if "ORDERABLE" in product_id:
         return product
 
+    if product.downloader is None:
+        return product
     on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
         "metadata_mapping", {}
     )

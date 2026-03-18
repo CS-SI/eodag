@@ -800,7 +800,7 @@ class HTTPDownload(Download):
                 max_workers=getattr(self.config, "max_workers", None)
             )
             try:
-                assets_values = product.assets.get_values(kwargs.get("asset"))
+                assets_values = product.assets.get_values(kwargs.get("asset") or "")
                 with executor:
                     assets_stream_list = self._stream_download_assets(
                         product,
@@ -865,7 +865,7 @@ class HTTPDownload(Download):
 
         return StreamResponse(
             content=chain(iter([first_chunk]), chunk_iterator),
-            headers=product.headers,
+            headers=getattr(product, "headers", {}),
             filename=getattr(product, "filename", None),
             size=getattr(product, "size", None),
         )
@@ -1060,17 +1060,17 @@ class HTTPDownload(Download):
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 
-            product.headers = product._stream.headers
+            product.headers = product._stream.headers  # type: ignore[attr-defined]
             filename = self._check_product_filename(product)
-            content_type = product.headers.get("Content-Type")
+            content_type = product.headers.get("Content-Type")  # type: ignore[attr-defined]
             guessed_content_type = (
                 guess_file_type(filename) if filename and not content_type else None
             )
             if guessed_content_type is not None:
-                product.headers["Content-Type"] = guessed_content_type
+                product.headers["Content-Type"] = guessed_content_type  # type: ignore[attr-defined]
 
             progress_callback.reset(total=stream_size)
-            product.size = stream_size
+            product.size = stream_size  # type: ignore[attr-defined]
 
             product.filename = filename
             return product._stream.iter_content(chunk_size=64 * 1024)
@@ -1250,7 +1250,7 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = product.assets.get_values(kwargs.get("asset"))
+        assets_values = product.assets.get_values(kwargs.get("asset") or "")
 
         assets_stream_list = self._stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
