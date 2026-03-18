@@ -27,37 +27,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import geojson
 import orjson
-import requests
-from pystac import Item
-from requests import RequestException
-from requests.auth import AuthBase
-from shapely import geometry
-from shapely.errors import ShapelyError
-
-from eodag.types.queryables import CommonStacMetadata
-from eodag.types.stac_metadata import create_stac_metadata_model
-
-try:
-    # import from eodag-cube if installed
-    from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
-        AssetsDict,
-    )
-except ImportError:
-    from ._assets import AssetsDict
-
-from eodag.api.product.drivers import DRIVERS
-from eodag.api.product.drivers.generic import GenericDriver
-from eodag.api.product.metadata_mapping import (
-    DEFAULT_GEOMETRY,
-    NOT_AVAILABLE,
-    NOT_MAPPED,
-    ONLINE_STATUS,
-    normalize_bands,
-)
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     GENERIC_STAC_PROVIDER,
     STAC_VERSION,
@@ -67,7 +39,6 @@ from eodag.utils import (
     _deprecated,
     deepcopy,
     format_string,
-    get_geometry_from_various,
 )
 from eodag.utils.deserialize import (
     _import_stac_item_from_eodag_server,
@@ -75,13 +46,16 @@ from eodag.utils.deserialize import (
     _import_stac_item_from_unknown_provider,
 )
 from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
-from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
+    import requests
     from concurrent.futures import ThreadPoolExecutor
+    from pystac import Item
+    from requests.auth import AuthBase
     from shapely.geometry.base import BaseGeometry
 
     from eodag import EODataAccessGateway
+    from eodag.api.product._assets import AssetsDict
     from eodag.api.product.drivers.base import DatasetDriver
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
@@ -89,6 +63,18 @@ if TYPE_CHECKING:
     from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
+
+
+def _get_assets_dict_cls():
+    """Get AssetsDict class, preferring eodag-cube if installed."""
+    try:
+        from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
+            AssetsDict,
+        )
+    except ImportError:
+        from eodag.api.product._assets import AssetsDict
+    return AssetsDict
+
 
 logger = logging.getLogger("eodag.product")
 
@@ -146,6 +132,15 @@ class EOProduct:
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
+        from shapely.errors import ShapelyError
+
+        from eodag.api.product.metadata_mapping import (
+            DEFAULT_GEOMETRY,
+            NOT_AVAILABLE,
+            NOT_MAPPED,
+        )
+        from eodag.utils import DEFAULT_SHAPELY_GEOMETRY, get_geometry_from_various
+
         self.provider = provider
         self.collection = (
             kwargs.get("collection")
@@ -153,6 +148,7 @@ class EOProduct:
             or properties.get("_collection")
         )
         self.location = self.remote_location = properties.get("eodag:download_link", "")
+        AssetsDict = _get_assets_dict_cls()
         self.assets = AssetsDict(self)
         self.properties = {
             key: value
@@ -227,6 +223,9 @@ class EOProduct:
         :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
         """
+        from eodag.types.queryables import CommonStacMetadata
+        from eodag.types.stac_metadata import create_stac_metadata_model
+
         search_intersection = None
         if self.search_intersection is not None:
             search_intersection = orjson.loads(
@@ -321,6 +320,8 @@ class EOProduct:
         :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
         :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a :class:`pystac.Item`
         """
+        from pystac import Item
+
         prod_dict = self.as_dict(skip_invalid=skip_invalid)
         return Item.from_dict(prod_dict)
 
@@ -429,6 +430,8 @@ class EOProduct:
         """Normalize bands in properties and each asset
         from STAC 1.0 (``eo:bands`` / ``raster:bands``) to STAC 1.1 (``bands``), in place.
         """
+        from eodag.api.product.metadata_mapping import normalize_bands
+
         normalize_bands(self.properties)
         for key in self.assets:
             normalize_bands(self.assets[key])
@@ -452,6 +455,8 @@ class EOProduct:
         :param plugins_manager: The plugins manager instance to use for retrieving
                                 the download and authentication plugins.
         """
+        from eodag.api.product.metadata_mapping import ONLINE_STATUS
+
         download_plugin = plugins_manager.get_download_plugin(self)
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
@@ -689,6 +694,8 @@ class EOProduct:
                         HTTP request if the resource requires authentication.
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
+        import requests
+
         with requests.get(
             self.properties["eodag:quicklook"],
             stream=True,
@@ -801,6 +808,9 @@ class EOProduct:
                 if self.downloader_auth is not None
                 else None
             )
+            from requests import RequestException
+            from requests.auth import AuthBase  # noqa: F811
+
             if not isinstance(auth, AuthBase):
                 auth = None
             # Read the ssl_verify parameter used on the provider config
@@ -837,8 +847,10 @@ class EOProduct:
 
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
-        for driver_conf in DRIVERS:
+        from eodag.api.product.drivers import DRIVERS
+        from eodag.api.product.drivers.generic import GenericDriver
 
+        for driver_conf in DRIVERS:
             # Select a driver if all criterias match
             match = True
             for criteria in driver_conf["criteria"]:
@@ -851,6 +863,8 @@ class EOProduct:
         return GenericDriver()
 
     def _repr_html_(self):
+        from eodag.utils.repr import dict_to_html_table
+
         thumbnail = self.properties.get("eodag:thumbnail") or self.properties.get(
             "eodag:quicklook"
         )

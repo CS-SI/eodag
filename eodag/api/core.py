@@ -83,7 +83,6 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
-from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -2377,6 +2376,8 @@ class EODataAccessGateway:
         :param provider: (optional) The EODAG provider to which the STAC items belong, if known.
         :returns: A SearchResult containing the imported STAC items
         """
+        from eodag.utils.stac_reader import fetch_stac_items
+
         json_items = []
         for item_url in items_urls:
             json_items.extend(fetch_stac_items(item_url))
