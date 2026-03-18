@@ -60,7 +60,6 @@ if not _HAS_JSONB:
 _JSON_STORE = "jsonb(?)" if _HAS_JSONB else "json(?)"
 _JSON_EXTRACT = "jsonb_extract" if _HAS_JSONB else "json_extract"
 _CONTENT_TYPE = "JSONB" if _HAS_JSONB else "TEXT"
-_CONFIG_TYPE = "BLOB" if _HAS_JSONB else "TEXT"
 _JSON_VALID_CHECK = "json_valid(content, 4)" if _HAS_JSONB else "json_valid(content)"
 
 
@@ -85,7 +84,8 @@ class SQLiteDatabase(Database):
         register_custom_functions(self._con)
 
         create_collections_table(self._con)
-        create_providers_config_table(self._con)
+        create_collections_config_table(self._con)
+        create_federation_backends_table(self._con)
 
     def close(self) -> None:
         """Close the connection to the database."""
@@ -511,15 +511,15 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     con.commit()
 
 
-def create_providers_config_table(con: sqlite3.Connection) -> None:
-    """Create the providers configuration table in the database."""
+def create_collections_config_table(con: sqlite3.Connection) -> None:
+    """Create the collections configuration table in the database."""
     cur = con.cursor()
     cur.execute(
         f"""
-        CREATE TABLE IF NOT EXISTS providers_config (
+        CREATE TABLE IF NOT EXISTS collections_config (
             provider TEXT,
             collection TEXT,
-            config {_CONFIG_TYPE} NOT NULL,
+            config {_CONTENT_TYPE} NOT NULL,
             priority INTEGER,
             PRIMARY KEY (provider, collection)
         );
@@ -650,3 +650,39 @@ def _stac_sortby_to_order_by(sortby: list[dict[str, str]]) -> list[str]:
         clauses.append(f"{COLLECTIONS_SORTABLES[field]} {direction.upper()}")
 
     return clauses
+
+
+def create_federation_backends_table(con: sqlite3.Connection) -> None:
+    """Create the federation backends table in the database."""
+    cur = con.cursor()
+
+    # Into config goes
+    # search:
+    #     xxx
+    # download:
+    #     xxx
+    # api:
+    #     xxx
+    # auth:
+    #     xxx
+    # search_auth:
+    #     xxx
+
+    # Into metadata goes
+    # description
+    # url
+    # last_fetch
+
+    cur.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS federation_backends (
+            key PRIMARY KEY,
+            id TEXT UNIQUE,
+            config {_CONTENT_TYPE} NOT NULL,
+            priority INTEGER NOT NULL,
+            metadata {_CONTENT_TYPE},
+            enabled BOOLEAN NOT NULL DEFAULT TRUE
+        );
+        """,
+    )
+    con.commit()
