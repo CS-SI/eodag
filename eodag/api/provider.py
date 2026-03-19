@@ -90,7 +90,7 @@ class ProviderConfig(yaml.YAMLObject):
     url: str
     api: PluginConfig
     search: PluginConfig
-    products: dict[str, Any]
+    products: dict[str, dict[str, Any]]
     download: PluginConfig
     auth: PluginConfig
     search_auth: PluginConfig
