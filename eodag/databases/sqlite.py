@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.provider import ProviderConfig
+    from eodag.config import CollectionProviderConfig, FederationBackendConfig
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
 
@@ -77,14 +77,19 @@ class SQLiteDatabase(Database):
         )
         self._con.row_factory = sqlite3.Row
 
+        # register adapters and converters
         sqlite3.register_adapter(Collection, _adapt_collection)
         # set the key "collection_dict" to convert SQLite bytes values to a dictionary
         sqlite3.register_converter("collection_dict", _convert_collection)
 
+        sqlite3.register_adapter(dict, _adapt_dict)
+        # set the key "dict" to convert SQLite bytes values to a dictionary
+        sqlite3.register_converter("dict", _convert_dict)
+
         register_custom_functions(self._con)
 
         create_collections_table(self._con)
-        create_collections_config_table(self._con)
+        create_collections_federation_backends_table(self._con)
         create_federation_backends_table(self._con)
 
     def close(self) -> None:
@@ -129,7 +134,7 @@ class SQLiteDatabase(Database):
             raise e
 
     def delete_collections(self, collection_ids: list[str]) -> None:
-        """Remove collections and their provider configs from the database.
+        """Remove collections and their federation backend configs from the database.
 
         Matches against both ``id`` and ``internal_id`` columns to handle aliases.
         """
@@ -139,10 +144,11 @@ class SQLiteDatabase(Database):
         placeholders = ", ".join("?" * len(collection_ids))
         params = tuple(collection_ids)
         match_clause = f"id IN ({placeholders}) OR internal_id IN ({placeholders})"
-        # Delete provider configs using internal_id lookup (providers_config.collection
+        # Delete federation backend configs using internal_id lookup
+        # (collections_federation_backends.collection_id
         # stores the internal id, not the alias)
         self._execute(
-            f"DELETE FROM providers_config WHERE collection IN "
+            f"DELETE FROM collections_federation_backends WHERE collection IN "
             f"(SELECT internal_id FROM collections WHERE {match_clause})",
             params + params,
         )
@@ -169,29 +175,82 @@ class SQLiteDatabase(Database):
             msg = f"{upserted_coll_nb} collection(s) have been updated or added to the database"
             logger.debug(msg)
 
-    def upsert_providers_config(self, providers_config: list[ProviderConfig]) -> None:
-        """Add or update providers configurations in the database"""
-        rows = [
-            (p_config.name, coll, coll_config, p_config.priority)
-            for p_config in providers_config
-            for coll, coll_config in p_config.products.items()
-        ]
+    def upsert_federation_backends(
+        self, fb_configs: list[FederationBackendConfig]
+    ) -> None:
+        """
+        Add or update collection specific api or search and download
+        plugins config for federation backends in the database
+        """
+        rows = []
+        for fb_config in fb_configs:
+            rows.append(
+                (
+                    fb_config.name,
+                    fb_config.plugins_config,
+                    fb_config.priority,
+                    fb_config.metadata,
+                    fb_config.enabled,
+                )
+            )
+
         if rows:
-            self._executemany(
+            upserted_coll_nb = self._executemany(
                 f"""
-                INSERT INTO providers_config (provider, collection, config, priority)
-                    VALUES (?, ?, {_JSON_STORE}, ?)
-                    ON CONFLICT(provider, collection) DO UPDATE SET
-                        config=excluded.config,
-                        priority=excluded.priority;
+                INSERT INTO federation_backends (id, plugins_config, priority, metadata, enabled)
+                    VALUES (?, {_JSON_STORE}, ?, {_JSON_STORE}, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        plugins_config=excluded.plugins_config,
+                        priority=excluded.priority,
+                        priority=excluded.metadata,
+                        priority=excluded.enabled
                 """,
                 rows,
-            )
+            ).rowcount
             self._con.commit()
 
-        # free memory taken by "products" in providers config
-        for p_config in providers_config:
-            p_config.__dict__["products"] = {}
+            if upserted_coll_nb > 0:
+                msg = (
+                    f"{upserted_coll_nb} federation backend configuration(s) "
+                    "have been updated or added to the database"
+                )
+                logger.debug(msg)
+
+    def upsert_collections_federation_backends(
+        self, coll_fb_configs: list[CollectionProviderConfig]
+    ) -> None:
+        """
+        Add or update collection specific api or search and download
+        plugins config for federation backends in the database
+        """
+        rows = []
+        for coll_fb_config in coll_fb_configs:
+            rows.append(
+                (
+                    coll_fb_config.provider,
+                    coll_fb_config.id,
+                    coll_fb_config.plugins_config,
+                )
+            )
+
+        if rows:
+            upserted_coll_nb = self._executemany(
+                f"""
+                INSERT INTO collections_federation_backends (collection_id, federation_backend_name, plugins_config)
+                    VALUES (?, ?, {_JSON_STORE})
+                    ON CONFLICT(collection_id, federation_backend_name) DO UPDATE SET
+                        plugins_config=excluded.plugins_config
+                """,
+                rows,
+            ).rowcount
+            self._con.commit()
+
+            if upserted_coll_nb > 0:
+                msg = (
+                    f"{upserted_coll_nb} collection specific configuration(s) for "
+                    "federation backends have been updated or added to the database"
+                )
+                logger.debug(msg)
 
     def collections_search(
         self,
@@ -268,18 +327,92 @@ class SQLiteDatabase(Database):
 
         return collections_list, number_matched
 
+    def get_collections(self, federation_backend_name: str) -> list[str]:
+        """
+        Get the list of collections of the given federation backend from the database
+        """
+        sql = "SELECT collection_id FROM collections_federation_backends WHERE federation_backend_name = ?;"
+
+        collections: list[str] = [
+            row["collection_id"]
+            for row in self._execute(sql, (federation_backend_name,)).fetchall()
+        ]
+
+        return collections
+
+    def get_federation_backends(
+        self, federation_backend_ids: Optional[list[str]] = None
+    ) -> dict[str, dict[str, Any]]:
+        """
+        Get federation backends from the database
+        """
+        where: str = ""
+        params: list[str] = []
+
+        if federation_backend_ids:
+            fb_placeholders = ", ".join("?" * len(federation_backend_ids))
+            where = f" WHERE id IN ({fb_placeholders})"
+            params = federation_backend_ids
+
+        sql = (
+            'SELECT id, json(plugins_config) AS "plugins_config [dict]", '
+            'priority, json(metadata) AS "metadata [dict]", enabled '
+            f"FROM federation_backends{where};"
+        )
+
+        fb_configs: dict[str, dict[str, dict[str, Any]]] = {}
+        for row in self._execute(sql, tuple(params) or None).fetchall():
+            fb_id = row["id"]
+            fb_configs[fb_id] = {
+                "plugins_config": row["plugins_config"],
+                "priority": row["priority"],
+                "metadata": row["metadata"],
+                "enabled": row["enabled"],
+            }
+
+        return fb_configs
+
+    def get_collection_federation_backends(
+        self, collection: str, federation_backend_ids: Optional[list[str]] = None
+    ) -> dict[str, dict[str, dict[str, Any]]]:
+        """
+        Get collection specific api or search and download
+        plugins config for federation backends from the database
+        """
+        where_parts: list[str] = ["collection_id = ?"]
+        params: list[str] = [collection]
+
+        if federation_backend_ids:
+            fb_placeholders = ", ".join("?" * len(federation_backend_ids))
+            where_parts.append(f"federation_backend_name IN ({fb_placeholders})")
+            params.extend(federation_backend_ids)
+
+        full_where = " AND ".join(where_parts)
+
+        sql = (
+            'SELECT federation_backend_name, json(plugins_config) AS "plugins_config [dict]" '
+            f"FROM collections_federation_backends WHERE {full_where}"
+        )
+
+        coll_fb_configs: dict[str, dict[str, dict[str, Any]]] = {}
+        for row in self._execute(sql, tuple(params)).fetchall():
+            fb_id = row["federation_backend_name"]
+            coll_fb_configs[fb_id] = row["plugins_config"]
+
+        return coll_fb_configs
+
 
 def _adapt_collection(collection: Collection) -> str:
-    """An adapter to automatically convert from a ``Collection``
-    instance to an SQLite-compatible type when injected to queries"""
+    """An adapter to automatically convert from a ``Collection`` instance
+    to an SQLite-compatible type (here a string) when injected to queries"""
     data = collection.model_dump(mode="json")
     data["_id"] = collection._id
     return orjson.dumps(data).decode()
 
 
 def _convert_collection(coll_bytes: bytes) -> dict[str, Any]:
-    """A converter to convert from SQLite bytes values of a collection to a dictionary
-    of this collection when called in queries by its key wrapped in square brackets.
+    """A converter to convert from SQLite bytes values of a collection json string to a
+    dictionary of this collection when called in queries by its key wrapped in square brackets.
     Its key is set during its registration.
 
     Remaps ``_id`` (internal id) back to ``id`` so that
@@ -290,6 +423,20 @@ def _convert_collection(coll_bytes: bytes) -> dict[str, Any]:
     if "_id" in data:
         data["id"] = data.pop("_id")
     return data
+
+
+def _adapt_dict(data: dict[str, Any]) -> str:
+    """An adapter to automatically convert from a dictionary to an
+    SQLite-compatible type (here a string) when injected to queries"""
+    return orjson.dumps(data).decode()
+
+
+def _convert_dict(dict_bytes: bytes) -> dict[str, Any]:
+    """A converter to convert from SQLite bytes values of a json string to
+    a dictionary when called in queries by its key wrapped in square brackets.
+    Its key is set during its registration.
+    """
+    return orjson.loads(dict_bytes)
 
 
 def _strip_accents(text: str | None) -> str | None:
@@ -511,17 +658,16 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     con.commit()
 
 
-def create_collections_config_table(con: sqlite3.Connection) -> None:
-    """Create the collections configuration table in the database."""
+def create_collections_federation_backends_table(con: sqlite3.Connection) -> None:
+    """Create the federation backends collections configuration table in the database."""
     cur = con.cursor()
     cur.execute(
         f"""
-        CREATE TABLE IF NOT EXISTS collections_config (
-            provider TEXT,
-            collection TEXT,
-            config {_CONTENT_TYPE} NOT NULL,
-            priority INTEGER,
-            PRIMARY KEY (provider, collection)
+        CREATE TABLE IF NOT EXISTS collections_federation_backends (
+            collection_id TEXT,
+            federation_backend_name TEXT,
+            plugins_config {_CONTENT_TYPE} NOT NULL,
+            PRIMARY KEY (collection_id, federation_backend_name)
         );
         """,
     )
@@ -678,7 +824,7 @@ def create_federation_backends_table(con: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS federation_backends (
             key PRIMARY KEY,
             id TEXT UNIQUE,
-            config {_CONTENT_TYPE} NOT NULL,
+            plugins_config {_CONTENT_TYPE} NOT NULL,
             priority INTEGER NOT NULL,
             metadata {_CONTENT_TYPE},
             enabled BOOLEAN NOT NULL DEFAULT TRUE
