@@ -33,6 +33,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "attrs",
     "annotated-types",
     "boto3",
     "botocore",
