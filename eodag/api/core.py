@@ -51,7 +51,9 @@ from eodag.config import (
     ensure_cfg_dir_exists,
     ensure_locations_config_exists,
     ensure_user_config_exists,
+    get_collections_providers_config,
     get_ext_collections_conf,
+    get_federation_backends_config,
     load_locations_config,
     load_provider_configs,
 )
@@ -179,7 +181,7 @@ class EODataAccessGateway:
             str(self.settings.collections_cfg_file)
         ).source
 
-        collections_dict = CollectionsDict.from_config(collections_config_dict)
+        collections_dict = CollectionsDict.from_configs(collections_config_dict)
         self.db.upsert_collections(collections_dict)
 
         self._providers = ProvidersDict.from_configs(
@@ -197,6 +199,18 @@ class EODataAccessGateway:
 
         # Environment overrides still apply to providers
         self._providers.update_from_env()
+
+        # add providers config
+        provider_configs = get_federation_backends_config(
+            [provider.config for provider in self._providers.values()]
+        )
+        self.db.upsert_federation_backends(provider_configs)
+
+        # add collections providers config
+        coll_p_configs = get_collections_providers_config(
+            [provider.config for provider in self._providers.values()]
+        )
+        self.db.upsert_collections_federation_backends(coll_p_configs)
 
         self._bulk_sync_collections()
 

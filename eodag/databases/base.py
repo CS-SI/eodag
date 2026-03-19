@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.collection import CollectionsDict
-    from eodag.api.provider import ProviderConfig
+    from eodag.config import CollectionProviderConfig, FederationBackendConfig
 
 
 class Database(ABC):
@@ -48,22 +48,34 @@ class Database(ABC):
     @abstractmethod
     def close(self) -> None:
         """Close the database connection."""
-        pass
+        ...
 
     @abstractmethod
     def delete_collections(self, collection_ids: list[str]) -> None:
         """Delete collections from the database by their IDs or aliases."""
-        pass
+        ...
 
     @abstractmethod
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
-        pass
+        ...
 
     @abstractmethod
-    def upsert_providers_config(self, providers_config: list[ProviderConfig]) -> None:
+    def upsert_federation_backends(
+        self, fb_configs: list[FederationBackendConfig]
+    ) -> None:
+        """
+        Add or update collection specific api or search and download
+        plugins config for federation backends in the database
+        """
+        ...
+
+    @abstractmethod
+    def upsert_collections_federation_backends(
+        self, coll_fb_configs: list[CollectionProviderConfig]
+    ) -> None:
         """Add or update providers configurations in the database"""
-        pass
+        ...
 
     @abstractmethod
     def collections_search(
@@ -81,4 +93,28 @@ class Database(ABC):
         """
         :returns: A tuple of (returned collections as dictionaries, total number matched).
         """
-        pass
+        ...
+
+    @abstractmethod
+    def get_collections(self, federation_backend_id: str) -> list[str]:
+        """
+        Get the list of collections of the given federation backend from the database
+        """
+        ...
+
+    @abstractmethod
+    def get_federation_backends(
+        self, federation_backend_ids: Optional[list[str]] = None
+    ) -> dict[str, dict[str, Any]]:
+        """
+        Get federation backends from the database
+        """
+
+    @abstractmethod
+    def get_collection_federation_backends(
+        self, collection: str, provider_ids: Optional[list[str]] = None
+    ) -> dict[str, dict[str, dict[str, Any]]]:
+        """
+        :returns: A dict with given providers as keys and a dict of configuration of collections as values
+        """
+        ...
