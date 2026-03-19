@@ -516,8 +516,8 @@ def update_assets_from_s3(
     s3_endpoint: Optional[str] = None,
     content_url: Optional[str] = None,
 ) -> None:
-    """Update ``EOProduct.assets`` using content listed in its ``remote_location`` or given
-    ``content_url``.
+    """Update ``EOProduct.assets`` using content listed in its ``product.assets["downloadlink"].remote_location``
+    or given ``content_url``.
 
     If url points to a zipped archive, its content will also be be listed.
 
@@ -525,11 +525,13 @@ def update_assets_from_s3(
     :param auth: Authentication plugin
     :param s3_endpoint: s3 endpoint if not hosted on AWS
     :param content_url: s3 URL pointing to the content that must be listed (defaults to
-                        ``product.remote_location`` if empty)
+                        ``product.assets['downloadlink'].remote_location`` if empty)
     """
 
+    if content_url is None and "download_link" in product.assets:
+        content_url = product.assets["download_link"].remote_location
     if content_url is None:
-        content_url = product.remote_location
+        return None
 
     bucket, prefix = get_bucket_name_and_prefix(content_url)
 
@@ -541,7 +543,6 @@ def update_assets_from_s3(
 
         logger.debug("Listing assets in %s", prefix)
         s3_client = auth.get_s3_client()
-
         if prefix.endswith(".zip"):
             # List prefix zip content
             assets_urls = [
@@ -562,18 +563,13 @@ def update_assets_from_s3(
             key, roles = product.driver.guess_asset_key_and_roles(
                 out_of_zip_url, product
             )
-
-            if key and key not in product.assets:
+            if key is not None:
                 product.assets[key] = {
                     "title": key,  # Normalize title with key
                     "roles": roles,
                     "href": asset_url,
+                    "type": guess_file_type(asset_url),
                 }
-                if mime_type := guess_file_type(asset_url):
-                    product.assets[key]["type"] = mime_type
-
-        # sort assets
-        product.assets.data = dict(sorted(product.assets.data.items()))
 
         # update driver
         product.driver = product.get_driver()
