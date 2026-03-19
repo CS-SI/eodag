@@ -62,6 +62,16 @@ _JSON_EXTRACT = "jsonb_extract" if _HAS_JSONB else "json_extract"
 _CONTENT_TYPE = "JSONB" if _HAS_JSONB else "TEXT"
 _JSON_VALID_CHECK = "json_valid(content, 4)" if _HAS_JSONB else "json_valid(content)"
 
+# SQLite has a compile-time variable limit (often 999).
+# Keep headroom when building batched parameterised queries.
+_SQLITE_VAR_CHUNK = 500
+
+
+def _chunks(seq: list[str], size: int) -> Iterable[list[str]]:
+    """Yield successive *size*-length slices from *seq*."""
+    for i in range(0, len(seq), size):
+        yield seq[i : i + size]
+
 
 class SQLiteDatabase(Database):
     """Class representing a SQLite database."""
@@ -182,75 +192,84 @@ class SQLiteDatabase(Database):
         Add or update collection specific api or search and download
         plugins config for federation backends in the database
         """
-        rows = []
-        for fb_config in fb_configs:
-            rows.append(
-                (
-                    fb_config.name,
-                    fb_config.plugins_config,
-                    fb_config.priority,
-                    fb_config.metadata,
-                    fb_config.enabled,
-                )
+        if not fb_configs:
+            return
+
+        cur = self._executemany(
+            f"""
+            INSERT INTO federation_backends (id, plugins_config, priority, metadata, enabled)
+            VALUES (?, {_JSON_STORE}, ?, {_JSON_STORE}, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                plugins_config = excluded.plugins_config,
+                priority       = excluded.priority,
+                metadata       = excluded.metadata,
+                enabled        = excluded.enabled
+            """,
+            (
+                (fb.name, fb.plugins_config, fb.priority, fb.metadata, fb.enabled)
+                for fb in fb_configs
+            ),
+        )
+        self._con.commit()
+
+        if cur.rowcount > 0:
+            logger.debug(
+                "%s federation backend configuration(s) have been updated or added "
+                "to the database",
+                cur.rowcount,
             )
-
-        if rows:
-            upserted_coll_nb = self._executemany(
-                f"""
-                INSERT INTO federation_backends (id, plugins_config, priority, metadata, enabled)
-                    VALUES (?, {_JSON_STORE}, ?, {_JSON_STORE}, ?)
-                    ON CONFLICT(id) DO UPDATE SET
-                        plugins_config=excluded.plugins_config,
-                        priority=excluded.priority,
-                        priority=excluded.metadata,
-                        priority=excluded.enabled
-                """,
-                rows,
-            ).rowcount
-            self._con.commit()
-
-            if upserted_coll_nb > 0:
-                msg = (
-                    f"{upserted_coll_nb} federation backend configuration(s) "
-                    "have been updated or added to the database"
-                )
-                logger.debug(msg)
 
     def upsert_collections_federation_backends(
         self, coll_fb_configs: list[CollectionProviderConfig]
     ) -> None:
         """
-        Add or update collection specific api or search and download
-        plugins config for federation backends in the database
+        Upsert collection-specific federation backend configs, then refresh
+        the denormalized ``federation_backends`` column on affected collections.
         """
-        rows = []
-        for coll_fb_config in coll_fb_configs:
-            rows.append(
-                (
-                    coll_fb_config.provider,
-                    coll_fb_config.id,
-                    coll_fb_config.plugins_config,
-                )
-            )
+        if not coll_fb_configs:
+            return
 
-        if rows:
-            upserted_coll_nb = self._executemany(
+        rows = [(cfg.id, cfg.provider, cfg.plugins_config) for cfg in coll_fb_configs]
+        affected_ids = sorted({cid for cid, _, _ in rows})
+
+        with self._con:
+            self._executemany(
                 f"""
-                INSERT INTO collections_federation_backends (collection_id, federation_backend_name, plugins_config)
-                    VALUES (?, ?, {_JSON_STORE})
-                    ON CONFLICT(collection_id, federation_backend_name) DO UPDATE SET
-                        plugins_config=excluded.plugins_config
+                INSERT INTO collections_federation_backends
+                    (collection_id, federation_backend_name, plugins_config)
+                VALUES (?, ?, {_JSON_STORE})
+                ON CONFLICT(collection_id, federation_backend_name) DO UPDATE SET
+                    plugins_config = excluded.plugins_config
                 """,
                 rows,
-            ).rowcount
-            self._con.commit()
+            )
 
-            if upserted_coll_nb > 0:
-                msg = (
-                    f"{upserted_coll_nb} collection specific configuration(s) for "
-                    "federation backends have been updated or added to the database"
+            for batch in _chunks(affected_ids, _SQLITE_VAR_CHUNK):
+                values_clause = ", ".join(["(?)"] * len(batch))
+                self._execute(
+                    f"""
+                    WITH affected(cid) AS (VALUES {values_clause})
+                    UPDATE collections
+                    SET federation_backends = (
+                        SELECT COALESCE(json_group_array(fb_name), json('[]'))
+                        FROM (
+                            SELECT federation_backend_name AS fb_name
+                            FROM collections_federation_backends
+                            WHERE collection_id = collections.internal_id
+                            ORDER BY federation_backend_name
+                        )
+                    )
+                    WHERE internal_id IN (SELECT cid FROM affected)
+                    """,
+                    tuple(batch),
                 )
-                logger.debug(msg)
+
+        logger.debug(
+            "Upserted %d collection-provider config(s); "
+            "refreshed federation_backends for %d collection(s)",
+            len(rows),
+            len(affected_ids),
+        )
 
     def collections_search(
         self,
@@ -468,24 +487,6 @@ def _st_makeenvelope(xmin: float, ymin: float, xmax: float, ymax: float) -> str:
     ).decode()
 
 
-def _make_array_func(
-    predicate: Callable[[set[Any], set[Any]], bool],
-) -> Callable[[str | None, str | None], int | None]:
-    """Create an array comparison function for SQLite registration.
-
-    Both arguments are JSON array strings.
-    """
-
-    def func(left_json: str | None, right_json: str | None) -> int | None:
-        if left_json is None or right_json is None:
-            return None
-        left = set(orjson.loads(left_json))
-        right = set(orjson.loads(right_json))
-        return int(predicate(left, right))
-
-    return func
-
-
 def _make_spatial_func(
     method_name: str,
 ) -> Callable[[str | None, str | None], int | None]:
@@ -528,15 +529,6 @@ def register_custom_functions(con: sqlite3.Connection) -> None:
         ("st_crosses", "crosses"),
     ]:
         con.create_function(sql_name, 2, _make_spatial_func(shapely_method))
-
-    # Array predicates – rewritten from Postgres @>, <@, @@, = ARRAY[]
-    for func_name, predicate in [
-        ("a_contains", lambda a, b: b.issubset(a)),
-        ("a_containedby", lambda a, b: a.issubset(b)),
-        ("a_equals", lambda a, b: a == b),
-        ("a_overlaps", lambda a, b: bool(a & b)),
-    ]:
-        con.create_function(func_name, 2, _make_array_func(predicate))
 
     # Integer division – cql2 emits div(a, b)
     con.create_function(
@@ -596,9 +588,70 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                         ))
                     )
                 END
-            ) STORED
+            ) STORED,
+            federation_backends TEXT
         );
         """
+    )
+
+    # R-tree spatial index on collection bounding boxes
+    cur.execute(
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS collections_rtree USING rtree(
+            id,
+            minx, maxx,
+            miny, maxy
+        );
+        """
+    )
+
+    # Triggers to keep R-tree in sync with collections table
+    cur.execute(
+        """
+        CREATE TRIGGER IF NOT EXISTS collections_rtree_ai AFTER INSERT ON collections
+        WHEN json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array'
+        BEGIN
+            INSERT INTO collections_rtree (id, minx, maxx, miny, maxy) VALUES (
+                NEW.key,
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][1]') AS REAL),
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL)
+            );
+        END;
+        """
+    )
+    cur.execute(
+        """
+        CREATE TRIGGER IF NOT EXISTS collections_rtree_ad AFTER DELETE ON collections
+        BEGIN
+            DELETE FROM collections_rtree WHERE id = OLD.key;
+        END;
+        """
+    )
+    cur.execute(
+        """
+        CREATE TRIGGER IF NOT EXISTS collections_rtree_au AFTER UPDATE OF content ON collections
+        BEGIN
+            DELETE FROM collections_rtree WHERE id = OLD.key;
+            INSERT INTO collections_rtree (id, minx, maxx, miny, maxy)
+            SELECT
+                NEW.key,
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][0]') AS REAL),
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][2]') AS REAL),
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][1]') AS REAL),
+                CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL)
+            WHERE json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array';
+        END;
+        """
+    )
+
+    # B-tree indexes on temporal columns for range queries
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_collections_datetime ON collections (datetime);"
+    )
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_collections_end_datetime ON collections (end_datetime);"
     )
 
     # FTS5 virtual table for full-text search on title, description, keywords
@@ -671,6 +724,12 @@ def create_collections_federation_backends_table(con: sqlite3.Connection) -> Non
         );
         """,
     )
+    cur.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_cfb_backend_name
+        ON collections_federation_backends (federation_backend_name);
+        """
+    )
     con.commit()
 
 
@@ -708,11 +767,8 @@ def _stac_search_to_where(
     if federation_backends:
         cql2_conditions.append(
             {
-                "op": "in",
-                "args": [
-                    {"property": "federation:backends"},
-                    federation_backends,
-                ],
+                "op": "a_overlaps",
+                "args": [{"property": "federation_backends"}, federation_backends],
             }
         )
 
