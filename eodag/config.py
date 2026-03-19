@@ -27,6 +27,7 @@ import requests
 import yaml
 import yaml.parser
 from annotated_types import Gt
+from attrs import define, field
 from jsonpath_ng import JSONPath
 from typing_extensions import TypedDict
 
@@ -668,6 +669,27 @@ class PluginConfig(yaml.YAMLObject):
         return False
 
 
+@define
+class CollectionProviderConfig:
+    """A class representing a collection specific configuration for the given provider"""
+
+    # internal id of the collection
+    id: str = field()
+    provider: str = field()
+    plugins_config: dict[str, dict[str, Any]] = field()
+
+
+@define
+class FederationBackendConfig:
+    """A class representing the configuration common to all collections of the given provider"""
+
+    name: str = field()
+    plugins_config: dict[str, dict[str, Any]] = field()
+    priority: int = field()
+    metadata: dict[str, Any] = field()
+    enabled: bool = field(default=True)
+
+
 def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     """Checks if credentials are set for this Authentication plugin configuration
 
@@ -748,6 +770,85 @@ def load_stac_provider_config() -> dict[str, Any]:
     return SimpleYamlProxyConfig(
         str(res_files("eodag") / "resources" / "stac_provider.yml")
     ).source
+
+
+def get_collections_providers_config(
+    providers_config: list[ProviderConfig],
+) -> list[CollectionProviderConfig]:
+    """
+    Get collection specific api or search and download plugins config for given providers.
+    Free memory of providers configuration by removing their attributes "products" after using them
+    """
+    coll_p_configs = []
+    for p_config in providers_config:
+        p_api_config = getattr(p_config, "api", None)
+
+        for coll, p_coll_config in p_config.products.copy().items():
+            del p_config.products[coll]
+
+            if p_api_config:
+                full_coll_p_config = {"api": p_coll_config}
+            else:
+                full_coll_p_config = {"search": p_coll_config}
+                if coll_download_config := getattr(
+                    p_config.download, "products", {}
+                ).pop(coll, None):
+                    full_coll_p_config.update({"download": coll_download_config})
+
+            coll_p_configs.append(
+                CollectionProviderConfig(coll, p_config.name, full_coll_p_config)
+            )
+
+    return coll_p_configs
+
+
+def get_federation_backends_config(
+    providers_config: list[ProviderConfig],
+) -> list[FederationBackendConfig]:
+    """
+    Get collection specific api or search and download plugins config for given providers.
+    """
+    p_configs = []
+    for p_config in providers_config:
+        # metadata
+        p_mtd = {
+            "description": p_config.description,
+            "url": p_config.url,
+            "last_fetch": None,
+        }
+
+        # check if there is a plugin "api"
+        if getattr(p_config, "api", None):
+            full_p_config = {"api": p_config.api.__dict__}
+            p_configs.append(
+                FederationBackendConfig(
+                    p_config.name, full_p_config, p_config.priority, p_mtd, True
+                )
+            )
+            continue
+
+        # search and download plugins exist if there is no an api one
+        full_p_config = {"search": p_config.search.__dict__}
+        full_p_config.update({"download": p_config.download.__dict__})
+
+        # check if there is a plugin for authentication
+        if getattr(p_config, "auth", None):
+            full_p_config.update({"auth": p_config.auth.__dict__})
+        elif getattr(p_config, "search_auth", None):
+            full_p_config.update(
+                {
+                    "search_auth": p_config.search_auth.__dict__,
+                    "download_auth": p_config.download_auth.__dict__,
+                }
+            )
+
+        p_configs.append(
+            FederationBackendConfig(
+                p_config.name, full_p_config, p_config.priority, p_mtd, True
+            )
+        )
+
+    return p_configs
 
 
 def get_ext_collections_conf(
