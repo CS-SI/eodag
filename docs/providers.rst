@@ -724,39 +724,6 @@ No credentials are needed
 
 ----
 
-
-**peps**
---------
-
-.. grid:: 2
-   :gutter: 2
-   :class-container: sd-d-flex sd-align-items-center
-
-   .. grid-item::
-      :columns: 10
-
-      French National Space Agency (CNES) catalog for Sentinel products.
-
-   .. grid-item::
-      :columns: 2
-      :class: sd-text-right
-
-      .. button-link:: https://peps.cnes.fr/rocket/#/home
-        :color: primary
-        :outline:
-        :tooltip: PEPS website
-
-        :fas:`external-link-alt`
-
-.. dropdown:: Registration info
-  :color: muted
-  :class-container: dropdown-fade-in slim-dropdown
-
-  create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag
-  credentials.
-
-----
-
 **Destination Earth**
 ======================
 
