@@ -32,6 +32,7 @@ BASE_COLLECTION_TABLE_COLUMNS = {
     "end_datetime",
     "geometry",
     "content",
+    "federation_backends",
 }
 
 SUPPORTED_CONFORMANCE_CLASSES = (
@@ -188,6 +189,54 @@ _RE_ARRAY_OPS = {
 }
 _RE_ARRAY_EQUALS = re.compile(rf"({_SQL_EXPR})\s*=\s*ARRAY\[([^\]]*)\]")
 
+# Spatial function patterns for R-tree pre-filtering.
+# Excludes st_disjoint (bbox overlap doesn't imply geometry non-disjointness).
+_RE_SPATIAL_GEOJSON = re.compile(
+    r"(st_(?!disjoint)\w+)\(geometry,\s*st_geomfromgeojson\('([^']*)'\)\)",
+    re.IGNORECASE,
+)
+_RE_SPATIAL_ENVELOPE = re.compile(
+    r"(st_(?!disjoint)\w+)\(geometry,\s*st_makeenvelope\(([^)]*)\)\)",
+    re.IGNORECASE,
+)
+
+
+def _geojson_bounds(geojson_str: str) -> tuple[float, float, float, float] | None:
+    """Extract (minx, miny, maxx, maxy) from a GeoJSON literal string."""
+    try:
+        geojson = orjson.loads(geojson_str)
+    except Exception:
+        return None
+    bbox = geojson.get("bbox")
+    if bbox and len(bbox) >= 4:
+        return (float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3]))
+    coords = geojson.get("coordinates")
+    if coords is None:
+        return None
+    points: list[tuple[float, float]] = []
+
+    def _flatten(item: Any) -> None:
+        if isinstance(item, list) and item and isinstance(item[0], (int, float)):
+            points.append((float(item[0]), float(item[1])))
+        elif isinstance(item, list):
+            for sub in item:
+                _flatten(sub)
+
+    _flatten(coords)
+    if not points:
+        return None
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    return (min(xs), min(ys), max(xs), max(ys))  # minx, miny, maxx, maxy
+
+
+def _rtree_filter(minx: float, miny: float, maxx: float, maxy: float) -> str:
+    """Build an R-tree sub-query filter for bbox intersection."""
+    return (
+        f"key IN (SELECT id FROM collections_rtree WHERE "
+        f"minx <= {maxx} AND maxx >= {minx} AND miny <= {maxy} AND maxy >= {miny})"
+    )
+
 
 def _sqlite_compat(sql: str) -> str:
     """Apply SQLite-specific rewrites to the SQL emitted by cql2."""
@@ -203,15 +252,56 @@ def _sqlite_compat(sql: str) -> str:
     # Rewrite to custom SQLite functions that compare JSON arrays.
     # Skip entirely if no ARRAY[ remains after SOME rewriting (avoids catastrophic backtracking).
     if "ARRAY[" in result:
-        for pg_op, (func_name, pattern) in {
-            "@@": ("a_overlaps", _RE_ARRAY_OPS["@@"]),
-            "@>": ("a_contains", _RE_ARRAY_OPS["@>"]),
-            "<@": ("a_containedby", _RE_ARRAY_OPS["<@"]),
-        }.items():
-            result = pattern.sub(rf"{func_name}(\1, json_array(\2))", result)
+        # a_overlaps (@@): A ∩ B ≠ ∅
+        result = _RE_ARRAY_OPS["@@"].sub(
+            r"EXISTS (SELECT 1 FROM json_each(\1) je WHERE je.value IN (\2))",
+            result,
+        )
 
-        # a_equals: prop = ARRAY[...] → a_equals(prop, json_array(...))
-        result = _RE_ARRAY_EQUALS.sub(r"a_equals(\1, json_array(\2))", result)
+        # a_contains (@>): A ⊇ B — every element of B is in A
+        result = _RE_ARRAY_OPS["@>"].sub(
+            r"NOT EXISTS (SELECT 1 FROM json_each(json_array(\2)) je"
+            r" WHERE je.value NOT IN (SELECT je2.value FROM json_each(\1) je2))",
+            result,
+        )
+
+        # a_containedby (<@): A ⊆ B — every element of A is in B
+        result = _RE_ARRAY_OPS["<@"].sub(
+            r"(\1 IS NOT NULL AND"
+            r" NOT EXISTS (SELECT 1 FROM json_each(\1) je WHERE je.value NOT IN (\2)))",
+            result,
+        )
+
+        # a_equals: A = B (same elements) — A ⊇ B AND A ⊆ B
+        result = _RE_ARRAY_EQUALS.sub(
+            r"(\1 IS NOT NULL"
+            r" AND NOT EXISTS (SELECT 1 FROM json_each(json_array(\2)) je"
+            r" WHERE je.value NOT IN (SELECT je2.value FROM json_each(\1) je2))"
+            r" AND NOT EXISTS (SELECT 1 FROM json_each(\1) je"
+            r" WHERE je.value NOT IN (\2)))",
+            result,
+        )
+
+    # R-tree pre-filter for spatial predicates on the geometry column.
+    def _inject_rtree_geojson(match: re.Match[str]) -> str:
+        bounds = _geojson_bounds(match.group(2))
+        if bounds is None:
+            return match.group(0)
+        return f"({_rtree_filter(*bounds)} AND {match.group(0)})"
+
+    def _inject_rtree_envelope(match: re.Match[str]) -> str:
+        parts = [p.strip() for p in match.group(2).split(",")]
+        if len(parts) != 4:
+            return match.group(0)
+        minx, miny, maxx, maxy = parts
+        return (
+            f"(key IN (SELECT id FROM collections_rtree WHERE "
+            f"minx <= {maxx} AND maxx >= {minx} AND miny <= {maxy} AND maxy >= {miny}) "
+            f"AND {match.group(0)})"
+        )
+
+    result = _RE_SPATIAL_GEOJSON.sub(_inject_rtree_geojson, result)
+    result = _RE_SPATIAL_ENVELOPE.sub(_inject_rtree_envelope, result)
 
     return result
 

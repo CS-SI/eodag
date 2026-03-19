@@ -26,6 +26,7 @@ from typing import Any
 import orjson
 import shapely.geometry
 
+from eodag.config import CollectionProviderConfig
 from eodag.databases.sqlite import (
     SQLiteDatabase,
     create_collections_table,
@@ -53,6 +54,7 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "ONE",
+        "_id": "ONE",
         "title": "Optical satellite one",
         "extent": {
             "spatial": {"bbox": [[0.0, 0.0, 10.0, 10.0]]},
@@ -68,6 +70,7 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "TWO",
+        "_id": "TWO",
         "title": "Radar satellite two",
         "extent": {
             "spatial": {"bbox": [[20.0, 20.0, 30.0, 30.0]]},
@@ -85,6 +88,7 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "THREE",
+        "_id": "THREE",
         "title": "Climate reanalysis three",
         "extent": {
             "spatial": {"bbox": [[40.0, 40.0, 50.0, 50.0]]},
@@ -102,6 +106,7 @@ COLLECTIONS = [
     {
         "type": "Collection",
         "id": "FOUR",
+        "_id": "FOUR",
         "title": "Radar generation four",
         "extent": {
             "spatial": {"bbox": [[60.0, 60.0, 70.0, 70.0]]},
@@ -181,6 +186,15 @@ def _arith(arith_op: str, prop: str, operand, cmp_op: str, value):
             value,
         ],
     }
+
+
+def _make_coll_fb(provider: str, collection_id: str) -> CollectionProviderConfig:
+    """Create a CollectionProviderConfig for testing federation backends."""
+    return CollectionProviderConfig(
+        id=collection_id,
+        provider=provider,
+        plugins_config={"search": {"type": "StacSearch"}},
+    )
 
 
 class TestCQL2JsonToSql(unittest.TestCase):
@@ -1083,6 +1097,19 @@ class TestCollectionsSearch(unittest.TestCase):
         )
         cls.db._con.commit()
 
+        # Federation backends:
+        #   ONE   -> ["backend_a", "backend_b"]
+        #   TWO   -> ["backend_b"]
+        #   THREE -> (none)
+        #   FOUR  -> (none)
+        cls.db.upsert_collections_federation_backends(
+            [
+                _make_coll_fb("backend_a", "ONE"),
+                _make_coll_fb("backend_b", "ONE"),
+                _make_coll_fb("backend_b", "TWO"),
+            ]
+        )
+
     def _ids(self, result: tuple[list[dict[str, Any]], int]) -> list[str]:
         """Extract ordered list of ids from collections_search result."""
         return [c["id"] for c in result[0]]
@@ -1285,6 +1312,73 @@ class TestCollectionsSearch(unittest.TestCase):
         # Sorted datetime desc: TWO(2021), ONE(2020)
         self.assertEqual(self._ids(result), ["TWO", "ONE"])
         self.assertEqual(self._matched(result), 2)
+
+    def test_federation_backends(self):
+        """Filter collections by federation_backends."""
+        cases = [
+            ("no filter", None, {}, ALL_IDS, 4),
+            ("single backend", ["backend_a"], {}, ["ONE"], 1),
+            ("shared backend", ["backend_b"], {}, ["ONE", "TWO"], 2),
+            (
+                "multiple backends (union)",
+                ["backend_a", "backend_b"],
+                {},
+                ["ONE", "TWO"],
+                2,
+            ),
+            ("nonexistent backend", ["backend_z"], {}, [], 0),
+            (
+                "with geometry",
+                ["backend_a"],
+                {"geometry": shapely.geometry.box(-5, -5, 15, 15)},
+                ["ONE"],
+                1,
+            ),
+            (
+                "with datetime",
+                ["backend_b"],
+                {"datetime": "2021-01-01T00:00:00Z/.."},
+                ["ONE", "TWO"],
+                2,
+            ),
+        ]
+        for name, fb, kwargs, expected_ids, expected_matched in cases:
+            with self.subTest(name):
+                result = self.db.collections_search(federation_backends=fb, **kwargs)
+                self.assertEqual(sorted(self._ids(result)), expected_ids)
+                self.assertEqual(self._matched(result), expected_matched)
+
+    def test_federation_backends_denormalization_update(self):
+        """Adding backends incrementally keeps the denormalized column in sync."""
+        db = SQLiteDatabase(":memory:")
+        db._con.executemany(
+            "INSERT INTO collections (content) VALUES (jsonb(?))",
+            [(orjson.dumps(c),) for c in COLLECTIONS[:1]],  # only ONE
+        )
+        db._con.commit()
+
+        cases = [
+            ("initially empty", [], ["backend_x"], 0),
+            ("after adding backend_x", [("backend_x", "ONE")], ["backend_x"], 1),
+            (
+                "after adding backend_y, backend_x still matches",
+                [("backend_y", "ONE")],
+                ["backend_x"],
+                1,
+            ),
+            ("backend_y also matches", [], ["backend_y"], 1),
+            ("both together match", [], ["backend_x", "backend_y"], 1),
+        ]
+        for name, to_add, fb_filter, expected_matched in cases:
+            with self.subTest(name):
+                if to_add:
+                    db.upsert_collections_federation_backends(
+                        [_make_coll_fb(prov, coll) for prov, coll in to_add]
+                    )
+                result = db.collections_search(federation_backends=fb_filter)
+                self.assertEqual(self._matched(result), expected_matched)
+
+        db.close()
 
 
 if __name__ == "__main__":
