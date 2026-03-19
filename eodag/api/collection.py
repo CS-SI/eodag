@@ -657,7 +657,7 @@ class CollectionsDict(UserDict[str, Collection]):
         return str(self)
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> CollectionsDict:
+    def from_configs(cls, config: dict[str, Any]) -> CollectionsDict:
         """Create a CollectionsDict instance from a configuration dictionary."""
         collections = []
         for collection_id, collection_conf in config.items():
