@@ -265,8 +265,8 @@ class Search(PluginTopic):
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
-        # remove duplicates
-        sort_by_arg = list(dict.fromkeys(sort_by_arg))
+        # remove duplicates (convert to tuples for hashability)
+        sort_by_arg = list(dict.fromkeys(tuple(x) for x in sort_by_arg))
 
         sort_by_qs: str = ""
         sort_by_qp: dict[str, Any] = {}

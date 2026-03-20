@@ -615,7 +615,7 @@ class TestCoreSearchResults(EODagTestCase):
         # count disabled by default
         search_results = self.dag.search(collection="S2_MSI_L1C", provider="creodias")
         self.assertNotIn(
-            self.dag._providers["creodias"].search_config.pagination["count_tpl"],
+            self.dag.providers["creodias"].search_config.pagination["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
         self.assertIsNone(search_results.number_matched)
@@ -625,7 +625,7 @@ class TestCoreSearchResults(EODagTestCase):
             collection="S2_MSI_L1C", provider="creodias", count=True
         )
         self.assertIn(
-            self.dag._providers["creodias"].search_config.pagination["count_tpl"],
+            self.dag.providers["creodias"].search_config.pagination["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
         self.assertIsNotNone(search_results.number_matched)
