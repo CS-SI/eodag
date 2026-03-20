@@ -44,7 +44,7 @@ from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
-from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.provider import Provider, build_provider_configs
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
@@ -86,7 +86,7 @@ from tests.context import (
 class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = build_provider_configs(load_default_config())
         self.plugins_manager = PluginManager(providers)
         self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
@@ -144,8 +144,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         provider_name, mundi_config = next(iter(mundi_config_dict.items()))
         if "name" not in mundi_config:
             mundi_config["name"] = provider_name
-        self.plugins_manager.providers[provider] = Provider(mundi_config)
-        self.plugins_manager.rebuild()
+        self.plugins_manager.add_provider(provider, Provider(mundi_config))
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         self.mundi_search_plugin = self.get_search_plugin(self.collection, provider)
@@ -1620,8 +1619,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         provider_name, onda_config = next(iter(onda_config_dict.items()))
         if "name" not in onda_config:
             onda_config["name"] = provider_name
-        self.plugins_manager.providers["onda"] = Provider(onda_config)
-        self.plugins_manager.rebuild()
+        self.plugins_manager.add_provider("onda", Provider(onda_config))
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
@@ -3122,6 +3120,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         stubber.add_response("list_objects", {})
         download_plugin = self.plugins_manager.get_download_plugin(res.data[0])
         auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, res.data[0])
+        auth_plugin.config.credentials = {
+            "aws_access_key_id": "foo",
+            "aws_secret_access_key": "bar",
+        }
         res.data[0].driver = None
         res.data[0].assets = AssetsDict(res.data[0])
         res.data[0].register_downloader(download_plugin, auth_plugin)
@@ -3170,7 +3172,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestSearchPluginECMWFSearch, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = build_provider_configs(load_default_config())
         cls.plugins_manager = PluginManager(providers)
 
     def setUp(self):

@@ -96,7 +96,6 @@ if TYPE_CHECKING:
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
-    from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
 
@@ -460,16 +459,16 @@ class EOProduct:
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def _register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
+    def _register_downloader(self, dag: EODataAccessGateway) -> None:
         """Register the downloader and authenticator for this EOProduct using the
-        provided plugins manager.
+        provided EODataAccessGateway instance.
         This method is typically called after the EOProduct has been created and
         before any download operation is performed.
 
-        :param plugins_manager: The plugins manager instance to use for retrieving
-                                the download and authentication plugins.
+        :param dag: The EODataAccessGateway instance to use for retrieving
+                    the download and authentication plugins.
         """
-        download_plugin = plugins_manager.get_download_plugin(self)
+        download_plugin = dag.get_download_plugin(self)
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
         elif self.properties.get("order:status") != ONLINE_STATUS:
@@ -481,7 +480,7 @@ class EOProduct:
 
         try:
             auth_plugin = next(
-                plugins_manager.get_auth_plugins(
+                dag.get_auth_plugins(
                     self.provider,
                     matching_url=matching_url,
                     matching_conf=download_plugin.config,
@@ -952,7 +951,7 @@ class EOProduct:
         """Import a STAC item from a EODAG serialized EOProduct.
 
         :param feature: A STAC item as a dictionary
-        :param plugins_manager: The EODAG plugin manager instance
+        :param plugins_manager: The EODAG plugins manager instance
         :returns: An EOProduct created from the STAC item
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
@@ -993,7 +992,7 @@ class EOProduct:
         """Create a SearchResult from a STAC item.
 
         :param feature: A STAC item as a dictionary
-        :param plugins_manager: The EODAG plugin manager instance
+        :param plugins_manager: The EODAG plugins manager instance
         :provider: (optional) The provider to which the STAC item belongs, if known. If not provided, the method will
                    try to determine it from the STAC item properties.
         :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.
