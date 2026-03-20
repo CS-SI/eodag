@@ -51,6 +51,7 @@ from tests.context import (
     PluginConfig,
     PluginManager,
     ProvidersDict,
+    build_provider_configs,
     load_default_config,
     path_to_uri,
     uri_to_path,
@@ -61,7 +62,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseDownloadPluginTest, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = build_provider_configs(load_default_config())
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()

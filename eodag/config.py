@@ -773,23 +773,21 @@ def get_collections_providers_config(
 ) -> list[CollectionProviderConfig]:
     """
     Get collection specific api or search and download plugins config for given providers.
-    Free memory of providers configuration by removing their attributes "products" after using them
     """
     coll_p_configs = []
     for p_config in providers_config:
         p_api_config = getattr(p_config, "api", None)
 
-        for coll, p_coll_config in p_config.products.copy().items():
-            del p_config.products[coll]
-
+        for coll, p_coll_config in getattr(p_config, "products", {}).items():
             if p_api_config:
                 full_coll_p_config = {"api": p_coll_config}
             else:
                 full_coll_p_config = {"search": p_coll_config}
-                if coll_download_config := getattr(
-                    p_config.download, "products", {}
-                ).pop(coll, None):
-                    full_coll_p_config.update({"download": coll_download_config})
+                download_products = getattr(
+                    getattr(p_config, "download", None), "products", {}
+                )
+                if coll in download_products:
+                    full_coll_p_config["download"] = download_products[coll]
 
             coll_p_configs.append(
                 CollectionProviderConfig(coll, p_config.name, full_coll_p_config)
@@ -802,20 +800,29 @@ def get_federation_backends_config(
     providers_config: list[ProviderConfig],
 ) -> list[FederationBackendConfig]:
     """
-    Get collection specific api or search and download plugins config for given providers.
+    Get provider-level plugin configs for federation backends.
+
+    Auth configs are included in ``plugins_config`` but **credentials are stripped**
+    (they must stay in memory only, never in the database).
+
+    ``metadata`` is enriched with ``group``, ``roles``, and ``last_fetch``.
     """
     p_configs = []
     for p_config in providers_config:
-        # metadata
-        p_mtd = {
-            "description": p_config.description,
-            "url": p_config.url,
+        # metadata (enriched with group, roles)
+        p_mtd: dict[str, Any] = {
+            "description": getattr(p_config, "description", None),
+            "url": getattr(p_config, "url", None),
+            "group": getattr(p_config, "group", None),
+            "roles": getattr(p_config, "roles", None),
             "last_fetch": None,
         }
 
         # check if there is a plugin "api"
         if getattr(p_config, "api", None):
-            full_p_config = {"api": p_config.api.__dict__}
+            full_p_config: dict[str, Any] = {
+                "api": _strip_credentials(p_config.api.__dict__)
+            }
             p_configs.append(
                 FederationBackendConfig(
                     p_config.name, full_p_config, p_config.priority, p_mtd, True
@@ -824,19 +831,27 @@ def get_federation_backends_config(
             continue
 
         # search and download plugins exist if there is no an api one
-        full_p_config = {"search": p_config.search.__dict__}
-        full_p_config.update({"download": p_config.download.__dict__})
+        full_p_config: dict[str, Any] = {}
+        if getattr(p_config, "search", None):
+            full_p_config["search"] = dict(p_config.search.__dict__)
+        if getattr(p_config, "download", None):
+            full_p_config["download"] = dict(p_config.download.__dict__)
 
         # check if there is a plugin for authentication
         if getattr(p_config, "auth", None):
-            full_p_config.update({"auth": p_config.auth.__dict__})
+            full_p_config["auth"] = _strip_credentials(p_config.auth.__dict__)
         elif getattr(p_config, "search_auth", None):
-            full_p_config.update(
-                {
-                    "search_auth": p_config.search_auth.__dict__,
-                    "download_auth": p_config.download_auth.__dict__,
-                }
+            full_p_config["search_auth"] = _strip_credentials(
+                p_config.search_auth.__dict__
             )
+            if getattr(p_config, "download_auth", None):
+                full_p_config["download_auth"] = _strip_credentials(
+                    p_config.download_auth.__dict__
+                )
+
+        if not full_p_config:
+            # no plugin configured at all
+            continue
 
         p_configs.append(
             FederationBackendConfig(
@@ -845,6 +860,32 @@ def get_federation_backends_config(
         )
 
     return p_configs
+
+
+def extract_credentials(
+    providers_config: list[ProviderConfig],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """Extract credentials from provider configs (to keep in memory only).
+
+    :returns: ``{provider_name: {auth_key: credentials_dict, ...}}``
+    """
+    result: dict[str, dict[str, dict[str, Any]]] = {}
+    for p_config in providers_config:
+        creds: dict[str, dict[str, Any]] = {}
+        for key in AUTH_TOPIC_KEYS:
+            auth_conf = getattr(p_config, key, None)
+            if auth_conf is not None and credentials_in_auth(auth_conf):
+                creds[key] = dict(auth_conf.credentials)
+        if creds:
+            result[p_config.name] = creds
+    return result
+
+
+def _strip_credentials(auth_dict: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of an auth config dict with credentials removed."""
+    result = dict(auth_dict)
+    result.pop("credentials", None)
+    return result
 
 
 def get_ext_collections_conf(
