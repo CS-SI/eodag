@@ -948,7 +948,6 @@ class EOProduct:
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
         for driver_conf in DRIVERS:
-
             # Select a driver if all criterias match
             match = True
             for criteria in driver_conf["criteria"]:
@@ -992,12 +991,12 @@ class EOProduct:
                         {dict_to_html_table({
                          "provider": self.provider,
                          "collection": self.collection,
-                         "properties[&quot;id&quot;]": self.properties.get('id'),
+                         "properties[&quot;id&quot;]": self.properties.get("id"),
                          "properties[&quot;start_datetime&quot;]": self.properties.get(
-                             'start_datetime'
+                             "start_datetime"
                          ),
                          "properties[&quot;end_datetime&quot;]": self.properties.get(
-                             'end_datetime'
+                             "end_datetime"
                          ),
                          }, brackets=False)}
                         <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
@@ -1007,7 +1006,7 @@ class EOProduct:
                                      self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
                         {links_details}
                     </td>
-                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
+                    <td {geom_style} title='geometry'>geometry<br/>{self.geometry._repr_svg_()}</td>
                     <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
                 </tr>
             </table>"""
@@ -1054,7 +1053,7 @@ class EOProduct:
         """Import a STAC item from a EODAG serialized EOProduct.
 
         :param feature: A STAC item as a dictionary
-        :param plugins_manager: The EODAG plugin manager instance
+        :param plugins_manager: The EODAG plugins manager instance
         :returns: An EOProduct created from the STAC item
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
@@ -1096,7 +1095,7 @@ class EOProduct:
         """Create a SearchResult from a STAC item.
 
         :param feature: A STAC item as a dictionary
-        :param plugins_manager: The EODAG plugin manager instance
+        :param plugins_manager: The EODAG plugins manager instance
         :provider: (optional) The provider to which the STAC item belongs, if known. If not provided, the method will
                    try to determine it from the STAC item properties.
         :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.

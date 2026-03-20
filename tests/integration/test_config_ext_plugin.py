@@ -50,8 +50,8 @@ class TestExternalPluginConfig(unittest.TestCase):
     def tearDown(self):
         super(TestExternalPluginConfig, self).tearDown()
 
-        self.dag._providers.pop("fakeplugin_provider", None)
-        self.dag._providers.pop("fakeplugin_provider2", None)
+        self.dag.providers.pop("fakeplugin_provider", None)
+        self.dag.providers.pop("fakeplugin_provider2", None)
 
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
@@ -63,7 +63,7 @@ class TestExternalPluginConfig(unittest.TestCase):
     def test_update_providers_from_ext_plugin(self):
         """Load fake external plugin and check if it updates providers config"""
 
-        default_providers_count = len(self.dag._providers)
+        default_providers_count = len(self.dag.providers)
 
         src = os.path.join(TEST_RESOURCES_PATH, "fake_ext_plugin")
         fakeplugin_location = os.path.join(self.tmp_home_dir.name, "fake_ext_plugin")
@@ -83,6 +83,6 @@ class TestExternalPluginConfig(unittest.TestCase):
                 match=r"Usage of deprecated (YAML tag|environment variable)",
             ):
                 self.dag = EODataAccessGateway()
-            self.assertEqual(len(self.dag._providers), default_providers_count + 2)
-            self.assertIn("fakeplugin_provider", self.dag._providers)
-            self.assertIn("fakeplugin_provider2", self.dag._providers)
+            self.assertEqual(len(self.dag.providers), default_providers_count + 2)
+            self.assertIn("fakeplugin_provider", self.dag.providers)
+            self.assertIn("fakeplugin_provider2", self.dag.providers)

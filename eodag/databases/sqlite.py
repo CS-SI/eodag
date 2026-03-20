@@ -20,9 +20,10 @@ from __future__ import annotations
 import logging
 import sqlite3
 import unicodedata
+from collections import defaultdict
 from collections.abc import Callable
 from sqlite3 import Connection
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
 import cql2
 import orjson
@@ -30,10 +31,11 @@ import shapely
 from shapely.geometry import shape
 
 from eodag.api.collection import Collection, CollectionsDict
+from eodag.config import PluginConfig, ProviderConfig
 from eodag.databases.base import Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
-from eodag.utils import get_geometry_from_various
+from eodag.utils import PLUGINS_TOPIC_KEYS, get_geometry_from_various
 from eodag.utils.dates import get_datetime
 
 if TYPE_CHECKING:
@@ -41,8 +43,6 @@ if TYPE_CHECKING:
     from sqlite3 import Cursor, _Parameters
 
     from shapely.geometry.base import BaseGeometry
-
-    from eodag.config import CollectionProviderConfig, FederationBackendConfig
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
 
@@ -66,6 +66,26 @@ _JSON_VALID_CHECK = "json_valid(content, 4)" if _HAS_JSONB else "json_valid(cont
 # Keep headroom when building batched parameterised queries.
 _SQLITE_VAR_CHUNK = 500
 
+# TODO: remove namedtuple ?
+
+
+class FederationBackendConfig(NamedTuple):
+    """Provider-level plugin config for a federation backend (DB row)."""
+
+    name: str
+    plugins_config: dict[str, dict[str, Any]]
+    priority: int
+    metadata: dict[str, Any]
+    enabled: bool = True
+
+
+class CollectionProviderConfig(NamedTuple):
+    """Collection-specific plugin config for a provider (DB row)."""
+
+    id: str
+    provider: str
+    plugins_config: dict[str, dict[str, Any]]
+
 
 def _chunks(seq: list[str], size: int) -> Iterable[list[str]]:
     """Yield successive *size*-length slices from *seq*."""
@@ -87,9 +107,7 @@ class SQLiteDatabase(Database):
         )
         self._con.row_factory = sqlite3.Row
 
-        # register adapters and converters
         sqlite3.register_adapter(Collection, _adapt_collection)
-        # set the key "collection_dict" to convert SQLite bytes values to a dictionary
         sqlite3.register_converter("collection_dict", _convert_collection)
 
         sqlite3.register_adapter(dict, _adapt_dict)
@@ -168,6 +186,20 @@ class SQLiteDatabase(Database):
         )
         self._con.commit()
 
+    def delete_collections_federation_backends(self, collection_ids: list[str]) -> None:
+        """Remove collection entries from the collections_federation_backends table.
+
+        :param collection_ids: Collection IDs to remove.
+        """
+        if not collection_ids:
+            return
+        placeholders = ", ".join("?" * len(collection_ids))
+        self._execute(
+            f"DELETE FROM collections_federation_backends WHERE collection_id IN ({placeholders})",
+            tuple(collection_ids),
+        )
+        self._con.commit()
+
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
 
@@ -185,41 +217,34 @@ class SQLiteDatabase(Database):
             msg = f"{upserted_coll_nb} collection(s) have been updated or added to the database"
             logger.debug(msg)
 
-    def upsert_federation_backends(
+    def _upsert_federation_backends(
         self, fb_configs: list[FederationBackendConfig]
     ) -> None:
         """
-        Add or update collection specific api or search and download
-        plugins config for federation backends in the database
+        Add or update federation backend configs (providers) in the database.
+        Each config must contain: name, plugins_config, priority, metadata, enabled.
         """
         if not fb_configs:
             return
-
-        cur = self._executemany(
+        rows = []
+        for cfg in fb_configs:
+            rows.append(cfg)
+        self._executemany(
             f"""
-            INSERT INTO federation_backends (id, plugins_config, priority, metadata, enabled)
+            INSERT INTO federation_backends (name, plugins_config, priority, metadata, enabled)
             VALUES (?, {_JSON_STORE}, ?, {_JSON_STORE}, ?)
-            ON CONFLICT(id) DO UPDATE SET
+            ON CONFLICT(name) DO UPDATE SET
                 plugins_config = excluded.plugins_config,
-                priority       = excluded.priority,
-                metadata       = excluded.metadata,
-                enabled        = excluded.enabled
+                priority = excluded.priority,
+                metadata = excluded.metadata,
+                enabled = excluded.enabled
             """,
-            (
-                (fb.name, fb.plugins_config, fb.priority, fb.metadata, fb.enabled)
-                for fb in fb_configs
-            ),
+            rows,
         )
         self._con.commit()
+        logger.debug("Upserted %d federation backend(s)", len(rows))
 
-        if cur.rowcount > 0:
-            logger.debug(
-                "%s federation backend configuration(s) have been updated or added "
-                "to the database",
-                cur.rowcount,
-            )
-
-    def upsert_collections_federation_backends(
+    def _upsert_collections_federation_backends(
         self, coll_fb_configs: list[CollectionProviderConfig]
     ) -> None:
         """
@@ -270,6 +295,69 @@ class SQLiteDatabase(Database):
             len(rows),
             len(affected_ids),
         )
+
+    def upsert_fb_configs(self, configs: list[ProviderConfig]) -> None:
+        """Add or update federation backend configs (providers) in the database."""
+        federation_backend_configs = []
+        collections_provider_configs = []
+
+        def strip_credentials(plugin_conf: dict[str, Any]) -> dict[str, Any]:
+            return {k: v for k, v in plugin_conf.items() if k != "credentials"}
+
+        for config in configs:
+            exclude_keys = set(PLUGINS_TOPIC_KEYS) | {"priority", "name"}
+            metadata = {
+                k: v for k, v in config.__dict__.items() if k not in exclude_keys
+            }
+
+            plugins_config = {}
+            for k in PLUGINS_TOPIC_KEYS:
+                val = getattr(config, k, None)
+                plugins_config[k] = (
+                    strip_credentials(val.__dict__)
+                    if isinstance(val, PluginConfig)
+                    else {}
+                )
+
+            federation_backend_configs.append(
+                FederationBackendConfig(
+                    name=config.name,
+                    plugins_config=plugins_config,
+                    priority=getattr(config, "priority", 0),
+                    metadata=metadata,
+                    enabled=config.enabled,
+                )
+            )
+
+            tmp = defaultdict(lambda: {"search": None, "download": None})
+
+            for section, source in (
+                ("search", getattr(config, "products", None)),
+                (
+                    "download",
+                    getattr(getattr(config, "download", None), "products", None),
+                ),
+            ):
+                for coll_id, cfg in (source or {}).items():
+                    tmp[coll_id][section] = cfg
+
+            collections_provider_configs.extend(
+                CollectionProviderConfig(coll_id, config.name, cfg)
+                for coll_id, cfg in tmp.items()
+            )
+
+        self._upsert_federation_backends(federation_backend_configs)
+        self._upsert_collections_federation_backends(collections_provider_configs)
+
+    def set_priority(self, name: str, priority: int) -> None:
+        """
+        Set the priority of a federation backend.
+        """
+        self._execute(
+            "UPDATE federation_backends SET priority = ? WHERE name = ?",
+            (priority, name),
+        )
+        self._con.commit()
 
     def collections_search(
         self,
@@ -346,79 +434,125 @@ class SQLiteDatabase(Database):
 
         return collections_list, number_matched
 
-    def get_collections(self, federation_backend_name: str) -> list[str]:
+    def get_federation_backends(
+        self,
+        collection: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        limit: Optional[int] = None,
+        names: Optional[list[str]] = None,
+    ) -> list[dict[str, Any]]:
         """
-        Get the list of collections of the given federation backend from the database
+        Return federation backends according to filters.
+        Results are sorted by priority DESC then name ASC.
         """
-        sql = "SELECT collection_id FROM collections_federation_backends WHERE federation_backend_name = ?;"
+        sql = (
+            "SELECT fb.name, fb.priority, fb.enabled, "
+            'json(fb.metadata) AS "metadata [dict]" '
+            "FROM federation_backends fb"
+        )
+        where_clauses = []
+        params: list[Any] = []
 
-        collections: list[str] = [
-            row["collection_id"]
-            for row in self._execute(sql, (federation_backend_name,)).fetchall()
+        if enabled is not None:
+            where_clauses.append("fb.enabled = ?")
+            params.append(1 if enabled else 0)
+
+        if names:
+            placeholders = ",".join("?" for _ in names)
+            where_clauses.append(f"fb.name IN ({placeholders})")
+            params.extend(names)
+
+        if collection:
+            sql += (
+                " INNER JOIN collections_federation_backends cfb "
+                "ON fb.name = cfb.federation_backend_name AND cfb.collection_id = ?"
+            )
+            params.append(collection)
+
+        if where_clauses:
+            sql += " WHERE " + " AND ".join(where_clauses)
+
+        sql += " ORDER BY fb.priority DESC, fb.name ASC"
+        if limit is not None:
+            sql += f" LIMIT {limit}"
+
+        rows = self._execute(sql, tuple(params)).fetchall()
+
+        return [
+            {
+                "name": row["name"],
+                "priority": row["priority"],
+                "enabled": bool(row["enabled"]),
+                "metadata": row["metadata"] or {},
+            }
+            for row in rows
         ]
 
-        return collections
+    def get_fb_config(
+        self,
+        name: str,
+        collections: set[str] | None = None,
+    ) -> dict[str, Any]:
+        """Get the federation backend config for a given provider and optional collection filter."""
+        collections = collections or set()
 
-    def get_federation_backends(
-        self, federation_backend_ids: Optional[list[str]] = None
-    ) -> dict[str, dict[str, Any]]:
+        if collections:
+            placeholders = ", ".join("?" for _ in collections)
+            cfb_filter_sql = f"cfb.collection_id IN ({placeholders})"
+            cfb_params = tuple(collections)
+        else:
+            cfb_filter_sql = "0"
+            cfb_params = ()
+
+        sql = f"""
+            SELECT
+                fb.plugins_config  AS "provider_plugins_config [dict]",
+                fb.priority        AS provider_priority,
+                fb.metadata        AS "provider_metadata [dict]",
+                fb.enabled         AS provider_enabled,
+
+                c.collection_id    AS collection_id,
+                c.plugins_config   AS "collection_plugins_config [dict]"
+            FROM federation_backends fb
+            LEFT JOIN (
+                SELECT
+                    cfb.collection_id,
+                    cfb.plugins_config
+                FROM collections_federation_backends cfb
+                WHERE cfb.federation_backend_name = ?
+                AND {cfb_filter_sql}
+            ) AS c
+            ON 1 = 1
+            WHERE fb.name = ?
         """
-        Get federation backends from the database
-        """
-        where: str = ""
-        params: list[str] = []
+        params = (name, *cfb_params, name)
 
-        if federation_backend_ids:
-            fb_placeholders = ", ".join("?" * len(federation_backend_ids))
-            where = f" WHERE id IN ({fb_placeholders})"
-            params = federation_backend_ids
-
-        sql = (
-            'SELECT id, json(plugins_config) AS "plugins_config [dict]", '
-            'priority, json(metadata) AS "metadata [dict]", enabled '
-            f"FROM federation_backends{where};"
-        )
-
-        fb_configs: dict[str, dict[str, dict[str, Any]]] = {}
-        for row in self._execute(sql, tuple(params) or None).fetchall():
-            fb_id = row["id"]
-            fb_configs[fb_id] = {
-                "plugins_config": row["plugins_config"],
-                "priority": row["priority"],
-                "metadata": row["metadata"],
-                "enabled": row["enabled"],
+        rows = self._execute(sql, params).fetchall()
+        if not rows or not rows[0]["provider_plugins_config"]:
+            raise KeyError(f"Provider '{name}' not found")
+        base: dict[str, Any] = (
+            rows[0]["provider_plugins_config"]
+            | (rows[0]["provider_metadata"] or {})
+            | {
+                "priority": int(rows[0]["provider_priority"] or 0),
+                "enabled": bool(rows[0]["provider_enabled"]),
+                "name": name,
             }
-
-        return fb_configs
-
-    def get_collection_federation_backends(
-        self, collection: str, federation_backend_ids: Optional[list[str]] = None
-    ) -> dict[str, dict[str, dict[str, Any]]]:
-        """
-        Get collection specific api or search and download
-        plugins config for federation backends from the database
-        """
-        where_parts: list[str] = ["collection_id = ?"]
-        params: list[str] = [collection]
-
-        if federation_backend_ids:
-            fb_placeholders = ", ".join("?" * len(federation_backend_ids))
-            where_parts.append(f"federation_backend_name IN ({fb_placeholders})")
-            params.extend(federation_backend_ids)
-
-        full_where = " AND ".join(where_parts)
-
-        sql = (
-            'SELECT federation_backend_name, json(plugins_config) AS "plugins_config [dict]" '
-            f"FROM collections_federation_backends WHERE {full_where}"
         )
+        base.setdefault("products", {})
+        if isinstance(base.get("download"), dict):
+            base["download"].setdefault("products", {})
 
-        coll_fb_configs: dict[str, dict[str, dict[str, Any]]] = {}
-        for row in self._execute(sql, tuple(params)).fetchall():
-            fb_id = row["federation_backend_name"]
-            coll_fb_configs[fb_id] = row["plugins_config"]
+        for r in rows:
+            cid = r["collection_id"]
+            if not cid:
+                continue
+            blob = r["collection_plugins_config"] or {}
+            base["products"][cid] = blob.get("search", {})
+            if isinstance(base.get("download"), dict):
+                base["download"]["products"][cid] = blob.get("download", {})
 
-        return coll_fb_configs
+        return base
 
 
 def _adapt_collection(collection: Collection) -> str:
@@ -447,7 +581,8 @@ def _convert_collection(coll_bytes: bytes) -> dict[str, Any]:
 def _adapt_dict(data: dict[str, Any]) -> str:
     """An adapter to automatically convert from a dictionary to an
     SQLite-compatible type (here a string) when injected to queries"""
-    return orjson.dumps(data).decode()
+    data_bytes = orjson.dumps(data)
+    return data_bytes if _HAS_JSONB else data_bytes.decode()
 
 
 def _convert_dict(dict_bytes: bytes) -> dict[str, Any]:
@@ -711,6 +846,25 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     con.commit()
 
 
+def create_federation_backends_table(con: sqlite3.Connection) -> None:
+    """Create the federation backends table in the database."""
+    cur = con.cursor()
+
+    cur.execute(
+        f"""
+        CREATE TABLE IF NOT EXISTS federation_backends (
+            key PRIMARY KEY,
+            name TEXT UNIQUE,
+            plugins_config {_CONTENT_TYPE} NOT NULL,
+            priority INTEGER NOT NULL,
+            metadata {_CONTENT_TYPE},
+            enabled BOOLEAN NOT NULL DEFAULT TRUE
+        );
+        """,
+    )
+    con.commit()
+
+
 def create_collections_federation_backends_table(con: sqlite3.Connection) -> None:
     """Create the federation backends collections configuration table in the database."""
     cur = con.cursor()
@@ -852,39 +1006,3 @@ def _stac_sortby_to_order_by(sortby: list[dict[str, str]]) -> list[str]:
         clauses.append(f"{COLLECTIONS_SORTABLES[field]} {direction.upper()}")
 
     return clauses
-
-
-def create_federation_backends_table(con: sqlite3.Connection) -> None:
-    """Create the federation backends table in the database."""
-    cur = con.cursor()
-
-    # Into config goes
-    # search:
-    #     xxx
-    # download:
-    #     xxx
-    # api:
-    #     xxx
-    # auth:
-    #     xxx
-    # search_auth:
-    #     xxx
-
-    # Into metadata goes
-    # description
-    # url
-    # last_fetch
-
-    cur.execute(
-        f"""
-        CREATE TABLE IF NOT EXISTS federation_backends (
-            key PRIMARY KEY,
-            id TEXT UNIQUE,
-            plugins_config {_CONTENT_TYPE} NOT NULL,
-            priority INTEGER NOT NULL,
-            metadata {_CONTENT_TYPE},
-            enabled BOOLEAN NOT NULL DEFAULT TRUE
-        );
-        """,
-    )
-    con.commit()
