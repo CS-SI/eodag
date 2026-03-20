@@ -140,3 +140,7 @@ class TimeOutError(RequestError):
             f"Request timeout {timeout_msg} for URL {url}" if url else str(exception)
         )
         super().__init__(message)
+
+
+class QuotaExceededError(RequestError):
+    """An error indicating that too many requests were sent to a provider"""

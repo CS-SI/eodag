@@ -31,7 +31,7 @@ from typing import (
     cast,
     get_args,
 )
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import (
     parse_qs,
     parse_qsl,
@@ -99,6 +99,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     PluginImplementationError,
+    QuotaExceededError,
     RequestError,
     TimeOutError,
     ValidationError,
@@ -1495,7 +1496,20 @@ class QueryStringSearch(Search):
         except socket.timeout:
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
+        except HTTPError as e:  # raised by urlopen
+            if e.code and e.code == 429:
+                raise QuotaExceededError(
+                    f"Too many requests on provider {self.provider}, please check your quota!"
+                )
         except (requests.RequestException, URLError) as err:
+            if (
+                err.response
+                and err.response.status_code
+                and err.response.status_code == 429
+            ):
+                raise QuotaExceededError(
+                    f"Too many requests on provider {self.provider}, please check your quota!"
+                )
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
                 logger.exception("%s %s" % (exception_message, err_msg))
@@ -1591,7 +1605,15 @@ class ODataV4Search(QueryStringSearch):
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-                except requests.RequestException:
+                except requests.RequestException as e:
+                    if (
+                        e.response
+                        and e.response.status_code
+                        and e.response.status_code == 429
+                    ):
+                        logger.error(
+                            f"Too many requests on provider {self.provider}, please check your quota!"
+                        )
                     logger.exception(
                         "Skipping error while searching for %s %s instance",
                         self.provider,
@@ -2036,6 +2058,10 @@ class PostJsonSearch(QueryStringSearch):
                     f"Please check your credentials for {self.provider}.",
                     f"HTTP Error {response.status_code} returned.",
                     response.text.strip(),
+                )
+            if response.status_code and response.status_code == 429:
+                raise QuotaExceededError(
+                    f"Too many requests on provider {self.provider}, please check your quota!"
                 )
             if exception_message:
                 logger.exception(exception_message)
