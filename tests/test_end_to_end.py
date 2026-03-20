@@ -439,7 +439,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
-        self.eodag._providers.configs["creodias"].auth.credentials[
+        self.eodag.providers.configs["creodias"].auth.credentials[
             "totp"
         ] = "PLEASE_CHANGE_ME"
         expected_filename = "{}.zip".format(product.properties["title"])

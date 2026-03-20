@@ -26,7 +26,6 @@ import shutil
 import tempfile
 import warnings
 from collections import deque
-from copy import deepcopy
 from importlib.metadata import version
 from importlib.resources import files as res_files
 from operator import itemgetter
@@ -43,13 +42,22 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.provider import (
+    Provider,
+    ProvidersDict,
+    build_provider_configs,
+    load_provider_configs,
+    merge_provider_configs,
+)
 from eodag.api.search_result import SearchResult
 from eodag.config import (
+    AUTH_TOPIC_KEYS,
     PLUGINS_TOPICS_KEYS,
+    CollectionProviderConfig,
     PluginConfig,
     SimpleYamlProxyConfig,
     credentials_in_auth,
+    extract_credentials,
     get_collections_providers_config,
     get_ext_collections_conf,
     get_federation_backends_config,
@@ -82,6 +90,7 @@ from eodag.utils.dates import get_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
+    MisconfiguredError,
     NoMatchingCollection,
     PluginImplementationError,
     RequestError,
@@ -97,7 +106,9 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.databases.base import Database
     from eodag.plugins.apis.base import Api
+    from eodag.plugins.base import PluginTopic
     from eodag.plugins.crunch.base import Crunch
+    from eodag.plugins.download.base import Download
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
     from eodag.types.download_args import DownloadConf
@@ -156,10 +167,14 @@ class EODataAccessGateway:
         collections_dict = CollectionsDict.from_configs(collections_config_dict)
         self.db.upsert_collections(collections_dict)
 
-        self._providers = ProvidersDict.from_configs(load_default_config())
+        self._plugins_manager = PluginManager()
 
-        self._plugins_manager = PluginManager(self._providers)
-        self._providers = self._plugins_manager.providers
+        # Build providers: default → external plugins → user YAML → env vars
+        extra_configs = (
+            [self._plugins_manager.external_providers_config]
+            if self._plugins_manager.external_providers_config
+            else []
+        )
 
         # First level override: From a user configuration file
         if user_conf_file_path is None:
@@ -178,83 +193,73 @@ class EODataAccessGateway:
                         source,
                         standard_configuration_path,
                     )
-        self._providers.update_from_config_file(user_conf_file_path)
 
-        # Second level override: From environment variables
-        self._providers.update_from_env()
+        providers = load_provider_configs(
+            load_default_config(),
+            *extra_configs,
+            user_conf_file=user_conf_file_path,
+        )
 
-        # add providers config
+        # Extract credentials before pushing to DB (keep in memory only)
+        self._credentials = extract_credentials(
+            [provider.config for provider in providers.values()]
+        )
+
+        # filter out providers needing auth that have no credentials set
+        self._prune_providers_list(providers)
+
+        # add providers config to DB
         provider_configs = get_federation_backends_config(
-            [provider.config for provider in self._providers.values()]
+            [provider.config for provider in providers.values()]
         )
         self.db.upsert_federation_backends(provider_configs)
 
-        # add collections providers config
+        # add collections providers config to DB
         coll_p_configs = get_collections_providers_config(
-            [provider.config for provider in self._providers.values()]
+            [provider.config for provider in providers.values()]
         )
         self.db.upsert_collections_federation_backends(coll_p_configs)
 
+        # Bind plugin manager to DB and credentials
+        self._plugins_manager.set_db(self.db, self._credentials)
+
         self._bulk_sync_collections()
-
-        # re-build _plugins_manager using up-to-date providers_config
-        self._plugins_manager.rebuild(self._providers)
-
-        # store pruned providers configs
-        self._pruned_providers_config: dict[str, Any] = {}
-
-        # filter out providers needing auth that have no credentials set
-        self._prune_providers_list()
-
-        # Sort providers taking into account of possible new priority orders
-        self._plugins_manager.sort_providers()
 
         self.set_locations_conf(locations_conf_path)
 
     def _bulk_sync_collections(self) -> None:
         """Synchronize collections for all providers in a single DB query.
 
-        In strict mode, removes collections not in the collections table.
         In permissive mode, adds empty collection to config for missing types.
         """
-
-        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        all_config_ids: set[str] = set()
-        for provider in self._providers.values():
-            all_config_ids.update(
-                set(provider.collections_config.keys()) - {GENERIC_COLLECTION}
-            )
+        all_config_ids = self.db.get_all_collection_ids_for_backends() - {
+            GENERIC_COLLECTION
+        }
+        if not all_config_ids:
+            return
 
         known_ids = set(self.list_collections(ids=list(all_config_ids)).ids)
+        missing_ids = all_config_ids - known_ids
 
-        collections_to_add: list[Collection] = []
-        for provider in self._providers.values():
-            config_ids = set(provider.collections_config.keys()) - {GENERIC_COLLECTION}
-            missing_ids = config_ids - known_ids
-            if not missing_ids:
-                continue
+        if not missing_ids:
+            return
 
-            if strict_mode:
-                logger.debug(
-                    "Collections strict mode, ignoring %s (provider %s)",
-                    ", ".join(missing_ids),
-                    provider,
-                )
-                for coll_id in missing_ids:
-                    del provider.collections_config[coll_id]
-            else:
-                collections_to_add.extend(
-                    Collection(id=coll_id, title=coll_id, description=NOT_AVAILABLE)
-                    for coll_id in missing_ids
-                )
-                logger.debug(
-                    "Collections permissive mode, %s added (provider %s)",
-                    ", ".join(missing_ids),
-                    provider,
-                )
-
-        if collections_to_add:
+        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
+        if strict_mode:
+            logger.debug(
+                "Collections strict mode, ignoring %s",
+                ", ".join(missing_ids),
+            )
+        else:
+            collections_to_add = [
+                Collection(id=coll_id, title=coll_id, description=NOT_AVAILABLE)
+                for coll_id in missing_ids
+            ]
             self.db.upsert_collections(CollectionsDict(collections_to_add))
+            logger.debug(
+                "Collections permissive mode, %s added",
+                ", ".join(missing_ids),
+            )
 
     def _collections_config_init(
         self, collections_config_dict: dict[str, Any]
@@ -273,16 +278,7 @@ class EODataAccessGateway:
     @property
     def providers(self) -> ProvidersDict:
         """Providers of eodag configuration sorted by priority in descending order and by name in ascending order."""
-        providers = deepcopy(self._providers)
-        # Sort: priority descending, then name ascending
-        providers.data = {
-            k: v
-            for k, v in sorted(
-                providers.data.items(), key=lambda item: (-item[1].priority, item[0])
-            )
-        }
-
-        return providers
+        return ProvidersDict(self.db)
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -294,7 +290,8 @@ class EODataAccessGateway:
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
         """
-        if provider not in self.providers.names:
+        all_names = self.db.list_federation_backend_names(enabled_only=False)
+        if provider not in all_names:
             raise UnsupportedProvider(
                 f"This provider is not recognised by eodag: {provider}"
             )
@@ -302,7 +299,7 @@ class EODataAccessGateway:
         preferred_provider, max_priority = self.get_preferred_provider()
         if preferred_provider != provider:
             new_priority = max_priority + 1
-            self._plugins_manager.set_priority(provider, new_priority)
+            self.db.set_federation_backend_priority(provider, new_priority)
 
     def get_preferred_provider(self) -> tuple[str, int]:
         """Get the provider currently set as the preferred one for searching
@@ -310,7 +307,8 @@ class EODataAccessGateway:
 
         :returns: The provider with the maximum priority and its priority
         """
-        return max(self._providers.priorities.items(), key=itemgetter(1))
+        priorities = self.db.get_federation_backend_priorities()
+        return max(priorities.items(), key=itemgetter(1))
 
     def update_providers_config(
         self,
@@ -331,20 +329,47 @@ class EODataAccessGateway:
         else:
             return None
 
-        # restore the pruned configuration
-        for name in list(self._pruned_providers_config):
-            config = self._pruned_providers_config[name]
-            if name in conf_update:
-                logger.info(
-                    "%s: provider restored from the pruned configurations", name
-                )
-                self._providers[name] = Provider(config)
-                self._pruned_providers_config.pop(name)
+        # Re-enable disabled providers that appear in the update
+        disabled_names = set(
+            self.db.list_federation_backend_names(enabled_only=False)
+        ) - set(self.db.list_federation_backend_names(enabled_only=True))
+        to_restore = [n for n in conf_update if n in disabled_names]
+        if to_restore:
+            self.db.set_federation_backends_enabled(to_restore, True)
+            for name in to_restore:
+                logger.info("%s: disabled provider re-enabled", name)
 
-        self._providers.update_from_configs(conf_update)
+        # For existing providers, reconstruct from DB then merge the update
+        existing_names = [
+            n for n in conf_update if n in self.db.list_federation_backend_names(enabled_only=False)
+        ]
+        providers: dict[str, Provider] = {}
+        if existing_names:
+            # Load existing providers from DB and merge updates into them
+            for name in existing_names:
+                provider = self.providers[name]
+                provider.update_from_config(conf_update[name])
+                providers[name] = provider
+        # Create new providers from scratch
+        new_conf = {n: c for n, c in conf_update.items() if n not in existing_names}
+        if new_conf:
+            merge_provider_configs(providers, new_conf)
 
-        # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager.build_collection_to_provider_config_map()
+        provider_configs = get_federation_backends_config(
+            [provider.config for provider in providers.values()]
+        )
+        self.db.upsert_federation_backends(provider_configs)
+
+        coll_p_configs = get_collections_providers_config(
+            [provider.config for provider in providers.values()]
+        )
+        self.db.upsert_collections_federation_backends(coll_p_configs)
+
+        # update credentials
+        new_credentials = extract_credentials(
+            [provider.config for provider in providers.values()]
+        )
+        self._credentials.update(new_credentials)
 
     def add_provider(
         self,
@@ -413,87 +438,66 @@ class EODataAccessGateway:
         if priority is None:
             self.set_preferred_provider(name)
 
-    def _prune_providers_list(self) -> None:
-        """Removes from config providers needing auth that have no credentials set."""
-        update_needed = False
+    # ------------------------------------------------------------------
+    # Plugin resolution — reads DB, constructs plugins on the fly
+    # ------------------------------------------------------------------
 
-        # loop over a copy to allow popping items
-        for name, provider in list(self._providers.items()):
-            conf = provider.config
+    def _prune_providers_list(
+        self, providers: Optional[dict[str, Provider]] = None
+    ) -> None:
+        """Removes from config providers needing auth that have no credentials set.
 
-            # remove providers using skipped plugins
-            if [
-                v
-                for v in conf.__dict__.values()
-                if isinstance(v, PluginConfig)
-                and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
-            ]:
-                del self._providers[provider.name]
-                logger.debug(
-                    f"{provider}: provider needing unavailable plugin has been removed"
-                )
-                continue
+        When called with a ``providers`` dict, operates in-place before DB push.
+        When called without arguments, reads providers from DB, prunes, then
+        disables pruned providers in the DB.
+        """
+        from eodag.api.provider import prune_providers
 
-            # check authentication
-            if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
-                credentials_exist = credentials_in_auth(conf.api)
-                if not credentials_exist:
-                    # credentials needed but not found
-                    self._pruned_providers_config[provider.name] = conf
-                    del self._providers[provider.name]
+        from_db = providers is None
+        if from_db:
+            providers = dict(self.providers.items())
 
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no credentials could be found",
-                        provider,
-                    )
+        prune_providers(
+            providers,
+            skipped_plugins=self._plugins_manager.skipped_plugins,
+            db=self.db if from_db else None,
+        )
 
-            elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
-                if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
-                    # credentials needed but no auth plugin was found
-                    self._pruned_providers_config[provider.name] = conf
-                    del self._providers[provider.name]
+    # Thin delegation to PluginManager — keeps the public API stable
+    def get_search_plugins(
+        self,
+        collection: Optional[str] = None,
+        provider: Optional[str] = None,
+    ) -> Iterator[Search]:
+        return self._plugins_manager.get_search_plugins(collection, provider)
 
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no auth plugin could be found",
-                        provider,
-                    )
-                    continue
+    def get_download_plugin(self, product: EOProduct) -> Download:
+        return self._plugins_manager.get_download_plugin(product)
 
-                credentials_exist = (
-                    hasattr(conf, "search_auth")
-                    and credentials_in_auth(conf.search_auth)
-                ) or (
-                    not hasattr(conf, "search_auth")
-                    and hasattr(conf, "auth")
-                    and credentials_in_auth(conf.auth)
-                )
-                if not credentials_exist:
-                    # credentials needed but not found
-                    self._pruned_providers_config[provider.name] = conf
-                    del self._providers[provider.name]
+    def get_auth_plugin(
+        self,
+        associated_plugin: PluginTopic,
+        product: Optional[EOProduct] = None,
+    ) -> Any:
+        return self._plugins_manager.get_auth_plugin(associated_plugin, product)
 
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no credentials could be found",
-                        provider,
-                    )
+    def get_auth_plugins(
+        self,
+        provider: str,
+        matching_url: Optional[str] = None,
+        matching_conf: Optional[PluginConfig] = None,
+    ) -> Iterator[Any]:
+        return self._plugins_manager.get_auth_plugins(
+            provider, matching_url, matching_conf
+        )
 
-            elif not hasattr(conf, "api") and not hasattr(conf, "search"):
-                # provider should have at least an api or search plugin
-                self._pruned_providers_config[provider.name] = conf
-                del self._providers[provider.name]
-
-                update_needed = True
-                logger.info(
-                    "%s: provider has been pruned because no api or search plugin could be found",
-                    provider,
-                )
-
-        if update_needed:
-            # rebuild _plugins_manager with updated providers list
-            self._plugins_manager.rebuild(self._providers)
+    def get_auth(
+        self,
+        provider: str,
+        matching_url: Optional[str] = None,
+        matching_conf: Optional[PluginConfig] = None,
+    ) -> Any:
+        return self._plugins_manager.get_auth(provider, matching_url, matching_conf)
 
     def set_locations_conf(self, locations_conf_path: Optional[str]) -> None:
         """Set locations configuration.
@@ -607,7 +611,9 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
         if providers:
-            known = set(self.providers.names) | set(self.providers.groups)
+            all_names = self.db.list_federation_backend_names(enabled_only=False)
+            all_groups = self.db.list_federation_backend_groups(enabled_only=False)
+            known = set(all_names) | set(all_groups)
             unknown = set(providers) - known
             if unknown:
                 raise UnsupportedProvider(
@@ -616,7 +622,7 @@ class EODataAccessGateway:
             # Resolve provider groups to actual provider names for DB query
             resolved: list[str] = []
             for p in providers:
-                members = [m.name for m in self.providers.filter_by_name_or_group(p)]
+                members = self.db.filter_federation_backends(p, enabled_only=False)
                 resolved.extend(members)
             providers = resolved
         try:
@@ -658,13 +664,16 @@ class EODataAccessGateway:
         ] = {}
         # check if any provider has not already been fetched for collections
         already_fetched = True
-        for provider_to_fetch in self._providers.filter_by_name_or_group(provider):
-            if provider_to_fetch.fetchable and provider_to_fetch.search_config:
-                providers_discovery_configs_fetchable[
-                    provider_to_fetch.name
-                ] = provider_to_fetch.search_config.discover_collections
-                if not provider_to_fetch.collections_fetched:
-                    already_fetched = False
+        # filter backends by name or group, then check fetchable
+        backend_names = self.db.filter_federation_backends(provider)
+        fetchable_backends = self.db.get_federation_backends_fetchable(backend_names)
+        for fb in fetchable_backends:
+            fb_id = fb["id"]
+            discover_conf = fb["plugins_config"]["search"]["discover_collections"]
+            providers_discovery_configs_fetchable[fb_id] = discover_conf
+            last_fetch = self.db.get_federation_backend_last_fetch(fb_id)
+            if not last_fetch:
+                already_fetched = False
 
         if not already_fetched:
             # get ext_collections conf
@@ -689,7 +698,7 @@ class EODataAccessGateway:
         # and collections list would need to be fetched
 
         # get ext_collections conf for user modified providers
-        default_providers = ProvidersDict.from_configs(load_default_config())
+        default_providers = build_provider_configs(load_default_config())
         for (
             provider,
             user_discovery_conf,
@@ -776,11 +785,9 @@ class EODataAccessGateway:
         :returns: external collections configuration
         """
 
-        providers_iter, providers_check = itertools.tee(
-            self.providers.filter_by_name_or_group(provider)
-        )
+        backend_names = self.db.filter_federation_backends(provider)
 
-        if provider and not any(providers_check):
+        if provider and not backend_names:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
@@ -788,37 +795,36 @@ class EODataAccessGateway:
         ext_collections_conf: dict[str, Any] = {}
 
         kwargs: dict[str, Any] = {}
-        for p in providers_iter:
-            if not p.search_config:
-                return None
+        fetchable_backends = self.db.get_federation_backends_fetchable(backend_names)
+        for fb in fetchable_backends:
+            p_name = fb["id"]
 
-            if p.fetchable:
-                search_plugin: Union[Search, Api] = next(
-                    self._plugins_manager.get_search_plugins(provider=p.name)
-                )
+            search_plugin: Union[Search, Api] = next(
+                self.get_search_plugins(provider=p_name)
+            )
 
-                # check after plugin init if still fetchable
-                if not getattr(search_plugin.config, "discover_collections", {}).get(
-                    "fetch_url"
+            # check after plugin init if still fetchable
+            if not getattr(search_plugin.config, "discover_collections", {}).get(
+                "fetch_url"
+            ):
+                continue
+
+            # append auth to search plugin if needed
+            if getattr(search_plugin.config, "need_auth", False):
+                if auth := self.get_auth(
+                    search_plugin.provider,
+                    getattr(search_plugin.config, "api_endpoint", None),
+                    search_plugin.config,
                 ):
+                    kwargs["auth"] = auth
+                else:
+                    logger.debug(
+                        f"Could not authenticate on {p_name} for collections discovery"
+                    )
+                    ext_collections_conf[p_name] = None
                     continue
 
-                # append auth to search plugin if needed
-                if getattr(search_plugin.config, "need_auth", False):
-                    if auth := self._plugins_manager.get_auth(
-                        search_plugin.provider,
-                        getattr(search_plugin.config, "api_endpoint", None),
-                        search_plugin.config,
-                    ):
-                        kwargs["auth"] = auth
-                    else:
-                        logger.debug(
-                            f"Could not authenticate on {p} for collections discovery"
-                        )
-                        ext_collections_conf[p.name] = None
-                        continue
-
-                ext_collections_conf[p.name] = search_plugin.discover_collections(
+            ext_collections_conf[p_name] = search_plugin.discover_collections(
                     **kwargs
                 )
 
@@ -832,27 +838,47 @@ class EODataAccessGateway:
         :param ext_collections_conf: external collections configuration
         """
         all_new_collections: list[Collection] = []
+        all_backend_names = self.db.list_federation_backend_names(enabled_only=False)
 
         for provider, new_collections_conf in ext_collections_conf.items():
-            if new_collections_conf and provider in self._providers:
-                try:
-                    fetchable = self._providers[provider].fetchable
-                    if not fetchable:
-                        # conf has been updated and provider collections are no more discoverable
-                        continue
-
-                    provider_products_config = (
-                        self._providers[provider].collections_config or {}
-                    )
-                except UnsupportedProvider:
-                    logger.debug(
-                        "Ignoring external collections for unknown provider %s",
-                        provider,
-                    )
+            if new_collections_conf and provider in all_backend_names:
+                fb_data = self.db.get_federation_backends([provider]).get(provider, {})
+                fb_pc = fb_data.get("plugins_config", {})
+                search_conf = fb_pc.get("search") or fb_pc.get("api")
+                fetchable = bool(
+                    search_conf
+                    and search_conf.get("discover_collections", {}).get("fetch_url")
+                )
+                if not fetchable:
                     continue
+
+                provider_products_config_raw = (
+                    self.db.get_collection_configs_for_backend(provider)
+                )
+                # Unwrap topic key: {coll_id: {"search": conf}} -> {coll_id: conf}
+                provider_products_config: dict[str, Any] = {}
+                for coll_id, wrapped in provider_products_config_raw.items():
+                    for _topic, conf in wrapped.items():
+                        provider_products_config[coll_id] = conf
+                        break
 
                 new_collections = 0
                 bad_formatted_col_count = 0
+
+                # unparsable_properties from discover_collections conf
+                discover_conf = search_conf.get("discover_collections", {})
+                unparsable_keys = set(
+                    list(
+                        discover_conf.get(
+                            "generic_collection_parsable_properties", {}
+                        ).keys()
+                    )
+                    + list(
+                        discover_conf.get(
+                            "generic_collection_parsable_metadata", {}
+                        ).keys()
+                    )
+                )
                 for (
                     new_collection,
                     new_collection_conf,
@@ -860,9 +886,6 @@ class EODataAccessGateway:
                     if new_collection not in provider_products_config:
                         for existing_collection in provider_products_config.copy():
                             # compare parsed extracted conf (without metadata_mapping entry)
-                            unparsable_keys = self._providers[
-                                provider
-                            ].unparsable_properties
 
                             new_parsed_collections_conf = {
                                 k: v
@@ -965,17 +988,29 @@ class EODataAccessGateway:
                             provider,
                         )
 
-            elif provider not in self._providers:
+                    # Persist new collection-provider links to DB
+                    new_coll_fb_configs = [
+                        CollectionProviderConfig(
+                            coll_id,
+                            provider,
+                            {"search": coll_conf} if not fb_pc.get("api") else {"api": coll_conf},
+                        )
+                        for coll_id, coll_conf in provider_products_config.items()
+                        if coll_id not in self.db.get_collection_configs_for_backend(provider)
+                    ]
+                    if new_coll_fb_configs:
+                        self.db.upsert_collections_federation_backends(new_coll_fb_configs)
+
+            elif provider not in all_backend_names:
                 # unknown provider
                 continue
 
-            self._providers[provider].collections_fetched = True
+            self.db.set_federation_backend_last_fetch(
+                provider, datetime.datetime.now(datetime.timezone.utc).isoformat()
+            )
 
         if all_new_collections:
             self.db.upsert_collections(CollectionsDict(all_new_collections))
-
-        # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager.build_collection_to_provider_config_map()
 
     @_deprecated(
         reason="Please use 'EODataAccessGateway.providers' instead",
@@ -1000,14 +1035,22 @@ class EODataAccessGateway:
         """
         candidates = []
 
-        # use "providers" property to get sorted providers
-        for key, provider in self.providers.items():
-            if collection and collection not in provider.collections_config:
-                continue
+        # use DB to get providers sorted by priority
+        if collection:
+            # only providers configured for this collection
+            fb_configs = self.db.get_collection_federation_backends(collection)
+            all_fb = self.db.get_federation_backends(list(fb_configs.keys()))
+        else:
+            all_fb = self.db.get_federation_backends()
 
-            group = getattr(provider.config, "group", None)
+        for key, fb_data in sorted(
+            all_fb.items(), key=lambda item: (-item[1]["priority"], item[0])
+        ):
+            if not fb_data.get("enabled"):
+                continue
+            group = (fb_data.get("metadata") or {}).get("group")
             name = group if by_group and group else key
-            candidates.append((name, provider.priority))
+            candidates.append((name, fb_data["priority"]))
 
         if by_group:
             # Keep only the highest-priority entry per group
@@ -1593,7 +1636,7 @@ class EODataAccessGateway:
             logger.debug("collection %s not found", collection_id)
         get_search_plugins_kwargs = dict(provider=provider, collection=collection)
 
-        search_plugins = self._plugins_manager.get_search_plugins(
+        search_plugins = self.get_search_plugins(
             **get_search_plugins_kwargs
         )
         # datacube query string
@@ -1661,7 +1704,7 @@ class EODataAccessGateway:
         return SearchResult([], 0, results.errors)
 
     def _fetch_external_collection(self, provider: str, collection: str):
-        plugins = self._plugins_manager.get_search_plugins(provider=provider)
+        plugins = self.get_search_plugins(provider=provider)
         plugin = next(plugins)
 
         # check after plugin init if still fetchable
@@ -1672,7 +1715,7 @@ class EODataAccessGateway:
 
         # append auth if needed
         if getattr(plugin.config, "need_auth", False):
-            if auth := self._plugins_manager.get_auth(
+            if auth := self.get_auth(
                 plugin.provider,
                 getattr(plugin.config, "api_endpoint", None),
                 plugin.config,
@@ -1801,7 +1844,7 @@ class EODataAccessGateway:
         collection_exists = bool(self.get_collection(collection))
 
         search_plugins: list[Union[Search, Api]] = []
-        for plugin in self._plugins_manager.get_search_plugins(
+        for plugin in self.get_search_plugins(
             collection=collection, provider=provider
         ):
             # exclude MeteoblueSearch plugins from search fallback for unknown collection
@@ -1879,7 +1922,7 @@ class EODataAccessGateway:
 
             # append auth if needed
             if getattr(search_plugin.config, "need_auth", False):
-                if auth := self._plugins_manager.get_auth(
+                if auth := self.get_auth(
                     search_plugin.provider,
                     getattr(search_plugin.config, "api_endpoint", None),
                     search_plugin.config,
@@ -1967,7 +2010,7 @@ class EODataAccessGateway:
                         eo_product.collection = guesses[0]
 
                 if eo_product.search_intersection is not None:
-                    eo_product._register_downloader_from_manager(self._plugins_manager)
+                    eo_product._register_downloader(self)
 
             # Make next_page not available if the current one returned less than the maximum number of items asked for.
             if not prep.limit or len(search_result) < prep.limit:
@@ -1997,7 +2040,7 @@ class EODataAccessGateway:
         """
         search_criteria = kwargs.pop("search_criteria", {})
         for cruncher_name, cruncher_args in kwargs.items():
-            cruncher = self._plugins_manager.get_crunch_plugin(
+            cruncher = PluginManager.get_crunch_plugin(
                 cruncher_name, **cruncher_args
             )
             results = results.crunch(cruncher, **search_criteria)
@@ -2073,7 +2116,7 @@ class EODataAccessGateway:
         if search_result:
             logger.info("Downloading %s products", len(search_result))
             # Get download plugin using first product assuming all plugins use base.Download.download_all
-            download_plugin = self._plugins_manager.get_download_plugin(
+            download_plugin = self.get_download_plugin(
                 search_result[0]
             )
             paths = download_plugin.download_all(
@@ -2243,10 +2286,10 @@ class EODataAccessGateway:
 
     def _setup_downloader(self, product: EOProduct) -> None:
         if product.downloader is None:
-            downloader = self._plugins_manager.get_download_plugin(product)
+            downloader = self.get_download_plugin(product)
             auth = product.downloader_auth
             if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(downloader, product)
+                auth = self.get_auth_plugin(downloader, product)
             product.register_downloader(downloader, auth)
 
     def get_cruncher(self, name: str, **options: Any) -> Crunch:
@@ -2258,7 +2301,7 @@ class EODataAccessGateway:
         """
         plugin_conf = {"name": name}
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
-        return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
+        return PluginManager.get_crunch_plugin(name, **plugin_conf)
 
     def list_queryables(
         self,
@@ -2296,7 +2339,7 @@ class EODataAccessGateway:
         additional_information = []
         queryable_properties: dict[str, Any] = {}
 
-        for plugin in self._plugins_manager.get_search_plugins(collection, provider):
+        for plugin in self.get_search_plugins(collection, provider):
             # attach collection config
             collection_configs: dict[str, Any] = {}
             if collection:
@@ -2309,7 +2352,7 @@ class EODataAccessGateway:
 
             # authenticate if required
             if getattr(plugin.config, "need_auth", False) and (
-                auth := self._plugins_manager.get_auth_plugin(plugin)
+                auth := self.get_auth_plugin(plugin)
             ):
                 try:
                     plugin.auth = auth.authenticate()
@@ -2363,7 +2406,7 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
         sortables: dict[str, Optional[ProviderSortables]] = {}
-        provider_search_plugins = self._plugins_manager.get_search_plugins()
+        provider_search_plugins = self.get_search_plugins()
         for provider_search_plugin in provider_search_plugins:
             provider = provider_search_plugin.provider
             if not hasattr(provider_search_plugin.config, "sort"):
