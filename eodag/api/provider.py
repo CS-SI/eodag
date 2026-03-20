@@ -20,8 +20,6 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
-import traceback
-from collections import UserDict
 from inspect import isclass
 from textwrap import shorten
 from typing import (
@@ -506,12 +504,47 @@ class Provider:
         self.config.update(config)
 
 
-class ProvidersDict(UserDict[str, Provider]):
+class ProvidersDict:
     """
-    A dictionary-like collection of :class:`~eodag.api.provider.Provider` objects, keyed by provider name.
+    A dictionary-like view over providers stored in the database.
 
-    :param providers: Initial providers to populate the dictionary.
+    Providers are read from the ``federation_backends`` table. This class does not
+    hold any in-memory state — the database is the single source of truth.
+
+    Create via :meth:`ProvidersDict(db) <__init__>`.
     """
+
+    def __init__(self, db: Any) -> None:
+        """
+        :param db: A :class:`~eodag.databases.sqlite.SQLiteDatabase` instance.
+        """
+        self._db = db
+
+    def _provider_from_db(self, name: str) -> Provider:
+        """Reconstruct a Provider from database data.
+
+        :param name: The federation backend id
+        :returns: A Provider instance
+        :raises UnsupportedProvider: If the provider is not found in the database
+        """
+        fb = self._db.get_federation_backends([name])
+        if name not in fb:
+            raise UnsupportedProvider(f"Provider '{name}' not found.")
+        data = fb[name]
+        config_dict = {"name": name, **data["metadata"], **data["plugins_config"], "priority": data["priority"]}
+        # Load collection-level configs (products) from collections_federation_backends
+        coll_configs = self._db.get_collection_configs_for_backend(name)
+        if coll_configs:
+            products = {}
+            for coll_id, coll_pc in coll_configs.items():
+                # coll_pc is {"search": {...}} or {"api": {...}}
+                for _topic, topic_conf in coll_pc.items():
+                    products[coll_id] = topic_conf
+                    break
+            config_dict["products"] = products
+        provider = Provider(config_dict)
+        provider.collections_fetched = bool(data["metadata"].get("last_fetch"))
+        return provider
 
     def __contains__(self, item: object) -> bool:
         """
@@ -520,42 +553,53 @@ class ProvidersDict(UserDict[str, Provider]):
         :param item: Provider name or Provider instance to check.
         :return: True if the provider is in the dictionary, False otherwise.
         """
-        if isinstance(item, Provider):
-            return item.name in self.data
-        return item in self.data
+        name = item.name if isinstance(item, Provider) else item
+        if isinstance(name, str):
+            return name in self._db.list_federation_backend_names(enabled_only=True)
+        return False
 
-    def __setitem__(self, key: str, value: Provider) -> None:
-        """
-        Add a :class:`~eodag.api.provider.Provider` to the dictionary.
+    def __getitem__(self, key: str) -> Provider:
+        return self._provider_from_db(key)
 
-        :param key: The name of the provider.
-        :param value: The Provider instance to add.
-        :raises ValueError: If the provider key already exists.
-        """
-        if key in self.data:
-            msg = f"Provider '{key}' already exists."
-            raise ValueError(msg)
-        super().__setitem__(key, value)
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self._provider_from_db(key)
+        except UnsupportedProvider:
+            return default
 
-    def __delitem__(self, key: str) -> None:
-        """
-        Delete a provider by name.
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._db.list_federation_backend_names(enabled_only=True))
 
-        :param key: The name of the provider to delete.
-        :raises UnsupportedProvider: If the provider key is not found.
-        """
-        if key not in self.data:
-            msg = f"Provider '{key}' not found."
-            raise UnsupportedProvider(msg)
-        super().__delitem__(key)
+    def __len__(self) -> int:
+        return len(self._db.list_federation_backend_names(enabled_only=True))
 
+    def keys(self) -> list[str]:
+        return self._db.list_federation_backend_names(enabled_only=True)
+
+    def values(self) -> list[Provider]:
+        return [self._provider_from_db(n) for n in self._db.list_federation_backend_names(enabled_only=True)]
+
+    def items(self) -> list[tuple[str, Provider]]:
+        names = self._db.list_federation_backend_names(enabled_only=True)
+        return [(n, self._provider_from_db(n)) for n in names]
+
+    def pop(self, key: str, *args: Any) -> Any:
+        """Disable a provider in the DB and return it."""
+        try:
+            provider = self._provider_from_db(key)
+        except UnsupportedProvider:
+            if args:
+                return args[0]
+            raise
+        self._db.set_federation_backends_enabled([key], False)
+        return provider
     def __repr__(self) -> str:
         """
         String representation of :class:`~eodag.api.provider.ProvidersDict`.
 
         :return: String listing provider names.
         """
-        return f"ProvidersDict({list(self.data.keys())})"
+        return f"ProvidersDict({self.names})"
 
     def _repr_html_(self, embeded=False) -> str:
         """
@@ -604,9 +648,9 @@ class ProvidersDict(UserDict[str, Provider]):
         """
         List of provider names.
 
-        :return: List of provider names.
+        :return: List of provider names sorted by priority DESC then name ASC.
         """
-        return [provider.name for provider in self.data.values()]
+        return self._db.list_federation_backend_names()
 
     @property
     def groups(self) -> list[str]:
@@ -615,9 +659,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
         :return: List of provider groups if exist or names.
         """
-        return list(
-            set(provider.group or provider.name for provider in self.data.values())
-        )
+        return self._db.list_federation_backend_groups()
 
     @property
     def configs(self) -> dict[str, ProviderConfig]:
@@ -626,7 +668,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
         :return: Dictionary mapping provider name to :class:`~eodag.api.provider.ProviderConfig`.
         """
-        return {provider.name: provider.config for provider in self.data.values()}
+        return {name: self._provider_from_db(name).config for name in self._db.list_federation_backend_names(enabled_only=True)}
 
     @property
     def priorities(self) -> dict[str, int]:
@@ -635,9 +677,7 @@ class ProvidersDict(UserDict[str, Provider]):
 
         :return: Dictionary mapping provider name to priority integer.
         """
-        return {
-            provider.name: provider.config.priority for provider in self.data.values()
-        }
+        return self._db.get_federation_backend_priorities()
 
     def get_config(self, provider: str) -> Optional[ProviderConfig]:
         """
@@ -660,283 +700,304 @@ class ProvidersDict(UserDict[str, Provider]):
 
         :param q: Free-text parameter to filter providers. If None, returns all providers.
         :return: matching Provider objects in a :class:`~eodag.api.provider.ProvidersDict`.
-
-        Example
-        -------
-
-        >>> from eodag.api.provider import ProvidersDict, Provider
-        >>> providers = ProvidersDict()
-        >>> providers['test1'] = Provider({
-        ...     'name': 'test1',
-        ...     'description': 'Satellite data',
-        ...     'search': {'type': 'StacSearch'}
-        ... })
-        >>> providers['test2'] = Provider({
-        ...     'name': 'test2',
-        ...     'description': 'Weather data',
-        ...     'search': {'type': 'StacSearch'}
-        ... })
-        >>> # Filter by description content
-        >>> providers.filter('Satellite')
-        ProvidersDict(['test1'])
-        >>> # Filter with logical operators
-        >>> providers['test3'] = Provider({
-        ...     'name': 'test3',
-        ...     'description': 'Satellite weather data',
-        ...     'search': {'type': 'StacSearch'}
-        ... })
-        >>> providers.filter('Satellite AND weather')
-        ProvidersDict(['test3'])
-        >>> # Get all providers when no filter
-        >>> len(providers.filter())
-        3
         """
         if not q:
-            # yield from self.data.values()
             return self
 
+        # TODO: implement DB-backed free-text filtering
         free_text_query = compile_free_text_query(q)
         searchable_attributes = {"name", "group", "description", "products"}
 
-        filtered = ProvidersDict()
-        for p in self.data.values():
+        # For now, materialize from DB and filter in Python
+        matching_names: list[str] = []
+        for name in self._db.list_federation_backend_names(enabled_only=True):
+            p = self._provider_from_db(name)
             searchables = {
                 k: v for k, v in p.config.__dict__.items() if k in searchable_attributes
             }
             if free_text_query(searchables):
-                # yield p
-                filtered[p.name] = p
-        return filtered
+                matching_names.append(name)
+
+        # Return a filtered view backed by the same DB
+        return _FilteredProvidersDict(self._db, matching_names)
 
     def filter_by_name_or_group(
         self, name_or_group: Optional[str] = None
-    ) -> Iterator[Provider]:
+    ) -> list[str]:
         """
-        Yield providers whose name or group matches the given ``name_or_group``.
+        Return provider names matching the given ``name_or_group``.
 
-        If ``name_or_group`` is ``None``, yields all providers.
-
-        :param name_or_group: The provider name or group to filter by. If None, yields all providers.
-        :return: Iterator of matching :class:`~eodag.api.provider.Provider` objects.
-
-        Example
-        -------
-
-        >>> from eodag.api.provider import ProvidersDict, Provider
-        >>> providers = ProvidersDict()
-        >>> providers['sentinel'] = Provider({'name': 'sentinel', 'group': 'esa', 'search': {'type': 'StacSearch'}})
-        >>> providers['landsat'] = Provider({'name': 'landsat', 'group': 'usgs', 'search': {'type': 'StacSearch'}})
-        >>> providers['modis'] = Provider({'name': 'modis', 'group': 'nasa', 'search': {'type': 'StacSearch'}})
-        >>>
-        >>> # Filter by exact provider name
-        >>> list(p.name for p in providers.filter_by_name_or_group('sentinel'))
-        ['sentinel']
-        >>>
-        >>> # Filter by group (case-insensitive)
-        >>> list(p.name for p in providers.filter_by_name_or_group('ESA'))
-        ['sentinel']
-        >>>
-        >>> # Get all providers when no filter
-        >>> len(list(providers.filter_by_name_or_group()))
-        3
+        :param name_or_group: The provider name or group to filter by. If None, returns all.
+        :return: List of provider name strings.
         """
-        if name_or_group is None:
-            yield from self.data.values()
-            return
+        return self._db.filter_federation_backends(name_or_group)
 
-        name_or_group_lower = name_or_group.lower()
-        for provider in self.data.values():
-            if provider.name.lower() == name_or_group_lower or (
-                provider.group and provider.group.lower() == name_or_group_lower
-            ):
-                yield provider
 
-    def delete_collection(self, provider: str, collection: str) -> None:
-        """
-        Delete a collection from a provider.
+class _FilteredProvidersDict(ProvidersDict):
+    """A ProvidersDict restricted to a subset of provider names."""
 
-        :param provider: The provider's name.
-        :param product_ID: The collection to delete.
-        :raises UnsupportedProvider: If the provider or product is not found.
-        """
-        if provider_obj := self.get(provider):
-            if collection in provider_obj.collections_config:
-                provider_obj.delete_collection(collection)
-            else:
-                msg = f"Collection '{collection}' not found for provider '{provider}'."
-                raise UnsupportedCollection(msg)
-        else:
-            msg = f"Provider '{provider}' not found."
-            raise UnsupportedProvider(msg)
+    def __init__(self, db: Any, allowed_names: list[str]) -> None:
+        super().__init__(db)
+        self._allowed = allowed_names
 
-    def _share_credentials(self) -> None:
-        """
-        Share credentials between plugins with matching criteria
-        across all providers in this dictionary.
-        """
-        auth_confs_with_creds: list[PluginConfig] = []
-        for provider in self.values():
-            auth_confs_with_creds.extend(provider._get_auth_confs_with_credentials())
+    def __contains__(self, item: object) -> bool:
+        name = item.name if isinstance(item, Provider) else item
+        return isinstance(name, str) and name in self._allowed
 
-        if not auth_confs_with_creds:
-            return
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._allowed)
 
-        for provider in self.values():
-            provider._copy_matching_credentials(auth_confs_with_creds)
+    def __len__(self) -> int:
+        return len(self._allowed)
 
-    @staticmethod
-    def _get_whitelisted_configs(
-        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
-    ) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
-        """
-        Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
+    def keys(self) -> list[str]:
+        return list(self._allowed)
 
-        :param configs: The dictionary of provider configurations.
-        :return: Filtered configurations.
-        """
-        whitelist = set(os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(","))
-        if not whitelist or whitelist == {""}:
-            return configs
-        return {name: conf for name, conf in configs.items() if name in whitelist}
+    def values(self) -> list[Provider]:
+        return [self._provider_from_db(n) for n in self._allowed]
 
-    def update_from_configs(
-        self,
-        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
-    ) -> None:
-        """
-        Update providers from a dictionary of configurations.
+    def items(self) -> list[tuple[str, Provider]]:
+        return [(n, self._provider_from_db(n)) for n in self._allowed]
 
-        :param configs: A dictionary mapping provider names to configurations.
-        """
-        configs = self._get_whitelisted_configs(configs)
-        for name, conf in configs.items():
-            if isinstance(conf, dict) and conf.get("name") != name:
-                if "name" in conf:
-                    logger.debug(
-                        "%s: config name '%s' overridden by dict key",
-                        name,
-                        conf["name"],
-                    )
-                conf = {**conf, "name": name}
-            elif isinstance(conf, ProviderConfig) and conf.name != name:
-                raise ValidationError(
-                    f"ProviderConfig name '{conf.name}' must match dict key '{name}'"
+    @property
+    def names(self) -> list[str]:
+        return list(self._allowed)
+
+
+# ---------------------------------------------------------------------------
+# Standalone helpers to build / merge provider configurations
+# ---------------------------------------------------------------------------
+
+
+def _get_whitelisted_configs(
+    configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
+    """Filter configs according to the ``EODAG_PROVIDERS_WHITELIST`` env var."""
+    whitelist = set(os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(","))
+    if not whitelist or whitelist == {""}:
+        return configs
+    return {name: conf for name, conf in configs.items() if name in whitelist}
+
+
+def _share_credentials(providers: dict[str, Provider]) -> None:
+    """Share credentials between plugins with matching criteria."""
+    auth_confs_with_creds: list[PluginConfig] = []
+    for provider in providers.values():
+        auth_confs_with_creds.extend(provider._get_auth_confs_with_credentials())
+    if not auth_confs_with_creds:
+        return
+    for provider in providers.values():
+        provider._copy_matching_credentials(auth_confs_with_creds)
+
+
+def merge_provider_configs(
+    providers: dict[str, Provider],
+    configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+) -> None:
+    """Merge *configs* into *providers* in-place.
+
+    Existing providers are updated; new ones are created.  Respects the
+    ``EODAG_PROVIDERS_WHITELIST`` env-var when set.
+
+    :param providers: Mutable dict to update.
+    :param configs: Provider name → config mapping.
+    """
+    configs = _get_whitelisted_configs(configs)
+    for name, conf in configs.items():
+        if isinstance(conf, dict) and conf.get("name") != name:
+            if "name" in conf:
+                logger.debug(
+                    "%s: config name '%s' overridden by dict key", name, conf["name"]
                 )
-
-            try:
-                if name in self.data:
-                    self.data[name].update_from_config(conf)
-                else:
-                    self.data[name] = Provider(conf)
-
-                self.data[name].collections_fetched = False
-
-            except Exception:
-                if name in self.data:
-                    logger.warning(
-                        "%s: skipped updating provider due to invalid config", name
-                    )
-                else:
-                    logger.warning(
-                        "%s: could not create provider from scratch using config", name
-                    )
-                logger.debug("Traceback:\n%s", traceback.format_exc())
-
-        self._share_credentials()
-
-    def update_from_config_file(self, file_path: str) -> None:
-        """
-        Override provider configurations with values loaded from a YAML file.
-
-        :param file_path: The path to the configuration file.
-        :raises yaml.parser.ParserError: If the YAML file cannot be parsed.
-        """
-        logger.info("Loading user configuration from: %s", os.path.abspath(file_path))
-        with open(os.path.abspath(os.path.realpath(file_path)), "r") as fh:
-            try:
-                config_in_file = yaml.safe_load(fh)
-                if config_in_file is None:
-                    return
-            except yaml.parser.ParserError as e:
-                logger.error("Unable to load configuration file %s", file_path)
-                raise e
-
-        self.update_from_configs(config_in_file)
-
-    def update_from_env(self) -> None:
-        """
-        Override provider configurations with environment variables values.
-
-        Environment variables must start with ``EODAG__`` and follow a nested key
-        pattern separated by double underscores ``__``.
-        """
-
-        def build_mapping_from_env(
-            env_var: str, env_value: str, mapping: dict[str, Any]
-        ) -> None:
-            """
-            Recursively build a dictionary from an environment variable.
-
-            The environment variable must respect the pattern: ``KEY1__KEY2__[...]__KEYN``.
-            It will be transformed into a nested dictionary.
-
-            :param env_var: The environment variable key (nested keys separated by ``__``).
-            :param env_value: The value from environment variable.
-            :param mapping: The dictionary where the nested mapping is built.
-            """
-            parts = env_var.split("__")
-            iter_parts = iter(parts)
-            env_type = get_type_hints(PluginConfig).get(next(iter_parts, ""), str)
-            child_env_type = (
-                get_type_hints(env_type).get(next(iter_parts, ""))
-                if isclass(env_type)
-                else None
+            conf = {**conf, "name": name}
+        elif isinstance(conf, ProviderConfig) and conf.name != name:
+            raise ValidationError(
+                f"ProviderConfig name '{conf.name}' must match dict key '{name}'"
             )
-            if len(parts) == 2 and child_env_type:
-                try:
-                    env_value = cast_scalar_value(env_value, child_env_type)
-                except TypeError:
-                    logger.warning(
-                        f"Could not convert {parts} value {env_value} to {child_env_type}"
-                    )
-                mapping.setdefault(parts[0], {})
-                mapping[parts[0]][parts[1]] = env_value
-            elif len(parts) == 1:
-                try:
-                    env_value = cast_scalar_value(env_value, env_type)
-                except TypeError:
-                    logger.warning(
-                        f"Could not convert {parts[0]} value {env_value} to {env_type}"
-                    )
-                mapping[parts[0]] = env_value
+
+        try:
+            if name in providers:
+                providers[name].update_from_config(conf)
             else:
-                new_map = mapping.setdefault(parts[0], {})
-                build_mapping_from_env("__".join(parts[1:]), env_value, new_map)
+                providers[name] = Provider(conf)
+            providers[name].collections_fetched = False
+        except Exception:
+            import traceback
 
-        logger.debug("Loading configuration from environment variables")
+            operation = "updating" if name in providers else "creating"
+            logger.warning("%s: skipped %s due to invalid config", name, operation)
+            logger.debug("Traceback:\n%s", traceback.format_exc())
 
-        mapping_from_env: dict[str, dict[str, Any]] = {}
-        for env_var in os.environ:
-            if env_var.startswith("EODAG__"):
-                build_mapping_from_env(
-                    env_var[len("EODAG__") :].lower(),  # noqa
-                    os.environ[env_var],
-                    mapping_from_env,
+    _share_credentials(providers)
+
+
+def _parse_env_provider_configs() -> dict[str, dict[str, Any]]:
+    """Parse ``EODAG__*`` environment variables into a config mapping."""
+
+    def _build_mapping(env_var: str, env_value: str, mapping: dict[str, Any]) -> None:
+        parts = env_var.split("__")
+        iter_parts = iter(parts)
+        env_type = get_type_hints(PluginConfig).get(next(iter_parts, ""), str)
+        child_env_type = (
+            get_type_hints(env_type).get(next(iter_parts, ""))
+            if isclass(env_type)
+            else None
+        )
+        if len(parts) == 2 and child_env_type:
+            try:
+                env_value = cast_scalar_value(env_value, child_env_type)
+            except TypeError:
+                logger.warning(
+                    f"Could not convert {parts} value {env_value} to {child_env_type}"
+                )
+            mapping.setdefault(parts[0], {})
+            mapping[parts[0]][parts[1]] = env_value
+        elif len(parts) == 1:
+            try:
+                env_value = cast_scalar_value(env_value, env_type)
+            except TypeError:
+                logger.warning(
+                    f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                )
+            mapping[parts[0]] = env_value
+        else:
+            new_map = mapping.setdefault(parts[0], {})
+            _build_mapping("__".join(parts[1:]), env_value, new_map)
+
+    logger.debug("Loading configuration from environment variables")
+    result: dict[str, dict[str, Any]] = {}
+    for env_var in os.environ:
+        if env_var.startswith("EODAG__"):
+            _build_mapping(
+                env_var[len("EODAG__"):].lower(),
+                os.environ[env_var],
+                result,
+            )
+    return result
+
+
+def build_provider_configs(
+    configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+) -> dict[str, Provider]:
+    """Build a ``dict[str, Provider]`` from a configuration mapping.
+
+    :param configs: Provider name → config mapping.
+    :returns: A plain dict of providers.
+    """
+    providers: dict[str, Provider] = {}
+    merge_provider_configs(providers, configs)
+    return providers
+
+
+def load_provider_configs(
+    default_config: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    *extra_configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    user_conf_file: Optional[str] = None,
+    env_override: bool = True,
+) -> dict[str, Provider]:
+    """Build providers by merging default, extra, user-file and env configs.
+
+    :param default_config: The base provider configuration mapping.
+    :param extra_configs: Additional config mappings to merge (e.g. external plugins).
+    :param user_conf_file: Path to a YAML user configuration file.
+    :param env_override: Whether to apply ``EODAG__*`` environment variable overrides.
+    :returns: A plain dict of providers.
+    """
+    providers = build_provider_configs(default_config)
+
+    for cfg in extra_configs:
+        merge_provider_configs(providers, cfg)
+
+    if user_conf_file:
+        logger.info("Loading user configuration from: %s", os.path.abspath(user_conf_file))
+        try:
+            with open(os.path.abspath(os.path.realpath(user_conf_file)), "r") as fh:
+                config_in_file = yaml.safe_load(fh)
+        except yaml.parser.ParserError as e:
+            logger.error("Unable to load configuration file %s", user_conf_file)
+            raise e
+        if config_in_file:
+            merge_provider_configs(providers, config_in_file)
+
+    if env_override:
+        env_configs = _parse_env_provider_configs()
+        if env_configs:
+            merge_provider_configs(providers, env_configs)
+
+    return providers
+
+
+def prune_providers(
+    providers: dict[str, Provider],
+    skipped_plugins: list[str],
+    db: Any = None,
+) -> None:
+    """Remove providers that lack credentials, auth plugins, or use skipped plugins.
+
+    Operates in-place on *providers*.  When *db* is provided, disabled
+    providers are also marked as disabled in the database.
+
+    :param providers: Mutable providers dict to prune.
+    :param skipped_plugins: Plugin class names that failed to load.
+    :param db: Optional :class:`~eodag.databases.sqlite.SQLiteDatabase` —
+               when given, pruned providers are disabled in the DB.
+    """
+
+    def _remove(name: str) -> None:
+        del providers[name]
+        if db is not None:
+            db.set_federation_backends_enabled([name], False)
+
+    for name, provider in list(providers.items()):
+        conf = provider.config
+
+        # remove providers using skipped plugins
+        if any(
+            isinstance(v, PluginConfig) and getattr(v, "type", None) in skipped_plugins
+            for v in conf.__dict__.values()
+        ):
+            _remove(name)
+            logger.debug(
+                "%s: provider needing unavailable plugin has been removed", provider
+            )
+            continue
+
+        # check authentication
+        if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
+            if not credentials_in_auth(conf.api):
+                _remove(name)
+                logger.info(
+                    "%s: provider needing auth for search has been pruned because no credentials could be found",
+                    provider,
                 )
 
-        self.update_from_configs(mapping_from_env)
+        elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
+            if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
+                _remove(name)
+                logger.info(
+                    "%s: provider needing auth for search has been pruned because no auth plugin could be found",
+                    provider,
+                )
+                continue
 
-    @classmethod
-    def from_configs(
-        cls, configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]]
-    ) -> Self:
-        """
-        Build a ProvidersDict from a configuration mapping.
+            credentials_exist = (
+                hasattr(conf, "search_auth")
+                and credentials_in_auth(conf.search_auth)
+            ) or (
+                not hasattr(conf, "search_auth")
+                and hasattr(conf, "auth")
+                and credentials_in_auth(conf.auth)
+            )
+            if not credentials_exist:
+                _remove(name)
+                logger.info(
+                    "%s: provider needing auth for search has been pruned because no credentials could be found",
+                    provider,
+                )
 
-        :param configs: A dictionary mapping provider names to configuration dicts or
-                        :class:`~eodag.api.provider.ProviderConfig` instances.
-        :return: An instance of :class:`~eodag.api.provider.ProvidersDict` populated with the given configurations.
-        """
-        providers = cls()
-        providers.update_from_configs(configs)
-        return providers
+        elif not hasattr(conf, "api") and not hasattr(conf, "search"):
+            _remove(name)
+            logger.info(
+                "%s: provider has been pruned because no api or search plugin could be found",
+                provider,
+            )
