@@ -23,9 +23,10 @@ from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
+import yaml
 import yaml.parser
 
-from eodag.api.provider import ProvidersDict
+from eodag.api.provider import ProvidersDict, build_provider_configs, merge_provider_configs, _parse_env_provider_configs
 from eodag.config import PluginConfig
 from eodag.utils import deepcopy
 from tests.context import (
@@ -184,21 +185,22 @@ class TestProviderConfig(unittest.TestCase):
         provider3_config2 = deepcopy(provider1_config2.__dict__)
         provider3_config2.update({"name": "provider3"})
 
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider1": provider1_config1,
                 "provider2": provider2_config1,
             }
         )
 
-        providers.update_from_configs(
+        merge_provider_configs(
+            providers,
             {
                 "provider1": provider1_config2,
                 "provider3": provider3_config2,
             }
         )
 
-        self.assertEqual(len(providers.configs), 3)
+        self.assertEqual(len(providers), 3)
         self.assertEqual(providers["provider1"].config.provider_param, "val1")
         self.assertEqual(providers["provider1"].config.provider_param2, "val2")
         self.assertEqual(providers["provider1"].config.provider_param3, "val3")
@@ -287,7 +289,7 @@ class TestConfigFunctions(unittest.TestCase):
         """Config must be loaded with only the selected whitelist of providers"""
         try:
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
-            providers = ProvidersDict.from_configs(config.load_default_config())
+            providers = build_provider_configs(config.load_default_config())
 
             self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
@@ -296,8 +298,9 @@ class TestConfigFunctions(unittest.TestCase):
     def test_override_config_from_str(self):
         """Default configuration must be overridden from a yaml conf str"""
 
-        providers = ProvidersDict.from_configs(config.load_default_config())
-        providers.update_from_configs(
+        providers = build_provider_configs(config.load_default_config())
+        merge_provider_configs(
+            providers,
             yaml.safe_load(
                 """
                 my_new_provider:
@@ -381,11 +384,12 @@ class TestConfigFunctions(unittest.TestCase):
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
         """
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = build_provider_configs(config.load_default_config())
         file_path_override = os.path.join(
             os.path.dirname(__file__), "resources", "file_config_override.yml"
         )
-        providers.update_from_config_file(file_path_override)
+        with open(file_path_override) as fh:
+            merge_provider_configs(providers, yaml.safe_load(fh))
 
         usgs_conf = providers["usgs"].config
         self.assertEqual(usgs_conf.priority, 5)
@@ -441,7 +445,7 @@ class TestConfigFunctions(unittest.TestCase):
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = build_provider_configs(config.load_default_config())
         os.environ["EODAG__USGS__PRIORITY"] = "5"
         os.environ["EODAG__USGS__API__EXTRACT"] = "false"
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
@@ -461,7 +465,7 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__PEPS__SEARCH__TIMEOUT"] = "3.1"
         os.environ["EODAG__PEPS__SEARCH__PAGINATION__START_PAGE"] = "2"
 
-        providers.update_from_env()
+        merge_provider_configs(providers, _parse_env_provider_configs())
         usgs_conf = providers["usgs"].config
         self.assertEqual(usgs_conf.priority, 5)
         self.assertEqual(usgs_conf.api.extract, False)
@@ -538,7 +542,7 @@ class TestStacProviderConfig(unittest.TestCase):
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag._providers[
+        provider_search_conf = self.dag.providers[
             "usgs_satapi_aws"
         ].search_config.__dict__
 
@@ -593,7 +597,7 @@ class TestStacProviderConfig(unittest.TestCase):
         ]["search"]
 
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag._providers["foo"].search_config.__dict__
+        provider_search_conf = self.dag.providers["foo"].search_config.__dict__
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
         self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])

@@ -30,7 +30,7 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
-from eodag.api.provider import ProvidersDict
+from eodag.api.provider import ProvidersDict, build_provider_configs
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
 from eodag.utils.exceptions import RequestError
@@ -48,7 +48,7 @@ class BaseAuthPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.plugins_manager = PluginManager(ProvidersDict())
+        cls.plugins_manager = PluginManager()
         cls.auth_plugins = {}
 
     def tearDown(self):
@@ -69,7 +69,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_text_token_simple_url": {
                     "products": {"foo_product": {}},
@@ -577,7 +577,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         cls.aws_secret_access_key = "my_secret_key"
         cls.aws_session_token = "my_session_token"
         cls.profile_name = "my_profile"
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_with_auth_keys": {
                     "products": {"foo_product": {}},
@@ -768,7 +768,7 @@ class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_with_headers_in_conf": {
                     "products": {"foo_product": {}},
@@ -832,7 +832,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -912,7 +912,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -1053,7 +1053,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -1326,7 +1326,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider_token_provision_invalid": {
                     "products": {"foo_product": {}},

@@ -424,7 +424,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
-        self.eodag._providers.configs["creodias"].auth.credentials[
+        self.eodag.providers.configs["creodias"].auth.credentials[
             "totp"
         ] = "PLEASE_CHANGE_ME"
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -717,7 +717,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def test_end_to_end_complete_peps(self):
         """Complete end-to-end test with PEPS for download and download_all"""
 
-        self.eodag._providers.configs[
+        self.eodag.providers.configs[
             "peps"
         ].download.output_dir = self.tmp_download_path
 
