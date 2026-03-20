@@ -22,8 +22,9 @@ import shutil
 import tempfile
 import warnings
 from importlib.resources import files as res_files
+from inspect import isclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union, cast, get_type_hints
 
 import orjson
 import requests
@@ -36,9 +37,11 @@ from pydantic import BeforeValidator, Field, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import TypedDict
 
+from eodag.api.provider import Provider
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    cast_scalar_value,
     deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
@@ -55,6 +58,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from eodag.api.provider import ProviderConfig
+    from eodag.plugins.manager import PluginManager
 
 logger = logging.getLogger("eodag.config")
 
@@ -951,6 +955,145 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     )
 
 
+def _get_whitelisted_configs(
+    configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    whitelist: Optional[list[str]] = None,
+) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
+    """Filter configs according to the ``EODAG_PROVIDERS_WHITELIST`` env var.
+
+    :param configs: A mapping of provider names to their configurations.
+    :param whitelist: An optional list of provider names to include.
+                      If provided, only the providers in this list will be added to the resulting dict.
+    :return: A filtered mapping of provider names to configurations.
+    """
+    if whitelist is None:
+        whitelist = [
+            provider
+            for provider in os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(",")
+            if provider
+        ]
+
+    if not whitelist:
+        return configs
+    return {name: conf for name, conf in configs.items() if name in whitelist}
+
+
+def _share_credentials(providers: dict[str, Provider]) -> None:
+    """Share credentials between plugins with matching criteria."""
+    auth_confs_with_creds: list[PluginConfig] = []
+    for provider in providers.values():
+        auth_confs_with_creds.extend(provider._get_auth_confs_with_credentials())
+    if not auth_confs_with_creds:
+        return
+    for provider in providers.values():
+        provider._copy_matching_credentials(auth_confs_with_creds)
+
+
+def merge_provider_configs(
+    providers: dict[str, Provider],
+    configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    whitelist: Optional[list[str]] = None,
+) -> None:
+    """Merge *configs* into *providers* in-place.
+
+    Existing providers are updated; new ones are created.  Respects the
+    ``EODAG_PROVIDERS_WHITELIST`` env-var when set.
+
+    :param providers: Mutable dict to update.
+    :param configs: Provider name → config mapping.
+    :param whitelist: An optional list of provider names to include.
+                      If provided, only the providers in this list will be added to the resulting dict.
+    """
+    configs = _get_whitelisted_configs(configs, whitelist)
+    for name, conf in configs.items():
+        if isinstance(conf, dict) and conf.get("name") != name:
+            if "name" in conf:
+                logger.debug(
+                    "%s: config name '%s' overridden by dict key", name, conf["name"]
+                )
+            conf = {**conf, "name": name}
+        elif isinstance(conf, ProviderConfig) and conf.name != name:
+            raise ValidationError(
+                f"ProviderConfig name '{conf.name}' must match dict key '{name}'"
+            )
+
+        try:
+            if name in providers:
+                providers[name].update_from_config(conf)
+            else:
+                providers[name] = Provider(conf)
+            providers[name].collections_fetched = False
+        except Exception:
+            import traceback
+
+            operation = "updating" if name in providers else "creating"
+            logger.warning("%s: skipped %s due to invalid config", name, operation)
+            logger.debug("Traceback:\n%s", traceback.format_exc())
+
+    _share_credentials(providers)
+
+
+def _parse_env_provider_configs() -> dict[str, dict[str, Any]]:
+    """Parse ``EODAG__*`` environment variables into a config mapping."""
+
+    def _build_mapping(env_var: str, env_value: str, mapping: dict[str, Any]) -> None:
+        parts = env_var.split("__")
+        iter_parts = iter(parts)
+        env_type = get_type_hints(PluginConfig).get(next(iter_parts, ""), str)
+        child_env_type = (
+            get_type_hints(env_type).get(next(iter_parts, ""))
+            if isclass(env_type)
+            else None
+        )
+        if len(parts) == 2 and child_env_type:
+            try:
+                env_value = cast_scalar_value(env_value, child_env_type)
+            except TypeError:
+                logger.warning(
+                    f"Could not convert {parts} value {env_value} to {child_env_type}"
+                )
+            mapping.setdefault(parts[0], {})
+            mapping[parts[0]][parts[1]] = env_value
+        elif len(parts) == 1:
+            try:
+                env_value = cast_scalar_value(env_value, env_type)
+            except TypeError:
+                logger.warning(
+                    f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                )
+            mapping[parts[0]] = env_value
+        else:
+            new_map = mapping.setdefault(parts[0], {})
+            _build_mapping("__".join(parts[1:]), env_value, new_map)
+
+    logger.debug("Loading configuration from environment variables")
+    result: dict[str, dict[str, Any]] = {}
+    for env_var in os.environ:
+        if env_var.startswith("EODAG__"):
+            _build_mapping(
+                env_var[len("EODAG__"):].lower(),
+                os.environ[env_var],
+                result,
+            )
+    return result
+
+
+def build_provider_configs(
+    configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    whitelist: Optional[list[str]] = None,
+) -> dict[str, ProviderConfig]:
+    """Build a ``dict[str, ProviderConfig]`` from a configuration mapping.
+
+    :param configs: Provider name → config mapping.
+    :param whitelist: An optional list of provider names to include.
+                      If provided, only the providers in this list will be added to the resulting dict.
+    :returns: A plain dict of providers.
+    """
+    providers: dict[str, ProviderConfig] = {}
+    merge_provider_configs(providers, configs, whitelist=whitelist)
+    return providers
+
+
 def load_locations_config(location_cfg_file: str) -> list[dict[str, Any]]:
     """Load locations configuration.
 
@@ -991,26 +1134,59 @@ def load_locations_config(location_cfg_file: str) -> list[dict[str, Any]]:
 def load_provider_configs(
     providers_cfg_file: Optional[Path] = None,
     providers_cfg_dir: Path = DEFAULT_PROVIDERS_DIR,
+    *extra_configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+    user_cfg_file: Optional[str] = None,
+    env_override: bool = True,
+    whitelist: Optional[list[str]] = None,
 ) -> dict[str, ProviderConfig]:
-    """Load provider configurations.
+    """Build providers by merging base, extra, user-file and env configs.
 
-    Provider definitions are loaded from the source configured in
+    Provider, user configuration and whitelist definitions are loaded from the source configured in
     EODAG settings.
 
-    EODAG_PROVIDERS_CFG_FILE takes precedence over
-    EODAG_PROVIDERS_CFG_DIR for backward compatibility.
+    :param providers_cfg_file: Path to the base provider configuration file,
+                               which takes precedence over the directory-based configuration.
+    :param providers_cfg_dir: Path to the directory containing provider configuration files, for backward compatibility.
+    :param extra_configs: Additional config mappings to merge (e.g. external plugins).
+    :param user_cfg_file: Path to a YAML user configuration file.
+    :param env_override: Whether to apply ``EODAG__*`` environment variable overrides.
+    :param whitelist: An optional list of provider names to include.
+                      If provided, only the providers in this list will be added to the resulting dict.
+    :returns: A plain dict of providers.
     """
-
     if providers_cfg_file is not None:
-        return load_config(str(providers_cfg_file))
+        default_config = load_config(str(providers_cfg_file))
+    else:
+        providers_configs: dict[str, ProviderConfig] = {}
 
-    providers: dict[str, ProviderConfig] = {}
+        for config_file in providers_cfg_dir.glob("*.yml"):
+            if config_file.is_file():
+                providers_configs.update(load_config(str(config_file)))
 
-    for config_file in providers_cfg_dir.glob("*.yml"):
-        if config_file.is_file():
-            providers.update(load_config(str(config_file)))
+        default_config = dict(sorted(providers_configs.items()))
 
-    return dict(sorted(providers.items()))
+    providers = build_provider_configs(default_config, whitelist)
+
+    for cfg in extra_configs:
+        merge_provider_configs(providers, cfg, whitelist)
+
+    if user_cfg_file:
+        logger.info("Loading user configuration from: %s", os.path.abspath(user_cfg_file))
+        try:
+            with open(os.path.abspath(os.path.realpath(user_cfg_file)), "r") as fh:
+                config_in_file = yaml.safe_load(fh)
+        except yaml.parser.ParserError as e:
+            logger.error("Unable to load configuration file %s", user_cfg_file)
+            raise e
+        if config_in_file:
+            merge_provider_configs(providers, config_in_file, whitelist)
+
+    if env_override:
+        env_configs = _parse_env_provider_configs()
+        if env_configs:
+            merge_provider_configs(providers, env_configs, whitelist)
+
+    return providers
 
 
 def load_config(config_path: str) -> dict[str, ProviderConfig]:
@@ -1097,28 +1273,132 @@ def load_stac_provider_config() -> dict[str, Any]:
     return SimpleYamlProxyConfig(str(RESOURCES_DIR / "stac_provider.yml")).source
 
 
+def prune_providers(
+    providers: dict[str, Provider],
+    plugins_manager: PluginManager,
+    db: Any = None,
+) -> None:
+    """Remove providers that lack credentials, auth plugins, or use skipped plugins.
+
+    Operates in-place on *providers*.  When *db* is provided, disabled
+    providers are also marked as disabled in the database.
+
+    :param providers: Mutable providers dict to prune.
+    :param skipped_plugins: Plugin class names that failed to load.
+    :param db: Optional :class:`~eodag.databases.sqlite.SQLiteDatabase` —
+               when given, pruned providers are disabled in the DB.
+    """
+
+    def _remove(name: str) -> None:
+        del providers[name]
+        if db is not None:
+            db.set_federation_backends_enabled([name], False)
+
+    for name, provider in list(providers.items()):
+        conf = provider.config
+
+        # remove providers using skipped plugins
+        if any(
+            isinstance(v, PluginConfig) and getattr(v, "type", None) in plugins_manager.skipped_plugins
+            for v in conf.__dict__.values()
+        ):
+            plugins_manager.pruned_providers_reasons[provider.name] = {
+                "reason": "; ".join(
+                    plugins_manager.get_skipped_plugin_messages(conf)
+                ),
+                "reason_type": "skipped_plugin",
+            }
+            _remove(name)
+            logger.debug(
+                "%s: provider needing unavailable plugin has been removed", provider
+            )
+            continue
+
+        # check authentication
+        if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
+            if not credentials_in_auth(conf.api):
+                reason = "provider needing auth for search was pruned because no credentials could be found"
+                plugins_manager.pruned_providers_reasons[provider.name] = {
+                    "reason": reason,
+                    "reason_type": "missing_credentials",
+                }
+                _remove(name)
+                logger.info(
+                    "%s: %s",
+                    provider,
+                    reason,
+                )
+
+        elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
+            if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
+                reason = "provider needing auth for search was pruned because no auth plugin could be found"
+                plugins_manager.pruned_providers_reasons[provider.name] = {
+                    "reason": reason,
+                    "reason_type": "missing_auth_plugin",
+                }
+                _remove(name)
+                logger.info(
+                    "%s: %s",
+                    provider,
+                    reason,
+                )
+                continue
+
+            credentials_exist = (
+                hasattr(conf, "search_auth")
+                and credentials_in_auth(conf.search_auth)
+            ) or (
+                not hasattr(conf, "search_auth")
+                and hasattr(conf, "auth")
+                and credentials_in_auth(conf.auth)
+            )
+            if not credentials_exist:
+                reason = "provider needing auth for search was pruned because no credentials could be found"
+                plugins_manager.pruned_providers_reasons[provider.name] = {
+                    "reason": reason,
+                    "reason_type": "missing_credentials",
+                }
+                _remove(name)
+                logger.info(
+                    "%s: %s",
+                    provider,
+                    reason,
+                )
+
+        elif not hasattr(conf, "api") and not hasattr(conf, "search"):
+            reason = "provider has been pruned because no api or search plugin could be found"
+            plugins_manager.pruned_providers_reasons[provider.name] = {
+                "reason": reason,
+                "reason_type": "missing_search_plugin",
+            }
+            _remove(name)
+            logger.info(
+                "%s: %s",
+                provider,
+                reason,
+            )
+
+
 def get_collections_providers_config(
     providers_config: list[ProviderConfig],
 ) -> list[CollectionProviderConfig]:
     """
     Get collection specific api or search and download plugins config for given providers.
-    Free memory of providers configuration by removing their attributes "products" after using them
     """
     coll_p_configs = []
     for p_config in providers_config:
         p_api_config = getattr(p_config, "api", None)
 
-        for coll, p_coll_config in p_config.products.copy().items():
-            del p_config.products[coll]
-
+        for coll, p_coll_config in getattr(p_config, "products", {}).items():
             if p_api_config:
                 full_coll_p_config = {"api": p_coll_config}
             else:
                 full_coll_p_config = {"search": p_coll_config}
-                if coll_download_config := getattr(
-                    p_config.download, "products", {}
-                ).pop(coll, None):
-                    full_coll_p_config.update({"download": coll_download_config})
+                download_products = getattr(
+                    getattr(p_config, "download", None), "products", {}
+                )
+                if coll in download_products:
+                    full_coll_p_config["download"] = download_products[coll]
 
             coll_p_configs.append(
                 CollectionProviderConfig(coll, p_config.name, full_coll_p_config)
@@ -1131,20 +1411,29 @@ def get_federation_backends_config(
     providers_config: list[ProviderConfig],
 ) -> list[FederationBackendConfig]:
     """
-    Get collection specific api or search and download plugins config for given providers.
+    Get provider-level plugin configs for federation backends.
+
+    Auth configs are included in ``plugins_config`` but **credentials are stripped**
+    (they must stay in memory only, never in the database).
+
+    ``metadata`` is enriched with ``group``, ``roles``, and ``last_fetch``.
     """
     p_configs = []
     for p_config in providers_config:
-        # metadata
-        p_mtd = {
-            "description": p_config.description,
-            "url": p_config.url,
+        # metadata (enriched with group, roles)
+        p_mtd: dict[str, Any] = {
+            "description": getattr(p_config, "description", None),
+            "url": getattr(p_config, "url", None),
+            "group": getattr(p_config, "group", None),
+            "roles": getattr(p_config, "roles", None),
             "last_fetch": None,
         }
 
         # check if there is a plugin "api"
         if getattr(p_config, "api", None):
-            full_p_config = {"api": p_config.api.__dict__}
+            full_p_config: dict[str, Any] = {
+                "api": _strip_credentials(p_config.api.__dict__)
+            }
             p_configs.append(
                 FederationBackendConfig(
                     p_config.name, full_p_config, p_config.priority, p_mtd, True
@@ -1153,19 +1442,27 @@ def get_federation_backends_config(
             continue
 
         # search and download plugins exist if there is no an api one
-        full_p_config = {"search": p_config.search.__dict__}
-        full_p_config.update({"download": p_config.download.__dict__})
+        full_p_config: dict[str, Any] = {}
+        if getattr(p_config, "search", None):
+            full_p_config["search"] = dict(p_config.search.__dict__)
+        if getattr(p_config, "download", None):
+            full_p_config["download"] = dict(p_config.download.__dict__)
 
         # check if there is a plugin for authentication
         if getattr(p_config, "auth", None):
-            full_p_config.update({"auth": p_config.auth.__dict__})
+            full_p_config["auth"] = _strip_credentials(p_config.auth.__dict__)
         elif getattr(p_config, "search_auth", None):
-            full_p_config.update(
-                {
-                    "search_auth": p_config.search_auth.__dict__,
-                    "download_auth": p_config.download_auth.__dict__,
-                }
+            full_p_config["search_auth"] = _strip_credentials(
+                p_config.search_auth.__dict__
             )
+            if getattr(p_config, "download_auth", None):
+                full_p_config["download_auth"] = _strip_credentials(
+                    p_config.download_auth.__dict__
+                )
+
+        if not full_p_config:
+            # no plugin configured at all
+            continue
 
         p_configs.append(
             FederationBackendConfig(
@@ -1174,6 +1471,32 @@ def get_federation_backends_config(
         )
 
     return p_configs
+
+
+def extract_credentials(
+    providers_config: list[ProviderConfig],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """Extract credentials from provider configs (to keep in memory only).
+
+    :returns: ``{provider_name: {auth_key: credentials_dict, ...}}``
+    """
+    result: dict[str, dict[str, dict[str, Any]]] = {}
+    for p_config in providers_config:
+        creds: dict[str, dict[str, Any]] = {}
+        for key in AUTH_TOPIC_KEYS:
+            auth_conf = getattr(p_config, key, None)
+            if auth_conf is not None and credentials_in_auth(auth_conf):
+                creds[key] = dict(auth_conf.credentials)
+        if creds:
+            result[p_config.name] = creds
+    return result
+
+
+def _strip_credentials(auth_dict: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of an auth config dict with credentials removed."""
+    result = dict(auth_dict)
+    result.pop("credentials", None)
+    return result
 
 
 def get_ext_collections_conf(
