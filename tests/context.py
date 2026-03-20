@@ -45,7 +45,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag_cli, list_col, search_crunch
-from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
+from eodag.api.provider import Provider, ProviderConfig, ProvidersDict, build_provider_configs
 from eodag.config import (
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
