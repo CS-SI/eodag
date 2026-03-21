@@ -199,7 +199,7 @@ StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+include = ["eodag*"]
 
 [tool.setuptools.package-data]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
