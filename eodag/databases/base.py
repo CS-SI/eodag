@@ -18,13 +18,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from shapely.geometry.base import BaseGeometry
-
     from eodag.api.collection import CollectionsDict
-    from eodag.config import CollectionProviderConfig, FederationBackendConfig
+    from eodag.config import ProviderConfig
 
 
 class Database(ABC):
@@ -53,68 +51,45 @@ class Database(ABC):
     @abstractmethod
     def delete_collections(self, collection_ids: list[str]) -> None:
         """Delete collections from the database by their IDs or aliases."""
-        ...
+        pass
 
     @abstractmethod
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
-        ...
+        pass
 
     @abstractmethod
-    def upsert_federation_backends(
-        self, fb_configs: list[FederationBackendConfig]
-    ) -> None:
-        """
-        Add or update collection specific api or search and download
-        plugins config for federation backends in the database
-        """
-        ...
-
-    @abstractmethod
-    def upsert_collections_federation_backends(
-        self, coll_fb_configs: list[CollectionProviderConfig]
-    ) -> None:
-        """Add or update providers configurations in the database"""
-        ...
-
-    @abstractmethod
-    def collections_search(
-        self,
-        geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
-        datetime: Optional[str] = None,
-        limit: Optional[int] = None,
-        q: Optional[str] = None,
-        ids: Optional[list[str]] = None,
-        federation_backends: Optional[list[str]] = None,
-        cql2_text: Optional[str] = None,
-        cql2_json: Optional[dict[str, Any]] = None,
-        sortby: Optional[list[dict[str, str]]] = None,
-    ) -> tuple[list[dict[str, Any]], int]:
-        """
-        :returns: A tuple of (returned collections as dictionaries, total number matched).
-        """
-        ...
-
-    @abstractmethod
-    def get_collections(self, federation_backend_id: str) -> list[str]:
-        """
-        Get the list of collections of the given federation backend from the database
-        """
-        ...
+    def upsert_fb_configs(self, configs: list[ProviderConfig]) -> None:
+        """Add or update provider configurations in the database"""
+        pass
 
     @abstractmethod
     def get_federation_backends(
-        self, federation_backend_ids: Optional[list[str]] = None
-    ) -> dict[str, dict[str, Any]]:
+        self,
+        collection: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        limit: Optional[int] = None,
+        names: Optional[list[str]] = None,
+    ) -> list[dict[str, Any]]:
         """
         Get federation backends from the database
         """
+        pass
 
     @abstractmethod
-    def get_collection_federation_backends(
-        self, collection: str, provider_ids: Optional[list[str]] = None
-    ) -> dict[str, dict[str, dict[str, Any]]]:
+    def get_fb_config(
+        self,
+        name: str,
+        collections: set[str] | None = None,
+    ) -> dict[str, Any]:
         """
-        :returns: A dict with given providers as keys and a dict of configuration of collections as values
+        Get the configuration for a specific federation backend and collection from the database.
         """
-        ...
+        pass
+
+    @abstractmethod
+    def set_priority(self, name: str, priority: int) -> None:
+        """
+        Set the priority of a federation backend.
+        """
+        pass
