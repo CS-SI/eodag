@@ -947,16 +947,17 @@ No credentials are needed
    .. grid-item::
       :columns: 10
 
-      EOCAT (Earth Observation Catalogue) providing access to ESA Earth observation missions and climate monitoring datasets.
+      EOCAT (ESA Catalog) providing access to ESA Earth observation missions data, including Heritage and Third Party
+      missions.
 
    .. grid-item::
       :columns: 2
       :class: sd-text-right
 
-      .. button-link:: https://climate.esa.int/en/
+      .. button-link:: https://eocat.esa.int/eo-catalogue?httpAccept=text/html
         :color: primary
         :outline:
-        :tooltip: EOCAT website
+        :tooltip: EOCAT / ESA Catalog website
 
         :fas:`external-link-alt`
 
@@ -964,10 +965,14 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account `here <https://www.ecmwf.int/user/login>`__.
+  Create an account `here <https://eoiam-idp.eo.esa.int>`__.
 
-  Then use *email* as ``username`` and *key* as ``password`` from `here <https://eoiam-idp.eo.esa.int/>`__ in eodag credentials.
-  Consent is also required to access data for certain datasets.
+  Then use *email* as ``username`` and ``password`` in eodag credentials.
+
+  .. note:: **Additional consent**
+
+     Some collections will require additional consent for download. If so, a form URL will be will be provided in the
+     authentication error message. You will need to open the URL, fill in the form and try again.
 
 ----
 
