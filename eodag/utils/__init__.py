@@ -104,6 +104,13 @@ GENERIC_COLLECTION = "GENERIC_COLLECTION"
 #: if no existing provider can be used
 GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
+# EODAG supported plugin topics
+AUTH_TOPIC_KEYS = {"auth", "search_auth", "download_auth"}
+PLUGINS_TOPIC_KEYS = {"api", "search", "download"} | AUTH_TOPIC_KEYS
+
+# In-memory storage of credentials. Extracted from configurations.
+CredsStoreType = dict[str, dict[str, dict[str, Any]]]
+
 #: List of known STAC search plugins. Required to complete plugin configuration with STAC plugins specific features.
 STAC_SEARCH_PLUGINS = [
     "StacSearch",
@@ -1233,7 +1240,7 @@ def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
 
 
 def get_geometry_from_ecmwf_location(
-    location: dict[str, float]
+    location: dict[str, float],
 ) -> Optional[BaseGeometry]:
     """
     Creates a ``shapely.geometry`` from a single location.
@@ -1743,14 +1750,14 @@ def format_pydantic_error(e: PydanticValidationError) -> str:
         return ".".join(str_loc)
 
     error_messages = [
-        f'{concat_loc_names(err["loc"])}: {err["msg"]}' if err["loc"] else err["msg"]
+        f"{concat_loc_names(err['loc'])}: {err['msg']}" if err["loc"] else err["msg"]
         for err in e.errors()
     ]
     return error_header + "; ".join(set(error_messages))
 
 
 def get_collection_dates(
-    collection_dict: dict[str, Any]
+    collection_dict: dict[str, Any],
 ) -> tuple[Optional[str], Optional[str]]:
     """Extract mission start and end dates from collection configuration.
 

@@ -69,11 +69,11 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.core import EODataAccessGateway
     from eodag.api.product.drivers.base import DatasetDriver
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
+    from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
 
@@ -326,16 +326,16 @@ class EOProduct:
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def _register_downloader(self, dag: EODataAccessGateway) -> None:
+    def _register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
         """Register the downloader and authenticator for this EOProduct using the
-        provided EODataAccessGateway instance.
+        provided plugins manager.
         This method is typically called after the EOProduct has been created and
         before any download operation is performed.
 
-        :param dag: The EODataAccessGateway instance to use for retrieving
-                    the download and authentication plugins.
+        :param plugins_manager: The plugins manager instance to use for retrieving
+                                the download and authentication plugins.
         """
-        download_plugin = dag.get_download_plugin(self)
+        download_plugin = plugins_manager.get_download_plugin(self)
         if len(self.assets) > 0:
             matching_url = next(iter(self.assets.values()))["href"]
         elif self.properties.get("order:status") != ONLINE_STATUS:
@@ -347,7 +347,7 @@ class EOProduct:
 
         try:
             auth_plugin = next(
-                dag.get_auth_plugins(
+                plugins_manager.get_auth_plugins(
                     self.provider,
                     matching_url=matching_url,
                     matching_conf=download_plugin.config,
@@ -676,7 +676,6 @@ class EOProduct:
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
         for driver_conf in DRIVERS:
-
             # Select a driver if all criterias match
             match = True
             for criteria in driver_conf["criteria"]:
@@ -709,25 +708,35 @@ class EOProduct:
 
                 <tr style='background-color: transparent;'>
                     <td style='text-align: left; vertical-align: top;'>
-                        {dict_to_html_table({
-                         "provider": self.provider,
-                         "collection": self.collection,
-                         "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;start_datetime&quot;]": self.properties.get(
-                             'start_datetime'
-                         ),
-                         "properties[&quot;end_datetime&quot;]": self.properties.get(
-                             'end_datetime'
-                         ),
-                         }, brackets=False)}
-                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
-                             self.properties)})</summary>{
-                                 dict_to_html_table(self.properties, depth=1)}</details>
-                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
-                                     self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
+                        {
+            dict_to_html_table(
+                {
+                    "provider": self.provider,
+                    "collection": self.collection,
+                    "properties[&quot;id&quot;]": self.properties.get("id"),
+                    "properties[&quot;start_datetime&quot;]": self.properties.get(
+                        "start_datetime"
+                    ),
+                    "properties[&quot;end_datetime&quot;]": self.properties.get(
+                        "end_datetime"
+                    ),
+                },
+                brackets=False,
+            )
+        }
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
+            len(self.properties)
+        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
+            len(self.assets)
+        })</summary>{self.assets._repr_html_(embeded=True)}</details>
                     </td>
-                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
-                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
+                    <td {geom_style} title='geometry'>geometry<br />{
+            self.geometry._repr_svg_()
+        }</td>
+                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{
+            thumbnail_html
+        }</td>
                 </tr>
             </table>"""
 
