@@ -249,8 +249,9 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         * :attr:`~eodag.config.PluginConfig.token_key` (``str``): The key pointing
           to the token in the json response to the POST request to the token server
         * :attr:`~eodag.config.PluginConfig.token_provision` (``str``) (**mandatory**): One of
-          ``qs`` or ``header``. This is how the token obtained will be used to authenticate the
-          user on protected requests. If ``qs`` is chosen, then ``token_qs_key`` is mandatory
+          ``qs``, ``header`` or ``basic``. This is how the token obtained will be used to authenticate the
+          user on protected requests. If ``qs`` is chosen, then ``token_qs_key`` is mandatory. If ``basic`` is chosen,
+          the token is used as password with username "anonymous".
         * :attr:`~eodag.config.PluginConfig.login_form_xpath` (``str``) (**mandatory**): The
           xpath to the HTML form element representing the user login form
         * :attr:`~eodag.config.PluginConfig.authentication_uri_source` (``str``) (**mandatory**): Where
@@ -298,9 +299,9 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         super(OIDCAuthorizationCodeFlowAuth, self).validate_config_credentials()
-        if getattr(self.config, "token_provision", None) not in ("qs", "header"):
+        if getattr(self.config, "token_provision", None) not in ("qs", "header", "basic"):
             raise MisconfiguredError(
-                'Provider config parameter "token_provision" must be one of "qs" or "header"'
+                'Provider config parameter "token_provision" must be one of "qs", "header", or "basic"'
             )
         if self.config.token_provision == "qs" and not getattr(
             self.config, "token_qs_key", ""
@@ -314,10 +315,19 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         """Authenticate"""
         self._get_access_token()
 
+        if getattr(self.config, 'zarr', False):
+            return CodeAuthorizedAuth(
+                self.refresh_token,
+                "basic",
+                key=None,
+                refresh_token=self.refresh_token
+            )
+
         return CodeAuthorizedAuth(
             self.access_token,
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
+            refresh_token=self.refresh_token
         )
 
     def _request_new_token(self) -> dict[str, str]:
@@ -580,10 +590,11 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 class CodeAuthorizedAuth(AuthBase):
     """CodeAuthorizedAuth custom authentication class to be used with requests module"""
 
-    def __init__(self, token: str, where: str, key: Optional[str] = None) -> None:
+    def __init__(self, token: str, where: str, key: Optional[str] = None, refresh_token: Optional[str] = None) -> None:
         self.token = token
         self.where = where
         self.key = key
+        self.refresh_token = refresh_token
 
     def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
@@ -598,6 +609,12 @@ class CodeAuthorizedAuth(AuthBase):
 
         elif self.where == "header":
             request.headers["Authorization"] = "Bearer {}".format(self.token)
+
+        elif self.where == "basic":
+            import base64
+            auth_str = base64.b64encode(f"anonymous:{self.token}".encode()).decode()
+            request.headers["Authorization"] = f"Basic {auth_str}"
+
         logger.debug(
             re.sub(
                 r"'Bearer [^']+'",
