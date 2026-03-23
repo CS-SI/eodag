@@ -23,7 +23,9 @@ class EOIAMAuth(Authentication):
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         required = ["username", "password"]
-        missing = [k for k in required if k not in self.config.credentials]
+        missing = [
+            k for k in required if k not in getattr(self.config, "credentials", {})
+        ]
         if missing:
             raise MisconfiguredError(
                 f"Missing credentials for {self.provider}: {', '.join(missing)}"
