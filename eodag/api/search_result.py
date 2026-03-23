@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 
     from eodag.api.core import EODataAccessGateway
     from eodag.plugins.crunch.base import Crunch
+    from eodag.plugins.manager import PluginManager
 
 
 logger = logging.getLogger("eodag.search_result")
