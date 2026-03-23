@@ -265,6 +265,12 @@ def _update_properties_from_element(
                 "items": [
                     {
                         "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                        "description": "North border of the bounding box",
+                    },
+                    {
+                        "type": "number",
                         "maximum": 180,
                         "minimum": -180,
                         "description": "West border of the bounding box",
@@ -280,12 +286,6 @@ def _update_properties_from_element(
                         "maximum": 180,
                         "minimum": -180,
                         "description": "East border of the bounding box",
-                    },
-                    {
-                        "type": "number",
-                        "maximum": 90,
-                        "minimum": -90,
-                        "description": "North border of the bounding box",
                     },
                 ],
             }

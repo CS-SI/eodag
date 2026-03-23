@@ -66,7 +66,7 @@ class FilterLatestIntersect(Crunch):
         :returns: The filtered products
         """
         logger.debug("Start filtering for latest products")
-        if not products:
+        if not products or (isinstance(products, list) and len(products) == 0):
             return []
         # Warning: May crash if start_datetime is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)

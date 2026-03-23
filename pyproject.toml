@@ -9,7 +9,8 @@ readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [
     {name = "CS GROUP - France", email = "eodag@csgroup.space"}
 ]
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -199,13 +200,13 @@ StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+include = ["eodag*"]
 
 [tool.setuptools.package-data]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.0.2.dev0"
+fallback_version = "4.0.3.dev0"
 
 [tool.isort]
 multi_line_output = 3
