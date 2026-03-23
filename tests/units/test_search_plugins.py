@@ -97,7 +97,7 @@ from tests.context import (
 class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
-        providers = build_provider_configs(load_provider_configs())
+        providers = load_provider_configs()
         self.plugins_manager = PluginManager(providers)
         self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
@@ -3731,7 +3731,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(TestSearchPluginECMWFSearch, cls).setUpClass()
-        providers = build_provider_configs(load_provider_configs())
+        providers = load_provider_configs()
         cls.plugins_manager = PluginManager(providers)
 
     def setUp(self):
