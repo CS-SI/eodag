@@ -222,7 +222,7 @@ class SQLiteDatabase(Database):
     ) -> None:
         """
         Add or update federation backend configs (providers) in the database.
-        Chaque config doit contenir : id, plugins_config, priority, metadata, enabled.
+        Each config must contain: name, plugins_config, priority, metadata, enabled.
         """
         if not fb_configs:
             return
@@ -231,9 +231,9 @@ class SQLiteDatabase(Database):
             rows.append(cfg)
         self._executemany(
             f"""
-            INSERT INTO federation_backends (id, plugins_config, priority, metadata, enabled)
+            INSERT INTO federation_backends (name, plugins_config, priority, metadata, enabled)
             VALUES (?, {_JSON_STORE}, ?, {_JSON_STORE}, ?)
-            ON CONFLICT(id) DO UPDATE SET
+            ON CONFLICT(name) DO UPDATE SET
                 plugins_config = excluded.plugins_config,
                 priority = excluded.priority,
                 metadata = excluded.metadata,
@@ -354,7 +354,7 @@ class SQLiteDatabase(Database):
         Set the priority of a federation backend.
         """
         self._execute(
-            "UPDATE federation_backends SET priority = ? WHERE id = ?",
+            "UPDATE federation_backends SET priority = ? WHERE name = ?",
             (priority, name),
         )
         self._con.commit()
@@ -442,11 +442,11 @@ class SQLiteDatabase(Database):
         names: Optional[list[str]] = None,
     ) -> list[dict[str, Any]]:
         """
-        Retourne la liste des providers selon les filtres.
-        Résultat trié par priorité DESC puis nom ASC.
+        Return federation backends according to filters.
+        Results are sorted by priority DESC then name ASC.
         """
         sql = (
-            "SELECT fb.id, fb.priority, fb.enabled, "
+            "SELECT fb.name, fb.priority, fb.enabled, "
             'json(fb.metadata) AS "metadata [dict]" '
             "FROM federation_backends fb"
         )
@@ -459,20 +459,20 @@ class SQLiteDatabase(Database):
 
         if names:
             placeholders = ",".join("?" for _ in names)
-            where_clauses.append(f"fb.id IN ({placeholders})")
+            where_clauses.append(f"fb.name IN ({placeholders})")
             params.extend(names)
 
         if collection:
             sql += (
                 " INNER JOIN collections_federation_backends cfb "
-                "ON fb.id = cfb.federation_backend_name AND cfb.collection_id = ?"
+                "ON fb.name = cfb.federation_backend_name AND cfb.collection_id = ?"
             )
             params.append(collection)
 
         if where_clauses:
             sql += " WHERE " + " AND ".join(where_clauses)
 
-        sql += " ORDER BY fb.priority DESC, fb.id ASC"
+        sql += " ORDER BY fb.priority DESC, fb.name ASC"
         if limit is not None:
             sql += f" LIMIT {limit}"
 
@@ -480,7 +480,7 @@ class SQLiteDatabase(Database):
 
         return [
             {
-                "name": row["id"],
+                "name": row["name"],
                 "priority": row["priority"],
                 "enabled": bool(row["enabled"]),
                 "metadata": row["metadata"] or {},
@@ -523,7 +523,7 @@ class SQLiteDatabase(Database):
                 AND {cfb_filter_sql}
             ) AS c
             ON 1 = 1
-            WHERE fb.id = ?
+            WHERE fb.name = ?
         """
         params = (name, *cfb_params, name)
 
@@ -854,7 +854,7 @@ def create_federation_backends_table(con: sqlite3.Connection) -> None:
         f"""
         CREATE TABLE IF NOT EXISTS federation_backends (
             key PRIMARY KEY,
-            id TEXT UNIQUE,
+            name TEXT UNIQUE,
             plugins_config {_CONTENT_TYPE} NOT NULL,
             priority INTEGER NOT NULL,
             metadata {_CONTENT_TYPE},
