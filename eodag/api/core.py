@@ -253,8 +253,8 @@ class EODataAccessGateway:
         names: Optional[list[str]] = None,
     ) -> ProvidersDict:
         """
-        Liste les providers depuis la base, avec filtres éventuels.
-        Retourne un ProvidersDict (si pas names_only), ou une liste de dicts/noms.
+        List providers from the database, with optional filters, in a
+        :class:`~eodag.api.provider.ProvidersDict` instance.
         """
         providers = self.db.get_federation_backends(
             collection=collection, enabled=enabled, limit=limit, names=names
@@ -518,7 +518,7 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
         if providers:
-            all_names = self.db.list_federation_backend_names(enabled_only=False)
+            all_names = self.db.get_federation_backends(enabled_only=False).keys()
             all_groups = self.db.list_federation_backend_groups(enabled_only=False)
             known = set(all_names) | set(all_groups)
             unknown = set(providers) - known
@@ -747,7 +747,7 @@ class EODataAccessGateway:
         """
         # TODO: review this method as well!
         all_new_collections: list[Collection] = []
-        all_backend_names = self.db.list_federation_backend_names(enabled_only=False)
+        all_backend_names = self.db.get_federation_backends(enabled_only=False).keys()
 
         for provider, new_collections_conf in ext_collections_conf.items():
             if new_collections_conf and provider in all_backend_names:
