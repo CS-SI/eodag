@@ -1,4 +1,4 @@
-from urllib.parse import urljoin
+from urllib.parse import parse_qs, urljoin
 
 import requests
 from lxml import html
@@ -84,9 +84,24 @@ class EOIAMAuth(Authentication):
             "sessionDataKey": session_key,
         }
         resp = self.session.post(idp_url, data=payload, allow_redirects=True)
+        resp.raise_for_status()
+
+        if "consent.do" in resp.url:
+            redirect_url = resp.url
+            service_names = parse_qs(redirect_url).get("sp", [""])
+            service_name = service_names[0] if service_names else ""
+            msg = (
+                f"Consent required for service {service_name}, "
+                f"please fill the following form and try again {redirect_url}"
+            )
+            raise AuthenticationError(msg)
+
+        if "login.do" in resp.url:
+            raise MisconfiguredError("Login failed: please check your credentials")
 
         if "Earth Observation Identity and Access Management System" in resp.text:
-            raise MisconfiguredError("Login failed: check credentials or consent")
+            msg = f"Login failed: {resp.url}"
+            raise MisconfiguredError(msg)
 
         # Extract SAML form
         tree = html.fromstring(resp.text)
