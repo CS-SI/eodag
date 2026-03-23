@@ -299,7 +299,11 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         super(OIDCAuthorizationCodeFlowAuth, self).validate_config_credentials()
-        if getattr(self.config, "token_provision", None) not in ("qs", "header", "basic"):
+        if getattr(self.config, "token_provision", None) not in (
+            "qs",
+            "header",
+            "basic",
+        ):
             raise MisconfiguredError(
                 'Provider config parameter "token_provision" must be one of "qs", "header", or "basic"'
             )
@@ -315,19 +319,11 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         """Authenticate"""
         self._get_access_token()
 
-        if getattr(self.config, 'zarr', False):
-            return CodeAuthorizedAuth(
-                self.refresh_token,
-                "basic",
-                key=None,
-                refresh_token=self.refresh_token
-            )
-
         return CodeAuthorizedAuth(
             self.access_token,
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
-            refresh_token=self.refresh_token
+            refresh_token=self.refresh_token,
         )
 
     def _request_new_token(self) -> dict[str, str]:
@@ -590,7 +586,13 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 class CodeAuthorizedAuth(AuthBase):
     """CodeAuthorizedAuth custom authentication class to be used with requests module"""
 
-    def __init__(self, token: str, where: str, key: Optional[str] = None, refresh_token: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        token: str,
+        where: str,
+        key: Optional[str] = None,
+        refresh_token: Optional[str] = None,
+    ) -> None:
         self.token = token
         self.where = where
         self.key = key
@@ -612,7 +614,10 @@ class CodeAuthorizedAuth(AuthBase):
 
         elif self.where == "basic":
             import base64
-            auth_str = base64.b64encode(f"anonymous:{self.token}".encode()).decode()
+
+            auth_str = base64.b64encode(
+                f"anonymous:{self.refresh_token}".encode()
+            ).decode()
             request.headers["Authorization"] = f"Basic {auth_str}"
 
         logger.debug(
