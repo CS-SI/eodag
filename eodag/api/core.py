@@ -946,8 +946,8 @@ class EODataAccessGateway:
         # use DB to get providers sorted by priority
         if collection:
             # only providers configured for this collection
-            fb_configs = self.db.get_collection_federation_backends(collection)
-            all_fb = self.db.get_federation_backends(list(fb_configs.keys()))
+            fb_configs = self.db.get_collection_federation_backends(collection).keys()
+            all_fb = self.db.get_federation_backends(list(fb_configs))
         else:
             all_fb = self.db.get_federation_backends()
 
