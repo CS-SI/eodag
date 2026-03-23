@@ -576,10 +576,10 @@ class EODataAccessGateway:
         backend_names = self.db.filter_federation_backends(provider)
         fetchable_backends = self.db.get_federation_backends_fetchable(backend_names)
         for fb in fetchable_backends:
-            fb_id = fb["id"]
+            fb_name = fb["name"]
             discover_conf = fb["plugins_config"]["search"]["discover_collections"]
-            providers_discovery_configs_fetchable[fb_id] = discover_conf
-            last_fetch = self.db.get_federation_backend_last_fetch(fb_id)
+            providers_discovery_configs_fetchable[fb_name] = discover_conf
+            last_fetch = self.db.get_federation_backend_last_fetch(fb_name)
             if not last_fetch:
                 already_fetched = False
 
@@ -706,7 +706,7 @@ class EODataAccessGateway:
         kwargs: dict[str, Any] = {}
         fetchable_backends = self.db.get_federation_backends_fetchable(backend_names)
         for fb in fetchable_backends:
-            p_name = fb["id"]
+            p_name = fb["name"]
 
             search_plugin: Union[Search, Api] = next(
                 self._plugins_manager.get_search_plugins(provider=p_name)
