@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
     from eodag.api.core import EODataAccessGateway
     from eodag.plugins.crunch.base import Crunch
+    from eodag.plugins.manager import PluginManager
 
 
 logger = logging.getLogger("eodag.search_result")
@@ -379,28 +380,28 @@ class SearchResult(UserList[EOProduct]):
 
     @classmethod
     def _from_stac_item(
-        cls, feature: dict[str, Any], dag: EODataAccessGateway
+        cls, feature: dict[str, Any], plugin_manager: PluginManager
     ) -> SearchResult:
         """Create a SearchResult from a STAC item.
 
         :param feature: A STAC item as a dictionary
-        :param dag: The EODAG gateway instance
+        :param plugin_manager: The EODAG plugin manager instance
         :returns: A SearchResult containing the EOProduct(s) created from the STAC item
         """
         # Try importing from EODAG Server
-        if results := _import_stac_item_from_eodag_server(feature, dag):
+        if results := _import_stac_item_from_eodag_server(feature, plugin_manager):
             return results
 
         # try importing from a known STAC provider
-        if results := _import_stac_item_from_known_provider(feature, dag):
+        if results := _import_stac_item_from_known_provider(feature, plugin_manager):
             return results
 
         # try importing from an unknown STAC provider
-        return _import_stac_item_from_unknown_provider(feature, dag)
+        return _import_stac_item_from_unknown_provider(feature, plugin_manager)
 
 
 def _import_stac_item_from_eodag_server(
-    feature: dict[str, Any], dag: EODataAccessGateway
+    feature: dict[str, Any], plugin_manager: PluginManager
 ) -> Optional[SearchResult]:
     """Import a STAC item from EODAG Server.
 
@@ -447,30 +448,30 @@ def _import_stac_item_from_eodag_server(
                 updated_item = {}
         try:
             eo_product = unregistered_product_from_item(
-                updated_item, GENERIC_STAC_PROVIDER, dag
+                updated_item, GENERIC_STAC_PROVIDER, plugin_manager
             )
         except MisconfiguredError:
             eo_product = None
         if eo_product is not None:
             eo_product.provider = provider
-            eo_product._register_downloader(dag)
+            eo_product._register_downloader_from_manager(plugin_manager)
             return SearchResult([eo_product])
     return None
 
 
 def _import_stac_item_from_known_provider(
-    feature: dict[str, Any], dag: EODataAccessGateway
+    feature: dict[str, Any], plugin_manager: PluginManager
 ) -> Optional[SearchResult]:
     """Import a STAC item from an already-configured STAC provider.
 
     :param feature: A STAC item as a dictionary
-    :param dag: The EODAG gateway instance
+    :param plugin_manager: The EODAG plugin manager instance
     :returns: A SearchResult containing the EOProduct(s) created from the STAC item
     """
     item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
     item_href = item_hrefs[0]["href"] if len(item_hrefs) > 0 else None
     imported_products = SearchResult([])
-    for search_plugin in dag.get_search_plugins():
+    for search_plugin in plugin_manager.get_search_plugins():
         # only try STAC search plugins
         if (
             search_plugin.config.type in STAC_SEARCH_PLUGINS
@@ -500,7 +501,7 @@ def _import_stac_item_from_known_provider(
                 else:
                     eo_product.collection = feature.get("collection")
 
-                eo_product._register_downloader(dag)
+                eo_product._register_downloader_from_manager(plugin_manager)
                 imported_products.append(eo_product)
     if len(imported_products) > 0:
         return imported_products
@@ -508,24 +509,24 @@ def _import_stac_item_from_known_provider(
 
 
 def _import_stac_item_from_unknown_provider(
-    feature: dict[str, Any], dag: EODataAccessGateway
+    feature: dict[str, Any], plugin_manager: PluginManager
 ) -> SearchResult:
     """Import a STAC item from an unknown STAC provider.
 
     :param feature: A STAC item as a dictionary
-    :param dag: The EODAG gateway instance
+    :param plugin_manager: The EODAG plugin manager instance
     :returns: A SearchResult containing the EOProduct(s) created from the STAC item
     """
     try:
         logger.debug("Trying to import STAC item from unknown provider")
         eo_product = unregistered_product_from_item(
-            feature, GENERIC_STAC_PROVIDER, dag
+            feature, GENERIC_STAC_PROVIDER, plugin_manager
         )
     except MisconfiguredError:
         pass
     if eo_product is not None:
         eo_product.collection = feature.get("collection")
-        eo_product._register_downloader(dag)
+        eo_product._register_downloader_from_manager(plugin_manager)
         return SearchResult([eo_product])
     else:
         return SearchResult([])
