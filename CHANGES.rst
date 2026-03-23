@@ -3,6 +3,56 @@ Release history
 ===============
 
 
+v4.0.2 (2026-03-23)
+===================
+
+Bug Fixes
+---------
+
+* **crunch**: Minor fixes and improved crunches test coverage (`#2001`_, `c638016`_)
+
+* **plugins**: Order of values of EcmwfSearch bbox is N-W-S-E (`#2056`_, `b56678c`_)
+
+* **plugins**: Replace deprecated items_per_page in CopMarineSearch (`#2100`_, `b2df124`_)
+
+* **providers**: Queried orbit number parsing (`#2104`_, `bb03961`_)
+
+Build System
+------------
+
+* Fixed deprecated project.license expression (`#2105`_, `b595765`_)
+
+* Updated package discovery pattern (`#2103`_, `64b22c7`_)
+
+Documentation
+-------------
+
+* Tutorials typos fixes (`#1996`_, `5026718`_)
+
+Performance Improvements
+------------------------
+
+* **plugins**: Stop fetching when search page limit is reached on CopMarineSearch (`#2014`_,
+  `a6eaa0a`_)
+
+.. _#1996: https://github.com/CS-SI/eodag/pull/1996
+.. _#2001: https://github.com/CS-SI/eodag/pull/2001
+.. _#2014: https://github.com/CS-SI/eodag/pull/2014
+.. _#2056: https://github.com/CS-SI/eodag/pull/2056
+.. _#2100: https://github.com/CS-SI/eodag/pull/2100
+.. _#2103: https://github.com/CS-SI/eodag/pull/2103
+.. _#2104: https://github.com/CS-SI/eodag/pull/2104
+.. _#2105: https://github.com/CS-SI/eodag/pull/2105
+.. _5026718: https://github.com/CS-SI/eodag/commit/5026718b7d812e04cb630fe28726bb124babbf37
+.. _64b22c7: https://github.com/CS-SI/eodag/commit/64b22c70a2cf0c37ecf6ad681daaa40734b4b815
+.. _a6eaa0a: https://github.com/CS-SI/eodag/commit/a6eaa0ac30a38934b22453e9c0eae990cedabe56
+.. _b2df124: https://github.com/CS-SI/eodag/commit/b2df12454fe565e64a3b270a0490c09f394a9e59
+.. _b56678c: https://github.com/CS-SI/eodag/commit/b56678cf67f581a6ae095fcbbdc227215cc51ce2
+.. _b595765: https://github.com/CS-SI/eodag/commit/b595765b397772e7010bc550c4f0f4d516e5c4d0
+.. _bb03961: https://github.com/CS-SI/eodag/commit/bb03961083f3815a0787cb98882e3dd2a63e9daa
+.. _c638016: https://github.com/CS-SI/eodag/commit/c6380163b38e18f8181b9f521ee38524ec8c34ff
+
+
 v4.0.1 (2026-03-18)
 ===================
 
