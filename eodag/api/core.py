@@ -240,7 +240,7 @@ class EODataAccessGateway:
     @property
     def providers(self) -> ProvidersDict:
         """Providers of eodag configuration sorted by priority in descending order and by name in ascending order."""
-        return self.list_providers(enabled=True)
+        return self.get_providers(enabled=True)
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -2034,7 +2034,9 @@ class EODataAccessGateway:
         if search_result:
             logger.info("Downloading %s products", len(search_result))
             # Get download plugin using first product assuming all plugins use base.Download.download_all
-            download_plugin = self.get_download_plugin(search_result[0])
+            download_plugin = self._plugins_manager.get_download_plugin(
+                search_result[0]
+            )
             paths = download_plugin.download_all(
                 search_result,
                 downloaded_callback=downloaded_callback,
@@ -2130,10 +2132,10 @@ class EODataAccessGateway:
         products._dag = self
         for i, product in enumerate(products):
             if product.downloader is None:
-                downloader = self.get_download_plugin(product)
+                downloader = self._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = self.get_auth_plugin(downloader, product)
+                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
                 products[i].register_downloader(downloader, auth)
 
         return products
@@ -2210,10 +2212,10 @@ class EODataAccessGateway:
 
     def _setup_downloader(self, product: EOProduct) -> None:
         if product.downloader is None:
-            downloader = self.get_download_plugin(product)
+            downloader = self._plugins_manager.get_download_plugin(product)
             auth = product.downloader_auth
             if auth is None:
-                auth = self.get_auth_plugin(downloader, product)
+                auth = self._plugins_manager.get_auth_plugin(downloader, product)
             product.register_downloader(downloader, auth)
 
     def get_cruncher(self, name: str, **options: Any) -> Crunch:
@@ -2274,7 +2276,7 @@ class EODataAccessGateway:
 
             # authenticate if required
             if getattr(plugin.config, "need_auth", False) and (
-                auth := self.get_auth_plugin(plugin)
+                auth := self._plugins_manager.get_auth_plugin(plugin)
             ):
                 try:
                     plugin.auth = auth.authenticate()
