@@ -27,9 +27,8 @@ class EOIAMAuth(Authentication):
             k for k in required if k not in getattr(self.config, "credentials", {})
         ]
         if missing:
-            raise MisconfiguredError(
-                f"Missing credentials for {self.provider}: {', '.join(missing)}"
-            )
+            msg = f"Missing credentials for {self.provider}: {', '.join(missing)}"
+            raise MisconfiguredError(msg)
 
     def authenticate(self) -> AuthBase:
         """Return a requests.AuthBase object using the session with SAML login."""
@@ -40,10 +39,12 @@ class EOIAMAuth(Authentication):
         """Extract the value of an input field from the HTML tree."""
         inputs = tree.xpath(f"//input[@name='{name}']")
         if not inputs:
-            raise MisconfiguredError(f"{name} input not found")
+            msg = f"{name} input not found"
+            raise MisconfiguredError(msg)
         value = inputs[0].get("value")
         if not value:
-            raise MisconfiguredError(f"{name} has no value")
+            msg = f"{name} has no value"
+            raise MisconfiguredError(msg)
         return value
 
     def _extract_first_form(self, tree: html.HtmlElement) -> html.HtmlElement:
@@ -102,9 +103,8 @@ class EOIAMAuth(Authentication):
         resp_post = self.session.post(saml_url, data=saml_data, allow_redirects=False)
 
         if not resp_post.is_redirect:
-            raise AuthenticationError(
-                f"Unexpected response after SAML login: {resp_post.status_code}"
-            )
+            msg = f"Unexpected response after SAML login: {resp_post.status_code}"
+            raise AuthenticationError(msg)
 
         final_url = resp_post.headers.get("Location")
         if not final_url:
