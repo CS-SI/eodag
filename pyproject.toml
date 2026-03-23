@@ -9,7 +9,8 @@ readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [
     {name = "CS GROUP - France", email = "eodag@csgroup.space"}
 ]
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
