@@ -6550,7 +6550,7 @@
   search: !plugin
     type: StacSearch
     api_endpoint: 'https://eocat.esa.int/eo-catalogue/search'
-    ssl_verify: true
+    ssl_verify: false
     timeout: 90
     discover_queryables:
       fetch_url: null
