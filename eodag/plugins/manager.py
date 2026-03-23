@@ -19,13 +19,18 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Iterator, Optional, TypeVar, Union
 
 import importlib_metadata
 
-from eodag.config import AUTH_TOPIC_KEYS, PLUGINS_TOPICS_KEYS, PluginConfig, load_config
+from eodag.config import PluginConfig, load_config
 from eodag.plugins.crunch.base import Crunch
-from eodag.utils import GENERIC_COLLECTION
+from eodag.utils import (
+    AUTH_TOPIC_KEYS,
+    GENERIC_COLLECTION,
+    PLUGINS_TOPIC_KEYS,
+    dict_md5sum,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -46,37 +51,41 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.plugins.manager")
 
+T = TypeVar("T", bound=PluginTopic)
+
+AuthCacheKey = tuple[str, str, str]  # (provider, auth_type, conf_hash)
+
 
 class PluginManager:
     """Entry-point loader for eodag plugins.
 
-    Loads all plugin classes via setuptools entry points so that they are
-    registered in the metaclass registry
-    (:class:`~eodag.plugins.base.EODAGPluginMount`).  After initialisation
-    every plugin class is available through
-    ``TopicBase.get_plugin_by_class_name(name)``.
 
-    External packages that ship their own ``providers.yml`` are detected and
-    their raw configuration dicts are exposed via
-    :attr:`external_providers_config` so that the caller can merge them into
-    the database.
+    The role of instances of this class (normally only one instance exists,
+    created during instantiation of :class:`~eodag.api.core.EODataAccessGateway`.
+    But nothing is done to enforce this) is to instantiate the plugins
+    according to the providers configuration, keep track of them in memory, and
+    manage a cache of plugins already constructed. The providers configuration contains
+    information such as the name of the provider, the internet endpoint for accessing
+    it, and the plugins to use to perform defined actions (search, download,
+    authenticate, crunch).
+
+    :param providers: The ProvidersDict instance with all information about the providers
+                      supported by ``eodag``
     """
-
-    supported_topics = set(PLUGINS_TOPICS_KEYS)
 
     skipped_plugins: list[str]
     external_providers_config: dict[str, dict[str, Any]]
+    _db: Database
+    _creds_store: dict[str, dict[str, Any]]
 
-    def __init__(
-        self,
-        providers: Optional[dict[str, Any]] = None,
-    ) -> None:
+    def __init__(self, db: Database, creds_store: dict[str, dict[str, Any]]) -> None:
         self.skipped_plugins: list[str] = []
         self.external_providers_config: dict[str, dict[str, Any]] = {}
-        self._db: Optional[Database] = None
-        self._credentials: dict[str, Any] = {}
+        self._auth_plugins_cache: dict[AuthCacheKey, Authentication] = {}
+        self._db = db
+        self._creds_store = creds_store
 
-        for topic in self.supported_topics:
+        for topic in PLUGINS_TOPIC_KEYS:
             for entry_point in importlib_metadata.entry_points(
                 group="eodag.plugins.{}".format(topic)
             ):
@@ -108,49 +117,6 @@ class PluginManager:
                         plugin_configs = load_config(plugin_providers_config_path[0])
                         self.external_providers_config.update(plugin_configs)
 
-        # Optional convenience: set up an in-memory DB from providers (for tests)
-        if providers is not None:
-            from eodag.api.provider import Provider
-            from eodag.config import (
-                extract_credentials,
-                get_collections_providers_config,
-                get_federation_backends_config,
-            )
-            from eodag.databases.sqlite import SQLiteDatabase
-
-            db = SQLiteDatabase(":memory:")
-            configs = [
-                p.config if isinstance(p, Provider) else p
-                for p in providers.values()
-            ]
-            credentials = extract_credentials(configs)
-            fb_configs = get_federation_backends_config(configs)
-            db.upsert_federation_backends(fb_configs)
-            coll_p_configs = get_collections_providers_config(configs)
-            db.upsert_collections_federation_backends(coll_p_configs)
-            self.set_db(db, credentials)
-
-    @property
-    def providers(self) -> list[str]:
-        """Return the list of provider names from the DB."""
-        return list(self.db.get_federation_backend_priorities().keys())
-
-    def add_provider(self, name: str, provider: Any) -> None:
-        """Add a single provider to the DB (convenience for tests)."""
-        from eodag.config import (
-            extract_credentials,
-            get_collections_providers_config,
-            get_federation_backends_config,
-        )
-
-        config = provider.config if hasattr(provider, "config") else provider
-        creds = extract_credentials([config])
-        self._credentials.update(creds)
-        fb = get_federation_backends_config([config])
-        self.db.upsert_federation_backends(fb)
-        cp = get_collections_providers_config([config])
-        self.db.upsert_collections_federation_backends(cp)
-
     @staticmethod
     def get_crunch_plugin(name: str, **options: Any) -> Crunch:
         """Instantiate a eodag Crunch plugin whose class name is ``name``,
@@ -163,143 +129,76 @@ class PluginManager:
         klass = Crunch.get_plugin_by_class_name(name)
         return klass(options)
 
-    def set_db(self, db: Database, credentials: dict[str, Any]) -> None:
-        """Bind the plugin manager to a database and credentials store.
-
-        Must be called before any ``get_*_plugin`` method.
-
-        :param db: A :class:`~eodag.databases.sqlite.SQLiteDatabase` instance.
-        :param credentials: In-memory credentials dict (provider → topic → creds).
-        """
-        self._db = db
-        self._credentials = credentials
-
-    @property
-    def db(self) -> Database:
-        """Return the bound database, raising if not set."""
-        if self._db is None:
-            raise MisconfiguredError("PluginManager has no database bound; call set_db() first")
-        return self._db
-
-    @staticmethod
-    def build_plugin(
-        provider: str,
-        plugin_conf_dict: dict[str, Any],
-        topic_class: type,
-        priority: int = 0,
-    ) -> Search | Api | Download | Authentication:
-        """Build a single plugin from a config dict.
-
-        :param provider: Provider name
-        :param plugin_conf_dict: Config dict (must contain ``type``)
-        :param topic_class: Base class to look up the concrete class
-        :param priority: Priority to set on the plugin config
-        :returns: An instantiated plugin
-        """
-        conf = PluginConfig.from_mapping(plugin_conf_dict)
-        conf.priority = priority
-        klass = topic_class.get_plugin_by_class_name(conf.type)
-        return klass(provider, conf)
-
     def get_search_plugins(
         self,
         collection: Optional[str] = None,
         provider: Optional[str] = None,
-    ) -> Iterator[Search | Api]:
-        """Build and yield search plugins for the given collection/provider.
+    ) -> Iterator[Union[Search, Api]]:
+        """Build and return all the search plugins supporting the given collection,
+        ordered by highest priority, or the search plugin of the given provider
 
-        :param collection: The collection to search for
-        :param provider: Optional provider or group filter
-        :returns: Iterator of search or api plugins, ordered by priority DESC
+        :param collection: (optional) The collection that the constructed plugins
+                             must support
+        :param provider: (optional) The provider or the provider group on which to get
+            the search plugins
+        :returns: All the plugins supporting the collection, one by one (a generator
+                  object)
+            or :class:`~eodag.plugins.download.Api`)
+        :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        from eodag.plugins.apis.base import Api
-        from eodag.plugins.search.base import Search
+        providers = self._db.get_federation_backends(
+            enabled=True, collection=collection, names=[provider] if provider else None
+        )
+        if not providers:
+            logger.info("UnsupportedCollection: %s, using generic settings", collection)
+            providers = self._db.get_federation_backends(
+                enabled=True, collection=GENERIC_COLLECTION
+            )
 
-        if collection:
-            fb_filter = (
-                self.db.filter_federation_backends(provider) if provider else None
-            )
-            rows = self.db.get_search_configs_for_collection(
-                collection, providers=fb_filter
-            )
-            if not rows:
-                logger.info(
-                    "UnsupportedCollection: %s, using generic settings", collection
-                )
-                rows = self.db.get_search_configs_for_collection(
-                    GENERIC_COLLECTION, providers=fb_filter
-                )
-        else:
-            # All enabled backends
-            fb_names = (
-                self.db.filter_federation_backends(provider)
-                if provider
-                else self.db.list_federation_backend_names()
-            )
-            fbs = self.db.get_federation_backends(fb_names)
-            rows = [
-                {
-                    "provider": name,
-                    "plugins_config": fb["plugins_config"],
-                    "priority": fb["priority"],
-                    "collection_plugins_config": None,
-                }
-                for name, fb in sorted(
-                    fbs.items(), key=lambda x: x[1]["priority"], reverse=True
-                )
-            ]
-
-        if not rows and collection:
-            raise UnsupportedProvider(
-                f"{provider} is not (yet) supported for {collection}"
-            )
-        if not rows:
-            raise UnsupportedProvider(f"{provider} is not (yet) supported")
-
-        for row in rows:
-            pc = row["plugins_config"]
-            priority = row["priority"]
-            coll_pc = row["collection_plugins_config"]
-            provider_name = row["provider"]
+        for provider in providers:
+            pc = self._db.get_fb_config(provider["name"], collection)
 
             if "search" in pc:
-                search_conf = dict(pc["search"])
-                raw = self.db.get_collection_configs_for_backend(provider_name)
-                search_conf["products"] = {
-                    cid: cfg.get("search", cfg) for cid, cfg in raw.items()
-                }
-                yield self.build_plugin(provider_name, search_conf, Search, priority)
+                mode, topic_class = "search", Search
             elif "api" in pc:
-                api_conf = dict(pc["api"])
-                raw = self.db.get_collection_configs_for_backend(provider_name)
-                api_conf["products"] = {
-                    cid: cfg.get("api", cfg) for cid, cfg in raw.items()
-                }
-                yield self.build_plugin(provider_name, api_conf, Api, priority)
+                mode, topic_class = "api", Api
+            else:
+                raise MisconfiguredError(
+                    f"No search or api plugin configured for provider {provider['name']}."
+                )
 
-    def get_download_plugin(self, product: EOProduct) -> Download | Api:
-        """Build and return the download plugin for the given product.
+            plugin_conf = pc[mode] | {
+                "priority": pc["priority"],
+                "products": pc["products"],
+            }
 
-        :param product: The product to download
-        :returns: A download or api plugin
-        """
+            yield topic_class.get_plugin_by_class_name(plugin_conf["type"])(
+                provider, PluginConfig.from_mapping(plugin_conf)
+            )
+
+    def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
+        """Build and return the download plugin for the given product."""
         from eodag.plugins.apis.base import Api
         from eodag.plugins.download.base import Download
 
-        fb = self.db.get_federation_backends([product.provider])
-        if not fb:
-            raise UnsupportedProvider(f"Provider {product.provider} not found")
-        fb_conf = fb[product.provider]
-        pc = fb_conf["plugins_config"]
-        priority = fb_conf["priority"]
+        pc = self._db.get_fb_config(product.provider, product.collection)
+        if not pc:
+            raise UnsupportedProvider(
+                f"Provider {product.provider} not found with collection {product.collection}"
+            )
 
         if "download" in pc:
-            return self.build_plugin(product.provider, pc["download"], Download, priority)
+            mode, topic_class = "download", Download
         elif "api" in pc:
-            api_conf = dict(pc["api"])
-            return self.build_plugin(product.provider, api_conf, Api, priority)
-        raise MisconfiguredError(
-            f"No download plugin configured for provider {product.provider}."
+            mode, topic_class = "api", Api
+        else:
+            raise MisconfiguredError(
+                f"No download plugin configured for provider {product.provider}."
+            )
+        plugin_conf = pc[mode] | {"priority": pc["priority"]}
+
+        return topic_class.get_plugin_by_class_name(plugin_conf["type"])(
+            product.provider, PluginConfig.from_mapping(plugin_conf)
         )
 
     def get_auth_plugin(
@@ -333,63 +232,98 @@ class PluginManager:
         except StopIteration:
             return None
 
+    def _get_or_create_auth_plugin(
+        self,
+        provider: str,
+        auth_conf: dict[str, Any],
+        auth_key: str,
+        priority: int,
+    ) -> Authentication:
+        conf_hash = dict_md5sum(auth_conf)
+
+        cache_key = (provider, auth_conf["type"], conf_hash)
+        cached = self._auth_plugins_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        auth_conf["credentials"] = self._creds_store.get(provider, {}).get(auth_key, {})
+        plugin_conf = PluginConfig.from_mapping(auth_conf | {"priority": priority})
+        plugin = Authentication.get_plugin_by_class_name(auth_conf["type"])(
+            provider, plugin_conf
+        )
+        self._auth_plugins_cache[cache_key] = plugin
+        return plugin
+
     def get_auth_plugins(
         self,
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
     ) -> Iterator[Authentication]:
-        """Build and yield auth plugins matching the given criteria.
+        """Build and return the authentication plugin for the given collection and
+        provider
 
-        :param provider: The provider for which to authenticate
-        :param matching_url: URL to compare with plugin matching_url pattern
-        :param matching_conf: Config to compare with plugin matching_conf
-        :returns: Iterator of matching authentication plugins
+        :param provider: The provider for which to get the authentication plugin
+        :param matching_url: url to compare with plugin matching_url pattern
+        :param matching_conf: configuration to compare with plugin matching_conf
+        :returns: All the Authentication plugins for the given criteria
         """
-        from eodag.plugins.authentication.base import Authentication
+        auth_conf: Optional[dict[str, Any]] = None
 
-        all_auth = self.db.get_all_auth_configs()
-        sorted_providers = [provider] + [p for p in all_auth if p != provider]
+        def _is_auth_plugin_matching(
+            auth_conf: dict[str, Any],
+            matching_url: Optional[str],
+            matching_conf: Optional[dict[str, Any]],
+        ) -> bool:
+            if matching_conf:
+                plugin_matching_conf = auth_conf.get("matching_conf", {})
+                if (
+                    plugin_matching_conf
+                    and matching_conf.items() >= plugin_matching_conf.items()
+                ):
+                    # conf matches
+                    return True
 
-        for plugin_provider in sorted_providers:
-            if plugin_provider not in all_auth:
-                continue
-            auth_entries = all_auth[plugin_provider]
+            if matching_url:
+                plugin_matching_url = auth_conf.get("matching_url", None)
+                if plugin_matching_url and re.match(
+                    rf"{plugin_matching_url}", matching_url
+                ):
+                    # url matches
+                    return True
+            # no match
+            return False
 
-            priorities = self.db.get_federation_backend_priorities()
-            priority = priorities.get(plugin_provider, 0)
+        all_providers = [provider] + [
+            p["name"]
+            for p in self._db.get_federation_backends(enabled=True)
+            if p["name"] != provider
+        ]
+
+        for p in all_providers:
+            provider_conf = self._db.get_fb_config(p, collection=None)
 
             for key in AUTH_TOPIC_KEYS:
-                if key not in auth_entries:
+                auth_conf = provider_conf.get(key, None) if provider_conf else None
+                if auth_conf is None:
                     continue
-                auth_dict = dict(auth_entries[key])
 
-                provider_creds = self._credentials.get(plugin_provider, {})
-                if key in provider_creds:
-                    auth_dict["credentials"] = provider_creds[key]
-
-                plugin_matching_conf = auth_dict.get("matching_conf", {})
-                plugin_matching_url = auth_dict.get("matching_url")
-
+                # plugin without configured match criteria: only works for given provider
                 unconfigured_match = (
-                    not plugin_matching_conf
-                    and not plugin_matching_url
-                    and provider == plugin_provider
+                    True
+                    if (
+                        not auth_conf.get("matching_conf", {})
+                        and not auth_conf.get("matching_url", None)
+                        and provider == p
+                    )
+                    else False
                 )
 
-                conf_matches = False
-                if matching_conf and plugin_matching_conf:
-                    if matching_conf.__dict__.items() >= plugin_matching_conf.items():
-                        conf_matches = True
-
-                url_matches = False
-                if matching_url and plugin_matching_url:
-                    if re.match(rf"{plugin_matching_url}", matching_url):
-                        url_matches = True
-
-                if unconfigured_match or conf_matches or url_matches:
-                    yield self.build_plugin(
-                        plugin_provider, auth_dict, Authentication, priority
+                if not unconfigured_match and not _is_auth_plugin_matching(
+                    auth_conf, matching_url, matching_conf
+                ):
+                    yield self._get_or_create_auth_plugin(
+                        p, auth_conf, key, provider_conf["priority"]
                     )
 
     def get_auth(
