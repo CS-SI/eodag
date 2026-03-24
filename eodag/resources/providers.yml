@@ -6564,13 +6564,14 @@
         platform: '{$.summaries.platform#csv_list}'
     metadata_mapping:
       assets: '{$.assets#dict_with_roles(["data", "thumbnail", "overview"])}'
-      downloadLink: '$.assets.enclosure.href'
+      eodag:download_link: '$.assets.enclosure.href'
       instrument: '{$.properties.instruments#csv_list}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
+    ignore_assets: true
   auth: !plugin
     type: EOIAMAuth
     matching_url: https://[-\w\.]+.eo.esa.int
