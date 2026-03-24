@@ -4212,7 +4212,7 @@ MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
   processing:level: L1
   keywords: ["Calibration", "Level 1 Data", "Fundamental Climate Data Record", "Radiation", "SEVIRI", "MSG"]
   eodag:sensor_type: Optical
-  license: proprietary
+  license: other
   title: SEVIRI Rapid Scan High Rate Level 1.5 Image Data Climate Data Record Release 1 - MSG
   extent: {"spatial": {"bbox": [[-71.22, 12.78, 90.22, 81.26]]}, "temporal": {"interval": [["2008-05-06T00:00:00Z", "2021-09-17T00:00:00Z"]]}}
 
@@ -5444,7 +5444,7 @@ S6_AMR_L2_F06:
 VENUS_L1C:
   description: |
     A light description of Venus L1 data is available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=12984
-  instruments: []
+  instruments:
   constellation: VENUS
   platform: VENUS
   processing:level: L1C
@@ -5458,7 +5458,7 @@ VENUS_L2A_MAJA:
   description: |
     Level2 products provide surface reflectances after atmospheric correction, along with masks of clouds and their
     shadows. Data is processed by MAJA (before called MACCS) for THEIA land data center.
-  instruments: []
+  instruments:
   providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: VENUS
   platform: VENUS
@@ -5470,8 +5470,8 @@ VENUS_L2A_MAJA:
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2017-08-02T00:00:00Z", null]]}}
 
 VENUS_L3A_MAJA:
-  description: ""
-  instruments: []
+  description:
+  instruments:
   providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: VENUS
   platform: VENUS
@@ -5487,7 +5487,7 @@ TIGGE_CF_SFC:
   description: |
     TIGGE (THORPEX Interactive Grand Global Ensemble) Surface Control forecast
     from ECMWF
-  instruments: []
+  instruments:
   constellation: TIGGE
   platform: TIGGE
   processing:level:
@@ -6043,7 +6043,7 @@ AG_ERA5:
     finer land use pattern and finer land-sea delineation of the ECMWF HRES model.
     The data was produced on behalf of the Copernicus Climate Change Service.
   constellation: ERA5
-  instruments: []
+  instruments:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "climate", "land", "agriculture", "AgERA5", "surface"]
@@ -6464,7 +6464,7 @@ GLACIERS_ELEVATION_AND_MASS_CHANGE:
     providing time series of glacier changes: glacier elevation change series from the geodetic method and glacier
     mass-balance series from the glaciological method
   constellation: INSITU
-  instruments: []
+  instruments:
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "elevation", "mass", "change"]
@@ -6625,7 +6625,7 @@ SATELLITE_FIRE_BURNED_AREA:
     biomass, which can be translated to greenhouse gases emissions amongst other contaminants. Burned area is also
     useful for land cover change studies, fire management and risk analysis.
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "burned"]
@@ -7434,7 +7434,7 @@ FIRE_SEASONAL:
     These seasonal forecasts can be used to assess the performance of the forecasting system or to develop tools for statistically
     correcting forecast errors. ECMWF produces this dataset as the computational center for fire danger forecasting within the
     Copernicus Emergency Management Service (CEMS) on behalf of the Joint Research Centre, which serves as the managing entity for this service.
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -8261,7 +8261,7 @@ EEA_HRL_TCF:
     environmental and climate studies. TCF is derived from Sentinel-2 imagery at 20m resolution using a machine
     learning approach. The TCF product is part of the pan-European High Resolution Vegetation Phenology and Productivity
     (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instruments: []
+  instruments:
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -9076,7 +9076,7 @@ NEMSGLOBAL_TCDC:
     Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
     NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
     datasets from 1984 to 7 days ahead.
-  instruments: []
+  instruments:
   constellation: NEMSGLOBAL
   platform: NEMSGLOBAL
   processing:level:
@@ -9096,7 +9096,7 @@ NEMSAUTO_TCDC:
     and precipitation forecast.
     Note that Automatic domain switching is only supported for multi point queries.
     Support for polygons may follow later.
-  instruments: []
+  instruments:
   constellation: NEMSAUTO
   platform: NEMSAUTO
   processing:level:
@@ -16941,7 +16941,7 @@ GHS_UCDB_REGION:
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
   description:
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level:
