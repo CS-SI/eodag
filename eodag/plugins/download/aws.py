@@ -602,7 +602,7 @@ class AwsDownload(Download):
                         rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                     )
             else:
-                assets_values = product.assets.values()
+                assets_values = list(product.assets.values())
 
             bucket_names_and_prefixes = []
             for complementary_url in assets_values:
@@ -808,9 +808,8 @@ class AwsDownload(Download):
                         re.sub(rf"^{common_path}/?", "", rel_path),
                     )
 
-                data_type = assets_by_path.get(f"{obj.bucket_name}/{obj.key}", {}).get(
-                    "type"
-                )
+                asset_match = assets_by_path.get(f"{obj.bucket_name}/{obj.key}")
+                data_type = asset_match.get("type") if asset_match else None
 
                 file_info = S3FileInfo(
                     key=obj.key,

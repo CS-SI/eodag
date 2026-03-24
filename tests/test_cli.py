@@ -225,7 +225,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertNotEqual(exit_code, 0)
             self.assertIsInstance(error, SystemExit)
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_bbox_valid(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
@@ -269,7 +269,7 @@ class TestEodagCli(unittest.TestCase):
             # GEOSException for shapely >= 2.0
             self.assertTrue(isinstance(error, shapely.errors.GEOSException))
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_geom_wkt_valid(self, dag):
         """Calling eodag search with --geom WKT argument valid"""
         with self.user_conf() as conf_file:
@@ -334,7 +334,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertNotEqual(exit_code, 0)
             self.assertIsInstance(error, SystemExit)
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_storage_arg(self, dag):
         """Calling eodag search with specified result filename without .geojson extension"""  # noqa
         with self.user_conf() as conf_file:
@@ -359,7 +359,7 @@ class TestEodagCli(unittest.TestCase):
                 api_obj.search.return_value, filename="results.geojson"
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_with_cruncher(self, dag):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""  # noqa
         with self.user_conf() as conf_file:
@@ -437,7 +437,7 @@ class TestEodagCli(unittest.TestCase):
                 **{cruncher: {"minimum_overlap": "10"}},
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_and_download(self, dag):
         """Calling eodag search with --download argument should directly download search results"""
         with self.user_conf() as conf_file:
@@ -479,7 +479,7 @@ class TestEodagCli(unittest.TestCase):
                 search_results, output_dir=None, executor=mock.ANY
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_all(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
@@ -520,7 +520,7 @@ class TestEodagCli(unittest.TestCase):
                 },
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_query(self, dag):
         """Calling eodag search with --query argument"""
         with self.user_conf() as conf_file:
@@ -564,7 +564,7 @@ class TestEodagCli(unittest.TestCase):
                 },
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_locations(self, dag):
         """Calling eodag search with --locations argument"""
         with self.user_conf() as conf_file:
@@ -606,7 +606,7 @@ class TestEodagCli(unittest.TestCase):
                 },
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_start_date(self, dag):
         """Calling eodag search with --start argument"""
         with self.user_conf() as conf_file:
@@ -652,7 +652,7 @@ class TestEodagCli(unittest.TestCase):
                 },
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_stop_date(self, dag):
         """Calling eodag search with --end argument"""
         with self.user_conf() as conf_file:
@@ -699,7 +699,7 @@ class TestEodagCli(unittest.TestCase):
                 },
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_search_locs(self, dag):
         """Calling eodag search with --locs argument"""
         with self.user_conf() as conf_file:
@@ -774,7 +774,9 @@ class TestEodagCli(unittest.TestCase):
             output,
         )
 
-    @mock.patch("eodag.cli.EODataAccessGateway.fetch_collections_list", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
+    )
     def test_eodag_list_collection_fetch(self, mock_fetch_collections_list):
         """Calling eodag list should fetch for new collections depending on passed option"""
 
@@ -800,7 +802,7 @@ class TestEodagCli(unittest.TestCase):
         mock_fetch_collections_list.assert_called_with(mock.ANY, provider="peps")
         self.assertEqual(mock_fetch_collections_list.call_count, 2)
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_guess_collection_ok(self, dag):
         """Calling eodag list with one or several valid collection feature(s) should return
         all supported collections with this (these) feature(s) among the ones of its provider
@@ -836,7 +838,7 @@ class TestEodagCli(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.cli.EODataAccessGateway.guess_collection",
+        "eodag.api.core.EODataAccessGateway.guess_collection",
         autospec=True,
         side_effect=NoMatchingCollection(),
     )
@@ -855,7 +857,7 @@ class TestEodagCli(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.cli.EODataAccessGateway.discover_collections",
+        "eodag.api.core.EODataAccessGateway.discover_collections",
         autospec=True,
         return_value={},
     )
@@ -942,7 +944,7 @@ class TestEodagCli(unittest.TestCase):
                 ),
             )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_download_ok(self, dag):
         """Calling eodag download with all args well formed succeed"""
         search_results_path = os.path.join(
@@ -997,7 +999,7 @@ class TestEodagCli(unittest.TestCase):
             mock.ANY, output_dir=output_dir, executor=mock.ANY
         )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_download_ko(self, dag):
         """Calling eodag download with all args well formed fails"""
         search_results_path = os.path.join(
@@ -1015,7 +1017,7 @@ class TestEodagCli(unittest.TestCase):
             output,
         )
 
-    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_download_stac_items(self, dag):
         """Calling eodag download with --stac-item argument"""
         fake_result = SearchResult([mock.MagicMock() * 2], 2)

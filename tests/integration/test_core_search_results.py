@@ -515,7 +515,7 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertIsNotNone(search_results.number_matched)
 
     @mock.patch(
-        "eodag.api.core.fetch_stac_items",
+        "eodag.utils.stac_reader.fetch_stac_items",
         autospec=True,
         side_effect=[
             [
@@ -638,7 +638,7 @@ class TestCoreSearchResults(EODagTestCase):
         )
         self.assertIsInstance(results[1].downloader, Download)
 
-    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    @mock.patch("eodag.utils.stac_reader.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_known_provider(
         self,
         mock_fetch_stac_items,
@@ -666,7 +666,7 @@ class TestCoreSearchResults(EODagTestCase):
         )
         self.assertIsInstance(results[0].downloader, Download)
 
-    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    @mock.patch("eodag.utils.stac_reader.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_unknown_provider(self, mock_fetch_stac_items):
         """The core api must import STAC items from an unknwown provider"""
         stac_singlefile = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")

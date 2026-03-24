@@ -85,7 +85,6 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
-from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -2075,6 +2074,8 @@ class EODataAccessGateway:
             return filename
         collections = set(p.collection for p in search_result)
         for collection in collections:
+            if collection is None:
+                continue
             collection_obj = search_result._dag.collections_config.get(
                 collection, Collection(id=collection)
             )
@@ -2393,6 +2394,8 @@ class EODataAccessGateway:
         :param items_urls: A list of STAC items URLs to import
         :returns: A SearchResult containing the imported STAC items
         """
+        from eodag.utils.stac_reader import fetch_stac_items
+
         json_items = []
         for item_url in items_urls:
             json_items.extend(fetch_stac_items(item_url))

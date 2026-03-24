@@ -188,7 +188,8 @@ class Asset(UserDict):
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
         :returns: The absolute path to the downloaded product on the local filesystem
         """
-        return self.product.download(asset=self.key, **kwargs)
+        kwargs["asset"] = self.key
+        return self.product.download(**kwargs)
 
     def _repr_html_(self):
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
