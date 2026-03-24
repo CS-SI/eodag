@@ -225,6 +225,43 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             fs_path, _ = plugin._prepare_download(self.product, output_dir=outdir.name)
             self.assertIn("Unable to create records directory", str(cm.output))
 
+    def test_plugins_download_base_finalize_extract_not_complete(self):
+        """Download._finalize must not delete archive if extract is True but file is not an archive"""
+        plugin = self.get_download_plugin(self.product)
+
+        with TemporaryDirectory() as output_dir:
+            fs_path = Path(output_dir) / "FOO.bar"
+            fs_path.touch()
+            download_kwargs = dict(
+                output_dir=output_dir, extract=True, delete_archive=True
+            )
+
+            with self.assertLogs(level="INFO") as cm:
+                plugin._finalize(str(fs_path), **download_kwargs)
+                self.assertIn("Archive deletion is deactivated", str(cm.output))
+            self.assertTrue(os.path.isfile(fs_path))
+
+    def test_plugins_download_base_finalize_extract_complete(self):
+        """Download._finalize must delete archive if extract is True and file is an archive"""
+        plugin = self.get_download_plugin(self.product)
+
+        with TemporaryDirectory() as output_dir:
+            fs_path = Path(output_dir) / "FOO.bar"
+            fs_path.touch()
+            arch_path = Path(output_dir) / "FOO.TGZ"
+            with tarfile.open(arch_path, "w:gz") as tar:
+                tar.add(fs_path, arcname="FOO.bar")
+            fs_path.unlink()
+            download_kwargs = dict(
+                output_dir=output_dir, extract=True, delete_archive=True
+            )
+
+            with self.assertLogs(level="INFO") as cm:
+                plugin._finalize(str(arch_path), **download_kwargs)
+                self.assertIn("Deleting archive ", str(cm.output))
+            self.assertFalse(arch_path.exists())
+            self.assertTrue(os.path.isfile(Path(output_dir) / "FOO" / "FOO.bar"))
+
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def _dummy_product(
