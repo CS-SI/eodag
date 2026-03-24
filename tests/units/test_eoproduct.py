@@ -311,16 +311,14 @@ class TestEOProduct(unittest.TestCase):
         product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
         product.register_downloader(self.get_mock_downloader(), None)
 
-        quicklook_file_path = product.get_quicklook()
-        responses.assert_call_count("https://fake.url.to/quicklook", 1)
+        with tempfile.TemporaryDirectory() as output_dir:
+            quicklook_file_path = product.get_quicklook(output_dir=output_dir)
+            responses.assert_call_count("https://fake.url.to/quicklook", 1)
 
-        self.assertTrue(os.path.isfile(quicklook_file_path))
-        with open(quicklook_file_path, "rb") as fd:
-            content = fd.read()
-            self.assertEqual(content, b"Quicklook content")
-
-        if os.path.isfile(quicklook_file_path):
-            os.remove(quicklook_file_path)
+            self.assertTrue(os.path.isfile(quicklook_file_path))
+            with open(quicklook_file_path, "rb") as fd:
+                content = fd.read()
+                self.assertEqual(content, b"Quicklook content")
 
     @responses.activate
     def test_eoproduct_get_quicklook_ok(self):
