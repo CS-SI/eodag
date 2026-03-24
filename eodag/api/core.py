@@ -904,6 +904,9 @@ class EODataAccessGateway:
                         not in self.db.get_collection_configs_for_backend(provider)
                     ]
                     if new_coll_fb_configs:
+                        # TODO: upsert collections before using use upsert_collections_federation_backends()?
+                        # TODO: use upsert_collections_federation_backends() only once
+                        # at the end of the method to limit db calls?
                         self.db.upsert_collections_federation_backends(
                             new_coll_fb_configs
                         )
