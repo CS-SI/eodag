@@ -1070,7 +1070,7 @@ S3_OL_2_WFRBC003:
   processing:level: L2
   keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "Radiation", "Ocean", "Ocean Colour"]
   eodag:sensor_type: OPTICAL
-  license: proprietary
+  license: other
   title: OLCI Level 2 Ocean Colour Full Resolution (version BC003) - Sentinel-3 - Reprocessed
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-04-25T00:00:00Z", "2021-04-28T00:00:00Z"]]}}
 
@@ -2066,7 +2066,7 @@ MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
   processing:level: L1
   keywords: ["Calibration", "Level 1 Data", "Fundamental Climate Data Record", "Radiation", "SEVIRI", "MSG"]
   eodag:sensor_type: Optical
-  license: proprietary
+  license: other
   title: SEVIRI Rapid Scan High Rate Level 1.5 Image Data Climate Data Record Release 1 - MSG
   extent: {"spatial": {"bbox": [[-71.22, 12.78, 90.22, 81.26]]}, "temporal": {"interval": [["2008-05-06T00:00:00Z", "2021-09-17T00:00:00Z"]]}}
 
@@ -2957,7 +2957,7 @@ S6_AMR_L2_F06:
 VENUS_L1C:
   description: |
     A light description of Venus L1 data is available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=12984
-  instruments: []
+  instruments:
   constellation: VENUS
   platform: VENUS
   processing:level: L1C
@@ -2971,7 +2971,7 @@ VENUS_L2A_MAJA:
   description: |
     Level2 products provide surface reflectances after atmospheric correction, along with masks of clouds and their
     shadows. Data is processed by MAJA (before called MACCS) for THEIA land data center.
-  instruments: []
+  instruments:
   providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: VENUS
   platform: VENUS
@@ -2983,8 +2983,8 @@ VENUS_L2A_MAJA:
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2017-08-02T00:00:00Z", null]]}}
 
 VENUS_L3A_MAJA:
-  description: ""
-  instruments: []
+  description:
+  instruments:
   providers: [{"url":"https://www.cnes.fr","name":"Centre National d'Etudes Spatiales (CNES)","roles":["processor"]}]
   constellation: VENUS
   platform: VENUS
@@ -3001,7 +3001,7 @@ TIGGE_CF_SFC:
   description: |
     TIGGE (THORPEX Interactive Grand Global Ensemble) Surface Control forecast
     from ECMWF
-  instruments: []
+  instruments:
   constellation: TIGGE
   platform: TIGGE
   processing:level:
@@ -3026,7 +3026,7 @@ CAMS_GAC_FORECAST:
     Details of these system changes can be found in the documentation.
     Users looking for a more consistent long-term data set should consider using the CAMS Global Reanalysis instead, which is available through the ADS and spans the period from 2003 onwards.
     Finally, because some meteorological fields in the forecast do not fall within the general CAMS data licence, they are only available with a delay of 5 days.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3047,7 +3047,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
     In parallel, air quality forecasts are produced once a day for the next four days.
     Both the analysis and the forecast are available at hourly time steps at seven height levels.
     Note that only nitrogen monoxide, nitrogen dioxide, sulphur dioxide, ozone, PM2.5, PM10 and dust are regularly validated against in situ observations, and therefore forecasts of all other variables are unvalidated and should be considered experimental.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3065,7 +3065,7 @@ CAMS_GFE_GFAS:
     Emissions estimates for 40 pyrogenic species are available from GFAS, including aerosols, reactive gases and greenhouse gases, on a regular grid with a spatial resolution of 0.1 degrees longitude by 0.1 degrees latitude.
     This version of GFAS (v1.2) provides daily averaged data based on a combination of FRP observations from two Moderate Resolution Imaging Spectroradiometer (MODIS) instruments, one on the NASA EOS-Terra satellite and the other on the NASA EOS-Aqua satellite from 1 January 2003 to present. GFAS also provides daily estimates of smoke plume injection heights derived from FRP observations and meteorological information from the operational weather forecasts from ECMWF.
     GFAS data have been used to provide surface boundary conditions for the CAMS global atmospheric composition and European regional air quality forecasts, and the wider atmospheric chemistry modelling community.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3085,7 +3085,7 @@ CAMS_SOLAR_RADIATION:
     Data is offered in both ASCII and netCDF format.
     Additionally, an ASCII "expert mode" format can be selected which contains in addition to the irradiation, all the input data used in their calculation (aerosol optical properties, water vapour concentration, etc).
     This additional information is only meaningful in the time frame at which the calculation is performed and so is only available at 1-minute time steps in universal time (UT).
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3106,7 +3106,7 @@ CAMS_GREENHOUSE_INVERSION:
     For CH4 and N2O, the flux inversions account also for the chemical loss of these greenhouse gases. The net fluxes include contributions from the natural biosphere (e.g., vegetation, wetlands) as well anthropogenic contributions (e.g., fossil fuel emissions, rice fields).
     The data sets for the three species are updated once or twice per year adding the most recent year to the data record, while re-processing the original data record for consistency.
     This is reflected by the different version numbers. In addition, fluxes for methane are available based on surface air samples only or based on a combination of surface air samples and satellite observations (reflected by an 's' in the version number).
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3130,7 +3130,7 @@ CAMS_EAC4_MONTHLY:
     For this reason, EAC4 is only available from 2003 onwards.
     Although the analysis procedure considers chunks of data in a window of 12 hours in one go, EAC4 provides estimates every 3 hours, worldwide.
     This is made possible by the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3151,7 +3151,7 @@ CAMS_EU_AIR_QUALITY_RE:
     An interim reanalysis is provided each year for the year before based on the unvalidated near-real-time observation data stream that has not undergone full quality control by the data providers yet.
     Once the fully quality-controlled observations are available from the data provider, typically with an additional delay of about 1 year, a final validated annual reanalysis is provided.
     Both reanalyses are available at hourly time steps at height levels.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3173,7 +3173,7 @@ CAMS_EAC4:
     The observing system has changed drastically over time, and although the assimilation system can resolve data holes, the initially much sparser networks will lead to less accurate estimates.
     For this reason, EAC4 is only available from 2003 onwards.
     Although the analysis procedure considers chunks of data in a window of 12 hours in one go, EAC4 provides estimates every 3 hours, worldwide. This is made possible by the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3191,7 +3191,7 @@ CAMS_GRF_AUX:
     The calculation of aerosol radiative forcing requires a discrimination between aerosol of anthropogenic and natural origin.
     However, the CAMS reanalysis, which is used to provide the aerosol concentrations, does not make this distinction.
     The anthropogenic fraction was therefore derived by a method which uses aerosol size as a proxy for aerosol origin.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3217,7 +3217,7 @@ CAMS_GRF:
     Newer versions supercede old versions so it is always recommended to use the latest one.
     CAMS also produces distributions of aerosol optical depths, distinguishing natural from anthropogenic aerosols, which are a separate dataset. See "Related Data".
 
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3242,7 +3242,7 @@ CAMS_GREENHOUSE_EGG4_MONTHLY:
     The observing system has changed drastically over time, and although the assimilation system can resolve data holes, the initially much sparser networks will lead to less accurate estimates.
     For this reason, EAC4 is only available from 2003 onwards.
     The analysis procedure assimilates data in a window of 12 hours using the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3267,7 +3267,7 @@ CAMS_GREENHOUSE_EGG4:
     The observing system has changed drastically over time, and although the assimilation system can resolve data holes, the initially much sparser networks will lead to less accurate estimates.
     For this reason, EAC4 is only available from 2003 onwards.
     The analysis procedure assimilates data in a window of 12 hours using the 4D-Var assimilation method, which takes account of the exact timing of the observations and model evolution within the assimilation window.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3287,7 +3287,7 @@ CAMS_GLOBAL_EMISSIONS:
     The CAMS emission data sets provide good consistency between the emissions of greenhouse gases, reactive gases, and aerosol particles and their precursors.
     Because most inventory-based data sets are only available with a delay of several years, the CAMS emission inventories also extend these existing data sets forward in time by using the trends from the most recent available years, producing timely input data for real-time forecast models.
     Most of the data sets are updated once or twice per year adding the most recent year to the data record, while re-processing the original data record for consistency, when needed. This is reflected by the different version numbers.
-  instruments: []
+  instruments:
   constellation: CAMS
   platform: CAMS
   processing:level:
@@ -3313,7 +3313,7 @@ AG_ERA5:
     finer land use pattern and finer land-sea delineation of the ECMWF HRES model.
     The data was produced on behalf of the Copernicus Climate Change Service.
   constellation: ERA5
-  instruments: []
+  instruments:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "climate", "land", "agriculture", "AgERA5", "surface"]
@@ -3350,7 +3350,7 @@ ERA5_SL:
     for the uncertainty estimate (0.5 and 1 degree respectively for ocean waves). There are four main sub
     sets: hourly and monthly products, both on pressure levels (upper air fields) and single levels
     (atmospheric,ocean-wave and land surface quantities).
-  instruments: []
+  instruments:
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -3388,7 +3388,7 @@ ERA5_SL_MONTHLY:
     degrees for the reanalysis and 0.5 degrees for the uncertainty estimate (0.5 and 1 degree respectively for
     ocean waves). There are four main sub sets: hourly and monthly products, both on pressure levels (upper
     air fields) and single levels (atmospheric, ocean-wave and land surface quantities).
-  instruments: []
+  instruments:
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -3431,7 +3431,7 @@ ERA5_PL:
     humidity, Specific cloud ice water content, Specific cloud liquid water content, Specific humidity, Specific rain
     water content, Specific snow water content, Temperature, U-component of wind, V-component of wind, Vertical
     velocity, Vorticity (relative)
-  instruments: []
+  instruments:
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -3474,7 +3474,7 @@ ERA5_PL_MONTHLY:
     lat-lon grid of 0.25 degrees for the reanalysis and 0.5 degrees for the uncertainty estimate (0.5 and 1
     degree respectively for ocean waves). There are four main sub sets: hourly and monthly products, both on
     pressure levels (upper air fields) and single levels (atmospheric, ocean-wave and land surface quantities).
-  instruments: []
+  instruments:
   constellation: ERA5
   platform: ERA5
   processing:level:
@@ -3518,7 +3518,7 @@ ERA5_LAND:
     Surface thermal radiation downwards, Temperature of snow layer, Total evaporation, Total precipitation, Volumetric
     soil water layer 1, Volumetric soil water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
   constellation: ERA5
-  instruments: []
+  instruments:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "hourly", "evolution"]
@@ -3553,7 +3553,7 @@ ERA5_LAND_MONTHLY:
     Temperature of snow layer, Total evaporation, Total precipitation, Volumetric soil water layer 1, Volumetric soil
     water layer 2, Volumetric soil water layer 3, Volumetric soil water layer 4
   constellation: ERA5
-  instruments: []
+  instruments:
   platform: ERA5
   processing:level:
   keywords: ["ECMWF", "Reanalysis", "ERA5", "CDS", "Atmospheric", "land", "monthly", "evolution"]
@@ -3587,7 +3587,7 @@ UERRA_EUROPE_SL:
     Orography, Skin temperature, Snow density, Snow depth water equivalent, Surface pressure, Surface roughness, Total
     cloud cover, Total column integrated water vapour, Total precipitation
   constellation: SURFEX
-  instruments: []
+  instruments:
   platform: SURFEX
   processing:level:
   keywords: ["Climate", "ECMWF", "Reanalysis", "Regional", "Europe", "UERRA", "UERRA-HARMONIE", "SURFEX", "MESCAN-SURFEX", "CDS", "Atmospheric", "single", "levels"]
@@ -3605,7 +3605,7 @@ GLACIERS_ELEVATION_AND_MASS_CHANGE:
     providing time series of glacier changes: glacier elevation change series from the geodetic method and glacier
     mass-balance series from the glaciological method
   constellation: INSITU
-  instruments: []
+  instruments:
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "elevation", "mass", "change"]
@@ -3625,7 +3625,7 @@ GLACIERS_DIST_RANDOLPH:
     water cycle and local hazards.\nThis dataset is a snapshot of global glacier outlines compiled from\nmaps,
     aerial photographs and satellite images mostly acquired in the period 2000-2010.
   constellation:
-  instruments: []
+  instruments:
   platform: INSITU
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "distribution", "inventory"]
@@ -3663,7 +3663,7 @@ GRIDDED_GLACIERS_MASS_CHANGE:
     behalf of Copernicus Climate Change Service. Variables in the dataset/application are: Glacier mass change Variables
     in the dataset/application are: Uncertainty
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "WGMS", "INSITU", "CDS", "C3S", "glacier", "randolph", "mass", "gridded"]
@@ -3703,7 +3703,7 @@ SATELLITE_CARBON_DIOXIDE:
     Climate Change Initiative (CCI).\n\nVariables in the dataset/application are:\nColumn-average dry-air mole
     fraction of atmospheric carbon dioxide (XCO2), Mid-tropospheric columns of atmospheric carbon dioxide (CO2)
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "carbon-dioxide"]
@@ -3736,7 +3736,7 @@ SATELLITE_FIRE_BURNED_AREA:
     biomass, which can be translated to greenhouse gases emissions amongst other contaminants. Burned area is also
     useful for land cover change studies, fire management and risk analysis.
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "burned"]
@@ -3773,7 +3773,7 @@ SATELLITE_METHANE:
     dataset/application are:\nColumn-average dry-air mole fraction of atmospheric methane (XCH4), Mid-tropospheric
     columns of atmospheric methane (CH4)
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "methane"]
@@ -3814,7 +3814,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
     Sea Ice Satellite Application Facility (OSI SAF). Variables in the dataset/application are: Sea ice edge, Sea ice
     type Variables in the dataset/application are: Status flag, Uncertainty
     constellation:
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level:
@@ -3859,7 +3859,7 @@ SATELLITE_SEA_ICE_THICKNESS:
     no sea-ice thickness data with sufficient quality exist for the Southern Hemisphere. The extension of the CDR/ICDR to other
     periods, regions, and radar altimeter missions is under development in the extension of the ESA CCI Sea Ice project (ESA CCI+).
     This dataset is produced on behalf of the Copernicus Climate Change Service (C3S).
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level:
@@ -3888,7 +3888,7 @@ SATELLITE_SEA_ICE_CONCENTRATION:
     The two products share the same algorithm baseline, which is both a continuation of the EUMETSAT OSI SAF approach and a series of innovations contributed by ESA CCI activities. For both products, the underlying algorithm makes use of a combination of the same three temperature channels near 19 GHz and 37 GHz. The data also share a common data format, that allows expert users to revert some of the filtering steps and access the raw output of the SIC algorithms. Both are level-4 products in the sense that gaps are filled by temporal and spatial interpolation. However, gap filling is not applied to fill in days when no input satellite data are available.
 
     Further details about each product can be found below as well as in the Documentation section.
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level:
@@ -3932,7 +3932,7 @@ SEASONAL_POSTPROCESSED_PL:
     anomaly, Temperature anomaly, U-component of wind anomaly, V-component of wind anomaly
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "pressure", "levels"]
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   eodag:sensor_type: ATMOSPHERIC
@@ -3973,7 +3973,7 @@ SATELLITE_SEA_LEVEL_GLOBAL:
     geostrophic velocity zonal component, Geostrophic velocity anomalies meridian component, Geostrophic velocity
     anomalies zonal component, Sea level anomaly
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["Climate", "ECMWF", "CDS", "C3S", "sea", "level", "global"]
@@ -4027,7 +4027,7 @@ SEASONAL_POSTPROCESSED_SL:
     Top thermal radiation anomalous rate of accumulation, Total cloud cover anomaly, Total precipitation anomalous
     rate of accumulation
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "anomalies", "single", "levels"]
@@ -4077,7 +4077,7 @@ SEASONAL_ORIGINAL_SL:
     Surface solar radiation downwards, Surface thermal radiation downwards, TOA incident solar radiation, Top net
     solar radiation, Top net thermal radiation, Total cloud cover, Total precipitation
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "daily", "single", "levels"]
@@ -4121,7 +4121,7 @@ SEASONAL_ORIGINAL_PL:
     dataset/application are:\nGeopotential, Specific humidity, Temperature, U-component of wind, V-component
     of wind
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "subdaily", "pressure", "levels"]
@@ -4164,7 +4164,7 @@ SEASONAL_MONTHLY_PL:
     intervals during the period 1993-2016.\n\nVariables in the dataset/application are:\nGeopotential, Specific
     humidity, Temperature, U-component of wind, V-component of wind
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "pressure", "levels"]
@@ -4215,7 +4215,7 @@ SEASONAL_MONTHLY_SL:
     radiation, Surface thermal radiation downwards, Top solar radiation, Top thermal radiation, Total cloud cover,
     Total precipitation
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "seasonal", "forecast", "monthly", "single", "levels"]
@@ -4251,7 +4251,7 @@ SIS_HYDRO_MET_PROJ:
     are:\n2m air temperature, Highest 5-day precipitation amount, Longest dry spells, Number of dry spells,
     Precipitation
   constellation:
-  instruments: []
+  instruments:
   platform:
   processing:level:
   keywords: ["ECMWF", "CDS", "C3S", "hydrology", "meterology", "water", "precipitation", "temperature"]
@@ -4306,7 +4306,7 @@ FIRE_HISTORICAL:
     Variables in the dataset/application are: Build-up index, Burning index, Danger rating, Drought code, Duff moisture
     code, Energy release component, Fine fuel moisture code, Fire daily severity index, Fire danger index, Fire weather
     index, Ignition component, Initial spread index, Keetch-Byram drought index, Spread component
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4339,7 +4339,7 @@ FIRE_SEASONAL:
     These seasonal forecasts can be used to assess the performance of the forecasting system or to develop tools for statistically
     correcting forecast errors. ECMWF produces this dataset as the computational center for fire danger forecasting within the
     Copernicus Emergency Management Service (CEMS) on behalf of the Joint Research Centre, which serves as the managing entity for this service.
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4359,7 +4359,7 @@ GLOFAS_FORECAST:
     Data availability for the GloFAS forecast is from 2019-11-05 up to near real time.\n\nVariables in the
     dataset/application are:\nRiver discharge in the last 24 hours\n\nVariables in the dataset/application
     are:\nUpstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4377,7 +4377,7 @@ GLOFAS_HISTORICAL:
     forcing a hydrological modelling chain with inputs from a global reanalysis. Data availability for the historical
     simulation is from 1979-01-01 up to near real time.\n\nVariables in the dataset/application are:\nRiver discharge in the
     last 24 hours\n\nVariables in the dataset/application are:\nUpstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4408,7 +4408,7 @@ GLOFAS_REFORECAST:
     All these datasets are part of the operational flood forecasting within the Copernicus Emergency
     Management Service (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the
     last 24 hours\n\nVariables in the dataset/application are:\nUpstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4438,7 +4438,7 @@ GLOFAS_SEASONAL:
     part of the operational flood forecasting within the Copernicus Emergency Management Service
     (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24
     hours\n\nVariables in the dataset/application are:\nUpstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4472,7 +4472,7 @@ GLOFAS_SEASONAL_REFORECAST:
     the operational flood forecasting within the Copernicus Emergency Management Service
     (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24
     hours\n\nVariables in the dataset/application are:\nUpstream area"
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4510,7 +4510,7 @@ EFAS_FORECAST:
     (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24 hours,
     River discharge in the last 6 hours, Snow depth water equivalent, Soil depth, Volumetric
     soil moisture\n\nVariables in the dataset/application are:\nOrography, Upstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4543,7 +4543,7 @@ EFAS_HISTORICAL:
     dataset/application are:\nRiver discharge in the last 24 hours, River discharge in the last
     6 hours, Snow depth water equivalent, Soil depth, Volumetric soil moisture\n\nVariables in
     the dataset/application are:\nOrography, Upstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4579,7 +4579,7 @@ EFAS_REFORECAST:
     dataset/application are:\nRiver discharge, Snow depth water equivalent, Soil depth,
     Volumetric soil moisture\n\nVariables in the dataset/application are:\nOrography, Upstream
     area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4614,7 +4614,7 @@ EFAS_SEASONAL:
     dataset/application are:\nRiver discharge in the last 24 hours, Snow depth water equivalent,
     Soil depth, Volumetric soil moisture\n\nVariables in the dataset/application
     are:\nOrography, Upstream area
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4648,7 +4648,7 @@ EFAS_SEASONAL_REFORECAST:
     Service (CEMS).\n\nVariables in the dataset/application are:\nRiver discharge in the last 24 hours, Snow
     depth water equivalent, Soil depth, Volumetric soil moisture\n\nVariables in the dataset/application
     are:\nOrography, Upstream area"
-  instruments: []
+  instruments:
   constellation: CEMS
   platform: CEMS
   processing:level:
@@ -4666,7 +4666,7 @@ COP_DEM_GLO30_DGED:
     including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
     GLO-30 and GLO-90. GLO-30 provides worldwide coverage at 30 meters.Data were acquired through the TanDEM-X mission
     between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
-  instruments: []
+  instruments:
   constellation: TerraSAR
   platform:
   processing:level:
@@ -4682,7 +4682,7 @@ COP_DEM_GLO30_DTED:
     including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
     GLO-30 and GLO-90. GLO-30 provides worldwide coverage at 30 meters.Data were acquired through the TanDEM-X mission
     between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
-  instruments: []
+  instruments:
   constellation: TerraSAR
   platform:
   processing:level:
@@ -4698,7 +4698,7 @@ COP_DEM_GLO90_DGED:
     including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
     GLO-30 and GLO-90. GLO-90 provides worldwide coverage at 90 meters.Data were acquired through the TanDEM-X mission
     between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
-  instruments: []
+  instruments:
   constellation: TerraSAR
   platform:
   processing:level:
@@ -4714,7 +4714,7 @@ COP_DEM_GLO90_DTED:
     including buildings, infrastructure and vegetation. The Copernicus DEM is provided in 3 different instances: EEA-10,
     GLO-30 and GLO-90. GLO-90 provides worldwide coverage at 90 meters.Data were acquired through the TanDEM-X mission
     between 2011 and 2015. The datasets were made available for use in 2019 and will be maintained until 2026.
-  instruments: []
+  instruments:
   constellation: TerraSAR
   platform:
   processing:level:
@@ -4734,7 +4734,7 @@ CLMS_CORINE:
     MMUs mean that the change layer has higher resolution than the status layer. Due to differences in MMUs the
     difference between two status layers will not equal to the corresponding CLC-Changes layer. If you are interested
     in CLC-Changes between two neighbour surveys always use the CLC-Change layer.
-  instruments: []
+  instruments:
   constellation: Sentinel-2, LANDSAT, SPOT-4/5, IRS P6 LISS III
   platform: S2, L5, L7, L8, SPOT4, SPOT5
   processing:level:
@@ -4917,7 +4917,7 @@ EEA_HRL_TCF:
     environmental and climate studies. TCF is derived from Sentinel-2 imagery at 20m resolution using a machine
     learning approach. The TCF product is part of the pan-European High Resolution Vegetation Phenology and Productivity
     (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instruments: []
+  instruments:
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -4935,7 +4935,7 @@ CLMS_HRVPP_ST:
     The PPI Seasonal Trajectories are derived from the PPI vegetation index and hence based on Copernicus Sentinel-2 satellite observations.
     The ST products are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom, and for the period from 2017 until today, with yearly updates.
     These Seasonal Trajectories are part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instruments: []
+  instruments:
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -4958,7 +4958,7 @@ CLMS_HRVPP_ST_LAEA:
     The PPI Seasonal Trajectories are derived from the PPI vegetation index and hence based on Copernicus Sentinel-2 satellite observations.
     The ST products are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom, and for the period from 2017 until today, with yearly updates.
     These Seasonal Trajectories are part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instruments: []
+  instruments:
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -4980,7 +4980,7 @@ CLMS_HRVPP_VPP:
     The Vegetation and Productivity parameters are extracted from the filtered PPI time-series, the HR-VPP Seasonal Trajectories, and hence based on Copernicus Sentinel-2 satellite observations.
     The VPP parameters are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom and for the period from 2017 until today, with yearly updates.
     This VPP product is part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instruments: []
+  instruments:
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -5002,7 +5002,7 @@ CLMS_HRVPP_VPP_LAEA:
     The Vegetation and Productivity parameters are extracted from the filtered PPI time-series, the HR-VPP Seasonal Trajectories, and hence based on Copernicus Sentinel-2 satellite observations.
     The VPP parameters are made available as a set of raster files with 10m and 100m resolution, in ETRS89/LAEA projection corresponding to the High Resolution Layers tiling grid, for those tiles that cover the EEA38 countries and the United Kingdom and for the period from 2017 until today, with yearly updates.
     This VPP product is part of the pan-European High Resolution Vegetation Phenology and Productivity (HR-VPP) component of the Copernicus Land Monitoring Service (CLMS).
-  instruments: []
+  instruments:
   constellation: Sentinel-2
   platform: S2A,S2B,S2C
   processing:level:
@@ -5040,13 +5040,13 @@ GSW_CHANGE:
     The Global Surface Water Occurrence Change Intensity map provides information on where
     surface water occurrence increased, decreased or remained the same between 1984-1999
     and 2000-2021. Both the direction of change and its intensity are documented.
-  instruments: []
+  instruments:
   constellation: GSW
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Change", "Landsat"]
   eodag:sensor_type: HYDROLOGICAL
-  license: proprietary
+  license: other
   title: Global Surface Water Occurrence Change Intensity 1984-2020
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1984-01-01T00:00:00Z", "2020-12-31T23:59:59Z"]]}}
 
@@ -5054,13 +5054,13 @@ GSW_EXTENT:
   description: |
     The Global Surface Water Maximum Water Extent shows all the locations ever detected as
     water over a 38-year period (1984-2021)
-  instruments: []
+  instruments:
   constellation: GSW
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Extent", "Landsat"]
   eodag:sensor_type: HYDROLOGICAL
-  license: proprietary
+  license: other
   title: Global Surface Water Maximum Water Extent 1984-2021
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
 
@@ -5069,13 +5069,13 @@ GSW_OCCURRENCE:
     The Global Surface Water Occurrence shows where surface water occurred between 1984
     and 2021 and provides information concerning overall water dynamics. This product
     captures both the intra and inter-annual variability and changes.
-  instruments: []
+  instruments:
   constellation: GSW
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Occurrence", "Landsat"]
   eodag:sensor_type: HYDROLOGICAL
-  license: proprietary
+  license: other
   title: Global Surface Water Occurrence 1984-2021
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
 
@@ -5084,13 +5084,13 @@ GSW_RECURRENCE:
     The Global Surface Water Recurrence provides information concerning the inter-annual
     behaviour of water surfaces and captures the frequency with which water returns from
     year to year.
-  instruments: []
+  instruments:
   constellation: GSW
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Recurrence", "Landsat"]
   eodag:sensor_type: HYDROLOGICAL
-  license: proprietary
+  license: other
   title: Global Surface Water Recurrence 1984-2021
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
 
@@ -5099,13 +5099,13 @@ GSW_SEASONALITY:
     The Global Surface Water Seasonality map provides information concerning the intra-annual
     behaviour of water surfaces for a single year (2021) and shows permanent and seasonal
     water and the number of months water was present.
-  instruments: []
+  instruments:
   constellation: GSW
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Seasonality", "Landsat"]
   eodag:sensor_type: HYDROLOGICAL
-  license: proprietary
+  license: other
   title: Global Surface Water Seasonality 2014-2020
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2014-01-01T00:00:00Z", "2020-12-31T23:59:59Z"]]}}
 
@@ -5114,13 +5114,13 @@ GSW_TRANSITIONS:
     The Global Surface Water Transitions map provides information on the change in surface
     water seasonality between the first and last years (between 1984 and 2021) and captures
     changes between the three classes of not water, seasonal water and permanent water.
-  instruments: []
+  instruments:
   constellation: GSW
   platform: GSW
   processing:level:
   keywords: ["PEKEL", "Global-Surface-Water", "Transitions", "Landsat"]
   eodag:sensor_type: HYDROLOGICAL
-  license: proprietary
+  license: other
   title: Global Surface Water Transitions 1984-2021
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1984-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
 
@@ -5131,13 +5131,13 @@ EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
     and reported under the United Nations Framework Convention on Climate Change (UNFCCC),
     the Kyoto Protocol and the Decision 525/2013/EC. The annual data collection covers in
     principle all Member States of the European Union as well as some other European countries
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Agriculture", "Greenhouse-gas", "CO2", "Emission", "Air-pollutants"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Eurostat - Greenhouse gas emissions from agriculture
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2011-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
 
@@ -5147,13 +5147,13 @@ EUSTAT_POP_AGE_SEX_NUTS2:
     of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
     data collection and aims to gather information on demography and migration. This dataset
     contains information about the population by sex, age and region of residence (NUTS 2 level).
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-2", "Unidemo", "Demographic"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Population on 1 January by age, sex and NUTS 2 region
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1990-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
 
@@ -5163,13 +5163,13 @@ EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
     of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
     data collection and aims to gather information on demography and migration. This dataset
     contains information about the population by sex, age and region of residence (NUTS 3 level).
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-3", "Unidemo", "Demographic"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Population on 1 January by age, sex and NUTS 3 region
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2014-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
 
@@ -5180,13 +5180,13 @@ EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
     data collection and aims to gather information on demography and migration. This dataset
     contains information about demographic balance and crude rates of a population at regional
     level (NUTS 3 level).
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Age", "Sex", "NUTS-3", "Unidemo", "Demographic"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Population change - Demographic balance and crude rates at regional level (NUTS 3)
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2000-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
 
@@ -5207,78 +5207,78 @@ EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
     covers the full spectrum of the Member States of the European Union.The share of energy from
     renewable sources is calculated for four indicators: Transport (RES-T), Heating and Cooling
     (RES-H&C), Electricity (RES-E), Overall RES share (RES)
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Energy", "Renewable", "Transport", "Heating", "Cooling", "Electricity"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Share of energy from renewable sources
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2004-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
 
 EUSTAT_AVAILABLE_BEDS_HOSPITALS_NUTS2:
   description: |
     Non-expenditure healthcare data provide information on institutions providing healthcare in countries, on resources used and on output produced in the framework of healthcare provision. \nData on healthcare form a major element of public health information as they describe the capacities available for different types of healthcare provision as well as potential 'bottlenecks' observed. The quantity and quality of healthcare services provided and the work sharing established between the different institutions are a subject of ongoing debate in all countries. Sustainability - continuously providing the necessary monetary and personal resources needed - and meeting the challenges of ageing societies are the primary perspectives used when analysing and using the data. \nThe resource-related data refer to both human and technical resources, i.e. they relate to: \n- Health care staff: 'manpower' active in the health care sector (doctors, dentists, nurses, etc.);\n- Heath workforce migration: migration movements of doctors and nurses;\n- Healthcare facilities: technical capacity dimensions (hospital beds, beds in nursing and residential care facilities, etc.).\nThe output-related data ('activities') refer to contacts between patients and the healthcare system, and to the treatment thereby received. Data are available for hospital discharges of in-patients and day cases, average length of stay of in-patients, consultations with medical professionals, and medical procedures performed in hospitals.\nAnnual national and regional data are provided in absolute numbers, percentages, and in population-standardised rates (per 100 000 inhabitants).\nWherever applicable, the definitions and classifications of the System of Health Accounts (SHA) are followed, e.g. International Classification for Health Accounts - Providers of health care (ICHA-HP). For hospital discharges, the International Shortlist for Hospital Morbidity Tabulation (ISHMT) is used. Surgical procedures are classified according to a shortlist mapped to ICD-9-CM.\nThese healthcare data are largely based on administrative data sources in the countries. Therefore, they reflect the country-specific way of organising healthcare and may not always be completely comparable.
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Health-care", "Hospital", "Bed", "Health"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Available beds in hospitals by NUTS 2 region
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2013-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
 
 EUSTAT_BATHING_SITES_WATER_QUALITY:
   description: |
     The indicator measures the number and proportion of coastal and inland bathing sites with excellent water quality. The indicator assessment is based on microbiological parameters (intestinal enterococci and Escherichia coli). The new Bathing Water Directive requires Member States to identify and assess the quality of all inland and marine bathing waters and to classify these waters as ‘poor’, ‘sufficient’, ‘good’ or ‘excellent’.
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Bath", "Water", "Water-quality"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Bathing sites with excellent water quality by location
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2011-01-01T00:00:00Z", "2023-12-31T23:59:59Z"]]}}
 
 EUSTAT_POP_DENSITY_NUTS3:
   description: |
     Eurostat’s annual data collections on population. Member States send population data to Eurostat data as on of 31 December for the reference year under Regulation 1260/2013 on European demographic statistics. The data are conventionally published by Eurostat as population on 1 January of the following year (reference year + 1). \nThe aim is to collect annual mandatory and voluntary demographic data from the national statistical institutes. Mandatory data are those defined by the legislation listed under ‘6.1. Institutional mandate — legal acts and other agreements’. \nThe completeness of the demographic data collected on a voluntary basis depends on the availability and completeness of information provided by the national statistical institutes.\nFor more information on mandatory/voluntary data collection, see 6.1. Institutional mandate — legal acts and other agreements. \nThe following statistics are available. \nPopulation on 1 January by sex and by:\n- single age and educational attainment / marital status / broad group of citizenship / broad group of country of birth;\n  - five-year age group and citizenship / country of birth;\n  - citizenship and broad group of country of birth / country of birth and broad group of citizenship;\n  - broad age group and NUTS 3 (under regional data population folder);\n  - single age and NUTS 2 (under regional data population folder);\n  - five-year age group and NUTS 2 / NUTS 3 (under regional data population folder).\nPopulation structure statistics: median age of population, proportion of population by various age groups, old age dependency ratio.
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "Population", "Density", "NUTS-3"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Population density by NUTS 3 region
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1990-01-01T00:00:00Z", "2021-12-31T23:59:59Z"]]}}
 
 EUSTAT_SOIL_SEALING_INDEX:
   description: |
     The indicator estimates the increase in sealed soil surfaces with impervious materials due to urban development and construction (e.g. buildings, constructions and laying of completely or partially impermeable artificial material, such as asphalt, metal, glass, plastic or concrete). This provides an indication of the rate of soil sealing, when areas change land use towards artificial and urban land use. The indicator builds on data from the imperviousness High Resolution Layer (a product of the Copernicus Land Monitoring Service). The indicator is presented in the following units: Index 2006=100 % of total surface total sealed surface in km2.
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "soil", "soil-sealing", "SDG", "EU-Sustainable-Development-Goals"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Soil sealing index
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2006-01-01T00:00:00Z", "2018-12-31T23:59:59Z"]]}}
 
 EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS:
   description: |
     The indicator measures the surface of terrestrial protected areas. The indicator comprises nationally designated protected areas and Natura 2000 sites. A nationally designated area is an area protected by national legislation. The Natura 2000 network comprises both marine and terrestrial protected areas designated under the EU Habitats and Birds Directives with the goal to maintain or restore a favourable conservation status for habitat types and species of EU interest.
-  instruments: []
+  instruments:
   constellation: Eurostat
   platform: Eurostat
   processing:level:
   keywords: ["Eurostat", "CO2", "terrestrial", "protected-areas"]
   eodag:sensor_type:
-  license: proprietary
+  license: other
   title: Surface of the terrestrial protected areas
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2013-01-01T00:00:00Z", "2022-12-31T23:59:59Z"]]}}
 
@@ -5297,7 +5297,7 @@ ISIMIP_CLIMATE_FORCING_ISIMIP3B:
     ISIMIP3b group III simulations additionally account for future changes in socio-economic
     forcing.\n\nThis collection contains bias-adjusted atmospheric climate input data,
     atmospheric composition input data as well as ocean and lightning input data.
-  instruments: []
+  instruments:
   constellation: ISIMIP
   platform: ISIMIP
   processing:level:
@@ -5321,7 +5321,7 @@ ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
     additionally account for future changes in socio-economic forcing. This collection contains
     fishing, lake fraction, land use, land transition, water abstraction and wood harvesting input
     data as well as information about crops and fertilizers
-  instruments: []
+  instruments:
   constellation: ISIMIP
   platform: ISIMIP
   processing:level:
@@ -5337,7 +5337,7 @@ NEMSGLOBAL_TCDC:
     Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
     NEMSGLOBAL has 30km spatial and 1h temporal resolutions and produces seamless
     datasets from 1984 to 7 days ahead.
-  instruments: []
+  instruments:
   constellation: NEMSGLOBAL
   platform: NEMSGLOBAL
   processing:level:
@@ -5357,7 +5357,7 @@ NEMSAUTO_TCDC:
     and precipitation forecast.
     Note that Automatic domain switching is only supported for multi point queries.
     Support for polygons may follow later.
-  instruments: []
+  instruments:
   constellation: NEMSAUTO
   platform: NEMSAUTO
   processing:level:
@@ -5373,7 +5373,7 @@ DT_EXTREMES:
     The Digital Twin on Weather-Induced and Geophysical Extremes provides capabilities
     for the assessment and prediction of environmental extremes in support of risk
     assessment and management.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5389,7 +5389,7 @@ DT_CLIMATE_ADAPTATION:
     scenarios. This in turn will support sustainable development and climate adaptation
     and mitigation policy-making at multi-decadal timescales, at regional and national
     levels.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5405,7 +5405,7 @@ DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Historical Simulation' data based on the 'ICON' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5421,7 +5421,7 @@ DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Historical Simulation' data based on the 'IFS-NEMO' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5437,7 +5437,7 @@ DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Control Simulation' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5453,7 +5453,7 @@ DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
      This Collection gives access to 'Control Simulation' data based on the 'IFS-NEMO' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5469,7 +5469,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Future Projection' data based on the 'ICON' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5485,7 +5485,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Future Projection' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5501,7 +5501,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Future Projection' data based on the 'IFS-NEMO' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5517,7 +5517,7 @@ DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Storyline Simulation Present Climate' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5533,7 +5533,7 @@ DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Storyline Simulation Past Climate' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5549,7 +5549,7 @@ DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This Collection gives access to 'Storyline Simulation Future Climate' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5566,7 +5566,7 @@ DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
     information over multiple decades at high resolution via a unified framework combining
     advanced Earth system models, impact assessments, and observations. This nextGEMS Collection
     gives access to 'Historical Simulation' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -5583,7 +5583,7 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
     sector-specific information over multiple decades at high resolution via a unified
     framework combining advanced Earth system models, impact assessments, and observations.
     This nextGEMS Collection gives access to 'Future Projection' data based on the 'IFS-FESOM' model.
-  instruments: []
+  instruments:
   constellation: Digital Twin
   platform: DT
   processing:level:
@@ -6309,7 +6309,7 @@ MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
     1/12 degree horizontal resolution with regular longitude/latitude equirectangular projection. 50 vertical levels are
     ranging from 0 to 5500 meters. This product also delivers a special dataset for surface current which also includes
     wave and tidal drift called SMOC (Surface merged Ocean Current). DOI (product) : https://doi.org/10.48670/moi-00016
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6333,7 +6333,7 @@ MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
     dissolved oxygen, GLODAPv2 for DIC and Alkalinity, and climatological model outputs for Iron and DOC +
     Quality/Accuracy/Calibration information: See the related
     QuID[http://catalogue.marine.copernicus.eu/documents/QUID/CMEMS-GLO-QUID-001-028.pdf] DOI (product): https://doi.org/10.48670/moi-00015
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6360,7 +6360,7 @@ MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
     uses the assimilation of altimeters with a time step of 6 hours. The global wave system provides analysis 4 times a
     day, and a forecast of 10 days at 0:00 UTC. The wave model MFWAM uses the partitioning to split the swell spectrum
     in primary and secondary swells. DOI (product) : https://doi.org/10.48670/moi-00017
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6383,7 +6383,7 @@ MO_GLOBAL_MULTIYEAR_BGC_001_033:
     latitudes (CMEMS biogeochemistry multiyear product)
     Vertical coverage: + Epipelagic layer + Upper mesopelagic layer + Lower mesopelagic layer (max. 1000m)
     DOI (product) : https://doi.org/10.48670/moi-00020
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6404,7 +6404,7 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
     a geometric sequence of first member 0.035 Hz and a reason 7.5. WAVERYS takes into account oceanic currents from the
     GLORYS12 physical ocean reanalysis and assimilates significant wave height observed from historical altimetry missions
     and directional wave spectra from Sentinel 1 SAR from 2017 onwards. DOI (product): https://doi.org/10.48670/moi-00022
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6428,7 +6428,7 @@ MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
     \nThese four products provided four different time series of global ocean simulations 3D monthly estimates. All numerical products
     available for users are monthly or daily mean averages describing the ocean.
     \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00024
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6448,7 +6448,7 @@ MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
     delivered together with standard deviation of near-surface zonal and meridional raw velocities, Geometrical Dilution of
     Precision (GDOP), quality flags and metadata.\n The zonal and meridional velocities, at parking depth and in surface,
     calculated along the trajectories of the floats which are part of the Argo Program.\n\nDOI (product):\nhttps://doi.org/10.48670/moi-00041
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 2
@@ -6465,7 +6465,7 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
     a synthesis and a validation of the dataset, providing a support for localized experience (cruises), providing a validation
     source for operational models, observing seasonal cycle and inter-annual variability.
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00037
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6481,7 +6481,7 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
     product CORA (INSITU_GLO_TS_REP_OBSERVATIONS_013_001_b) using the ISAS software. Objective analysis is based on a statistical
     estimation method that allows presenting a synthesis and a validation of the dataset, providing a validation source for operational
     models, observing seasonal cycle and inter-annual variability.\n\n**DOI (product):**  \nhttps://doi.org/10.17882/46219
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6500,7 +6500,7 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
     ocean color satellite measurements with hydrological properties and additional relevant drivers.
     DOI (product): https://doi.org/10.48670/moi-00046 Product Citation: Please refer to our Technical FAQ for citing
     products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6524,7 +6524,7 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
     \n\nDOI (product):\nhttps://doi.org/10.48670/moi-00047\n\nReferences:\n\n Chau, T. T. T., Gehlen, M., and
     Chevallier, F.: A seamless ensemble-based reconstruction of surface ocean pCO2 and air-sea CO2 fluxes over the global
     coastal and open oceans, Biogeosciences, 19, 1087-1109, https://doi.org/10.5194/bg-19-1087-2022, 2022.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6550,7 +6550,7 @@ MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
     doi: 10.3389/fmars.2017.00128.\n Bittig H. C., T. Steinhoff, H. Claustre, B. Fiedler, N. L. Williams, R. Sauzède,
     A. Körtzinger and J.-P. Gattuso,2018: An Alternative to Static Climatologies: Robust Estimation of Open Ocean CO2 Variables
     and Nutrient Concentrations From T, S, and O2 Data Using Bayesian Neural Networks. Front. Mar. Sci. 5:328. doi: 10.3389/fmars.2018.00328.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -6573,7 +6573,7 @@ MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
     \n\nDOI (product): \nhttps://doi.org/10.48670/mds-00327\n\nReferences:\n\n Rio, M.-H., S. Mulet, and N. Picot:
     Beyond GOCE for the ocean circulation estimate: Synergetic use of altimetry, gravimetry, and in situ data provides new
     insight into geostrophic and Ekman currents, Geophys. Res. Lett., 41, doi:10.1002/2014GL061773, 2014.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6603,7 +6603,7 @@ MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
     1-13, doi:10.3389/fmars.2018.00084.\n Sammartino, Michela, Salvatore Aronica, Rosalia Santoleri, and Bruno Buongiorno Nardelli. (2022).
     Retrieving Mediterranean Sea Surface Salinity Distribution and Interannual Trends from Multi-Sensor Satellite and In Situ Data,
     Remote Sensing 14, 2502: https://doi.org/10.3390/rs14102502.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6626,7 +6626,7 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
     and salinity fields derived from in situ and satellite observations. Ocean Sci., 8(5):845-857.\n Mulet, S., M.-H. Rio,
     A. Mignot, S. Guinehut and R. Morrow, 2012: A new estimate of the global 3D geostrophic ocean circulation based on satellite
     data and in-situ measurements. Deep Sea Research Part II : Topical Studies in Oceanography, 77-80(0):70-81.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6651,7 +6651,7 @@ MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
     https://doi.org/10.25423/CMCC/MULTIOBS_GLO_PHY_W_REP_015_007\n Buongiorno Nardelli, B. A Multi-Year Timeseries of Observation-Based
     3D Horizontal and Vertical Quasi-Geostrophic Global Ocean Currents. Earth Syst. Sci. Data 2020, No. 12, 1711-1723.
     https://doi.org/10.5194/essd-12-1711-2020.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6669,7 +6669,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
     the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
     resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
     have a time-span of 2 days.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00134
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6684,7 +6684,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
     DTU Space produces polar covering Near Real Time gridded ice displacement fields obtained by MCC processing of Sentinel-1 SAR,
     Envisat ASAR WSM swath data or RADARSAT ScanSAR Wide mode data . The nominal temporal span between processed swaths is 24hours,
     the nominal product grid resolution is a 10km.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00135
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6703,7 +6703,7 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
     and ICDR (OSI-430-a, 2021-present with 16 days latency) was released in November 2022
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00136\n
     \nReferences:\n\n [http://osisaf.met.no/docs/osisaf_cdop2_ss2_pum_sea-ice-conc-reproc_v2p2.pdf]\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6721,7 +6721,7 @@ MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
     for processing details). The product gives additional variables (i.e. Absolute Dynamic Topography and geostrophic currents
     (absolute and anomalies)). It serves in near-real time applications.\nThis product is processed by the DUACS multimission
     altimeter data processing system. \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00149
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6736,7 +6736,7 @@ MO_SEALEVEL_GLO_PHY_MDT_008_063:
     Mean Dynamic Topography that combines the global CNES-CLS-2022 MDT, the Black Sea CMEMS2020 MDT and the Med Sea CMEMS2020 MDT.
     It  is an estimate of the mean over the 1993-2012 period of the sea surface height above geoid. This is consistent with the
     reference time period also used in the  DUACS products\n\nDOI (product):  \nhttps://doi.org/10.48670/moi-00150
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6755,7 +6755,7 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
     satellites . The observations of each sensor are intercalibrated prior to merging using a bias correction based on a multi-sensor
     median reference correcting the large-scale cross-sensor biases.3 more datasets are available that only contain "per sensor type" data:
     Polar InfraRed (PIR), Polar MicroWave (PMW), Geostationary InfraRed (GIR)\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00164
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -6780,7 +6780,7 @@ MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
     of the Environment. doi: 10.1016/j.rse.2010.10.017 2011.\n John D. Stark, Craig J. Donlon, Matthew J. Martin and Michael E. McCulloch,
     2007, OSTIA : An operational, high resolution, real time, global sea surface temperature analysis system., Oceans 07 IEEE Aberdeen,
     conference proceedings. Marine challenges: coastline to deep sea. Aberdeen, Scotland.IEEE.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6799,7 +6799,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
     \nReferences:\n\n Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.;
     Waters, J.; While, J.; Worsfold, M. The Current Configuration of the OSTIA System for Operational Production of Foundation
     Sea Surface Temperature and Ice Concentration Analyses. Remote Sens. 2020, 12, 720, doi:10.3390/rs12040720\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6826,7 +6826,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
     L. T.: Version 2 of the EUMETSAT OSI SAF and ESA CCI sea-ice concentration climate data records, The Cryosphere, 13, 49-78,
     doi:10.5194/tc-13-49-2019, 2019.\n Merchant, C.J., Embury, O., Bulgin, C.E. et al. Satellite-based time-series of sea-surface
     temperature since 1981 for climate applications. Sci Data 6, 223 (2019) doi:10.1038/s41597-019-0236-x.\n
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6851,7 +6851,7 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
     formats: one gathering in one netcdf file all observations related to the same swell field, and for another all observations
     available in a 3-hour time range, and for both formats, propagated information from source to land.
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00178
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -6877,7 +6877,7 @@ MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
     SARAL/AltiKa, CFOSAT ; and interim data (IGDR, 1 to 2 days delay) from Hai Yang-2B mission.\n\nOne file containing valid SWH
     is produced for each mission and for a 3-hour time window. It contains the filtered SWH (VAVH), the unfiltered SWH (VAVH_UNFILTERED)
     and the wind speed (wind_speed).\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00179
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -6897,7 +6897,7 @@ MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
     computed from all available level 3 along-track measurements from 00 UTC until 23:59 UTC ; VAVH_INST field provides an estimate
     of the instantaneous wave field at 12:00UTC (noon), using all available Level 3 along-track measurements and accounting for
     their spatial and temporal proximity.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00180
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6915,7 +6915,7 @@ MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
     QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT satellite instruments.  The product provides monthly mean stress-equivalent wind and
     stress variables as well as their standard deviation. The number of observations used to calculate the monthly averages are
     included in the product.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00181
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6936,7 +6936,7 @@ MO_WIND_GLO_PHY_L3_NRT_012_002:
     (discontinued on 15/11/2021), Metop-B and Metop-C at 0.125 and 0.25 degrees;\nThe OSCAT scatterometer on Scatsat-1 at 0.25
     and 0.5 degrees (discontinued on 28/2/2021); \nThe HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00182
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -6957,7 +6957,7 @@ MO_WIND_GLO_PHY_L3_MY_012_005:
     on MetOp-A and Metop-B at 0.125 and 0.25 degrees; The Seawinds scatterometer on QuikSCAT at 0.25 and 0.5 degrees; The AMI
     scatterometer on ERS-1 and ERS-2 at 0.25 degrees; The OSCAT scatterometer on Oceansat-2 at 0.25 and 0.5 degrees;
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00183
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -6976,7 +6976,7 @@ MO_WIND_GLO_PHY_L4_NRT_012_004:
     and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
     (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00305
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -6996,7 +6996,7 @@ MO_WIND_GLO_PHY_L4_MY_012_006:
     and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
     (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
     \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00185
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -7015,7 +7015,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
     Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).
     \n\nTo find these products in the catalogue, use the search keyword **""ESA-CCI""**.
     \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00282
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -7036,7 +7036,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
     datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).\n
     \nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword **"GlobColour"**.
     \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00278
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -7056,7 +7056,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
     **4 km** and a finer resolution based on olci **300 meters** inputs.\n* Recent products are organized in datasets called Near Real Time (**NRT**)
     and long time-series (from 1997) in datasets called Multi-Years (**MY**).\n\nTo find the **Copernicus-GlobColour** products in the catalogue,
     use the search keyword **"GlobColour"**.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00280
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: Level 3
@@ -7078,7 +7078,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
     \n* Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets
     called Multi-Years (**MY**).\n\nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword
     **"GlobColour"**.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00279
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -7100,7 +7100,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
     in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).
     \n\nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword **""GlobColour""**."
     \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00281
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -7118,7 +7118,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
     \n Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets
     called Multi-Years (**MY**).\n\nTo find these products in the catalogue, use the search keyword **""ESA-CCI""**.
     \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00283
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level: L4
@@ -7447,7 +7447,7 @@ GHS_UCDB_REGION:
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
   description:
-  instruments: []
+  instruments:
   constellation:
   platform:
   processing:level:
