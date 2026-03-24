@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+# Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from __future__ import annotations
+
 from urllib.parse import parse_qs, urljoin
 
 import requests
@@ -61,7 +80,7 @@ class EOIAMAuth(Authentication):
             raise MisconfiguredError("Form action not found")
         return urljoin(base_url, action)
 
-    def _login_from_html(self, html_content: str) -> requests.Response:
+    def _login_from_html(self, html_content: str, req_url: str) -> requests.Response:
         """Perform SAML login from HTML page."""
         creds = self.config.credentials
         username = creds["username"]
@@ -92,7 +111,7 @@ class EOIAMAuth(Authentication):
             service_name = service_names[0] if service_names else ""
             msg = (
                 f"Consent required for service {service_name}, "
-                f"please fill the following form and try again {redirect_url}"
+                f"please fill the following form and try again {req_url}"
             )
             raise AuthenticationError(msg)
 
@@ -168,7 +187,7 @@ class _EOIAMSessionAuth(AuthBase):
         if not self.auth_plugin._logged_in:
             resp = session.get(request.url, allow_redirects=True)
             if "Earth Observation Identity and Access Management System" in resp.text:
-                self.auth_plugin._login_from_html(resp.text)
+                self.auth_plugin._login_from_html(resp.text, req_url=request.url)
             self.auth_plugin._logged_in = True
 
         # Copy cookies from session to the request
