@@ -657,10 +657,7 @@ class QueryStringSearch(Search):
                             collection_data_id = collection_data.pop("id", None)
 
                             # remove collection if it must have be renamed but renaming failed
-                            if (
-                                collection_data_id
-                                and collection_data_id == NOT_AVAILABLE
-                            ):
+                            if collection_data_id == NOT_AVAILABLE:
                                 del conf_update_dict["collections_config"][
                                     generic_collection_id
                                 ]

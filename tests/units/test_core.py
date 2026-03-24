@@ -1102,20 +1102,28 @@ class TestCore(TestCoreBase):
 
     def test_update_collections_list(self):
         """Core api.update_collections_list must update eodag collections list"""
+        provider = "earth_search"
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
+        self.assertNotIn("foo", self.dag._providers[provider].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
+
+        self.assertNotIn("bar", self.dag._providers[provider].collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
-        self.dag.update_collections_list(ext_collections_conf)
+        # log a message to tell that external collections have been added to the provider config
+        with self.assertLogs(level="DEBUG") as cm:
+            self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertIn("foo", self.dag._providers["earth_search"].collections_config)
-        self.assertIn("bar", self.dag._providers["earth_search"].collections_config)
-        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
-        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
+        self.assertIn(f"Added 2 collections for {provider}", str(cm.output))
+
+        # check that collections have been added to configs
+        self.assertIn("foo", self.dag._providers[provider].collections_config)
+        self.assertIn("foo", self.dag.collections_config)
+
+        self.assertIn("bar", self.dag._providers[provider].collections_config)
+        self.assertIn("bar", self.dag.collections_config)
 
     def test_update_collections_list_unknown_provider(self):
         """Core api.update_collections_list on unkwnown provider must not crash and not update conf"""
@@ -1141,8 +1149,9 @@ class TestCore(TestCoreBase):
         ext_collections_conf["ecmwf"] = ext_collections_conf.pop("earth_search")
 
         self.assertNotIn("foo", self.dag._providers["ecmwf"].collections_config)
-        self.assertNotIn("bar", self.dag._providers["ecmwf"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
+
+        self.assertNotIn("bar", self.dag._providers["ecmwf"].collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
         # update existing provider conf and check that update_collections_list() is launched for it
@@ -1159,8 +1168,9 @@ class TestCore(TestCoreBase):
         self.dag.update_collections_list(ext_collections_conf)
 
         self.assertIn("foo", self.dag._providers["ecmwf"].collections_config)
-        self.assertIn("bar", self.dag._providers["ecmwf"].collections_config)
         self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
+
+        self.assertIn("bar", self.dag._providers["ecmwf"].collections_config)
         self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
     def test_update_collections_list_without_plugin(self):
@@ -1169,8 +1179,9 @@ class TestCore(TestCoreBase):
             ext_collections_conf = json.load(f)
 
         self.assertNotIn("foo", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
+
+        self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
         delattr(self.dag._providers["earth_search"].config, "search")
@@ -1178,8 +1189,9 @@ class TestCore(TestCoreBase):
         self.dag.update_collections_list(ext_collections_conf)
 
         self.assertNotIn("foo", self.dag._providers["earth_search"].collections_config)
-        self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
         self.assertNotIn("foo", self.dag.collections_config)
+
+        self.assertNotIn("bar", self.dag._providers["earth_search"].collections_config)
         self.assertNotIn("bar", self.dag.collections_config)
 
     def test_update_collections_list_errors_handling(self):
@@ -1196,43 +1208,133 @@ class TestCore(TestCoreBase):
             with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
                 ext_collections_conf = json.load(f)
 
-            # update the external conf with wrong attributes
+            # set the external "collections_config" conf with wrong attribute "processing_level"
+            ext_collections_conf[provider]["collections_config"].update(
+                {"foo": {"processing_level": 100}}
+            )
+
+            processing_level_value = ext_collections_conf[provider][
+                "collections_config"
+            ]["foo"]["processing_level"]
+            self.assertIn("processing_level", Collection.model_fields)
+            self.assertNotIn("processing_level", Collection.__static_fields__)
+            self.assertNotEqual(
+                processing_level_value,
+                Collection.model_fields["processing_level"].get_default(),
+            )
+
+            # set the external "collections_config" conf with wrong unknown attribute "qux"
+            ext_collections_conf[provider]["collections_config"].update(
+                {"bar": {"qux": "quux"}}
+            )
+
+            self.assertNotIn("qux", Collection.model_fields)
+
+            # update the external conf with wrong static attribute "type" in a new collection
             ext_collections_conf[provider]["providers_config"].update(
                 {
-                    "foo": {
-                        "collection": "foo",
+                    "foobar": {
+                        "collection": "foobar",
                         "metadata_mapping": {"cloudCover": "$.null"},
                     }
                 }
             )
 
             ext_collections_conf[provider]["collections_config"].update(
-                {"foo": {"processing:level": 100}}
+                {"foobar": {"type": "foo"}}
             )
 
-            # remove a collection useless for this test from the external conf
-            del ext_collections_conf[provider]["providers_config"]["bar"]
-            del ext_collections_conf[provider]["collections_config"]["bar"]
+            type_value = ext_collections_conf[provider]["collections_config"]["foobar"][
+                "type"
+            ]
+            self.assertIn("type", Collection.__static_fields__)
+            self.assertNotEqual(
+                type_value, Collection.model_fields["type"].get_default()
+            )
+
+            # update the external conf with right attributes in a new collection:
+            # - "keywords", which is part of the model with a not null value with a null default value
+            # - "extent", which is part of the model with same not null value and default value
+            # - "type", which is a static field set to the default value
+            # - "stac_version", which is a static field set to None
+            # - "processing:level", which is an alias of a field of the model
+            ext_collections_conf[provider]["providers_config"].update(
+                {
+                    "qux": {
+                        "collection": "qux",
+                        "metadata_mapping": {"cloudCover": "$.null"},
+                    }
+                }
+            )
+
+            ext_collections_conf[provider]["collections_config"].update(
+                {
+                    "qux": {
+                        "keywords": "foo",
+                        "extent": {
+                            "spatial": {"bbox": [[-180, -90, 180, 90]]},
+                            "temporal": {"interval": [[None, None]]},
+                        },
+                        "type": "Collection",
+                        "stac_version": None,
+                        "processing:level": "L1",
+                    }
+                }
+            )
+
+            self.assertIn("keywords", Collection.model_fields)
+            self.assertIsNone(Collection.model_fields["keywords"].get_default())
+
+            extent_value = ext_collections_conf[provider]["collections_config"]["qux"][
+                "extent"
+            ]
+            self.assertIn("extent", Collection.model_fields)
+            # value and default value are evaluated as equal even if the default value has float elements in "bbox"
+            self.assertDictEqual(
+                extent_value,
+                Collection.model_fields["extent"].get_default().model_dump(mode="json"),
+            )
+
+            type_value = ext_collections_conf[provider]["collections_config"]["qux"][
+                "type"
+            ]
+            self.assertIn("type", Collection.__static_fields__)
+            self.assertEqual(type_value, Collection.model_fields["type"].get_default())
+
+            stac_version_value = ext_collections_conf[provider]["collections_config"][
+                "qux"
+            ]["stac_version"]
+            self.assertIn("stac_version", Collection.__static_fields__)
+            self.assertNotEqual(
+                stac_version_value, Collection.model_fields["type"].get_default()
+            )
+            self.assertIsNone(stac_version_value)
+
+            self.assertEqual(
+                "processing:level",
+                Collection.get_collection_alias_from_field("processing_level"),
+            )
 
             # log a message to tell that bad attributes have been skipped on collections of the provider
             with self.assertLogs(level="DEBUG") as cm:
                 self.dag.update_collections_list(ext_collections_conf)
 
-            self.assertEqual(
-                len(ext_collections_conf[provider]["collections_config"]), 1
-            )
-
             self.assertIn(
-                f"bad formatted attributes skipped for 1 collection(s) on {provider}",
+                f"bad formatted attributes skipped for 3 collection(s) on {provider}",
                 str(cm.output),
             )
 
-            # check that the collection has been added to the config
-            self.assertIn("foo", self.dag._providers["earth_search"].collections_config)
+            self.assertEqual(
+                len(ext_collections_conf[provider]["collections_config"]), 4
+            )
+            self.assertIn(f"Added 4 collections for {provider}", str(cm.output))
 
-            # remove the wrong collection from the external conf
-            del ext_collections_conf[provider]["providers_config"]["foo"]
-            del ext_collections_conf[provider]["collections_config"]["foo"]
+            # check that collections has been added to configs
+            for new_coll in ["foo", "bar", "foobar", "qux"]:
+                self.assertIn(
+                    new_coll, self.dag._providers["earth_search"].collections_config
+                )
+                self.assertIn(new_coll, self.dag.collections_config)
 
             # case when id is not a string case
 
@@ -1267,14 +1369,11 @@ class TestCore(TestCoreBase):
                 str(cm.output),
             )
 
-            # check that the collection has not been added to the config
+            # check that the collection has not been added to configs
             self.assertNotIn(
                 100, self.dag._providers["earth_search"].collections_config
             )
-
-            # remove the wrong collection from the external conf
-            del ext_collections_conf[provider]["providers_config"][100]
-            del ext_collections_conf[provider]["collections_config"][100]
+            self.assertNotIn(100, self.dag.collections_config)
 
         finally:
             # remove the environment variable
