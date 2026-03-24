@@ -390,7 +390,9 @@ class Download(PluginTopic):
             tmp_dir = tempfile.TemporaryDirectory()
             extraction_dir = os.path.join(tmp_dir.name, os.path.basename(product_dir))
 
-            if fs_path.endswith(".zip"):
+            extract_complete = False
+            fs_path_lower = fs_path.lower()
+            if fs_path_lower.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
 
@@ -410,8 +412,12 @@ class Download(PluginTopic):
                 ):
                     os.makedirs(product_dir)
                 shutil.move(product_extraction_path, product_dir)
-
-            elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
+                extract_complete = True
+            elif (
+                fs_path_lower.endswith(".tar")
+                or fs_path_lower.endswith(".tar.gz")
+                or fs_path_lower.endswith(".tgz")
+            ):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
@@ -424,12 +430,13 @@ class Download(PluginTopic):
                 ):
                     os.makedirs(product_dir)
                 shutil.move(product_extraction_path, product_dir)
+                extract_complete = True
             else:
                 progress_callback(1, total=1)
 
             tmp_dir.cleanup()
 
-            if delete_archive and os.path.isfile(fs_path):
+            if delete_archive and os.path.isfile(fs_path) and extract_complete:
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
             elif os.path.isfile(fs_path):
