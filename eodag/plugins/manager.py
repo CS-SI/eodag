@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, TypeVar, Union
 import importlib_metadata
 
 from eodag.config import PluginConfig, load_config
+from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils import (
     AUTH_TOPIC_KEYS,
@@ -45,7 +46,6 @@ if TYPE_CHECKING:
     from eodag.databases.base import Database
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
-    from eodag.plugins.base import PluginTopic
     from eodag.plugins.download.base import Download
     from eodag.plugins.search.base import Search
 
