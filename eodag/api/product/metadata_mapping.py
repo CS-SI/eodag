@@ -156,6 +156,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``csv_list``: convert to a comma separated list
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``dict_with_roles``: keep only dict items with given roles in their "roles" list
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``from_alternate``: update assets using given alternate
         - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
