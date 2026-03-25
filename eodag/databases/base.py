@@ -18,9 +18,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+
     from eodag.api.collection import CollectionsDict
     from eodag.config import ProviderConfig
 
@@ -64,13 +66,35 @@ class Database(ABC):
         pass
 
     @abstractmethod
+    def collections_search(
+        self,
+        geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
+        datetime: Optional[str] = None,
+        limit: Optional[int] = None,
+        q: Optional[str] = None,
+        ids: Optional[list[str]] = None,
+        federation_backends: Optional[list[str]] = None,
+        cql2_text: Optional[str] = None,
+        cql2_json: Optional[dict[str, Any]] = None,
+        sortby: Optional[list[dict[str, str]]] = None,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Search collections matching the given parameters.
+
+        :param sortby: STAC sort extension objects, e.g.
+            ``[{"field": "datetime", "direction": "desc"}]``.
+            Allowed fields: ``id``, ``datetime``, ``end_datetime``.
+        :returns: A tuple of (returned collections as dictionaries, total number matched).
+        """
+        pass
+
+    @abstractmethod
     def get_federation_backends(
         self,
         collection: Optional[str] = None,
         enabled: Optional[bool] = None,
         limit: Optional[int] = None,
         names: Optional[list[str]] = None,
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, dict[str, Any]]:
         """
         Get federation backends from the database
         """
