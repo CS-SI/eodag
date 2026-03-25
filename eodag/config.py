@@ -700,7 +700,7 @@ class ProviderConfig(yaml.YAMLObject):
     name: str
     group: str
     priority: int = 0
-    enabled: bool
+    enabled: bool = True
     roles: list[str]
     description: str
     url: str
@@ -926,7 +926,7 @@ def load_stac_provider_config() -> dict[str, Any]:
 
 
 def extract_credentials(
-    providers_config: list[ProviderConfig],
+    providers_config: dict[str, ProviderConfig],
 ) -> CredsStoreType:
     """Extract credentials from provider configs (to keep in memory only).
 
@@ -934,7 +934,7 @@ def extract_credentials(
     """
     store: CredsStoreType = {}
 
-    for p in providers_config:
+    for p in providers_config.values():
         provider_creds: dict[str, dict[str, Any]] = {}
 
         for auth_key in AUTH_TOPIC_KEYS:
@@ -1174,7 +1174,7 @@ def disable_providers(
             isinstance(v, PluginConfig) and getattr(v, "type", None) in skipped_plugins
             for v in conf.__dict__.values()
         ):
-            conf["enabled"] = False
+            conf.enabled = False
             logger.debug(
                 "%s: provider needing unavailable plugin has been disabled", name
             )
@@ -1183,7 +1183,7 @@ def disable_providers(
         # check authentication
         if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
             if not credentials_in_auth(conf.api):
-                conf["enabled"] = False
+                conf.enabled = False
                 logger.info(
                     "%s: provider needing auth for search has been disabled because no credentials could be found",
                     name,
@@ -1191,7 +1191,7 @@ def disable_providers(
 
         elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
             if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
-                conf["enabled"] = False
+                conf.enabled = False
                 logger.info(
                     "%s: provider needing auth for search has been disabled because no auth plugin could be found",
                     name,
@@ -1206,14 +1206,14 @@ def disable_providers(
                 and credentials_in_auth(conf.auth)
             )
             if not credentials_exist:
-                conf["enabled"] = False
+                conf.enabled = False
                 logger.info(
                     "%s: provider needing auth for search has been disabled because no credentials could be found",
                     name,
                 )
 
         elif not hasattr(conf, "api") and not hasattr(conf, "search"):
-            conf["enabled"] = False
+            conf.enabled = False
             logger.info(
                 "%s: provider has been disabled because no api or search plugin could be found",
                 name,
