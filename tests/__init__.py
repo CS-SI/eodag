@@ -27,6 +27,7 @@ from io import StringIO
 from pathlib import Path
 from unittest import mock  # PY3
 
+import responses
 from owslib.etree import etree
 from owslib.ows import ExceptionReport
 from shapely import wkt
@@ -34,7 +35,6 @@ from shapely import wkt
 from eodag.api.product import EOProduct
 from eodag.config import PluginConfig
 from eodag.plugins.download.http import HTTPDownload
-from tests.mocks import ResponseFile
 
 jp = os.path.join
 dirn = os.path.dirname
@@ -122,15 +122,10 @@ class EODagTestCase(unittest.TestCase):
         }
 
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
-        self.requests_request_patcher = mock.patch(
-            "requests.Session.request", autospec=True
-        )
         self.requests_http_get = self.requests_http_get_patcher.start()
-        self.requests_request = self.requests_request_patcher.start()
 
     def tearDown(self):
         self.requests_http_get_patcher.stop()
-        self.requests_request_patcher.stop()
         unwanted_product_dir = jp(
             dirn(self.local_product_as_archive_path), self.local_filename
         )
@@ -301,11 +296,18 @@ class EODagTestCase(unittest.TestCase):
         extract=None,
         delete_archive=None,
     ):
-        self.requests_request.return_value = ResponseFile(
-            local_file=self.local_product_as_archive_path,
-            headers={"Content-Disposition": "attachment; filename=foobar.zip"},
-            url="http://example.com/foobar.zip",
-        )
+        if product is None:
+            product = self._dummy_product()
+        with open(self.local_product_as_archive_path, "rb") as fh:
+            responses.add(
+                responses.GET,
+                product.properties["eodag:download_link"],
+                body=fh.read(),
+                status=200,
+                content_type="application/zip",
+                auto_calculate_content_length=True,
+                stream=True,
+            )
         self.tmp_download_dir = tempfile.TemporaryDirectory()
         if output_dir is None:
             output_dir = str(Path(self.tmp_download_dir.name))
@@ -319,8 +321,6 @@ class EODagTestCase(unittest.TestCase):
             }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        if product is None:
-            product = self._dummy_product()
         product.register_downloader(downloader, None)
         return product
 
@@ -332,14 +332,16 @@ class EODagTestCase(unittest.TestCase):
         extract=None,
         delete_archive=None,
     ):
-        self.requests_request.return_value = ResponseFile(
-            local_file=self.local_asset_path,
-            headers={
-                "Content-Disposition": "attachment; filename=foo.jp2",
-                "Content-Type": "image/jp2",
-            },
-            url="https://example.com/asset/foo.jp2",
-        )
+        with open(self.local_asset_path, "rb") as fh:
+            responses.add(
+                responses.GET,
+                "https://example.com/asset/foo.jp2",
+                body=fh.read(),
+                status=200,
+                content_type="image/jp2",
+                auto_calculate_content_length=True,
+                stream=True,
+            )
         self.tmp_download_dir = tempfile.TemporaryDirectory()
         if output_dir is None:
             output_dir = str(Path(self.tmp_download_dir.name))

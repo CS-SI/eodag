@@ -544,7 +544,7 @@ class TestEOProduct(unittest.TestCase):
         product_stream = product.stream_download()
         responses.assert_call_count(product.properties["eodag:download_link"], 1)
 
-        # Header not in responses mocks
+        # Check response headers
         self.assertIn(
             product_stream.headers["Content-Type"],
             ["application/zip", "application/x-zip-compressed"],

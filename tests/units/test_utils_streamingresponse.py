@@ -87,7 +87,7 @@ class StreamResponseTest(unittest.TestCase):
         with open(__file__, "rb") as fd:
             content = fd.read()
 
-        # Chukize content
+        # Chunkize content
         chunked_content = []
         while len(content) > 1024:
             chunked_content.append(content[0:1024])
