@@ -957,7 +957,7 @@ class ProviderConfig(yaml.YAMLObject):
     name: str
     group: str
     priority: int = 0
-    enabled: bool
+    enabled: bool = True
     roles: list[str]
     description: str
     url: str
@@ -1299,7 +1299,7 @@ def load_stac_provider_config() -> dict[str, Any]:
 
 
 def extract_credentials(
-    providers_config: list[ProviderConfig],
+    providers_config: dict[str, ProviderConfig],
 ) -> CredsStoreType:
     """Extract credentials from provider configs (to keep in memory only).
 
@@ -1307,7 +1307,7 @@ def extract_credentials(
     """
     store: CredsStoreType = {}
 
-    for p in providers_config:
+    for p in providers_config.values():
         provider_creds: dict[str, dict[str, Any]] = {}
 
         for auth_key in AUTH_TOPIC_KEYS:
@@ -1546,7 +1546,7 @@ def disable_providers(
             isinstance(v, PluginConfig) and getattr(v, "type", None) in plugins_manager.skipped_plugins
             for v in conf.__dict__.values()
         ):
-            conf["enabled"] = False
+            conf.enabled = False
             plugins_manager.pruned_providers_reasons[name] = {
                 "reason": "; ".join(
                     plugins_manager.get_skipped_plugin_messages(conf)
@@ -1561,7 +1561,7 @@ def disable_providers(
         # check authentication
         if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
             if not credentials_in_auth(conf.api):
-                conf["enabled"] = False
+                conf.enabled = False
                 logger.info(
                     "%s: provider needing auth for search has been disabled because no credentials could be found",
                     name,
@@ -1579,7 +1579,7 @@ def disable_providers(
 
         elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
             if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
-                conf["enabled"] = False
+                conf.enabled = False
                 reason = "provider needing auth for search was pruned because no auth plugin could be found"
                 plugins_manager.pruned_providers_reasons[name] = {
                     "reason": reason,
@@ -1600,7 +1600,7 @@ def disable_providers(
                 and credentials_in_auth(conf.auth)
             )
             if not credentials_exist:
-                conf["enabled"] = False
+                conf.enabled
                 reason = "provider needing auth for search was pruned because no credentials could be found"
                 plugins_manager.pruned_providers_reasons[name] = {
                     "reason": reason,
@@ -1613,7 +1613,7 @@ def disable_providers(
                 )
 
         elif not hasattr(conf, "api") and not hasattr(conf, "search"):
-            conf["enabled"] = False
+            conf.enabled
             reason = "provider has been pruned because no api or search plugin could be found"
             plugins_manager.pruned_providers_reasons[name] = {
                 "reason": reason,
