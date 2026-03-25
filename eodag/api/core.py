@@ -40,7 +40,6 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
-    CollectionProviderConfig,
     EODAGSettings,
     PluginConfig,
     ProviderConfig,
@@ -828,7 +827,7 @@ class EODataAccessGateway:
 
                     # Persist new collection-provider links to DB
                     new_coll_fb_configs = [
-                        CollectionProviderConfig(
+                        (
                             coll_id,
                             provider,
                             {"search": coll_conf}
