@@ -1095,11 +1095,9 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = (
-            self._get_asset_sizes(assets_values, executor, auth, params) or None
-        )
+        total_size = self._get_asset_sizes(assets_values, executor, auth, params)
 
-        progress_callback.reset(total=total_size)
+        progress_callback.reset(total=total_size or None)
 
         # loop for assets paths and get common_subdir
         asset_rel_paths_list = []
@@ -1381,6 +1379,17 @@ class HTTPDownload(Download):
         params: Optional[dict[str, str]],
         zipped: bool = False,
     ) -> int:
+
+        # Try to get sizes from metadata first
+        sizes_from_metadata = [
+            int(asset["file:size"])
+            for asset in assets_values
+            if asset.get("file:size") is not None
+        ]
+        # If available, use the sum of sizes from metadata to avoid making HEAD requests for each asset
+        if sizes_from_metadata:
+            return sum(sizes_from_metadata)
+
         total_size = 0
 
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)

@@ -422,6 +422,19 @@ class TestMetadataFormatter(unittest.TestCase):
             "{'b': {'href': 's3://bar'}}",
         )
 
+    def test_convert_dict_with_roles(self):
+        """Test keeping only assets with specified roles"""
+
+        to_format = '{fieldname#dict_with_roles(["data"])}'
+        assets = {
+            "a": {"href": "http://example.com/a", "roles": ["data"]},
+            "b": {"href": "http://example.com/b", "roles": ["metadata"]},
+        }
+        self.assertEqual(
+            format_metadata(to_format, fieldname=assets),
+            "{'a': {'href': 'http://example.com/a', 'roles': ['data']}}",
+        )
+
     def test_convert_from_alternate(self):
         """
         Test converting assets by replacing href with alternate.<value>.href,

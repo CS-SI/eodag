@@ -6539,3 +6539,40 @@
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
+---
+!provider # MARK: eocat
+  name: eocat
+  priority: 0
+  description: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
+  roles:
+    - host
+  url: https://eocat.esa.int/eo-catalogue
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://eocat.esa.int/eo-catalogue/search'
+    ssl_verify: false
+    timeout: 90
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+    discover_collections:
+      fetch_url: 'https://eocat.esa.int/eo-catalogue/collections?limit=500'
+      result_type: json
+      results_entry: '$.collections[?(@.links[*].rel=="items" & @.id!="datasets" & @.id!="services")]'
+      single_collection_fetch_url: 'https://eocat.esa.int/eo-catalogue/collections/{_collection}'
+      single_collection_parsable_metadata:
+        platform: '{$.summaries.platform#csv_list}'
+    metadata_mapping:
+      assets: '{$.assets#dict_with_roles(["data", "thumbnail", "overview"])}'
+      eodag:download_link: '$.assets.enclosure.href'
+      instrument: '{$.properties.instruments#csv_list}'
+  products:
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload
+    ignore_assets: true
+  auth: !plugin
+    type: EOIAMAuth
+    matching_url: https://[-\w\.]+.eo.esa.int
+    auth_uri: 'https://eoiam-idp.eo.esa.int'

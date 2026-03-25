@@ -937,6 +937,43 @@ No credentials are needed
 
 No credentials are needed
 
+**eocat**
+----------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      EOCAT (ESA Catalog) providing access to ESA Earth observation missions data, including Heritage and Third Party
+      missions.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://eocat.esa.int/eo-catalogue?httpAccept=text/html
+        :color: primary
+        :outline:
+        :tooltip: EOCAT / ESA Catalog website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account `here <https://eoiam-idp.eo.esa.int>`__.
+
+  Then use *email* as ``username`` and ``password`` in eodag credentials.
+
+  .. note:: **Additional consent**
+
+     Some collections will require additional consent for download. If so, a form URL will be will be provided in the
+     authentication error message. You will need to open the URL, fill in the form and try again.
+
 ----
 
 **EUMETSAT**
