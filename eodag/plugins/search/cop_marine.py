@@ -229,6 +229,7 @@ class CopMarineSearch(StaticStacSearch):
             "geometry": geometry,
             "eodag:download_link": download_url,
             "dataset": dataset_item["id"],
+            "order:status": self.config.metadata_mapping["order:status"],
         }
         if use_dataset_dates:
             dates = _get_dates_from_dataset_data(dataset_item)
