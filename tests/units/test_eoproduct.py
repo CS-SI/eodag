@@ -24,121 +24,38 @@ import shutil
 import string
 import tempfile
 import time
-import unittest
 import zipfile
-from typing import Optional
 
 import geojson
 import responses
 from lxml import html
-from shapely import geometry, wkt
+from shapely import geometry
 
 from eodag.config import PluginConfig
-from tests import EODagTestCase
+from tests import EODagTestBase
 from tests.context import (
     DEFAULT_SHAPELY_GEOMETRY,
     NOT_AVAILABLE,
     DatasetDriver,
     Download,
     EOProduct,
-    HTTPDownload,
     ProgressCallback,
     mock,
 )
 
-jp = os.path.join
-dirn = os.path.dirname
 
-TEST_RESOURCES_PATH = jp(dirn(__file__), "..", "resources")
-RESOURCES_PATH = jp(dirn(__file__), "..", "..", "eodag", "resources")
-
-
-class TestEOProduct(unittest.TestCase):
+class TestEOProduct(EODagTestBase):
     NOT_ASSOCIATED_COLLECTION = "EODAG_DOES_NOT_SUPPORT_THIS_COLLECTION"
 
     def setUp(self):
         super(TestEOProduct, self).setUp()
         self.output_dir = tempfile.mkdtemp()
-        self.provider = "creodias"
-        self.download_url = (
-            "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
-        )
-        self.local_filename = (
-            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911"
-        )
-        self.local_product_abspath = os.path.abspath(
-            jp(TEST_RESOURCES_PATH, "products", self.local_filename)
-        )
-        self.local_product_as_archive_path = os.path.abspath(
-            jp(
-                TEST_RESOURCES_PATH,
-                "products",
-                "as_archive",
-                "{}.zip".format(self.local_filename),
-            )
-        )
-        self.local_asset_path = os.path.join(
-            TEST_RESOURCES_PATH,
-            "products",
-            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911",
-            "GRANULE",
-            "L1C_T31TDH_A013204_20180101T105435",
-            "IMG_DATA",
-            "T31TDH_20180101T105441_B01.jp2",
-        )
-        self.local_band_file = jp(
-            self.local_product_abspath,
-            "GRANULE",
-            "L1C_T31TDH_A013204_20180101T105435",
-            "IMG_DATA",
-            "T31TDH_20180101T105441_B01.jp2",
-        )
-        # A good valid geometry of a sentinel 2 product around Toulouse
-        self.geometry = wkt.loads(
-            "POLYGON((0.495928592903789 44.22596415476343, 1.870237286761489 "
-            "44.24783068396879, "
-            "1.888683014192297 43.25939191053712, 0.536772323136669 43.23826255332707, "
-            "0.495928592903789 44.22596415476343))"
-        )
-        # The footprint requested
-        self.footprint = {
-            "lonmin": 1.3128662109375002,
-            "latmin": 43.65197548731186,
-            "lonmax": 1.6754150390625007,
-            "latmax": 43.699651229671446,
-        }
-        self.collection = "S2_MSI_L1C"
-        self.platform = "S2A"
-        self.instrument = "MSI"
-        self.provider_id = "9deb7e78-9341-5530-8fe8-f81fd99c9f0f"
-
-        self.eoproduct_props = {
-            "id": "9deb7e78-9341-5530-8fe8-f81fd99c9f0f",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [
-                    [
-                        [0.495928592903789, 44.22596415476343],
-                        [1.870237286761489, 44.24783068396879],
-                        [1.888683014192297, 43.25939191053712],
-                        [0.536772323136669, 43.23826255332707],
-                        [0.495928592903789, 44.22596415476343],
-                    ]
-                ],
-            },
-            "collection": self.collection,
-            "constellation": "Sentinel-2",
-            "platform": self.platform,
-            "instruments": [self.instrument],
-            "title": self.local_filename,
-            "eodag:download_link": self.download_url,
-        }
 
     def tearDown(self):
-        super(TestEOProduct, self).tearDown()
         if os.path.isdir(self.output_dir):
             shutil.rmtree(self.output_dir)
         responses.calls.reset()
+        super(TestEOProduct, self).tearDown()
 
     def get_mock_downloader(self):
         """Returns a mock downloader with a default configuration."""
@@ -210,13 +127,13 @@ class TestEOProduct(unittest.TestCase):
         self.assertEqual(geo_interface["type"], "Feature")
         self.assertEqual(
             geo_interface["geometry"],
-            EODagTestCase._tuples_to_lists(geometry.mapping(self.geometry)),
+            EODagTestBase._tuples_to_lists(geometry.mapping(self.geometry)),
         )
         properties = geo_interface["properties"]
         self.assertEqual(properties["eodag:provider"], self.provider)
         self.assertEqual(
             properties["eodag:search_intersection"],
-            EODagTestCase._tuples_to_lists(
+            EODagTestBase._tuples_to_lists(
                 geometry.mapping(product.search_intersection)
             ),
         )
@@ -232,8 +149,8 @@ class TestEOProduct(unittest.TestCase):
                 product.location,
                 product.properties["title"],
                 product.properties["instruments"],
-                EODagTestCase._tuples_to_lists(geometry.mapping(product.geometry)),
-                EODagTestCase._tuples_to_lists(
+                EODagTestBase._tuples_to_lists(geometry.mapping(product.geometry)),
+                EODagTestBase._tuples_to_lists(
                     geometry.mapping(product.search_intersection)
                 ),
                 product.collection,
@@ -245,8 +162,8 @@ class TestEOProduct(unittest.TestCase):
                 same_product.location,
                 same_product.properties["title"],
                 same_product.properties["instruments"],
-                EODagTestCase._tuples_to_lists(geometry.mapping(same_product.geometry)),
-                EODagTestCase._tuples_to_lists(
+                EODagTestBase._tuples_to_lists(geometry.mapping(same_product.geometry)),
+                EODagTestBase._tuples_to_lists(
                     geometry.mapping(same_product.search_intersection)
                 ),
                 same_product.collection,
@@ -537,7 +454,8 @@ class TestEOProduct(unittest.TestCase):
                     self.eoproduct_props,
                     **{"eodag:download_link": "http://example.com/foobar.zip"},
                 )
-            )
+            ),
+            extract=False,
         )
 
         # Download, and check that the mocked request was properly called.
@@ -573,7 +491,8 @@ class TestEOProduct(unittest.TestCase):
                     "title": "asset title",
                     "type": "image/jp2",
                 }
-            }
+            },
+            extract=False,
         )
 
         # Download, and check that the mocked request was properly called.
@@ -645,7 +564,8 @@ class TestEOProduct(unittest.TestCase):
                         "title": "".join(random.choices(string.ascii_letters, k=10)),
                     },
                 )
-            )
+            ),
+            extract=False,
         )
         progress_callback = ProgressCallback()
 
@@ -733,7 +653,8 @@ class TestEOProduct(unittest.TestCase):
                             "otherProperty": "%(/%s/neither/resolved",
                         },
                     )
-                )
+                ),
+                extract=False,
             )
             self.assertEqual(downloadable_product.location, "%(257B/cannot/be/resolved")
             self.assertEqual(
@@ -868,82 +789,3 @@ class TestEOProduct(unittest.TestCase):
         self.assertFalse(
             any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
         )
-
-    def _dummy_product(
-        self,
-        provider: Optional[str] = None,
-        properties: Optional[dict] = None,
-        collection: Optional[str] = None,
-        **kwargs,
-    ):
-
-        if provider is None:
-            provider = self.provider
-
-        if properties is None:
-            properties = self.eoproduct_props
-
-        if collection is None:
-            collection = self.collection
-
-        return EOProduct(provider, properties, collection=collection, **kwargs)
-
-    def _dummy_downloadable_product(
-        self,
-        product: Optional[EOProduct] = None,
-        assets: Optional[dict] = None,
-        extract: bool = False,
-        delete_archive: bool = False,
-    ):
-
-        if product is None:
-            product = self._dummy_product()
-
-        # Mock product url
-        with open(self.local_product_as_archive_path, "rb") as fh:
-            responses.add(
-                responses.GET,
-                product.properties["eodag:download_link"],
-                body=fh.read(),
-                status=200,
-                content_type="application/zip",
-                auto_calculate_content_length=True,
-                stream=True,
-            )
-
-        # Mock asset url
-        if assets is not None:
-            with open(self.local_asset_path, "rb") as fh:
-                asset_content = fh.read()
-                for name in assets:
-                    asset_url = assets[name].get("href")
-                    asset_type = assets[name].get("type", "image/jp2")
-                    if asset_url is not None:
-                        responses.add(
-                            responses.GET,
-                            asset_url,
-                            body=asset_content,
-                            status=200,
-                            content_type=asset_type,
-                            auto_calculate_content_length=True,
-                            stream=True,
-                        )
-            product.assets.update(assets)
-
-        # Downloader
-        dl_config = PluginConfig.from_mapping(
-            {
-                "type": "HTTPDownload",
-                "base_uri": "fake_base_uri",
-                "output_dir": self.output_dir,
-                "extract": extract,
-                "delete_archive": delete_archive,
-            }
-        )
-        downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        product.register_downloader(downloader, None)
-        return product
-
-    def _clean_product(self, product_path):
-        if os.path.exists(product_path):
-            shutil.rmtree(product_path)

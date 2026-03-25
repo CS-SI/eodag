@@ -43,8 +43,11 @@ TEST_RESOURCES_PATH = jp(dirn(__file__), "resources")
 RESOURCES_PATH = jp(dirn(__file__), "..", "eodag", "resources")
 
 
-class EODagTestCase(unittest.TestCase):
+class EODagTestBase(unittest.TestCase):
+    """Base test case with common product test data and factory methods."""
+
     def setUp(self):
+        super().setUp()
 
         self.provider = "creodias"
         self.download_url = (
@@ -121,16 +124,13 @@ class EODagTestCase(unittest.TestCase):
             "eodag:download_link": self.download_url,
         }
 
-        self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
-        self.requests_http_get = self.requests_http_get_patcher.start()
-
     def tearDown(self):
-        self.requests_http_get_patcher.stop()
         unwanted_product_dir = jp(
             dirn(self.local_product_as_archive_path), self.local_filename
         )
         if os.path.isdir(unwanted_product_dir):
             shutil.rmtree(unwanted_product_dir)
+        super().tearDown()
 
     def override_properties(self, **kwargs):
         """Overrides the properties with the values specified in the input parameters"""
@@ -141,15 +141,6 @@ class EODagTestCase(unittest.TestCase):
                 if prop in self.__dict__ and new_value != self.__dict__[prop]
             }
         )
-
-    def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
-        """Helper method for doing assertions on requests http get method mock"""
-        self.assertEqual(self.requests_http_get.call_count, 1)
-        actual_url = self.requests_http_get.call_args[0][0]
-        self.assertEqual(actual_url, expected_url)
-        if expected_params:
-            actual_params = self.requests_http_get.call_args[1]["params"]
-            self.assertDictEqual(actual_params, expected_params)
 
     @staticmethod
     def _tuples_to_lists(shapely_mapping):
@@ -291,6 +282,7 @@ class EODagTestCase(unittest.TestCase):
     def _dummy_downloadable_product(
         self,
         product=None,
+        assets=None,
         base_uri=None,
         output_dir=None,
         extract=None,
@@ -298,6 +290,8 @@ class EODagTestCase(unittest.TestCase):
     ):
         if product is None:
             product = self._dummy_product()
+
+        # Mock product download url
         with open(self.local_product_as_archive_path, "rb") as fh:
             responses.add(
                 responses.GET,
@@ -308,43 +302,34 @@ class EODagTestCase(unittest.TestCase):
                 auto_calculate_content_length=True,
                 stream=True,
             )
-        self.tmp_download_dir = tempfile.TemporaryDirectory()
-        if output_dir is None:
-            output_dir = str(Path(self.tmp_download_dir.name))
-        dl_config = PluginConfig.from_mapping(
-            {
-                "type": "HTTPDownload",
-                "base_uri": "fake_base_uri" if base_uri is None else base_uri,
-                "output_dir": output_dir,
-                "extract": True if extract is None else extract,
-                "delete_archive": False if delete_archive is None else delete_archive,
-            }
-        )
-        downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        product.register_downloader(downloader, None)
-        return product
 
-    def _dummy_downloadable_asset(
-        self,
-        product=None,
-        base_uri=None,
-        output_dir=None,
-        extract=None,
-        delete_archive=None,
-    ):
-        with open(self.local_asset_path, "rb") as fh:
-            responses.add(
-                responses.GET,
-                "https://example.com/asset/foo.jp2",
-                body=fh.read(),
-                status=200,
-                content_type="image/jp2",
-                auto_calculate_content_length=True,
-                stream=True,
-            )
-        self.tmp_download_dir = tempfile.TemporaryDirectory()
+        # Mock asset download urls
+        if assets is not None:
+            with open(self.local_asset_path, "rb") as fh:
+                asset_content = fh.read()
+                for name in assets:
+                    asset_url = assets[name].get("href")
+                    asset_type = assets[name].get("type", "image/jp2")
+                    if asset_url is not None:
+                        responses.add(
+                            responses.GET,
+                            asset_url,
+                            body=asset_content,
+                            status=200,
+                            content_type=asset_type,
+                            auto_calculate_content_length=True,
+                            stream=True,
+                        )
+            product.assets.update(assets)
+
+        # Output directory
         if output_dir is None:
-            output_dir = str(Path(self.tmp_download_dir.name))
+            if hasattr(self, "output_dir"):
+                output_dir = self.output_dir
+            else:
+                self.tmp_download_dir = tempfile.TemporaryDirectory()
+                output_dir = str(Path(self.tmp_download_dir.name))
+
         dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
@@ -355,24 +340,36 @@ class EODagTestCase(unittest.TestCase):
             }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        if product is None:
-            product = self._dummy_product()
-            product.assets.update(
-                {
-                    "foo": {
-                        "href": "https://example.com/asset/foo.jp2",
-                        "title": "foo asset",
-                        "type": "image/jp2",
-                    }
-                }
-            )
         product.register_downloader(downloader, None)
         return product
 
     def _clean_product(self, product_path):
         if os.path.exists(product_path):
             shutil.rmtree(product_path)
-        self.tmp_download_dir.cleanup()
+        if hasattr(self, "tmp_download_dir"):
+            self.tmp_download_dir.cleanup()
+
+
+class EODagTestCase(EODagTestBase):
+    """Extended base test case that additionally patches requests.get."""
+
+    def setUp(self):
+        super().setUp()
+        self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
+        self.requests_http_get = self.requests_http_get_patcher.start()
+
+    def tearDown(self):
+        self.requests_http_get_patcher.stop()
+        super().tearDown()
+
+    def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
+        """Helper method for doing assertions on requests http get method mock"""
+        self.assertEqual(self.requests_http_get.call_count, 1)
+        actual_url = self.requests_http_get.call_args[0][0]
+        self.assertEqual(actual_url, expected_url)
+        if expected_params:
+            actual_params = self.requests_http_get.call_args[1]["params"]
+            self.assertDictEqual(actual_params, expected_params)
 
 
 @contextlib.contextmanager
