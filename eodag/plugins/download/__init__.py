@@ -16,3 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG download package"""
+from .aws import AwsDownload
+from .base import Download
+from .http import HTTPDownload
+
+__all__ = ["Download", "AwsDownload", "HTTPDownload"]

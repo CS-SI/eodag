@@ -29,6 +29,7 @@ Download
 --------
 
 .. automethod:: EOProduct.download
+.. automethod:: EOProduct.stream_download
 .. automethod:: EOProduct.get_quicklook
 
 Conversion

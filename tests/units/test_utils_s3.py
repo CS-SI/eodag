@@ -117,19 +117,19 @@ class TestUtilsS3(TestCase):
         else:
             self.assertEqual(response.media_type, expected_media_type)
         if expected_filename_ext:
-            self.assertIn("content-disposition", response.headers)
+            self.assertIn("Content-Disposition", response.headers)
             match = re.search(
                 r'filename="([^"]+)"',
-                response.headers["content-disposition"],
+                response.headers["Content-Disposition"],
             )
             self.assertIsNotNone(match)
             filename = match.group(1)  # type: ignore
             self.assertTrue(filename.endswith(expected_filename_ext))
         elif expected_filename:
-            self.assertIn("content-disposition", response.headers)
-            self.assertIn(expected_filename, response.headers["content-disposition"])
+            self.assertIn("Content-Disposition", response.headers)
+            self.assertIn(expected_filename, response.headers["Content-Disposition"])
         else:
-            self.assertNotIn("content-disposition", response.headers)
+            self.assertNotIn("Content-Disposition", response.headers)
 
         # --- Content checks ---
         content = b"".join(response.content)

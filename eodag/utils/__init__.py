@@ -42,24 +42,13 @@ import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
-from dataclasses import dataclass, field
 from email.message import Message
 from glob import glob
 from importlib.metadata import metadata
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
@@ -83,8 +72,10 @@ from shapely.geometry import Polygon, box, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
-from eodag.utils import logging as eodag_logging
-from eodag.utils.exceptions import MisconfiguredError
+from .exceptions import MisconfiguredError
+from .logging import get_disable_tqdm
+from .logging import logging as eodag_logging
+from .streamresponse import StreamResponse
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
@@ -490,7 +481,7 @@ class ProgressCallback(tqdm):
         if "position" not in kwargs:
             kwargs["position"] = 0
         if "disable" not in kwargs:
-            kwargs["disable"] = eodag_logging.disable_tqdm
+            kwargs["disable"] = get_disable_tqdm()
         if "dynamic_ncols" not in kwargs:
             kwargs["dynamic_ncols"] = True
 
@@ -1516,83 +1507,6 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
     return new_type(value)
 
 
-@dataclass
-class StreamResponse:
-    """Represents a streaming response"""
-
-    content: Iterable[bytes]
-    _filename: Optional[str] = field(default=None, repr=False, init=False)
-    _size: Optional[int] = field(default=None, repr=False, init=False)
-    headers: dict[str, str] = field(default_factory=dict)
-    media_type: Optional[str] = None
-    status_code: Optional[int] = None
-    arcname: Optional[str] = None
-
-    def __init__(
-        self,
-        content: Iterable[bytes],
-        filename: Optional[str] = None,
-        size: Optional[int] = None,
-        headers: Optional[Mapping[str, str]] = None,
-        media_type: Optional[str] = None,
-        status_code: Optional[int] = None,
-        arcname: Optional[str] = None,
-    ):
-        self.content = content
-        self.headers = dict(headers) if headers else {}
-        self.media_type = media_type
-        self.status_code = status_code
-        self.arcname = arcname
-        # use property setters to update headers
-        self.filename = filename
-        self.size = size
-
-    # filename handling
-    @property
-    def filename(self) -> Optional[str]:
-        """Get the filename for the streaming response.
-
-        :returns: The filename, or None if not set
-        """
-        return self._filename
-
-    @filename.setter
-    def filename(self, value: Optional[str]) -> None:
-        """Set the filename and update the content-disposition header accordingly.
-
-        :param value: The filename to set, or None to clear it
-        """
-        self._filename = value
-        if value:
-            outputs_filename = os.path.basename(value)
-            self.headers[
-                "content-disposition"
-            ] = f'attachment; filename="{outputs_filename}"'
-        elif "content-disposition" in self.headers:
-            del self.headers["content-disposition"]
-
-    # size handling
-    @property
-    def size(self) -> Optional[int]:
-        """Get the content size for the streaming response.
-
-        :returns: The content size in bytes, or None if not set
-        """
-        return self._size
-
-    @size.setter
-    def size(self, value: Optional[int]) -> None:
-        """Set the content size and update the content-length header accordingly.
-
-        :param value: The content size in bytes, or None to clear it
-        """
-        self._size = value
-        if value is not None:
-            self.headers["content-length"] = str(value)
-        elif "content-length" in self.headers:
-            del self.headers["content-length"]
-
-
 def guess_file_type(file: str) -> Optional[str]:
     """Guess the mime type of a file or URL based on its extension,
     using eodag extended mimetypes definition
@@ -1794,3 +1708,89 @@ def get_collection_dates(
     )
 
     return mission_start, mission_end
+
+
+__all__ = [
+    "GENERIC_COLLECTION",
+    "GENERIC_STAC_PROVIDER",
+    "STAC_SEARCH_PLUGINS",
+    "STAC_VERSION",
+    "USER_AGENT",
+    "HTTP_REQ_TIMEOUT",
+    "DEFAULT_SEARCH_TIMEOUT",
+    "DEFAULT_STREAM_REQUESTS_TIMEOUT",
+    "REQ_RETRY_TOTAL",
+    "REQ_RETRY_BACKOFF_FACTOR",
+    "REQ_RETRY_STATUS_FORCELIST",
+    "DEFAULT_DOWNLOAD_WAIT",
+    "DEFAULT_DOWNLOAD_TIMEOUT",
+    "DEFAULT_TOKEN_EXPIRATION_MARGIN",
+    "DEFAULT_PAGE",
+    "DEFAULT_ITEMS_PER_PAGE",
+    "DEFAULT_MAX_ITEMS_PER_PAGE",
+    "KNOWN_NEXT_PAGE_TOKEN_KEYS",
+    "DEFAULT_PROJ",
+    "DEFAULT_MISSION_START_DATE",
+    "DEFAULT_SHAPELY_GEOMETRY",
+    "ONLINE_STATUS",
+    "JSONPATH_MATCH",
+    "WORKABLE_JSONPATH_MATCH",
+    "ARRAY_FIELD_MATCH",
+    "FloatRange",
+    "StreamResponse",
+    "DownloadedCallback",
+    "ProgressCallback",
+    "MockResponse",
+    "Unpack",
+    "_deprecated",
+    "slugify",
+    "sanitize",
+    "strip_accents",
+    "uri_to_path",
+    "path_to_uri",
+    "mutate_dict_in_place",
+    "merge_mappings",
+    "maybe_generator",
+    "repeatfunc",
+    "makedirs",
+    "rename_subfolder",
+    "rename_with_version",
+    "format_dict_items",
+    "jsonpath_parse_dict_items",
+    "update_nested_dict",
+    "items_recursive_apply",
+    "dict_items_recursive_apply",
+    "list_items_recursive_apply",
+    "items_recursive_sort",
+    "dict_items_recursive_sort",
+    "list_items_recursive_sort",
+    "string_to_jsonpath",
+    "format_string",
+    "parse_jsonpath",
+    "nested_pairs2dict",
+    "get_geometry_from_various",
+    "get_geometry_from_ecmwf_feature",
+    "get_geometry_from_ecmwf_area",
+    "get_geometry_from_ecmwf_location",
+    "md5sum",
+    "obj_md5sum",
+    "cached_parse",
+    "cached_yaml_load",
+    "cached_yaml_load_all",
+    "get_bucket_name_and_prefix",
+    "flatten_top_directories",
+    "deepcopy",
+    "parse_header",
+    "cast_scalar_value",
+    "guess_file_type",
+    "guess_extension",
+    "get_ssl_context",
+    "sort_dict",
+    "dict_md5sum",
+    "remove_str_array_quotes",
+    "parse_le_uint32",
+    "parse_le_uint16",
+    "format_pydantic_error",
+    "get_collection_dates",
+    "eodag_logging",
+]

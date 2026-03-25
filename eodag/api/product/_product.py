@@ -23,7 +23,7 @@ import os
 import re
 import tempfile
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import orjson
 import requests
@@ -59,6 +59,7 @@ from eodag.utils import (
     STAC_VERSION,
     USER_AGENT,
     ProgressCallback,
+    StreamResponse,
     format_string,
     get_geometry_from_various,
 )
@@ -76,7 +77,6 @@ if TYPE_CHECKING:
     from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
-
 
 logger = logging.getLogger("eodag.product")
 
@@ -481,6 +481,50 @@ class EOProduct:
 
         return fs_path
 
+    def stream_download(
+        self,
+        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        compress: Literal["zip", "raw", "auto"] = "auto",
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Unpack[DownloadConf],
+    ) -> StreamResponse:
+        """Download as StreamResponse the EO product using the provided download plugin and the
+        authenticator if necessary.
+
+        :param byte_range: (optional) Tuple of first index / last index byte to read
+        :param compress: (optional) "zip", "raw", "auto"
+        :param wait: (optional) If download fails, wait time in minutes between
+                     two download tries
+        :param timeout: (optional) If download fails, maximum time in minutes
+                        before stop retrying to download
+        :param kwargs: additional kwargs like `dl_url_params` (dict) can be provided
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :returns: StreamResponse Stream representation of a file
+        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
+        :raises: :class:`RuntimeError`
+        """
+        if self.downloader is None:
+            raise RuntimeError(
+                "EO product is unable to stream_download itself due to lacking of a "
+                "download plugin"
+            )
+        auth = (
+            self.downloader_auth.authenticate()
+            if self.downloader_auth is not None
+            else self.downloader_auth
+        )
+        return self.downloader.stream_download(
+            self,
+            auth,
+            byte_range,
+            compress,
+            wait=wait,
+            timeout=timeout,
+            **kwargs,
+        )
+
     def _init_progress_bar(
         self,
         progress_callback: Optional[ProgressCallback],
@@ -536,7 +580,7 @@ class EOProduct:
             verify=ssl_verify,
         ) as stream:
             stream.raise_for_status()
-            stream_size = int(stream.headers.get("content-length", 0))
+            stream_size = int(stream.headers.get("Content-Length", 0))
             progress_callback.reset(stream_size)
             with open(quicklook_file, "wb") as fhandle:
                 for chunk in stream.iter_content(chunk_size=64 * 1024):

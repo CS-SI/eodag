@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import contextlib
-import io
 import os
 import random
 import shutil
@@ -28,9 +27,9 @@ from io import StringIO
 from pathlib import Path
 from unittest import mock  # PY3
 
+import responses
 from owslib.etree import etree
 from owslib.ows import ExceptionReport
-from requests.structures import CaseInsensitiveDict
 from shapely import wkt
 
 from eodag.api.product import EOProduct
@@ -44,8 +43,12 @@ TEST_RESOURCES_PATH = jp(dirn(__file__), "resources")
 RESOURCES_PATH = jp(dirn(__file__), "..", "eodag", "resources")
 
 
-class EODagTestCase(unittest.TestCase):
+class EODagTestBase(unittest.TestCase):
+    """Base test case with common product test data and factory methods."""
+
     def setUp(self):
+        super().setUp()
+
         self.provider = "creodias"
         self.download_url = (
             "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
@@ -63,6 +66,15 @@ class EODagTestCase(unittest.TestCase):
                 "as_archive",
                 "{}.zip".format(self.local_filename),
             )
+        )
+        self.local_asset_path = os.path.join(
+            TEST_RESOURCES_PATH,
+            "products",
+            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911",
+            "GRANULE",
+            "L1C_T31TDH_A013204_20180101T105435",
+            "IMG_DATA",
+            "T31TDH_20180101T105441_B01.jp2",
         )
         self.local_band_file = jp(
             self.local_product_abspath,
@@ -112,21 +124,13 @@ class EODagTestCase(unittest.TestCase):
             "eodag:download_link": self.download_url,
         }
 
-        self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
-        self.requests_request_patcher = mock.patch(
-            "requests.Session.request", autospec=True
-        )
-        self.requests_http_get = self.requests_http_get_patcher.start()
-        self.requests_request = self.requests_request_patcher.start()
-
     def tearDown(self):
-        self.requests_http_get_patcher.stop()
-        self.requests_request_patcher.stop()
         unwanted_product_dir = jp(
             dirn(self.local_product_as_archive_path), self.local_filename
         )
         if os.path.isdir(unwanted_product_dir):
             shutil.rmtree(unwanted_product_dir)
+        super().tearDown()
 
     def override_properties(self, **kwargs):
         """Overrides the properties with the values specified in the input parameters"""
@@ -137,15 +141,6 @@ class EODagTestCase(unittest.TestCase):
                 if prop in self.__dict__ and new_value != self.__dict__[prop]
             }
         )
-
-    def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
-        """Helper method for doing assertions on requests http get method mock"""
-        self.assertEqual(self.requests_http_get.call_count, 1)
-        actual_url = self.requests_http_get.call_args[0][0]
-        self.assertEqual(actual_url, expected_url)
-        if expected_params:
-            actual_params = self.requests_http_get.call_args[1]["params"]
-            self.assertDictEqual(actual_params, expected_params)
 
     @staticmethod
     def _tuples_to_lists(shapely_mapping):
@@ -287,15 +282,54 @@ class EODagTestCase(unittest.TestCase):
     def _dummy_downloadable_product(
         self,
         product=None,
+        assets=None,
         base_uri=None,
         output_dir=None,
         extract=None,
         delete_archive=None,
     ):
-        self._set_download_simulation()
-        self.tmp_download_dir = tempfile.TemporaryDirectory()
+        if product is None:
+            product = self._dummy_product()
+
+        # Mock product download url
+        with open(self.local_product_as_archive_path, "rb") as fh:
+            responses.add(
+                responses.GET,
+                product.properties["eodag:download_link"],
+                body=fh.read(),
+                status=200,
+                content_type="application/zip",
+                auto_calculate_content_length=True,
+                stream=True,
+            )
+
+        # Mock asset download urls
+        if assets is not None:
+            with open(self.local_asset_path, "rb") as fh:
+                asset_content = fh.read()
+                for name in assets:
+                    asset_url = assets[name].get("href")
+                    asset_type = assets[name].get("type", "image/jp2")
+                    if asset_url is not None:
+                        responses.add(
+                            responses.GET,
+                            asset_url,
+                            body=asset_content,
+                            status=200,
+                            content_type=asset_type,
+                            auto_calculate_content_length=True,
+                            stream=True,
+                        )
+            product.assets.update(assets)
+
+        # Output directory
         if output_dir is None:
-            output_dir = str(Path(self.tmp_download_dir.name))
+            if hasattr(self, "output_dir"):
+                output_dir = self.output_dir
+            else:
+                self.tmp_download_dir = tempfile.TemporaryDirectory()
+                output_dir = str(Path(self.tmp_download_dir.name))
+
         dl_config = PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",
@@ -306,57 +340,36 @@ class EODagTestCase(unittest.TestCase):
             }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
-        if product is None:
-            product = self._dummy_product()
         product.register_downloader(downloader, None)
         return product
 
     def _clean_product(self, product_path):
         if os.path.exists(product_path):
             shutil.rmtree(product_path)
-        self.tmp_download_dir.cleanup()
+        if hasattr(self, "tmp_download_dir"):
+            self.tmp_download_dir.cleanup()
 
-    def _set_download_simulation(self):
-        self.requests_request.return_value = self._download_response_archive()
 
-    def _download_response_archive(self):
-        class Response:
-            """Emulation of a response to requests.get method for a zipped product"""
+class EODagTestCase(EODagTestBase):
+    """Extended base test case that additionally patches requests.get."""
 
-            def __init__(response):
-                # Using a zipped product file
-                with open(self.local_product_as_archive_path, "rb") as fh:
-                    response.__zip_buffer = io.BytesIO(fh.read())
-                cl = response.__zip_buffer.getbuffer().nbytes
-                response.headers = CaseInsensitiveDict(
-                    {
-                        "content-length": cl,
-                        "content-disposition": "attachment; filename=foobar.zip",
-                    }
-                )
-                response.url = "http://foo.bar"
+    def setUp(self):
+        super().setUp()
+        self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
+        self.requests_http_get = self.requests_http_get_patcher.start()
 
-            def __enter__(response):
-                return response
+    def tearDown(self):
+        self.requests_http_get_patcher.stop()
+        super().tearDown()
 
-            def __exit__(response, *args):
-                pass
-
-            def iter_content(response, **kwargs):
-                with response.__zip_buffer as fh:
-                    while True:
-                        chunk = fh.read(kwargs["chunk_size"])
-                        if not chunk:
-                            break
-                        yield chunk
-
-            def raise_for_status(response):
-                pass
-
-            def close(response):
-                pass
-
-        return Response()
+    def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
+        """Helper method for doing assertions on requests http get method mock"""
+        self.assertEqual(self.requests_http_get.call_count, 1)
+        actual_url = self.requests_http_get.call_args[0][0]
+        self.assertEqual(actual_url, expected_url)
+        if expected_params:
+            actual_params = self.requests_http_get.call_args[1]["params"]
+            self.assertDictEqual(actual_params, expected_params)
 
 
 @contextlib.contextmanager

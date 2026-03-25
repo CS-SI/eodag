@@ -21,6 +21,7 @@ import os
 import tempfile
 from pathlib import Path
 
+import responses
 from requests.models import Response
 from shapely import geometry
 from stac_validator import stac_validator
@@ -398,6 +399,7 @@ class TestCoreSearchResults(EODagTestCase):
         products_paths = self.dag.download_all(None)
         self.assertFalse(products_paths)
 
+    @responses.activate
     def test_download_all_callback(self):
         product = self._dummy_downloadable_product()
         search_result = SearchResult([product])
@@ -418,6 +420,7 @@ class TestCoreSearchResults(EODagTestCase):
             for product_path in products_paths:
                 self._clean_product(product_path)
 
+    @responses.activate
     def test_download_all_callback_and_skipped(self):
         """Download.download_all must skip products on download error and update callback on downloaded"""
         product = self._dummy_downloadable_product()
