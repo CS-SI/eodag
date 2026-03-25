@@ -30,12 +30,11 @@ import orjson
 import shapely
 from shapely.geometry import shape
 
-from eodag.api.collection import Collection, CollectionsDict
-from eodag.config import PluginConfig, ProviderConfig
+from eodag.api.collection import Collection
 from eodag.databases.base import Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
-from eodag.utils import PLUGINS_TOPIC_KEYS, get_geometry_from_various
+from eodag.utils import GENERIC_COLLECTION, PLUGINS_TOPIC_KEYS, get_geometry_from_various
 from eodag.utils.dates import get_datetime
 
 if TYPE_CHECKING:
@@ -43,6 +42,9 @@ if TYPE_CHECKING:
     from sqlite3 import Cursor, _Parameters
 
     from shapely.geometry.base import BaseGeometry
+
+    from eodag.api.collection import CollectionsDict
+    from eodag.config import ProviderConfig
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
 
@@ -180,7 +182,7 @@ class SQLiteDatabase(Database):
             INSERT INTO collections (content) VALUES ({_JSON_STORE}(?))
             ON CONFLICT(internal_id) DO UPDATE SET content=excluded.content;
             """,
-            [(c,) for c in collections.values()],
+            [(c,) for c in collections.values() if c.id != GENERIC_COLLECTION],
         ).rowcount
 
         self._con.commit()
@@ -324,19 +326,15 @@ class SQLiteDatabase(Database):
             return {k: v for k, v in plugin_conf.items() if k != "credentials"}
 
         for config in configs:
-            exclude_keys = set(PLUGINS_TOPIC_KEYS) | {"priority", "name"}
+            exclude_keys = set(PLUGINS_TOPIC_KEYS) | {"priority", "name", "products"}
             metadata = {
                 k: v for k, v in config.__dict__.items() if k not in exclude_keys
             }
 
             plugins_config = {}
             for k in PLUGINS_TOPIC_KEYS:
-                val = getattr(config, k, None)
-                plugins_config[k] = (
-                    strip_credentials(val.__dict__)
-                    if isinstance(val, PluginConfig)
-                    else {}
-                )
+                if val := getattr(config, k, None):
+                    plugins_config[k] = strip_credentials(val.__dict__)
 
             federation_backend_configs.append(
                 (
@@ -348,17 +346,24 @@ class SQLiteDatabase(Database):
                 )
             )
 
-            tmp = defaultdict(lambda: {"search": None, "download": None})
+            topics_cfg: dict[str, dict[str, Any]] = {}
+            products_cfg = config.products
+            if getattr(config, "api", None):
+                topics_cfg["api"] = products_cfg
+            else:
+                topics_cfg["search"] = products_cfg
+                if products_download_cfg := getattr(
+                    getattr(config, "download", None), "products", None
+                ):
+                    topics_cfg["download"] = products_download_cfg
+            # check
+            tmp: dict[str, dict[str, Any]] = defaultdict(
+                lambda: {topic: None for topic in topics_cfg}
+            )
 
-            for section, source in (
-                ("search", getattr(config, "products", None)),
-                (
-                    "download",
-                    getattr(getattr(config, "download", None), "products", None),
-                ),
-            ):
-                for coll_id, cfg in (source or {}).items():
-                    tmp[coll_id][section] = cfg
+            for topic, products_cfg in topics_cfg.items():
+                for coll_id, cfg in products_cfg.items():
+                    tmp[coll_id][topic] = cfg
 
             for coll_id, cfg in tmp.items():
                 collections_provider_configs.append((coll_id, config.name, cfg))
@@ -374,11 +379,12 @@ class SQLiteDatabase(Database):
         """
         Set the priority of a federation backend.
         """
-        self._execute(
-            "UPDATE federation_backends SET priority = ? WHERE name = ?",
-            (priority, name),
-        )
-        self._con.commit()
+        with self._con:
+            self._execute(
+                "UPDATE federation_backends SET priority = ? WHERE name = ?",
+                (priority, name),
+            )
+            self._refresh_collections_denorm([name])
 
     def collections_search(
         self,
@@ -463,11 +469,13 @@ class SQLiteDatabase(Database):
         enabled: Optional[bool] = None,
         limit: Optional[int] = None,
         names: Optional[list[str]] = None,
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, dict[str, Any]]:
         """
         Return federation backends according to filters.
         Results are sorted by priority DESC then name ASC.
         """
+
+        # TODO: Add params binding by name
         sql = (
             "SELECT fb.name, fb.priority, fb.enabled, "
             'json(fb.metadata) AS "metadata [dict]" '
@@ -476,21 +484,20 @@ class SQLiteDatabase(Database):
         where_clauses = []
         params: list[Any] = []
 
-        if enabled is not None:
-            where_clauses.append("fb.enabled = ?")
-            params.append(1 if enabled else 0)
-
-        if names:
-            placeholders = ",".join("?" for _ in names)
-            where_clauses.append(f"fb.name IN ({placeholders})")
-            params.extend(names)
-
         if collection:
             sql += (
                 " INNER JOIN collections_federation_backends cfb "
                 "ON fb.name = cfb.federation_backend_name AND cfb.collection_id = ?"
             )
             params.append(collection)
+
+        if enabled is not None:
+            where_clauses.append(f'{"NOT " if not enabled else ""}fb.enabled')
+
+        if names:
+            placeholders = ",".join("?" for _ in names)
+            where_clauses.append(f"fb.name IN ({placeholders})")
+            params.extend(names)
 
         if where_clauses:
             sql += " WHERE " + " AND ".join(where_clauses)
@@ -501,15 +508,14 @@ class SQLiteDatabase(Database):
 
         rows = self._execute(sql, tuple(params)).fetchall()
 
-        return [
-            {
-                "name": row["name"],
+        return {
+            row["name"]: {
                 "priority": row["priority"],
                 "enabled": bool(row["enabled"]),
                 "metadata": row["metadata"] or {},
             }
             for row in rows
-        ]
+        }
 
     def get_fb_config(
         self,
@@ -529,13 +535,13 @@ class SQLiteDatabase(Database):
 
         sql = f"""
             SELECT
-                fb.plugins_config  AS "provider_plugins_config [dict]",
-                fb.priority        AS provider_priority,
-                fb.metadata        AS "provider_metadata [dict]",
-                fb.enabled         AS provider_enabled,
+                json(fb.plugins_config) AS "provider_plugins_config [dict]",
+                fb.priority             AS provider_priority,
+                json(fb.metadata)       AS "provider_metadata [dict]",
+                fb.enabled              AS provider_enabled,
 
-                c.collection_id    AS collection_id,
-                c.plugins_config   AS "collection_plugins_config [dict]"
+                c.collection_id         AS collection_id,
+                json(c.plugins_config)  AS "collection_plugins_config [dict]"
             FROM federation_backends fb
             LEFT JOIN (
                 SELECT
@@ -557,7 +563,7 @@ class SQLiteDatabase(Database):
             rows[0]["provider_plugins_config"]
             | (rows[0]["provider_metadata"] or {})
             | {
-                "priority": int(rows[0]["provider_priority"] or 0),
+                "priority": rows[0]["provider_priority"],
                 "enabled": bool(rows[0]["provider_enabled"]),
                 "name": name,
             }
@@ -571,7 +577,7 @@ class SQLiteDatabase(Database):
             if not cid:
                 continue
             blob = r["collection_plugins_config"] or {}
-            base["products"][cid] = blob.get("search", {})
+            base["products"][cid] = blob.get("search", {}) or blob.get("api", {})
             if isinstance(base.get("download"), dict):
                 base["download"]["products"][cid] = blob.get("download", {})
 
@@ -880,7 +886,7 @@ def create_federation_backends_table(con: sqlite3.Connection) -> None:
             plugins_config {_CONTENT_TYPE} NOT NULL,
             priority INTEGER NOT NULL,
             metadata {_CONTENT_TYPE},
-            enabled BOOLEAN NOT NULL DEFAULT TRUE
+            enabled BOOLEAN NOT NULL
         );
         """,
     )

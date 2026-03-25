@@ -24,8 +24,12 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, TypeVar, Union
 import importlib_metadata
 
 from eodag.config import PluginConfig, load_config
+from eodag.plugins.apis.base import Api
+from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.base import Crunch
+from eodag.plugins.download.base import Download
+from eodag.plugins.search.base import Search
 from eodag.utils import (
     AUTH_TOPIC_KEYS,
     GENERIC_COLLECTION,
@@ -44,10 +48,6 @@ if TYPE_CHECKING:
 
     from eodag.api.product import EOProduct
     from eodag.databases.base import Database
-    from eodag.plugins.apis.base import Api
-    from eodag.plugins.authentication.base import Authentication
-    from eodag.plugins.download.base import Download
-    from eodag.plugins.search.base import Search
 
 logger = logging.getLogger("eodag.plugins.manager")
 
@@ -76,14 +76,13 @@ class PluginManager:
     skipped_plugins: list[str]
     external_providers_config: dict[str, dict[str, Any]]
     _db: Database
-    _creds_store: dict[str, dict[str, Any]]
+    _creds_store: Optional[dict[str, dict[str, Any]]] = None
 
-    def __init__(self, db: Database, creds_store: dict[str, dict[str, Any]]) -> None:
+    def __init__(self, db: Database) -> None:
         self.skipped_plugins: list[str] = []
         self.external_providers_config: dict[str, dict[str, Any]] = {}
         self._auth_plugins_cache: dict[AuthCacheKey, Authentication] = {}
         self._db = db
-        self._creds_store = creds_store
 
         for topic in PLUGINS_TOPIC_KEYS:
             for entry_point in importlib_metadata.entry_points(
@@ -117,6 +116,25 @@ class PluginManager:
                         plugin_configs = load_config(plugin_providers_config_path[0])
                         self.external_providers_config.update(plugin_configs)
 
+    # creds_store handling
+    @property
+    def creds_store(self) -> dict[str, dict[str, Any]]:
+        """Get creds_store for the auth plugin.
+
+        :returns: creds_store, or None if not set
+        """
+        if self._creds_store is None:
+            raise ValueError("creds_store can not be null")
+        return self._creds_store
+
+    @creds_store.setter
+    def creds_store(self, value: dict[str, dict[str, Any]]) -> None:
+        """Set creds_store.
+
+        :param value: The value of creds_store to set
+        """
+        self._creds_store = value
+
     @staticmethod
     def get_crunch_plugin(name: str, **options: Any) -> Crunch:
         """Instantiate a eodag Crunch plugin whose class name is ``name``,
@@ -146,17 +164,28 @@ class PluginManager:
             or :class:`~eodag.plugins.download.Api`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        providers = self._db.get_federation_backends(
+
+        # raise an error if a provider is given but is not found
+        if provider is not None:
+            provider_names = self._db.get_federation_backends(
+                enabled=True, names=[provider]
+            )
+            if not provider_names:
+                msg = f"Provider {provider} unknown or not enabled"
+                raise UnsupportedProvider(msg)
+
+        provider_names = self._db.get_federation_backends(
             enabled=True, collection=collection, names=[provider] if provider else None
         )
-        if not providers:
+        if not provider_names:
             logger.info("UnsupportedCollection: %s, using generic settings", collection)
-            providers = self._db.get_federation_backends(
-                enabled=True, collection=GENERIC_COLLECTION
+            collection = GENERIC_COLLECTION
+            provider_names = self._db.get_federation_backends(
+                enabled=True, collection=collection
             )
 
-        for provider in providers:
-            pc = self._db.get_fb_config(provider["name"], collection)
+        for p_name in provider_names:
+            pc = self._db.get_fb_config(p_name, {collection} if collection else None)
 
             if "search" in pc:
                 mode, topic_class = "search", Search
@@ -164,7 +193,7 @@ class PluginManager:
                 mode, topic_class = "api", Api
             else:
                 raise MisconfiguredError(
-                    f"No search or api plugin configured for provider {provider['name']}."
+                    f"No search or api plugin configured for provider {p_name}."
                 )
 
             plugin_conf = pc[mode] | {
@@ -173,7 +202,7 @@ class PluginManager:
             }
 
             yield topic_class.get_plugin_by_class_name(plugin_conf["type"])(
-                provider, PluginConfig.from_mapping(plugin_conf)
+                p_name, PluginConfig.from_mapping(plugin_conf)
             )
 
     def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
@@ -181,7 +210,7 @@ class PluginManager:
         from eodag.plugins.apis.base import Api
         from eodag.plugins.download.base import Download
 
-        pc = self._db.get_fb_config(product.provider, product.collection)
+        pc = self._db.get_fb_config(product.provider, {product.collection})
         if not pc:
             raise UnsupportedProvider(
                 f"Provider {product.provider} not found with collection {product.collection}"
@@ -273,19 +302,18 @@ class PluginManager:
         def _is_auth_plugin_matching(
             auth_conf: dict[str, Any],
             matching_url: Optional[str],
-            matching_conf: Optional[dict[str, Any]],
+            matching_conf: Optional[PluginConfig],
         ) -> bool:
+            plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
             if matching_conf:
-                plugin_matching_conf = auth_conf.get("matching_conf", {})
                 if (
                     plugin_matching_conf
-                    and matching_conf.items() >= plugin_matching_conf.items()
+                    and matching_conf.__dict__.items() >= plugin_matching_conf.items()
                 ):
                     # conf matches
                     return True
-
+            plugin_matching_url = getattr(auth_conf, "matching_url", None)
             if matching_url:
-                plugin_matching_url = auth_conf.get("matching_url", None)
                 if plugin_matching_url and re.match(
                     rf"{plugin_matching_url}", matching_url
                 ):
@@ -295,13 +323,11 @@ class PluginManager:
             return False
 
         all_providers = [provider] + [
-            p["name"]
-            for p in self._db.get_federation_backends(enabled=True)
-            if p["name"] != provider
+            p for p in self._db.get_federation_backends(enabled=True) if p != provider
         ]
 
         for p in all_providers:
-            provider_conf = self._db.get_fb_config(p, collection=None)
+            provider_conf = self._db.get_fb_config(p, collections=None)
 
             for key in AUTH_TOPIC_KEYS:
                 auth_conf = provider_conf.get(key, None) if provider_conf else None
