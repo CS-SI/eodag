@@ -66,7 +66,7 @@ class Provider:
     def __init__(
         self, name: str, priority: int, enabled: bool, metadata: dict[str, Any]
     ):
-        self._name = name
+        self.name = name
         self.priority = priority
         self.enabled = enabled
         self.metadata = metadata
