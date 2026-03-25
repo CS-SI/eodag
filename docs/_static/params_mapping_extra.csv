@@ -10,7 +10,6 @@ constellation,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`q
 created,,,,,,,,,,,metadata only,,metadata only,
 datetime,,,,metadata only,metadata only,,metadata only,,metadata only,metadata only,,metadata only,,metadata only
 description,,,,,,,,,,,metadata only,,metadata only,
-downloadLink,,,,,,,metadata only,,,,,,,
 end_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 endingDateTime,metadata only,,metadata only,,,,,,,,,,,
 eo:cloud_cover,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`

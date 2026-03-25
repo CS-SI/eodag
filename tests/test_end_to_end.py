@@ -220,9 +220,9 @@ FEDEO_CEDA_SEARCH_ARGS = [
 EOCAT_SEARCH_ARGS = [
     "eocat",
     "GOCE_Thermosphere_Data",
-    "2009-03-17",
-    "2009-03-18",
-    [-180, -90, 180, 90],
+    "2010-03-17",
+    "2010-03-18",
+    None,
 ]
 
 
@@ -460,8 +460,8 @@ class TestEODagEndToEnd(EndToEndBase):
     def test_end_to_end_search_download_eocat(self):
         self.eodag.discover_collections(provider="eocat")
         products = self.execute_search(*EOCAT_SEARCH_ARGS, check_product=False)
-        expected_filename = "{}".format(products[2].properties["title"])
-        self.execute_download(products[2], expected_filename)
+        expected_filename = "{}.TGZ".format(products[0].properties["title"])
+        self.execute_download(products[0], expected_filename)
 
     def test_end_to_end_search_download_fedeo_ceda(self):
         self.eodag.discover_collections(provider="fedeo_ceda")
@@ -681,14 +681,14 @@ class TestEODagEndToEnd(EndToEndBase):
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertDictEqual(ext_collections_conf, {})
 
-    def test_end_to_end_discover_product_types_eocat(self):
-        """discover_product_types() must return an external product types configuration for eocat"""
+    def test_end_to_end_discover_collections_eocat(self):
+        """discover_collections() must return an external collections configuration for eocat"""
         provider = "eocat"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
-        self.assertIsNotNone(ext_product_types_conf[provider])
+        ext_collections_conf = self.eodag.discover_collections(provider=provider)
+        self.assertIsNotNone(ext_collections_conf[provider])
 
-    def test_end_to_end_discover_product_types_fedeo_ceda(self):
-        """discover_product_types() must return an external product types configuration for fedeo ceda"""
+    def test_end_to_end_discover_collections_fedeo_ceda(self):
+        """discover_collections() must return an external collections configuration for fedeo ceda"""
         provider = "fedeo_ceda"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
