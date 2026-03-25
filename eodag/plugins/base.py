@@ -17,11 +17,9 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Type, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from eodag.utils.exceptions import PluginNotFoundError
-
-T = TypeVar("T", bound="PluginTopic")
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -33,23 +31,23 @@ class EODAGPluginMount(type):
     def __init__(
         cls, name: str, bases: tuple[type, ...], attrs: dict[str, Any]
     ) -> None:
-        if not hasattr(cls, "plugins"):
+        if not hasattr(cls, "_plugins_registry"):
             # This branch only executes when processing the mount point itself.
             # So, since this is a new plugin type, not an implementation, this
             # class shouldn't be registered as a plugin. Instead, it sets up a
             # list where plugins can be registered later.
-            cls._plugins_registry: dict[str, type[PluginTopic]] = {}
+            cls._plugins_registry: dict[str, EODAGPluginMount] = {}
         else:
             # This must be a plugin implementation, which should be registered.
             # Simply appending it to the list is all that's needed to keep
             # track of it later.
             cls._plugins_registry[cls.__name__] = cls
 
-    def get_plugins(cls: Type[T], *args: Any, **kwargs: Any) -> list[T]:
+    def get_plugins(cls, *args: Any, **kwargs: Any) -> list[EODAGPluginMount]:
         """Get plugins"""
         return [plugin(*args, **kwargs) for plugin in cls._plugins_registry.values()]
 
-    def get_plugin_by_class_name(cls: Type[T], name: str) -> Type[T]:
+    def get_plugin_by_class_name(cls, name: str) -> EODAGPluginMount:
         """Get plugin class by its class name (O(1) lookup)."""
         try:
             return cls._plugins_registry[name]
