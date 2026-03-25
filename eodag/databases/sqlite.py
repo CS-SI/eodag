@@ -23,7 +23,7 @@ import unicodedata
 from collections import defaultdict
 from collections.abc import Callable
 from sqlite3 import Connection
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import cql2
 import orjson
@@ -57,40 +57,11 @@ if not _HAS_JSONB:
     )
 
 # Conditional SQL fragments
-_JSON_STORE = "jsonb(?)" if _HAS_JSONB else "json(?)"
+_JSON_STORE = "jsonb" if _HAS_JSONB else "json"
 _JSON_EXTRACT = "jsonb_extract" if _HAS_JSONB else "json_extract"
 _CONTENT_TYPE = "JSONB" if _HAS_JSONB else "TEXT"
 _JSON_VALID_CHECK = "json_valid(content, 4)" if _HAS_JSONB else "json_valid(content)"
-
-# SQLite has a compile-time variable limit (often 999).
-# Keep headroom when building batched parameterised queries.
-_SQLITE_VAR_CHUNK = 500
-
-# TODO: remove namedtuple ?
-
-
-class FederationBackendConfig(NamedTuple):
-    """Provider-level plugin config for a federation backend (DB row)."""
-
-    name: str
-    plugins_config: dict[str, dict[str, Any]]
-    priority: int
-    metadata: dict[str, Any]
-    enabled: bool = True
-
-
-class CollectionProviderConfig(NamedTuple):
-    """Collection-specific plugin config for a provider (DB row)."""
-
-    id: str
-    provider: str
-    plugins_config: dict[str, dict[str, Any]]
-
-
-def _chunks(seq: list[str], size: int) -> Iterable[list[str]]:
-    """Yield successive *size*-length slices from *seq*."""
-    for i in range(0, len(seq), size):
-        yield seq[i : i + size]
+_JSON_GROUP_ARRAY = "jsonb_group_array" if _HAS_JSONB else "json_group_array"
 
 
 class SQLiteDatabase(Database):
@@ -116,9 +87,10 @@ class SQLiteDatabase(Database):
 
         register_custom_functions(self._con)
 
-        create_collections_table(self._con)
-        create_collections_federation_backends_table(self._con)
-        create_federation_backends_table(self._con)
+        with self._con:
+            create_collections_table(self._con)
+            create_collections_federation_backends_table(self._con)
+            create_federation_backends_table(self._con)
 
     def close(self) -> None:
         """Close the connection to the database."""
@@ -205,7 +177,7 @@ class SQLiteDatabase(Database):
 
         upserted_coll_nb = self._executemany(
             f"""
-            INSERT INTO collections (content) VALUES ({_JSON_STORE})
+            INSERT INTO collections (content) VALUES ({_JSON_STORE}(?))
             ON CONFLICT(internal_id) DO UPDATE SET content=excluded.content;
             """,
             [(c,) for c in collections.values()],
@@ -218,7 +190,10 @@ class SQLiteDatabase(Database):
             logger.debug(msg)
 
     def _upsert_federation_backends(
-        self, fb_configs: list[FederationBackendConfig]
+        self,
+        fb_configs: list[
+            tuple[str, dict[str, dict[str, Any]], int, dict[str, Any], bool]
+        ],
     ) -> None:
         """
         Add or update federation backend configs (providers) in the database.
@@ -226,80 +201,124 @@ class SQLiteDatabase(Database):
         """
         if not fb_configs:
             return
-        rows = []
-        for cfg in fb_configs:
-            rows.append(cfg)
         self._executemany(
             f"""
             INSERT INTO federation_backends (name, plugins_config, priority, metadata, enabled)
-            VALUES (?, {_JSON_STORE}, ?, {_JSON_STORE}, ?)
+            VALUES (?, {_JSON_STORE}(?), ?, {_JSON_STORE}(?), ?)
             ON CONFLICT(name) DO UPDATE SET
                 plugins_config = excluded.plugins_config,
                 priority = excluded.priority,
                 metadata = excluded.metadata,
                 enabled = excluded.enabled
             """,
-            rows,
+            fb_configs,
         )
-        self._con.commit()
-        logger.debug("Upserted %d federation backend(s)", len(rows))
+        logger.debug("Upserted %d federation backend(s)", len(fb_configs))
 
     def _upsert_collections_federation_backends(
-        self, coll_fb_configs: list[CollectionProviderConfig]
+        self, coll_fb_configs: list[tuple[str, str, dict[str, Any]]]
     ) -> None:
         """
-        Upsert collection-specific federation backend configs, then refresh
-        the denormalized ``federation_backends`` column on affected collections.
+        Upsert collection-specific federation backend configs.
         """
         if not coll_fb_configs:
             return
 
-        rows = [(cfg.id, cfg.provider, cfg.plugins_config) for cfg in coll_fb_configs]
-        affected_ids = sorted({cid for cid, _, _ in rows})
-
-        with self._con:
-            self._executemany(
-                f"""
-                INSERT INTO collections_federation_backends
-                    (collection_id, federation_backend_name, plugins_config)
-                VALUES (?, ?, {_JSON_STORE})
-                ON CONFLICT(collection_id, federation_backend_name) DO UPDATE SET
-                    plugins_config = excluded.plugins_config
-                """,
-                rows,
-            )
-
-            for batch in _chunks(affected_ids, _SQLITE_VAR_CHUNK):
-                values_clause = ", ".join(["(?)"] * len(batch))
-                self._execute(
-                    f"""
-                    WITH affected(cid) AS (VALUES {values_clause})
-                    UPDATE collections
-                    SET federation_backends = (
-                        SELECT COALESCE(json_group_array(fb_name), json('[]'))
-                        FROM (
-                            SELECT federation_backend_name AS fb_name
-                            FROM collections_federation_backends
-                            WHERE collection_id = collections.internal_id
-                            ORDER BY federation_backend_name
-                        )
-                    )
-                    WHERE internal_id IN (SELECT cid FROM affected)
-                    """,
-                    tuple(batch),
-                )
+        self._executemany(
+            f"""
+            INSERT INTO collections_federation_backends
+                (collection_id, federation_backend_name, plugins_config)
+            VALUES (?, ?, {_JSON_STORE}(?))
+            ON CONFLICT(collection_id, federation_backend_name) DO UPDATE SET
+                plugins_config = excluded.plugins_config
+            """,
+            coll_fb_configs,
+        )
 
         logger.debug(
-            "Upserted %d collection-provider config(s); "
-            "refreshed federation_backends for %d collection(s)",
-            len(rows),
-            len(affected_ids),
+            "Upserted %d collection-provider config(s); ", len(coll_fb_configs)
+        )
+
+    def _refresh_collections_denorm(self, changed_providers: list[str]):
+        """
+        Refresh the denormalized ``federation_backends`` and ``priority`` column
+        on affected collections.
+        """
+        if not changed_providers:
+            return
+        provider_qmarks = ", ".join(["?"] * len(changed_providers))
+
+        self._execute(
+            """
+            CREATE TEMP TABLE IF NOT EXISTS tmp_affected (
+                collection_id TEXT PRIMARY KEY
+            ) WITHOUT ROWID;
+            """
+        )
+        self._execute(
+            f"""
+            CREATE TEMP TABLE IF NOT EXISTS tmp_agg (
+                collection_id TEXT PRIMARY KEY,
+                federation_backends {_CONTENT_TYPE} NOT NULL,
+                priority INTEGER NOT NULL
+            ) WITHOUT ROWID;
+            """
+        )
+        self._execute("DELETE FROM tmp_affected;")
+        self._execute("DELETE FROM tmp_agg;")
+
+        self._execute(
+            f"""
+            INSERT INTO tmp_affected(collection_id)
+            SELECT DISTINCT cfb.collection_id
+            FROM collections_federation_backends cfb
+            WHERE cfb.federation_backend_name IN ({provider_qmarks});
+            """,
+            tuple(changed_providers),
+        )
+        self._execute(
+            f"""
+            INSERT INTO tmp_agg(collection_id, federation_backends, priority)
+            SELECT
+                cfb.collection_id,
+                COALESCE({_JSON_GROUP_ARRAY}(
+                    fb.name ORDER BY fb.priority DESC
+                ), {_JSON_STORE}('[]')) AS federation_backends,
+                COALESCE(MAX(fb.priority), 0) AS priority
+            FROM tmp_affected a
+            JOIN collections_federation_backends cfb
+            ON cfb.collection_id = a.collection_id
+            JOIN federation_backends fb
+            ON fb.name = cfb.federation_backend_name
+            WHERE fb.enabled = 1
+            GROUP BY cfb.collection_id;
+            """
+        )
+        self._execute(
+            f"""
+            UPDATE collections
+            SET
+                federation_backends = COALESCE(
+                    (SELECT federation_backends
+                    FROM tmp_agg
+                    WHERE tmp_agg.collection_id = collections.internal_id),
+                    {_JSON_STORE}('[]')
+                ),
+                priority = COALESCE(
+                    (SELECT priority
+                    FROM tmp_agg
+                    WHERE tmp_agg.collection_id = collections.internal_id),
+                    0
+                )
+            WHERE internal_id IN (SELECT collection_id FROM tmp_affected);
+            """
         )
 
     def upsert_fb_configs(self, configs: list[ProviderConfig]) -> None:
         """Add or update federation backend configs (providers) in the database."""
         federation_backend_configs = []
         collections_provider_configs = []
+        changed_providers = set()
 
         def strip_credentials(plugin_conf: dict[str, Any]) -> dict[str, Any]:
             return {k: v for k, v in plugin_conf.items() if k != "credentials"}
@@ -320,12 +339,12 @@ class SQLiteDatabase(Database):
                 )
 
             federation_backend_configs.append(
-                FederationBackendConfig(
-                    name=config.name,
-                    plugins_config=plugins_config,
-                    priority=getattr(config, "priority", 0),
-                    metadata=metadata,
-                    enabled=config.enabled,
+                (
+                    config.name,
+                    plugins_config,
+                    getattr(config, "priority", 0),
+                    metadata,
+                    config.enabled,
                 )
             )
 
@@ -341,13 +360,15 @@ class SQLiteDatabase(Database):
                 for coll_id, cfg in (source or {}).items():
                     tmp[coll_id][section] = cfg
 
-            collections_provider_configs.extend(
-                CollectionProviderConfig(coll_id, config.name, cfg)
-                for coll_id, cfg in tmp.items()
-            )
+            for coll_id, cfg in tmp.items():
+                collections_provider_configs.append((coll_id, config.name, cfg))
 
-        self._upsert_federation_backends(federation_backend_configs)
-        self._upsert_collections_federation_backends(collections_provider_configs)
+            changed_providers.add(config.name)
+
+        with self._con:
+            self._upsert_federation_backends(federation_backend_configs)
+            self._upsert_collections_federation_backends(collections_provider_configs)
+            self._refresh_collections_denorm(sorted(changed_providers))
 
     def set_priority(self, name: str, priority: int) -> None:
         """
@@ -389,7 +410,7 @@ class SQLiteDatabase(Database):
         )
 
         from_clause = "FROM collections c"
-        where_parts = [where]
+        where_parts = [where] + ["c.federation_backends IS NOT NULL"]
         params: list[Any] = []
         order_terms: list[str] = []
         select_score = ""
@@ -408,7 +429,7 @@ class SQLiteDatabase(Database):
         if sortby:
             order_terms = _stac_sortby_to_order_by(sortby)
 
-        order_terms.append("c.id ASC")
+        order_terms.extend(["c.priority DESC", "c.id ASC"])
         order_by = " ORDER BY " + ", ".join(order_terms)
 
         full_where = " AND ".join(where_parts)
@@ -421,16 +442,18 @@ class SQLiteDatabase(Database):
         number_matched = cast(int, count_row[0]) if count_row else 0
 
         sql = (
-            f'SELECT json(c.content) AS "c.content [collection_dict]"{select_score} '
+            f'SELECT json(c.content) AS "c.content [collection_dict]", '
+            f'json(c.federation_backends) as "c.federation_backends"{select_score} '
             f"{from_clause} WHERE {full_where}{order_by}"
         )
         if limit is not None:
             sql += f" LIMIT {limit}"
 
-        collections_list: list[dict[str, Any]] = [
-            row["c.content"]
-            for row in self._execute(sql, tuple(params) or None).fetchall()
-        ]
+        collections_list = []
+        for row in self._execute(sql, tuple(params) or None).fetchall():
+            coll = row["c.content"]
+            coll["federation:backends"] = row["c.federation_backends"]
+            collections_list.append(coll)
 
         return collections_list, number_matched
 
@@ -724,7 +747,8 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                     )
                 END
             ) STORED,
-            federation_backends TEXT
+            federation_backends {_CONTENT_TYPE},
+            priority INTEGER
         );
         """
     )
@@ -843,8 +867,6 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     """
     )
 
-    con.commit()
-
 
 def create_federation_backends_table(con: sqlite3.Connection) -> None:
     """Create the federation backends table in the database."""
@@ -862,7 +884,6 @@ def create_federation_backends_table(con: sqlite3.Connection) -> None:
         );
         """,
     )
-    con.commit()
 
 
 def create_collections_federation_backends_table(con: sqlite3.Connection) -> None:
@@ -880,11 +901,10 @@ def create_collections_federation_backends_table(con: sqlite3.Connection) -> Non
     )
     cur.execute(
         """
-        CREATE INDEX IF NOT EXISTS idx_cfb_backend_name
-        ON collections_federation_backends (federation_backend_name);
+        CREATE INDEX IF NOT EXISTS idx_cfb_backend_collection
+        ON collections_federation_backends (federation_backend_name, collection_id);
         """
     )
-    con.commit()
 
 
 def _stac_search_to_where(
