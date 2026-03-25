@@ -826,10 +826,8 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         auth = auth_plugin.authenticate()
         self.assertIsInstance(auth, AuthBase)
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.get", autospec=True
-    )
-    def test_plugins_auth_eoiam_authenticate_no_login_required(self, mock_session_get):
+    @responses.activate
+    def test_plugins_auth_eoiam_authenticate_no_login_required(self):
         """EOIAMAuth should not login if not an EOIAM page"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -837,10 +835,12 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
             "password": "test_pass",
         }
 
-        # Mock response without EOIAM login page
-        mock_response = mock.Mock()
-        mock_response.text = "<html><body>Some content</body></html>"
-        mock_session_get.return_value = mock_response
+        # Response without EOIAM login page
+        responses.add(
+            responses.GET,
+            "http://test.url",
+            body="<html><body>Some content</body></html>",
+        )
 
         auth = auth_plugin.authenticate()
         req = mock.Mock(headers={})
@@ -849,15 +849,8 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
 
         self.assertFalse(auth_plugin._logged_in is False)
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.get", autospec=True
-    )
-    def test_plugins_auth_eoiam_login_from_html_success(
-        self, mock_session_get, mock_session_post
-    ):
+    @responses.activate
+    def test_plugins_auth_eoiam_login_from_html_success(self):
         """EOIAMAuth._login_from_html should perform SAML login successfully"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -890,27 +883,29 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        # Mock POST response after credentials submission
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/saml"
-        mock_post_response.text = saml_html
-        mock_post_response.raise_for_status = mock.Mock()
-
-        # Mock SAML POST response (redirect)
-        mock_saml_response = mock.Mock()
-        mock_saml_response.is_redirect = True
-        mock_saml_response.headers = {"Location": "http://final.url"}
-
-        # Mock final GET response
-        mock_final_response = mock.Mock()
-        mock_final_response.headers = {"Content-Type": "application/json"}
-        mock_final_response.text = "{}"
-
-        mock_session_post.side_effect = [mock_post_response, mock_saml_response]
-        mock_session_get.return_value = mock_final_response
+        # POST credentials -> SAML HTML response
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": "http://final.url"},
+        )
+        # GET final URL -> JSON
+        responses.add(
+            responses.GET,
+            "http://final.url",
+            body="{}",
+            headers={"Content-Type": "application/json"},
+        )
 
         result = auth_plugin._login_from_html(login_html, req_url="http://test.url")
-        self.assertEqual(result, mock_final_response)
+        self.assertEqual(result.text, "{}")
 
     def test_plugins_auth_eoiam_extract_input_value_missing(self):
         """EOIAMAuth._extract_input_value should raise MisconfiguredError if input not found"""
@@ -990,10 +985,8 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         result = auth_plugin._resolve_action(form, "http://foo.bar")
         self.assertEqual(result, "http://foo.bar/login")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_login_consent_required(self, mock_session_post):
+    @responses.activate
+    def test_plugins_auth_eoiam_login_consent_required(self):
         """EOIAMAuth._login_from_html should raise AuthenticationError if consent is required"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1011,21 +1004,26 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        # Mock POST response redirecting to consent page
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/consent.do?sp=TestService"
-        mock_post_response.raise_for_status = mock.Mock()
-        mock_session_post.return_value = mock_post_response
+        # POST redirects to consent page
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            status=302,
+            headers={"Location": "http://foo.bar/consent.do?sp=TestService"},
+        )
+        responses.add(
+            responses.GET,
+            "http://foo.bar/consent.do?sp=TestService",
+            body="",
+        )
 
         with self.assertRaisesRegex(
             AuthenticationError, "Consent required for service"
         ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_login_failed_wrong_credentials(self, mock_session_post):
+    @responses.activate
+    def test_plugins_auth_eoiam_login_failed_wrong_credentials(self):
         """EOIAMAuth._login_from_html should raise MisconfiguredError on wrong credentials"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1043,21 +1041,26 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        # Mock POST response redirecting back to login page
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/login.do"
-        mock_post_response.raise_for_status = mock.Mock()
-        mock_session_post.return_value = mock_post_response
+        # POST redirects to login page (wrong credentials)
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            status=302,
+            headers={"Location": "http://foo.bar/login.do"},
+        )
+        responses.add(
+            responses.GET,
+            "http://foo.bar/login.do",
+            body="",
+        )
 
         with self.assertRaisesRegex(
             MisconfiguredError, "Login failed: please check your credentials"
         ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_login_failed_eoiam_page(self, mock_session_post):
+    @responses.activate
+    def test_plugins_auth_eoiam_login_failed_eoiam_page(self):
         """EOIAMAuth._login_from_html should raise MisconfiguredError if still on EOIAM page"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1075,27 +1078,18 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        # Mock POST response staying on EOIAM page
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/some_page"
-        mock_post_response.text = (
-            "Earth Observation Identity and Access Management System"
+        # POST stays on EOIAM page
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body="Earth Observation Identity and Access Management System",
         )
-        mock_post_response.raise_for_status = mock.Mock()
-        mock_session_post.return_value = mock_post_response
 
         with self.assertRaisesRegex(MisconfiguredError, "Login failed"):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.get", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_saml_no_redirect(
-        self, mock_session_post, mock_session_get
-    ):
+    @responses.activate
+    def test_plugins_auth_eoiam_saml_no_redirect(self):
         """EOIAMAuth._login_from_html should raise AuthenticationError if SAML response is not a redirect"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1123,31 +1117,26 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/saml"
-        mock_post_response.text = saml_html
-        mock_post_response.raise_for_status = mock.Mock()
-
-        mock_saml_response = mock.Mock()
-        mock_saml_response.is_redirect = False
-        mock_saml_response.status_code = 200
-
-        mock_session_post.side_effect = [mock_post_response, mock_saml_response]
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> not a redirect (200)
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=200,
+        )
 
         with self.assertRaisesRegex(
             AuthenticationError, "Unexpected response after SAML login"
         ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.get", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_final_redirect_missing(
-        self, mock_session_post, mock_session_get
-    ):
+    @responses.activate
+    def test_plugins_auth_eoiam_final_redirect_missing(self):
         """EOIAMAuth._login_from_html should raise AuthenticationError if final redirect URL is missing"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1175,31 +1164,27 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/saml"
-        mock_post_response.text = saml_html
-        mock_post_response.raise_for_status = mock.Mock()
-
-        mock_saml_response = mock.Mock()
-        mock_saml_response.is_redirect = True
-        mock_saml_response.headers = {}  # No Location header
-
-        mock_session_post.side_effect = [mock_post_response, mock_saml_response]
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect with empty Location
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": ""},
+        )
 
         with self.assertRaisesRegex(
             AuthenticationError, "Final redirect URL not found"
         ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.get", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_consent_required_after_redirect(
-        self, mock_session_post, mock_session_get
-    ):
+    @responses.activate
+    def test_plugins_auth_eoiam_consent_required_after_redirect(self):
         """EOIAMAuth._login_from_html should raise AuthenticationError if consent required after redirect"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1227,34 +1212,32 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/saml"
-        mock_post_response.text = saml_html
-        mock_post_response.raise_for_status = mock.Mock()
-
-        mock_saml_response = mock.Mock()
-        mock_saml_response.is_redirect = True
-        mock_saml_response.headers = {"Location": "http://final.url"}
-
-        mock_session_post.side_effect = [mock_post_response, mock_saml_response]
-
-        mock_final_response = mock.Mock()
-        mock_final_response.headers = {"Content-Type": "text/html"}
-        mock_final_response.text = "wants to access your account"
-        mock_session_get.return_value = mock_final_response
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": "http://final.url"},
+        )
+        # GET final URL -> consent page
+        responses.add(
+            responses.GET,
+            "http://final.url",
+            body="wants to access your account",
+            headers={"Content-Type": "text/html"},
+        )
 
         with self.assertRaisesRegex(AuthenticationError, "Consent required"):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.get", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.eoiam.requests.Session.post", autospec=True
-    )
-    def test_plugins_auth_eoiam_data_access_required(
-        self, mock_session_post, mock_session_get
-    ):
+    @responses.activate
+    def test_plugins_auth_eoiam_data_access_required(self):
         """EOIAMAuth._login_from_html should raise AuthenticationError if data access is required"""
         auth_plugin = self.get_auth_plugin("foo_provider")
         auth_plugin.config.credentials = {
@@ -1282,23 +1265,26 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         </html>
         """
 
-        mock_post_response = mock.Mock()
-        mock_post_response.url = "http://foo.bar/saml"
-        mock_post_response.text = saml_html
-        mock_post_response.raise_for_status = mock.Mock()
-
-        mock_saml_response = mock.Mock()
-        mock_saml_response.is_redirect = True
-        mock_saml_response.headers = {"Location": "http://final.url"}
-
-        mock_session_post.side_effect = [mock_post_response, mock_saml_response]
-
-        mock_final_response = mock.Mock()
-        mock_final_response.headers = {"Content-Type": "text/html"}
-        mock_final_response.text = (
-            "not yet performed the necessary steps in order to access this data."
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
         )
-        mock_session_get.return_value = mock_final_response
+        # POST SAML -> redirect
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": "http://final.url"},
+        )
+        # GET final URL -> data access required page
+        responses.add(
+            responses.GET,
+            "http://final.url",
+            body="not yet performed the necessary steps in order to access this data.",
+            headers={"Content-Type": "text/html"},
+        )
 
         with self.assertRaisesRegex(
             AuthenticationError, "Data access request required"
