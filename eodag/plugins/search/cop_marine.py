@@ -229,6 +229,8 @@ class CopMarineSearch(StaticStacSearch):
             "geometry": geometry,
             "eodag:download_link": download_url,
             "dataset": dataset_item["id"],
+            # order:status set to succeeded for consistency between providers
+            "order:status": "succeeded",
         }
         if use_dataset_dates:
             dates = _get_dates_from_dataset_data(dataset_item)
