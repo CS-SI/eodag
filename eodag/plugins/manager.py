@@ -25,11 +25,15 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 import importlib_metadata
 
-from eodag.config import AUTH_TOPIC_KEYS, PluginConfig, load_config
+from eodag.config import PluginConfig, load_config
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.base import Crunch
+from eodag.plugins.download.base import Download
+from eodag.plugins.search.base import Search
 from eodag.utils import (
+    AUTH_TOPIC_KEYS,
     GENERIC_COLLECTION,
     PLUGINS_TOPIC_KEYS,
     dict_md5sum,
@@ -47,11 +51,7 @@ if TYPE_CHECKING:
     from eodag.api.product._product import EOProduct
     from eodag.api.provider import ProviderConfig, PrunedProviderReason
     from eodag.databases.base import Database
-    from eodag.plugins.apis.base import Api
-    from eodag.plugins.authentication.base import Authentication
-    from eodag.plugins.base import PluginTopic
-    from eodag.plugins.download.base import Download
-    from eodag.plugins.search.base import Search
+
 
 logger = logging.getLogger("eodag.plugins.manager")
 
@@ -237,7 +237,7 @@ class PluginManager:
             )
 
         if provider:
-            self.check_provider_available(provider, include_groups=True)
+            self.check_provider_available(provider)
 
         for provider in providers:
             pc = self._db.get_fb_config(provider["name"], collection)
@@ -262,9 +262,6 @@ class PluginManager:
 
     def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
         """Build and return the download plugin for the given product."""
-        from eodag.plugins.apis.base import Api
-        from eodag.plugins.download.base import Download
-
         pc = self._db.get_fb_config(product.provider, product.collection)
         if not pc:
             raise UnsupportedProvider(
