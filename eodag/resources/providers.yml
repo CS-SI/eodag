@@ -5921,8 +5921,6 @@
       fetch_url: null
     metadata_mapping:
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # order:status set to succeeded for consistency between providers
-      order:status: 'succeeded'
   products:
     MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
       _collection: GLOBAL_ANALYSISFORECAST_PHY_001_024
