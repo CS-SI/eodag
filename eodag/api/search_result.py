@@ -385,7 +385,7 @@ class SearchResult(UserList[EOProduct]):
         """Create a SearchResult from a STAC item.
 
         :param feature: A STAC item as a dictionary
-        :param plugins_manager: The EODAG plugin manager instance
+        :param plugins_manager: The EODAG plugins manager instance
         :returns: A SearchResult containing the EOProduct(s) created from the STAC item
         """
         # Try importing from EODAG Server
@@ -406,7 +406,7 @@ def _import_stac_item_from_eodag_server(
     """Import a STAC item from EODAG Server.
 
     :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
+    :param dag: The EODAG gateway instance
     :returns: A SearchResult containing the EOProduct(s) created from the STAC item
     """
     provider = None
@@ -465,7 +465,7 @@ def _import_stac_item_from_known_provider(
     """Import a STAC item from an already-configured STAC provider.
 
     :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
+    :param plugins_manager: The EODAG plugins manager instance
     :returns: A SearchResult containing the EOProduct(s) created from the STAC item
     """
     item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
@@ -514,7 +514,7 @@ def _import_stac_item_from_unknown_provider(
     """Import a STAC item from an unknown STAC provider.
 
     :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
+    :param plugins_manager: The EODAG plugins manager instance
     :returns: A SearchResult containing the EOProduct(s) created from the STAC item
     """
     try:

@@ -3,7 +3,7 @@
 Collections
 ===========
 
-``eodag`` maintains a catalog of EO collections including some of their metadata. Each collection is
+``eodag`` maintains a catalog of STAC collections including some of their metadata. Each collection is
 given an identifier (e.g. ``S2_MSI_L2A``) that should then be used by users to search for this kind
 of product.
 
@@ -20,6 +20,7 @@ The example below shows the catalog entry for the collection *Sentinel 2 Level-2
      constellation: SENTINEL2
      platform: S2A,S2B
      processing:level: L2
+     keywords: ["MSI", "SENTINEL", "SENTINEL2", "S2", "S2A", "S2B", "S2C", "L1", "L1C", "SAFE"]
      eodag:sensor_type: OPTICAL
      license: other
      title: SENTINEL2 Level-2A

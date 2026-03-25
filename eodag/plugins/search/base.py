@@ -30,7 +30,6 @@ from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
@@ -55,6 +54,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
+    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.base")
@@ -265,8 +265,8 @@ class Search(PluginTopic):
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
-        # remove duplicates
-        sort_by_arg = list(dict.fromkeys(sort_by_arg))
+        # remove duplicates (convert to tuples for hashability)
+        sort_by_arg = list(dict.fromkeys(tuple(x) for x in sort_by_arg))
 
         sort_by_qs: str = ""
         sort_by_qp: dict[str, Any] = {}

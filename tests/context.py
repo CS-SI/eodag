@@ -51,7 +51,12 @@ from eodag.config import (
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
 )
-from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
+from eodag.api.provider import (
+    ProviderConfig,
+    ProvidersDict,
+    Provider,
+    build_provider_configs,
+)
 from eodag.config import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
