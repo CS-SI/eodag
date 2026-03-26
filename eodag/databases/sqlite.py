@@ -181,12 +181,23 @@ class SQLiteDatabase(Database):
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
 
+        def _get_id(c):
+            if isinstance(c, Collection):
+                return c.id
+            else:
+                return c.get("id")
+
         upserted_coll_nb = self._executemany(
             f"""
             INSERT INTO collections (content) VALUES ({_JSON_STORE}(?))
+            ON CONFLICT(id) DO UPDATE SET content = excluded.content
             ON CONFLICT(internal_id) DO UPDATE SET content=excluded.content;
             """,
-            [(c,) for c in collections.values() if c.id != GENERIC_COLLECTION],
+            [
+                (c,)
+                for c in collections.values()
+                if _get_id(c) not in (GENERIC_COLLECTION, "GENERIC_PRODUCT_TYPE")
+            ],
         ).rowcount
 
         self._con.commit()
