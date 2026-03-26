@@ -351,7 +351,7 @@ class SQLiteDatabase(Database):
             )
 
             topics_cfg: dict[str, dict[str, Any]] = {}
-            products_cfg = config.products
+            products_cfg = getattr(config, "products", {})
             if getattr(config, "api", None):
                 topics_cfg["api"] = products_cfg
             else:
