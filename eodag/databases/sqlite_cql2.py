@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """CQL2 to SQLite SQL translator for EODAG's SQLite backend."""
+
 from __future__ import annotations
 
 import re
@@ -25,14 +26,14 @@ import cql2
 import orjson
 
 BASE_COLLECTION_TABLE_COLUMNS = {
-    "key",
-    "id",
-    "internal_id",
-    "datetime",
-    "end_datetime",
-    "geometry",
-    "content",
-    "federation_backends",
+    "key": "key",
+    "id": "id",
+    "internal_id": "internal_id",
+    "datetime": "datetime",
+    "end_datetime": "end_datetime",
+    "geometry": "geometry",
+    "content": "content",
+    "federation:backends": "federation_backends",
 }
 
 SUPPORTED_CONFORMANCE_CLASSES = (
@@ -150,11 +151,12 @@ def _replace_properties(sql: str, properties: set[str]) -> str:
     """Rewrite property references in the SQL to json_extract(content, '$.property')."""
     result = sql
     for prop in sorted(properties, key=len, reverse=True):
-        if prop in BASE_COLLECTION_TABLE_COLUMNS:
-            continue
-
-        prop_expr = f"json_extract(content, '$.{prop}')"
-        quoted = f'"{prop}"'
+        if value := BASE_COLLECTION_TABLE_COLUMNS.get(prop):
+            prop_expr = value
+            quoted = f'"{value}"'
+        else:
+            prop_expr = f"json_extract(content, '$.{prop}')"
+            quoted = f'"{prop}"'
 
         if quoted in result:
             # CQL2 quotes properties that contain special characters (e.g. ':').
@@ -240,6 +242,8 @@ def _rtree_filter(minx: float, miny: float, maxx: float, maxy: float) -> str:
 
 def _sqlite_compat(sql: str) -> str:
     """Apply SQLite-specific rewrites to the SQL emitted by cql2."""
+    # TODO: check to refactor
+    # TODO: also verify probably no need of JSONB special operators
     result = sql
 
     # cql2 emits Postgres CAST('...' AS TIMESTAMP WITH TIME ZONE); strip for SQLite.
@@ -248,41 +252,78 @@ def _sqlite_compat(sql: str) -> str:
     # cql2 emits Postgres form: x = SOME(ARRAY['a', 'b'])
     result = _RE_SOME_ARRAY.sub(r"\1 IN (\2)", result)
 
-    # cql2 emits Postgres array operators (@>, <@, @@, = ARRAY[...]).
-    # Rewrite to custom SQLite functions that compare JSON arrays.
-    # Skip entirely if no ARRAY[ remains after SOME rewriting (avoids catastrophic backtracking).
-    if "ARRAY[" in result:
-        # a_overlaps (@@): A ∩ B ≠ ∅
-        result = _RE_ARRAY_OPS["@@"].sub(
-            r"EXISTS (SELECT 1 FROM json_each(\1) je WHERE je.value IN (\2))",
-            result,
+    # ---- Array operators ----------------------------------------------------
+    # Guard must look for REAL operators (after html.unescape above).
+    if any(tok in result for tok in ("@>", "<@", "@@", "&&", "ARRAY[")):
+        # IMPORTANT: LHS can be:
+        # - a function call: json_extract(...)
+        # - an identifier: federation_backends
+        # - a qualified identifier: c.federation_backends
+        # - a quoted identifier: "federation:backends"
+        #
+        # So we widen the LHS expression matcher here to include "...." identifiers.
+        _LHS = r"(?:" r'"[^"]+"' r"|(?:\w+\.)?\w+" r"|\w+\([^)]*\)" r")"
+
+        _SCALAR_STR = (
+            r"'(?:[^']|'')*'"  # SQL single-quoted literal (handles doubled quotes)
         )
 
-        # a_contains (@>): A ⊇ B — every element of B is in A
-        result = _RE_ARRAY_OPS["@>"].sub(
-            r"NOT EXISTS (SELECT 1 FROM json_each(json_array(\2)) je"
-            r" WHERE je.value NOT IN (SELECT je2.value FROM json_each(\1) je2))",
-            result,
-        )
+        # One regex per operator; RHS supports ARRAY[...] or scalar.
+        _RE_OP_MIXED = {
+            "@@": re.compile(rf"({_LHS})\s*@@\s*(?:ARRAY\[([^\]]*)\]|({_SCALAR_STR}))"),
+            "@>": re.compile(rf"({_LHS})\s*@>\s*(?:ARRAY\[([^\]]*)\]|({_SCALAR_STR}))"),
+            "<@": re.compile(rf"({_LHS})\s*<@\s*(?:ARRAY\[([^\]]*)\]|({_SCALAR_STR}))"),
+        }
 
-        # a_containedby (<@): A ⊆ B — every element of A is in B
-        result = _RE_ARRAY_OPS["<@"].sub(
-            r"(\1 IS NOT NULL AND"
-            r" NOT EXISTS (SELECT 1 FROM json_each(\1) je WHERE je.value NOT IN (\2)))",
-            result,
-        )
+        def _sub_overlaps(m: re.Match[str]) -> str:
+            lhs, rhs_arr, rhs_scalar = m.group(1), m.group(2), m.group(3)
+            if rhs_scalar is not None:
+                # A @@ 'x'  ->  x ∈ A
+                return f"EXISTS (SELECT 1 FROM json_each({lhs}) je WHERE je.value = {rhs_scalar})"
+            # A @@ ARRAY[...]  ->  A ∩ B ≠ ∅
+            return f"EXISTS (SELECT 1 FROM json_each({lhs}) je WHERE je.value IN ({rhs_arr}))"
 
-        # a_equals: A = B (same elements) — A ⊇ B AND A ⊆ B
-        result = _RE_ARRAY_EQUALS.sub(
-            r"(\1 IS NOT NULL"
-            r" AND NOT EXISTS (SELECT 1 FROM json_each(json_array(\2)) je"
-            r" WHERE je.value NOT IN (SELECT je2.value FROM json_each(\1) je2))"
-            r" AND NOT EXISTS (SELECT 1 FROM json_each(\1) je"
-            r" WHERE je.value NOT IN (\2)))",
-            result,
-        )
+        def _sub_contains(m: re.Match[str]) -> str:
+            lhs, rhs_arr, rhs_scalar = m.group(1), m.group(2), m.group(3)
+            if rhs_scalar is not None:
+                # A @> 'x'  ->  x ∈ A
+                return f"EXISTS (SELECT 1 FROM json_each({lhs}) je WHERE je.value = {rhs_scalar})"
+            # A @> ARRAY[...]  ->  every element of B is in A
+            return (
+                f"NOT EXISTS (SELECT 1 FROM json_each(json_array({rhs_arr})) je "
+                f"WHERE je.value NOT IN (SELECT je2.value FROM json_each({lhs}) je2))"
+            )
 
-    # R-tree pre-filter for spatial predicates on the geometry column.
+        def _sub_containedby(m: re.Match[str]) -> str:
+            lhs, rhs_arr, rhs_scalar = m.group(1), m.group(2), m.group(3)
+            if rhs_scalar is not None:
+                # A <@ 'x'  ->  A ⊆ {x} (all elements equal x)
+                return (
+                    f"({lhs} IS NOT NULL AND "
+                    f"NOT EXISTS (SELECT 1 FROM json_each({lhs}) je WHERE je.value <> {rhs_scalar}))"
+                )
+            # A <@ ARRAY[...]  ->  every element of A is in B
+            return (
+                f"({lhs} IS NOT NULL AND "
+                f"NOT EXISTS (SELECT 1 FROM json_each({lhs}) je WHERE je.value NOT IN ({rhs_arr})))"
+            )
+
+        result = _RE_OP_MIXED["@@"].sub(_sub_overlaps, result)
+        result = _RE_OP_MIXED["@>"].sub(_sub_contains, result)
+        result = _RE_OP_MIXED["<@"].sub(_sub_containedby, result)
+
+        # Keep your a_equals rewrite as-is, but only if ARRAY[...] is present.
+        if "ARRAY[" in result:
+            result = _RE_ARRAY_EQUALS.sub(
+                r"(\1 IS NOT NULL"
+                r" AND NOT EXISTS (SELECT 1 FROM json_each(json_array(\2)) je"
+                r" WHERE je.value NOT IN (SELECT je2.value FROM json_each(\1) je2))"
+                r" AND NOT EXISTS (SELECT 1 FROM json_each(\1) je"
+                r" WHERE je.value NOT IN (\2)))",
+                result,
+            )
+
+    # ---- Spatial R-tree pre-filter -----------------------------------------
     def _inject_rtree_geojson(match: re.Match[str]) -> str:
         bounds = _geojson_bounds(match.group(2))
         if bounds is None:
