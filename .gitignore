@@ -96,6 +96,7 @@ ENV/
 docs/plugins_reference/generated/*.rst
 docs/drivers_generated/*.rst
 
+docs/getting_started_guide/*workspace*
 docs/notebooks/api_user_guide/*workspace*
 docs/notebooks/tutos/*workspace*
 
