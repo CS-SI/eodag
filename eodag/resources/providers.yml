@@ -3204,6 +3204,12 @@
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
       metadata_mapping:
+        sortOrder:
+          - '{{"sortOrder": "{sortOrder}"}}'
+          - '$.null'
+        gsd:
+          - '{{"spatialResolution": "{gsd}"}}'
+          - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
