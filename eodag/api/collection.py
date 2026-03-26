@@ -20,16 +20,16 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, List, Literal, Optional, cast
+from urllib.parse import urljoin
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr, RootModel
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Collection as StacCollection
 from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
-from stac_pydantic.links import Links
-from stac_pydantic.shared import SEMVER_REGEX
+from stac_pydantic.shared import SEMVER_REGEX, StacBaseModel
 
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
@@ -54,6 +54,47 @@ RFC3339_PATTERN = (
     r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
     r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
 )
+
+
+class Link(StacBaseModel):
+    """
+    https://github.com/radiantearth/stac-spec/blob/v1.0.0/collection-spec/collection-spec.md#link-object
+    """
+
+    href: str = Field(..., alias="href", min_length=1)
+    rel: str = Field(..., alias="rel", min_length=1)
+    type: Optional[str] = None
+    title: Optional[str] = None
+
+    # Label extension
+    label: Optional[str] = Field(default=None, alias="label:assets")
+    model_config = ConfigDict(use_enum_values=True, extra="allow")
+
+    def resolve(self, base_url: str) -> None:
+        """resolve a link to the given base URL"""
+        self.href = urljoin(base_url, self.href)
+
+
+class Links(RootModel[List[Link]]):
+    root: List[Link]
+
+    def link_iterator(self) -> Iterator[Link]:
+        """Produce iterator to iterate through links"""
+        return iter(self.root)
+
+    def resolve(self, base_url: str) -> None:
+        """resolve all links to the given base URL"""
+        for link in self.link_iterator():
+            link.resolve(base_url)
+
+    def append(self, link: Link) -> None:
+        self.root.append(link)
+
+    def __len__(self) -> int:
+        return len(self.root)
+
+    def __getitem__(self, idx: int) -> Link:
+        return self.root[idx]
 
 
 class Collection(StacCollection):
