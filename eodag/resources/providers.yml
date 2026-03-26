@@ -3101,6 +3101,21 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
+        platform:
+          - '{{"platformSerialIdentifier": "{platform}"}}'
+          - '$.null'
+        instruments:
+          - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+          - '$.null'
+        sat:relative_orbit:
+          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
+          - '$.null'
+        eo:cloud_cover:
+          - '{{"cloudCover": "{eo:cloud_cover}"}}'
+          - '$.null'
+        sortOrder:
+          - '{{"sortOrder": "{sortOrder}"}}'
+          - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
