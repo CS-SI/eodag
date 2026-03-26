@@ -351,15 +351,13 @@ class SQLiteDatabase(Database):
                 if val := getattr(config, k, None):
                     plugins_config[k] = strip_credentials(val.__dict__)
 
-            federation_backend_configs.append(
-                (
-                    config.name,
-                    plugins_config,
-                    getattr(config, "priority", 0),
-                    metadata,
-                    config.enabled,
-                )
-            )
+            federation_backend_configs.append((
+                config.name,
+                plugins_config,
+                getattr(config, "priority", 0),
+                metadata,
+                config.enabled,
+            ))
 
             topics_cfg: dict[str, dict[str, Any]] = {}
             products_cfg = getattr(config, "products", {})
@@ -650,20 +648,18 @@ def _strip_accents(text: str | None) -> str | None:
 
 def _st_makeenvelope(xmin: float, ymin: float, xmax: float, ymax: float) -> str:
     """Convert bounding-box coordinates to a GeoJSON Polygon string."""
-    return orjson.dumps(
-        {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [xmin, ymin],
-                    [xmax, ymin],
-                    [xmax, ymax],
-                    [xmin, ymax],
-                    [xmin, ymin],
-                ]
-            ],
-        }
-    ).decode()
+    return orjson.dumps({
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [xmin, ymin],
+                [xmax, ymin],
+                [xmax, ymax],
+                [xmin, ymax],
+                [xmin, ymin],
+            ]
+        ],
+    }).decode()
 
 
 def _make_spatial_func(
@@ -943,62 +939,52 @@ def _stac_search_to_where(
         cql2_conditions.append(cql2_json)
 
     if ids:
-        cql2_conditions.append(
-            {
-                "op": "or",
-                "args": [
-                    {
-                        "op": "in",
-                        "args": [{"property": "id"}, ids],
-                    },
-                    {
-                        "op": "in",
-                        "args": [{"property": "internal_id"}, ids],
-                    },
-                ],
-            }
-        )
+        cql2_conditions.append({
+            "op": "or",
+            "args": [
+                {
+                    "op": "in",
+                    "args": [{"property": "id"}, ids],
+                },
+                {
+                    "op": "in",
+                    "args": [{"property": "internal_id"}, ids],
+                },
+            ],
+        })
 
     if federation_backends:
-        cql2_conditions.append(
-            {
-                "op": "a_overlaps",
-                "args": [{"property": "federation_backends"}, federation_backends],
-            }
-        )
+        cql2_conditions.append({
+            "op": "a_overlaps",
+            "args": [{"property": "federation_backends"}, federation_backends],
+        })
 
     if geometry:
         geom = get_geometry_from_various(geometry=geometry)
         if geom is not None:
-            cql2_conditions.append(
-                {
-                    "op": "s_intersects",
-                    "args": [
-                        {"property": "geometry"},
-                        shapely.geometry.mapping(geom),
-                    ],
-                }
-            )
+            cql2_conditions.append({
+                "op": "s_intersects",
+                "args": [
+                    {"property": "geometry"},
+                    shapely.geometry.mapping(geom),
+                ],
+            })
 
     if datetime:
         start_date_str, end_date_str = get_datetime({"datetime": datetime})
         if end_date_str:
-            cql2_conditions.append(
-                {
-                    "op": "<=",
-                    "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
-                }
-            )
+            cql2_conditions.append({
+                "op": "<=",
+                "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
+            })
         if start_date_str:
-            cql2_conditions.append(
-                {
-                    "op": ">=",
-                    "args": [
-                        {"property": "end_datetime"},
-                        {"timestamp": start_date_str},
-                    ],
-                }
-            )
+            cql2_conditions.append({
+                "op": ">=",
+                "args": [
+                    {"property": "end_datetime"},
+                    {"timestamp": start_date_str},
+                ],
+            })
 
     # Merge all conditions into one CQL2 AND filter
     where_clause = "True"
