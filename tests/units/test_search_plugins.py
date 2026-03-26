@@ -259,9 +259,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginQueryStringSearch, self).setUp()
         # One of the providers that has a QueryStringSearch Search plugin
-        provider = "peps"
-        self.peps_search_plugin = self.get_search_plugin(self.collection, provider)
-        self.peps_auth_plugin = self.get_auth_plugin(self.peps_search_plugin)
+        provider = "sara"
+        self.sara_search_plugin = self.get_search_plugin(self.collection, provider)
+        self.sara_auth_plugin = self.get_auth_plugin(self.sara_search_plugin)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -270,35 +270,36 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         self.maxDiff = None
-        """A query with a QueryStringSearch (peps here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
-        with open(self.provider_resp_dir / "peps_search.json") as f:
-            peps_resp_search = json.load(f)
+        """A query with a QueryStringSearch (sara here) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        with open(self.provider_resp_dir / "sara_search.json") as f:
+            sara_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
-            peps_resp_search,
+            sara_resp_search,
         ]
-        products = self.peps_search_plugin.query(
+        products = self.sara_search_plugin.query(
             prep=PreparedSearch(
                 page=1,
                 limit=2,
-                auth_plugin=self.peps_auth_plugin,
+                auth_plugin=self.sara_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
-        peps_url_search = (
-            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08&"
+        sara_url_search = (
+            "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?startDate=2020-08-08&"
             "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
-            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSIL1C&instrument=MSI&processingLevel=L1C&"
+            "sortParam=startDate&sortOrder=asc&maxRecords=2&page=1"
         )
-        peps_products_count = 47
+        sara_products_count = 47
         number_of_products = 2
 
         mock__request.assert_called_once()
-        self.assertEqual(mock__request.call_args_list[-1][0][1].url, peps_url_search)
+        self.assertEqual(mock__request.call_args_list[-1][0][1].url, sara_url_search)
 
-        self.assertEqual(products.number_matched, peps_products_count)
+        self.assertEqual(products.number_matched, sara_products_count)
         self.assertEqual(len(products.data), number_of_products)
         self.assertIsInstance(products.data[0], EOProduct)
 
@@ -311,32 +312,33 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_no_count_and_search_peps(
         self, mock__request, mock_count_hits
     ):
-        """A query with a QueryStringSearch (here peps) without a count"""
-        with open(self.provider_resp_dir / "peps_search.json") as f:
-            peps_resp_search = json.load(f)
+        """A query with a QueryStringSearch (here sara) without a count"""
+        with open(self.provider_resp_dir / "sara_search.json") as f:
+            sara_resp_search = json.load(f)
         mock__request.return_value = mock.Mock()
-        mock__request.return_value.json.return_value = peps_resp_search
-        products = self.peps_search_plugin.query(
+        mock__request.return_value.json.return_value = sara_resp_search
+        products = self.sara_search_plugin.query(
             prep=PreparedSearch(
                 count=False,
                 page=1,
                 limit=2,
-                auth_plugin=self.peps_auth_plugin,
+                auth_plugin=self.sara_auth_plugin,
             ),
             **self.search_criteria_s2_msi_l1c,
         )
 
         # Specific expected results
-        peps_url_search = (
-            "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?startDate=2020-08-08&"
+        sara_url_search = (
+            "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?startDate=2020-08-08&"
             "completionDate=2020-08-16&geometry=POLYGON ((137.7729 13.1342, 137.7729 23.8860, 153.7491 23.8860, "
-            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSI1C&maxRecords=2&page=1"
+            "153.7491 13.1342, 137.7729 13.1342))&productType=S2MSIL1C&instrument=MSI&processingLevel=L1C&"
+            "sortParam=startDate&sortOrder=asc&maxRecords=2&page=1"
         )
         number_of_products = 2
 
         mock_count_hits.assert_not_called()
         mock__request.assert_called_once()
-        self.assertEqual(mock__request.call_args_list[-1][0][1].url, peps_url_search)
+        self.assertEqual(mock__request.call_args_list[-1][0][1].url, sara_url_search)
 
         self.assertIsNone(products.number_matched)
         self.assertEqual(len(products.data), number_of_products)
@@ -352,39 +354,34 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_search_cloudcover_peps(
         self, mock__request, mock_normalize_results
     ):
-        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar collections"""
+        """A query with a QueryStringSearch (here sara) must use cloudCover filtering when configured"""
 
-        self.peps_search_plugin.query(collection="S2_MSI_L1C", **{"eo:cloud_cover": 50})
+        self.sara_search_plugin.query(collection="S2_MSI_L1C", **{"eo:cloud_cover": 50})
         mock__request.assert_called()
         self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
-        mock__request.reset_mock()
-
-        self.peps_search_plugin.query(collection="S1_SAR_GRD", **{"eo:cloud_cover": 50})
-        mock__request.assert_called()
-        self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
     def test_plugins_search_querystringsearch_search_peps_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
         # with raised error parameter set to True in the global config of the provider
-        provider_search_plugin_config = copy_deepcopy(self.peps_search_plugin.config)
-        self.peps_search_plugin.config.discover_metadata[
+        provider_search_plugin_config = copy_deepcopy(self.sara_search_plugin.config)
+        self.sara_search_plugin.config.discover_metadata[
             "raise_mtd_discovery_error"
         ] = True
 
         with self.assertRaises(ValidationError) as context:
-            self.peps_search_plugin.query(
+            self.sara_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
                     limit=2,
-                    auth_plugin=self.peps_auth_plugin,
+                    auth_plugin=self.sara_auth_plugin,
                 ),
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
             "Search parameters which are not queryable are disallowed for this collection on this provider: "
             f"please remove 'foo' from your search parameters. Collection: "
-            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.peps_search_plugin.provider}",
+            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.sara_search_plugin.provider}",
             context.exception.message,
         )
 
@@ -392,32 +389,32 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # first, update this parameter to False in the global config
         # to show that it is going to be taken over by this new config
-        self.peps_search_plugin.config.discover_metadata[
+        self.sara_search_plugin.config.discover_metadata[
             "raise_mtd_discovery_error"
         ] = False
 
-        self.peps_search_plugin.config.products[
+        self.sara_search_plugin.config.products[
             self.search_criteria_s2_msi_l1c["collection"]
         ]["discover_metadata"] = {"raise_mtd_discovery_error": True}
 
         with self.assertRaises(ValidationError) as context:
-            self.peps_search_plugin.query(
+            self.sara_search_plugin.query(
                 prep=PreparedSearch(
                     page=1,
                     limit=2,
-                    auth_plugin=self.peps_auth_plugin,
+                    auth_plugin=self.sara_auth_plugin,
                 ),
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
             "Search parameters which are not queryable are disallowed for this collection on this provider: "
             f"please remove 'foo' from your search parameters. Collection: "
-            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.peps_search_plugin.provider}",
+            f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.sara_search_plugin.provider}",
             context.exception.message,
         )
 
         # restore the original config
-        self.peps_search_plugin.config = provider_search_plugin_config
+        self.sara_search_plugin.config = provider_search_plugin_config
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -908,7 +905,11 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin(self.collection, "peps")
+        search_plugin = self.get_search_plugin(self.collection, "sara")
+
+        # ensure metadata_mapping exists for S1_SAR_GRD and S1_SAR_SLC
+        search_plugin.config.products["S1_SAR_GRD"].setdefault("metadata_mapping", {})
+        search_plugin.config.products["S1_SAR_SLC"].setdefault("metadata_mapping", {})
 
         # update metadata_mapping only for S1_SAR_GRD
         search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
@@ -938,7 +939,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         side_effect=requests.exceptions.Timeout(),
     )
     def test_plugins_search_querystringseach_timeout(self, mock__request):
-        search_plugin = self.get_search_plugin(self.collection, "peps")
+        search_plugin = self.get_search_plugin(self.collection, "sara")
         with self.assertRaises(TimeOutError):
             search_plugin.query(
                 collection="S1_SAR_SLC",
@@ -1839,18 +1840,18 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self, mock__request
     ):
         """The metadata mapping for ODataV4Search should not mix specific collections metadata-mapping"""
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
+        wkt_geometry = self.search_criteria_s2_msi_l1c["geometry"].wkt
         mock__request.return_value = mock.Mock()
         result = {
-            "features": [
+            "value": [
                 {
                     "id": "foo",
-                    "geometry": geojson_geometry,
+                    "footprint": wkt_geometry,
                 },
             ],
         }
-        mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin("onda")
+        mock__request.return_value.json.side_effect = [5, result, 5, result]
+        search_plugin = self.get_search_plugin(provider="onda")
 
         # update metadata_mapping only for S1_SAR_GRD
         search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (

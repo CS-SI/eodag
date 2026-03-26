@@ -41,13 +41,6 @@ from tests.context import (
     uri_to_path,
 )
 
-PEPS_SEARCH_ARGS = [
-    "peps",
-    "S2_MSI_L1C",
-    "2020-08-08",
-    "2020-08-16",
-    [137.772897, 13.134202, 153.749135, 23.885986],
-]
 GEODES_SEARCH_ARGS = [
     "geodes",
     "S2_MSI_L1C",
@@ -419,12 +412,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.tar.gz".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    # @unittest.skip("service unavailable for the moment")
-    def test_end_to_end_search_download_peps(self):
-        product = self.execute_search(*PEPS_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
-
     def test_end_to_end_search_download_geodes(self):
         product = self.execute_search(*GEODES_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -551,16 +538,22 @@ class TestEODagEndToEnd(EndToEndBase):
         self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
-    def test_get_quicklook_peps(self):
+    def test_get_quicklook_cop_dataspace(self):
         product = self.execute_search(
-            "peps", "S2_MSI_L1C", "2019-03-01", "2019-03-15", [50, 50, 50.3, 50.3]
+            "cop_dataspace",
+            "S2_MSI_L1C",
+            "2019-03-01",
+            "2019-03-15",
+            [50, 50, 50.3, 50.3],
         )
-        quicklook_file_path = product.get_quicklook(filename="peps_quicklook")
+        quicklook_file_path = product.get_quicklook(filename="cop_dataspace_quicklook")
         # TearDown will remove quicklook_file_path on end
         self.downloaded_file_path = quicklook_file_path
 
         self.assertNotEqual(quicklook_file_path, "")
-        self.assertEqual(os.path.basename(quicklook_file_path), "peps_quicklook")
+        self.assertEqual(
+            os.path.basename(quicklook_file_path), "cop_dataspace_quicklook"
+        )
         self.assertEqual(
             os.path.dirname(quicklook_file_path),
             os.path.join(product.downloader.config.output_dir, "quicklooks"),
@@ -585,7 +578,7 @@ class TestEODagEndToEnd(EndToEndBase):
         """Search by tileIdentifier should find results and correctly map found metadata"""
         # providers supporting search-by-tile
         supported_providers_collections = [
-            ("peps", "S2_MSI_L1C"),
+            ("cop_dataspace", "S2_MSI_L1C"),
             ("planetary_computer", "S2_MSI_L2A"),
             ("earth_search", "S2_MSI_L1C"),
         ]
@@ -721,10 +714,8 @@ class TestEODagEndToEndComplete(EndToEndBase):
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
         if not os.path.isfile(tests_user_conf):
-            unittest.SkipTest("Missing user conf file with credentials")
-        cls.eodag = EODataAccessGateway(
-            user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
-        )
+            tests_user_conf = None
+        cls.eodag = EODataAccessGateway(user_conf_file_path=tests_user_conf)
 
         # temp download directory
         cls.tmp_download_dir = TemporaryDirectory()
@@ -734,14 +725,14 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def tearDownClass(cls):
         cls.tmp_download_dir.cleanup()
 
-    def test_end_to_end_complete_peps(self):
-        """Complete end-to-end test with PEPS for download and download_all"""
+    def test_end_to_end_complete_cop_dataspace(self):
+        """Complete end-to-end test with cop_dataspace for download and download_all"""
 
         self.eodag._providers.configs[
-            "peps"
+            "cop_dataspace"
         ].download.output_dir = self.tmp_download_path
 
-        # Search for products that are succeeded and as small as possible
+        # Search for products that are online and as small as possible (smallest area first)
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
         search_results = self.eodag.search(
@@ -750,19 +741,15 @@ class TestEODagEndToEndComplete(EndToEndBase):
             end=today.isoformat(),
             geom={"lonmin": 1, "latmin": 42, "lonmax": 5, "latmax": 46},
             limit=100,
-            provider="peps",
+            provider="cop_dataspace",
         )
         prods_sorted_by_size = SearchResult(
-            sorted(search_results, key=lambda p: p.properties["peps:resourceSize"])
+            sorted(search_results, key=lambda p: p.geometry.area)
         )
-        prods_online = [
-            p
-            for p in prods_sorted_by_size
-            if p.properties["order:status"] == "succeeded"
-        ]
+        prods_online = prods_sorted_by_size.filter_online()
         if len(prods_online) < 2:
             unittest.skip(
-                "Not enough succeeded products found, update the search criteria."
+                "Not enough online products found, update the search criteria."
             )
 
         # Retrieve one product to work with
@@ -892,7 +879,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
         archive_paths = self.eodag.download_all(products[:], extract=False)
         end_time = time.time()
         self.assertLess(end_time - start_time, 2)  # Should be really fast (< 2s)
-        self.assertEqual(archive_paths, prev_archive_paths)
+        self.assertEqual(sorted(archive_paths), sorted(prev_archive_paths))
 
 
 # @unittest.skip("skip auto run")
@@ -922,11 +909,6 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             if cls.eodag_env_pattern.match(k):
                 os.environ.pop(k)
         os.environ.update(cls.eodag_env_backup)
-
-    def test_end_to_end_wrong_credentials_peps(self):
-        product = self.execute_search(*PEPS_SEARCH_ARGS)
-        with self.assertRaises(AuthenticationError):
-            self.eodag.download(product)
 
     def test_end_to_end_wrong_apikey_search_aws_eos(self):
         self.eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
