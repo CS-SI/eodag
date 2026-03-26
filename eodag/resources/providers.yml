@@ -2926,20 +2926,23 @@
     processing:level:
       - '{{"processingLevel": "{processing:level}"}}'
       - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, LEVEL\\4)`'
-    sar:instrument_mode:
-      - '{{"sensorMode": "{sar:instrument_mode}"}}'
-      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, \\2)`'
-    swath:
-      - '{{"swath": "{swath}"}}'
+    platform:
+      - '{{"platformSerialIdentifier": "{platform}"}}'
+      - '$.null'
+    instruments:
+      - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+      - '$.null'
+    online:
+      - '{{"online": "{online}"}}'
       - '$.null'
     polarisation:
-      - '{{"polarisation": "{polarisation}"}}'
+      - '{{"polarisationChannels": "{polarisation}"}}'
       - '$.null'
     sat:relative_orbit:
       - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
       - '$.null'
-    missionTakeId:
-      - '{{"missionTakeId": "{missionTakeId}"}}'
+    sortOrder:
+      - '{{"sortOrder": "{sortOrder}"}}'
       - '$.null'
   anchor_orbit_cycle: &orbit_cycle
     sat:relative_orbit:
