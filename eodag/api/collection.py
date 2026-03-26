@@ -107,7 +107,7 @@ class Collection(StacCollection):
 
     # path to external collection metadata file (required by stac-fastapi-eodag)
     eodag_stac_collection: Optional[str] = Field(
-        default=None, alias="stacCollection", exclude=True, repr=False
+        default=None, alias="stacCollection", repr=False
     )
 
     # Private property to store the eodag internal id value. Not part of the model schema.
