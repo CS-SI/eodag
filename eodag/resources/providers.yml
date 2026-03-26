@@ -3211,8 +3211,17 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_.*/, \\3)`'
+        instruments:
+          - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+          - '$.null'
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
+          - '$.null'
+        sortOrder:
+          - '{{"sortOrder": "{sortOrder}"}}'
+          - '$.null'
+        sat:absolute_orbit:
+          - '{{"orbitNumber": "{sat:absolute_orbit}"}}'
           - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.nc", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     S5P_L2_IR_ALL:
