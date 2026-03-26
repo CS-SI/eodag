@@ -34,7 +34,11 @@ from eodag.api.collection import Collection
 from eodag.databases.base import Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
-from eodag.utils import GENERIC_COLLECTION, PLUGINS_TOPIC_KEYS, get_geometry_from_various
+from eodag.utils import (
+    GENERIC_COLLECTION,
+    PLUGINS_TOPIC_KEYS,
+    get_geometry_from_various,
+)
 from eodag.utils.dates import get_datetime
 
 if TYPE_CHECKING:
@@ -76,7 +80,7 @@ class SQLiteDatabase(Database):
         self._con = sqlite3.connect(
             database=db_path,
             detect_types=sqlite3.PARSE_COLNAMES,
-            check_same_thread=True,
+            check_same_thread=False,
         )
         self._con.row_factory = sqlite3.Row
 
@@ -492,7 +496,7 @@ class SQLiteDatabase(Database):
             params.append(collection)
 
         if enabled is not None:
-            where_clauses.append(f'{"NOT " if not enabled else ""}fb.enabled')
+            where_clauses.append(f"{'NOT ' if not enabled else ''}fb.enabled")
 
         if names:
             placeholders = ",".join("?" for _ in names)
