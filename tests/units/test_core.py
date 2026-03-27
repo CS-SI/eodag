@@ -2855,7 +2855,7 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_peps_plugins_product_available(self):
+    def test__prepare_search_cop_dataspace_plugins_product_available(self):
         """_prepare_search must return the search plugins when collection is defined"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
@@ -2866,7 +2866,7 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_peps_plugins_product_available_with_alias(self):
+    def test__prepare_search_cop_dataspace_plugins_product_available_with_alias(self):
         """_prepare_search must return the search plugins when collection is defined and alias is used"""
         products = self.dag.collections_config
         products.update(
@@ -2905,7 +2905,7 @@ class TestCoreSearch(TestCoreBase):
         self.assertListEqual(search_plugins, [])
         self.assertNotIn("auth", prepared_search)
 
-    def test__prepare_search_peps_plugins_product_not_available(self):
+    def test__prepare_search_cop_dataspace_plugins_product_not_available(self):
         """_prepare_search can use another search plugin than the preferred one"""
         # Document a special behaviour whereby the search and auth plugins don't
         # correspond to the preferred one. This occurs whenever the searched product

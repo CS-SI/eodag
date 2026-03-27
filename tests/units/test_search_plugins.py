@@ -266,7 +266,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_count_and_search_peps(
+    def test_plugins_search_querystringsearch_count_and_search_cop_dataspace(
         self, mock__request
     ):
         self.maxDiff = None
@@ -309,7 +309,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_no_count_and_search_peps(
+    def test_plugins_search_querystringsearch_no_count_and_search_cop_dataspace(
         self, mock__request, mock_count_hits
     ):
         """A query with a QueryStringSearch (here sara) without a count"""
@@ -351,7 +351,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_search_cloudcover_peps(
+    def test_plugins_search_querystringsearch_search_cloudcover_cop_dataspace(
         self, mock__request, mock_normalize_results
     ):
         """A query with a QueryStringSearch (here sara) must use cloudCover filtering when configured"""
@@ -360,7 +360,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         mock__request.assert_called()
         self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
-    def test_plugins_search_querystringsearch_search_peps_ko(self):
+    def test_plugins_search_querystringsearch_search_cop_dataspace_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
         # with raised error parameter set to True in the global config of the provider
