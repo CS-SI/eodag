@@ -3047,7 +3047,7 @@
       product:type: GRD
       metadata_mapping:
         <<: *s1_sar_params
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SAFE", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_RAW:
       _collection: EO:ESA:DAT:SENTINEL-1
       product:type: RAW
@@ -3071,7 +3071,7 @@
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SAFE", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI2A
@@ -3085,7 +3085,7 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_SI
@@ -3122,37 +3122,37 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
     S3_ERR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       metadata_mapping_from_product: S3_EFR
       metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
     S3_SLSTR_L1RBT:
       _collection: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
       product:type: SL_1_RBT___
@@ -3165,14 +3165,14 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startdate": {id#split_id_into_s3_params}["startDate"], "enddate": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L1B
@@ -3183,13 +3183,13 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.nc", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     S5P_L2_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L2
       metadata_mapping_from_product: S5P_L1B_IR_ALL
     EEA_HRL_TCF:
-      product:type: EO:EEA:DAT:HRL:TCF
+      _collection: EO:EEA:DAT:HRL:TCF
       metadata_mapping:
           start_datetime:
               - '{{"year": {start_datetime#to_datetime_dict("string")}["year"]}}'
