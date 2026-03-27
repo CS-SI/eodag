@@ -1771,11 +1771,12 @@ class TestCore(TestCoreBase):
             end="2025-01-31",
             geom=[-10, 35, 10, 45],
         )
-        search_plugin = next(
-            self.dag._plugins_manager.get_search_plugins(provider="cop_dataspace")
-        )
-        mock_list_queryables.assert_called_with(
-            search_plugin,
+        # plugins are constructed fresh (no cache), so compare by call args
+        # skipping the plugin self argument
+        call_args = mock_list_queryables.call_args
+        self.assertEqual(call_args[0][0].provider, "cop_dataspace")
+        self.assertEqual(
+            call_args[0][1],
             dict(
                 collection="S2_MSI_L1C",
                 start_datetime="2025-01-01",
@@ -1785,7 +1786,7 @@ class TestCore(TestCoreBase):
         )
         self.assertEqual(
             call_args[0][2],
-            [col.id for col in self.dag.list_collections(providers=["peps"])],
+            [col.id for col in self.dag.list_collections(providers=["cop_dataspace"])],
         )
         self.assertEqual(call_args[0][4], "S2_MSI_L1C")
         self.assertEqual(call_args[0][5], "S2_MSI_L1C")
