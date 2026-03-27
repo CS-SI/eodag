@@ -1300,6 +1300,12 @@ class HTTPDownload(Download):
                     os.path.basename(asset_abs_path),
                 )
                 os.rename(asset_abs_path_temp, asset_abs_path)
+            else:
+                skipped_size = os.path.getsize(asset_abs_path)
+                logger.debug(
+                    "Asset already exists at '%s', skipping download", asset_abs_path
+                )
+                progress_callback(skipped_size)
             return
 
         # use parallelization if possible
