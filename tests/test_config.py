@@ -277,11 +277,8 @@ class TestConfigFunctions(unittest.TestCase):
             download_plugin = getattr(value, "download", getattr(value, "api", None))
             if download_plugin is not None:
                 self.assertEqual(download_plugin.output_dir, tempfile.gettempdir())
-            # priority is set to 0 unless you are 'peps' provider
-            if key == "peps":
-                self.assertEqual(value.priority, 1)
-            else:
-                self.assertEqual(value.priority, 0)
+            # priority is set to 0 for all providers
+            self.assertEqual(value.priority, 0)
 
     def test_load_config_providers_whitelist(self):
         """Config must be loaded with only the selected whitelist of providers"""
@@ -357,7 +354,7 @@ class TestConfigFunctions(unittest.TestCase):
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
 
-        peps:
+        cop_dataspace:
           download:
               output_dir: /data
 
@@ -404,8 +401,8 @@ class TestConfigFunctions(unittest.TestCase):
             "secret-access-key",
         )
 
-        peps_conf = providers["peps"].config
-        self.assertEqual(peps_conf.download.output_dir, "/data")
+        cop_dataspace_conf = providers["cop_dataspace"].config
+        self.assertEqual(cop_dataspace_conf.download.output_dir, "/data")
 
         my_new_provider_conf = providers["my_new_provider"].config
         self.assertEqual(my_new_provider_conf.priority, 4)
@@ -454,12 +451,12 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ[
             "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
-        os.environ["EODAG__PEPS__DOWNLOAD__OUTPUT_DIR"] = "/data"
+        os.environ["EODAG__COP_DATASPACE__DOWNLOAD__OUTPUT_DIR"] = "/data"
         # check a parameter that has not been set yet
-        self.assertFalse(hasattr(providers["peps"].search_config, "timeout"))
-        self.assertNotIn("start_page", providers["peps"].search_config.pagination)
-        os.environ["EODAG__PEPS__SEARCH__TIMEOUT"] = "3.1"
-        os.environ["EODAG__PEPS__SEARCH__PAGINATION__START_PAGE"] = "2"
+        self.assertFalse(
+            hasattr(providers["cop_dataspace"].search_config, "start_page")
+        )
+        os.environ["EODAG__COP_DATASPACE__SEARCH__START_PAGE"] = "2"
 
         providers.update_from_env()
         usgs_conf = providers["usgs"].config
@@ -479,10 +476,9 @@ class TestConfigFunctions(unittest.TestCase):
             "secret-access-key",
         )
 
-        peps_conf = providers["peps"].config
-        self.assertEqual(peps_conf.download.output_dir, "/data")
-        self.assertEqual(peps_conf.search.timeout, 3.1)
-        self.assertEqual(peps_conf.search.pagination["start_page"], 2)
+        cop_dataspace_conf = providers["cop_dataspace"].config
+        self.assertEqual(cop_dataspace_conf.download.output_dir, "/data")
+        self.assertEqual(cop_dataspace_conf.search.start_page, "2")
 
     @mock.patch("requests.get", autospec=True)
     def test_get_ext_collections_conf(self, mock_get):

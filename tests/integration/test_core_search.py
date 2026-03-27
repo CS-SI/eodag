@@ -72,8 +72,8 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_qssearch(
         self, mock_authenticate, mock_fetch_collections_list, mock_get
     ):
-        # QueryStringSearch / peps
-        self.dag.set_preferred_provider("peps")
+        # QueryStringSearch / sara
+        self.dag.set_preferred_provider("sara")
         self.assertRaises(
             RequestError, self.dag.search, collection="foo", raise_errors=True
         )
@@ -282,7 +282,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",  # requests.get
                 "cop_dataspace",  # requests.Request
                 "creodias",  # requests.Request
                 "dedl",  # requests.get
@@ -318,7 +317,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -338,22 +336,16 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Request",
-        autospec=True,
-        side_effect=RequestException,
-    )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_first(self, mock_get, mock_request):
+    def test_core_search_fallback_find_on_first(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -362,30 +354,31 @@ class TestCoreSearch(unittest.TestCase):
                 "wekeo_main",
             ],
         )
-
-        # peps comes 1st by priority
-        peps_resp_search_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses", "peps_search.json"
+        mock_query.return_value = SearchResult(
+            [EOProduct("cop_dataspace", dict(geometry="POINT (0 0)", id="a"))],
+            number_matched=1,
         )
-        with open(peps_resp_search_file, encoding="utf-8") as f:
-            peps_resp_search_file_content = json.load(f)
-        peps_resp_search_results_count = len(peps_resp_search_file_content["features"])
-
-        mock_get.return_value.json.return_value = peps_resp_search_file_content
 
         search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
-        self.assertEqual(len(search_result), peps_resp_search_results_count)
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
-            mock_get.call_count + mock_request.call_count,
+            mock_query.call_count,
             1,
-            "only 1 provider out of 7 must have been requested",
+            f"only 1 provider out of {len(available_providers)} must have been requested",
         )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get",
         autospec=True,
     )
-    # creodias uses requests.Request then urllib with HTTPAdapter.build_response
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.Session.get",
+        autospec=True,
+        # fail on providers without dont_quote
+        side_effect=RequestException,
+    )
+    # cop_dataspace and creodias use dont_quote: requests.Request then urllib with HTTPAdapter.build_response
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.adapters.HTTPAdapter.build_response",
         autospec=True,
@@ -398,14 +391,8 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
-        autospec=True,
-        # fail on other providers
-        side_effect=RequestException,
-    )
     def test_core_search_fallback_find_on_second(
-        self, mock_get, mock_request, mock_urlopen, mock_httpadapter, mock_auth_get
+        self, mock_request, mock_urlopen, mock_httpadapter, mock_get, mock_auth_get
     ):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
@@ -413,7 +400,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -433,15 +419,17 @@ class TestCoreSearch(unittest.TestCase):
             creodias_resp_search_file_content["value"]
         )
 
-        # results content
+        # cop_dataspace returns empty, creodias returns results
+        cop_dataspace_empty_resp = {"@odata.context": "", "value": []}
         mock_httpadapter.return_value.json.side_effect = [
+            cop_dataspace_empty_resp,
             creodias_resp_search_file_content,
         ]
 
         search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), creodias_resp_search_results_count)
         self.assertEqual(
-            mock_get.call_count + mock_request.call_count,
+            mock_request.call_count,
             2,
             "there must have been 2 requests",
         )
@@ -457,7 +445,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -494,7 +481,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",

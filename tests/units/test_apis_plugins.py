@@ -654,7 +654,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         @responses.activate
         def run():
             product = EOProduct(
-                "peps",
+                "cop_dataspace",
                 dict(
                     geometry="POINT (0 0)",
                     title="dummy_product",

@@ -1,0 +1,361 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              145.070326700333,
+              14.376236095408
+            ],
+            [
+              145.235878626902,
+              14.3778261992256
+            ],
+            [
+              145.230083939915,
+              15.0890199865838
+            ],
+            [
+              145.198487181818,
+              14.9483213966463
+            ],
+            [
+              145.165173897015,
+              14.7999066647898
+            ],
+            [
+              145.131887608739,
+              14.6514013504497
+            ],
+            [
+              145.098633717206,
+              14.5028396241342
+            ],
+            [
+              145.070326700333,
+              14.376236095408
+            ]
+          ]
+        ]
+      },
+      "bbox": [
+        145.070326700333,
+        14.376236095408,
+        145.235878626902,
+        15.0890199865838
+      ],
+      "id": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PBS_20230405T155830",
+      "assets": {},
+      "properties": {
+        "constellation": "SENTINEL-2",
+        "datetime": "2020-08-15T00:52:51.024000Z",
+        "end_datetime": "2020-08-15T00:52:51.024000Z",
+        "instruments": [
+          "MSI"
+        ],
+        "platform": "S2A",
+        "providers": [
+          {
+            "name": "ESA",
+            "roles": [
+              "producer"
+            ]
+          },
+          {
+            "name": "cop_dataspace",
+            "roles": [
+              "host"
+            ]
+          }
+        ],
+        "published": "2023-08-24T03:26:51.728582Z",
+        "start_datetime": "2020-08-15T00:52:51.024000Z",
+        "title": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PBS_20230405T155830",
+        "uid": "8a84f4dc-86e6-47d6-ae92-e2040873405d",
+        "updated": "2024-05-08T15:16:29.710841Z",
+        "eo:cloud_cover": 0.0,
+        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(8a84f4dc-86e6-47d6-ae92-e2040873405d)/$value",
+        "eodag:quicklook": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
+        "eodag:thumbnail": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
+        "grid:code": "MGRS-55PBS",
+        "order:status": "succeeded",
+        "processing:datetime": "2023-04-05T15:58:30.000000Z",
+        "processing:level": "S2MSI1C",
+        "processing:version": "05.00",
+        "product:type": "S2MSI1C",
+        "s2:datastrip_id": "S2A_OPER_MSI_L1C_DS_S2RP_20230405T155830_S20200815T005250_N05.00",
+        "s2:datatake_id": "GS2A_20200815T005251_026883_N05.00",
+        "s2:datatake_type": "INS-NOBS",
+        "sat:absolute_orbit": 26883,
+        "sat:relative_orbit": 2,
+        "eodag:provider": "cop_dataspace",
+        "eodag:search_intersection": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                145.070326700333,
+                14.376236095408
+              ],
+              [
+                145.235878626902,
+                14.3778261992256
+              ],
+              [
+                145.230083939915,
+                15.0890199865838
+              ],
+              [
+                145.198487181818,
+                14.9483213966463
+              ],
+              [
+                145.165173897015,
+                14.7999066647898
+              ],
+              [
+                145.131887608739,
+                14.6514013504497
+              ],
+              [
+                145.098633717206,
+                14.5028396241342
+              ],
+              [
+                145.070326700333,
+                14.376236095408
+              ]
+            ]
+          ]
+        }
+      },
+      "links": [
+        {
+          "rel": "collection",
+          "href": "S2_MSI_L1C.json",
+          "type": "application/json"
+        }
+      ],
+      "stac_extensions": [
+        "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/product/v1.0.0/schema.json",
+        "https://stac-extensions.github.io/eo/v2.0.0/schema.json",
+        "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
+        "https://stac-extensions.github.io/sat/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/order/v1.1.0/schema.json"
+      ],
+      "stac_version": "1.1.0",
+      "collection": "S2_MSI_L1C"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              147.162902433218,
+              12.5752591613597
+            ],
+            [
+              147.433529795528,
+              12.5747488245448
+            ],
+            [
+              147.436622847063,
+              12.5880268511008
+            ],
+            [
+              147.471255488124,
+              12.736313891156
+            ],
+            [
+              147.505950293357,
+              12.8846815649911
+            ],
+            [
+              147.540695713982,
+              13.0331525588231
+            ],
+            [
+              147.575489684947,
+              13.1817568562901
+            ],
+            [
+              147.61032174967,
+              13.3304490538196
+            ],
+            [
+              147.645187643317,
+              13.4790468658426
+            ],
+            [
+              147.665871187679,
+              13.5670979877908
+            ],
+            [
+              146.999815138748,
+              13.568451278586
+            ],
+            [
+              146.999815845112,
+              12.6176676278489
+            ],
+            [
+              147.162902433218,
+              12.5752591613597
+            ]
+          ]
+        ]
+      },
+      "bbox": [
+        146.999815138748,
+        12.5747488245448,
+        147.665871187679,
+        13.568451278586
+      ],
+      "id": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PEQ_20230405T155830",
+      "assets": {},
+      "properties": {
+        "constellation": "SENTINEL-2",
+        "datetime": "2020-08-15T00:52:51.024000Z",
+        "end_datetime": "2020-08-15T00:52:51.024000Z",
+        "instruments": [
+          "MSI"
+        ],
+        "platform": "S2A",
+        "providers": [
+          {
+            "name": "ESA",
+            "roles": [
+              "producer"
+            ]
+          },
+          {
+            "name": "cop_dataspace",
+            "roles": [
+              "host"
+            ]
+          }
+        ],
+        "published": "2023-08-24T03:22:10.452401Z",
+        "start_datetime": "2020-08-15T00:52:51.024000Z",
+        "title": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PEQ_20230405T155830",
+        "uid": "27b9f4f9-a377-4d65-947b-360be6bfa80c",
+        "updated": "2024-05-08T15:16:16.326358Z",
+        "eo:cloud_cover": 12.6437621427741,
+        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(27b9f4f9-a377-4d65-947b-360be6bfa80c)/$value",
+        "eodag:quicklook": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(cda73c56-3ade-46d8-b841-3d501b57c756)/$value",
+        "eodag:thumbnail": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(cda73c56-3ade-46d8-b841-3d501b57c756)/$value",
+        "grid:code": "MGRS-55PEQ",
+        "order:status": "succeeded",
+        "processing:datetime": "2023-04-05T15:58:30.000000Z",
+        "processing:level": "S2MSI1C",
+        "processing:version": "05.00",
+        "product:type": "S2MSI1C",
+        "s2:datastrip_id": "S2A_OPER_MSI_L1C_DS_S2RP_20230405T155830_S20200815T005250_N05.00",
+        "s2:datatake_id": "GS2A_20200815T005251_026883_N05.00",
+        "s2:datatake_type": "INS-NOBS",
+        "sat:absolute_orbit": 26883,
+        "sat:relative_orbit": 2,
+        "eodag:provider": "cop_dataspace",
+        "eodag:search_intersection": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                147.162902433218,
+                12.5752591613597
+              ],
+              [
+                147.433529795528,
+                12.5747488245448
+              ],
+              [
+                147.436622847063,
+                12.5880268511008
+              ],
+              [
+                147.471255488124,
+                12.736313891156
+              ],
+              [
+                147.505950293357,
+                12.8846815649911
+              ],
+              [
+                147.540695713982,
+                13.0331525588231
+              ],
+              [
+                147.575489684947,
+                13.1817568562901
+              ],
+              [
+                147.61032174967,
+                13.3304490538196
+              ],
+              [
+                147.645187643317,
+                13.4790468658426
+              ],
+              [
+                147.665871187679,
+                13.5670979877908
+              ],
+              [
+                146.999815138748,
+                13.568451278586
+              ],
+              [
+                146.999815845112,
+                12.6176676278489
+              ],
+              [
+                147.162902433218,
+                12.5752591613597
+              ]
+            ]
+          ]
+        }
+      },
+      "links": [
+        {
+          "rel": "collection",
+          "href": "S2_MSI_L1C.json",
+          "type": "application/json"
+        }
+      ],
+      "stac_extensions": [
+        "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/product/v1.0.0/schema.json",
+        "https://stac-extensions.github.io/eo/v2.0.0/schema.json",
+        "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
+        "https://stac-extensions.github.io/sat/v1.1.0/schema.json",
+        "https://stac-extensions.github.io/order/v1.1.0/schema.json"
+      ],
+      "stac_version": "1.1.0",
+      "collection": "S2_MSI_L1C"
+    }
+  ],
+  "metadata": {
+    "eodag:number_matched": 1,
+    "eodag:next_page_token": null,
+    "eodag:next_page_token_key": null,
+    "eodag:search_params": null,
+    "eodag:raise_errors": false
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "/home/sbrunato/workspace/eodag/tests/resources/eodag_search_result_cop_dataspace.geojson",
+      "type": "application/json"
+    }
+  ],
+  "stac_extensions": [],
+  "stac_version": "1.1.0"
+}

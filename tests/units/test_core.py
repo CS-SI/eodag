@@ -346,7 +346,6 @@ class TestCore(TestCoreBase):
             "earth_search",
             "geodes",
             "geodes_s3",
-            "peps",
             "planetary_computer",
             "sara",
             "wekeo_main",
@@ -360,7 +359,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "geodes",
             "geodes_s3",
-            "peps",
             "sara",
             "wekeo_main",
         ],
@@ -377,7 +375,6 @@ class TestCore(TestCoreBase):
             "dedl",
             "geodes",
             "geodes_s3",
-            "peps",
             "sara",
             "wekeo_main",
         ],
@@ -391,7 +388,6 @@ class TestCore(TestCoreBase):
             "earth_search_gcs",
             "geodes",
             "geodes_s3",
-            "peps",
             "sara",
             "usgs",
             "wekeo_main",
@@ -616,7 +612,6 @@ class TestCore(TestCoreBase):
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         GENERIC_COLLECTION: [
-            "peps",
             "usgs",
             "creodias",
             "usgs_satapi_aws",
@@ -634,7 +629,6 @@ class TestCore(TestCoreBase):
         ],
     }
     SUPPORTED_PROVIDERS = [
-        "peps",
         "aws_eos",
         "cop_ads",
         "cop_cds",
@@ -767,8 +761,10 @@ class TestCore(TestCoreBase):
         """Core api must fetch providers for new collections if option is passed to list_collections"""
         self.dag.list_collections(fetch_providers=False)
         assert not mock_fetch_collections_list.called
-        self.dag.list_collections(provider="peps", fetch_providers=True)
-        mock_fetch_collections_list.assert_called_once_with(self.dag, provider="peps")
+        self.dag.list_collections(provider="cop_dataspace", fetch_providers=True)
+        mock_fetch_collections_list.assert_called_once_with(
+            self.dag, provider="cop_dataspace"
+        )
 
     def test_guess_collection_with_filter(self):
         """Testing the search terms"""
@@ -1329,24 +1325,24 @@ class TestCore(TestCoreBase):
         try:
             # Default conf: no auth needed for search
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert not getattr(dag._providers["peps"].search_config, "need_auth", False)
+            assert not getattr(dag._providers["sara"].search_config, "need_auth", False)
 
             # auth needed for search without credentials
-            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert "peps" not in dag.providers.names
+            assert "sara" not in dag.providers.names
 
             # auth needed for search with credentials
-            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
-            os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__SARA__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert "peps" in dag.providers.names
-            assert getattr(dag._providers["peps"].search_config, "need_auth", False)
+            assert "sara" in dag.providers.names
+            assert getattr(dag._providers["sara"].search_config, "need_auth", False)
 
         # Teardown
         finally:
-            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
-            os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
+            os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
 
     @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
@@ -1365,7 +1361,7 @@ class TestCore(TestCoreBase):
         mock_iter_ep.side_effect = skip_qssearch
 
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        self.assertNotIn("peps", dag.providers.names)
+        self.assertNotIn("sara", dag.providers.names)
         self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
         dag._plugins_manager.skipped_plugins = []
 
@@ -1376,26 +1372,26 @@ class TestCore(TestCoreBase):
         )
         try:
             # auth needed for search with need_auth but without auth plugin
-            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
-            os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__SARA__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            delattr(dag._providers["peps"].config, "auth")
-            assert "peps" in dag.providers.names
-            assert getattr(dag._providers["peps"].search_config, "need_auth", False)
-            assert not hasattr(dag._providers["peps"].config, "auth")
+            delattr(dag._providers["sara"].config, "auth")
+            assert "sara" in dag.providers.names
+            assert getattr(dag._providers["sara"].search_config, "need_auth", False)
+            assert not hasattr(dag._providers["sara"].config, "auth")
 
             with self.assertLogs(level="INFO") as cm:
                 dag._prune_providers_list()
-                self.assertNotIn("peps", dag._providers)
+                self.assertNotIn("sara", dag._providers)
                 self.assertIn(
-                    "peps: provider needing auth for search has been pruned because no auth plugin could be found",
+                    "sara: provider needing auth for search has been pruned because no auth plugin could be found",
                     str(cm.output),
                 )
 
         # Teardown
         finally:
-            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
-            os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
+            os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
 
     def test_prune_providers_list_without_api_or_search_plugin(self):
         """Providers without api or search plugin must be pruned on init"""
@@ -1403,18 +1399,18 @@ class TestCore(TestCoreBase):
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        delattr(dag._providers["peps"].config, "search")
-        assert "peps" in dag.providers.names
-        assert not hasattr(dag._providers["peps"].config, "api")
-        assert not hasattr(dag._providers["peps"].config, "search")
+        delattr(dag._providers["sara"].config, "search")
+        assert "sara" in dag.providers.names
+        assert not hasattr(dag._providers["sara"].config, "api")
+        assert not hasattr(dag._providers["sara"].config, "search")
 
-        assert "peps" in dag.providers.names
+        assert "sara" in dag.providers.names
 
         with self.assertLogs(level="INFO") as cm:
             dag._prune_providers_list()
-            self.assertNotIn("peps", dag._providers)
+            self.assertNotIn("sara", dag._providers)
             self.assertIn(
-                "peps: provider has been pruned because no api or search plugin could be found",
+                "sara: provider has been pruned because no api or search plugin could be found",
                 str(cm.output),
             )
 
@@ -1426,20 +1422,20 @@ class TestCore(TestCoreBase):
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
 
-        self.assertEqual(self.dag.get_preferred_provider(), ("peps", 1))
+        self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 0))
 
         self.assertRaises(
             UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
         )
 
         self.dag.set_preferred_provider("creodias")
-        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 2))
+        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 1))
 
         self.dag.set_preferred_provider("cop_dataspace")
-        self.assertEqual(self.dag.get_preferred_provider(), ("cop_dataspace", 3))
+        self.assertEqual(self.dag.get_preferred_provider(), ("cop_dataspace", 2))
 
         self.dag.set_preferred_provider("creodias")
-        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 4))
+        self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 3))
 
         # check that the providers are correctly ordered by priority and name in "providers" property
         self.assertListEqual(["usgs", "aws_eos"], list(self.dag._providers.keys())[:2])
@@ -1513,29 +1509,37 @@ class TestCore(TestCoreBase):
 
         # Only provider
         # when only a provider is specified, return the union of the queryables for all collections
-        queryables_peps_none = self.dag.list_queryables(provider="peps")
+        queryables_cop_dataspace_none = self.dag.list_queryables(
+            provider="cop_dataspace"
+        )
         queryables_fields = Queryables.from_stac_models().model_fields
         expected_longer_result = model_fields_to_annotated(queryables_fields)
-        self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
-        self.assertLess(len(queryables_peps_none), len(expected_longer_result))
-        for key, queryable in queryables_peps_none.items():
+        self.assertGreater(
+            len(queryables_cop_dataspace_none), len(queryables_none_none)
+        )
+        self.assertLess(len(queryables_cop_dataspace_none), len(expected_longer_result))
+        for key, queryable in queryables_cop_dataspace_none.items():
             # compare obj.__repr__
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
-        self.assertTrue(queryables_peps_none.additional_properties)
+        self.assertTrue(queryables_cop_dataspace_none.additional_properties)
 
         # provider & collection
-        queryables_peps_s1grd = self.dag.list_queryables(
-            provider="peps", collection="S1_SAR_GRD"
+        queryables_cop_dataspace_s1grd = self.dag.list_queryables(
+            provider="cop_dataspace", collection="S1_SAR_GRD"
         )
-        self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
-        self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
-        for key, queryable in queryables_peps_s1grd.items():
+        self.assertGreater(
+            len(queryables_cop_dataspace_s1grd), len(queryables_none_none)
+        )
+        self.assertLess(
+            len(queryables_cop_dataspace_s1grd), len(expected_longer_result)
+        )
+        for key, queryable in queryables_cop_dataspace_s1grd.items():
             if key == "collection":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 # compare obj.__repr__
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
-        self.assertTrue(queryables_peps_s1grd.additional_properties)
+        self.assertTrue(queryables_cop_dataspace_s1grd.additional_properties)
 
         # provider & collection alias
         # result should be the same if alias is used
@@ -1550,13 +1554,18 @@ class TestCore(TestCoreBase):
                 )
             }
         )
-        queryables_peps_s1grd_alias = self.dag.list_queryables(
-            provider="peps", collection="S1_SG"
+        queryables_cop_dataspace_s1grd_alias = self.dag.list_queryables(
+            provider="cop_dataspace", collection="S1_SG"
         )
-        self.assertEqual(len(queryables_peps_s1grd), len(queryables_peps_s1grd_alias))
+        self.assertEqual(
+            len(queryables_cop_dataspace_s1grd),
+            len(queryables_cop_dataspace_s1grd_alias),
+        )
         self.assertEqual(
             "S1_SG",
-            queryables_peps_s1grd_alias["collection"].__metadata__[0].get_default(),
+            queryables_cop_dataspace_s1grd_alias["collection"]
+            .__metadata__[0]
+            .get_default(),
         )
         # restore the original collection instance in the config
         products.update(
@@ -1574,29 +1583,33 @@ class TestCore(TestCoreBase):
         # having the collection in its config is returned
         queryables_none_s1grd = self.dag.list_queryables(collection="S1_SAR_GRD")
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
-        self.assertGreater(len(queryables_none_s1grd), len(queryables_peps_none))
-        self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
+        self.assertGreater(
+            len(queryables_none_s1grd), len(queryables_cop_dataspace_none)
+        )
+        self.assertGreaterEqual(
+            len(queryables_none_s1grd), len(queryables_cop_dataspace_s1grd)
+        )
         self.assertLess(len(queryables_none_s1grd), len(expected_longer_result))
-        # check that peps gets the highest priority
-        self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
-        for key, queryable in queryables_peps_s1grd.items():
+        for key, queryable in queryables_cop_dataspace_s1grd.items():
             if key == "collection":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 # compare obj.__repr__
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
-            # queryables for provider peps are in queryables for all providers
+            # queryables for provider cop_dataspace are in queryables for all providers
             self.assertEqual(str(queryable), str(queryables_none_s1grd[key]))
         self.assertTrue(queryables_none_s1grd.additional_properties)
 
         # model_validate should validate input parameters using the queryables result
-        queryables_validated = queryables_peps_s1grd.get_model().model_validate(
-            {"collection": "S1_SAR_GRD", "eo:snow_cover": 50}
+        queryables_validated = (
+            queryables_cop_dataspace_s1grd.get_model().model_validate(
+                {"collection": "S1_SAR_GRD", "gsd": 10}
+            )
         )
-        self.assertIn("eo_snow_cover", queryables_validated.__dict__)
+        self.assertIn("gsd", queryables_validated.__dict__)
         with self.assertRaises(PydanticValidationError):
-            queryables_peps_s1grd.get_model().model_validate(
-                {"collection": "S1_SAR_GRD", "eo:snow_cover": 500}
+            queryables_cop_dataspace_s1grd.get_model().model_validate(
+                {"collection": "S1_SAR_GRD", "gsd": -1}
             )
 
     @mock.patch(
@@ -1606,14 +1619,14 @@ class TestCore(TestCoreBase):
     def test_alias_in_list_queryables(self, mock_list_queryables: mock.Mock):
         """queryables alias must be resolved in list_queryables"""
         self.dag.list_queryables(
-            provider="peps",
+            provider="cop_dataspace",
             collection="S2_MSI_L1C",
             start="2025-01-01",
             end="2025-01-31",
             geom=[-10, 35, 10, 45],
         )
         search_plugin = next(
-            self.dag._plugins_manager.get_search_plugins(provider="peps")
+            self.dag._plugins_manager.get_search_plugins(provider="cop_dataspace")
         )
         mock_list_queryables.assert_called_with(
             search_plugin,
@@ -1625,7 +1638,9 @@ class TestCore(TestCoreBase):
             ),
             [
                 col.id
-                for col in self.dag.list_collections("peps", fetch_providers=False)
+                for col in self.dag.list_collections(
+                    "cop_dataspace", fetch_providers=False
+                )
             ],
             {
                 "S2_MSI_L1C": {
@@ -1663,17 +1678,17 @@ class TestCore(TestCoreBase):
 
         # Check if discover_metadata.auto_discovery is True
         self.assertTrue(
-            self.dag._providers["peps"].search_config.discover_metadata[
+            self.dag._providers["sara"].search_config.discover_metadata[
                 "auto_discovery"
             ]
         )
-        peps_queryables = self.dag.list_queryables(provider="peps")
-        self.assertTrue(peps_queryables.additional_properties)
+        sara_queryables = self.dag.list_queryables(provider="sara")
+        self.assertTrue(sara_queryables.additional_properties)
 
-        item_peps_queryables = self.dag.list_queryables(
-            collection="S2_MSI_L1C", provider="peps"
+        item_sara_queryables = self.dag.list_queryables(
+            collection="S2_MSI_L1C", provider="sara"
         )
-        self.assertTrue(item_peps_queryables.additional_properties)
+        self.assertTrue(item_sara_queryables.additional_properties)
 
         # additional_properties set to False for EcmwfSearch plugin
         cop_cds_queryables = self.dag.list_queryables(provider="cop_cds")
@@ -1896,7 +1911,9 @@ class TestCore(TestCoreBase):
 
     def test_queryables_repr(self):
         """The HTML representation of queryables must be correct"""
-        queryables = self.dag.list_queryables(provider="peps", collection="S1_SAR_GRD")
+        queryables = self.dag.list_queryables(
+            provider="cop_dataspace", collection="S1_SAR_GRD"
+        )
         self.assertIsInstance(queryables, QueryablesDict)
         queryables_repr = html.fromstring(queryables._repr_html_())
         self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
@@ -1918,7 +1935,6 @@ class TestCore(TestCoreBase):
         maximum number dict for providers which support the sorting feature"""
         self.maxDiff = None
         expected_result = {
-            "peps": None,
             "aws_eos": None,
             "cop_ads": None,
             "cop_cds": None,
@@ -2067,8 +2083,8 @@ class TestCore(TestCoreBase):
                 )
 
         # check if sortables are set to None when the provider does not support the sorting feature
-        self.assertFalse(hasattr(self.dag._providers["peps"].search_config, "sort"))
-        self.assertIsNone(sortables["peps"])
+        self.assertFalse(hasattr(self.dag._providers["aws_eos"].search_config, "sort"))
+        self.assertIsNone(sortables["aws_eos"])
 
         # check if sortable parameter(s) and its (their) maximum number of a provider are set
         # to their value when the provider supports the sorting feature and has a maximum number of sortables
@@ -2110,7 +2126,7 @@ class TestCore(TestCoreBase):
     ) -> None:
         """Search filter must be validated if requested"""
         filter = {
-            "provider": "peps",
+            "provider": "cop_dataspace",
             "collection": "S1_SAR_GRD",
             "lorem": "ipsum",
         }
@@ -2148,7 +2164,7 @@ class TestCore(TestCoreBase):
     ) -> None:
         """Search must fail if validation is enabled and the filter is not valid"""
         filter = {
-            "provider": "peps",
+            "provider": "cop_dataspace",
             "collection": "S1_SAR_GRD",
             "sat:absolute_orbit": "dolorem",
         }
@@ -2192,9 +2208,9 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             self.dag = EODataAccessGateway()
             # usgs priority is set to 5 in the test config overrides
             self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 5))
-            # peps outputs prefix is set to /data
+            # cop_dataspace outputs prefix is set to /data
             self.assertEqual(
-                self.dag._providers["peps"].config.download.output_dir, "/data"
+                self.dag._providers["cop_dataspace"].config.download.output_dir, "/data"
             )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
@@ -2495,10 +2511,16 @@ class TestCoreSearch(TestCoreBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Mock OIDC auth requests.get to prevent socket calls during auth plugin init
+        cls.oidc_mock = mock.patch(
+            "eodag.plugins.authentication.openid_connect.requests.get",
+            autospec=True,
+        )
+        cls.oidc_mock.start()
         cls.dag = EODataAccessGateway()
-        # Get a SearchResult obj with 2 S2_MSI_L1C peps products
+        # Get a SearchResult obj with 2 S2_MSI_L1C cop_dataspace products
         search_results_file = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+            TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
@@ -2510,6 +2532,11 @@ class TestCoreSearch(TestCoreBase):
         search_results_data_2[1].properties["id"] = "b"
         cls.search_results_2 = SearchResult(search_results_data_2)
         cls.search_results_size_2 = len(cls.search_results_2)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.oidc_mock.stop()
+        super().tearDownClass()
 
     def test_guess_collection_with_kwargs(self):
         """guess_collection must return the products matching the given kwargs"""
@@ -2795,7 +2822,7 @@ class TestCoreSearch(TestCoreBase):
         """_prepare_search must attach the product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.set_preferred_provider("cop_dataspace")
             base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # Just check that the title has been set correctly. There are more (e.g.
@@ -2817,7 +2844,7 @@ class TestCoreSearch(TestCoreBase):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.set_preferred_provider("cop_dataspace")
             base = {"collection": "product_unknown_to_eodag"}
             search_plugins, _ = self.dag._prepare_search(**base)
             # collection_config is still created if the product is not known to eodag
@@ -2828,18 +2855,18 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_peps_plugins_product_available(self):
+    def test__prepare_search_cop_dataspace_plugins_product_available(self):
         """_prepare_search must return the search plugins when collection is defined"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.set_preferred_provider("cop_dataspace")
             base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
-            self.assertEqual(search_plugins[0].provider, "peps")
+            self.assertEqual(search_plugins[0].provider, "cop_dataspace")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_peps_plugins_product_available_with_alias(self):
+    def test__prepare_search_cop_dataspace_plugins_product_available_with_alias(self):
         """_prepare_search must return the search plugins when collection is defined and alias is used"""
         products = self.dag.collections_config
         products.update(
@@ -2853,10 +2880,10 @@ class TestCoreSearch(TestCoreBase):
         )
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
-            self.dag.set_preferred_provider("peps")
+            self.dag.set_preferred_provider("cop_dataspace")
             base = {"collection": "S2_MSI_ALIAS"}
             search_plugins, _ = self.dag._prepare_search(**base)
-            self.assertEqual(search_plugins[0].provider, "peps")
+            self.assertEqual(search_plugins[0].provider, "cop_dataspace")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
@@ -2878,19 +2905,18 @@ class TestCoreSearch(TestCoreBase):
         self.assertListEqual(search_plugins, [])
         self.assertNotIn("auth", prepared_search)
 
-    def test__prepare_search_peps_plugins_product_not_available(self):
+    def test__prepare_search_cop_dataspace_plugins_product_not_available(self):
         """_prepare_search can use another search plugin than the preferred one"""
         # Document a special behaviour whereby the search and auth plugins don't
         # correspond to the preferred one. This occurs whenever the searched product
-        # isn't available for the preferred provider but is made available by  another
-        # one. In that case peps provides it and happens to be the first one on the list
-        # of providers that make it available.
+        # isn't available for the preferred provider but is made available by another
+        # one. In that case the first provider on the list that makes it available is used.
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("cop_cds")
             base = {"collection": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
-            self.assertEqual(search_plugins[0].provider, "peps")
+            self.assertNotEqual(search_plugins[0].provider, "cop_cds")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
@@ -2988,7 +3014,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
         """_do_search must support itemsperpage higher than maximum"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = SearchResult(
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
@@ -3015,7 +3041,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_params_alias(self, search_plugin):
         """_do_search must get params alias and remove provider prefix"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
 
         class DummyConfig:
             pagination = {}
@@ -3026,8 +3052,8 @@ class TestCoreSearch(TestCoreBase):
             baz=None,
             eo_cloud_cover=10,
             **{"eo:snow_cover": 20},
-            peps_custom_1=30,
-            **{"peps:custom_2": 40},
+            cop_dataspace_custom_1=30,
+            **{"cop_dataspace:custom_2": 40},
             **{"ecmwf:variable": "aaa"},
             **{"ecmwf_format": "grib"},
         )
@@ -3050,7 +3076,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_counts(self, search_plugin):
         """_do_search must create a count query if specified"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = SearchResult(
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
@@ -3068,7 +3094,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_without_count(self, search_plugin):
         """_do_search must be able to create a query without a count"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = SearchResult(
             self.search_results.data,
             None,  # .query must return None if count is False
@@ -3086,7 +3112,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
         """_do_search must return None as count if provider does not return the count"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = SearchResult(self.search_results.data, None)
 
         class DummyConfig:
@@ -3107,7 +3133,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
         """_do_search must return provider response even if provider returns a null count"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = ([], 0)
 
         class DummyConfig:
@@ -3129,9 +3155,9 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_pagination_disabled_less_products(self, search_plugin):
         """_do_search must handle pagination disabled when less products than limit are returned"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = SearchResult(
-            [EOProduct("peps", {"id": "_"})], next_page_token=2
+            [EOProduct("cop_dataspace", {"id": "_"})], next_page_token=2
         )
 
         class DummyConfig:
@@ -3159,7 +3185,7 @@ class TestCoreSearch(TestCoreBase):
             pagination = {}
 
         class DummySearchPlugin:
-            provider = "peps"
+            provider = "cop_dataspace"
             config = DummyConfig()
 
         sr = self.dag._do_search(
@@ -3173,7 +3199,7 @@ class TestCoreSearch(TestCoreBase):
         """_do_search must not raise errors if raise_errors=True"""
 
         class DummySearchPlugin:
-            provider = "peps"
+            provider = "cop_dataspace"
 
         # AttributeError raised when .query is tried to be accessed on the dummy plugin.
         with self.assertRaises(AttributeError):
@@ -3184,7 +3210,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_query_products_must_be_a_list(self, search_plugin):
         """_do_search expects that each search plugin returns a list of products."""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
 
         # create an "invalid" SearchResult object
 
@@ -3207,7 +3233,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_register_downloader_if_search_intersection(self, search_plugin):
         """_do_search must register each product's downloader if search_intersection is not None"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = (
             self.search_results.data,
             self.search_results_size,
@@ -3235,7 +3261,7 @@ class TestCoreSearch(TestCoreBase):
             pagination = {}
 
         search_plugin.config = DummyConfig()
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.return_value = ([DummyProduct(), DummyProduct()], 2)
         sr = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
@@ -3245,7 +3271,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_iter_page_returns_iterator(self, search_plugin, prepare_seach):
         """search_iter_page must return an iterator"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         # create first and second SearchResult with next_page_token
         first_page = SearchResult(
             products=self.search_results.data, number_matched=None
@@ -3338,6 +3364,7 @@ class TestCoreSearch(TestCoreBase):
             next_page_token="token_for_page_2",
             next_page_token_key="next_key",
             limit=2,
+            number_matched=1,
             validate=False,
         )
 
@@ -3386,7 +3413,7 @@ class TestCoreSearch(TestCoreBase):
         self, search_plugin, prepare_seach
     ):
         """search_iter_page must stop as soon as less than limit products were retrieved"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         # create first and second SearchResult with next_page_token
         first_page = SearchResult(
             products=self.search_results.data, number_matched=None
@@ -3417,7 +3444,7 @@ class TestCoreSearch(TestCoreBase):
         self, search_plugin, prepare_seach
     ):
         """search_iter_page must stop if the page doesn't return any product"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         # create 3 SearchResult with next_page_token
         first_page = SearchResult(
             products=self.search_results.data, number_matched=None
@@ -3452,7 +3479,7 @@ class TestCoreSearch(TestCoreBase):
         self, search_plugin, prepare_seach
     ):
         """search_iter_page must propagate errors"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.query.side_effect = AttributeError()
         page_iterator = self.dag.search_iter_page_plugin(search_plugin=search_plugin)
         with self.assertRaises(AttributeError):
@@ -3469,14 +3496,14 @@ class TestCoreSearch(TestCoreBase):
             pagination = {"next_page_url_tpl": "tpl"}
 
         search_plugin.config = DummyConfig()
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         search_plugin.next_page_url = "page2"
         search_plugin.next_page_query_obj = None
         search_plugin.next_page_merge = False
 
         same_product = mock.Mock()
         same_product.properties = {"id": "123"}
-        same_product.provider = "peps"
+        same_product.provider = "cop_dataspace"
 
         result_page1 = mock.Mock()
         result_page1.number_matched = 10
@@ -3787,7 +3814,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test_search_all_must_collect_them_all(self, search_plugin, prepare_seach):
         """search_all must return all the products available"""
-        search_plugin.provider = "peps"
+        search_plugin.provider = "cop_dataspace"
         first_page = SearchResult(self.search_results.data, None)
         first_page.next_page_token = "token_for_page_2"
         second_page = SearchResult([self.search_results_2.data[0]], None)
@@ -3928,7 +3955,7 @@ class TestCoreSearch(TestCoreBase):
 
     def test_fetch_external_collection_with_auth(self):
         """test _fetch_external_collection when the plugin needs authentication"""
-        provider = "peps"
+        provider = "cop_dataspace"
         collection = "S2_MSI_L1C"
 
         plugin = mock.Mock()
@@ -4102,7 +4129,7 @@ class TestCoreDownload(TestCoreBase):
         search_result = SearchResult(
             [
                 EOProduct(
-                    "peps",
+                    "cop_dataspace",
                     dict(
                         geometry="POINT (0 0)",
                         id="dummy_product_a",
@@ -4110,7 +4137,7 @@ class TestCoreDownload(TestCoreBase):
                     ),
                 ),
                 EOProduct(
-                    "peps",
+                    "cop_dataspace",
                     dict(
                         geometry="POINT (0 0)",
                         id="dummy_product_b",
@@ -4142,7 +4169,7 @@ class TestCoreDownload(TestCoreBase):
         search_result = SearchResult(
             [
                 EOProduct(
-                    "peps",
+                    "cop_dataspace",
                     dict(
                         geometry="POINT (0 0)",
                         id="dummy_product_a",
@@ -4150,7 +4177,7 @@ class TestCoreDownload(TestCoreBase):
                     ),
                 ),
                 EOProduct(
-                    "peps",
+                    "cop_dataspace",
                     dict(
                         geometry="POINT (0 0)",
                         id="dummy_product_b",

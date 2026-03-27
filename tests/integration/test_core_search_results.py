@@ -57,10 +57,10 @@ class TestCoreSearchResults(EODagTestCase):
                         "keyword": {},
                         "product:type": "OCN",
                         "eodag:download_link": (
-                            "https://peps.cnes.fr/resto/collections/S1/"
-                            "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
+                            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+                            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
                         ),
-                        "eodag:provider": "peps",
+                        "eodag:provider": "cop_dataspace",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
@@ -294,18 +294,18 @@ class TestCoreSearchResults(EODagTestCase):
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
         autospec=True,
     )
-    def test_core_serialize_deserialize_peps_results(self, mock__request):
-        """The core api must be able to serialize and deserialize a search result from peps provider"""
-        peps_resp_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses", "peps_search.json"
+    def test_core_serialize_deserialize_cop_dataspace_results(self, mock__request):
+        """The core api must be able to serialize and deserialize a search result from cop_dataspace provider"""
+        cop_dataspace_resp_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "cop_dataspace_search.json"
         )
         mock__request.return_value = mock.Mock()
-        with open(peps_resp_file) as f:
+        with open(cop_dataspace_resp_file) as f:
             mock__request.return_value.json.side_effect = [
                 json.load(f),
             ]
         prods = self.dag.search(
-            provider="peps", collection="S2_MSI_L1C", raise_errors=True
+            provider="cop_dataspace", collection="S2_MSI_L1C", raise_errors=True
         )
         self.assertGreater(len(prods), 0)
 
@@ -349,7 +349,7 @@ class TestCoreSearchResults(EODagTestCase):
     def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
         return {
             "properties": {
-                "eodag:provider": "peps",
+                "eodag:provider": "cop_dataspace",
                 "eodag:search_intersection": {
                     "coordinates": geom_coords,
                     "type": geom_type,
@@ -458,10 +458,10 @@ class TestCoreSearchResults(EODagTestCase):
     def test_core_search_results_registered(self, mock_query):
         """The core api must register search results downloaders"""
         # QueryStringSearch provider
-        self.dag.set_preferred_provider("peps")
+        self.dag.set_preferred_provider("cop_dataspace")
 
         search_results_file = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+            TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
@@ -483,7 +483,7 @@ class TestCoreSearchResults(EODagTestCase):
         """The core api must register search results downloaders"""
         self.dag.set_preferred_provider("creodias")
         search_results_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses/peps_search.json"
+            TEST_RESOURCES_PATH, "provider_responses/cop_dataspace_search.json"
         )
         with open(search_results_file, encoding="utf-8") as f:
             payload = json.load(f)
@@ -491,9 +491,11 @@ class TestCoreSearchResults(EODagTestCase):
         fake_response.status_code = 200
         fake_response._content = json.dumps(payload).encode("utf-8")
         mock_request.return_value = fake_response
-        search_results = self.dag.search(collection="S2_MSI_L1C", provider="peps")
+        search_results = self.dag.search(
+            collection="S2_MSI_L1C", provider="cop_dataspace"
+        )
         # use given provider and not preferred provider
-        self.assertEqual("peps", search_results[0].provider)
+        self.assertEqual("cop_dataspace", search_results[0].provider)
 
     @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
     def test_core_search_with_count(self, mock_urlopen):

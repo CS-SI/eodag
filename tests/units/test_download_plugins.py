@@ -85,7 +85,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseDownloadPluginTest, self).setUp()
         self.product = EOProduct(
-            "peps",
+            "sara",
             dict(
                 geometry="POINT (0 0)",
                 title="dummy_product",
@@ -506,7 +506,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product.assets["foo"]["href"],
             stream=True,
             auth=None,
-            params=plugin.config.dl_url_params,
+            params=getattr(plugin.config, "dl_url_params", {}),
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=True,
@@ -536,7 +536,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product.assets["foo"]["href"],
             stream=True,
             auth=None,
-            params=plugin.config.dl_url_params,
+            params=getattr(plugin.config, "dl_url_params", {}),
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=True,
@@ -567,7 +567,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.assert_called_once_with(
             self.product.assets["foo"]["href"],
             auth=None,
-            params=plugin.config.dl_url_params,
+            params=getattr(plugin.config, "dl_url_params", {}),
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=False,
@@ -576,7 +576,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product.assets["foo"]["href"],
             stream=True,
             auth=None,
-            params=plugin.config.dl_url_params,
+            params=getattr(plugin.config, "dl_url_params", {}),
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=False,
@@ -621,7 +621,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product.assets["foo"]["href"],
             stream=True,
             auth=None,
-            params=plugin.config.dl_url_params,
+            params=getattr(plugin.config, "dl_url_params", {}),
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=True,
@@ -630,7 +630,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.assert_called_once_with(
             self.product.assets["foo"]["href"],
             auth=None,
-            params=plugin.config.dl_url_params,
+            params=getattr(plugin.config, "dl_url_params", {}),
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
@@ -1341,7 +1341,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_get(self, mock_request):
         """HTTPDownload._order() must request using eodag:order_link and GET protocol"""
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["order:status"] = OFFLINE_STATUS
 
@@ -1378,7 +1380,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_request.return_value = MockResponse(status_code=500)
 
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1403,7 +1407,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_get_raises_if_request_400(self, mock_request):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1434,7 +1440,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_post(self, mock_request):
         """HTTPDownload._order() must request using eodag:order_link and POST protocol"""
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["order:status"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
@@ -1497,7 +1505,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "error": {"that": "failed"},
         }
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1534,7 +1544,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_request.return_value = MockResponse(status_code=500)
 
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
@@ -1563,7 +1575,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     ):
         # Set up the EOProduct and the necessary properties
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
         self.product.properties["eodag:status_link"] = "http://somewhere/orderstatus"
 
@@ -1609,7 +1623,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1664,7 +1680,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         self.product.properties["eodag:search_link"] = "http://somewhere/search-again"
-        self.product.properties["eodag:download_link"] = "https://peps.cnes.fr/dummy"
+        self.product.properties[
+            "eodag:download_link"
+        ] = "https://copernicus.nci.org.au/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1710,7 +1728,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
-            url = "http://somewhere/?issuerId=peps"
+            url = "http://somewhere/"
             responses.add(responses.GET, url, status=500)
 
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
@@ -1746,7 +1764,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
-            url = "http://somewhere/?issuerId=peps"
+            url = "http://somewhere/"
             responses.add(responses.GET, url, status=202)
 
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
@@ -1768,12 +1786,12 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         @responses.activate(registry=responses.registries.OrderedRegistry)
         def run():
             # fail, then succeeds
-            url = "http://somewhere/?issuerId=peps"
+            url = "http://somewhere/"
             responses.add(responses.GET, url, status=202)
             responses.add(responses.GET, url, status=202)
             responses.add(
                 responses.GET,
-                "http://somewhere/?issuerId=peps",
+                "http://somewhere/",
                 status=200,
                 content_type="application/octet-stream",
                 body=b"something",
@@ -1797,7 +1815,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
-            url = "http://somewhere/?issuerId=peps"
+            url = "http://somewhere/"
             responses.add(responses.GET, url, status=202)
 
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
@@ -1818,7 +1836,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
-            url = "http://somewhere/?issuerId=peps"
+            url = "http://somewhere/"
             responses.add(responses.GET, url, status=202)
 
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
@@ -1839,7 +1857,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
         @responses.activate(registry=responses.registries.FirstMatchRegistry)
         def run():
-            url = "http://somewhere/?issuerId=peps"
+            url = "http://somewhere/"
             responses.add(responses.GET, url, status=202)
 
             with self.assertRaisesRegex(NotAvailableError, r"^((?!timeout).)*$"):

@@ -76,14 +76,21 @@ class OIDCRefreshTokenBase(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
-        self.session = requests.Session()
 
         self.access_token = ""
         self.access_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
-
         self.refresh_token = ""
         self.refresh_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
+        self.session = requests.Session()
 
+        auth_config = self._get_oidc_endpoints()
+
+        self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
+        self.token_endpoint = auth_config["token_endpoint"]
+        self.authorization_endpoint = auth_config["authorization_endpoint"]
+        self.algorithms = auth_config["id_token_signing_alg_values_supported"]
+
+    def _get_oidc_endpoints(self):
         try:
             response = requests.get(self.config.oidc_config_url)
             response.raise_for_status()
@@ -93,11 +100,7 @@ class OIDCRefreshTokenBase(Authentication):
                 f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}"
                 f"Request returned {e.response.text}."
             )
-
-        self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
-        self.token_endpoint = auth_config["token_endpoint"]
-        self.authorization_endpoint = auth_config["authorization_endpoint"]
-        self.algorithms = auth_config["id_token_signing_alg_values_supported"]
+        return auth_config
 
     def decode_jwt_token(self, token: str) -> dict[str, Any]:
         """Decode JWT token."""

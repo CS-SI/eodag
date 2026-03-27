@@ -96,8 +96,10 @@ ENV/
 docs/plugins_reference/generated/*.rst
 docs/drivers_generated/*.rst
 
+docs/getting_started_guide/*workspace*
 docs/notebooks/api_user_guide/*workspace*
 docs/notebooks/tutos/*workspace*
+docs/notebooks/tutos/auxdata/*
 
 # All kind of user files (mostly configuration files with passwords)
 *.user.yml*

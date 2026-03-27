@@ -1487,7 +1487,7 @@ S3_WAT_BC005:
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-05-05T00:00:00Z", "2023-03-09T00:00:00Z"]]}}
 
 S3_LAN:
-  description: LAN or SR_2_LAN___ (peps)
+  description: LAN or SR_2_LAN___
   instruments: ["SRAL"]
   providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
