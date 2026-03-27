@@ -3206,7 +3206,7 @@
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
-      processing:level: L1B
+      processing:level: L1b
       metadata_mapping:
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
