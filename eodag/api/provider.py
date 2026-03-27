@@ -887,8 +887,14 @@ class ProvidersDict(UserDict[str, Provider]):
                 self.data[name].collections_fetched = False
 
             except Exception:
-                operation = "updating" if name in self.data else "creating"
-                logger.warning("%s: skipped %s due to invalid config", name, operation)
+                if name in self.data:
+                    logger.warning(
+                        "%s: skipped updating provider due to invalid config", name
+                    )
+                else:
+                    logger.warning(
+                        "%s: could not create provider from scratch using config", name
+                    )
                 logger.debug("Traceback:\n%s", traceback.format_exc())
 
         self._share_credentials()
