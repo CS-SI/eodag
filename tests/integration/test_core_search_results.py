@@ -253,6 +253,55 @@ class TestCoreSearchResults(EODagTestCase):
             finally:
                 os.chdir(current_dir)
 
+    def test_core_serialize_search_results_skip_invalid(self):
+        """The core api must serialize a search results to STAC and skip invalid properties"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # bad formatted property
+                self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
+
+                self.dag.serialize(self.search_result, filename=f.name)
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property skipped
+                self.assertNotIn(
+                    "eo:cloud_cover", serialized["features"][0]["properties"]
+                )
+
+    def test_core_serialize_search_results_keep_invalid(self):
+        """The core api must serialize a search results to STAC and keep invalid properties if asked"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # bad formatted property
+                self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
+
+                self.dag.serialize(
+                    self.search_result, filename=f.name, skip_invalid=False
+                )
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property not skipped
+                self.assertEqual(
+                    serialized["features"][0]["properties"]["eo:cloud_cover"],
+                    "bad-formatted",
+                )
+
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch._request",
         autospec=True,
