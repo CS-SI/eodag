@@ -65,6 +65,7 @@ class CommonStacMetadata(ItemProperties):
     title: Annotated[str, Field(None)]
     description: Annotated[str, Field(None)]
     license: Annotated[str, Field(None)]
+    keywords: Annotated[list[str], Field(None)]
 
     _conformance_classes: ClassVar[dict[str, str]]
     get_conformance_classes: ClassVar[Callable[[Any], list[str]]]
