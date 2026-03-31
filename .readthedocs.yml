@@ -1,11 +1,25 @@
+# Read the Docs configuration file for Sphinx projects
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
 version: 2
 
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.10"
+    python: "3.14"
   jobs:
     post_checkout:
+      # Skip builds for draft pull requests (exit code 183 cancels the build)
+      # See https://docs.readthedocs.com/platform/en/stable/guides/build/skip-build.html
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ]; then
+          DRAFT=$(curl -s "https://api.github.com/repos/CS-SI/eodag/pulls/${READTHEDOCS_VERSION}" | python3 -c "import sys, json; print(json.load(sys.stdin).get(\"draft\", False))")
+          if [ "$DRAFT" = "True" ]; then
+            exit 183;
+          fi
+        fi
+      # fetch repo
       - git fetch --unshallow
       - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
       - git fetch origin

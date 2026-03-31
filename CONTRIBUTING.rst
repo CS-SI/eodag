@@ -43,6 +43,9 @@ We use ``prek`` (faster ``pre-commit``) to run a suite of linters, formatters an
 , ``flake8``) to ensure the code base is homogeneously formatted and easier to read. It's important that you install it,
 since we run the exact same hooks in the Continuous Integration.
 
+The default branch for development is `develop`. Please create your new branch from `develop` to work on your patch, and open a pull request against `develop` when you are done.
+If you do not have permissions to push to the main repository, you can fork it and push your branch to your forked repository. Then, you can open a pull request against the main repository.
+
 To run the default test suite (which excludes end-to-end tests):
 
 .. code-block:: bash
@@ -121,6 +124,12 @@ If not, the outputs and the widgets (e.g. progress bar) won't be displayed in th
 
 `Read the Docs <https://readthedocs.org/>`_ is a service that uses Sphinx to build a documentation website,
 which it then hosts for free for open source projects, such as EODAG.
+
+.. note::
+
+    Documentation preview builds are triggered on pull requests, and are available in the generated "Checks" pannel at
+    the bottom of the pull request conversation.
+    Draft pull requests are not built to save build time and resources.
 
 Release EODAG
 -------------
