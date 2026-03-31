@@ -300,7 +300,6 @@ class EODagTestBase(unittest.TestCase):
                 status=200,
                 content_type="application/zip",
                 auto_calculate_content_length=True,
-                stream=True,
             )
 
         # Mock asset download urls
@@ -318,7 +317,6 @@ class EODagTestBase(unittest.TestCase):
                             status=200,
                             content_type=asset_type,
                             auto_calculate_content_length=True,
-                            stream=True,
                         )
             product.assets.update(assets)
 
