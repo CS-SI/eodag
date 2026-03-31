@@ -14,7 +14,7 @@ build:
       # See https://docs.readthedocs.com/platform/en/stable/guides/build/skip-build.html
       - |
         if [ "$READTHEDOCS_VERSION_TYPE" = "external" ]; then
-          DRAFT=$(curl -s "https://api.github.com/repos/CS-SI/eodag/pulls/${READTHEDOCS_VERSION}" | python3 -c "import sys, json; print(json.load(sys.stdin).get('draft', False))")
+          DRAFT=$(curl -s "https://api.github.com/repos/CS-SI/eodag/pulls/${READTHEDOCS_VERSION}" | python3 -c "import sys, json; print(json.load(sys.stdin).get(\"draft\", False))")
           if [ "$DRAFT" = "True" ]; then
             exit 183;
           fi
