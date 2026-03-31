@@ -2045,7 +2045,9 @@ class EODataAccessGateway:
 
     @staticmethod
     def serialize(
-        search_result: SearchResult, filename: str = "search_results.geojson"
+        search_result: SearchResult,
+        filename: str = "search_results.geojson",
+        skip_invalid: bool = True,
     ) -> str:
         """Registers results of a search into a geojson file.
         The output is a FeatureCollection containing the EO products as features,
@@ -2054,9 +2056,10 @@ class EODataAccessGateway:
 
         :param search_result: A set of EO products resulting from a search
         :param filename: (optional) The name of the file to generate
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
         :returns: The name of the created file
         """
-        search_result_dict = search_result.as_dict()
+        search_result_dict = search_result.as_dict(skip_invalid=skip_invalid)
         # add self link
         search_result_dict.setdefault("links", [])
         search_result_dict["links"].append(

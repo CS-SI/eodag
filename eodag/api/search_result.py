@@ -245,8 +245,12 @@ class SearchResult(UserList[EOProduct]):
         """
         return SearchResult.from_dict(feature_collection)
 
-    def as_dict(self) -> dict[str, Any]:
-        """GeoJSON representation of SearchResult"""
+    def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
+        """GeoJSON representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a Python dict
+        """
 
         geojson_search_params = {} | (self.search_params or {})
         # search_params shapely geometry to wkt
@@ -257,7 +261,9 @@ class SearchResult(UserList[EOProduct]):
 
         return {
             "type": "FeatureCollection",
-            "features": [product.as_dict() for product in self],
+            "features": [
+                product.as_dict(skip_invalid=skip_invalid) for product in self
+            ],
             "metadata": {
                 "eodag:number_matched": self.number_matched,
                 "eodag:next_page_token": self.next_page_token,
@@ -274,22 +280,37 @@ class SearchResult(UserList[EOProduct]):
         reason="Please use 'SearchResult.as_dict' instead",
         version="4.1.0",
     )
-    def as_geojson_object(self) -> dict[str, Any]:
-        """GeoJSON representation of SearchResult"""
-        return self.as_dict()
+    def as_geojson_object(self, skip_invalid: bool = True) -> dict[str, Any]:
+        """GeoJSON representation of SearchResult
 
-    def as_shapely_geometry_object(self) -> GeometryCollection:
-        """:class:`shapely.GeometryCollection` representation of SearchResult"""
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a Python dict
+        """
+        return self.as_dict(skip_invalid=skip_invalid)
+
+    def as_shapely_geometry_object(
+        self, skip_invalid: bool = True
+    ) -> GeometryCollection:
+        """:class:`shapely.GeometryCollection` representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a
+                  :class:`shapely.GeometryCollection`
+        """
         return GeometryCollection(
             [
                 shape(feature["geometry"]).buffer(0)
-                for feature in self.as_dict()["features"]
+                for feature in self.as_dict(skip_invalid=skip_invalid)["features"]
             ]
         )
 
-    def as_wkt_object(self) -> str:
-        """WKT representation of SearchResult"""
-        return self.as_shapely_geometry_object().wkt
+    def as_wkt_object(self, skip_invalid: bool = True) -> str:
+        """WKT representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a WKT string
+        """
+        return self.as_shapely_geometry_object(skip_invalid=skip_invalid).wkt
 
     @property
     def __geo_interface__(self) -> dict[str, Any]:

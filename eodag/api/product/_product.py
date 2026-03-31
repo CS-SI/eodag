@@ -218,10 +218,11 @@ class EOProduct:
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
 
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
         :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
         """
@@ -247,33 +248,39 @@ class EOProduct:
             stac_properties["providers"] = stac_providers
 
         props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
-        props_validated = props_model.safe_validate(stac_properties)
+        props_validated = props_model.safe_validate(
+            stac_properties, skip_invalid=skip_invalid
+        )
         stac_extensions: set[str] = set(props_validated.get_conformance_classes())
 
         # skip invalid properties
-        invalid_properties = {
-            k
-            for k in stac_properties.keys()
-            if k not in props_validated.model_dump() and props_model.has_field(k)
-        }
-        for key in invalid_properties:
-            stac_properties.pop(key, None)
+        if skip_invalid:
+            invalid_properties = {
+                k
+                for k in stac_properties.keys()
+                if k not in props_validated.model_dump() and props_model.has_field(k)
+            }
+            for key in invalid_properties:
+                stac_properties.pop(key, None)
 
         # get conformance classes for assets properties
         assets_dict = {**self.assets.as_dict()}
         for asset_key, asset_properties in self.assets.as_dict().items():
-            asset_props_validated = props_model.safe_validate(asset_properties)
+            asset_props_validated = props_model.safe_validate(
+                asset_properties, skip_invalid=skip_invalid
+            )
             stac_extensions.update(asset_props_validated.get_conformance_classes())
 
             # skip invalid assets properties
-            invalid_asset_properties = {
-                k
-                for k in asset_properties.keys()
-                if k not in asset_props_validated.model_dump()
-                and props_model.has_field(k)
-            }
-            for key in invalid_asset_properties:
-                assets_dict[asset_key].pop(key, None)
+            if skip_invalid:
+                invalid_asset_properties = {
+                    k
+                    for k in asset_properties.keys()
+                    if k not in asset_props_validated.model_dump()
+                    and props_model.has_field(k)
+                }
+                for key in invalid_asset_properties:
+                    assets_dict[asset_key].pop(key, None)
 
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
