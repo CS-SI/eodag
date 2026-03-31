@@ -3924,18 +3924,33 @@ class TestCoreSearch(TestCoreBase):
 
         self.assertEqual(mock__do_search.call_args_list[0].kwargs["limit"], 7)
 
-    @unittest.skip("Disable until fixed")
-    def test_search_all_request_error(self):
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth",
+        autospec=True,
+    )
+    def test_search_all_request_error(self, mock_get_auth):
         """search_all must stop iteration and move to next provider when error occurs"""
 
         collection = "S2_MSI_L1C"
         dag = EODataAccessGateway()
 
         for plugin in dag._plugins_manager.get_search_plugins(collection=collection):
+            plugin.discover_queryables = mock.MagicMock()
             plugin.query = mock.MagicMock()
             plugin.query.side_effect = RequestError
 
-        dag.search_all(collection="S2_MSI_L1C")
+        results = dag.search_all(collection="S2_MSI_L1C")
+
+        self.assertEqual(len(results), 0)
+
+        for plugin in dag._plugins_manager.get_search_plugins(collection=collection):
+            self.assertEqual(
+                plugin.query.call_count,
+                1,
+                "Expected to be called once, {} call count = {}".format(
+                    plugin, plugin.query.call_count
+                ),
+            )
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",

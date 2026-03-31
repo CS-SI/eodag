@@ -181,7 +181,6 @@ class TestEOProduct(EODagTestBase):
             body=b"",
             status=200,
             auto_calculate_content_length=True,
-            stream=True,
         )
         product = self._dummy_product()
         product.properties["eodag:quicklook"] = None
@@ -208,7 +207,6 @@ class TestEOProduct(EODagTestBase):
             body=b"",
             status=404,
             auto_calculate_content_length=True,
-            stream=True,
         )
         # Download, and check request called
         quicklook_file_path = product.get_quicklook()
@@ -223,7 +221,6 @@ class TestEOProduct(EODagTestBase):
             "https://fake.url.to/quicklook",
             body=b"Quicklook content",
             status=200,
-            stream=True,
         )
         product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
         product.register_downloader(self.get_mock_downloader(), None)
@@ -247,7 +244,6 @@ class TestEOProduct(EODagTestBase):
             "https://fake.url.to/quicklook",
             body=b"Quicklook content",
             status=200,
-            stream=True,
         )
         product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
         product.register_downloader(self.get_mock_downloader(), None)
@@ -300,7 +296,6 @@ class TestEOProduct(EODagTestBase):
             "https://fake.url.to/quicklook",
             body=b"Quicklook content",
             status=200,
-            stream=True,
         )
 
         quicklook_file_path = product.get_quicklook(filename=quicklook_basename)
