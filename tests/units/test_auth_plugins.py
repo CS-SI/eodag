@@ -1226,14 +1226,17 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
             headers={"Location": "http://final.url"},
         )
         # GET final URL -> consent page
+        final_url = "http://final.url"
         responses.add(
             responses.GET,
-            "http://final.url",
+            final_url,
             body="wants to access your account",
             headers={"Content-Type": "text/html"},
         )
 
-        with self.assertRaisesRegex(AuthenticationError, "Consent required"):
+        with self.assertRaisesRegex(
+            AuthenticationError, f"Consent required: .* {final_url}"
+        ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 
     @responses.activate
@@ -1279,15 +1282,16 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
             headers={"Location": "http://final.url"},
         )
         # GET final URL -> data access required page
+        final_url = "http://final.url"
         responses.add(
             responses.GET,
-            "http://final.url",
+            final_url,
             body="not yet performed the necessary steps in order to access this data.",
             headers={"Content-Type": "text/html"},
         )
 
         with self.assertRaisesRegex(
-            AuthenticationError, "Data access request required"
+            AuthenticationError, f"Data access request required: .* {final_url}"
         ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
 

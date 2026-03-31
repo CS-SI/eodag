@@ -152,17 +152,21 @@ class EOIAMAuth(Authentication):
             error_text = resp_final.text
 
             if "wants to access your account" in error_text:
-                raise AuthenticationError(
-                    "Consent required: please log in to the EOIAM portal and grant consent to EO Data Access Gateway"
+                msg = (
+                    "Consent required: please log in to the EOIAM portal "
+                    f"and grant consent through this link {final_url}"
                 )
+                raise AuthenticationError(msg)
 
             if (
                 "not yet performed the necessary steps in order to access this data."
                 in error_text
             ):
-                raise AuthenticationError(
-                    "Data access request required: please log in to the EOIAM portal and request access to the data"
+                msg = (
+                    f"Data access request required: please log in to the EOIAM portal "
+                    f"and request access to the data through this link {final_url}"
                 )
+                raise AuthenticationError(msg)
 
             raise AuthenticationError("Unexpected HTML response after SAML login")
 
