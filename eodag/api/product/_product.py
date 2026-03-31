@@ -57,6 +57,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    GENERIC_STAC_PROVIDER,
     STAC_VERSION,
     USER_AGENT,
     ProgressCallback,
@@ -315,6 +316,9 @@ class EOProduct:
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         if dag is not None:
+            # add a generic STAC provider that might be needed to handle the items
+            dag.add_provider(GENERIC_STAC_PROVIDER)
+
             plugin_manager = dag._plugins_manager
             product = cls._from_stac_item(
                 feature, plugin_manager, provider=None, raise_errors=raise_errors
