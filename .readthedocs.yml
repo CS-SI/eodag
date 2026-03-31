@@ -10,9 +10,6 @@ build:
     python: "3.14"
   jobs:
     post_checkout:
-      - git fetch --unshallow
-      - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-      - git fetch origin
       # Skip builds for draft pull requests (exit code 183 cancels the build)
       # See https://docs.readthedocs.com/platform/en/stable/guides/build/skip-build.html
       - |
@@ -22,6 +19,10 @@ build:
             exit 183;
           fi
         fi
+      # fetch repo
+      - git fetch --unshallow
+      - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+      - git fetch origin
 
     # Uncomment to debug
     # pre_install:
