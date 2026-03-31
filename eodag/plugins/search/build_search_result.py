@@ -913,6 +913,7 @@ class ECMWFSearch(PostJsonSearch):
             # We convert every single value to a list of string
             filter_v = list(values) if isinstance(values, tuple) else values
             filter_v = filter_v if isinstance(filter_v, list) else [filter_v]
+            filter_v = [str(v) for v in filter_v]
 
             # We strip values of superfluous quotes (added by mapping converter to_geojson).
             # ECMWF accept date ranges with /to/. We need to split it to an array

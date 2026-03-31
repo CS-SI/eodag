@@ -37,9 +37,9 @@
       title: '$.displayId'
       description: '$.summary'
       eo:cloud_cover: '$.cloudCover'
-      start_datetime: '$.temporalCoverage.startDate'
-      end_datetime: '$.temporalCoverage.endDate'
-      published: '$.publishDate'
+      start_datetime: '{$.temporalCoverage.startDate#to_iso_utc_datetime}'
+      end_datetime: '{$.temporalCoverage.endDate#to_iso_utc_datetime}'
+      published: '{$.publishDate#to_iso_utc_datetime}'
       eodag:thumbnail: '$.browse[0].thumbnailPath'
       eodag:quicklook: '$.browse[0].browsePath'
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
@@ -1835,13 +1835,13 @@
       description: '$.properties.description'
       gsd:
         - 'resolution'
-        - '$.properties.resolution'
+        - '{$.properties.resolution#replace_tuple(((0,"Not Available"),))}'
       _provider: '$.properties.organisationName'
       providers:
         - 'organisationName'
         - '[{{"name":"{_provider}","roles":["producer"]}}]'
       published: '$.properties.published'
-      license: '$.properties.license'
+      license: '$.properties.license.licenseId'
       # OpenSearch Parameters for Product Search (Table 5)
       product:acquisition_type: '$.properties.acquisitionType'
       sat:relative_orbit:
