@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import logging
 import os
 import pathlib
@@ -547,6 +548,93 @@ class TestEOProduct(EODagTestBase):
         # The downloaded zip file is still around
         product_zip_file = "{}.zip".format(product_dir_path)
         self.assertTrue(os.path.isfile(product_zip_file))
+
+    def test_eoproduct_get_auth_headers_uses_auth_object_helper(self):
+        """EOProduct._get_auth_headers must expose auth headers when available."""
+        product = self._dummy_product()
+        auth = mock.Mock()
+        auth.get_auth_headers.return_value = {"Authorization": "Basic abc"}
+
+        self.assertEqual(
+            product._get_auth_headers(auth),
+            {"Authorization": "Basic abc"},
+        )
+
+    @mock.patch("eodag.api.product._product.requests.get")
+    def test_eoproduct_request_asset_passes_auth_and_headers(self, mock_get):
+        """EOProduct.request_asset must pass auth headers returned by the auth object."""
+        product = self._dummy_product()
+        auth = mock.Mock()
+        auth.get_auth_headers.return_value = {"Authorization": "Basic abc"}
+
+        product.request_asset("https://example.com/zarr/.zmetadata", auth)
+
+        mock_get.assert_called_once_with(
+            "https://example.com/zarr/.zmetadata",
+            auth=auth,
+            headers={"Authorization": "Basic abc"},
+            stream=True,
+        )
+
+    @mock.patch("fsspec.get_mapper")
+    def test_eoproduct_list_zarr_files_from_zmetadata(self, mock_get_mapper):
+        """EOProduct.list_zarr_files_from_metadata must return files listed in `.zmetadata`."""
+        product = self._dummy_product()
+        mapper = {
+            ".zmetadata": json.dumps(
+                {
+                    "metadata": {
+                        ".zgroup": {},
+                        ".zattrs": {},
+                        "foo/.zarray": {},
+                    }
+                }
+            )
+        }
+        mock_get_mapper.return_value = mapper
+
+        files = product.list_zarr_files_from_metadata("https://example.com/zarr")
+
+        mock_get_mapper.assert_called_once_with(
+            "https://example.com/zarr",
+            client_kwargs={"headers": {}, "trust_env": False},
+        )
+        self.assertEqual(files, [".zmetadata", ".zgroup", ".zattrs", "foo/.zarray"])
+
+    @mock.patch("fsspec.get_mapper")
+    def test_eoproduct_list_zarr_files_from_zmetadata_with_basic_auth(
+        self, mock_get_mapper
+    ):
+        """EOProduct.list_zarr_files_from_metadata must forward auth headers to fsspec for `.zmetadata`."""
+        product = self._dummy_product()
+        auth = mock.Mock()
+        auth.get_auth_headers.return_value = {"Authorization": "Basic abc"}
+        mock_get_mapper.return_value = {".zmetadata": json.dumps({"metadata": {}})}
+
+        files = product.list_zarr_files_from_metadata(
+            "https://example.com/zarr",
+            auth,
+        )
+
+        mock_get_mapper.assert_called_once_with(
+            "https://example.com/zarr",
+            client_kwargs={
+                "headers": {"Authorization": "Basic abc"},
+                "trust_env": False,
+            },
+        )
+        self.assertEqual(files, [".zmetadata"])
+
+    @mock.patch("fsspec.get_mapper")
+    def test_eoproduct_list_zarr_files_from_metadata_raises_when_missing(
+        self, mock_get_mapper
+    ):
+        """EOProduct.list_zarr_files_from_metadata must fail when metadata files are missing."""
+        product = self._dummy_product()
+        mock_get_mapper.return_value = {}
+
+        with self.assertRaises(ValueError):
+            product.list_zarr_files_from_metadata("https://example.com/zarr")
 
     @responses.activate
     def test_eoproduct_download_progress_bar(self):
