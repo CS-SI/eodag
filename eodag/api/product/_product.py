@@ -633,7 +633,7 @@ class EOProduct:
     def request_asset(
         self,
         url: str,
-        auth: Optional[object] = None,
+        auth: Optional[AuthBase] = None,
     ) -> requests.Response:
         """Perform a GET request to the given URL with authentication if provided."""
         headers = self._get_auth_headers(auth) if auth is not None else {}
@@ -645,7 +645,7 @@ class EOProduct:
         auth: Optional[object] = None,
     ) -> list[str]:
         """List file paths from a Zarr store metadata file."""
-        import fsspec
+        import fsspec  # type: ignore[import-untyped]
 
         headers = self._get_auth_headers(auth) if auth is not None else {}
         mapper = fsspec.get_mapper(
@@ -657,18 +657,10 @@ class EOProduct:
             meta = json.loads(mapper[".zmetadata"])
             return [".zmetadata", *meta["metadata"].keys()]
 
-        """TO DO
-        .zmetadata is present for zarr v2, but not for v3, we should support both.
-        For Zarr v3, there is no .zmetata but zarr.json file instead,
-        we can try to read it and parse the metadata from it to list files in the store.
-        for exemple:
-        if "zarr.json" in mapper:
-            meta = json.loads(mapper["zarr.json"])
-            return ["zarr.json", , *meta["metadata"].keys()]
-        We don't have v3 zarr files for testing yet, so we will implement this when we have some.
-        But it should be straightforward as the structure of zarr.json is similar to .zmetadata
-        """
-
+        # TODO: Support Zarr v3 when test data becomes available.
+        # Zarr v2 uses `.zmetadata`, while Zarr v3 exposes `zarr.json`.
+        # The implementation should be straightforward once we can validate it
+        # against real examples.
         raise ValueError(f"No Zarr metadata file found at {base_url}")
 
     def _init_progress_bar(
