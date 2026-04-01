@@ -25,6 +25,7 @@ import logging
 import re
 import string
 from random import SystemRandom
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlparse
 
@@ -79,6 +80,7 @@ class OIDCRefreshTokenBase(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
+        self._auth_lock = Lock()
 
         self.access_token = ""
         self.access_token_expiration = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
@@ -323,7 +325,8 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 
     def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
-        self._get_access_token()
+        with self._auth_lock:
+            self._get_access_token()
 
         return CodeAuthorizedAuth(
             self.access_token,
