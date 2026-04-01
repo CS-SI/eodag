@@ -46,8 +46,8 @@ Conversion
 
 .. autosummary::
 
-   SearchResult.from_geojson
-   SearchResult.as_geojson_object
+   SearchResult.from_dict
+   SearchResult.as_dict
    SearchResult.as_shapely_geometry_object
    SearchResult.as_wkt_object
 
@@ -60,5 +60,5 @@ Interface
 
 .. autoclass:: SearchResult
    :members: crunch, filter_date, filter_latest_intersect, filter_latest_by_name, filter_overlap, filter_property,
-             filter_online, from_geojson, as_geojson_object, as_shapely_geometry_object, as_wkt_object, next_page,
+             filter_online, from_dict, as_dict, as_shapely_geometry_object, as_wkt_object, next_page,
              __geo_interface__

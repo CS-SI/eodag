@@ -36,7 +36,8 @@ Conversion
 ----------
 
 .. automethod:: EOProduct.as_dict
-.. automethod:: EOProduct.from_geojson
+.. automethod:: EOProduct.from_dict
+.. automethod:: EOProduct.from_file
 
 Interface
 ---------
