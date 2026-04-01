@@ -206,7 +206,7 @@ class SearchResult(UserList[EOProduct]):
         if eodag_search_params and eodag_search_params.get("geometry"):
             eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
 
-        return cls(
+        results = cls(
             products=products,
             number_matched=props.get("eodag:number_matched"),
             next_page_token=props.get("eodag:next_page_token"),
@@ -214,6 +214,9 @@ class SearchResult(UserList[EOProduct]):
             search_params=eodag_search_params or None,
             raise_errors=props.get("eodag:raise_errors"),
         )
+        if dag is not None:
+            results._dag = dag
+        return results
 
     @classmethod
     def from_file(
