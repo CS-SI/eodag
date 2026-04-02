@@ -443,7 +443,7 @@ class SQLiteDatabase(Database):
                 params.append(fts_expr)
 
                 # Weighted relevance: title > description > keywords
-                select_score = ", bm25(collections_fts, 10.0, 3.0, 1.0) AS rank_score"
+                select_score = ", bm25(collections_fts, 30.0, 3.0, 1.0) AS rank_score"
                 order_terms = ["rank_score ASC"]
 
         if sortby:
