@@ -18,10 +18,7 @@
 #
 """EODAG product package"""
 
-from typing import TYPE_CHECKING, Any, Optional
-
-if TYPE_CHECKING:
-    from eodag.plugins.manager import PluginManager
+from eodag.utils.deserialize import unregistered_product_from_item
 
 try:
     # import from eodag-cube if installed
@@ -33,30 +30,6 @@ try:
 except ImportError:
     from ._assets import Asset, AssetsDict  # type: ignore[assignment]
     from ._product import EOProduct  # type: ignore[assignment]
-
-
-def unregistered_product_from_item(
-    feature: dict[str, Any], provider: str, plugins_manager: "PluginManager"
-) -> Optional[EOProduct]:
-    """Create an EOProduct from a STAC item, map its metadata, but without registering its plugins.
-
-    :param feature: The STAC item to convert into an EOProduct.
-    :param provider: The associated provider from which configuration should be used for mapping.
-    :param plugins_manager: The plugins manager instance to use for retrieving search plugins.
-    :returns: An EOProduct instance if the item can be normalized, otherwise None.
-    """
-    for search_plugin in plugins_manager.get_search_plugins(provider=provider):
-        if hasattr(search_plugin, "normalize_results"):
-            products = search_plugin.normalize_results([feature])
-            if len(products) > 0:
-                # properties cleanup
-                for prop in ("start_datetime", "end_datetime"):
-                    products[0].properties.pop(prop, None)
-                # set collection if not already set
-                if products[0].collection is None:
-                    products[0].collection = products[0].properties.get("collection")
-                return products[0]
-    return None
 
 
 # exportable content

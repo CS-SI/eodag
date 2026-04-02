@@ -38,6 +38,7 @@ import yaml
 from pydantic import AliasChoices
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
@@ -91,7 +92,6 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.product import EOProduct
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
@@ -2045,7 +2045,9 @@ class EODataAccessGateway:
 
     @staticmethod
     def serialize(
-        search_result: SearchResult, filename: str = "search_results.geojson"
+        search_result: SearchResult,
+        filename: str = "search_results.geojson",
+        skip_invalid: bool = True,
     ) -> str:
         """Registers results of a search into a geojson file.
         The output is a FeatureCollection containing the EO products as features,
@@ -2054,9 +2056,10 @@ class EODataAccessGateway:
 
         :param search_result: A set of EO products resulting from a search
         :param filename: (optional) The name of the file to generate
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
         :returns: The name of the created file
         """
-        search_result_dict = search_result.as_geojson_object()
+        search_result_dict = search_result.as_dict(skip_invalid=skip_invalid)
         # add self link
         search_result_dict.setdefault("links", [])
         search_result_dict["links"].append(
@@ -2101,8 +2104,7 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`
         """
-        with open(filename, "r") as fh:
-            return SearchResult.from_geojson(geojson.load(fh))
+        return SearchResult.from_file(filename)
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register
@@ -2114,17 +2116,7 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`, ready for download and pagination
         """
-        products = self.deserialize(filename)
-        products._dag = self
-        for i, product in enumerate(products):
-            if product.downloader is None:
-                downloader = self._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
-                products[i].register_downloader(downloader, auth)
-
-        return products
+        return SearchResult.from_file(filename, self)
 
     def download(
         self,
@@ -2381,7 +2373,9 @@ class EODataAccessGateway:
                 collection=collection,
             )
 
-    def import_stac_items(self, items_urls: list[str]) -> SearchResult:
+    def import_stac_items(
+        self, items_urls: list[str], provider: Optional[str] = None
+    ) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
 
         - Origin provider and download links will be set if item comes from an EODAG
@@ -2391,6 +2385,7 @@ class EODataAccessGateway:
         - If item comes from an unknown provider, a generic STAC provider will be used.
 
         :param items_urls: A list of STAC items URLs to import
+        :param provider: (optional) The EODAG provider to which the STAC items belong, if known.
         :returns: A SearchResult containing the imported STAC items
         """
         json_items = []
@@ -2402,9 +2397,9 @@ class EODataAccessGateway:
 
         results = SearchResult([])
         for json_item in json_items:
-            if search_result := SearchResult._from_stac_item(
-                json_item, self._plugins_manager
+            if product := EOProduct._from_stac_item(
+                json_item, self._plugins_manager, provider
             ):
-                results.extend(search_result)
+                results.append(product)
 
         return results

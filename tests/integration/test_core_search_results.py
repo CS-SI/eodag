@@ -119,7 +119,7 @@ class TestCoreSearchResults(EODagTestCase):
             ],
             "type": "FeatureCollection",
         }
-        self.search_result = SearchResult.from_geojson(self.geojson_repr)
+        self.search_result = SearchResult.from_dict(self.geojson_repr)
         self.search_result._dag = self.dag
         # Ensure that each product in a search result has geometry and search
         # intersection as a shapely geometry
@@ -252,6 +252,55 @@ class TestCoreSearchResults(EODagTestCase):
                 self.assertTrue((Path(tmpdir) / "search_results.geojson").exists())
             finally:
                 os.chdir(current_dir)
+
+    def test_core_serialize_search_results_skip_invalid(self):
+        """The core api must serialize a search results to STAC and skip invalid properties"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # bad formatted property
+                self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
+
+                self.dag.serialize(self.search_result, filename=f.name)
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property skipped
+                self.assertNotIn(
+                    "eo:cloud_cover", serialized["features"][0]["properties"]
+                )
+
+    def test_core_serialize_search_results_keep_invalid(self):
+        """The core api must serialize a search results to STAC and keep invalid properties if asked"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # bad formatted property
+                self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
+
+                self.dag.serialize(
+                    self.search_result, filename=f.name, skip_invalid=False
+                )
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property not skipped
+                self.assertEqual(
+                    serialized["features"][0]["properties"]["eo:cloud_cover"],
+                    "bad-formatted",
+                )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch._request",
@@ -403,13 +452,13 @@ class TestCoreSearchResults(EODagTestCase):
         geom_coords_2 = [[[90, 3], [91, 3], [91, 4], [90, 4], [90, 3]]]
         geom_coords_3 = [[[92, 4], [92, 4], [92, 5], [91, 5], [91, 4]]]
 
-        eo_geom1 = EOProduct.from_geojson(
+        eo_geom1 = EOProduct.from_dict(
             self._minimal_eoproduct_geojson_repr("1", geom_coords_1)
         )
-        eo_geom2 = EOProduct.from_geojson(
+        eo_geom2 = EOProduct.from_dict(
             self._minimal_eoproduct_geojson_repr("2", geom_coords_2)
         )
-        eo_geom3 = EOProduct.from_geojson(
+        eo_geom3 = EOProduct.from_dict(
             self._minimal_eoproduct_geojson_repr("3", geom_coords_3)
         )
         first_search = SearchResult([eo_geom1])
@@ -503,7 +552,7 @@ class TestCoreSearchResults(EODagTestCase):
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
-        products = SearchResult.from_geojson(search_results_geojson)
+        products = SearchResult.from_dict(search_results_geojson)
 
         mock_query.return_value = (products.data, len(products))
 

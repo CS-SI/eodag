@@ -270,7 +270,7 @@ class EndToEndBase(unittest.TestCase):
             self.assertEqual(one_product.provider, provider)
 
             # validate STAC serialization
-            self.stac.validate_item_collection_dict(results.as_geojson_object())
+            self.stac.validate_item_collection_dict(results.as_dict())
             for msg in self.stac.message:
                 self.assertTrue(
                     msg["valid_stac"],
