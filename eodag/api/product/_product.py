@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 import geojson
 import orjson
 import requests
+from pystac import Item
 from requests import RequestException
 from requests.auth import AuthBase
 from shapely import geometry
@@ -302,6 +303,15 @@ class EOProduct:
         }
         return geojson_repr
 
+    def as_pystac_object(self, skip_invalid: bool = True) -> Item:
+        """Builds a representation of EOProduct as a pystac Item to enable its manipulation with pystac methods
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a :class:`pystac.Item`
+        """
+        prod_dict = self.as_dict(skip_invalid=skip_invalid)
+        return Item.from_dict(prod_dict)
+
     @classmethod
     def from_dict(
         cls,
@@ -360,6 +370,27 @@ class EOProduct:
         with open(filepath, "r") as fh:
             feature = geojson.load(fh)
 
+        return cls.from_dict(feature, dag=dag, raise_errors=raise_errors)
+
+    @classmethod
+    def from_pystac(
+        cls,
+        item: Item,
+        dag: Optional[EODataAccessGateway] = None,
+        raise_errors: bool = False,
+    ) -> EOProduct:
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from a pystac Item.
+
+        :param item: The :class:`pystac.Item` containing the metadata of the product
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
+                    provided, the downloader and authenticator will not be registered.
+        :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.
+                             If False, several import methods will be tried: from serialized, from eodag-server, from
+                             known provider, from unknown provider.
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        feature = item.to_dict()
         return cls.from_dict(feature, dag=dag, raise_errors=raise_errors)
 
     @classmethod

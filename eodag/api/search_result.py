@@ -22,6 +22,7 @@ from collections import UserList
 from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
 
 import geojson
+from pystac import ItemCollection
 from shapely.geometry import GeometryCollection
 from shapely.geometry import mapping as shapely_mapping
 from shapely.geometry import shape
@@ -235,6 +236,22 @@ class SearchResult(UserList[EOProduct]):
 
         return cls.from_dict(feature, dag=dag)
 
+    @classmethod
+    def from_pystac(
+        cls,
+        item_collection: ItemCollection,
+        dag: Optional[EODataAccessGateway] = None,
+    ) -> SearchResult:
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from a pystac ItemCollection
+
+        :param item_collection: The :class:`pystac.ItemCollection` containing the metadata of the products.
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
+        :returns: An eodag representation of a search result
+        """
+        features_collection = item_collection.to_dict()
+
+        return cls.from_dict(features_collection, dag=dag)
+
     @staticmethod
     @_deprecated(
         reason="Please use 'SearchResult.from_dict' instead",
@@ -314,6 +331,16 @@ class SearchResult(UserList[EOProduct]):
         :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a WKT string
         """
         return self.as_shapely_geometry_object(skip_invalid=skip_invalid).wkt
+
+    def as_pystac_object(self, skip_invalid: bool = True) -> ItemCollection:
+        """Pystac ItemCollection representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a
+                  :class:`pystac.ItemCollection`
+        """
+        results_dict = self.as_dict(skip_invalid=skip_invalid)
+        return ItemCollection.from_dict(results_dict)
 
     @property
     def __geo_interface__(self) -> dict[str, Any]:

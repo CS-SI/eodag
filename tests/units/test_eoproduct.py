@@ -29,6 +29,7 @@ import zipfile
 import geojson
 import responses
 from lxml import html
+from pystac import Item
 from shapely import geometry
 
 from eodag.config import PluginConfig
@@ -784,3 +785,21 @@ class TestEOProduct(EODagTestBase):
         self.assertFalse(
             any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
         )
+
+    def test_eoproduct_as_pystac_object(self):
+        """eoproduct.as_pystac_object must return a pystac.Item"""
+        product = self._dummy_product(
+            properties={"id": "dummy_id", "datetime": "2021-01-01T00:00:00Z"}
+        )
+        pystac_item = product.as_pystac_object()
+        self.assertIsInstance(pystac_item, Item)
+        pystac_item.validate()
+
+    def test_eoproduct_from_pystac(self):
+        """eoproduct.from_pystac must return an EOProduct instance from a pystac.Item"""
+        product = self._dummy_product(
+            properties={"id": "dummy_id", "datetime": "2021-01-01T00:00:00Z"}
+        )
+        pystac_item = Item.from_dict(product.as_dict())
+        product_from_pystac = EOProduct.from_pystac(pystac_item)
+        self.assertIsInstance(product_from_pystac, EOProduct)
