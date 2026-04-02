@@ -605,19 +605,6 @@ class CodeAuthorizedAuth(AuthBase):
         self.key = key
         self.refresh_token = refresh_token
 
-    def get_auth_headers(self) -> dict[str, str]:
-        """Build auth headers for header-based token provisioning."""
-        if self.where == "header":
-            return {"Authorization": f"Bearer {self.token}"}
-
-        if self.where == "basic" and self.refresh_token is not None:
-            auth_str = base64.b64encode(
-                f"anonymous:{self.refresh_token}".encode()
-            ).decode()
-            return {"Authorization": f"Basic {auth_str}"}
-
-        return {}
-
     def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
         if self.where == "qs":
@@ -629,8 +616,14 @@ class CodeAuthorizedAuth(AuthBase):
 
             request.prepare_url(url_without_args, query_dict)
 
-        else:
-            request.headers.update(self.get_auth_headers())
+        elif self.where == "header":
+            request.headers["Authorization"] = "Bearer {}".format(self.token)
+
+        if self.where == "basic" and self.refresh_token is not None:
+            auth_str = base64.b64encode(
+                f"anonymous:{self.refresh_token}".encode()
+            ).decode()
+            request.headers["Authorization"] = f"Basic {auth_str}"
 
         logger.debug(
             re.sub(
