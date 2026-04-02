@@ -980,17 +980,22 @@ class TestCore(TestCoreBase):
         self.assertIsNone(self.dag.get_collection("bar"))
 
         # Remove search plugin from the DB record directly
-        fb = self.dag.db.get_federation_backends(["earth_search"])
+        fb = self.dag.db.get_federation_backends({"earth_search"})
         pc = fb["earth_search"]["plugins_config"]
         pc.pop("search", None)
         from eodag.config import FederationBackendConfig
 
-        self.dag.db.upsert_federation_backends([
-            FederationBackendConfig(
-                "earth_search", pc, fb["earth_search"]["priority"],
-                fb["earth_search"]["metadata"], fb["earth_search"]["enabled"],
-            )
-        ])
+        self.dag.db.upsert_federation_backends(
+            [
+                FederationBackendConfig(
+                    "earth_search",
+                    pc,
+                    fb["earth_search"]["priority"],
+                    fb["earth_search"]["metadata"],
+                    fb["earth_search"]["enabled"],
+                )
+            ]
+        )
 
         self.dag.update_collections_list(ext_collections_conf)
 
@@ -1176,9 +1181,7 @@ class TestCore(TestCoreBase):
             )
 
             # check that the collection has not been added to configs
-            self.assertNotIn(
-                100, self.dag.providers["earth_search"].collections_config
-            )
+            self.assertNotIn(100, self.dag.providers["earth_search"].collections_config)
             self.assertIsNone(self.dag.get_collection(100))
 
         finally:
@@ -1241,17 +1244,22 @@ class TestCore(TestCoreBase):
     def test_discover_collections_without_plugin(self):
         """Core api must not fetch providers without search and api plugins"""
         # Remove search plugin from earth_search in the DB
-        fb = self.dag.db.get_federation_backends(["earth_search"])
+        fb = self.dag.db.get_federation_backends({"earth_search"})
         pc = fb["earth_search"]["plugins_config"]
         pc.pop("search", None)
         from eodag.config import FederationBackendConfig
 
-        self.dag.db.upsert_federation_backends([
-            FederationBackendConfig(
-                "earth_search", pc, fb["earth_search"]["priority"],
-                fb["earth_search"]["metadata"], fb["earth_search"]["enabled"],
-            )
-        ])
+        self.dag.db.upsert_federation_backends(
+            [
+                FederationBackendConfig(
+                    "earth_search",
+                    pc,
+                    fb["earth_search"]["priority"],
+                    fb["earth_search"]["metadata"],
+                    fb["earth_search"]["enabled"],
+                )
+            ]
+        )
         ext_collections_conf = self.dag.discover_collections(provider="earth_search")
         self.assertEqual(
             ext_collections_conf,
@@ -1830,9 +1838,7 @@ class TestCore(TestCoreBase):
         self, mock_discover_queryables: mock.Mock
     ):
         plugin = next(
-            self.dag.get_search_plugins(
-                provider="cop_cds", collection="ERA5_SL"
-            )
+            self.dag.get_search_plugins(provider="cop_cds", collection="ERA5_SL")
         )
         # default values should be added to params
         self.dag.list_queryables(provider="cop_cds", collection="ERA5_SL")
@@ -3708,9 +3714,7 @@ class TestCoreSearch(TestCoreBase):
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
 
-        search_plugin = next(
-            dag.get_search_plugins(collection="S2_MSI_L1C")
-        )
+        search_plugin = next(dag.get_search_plugins(collection="S2_MSI_L1C"))
         self.assertIsNone(search_plugin.next_page_url)
         self.assertEqual(
             search_plugin.config.pagination["next_page_url_tpl"],
@@ -4175,9 +4179,7 @@ class TestCoreSearch(TestCoreBase):
         dag._setup_downloader(product)
 
         dag.get_download_plugin.assert_called_once_with(product)
-        dag.get_auth_plugin.assert_called_once_with(
-            downloader_mock, product
-        )
+        dag.get_auth_plugin.assert_called_once_with(downloader_mock, product)
         product.register_downloader.assert_called_once_with(downloader_mock, auth_mock)
 
     def test_setup_downloader_with_existing_auth(self):
@@ -4546,16 +4548,10 @@ class TestCoreProviderGroup(TestCoreBase):
         The method get_search_plugins is called with provider group
         It returns a list containing the 2 grouped plugins
         """
-        plugin1 = list(
-            self.dag.get_search_plugins(provider=self.group[0])
-        )
-        plugin2 = list(
-            self.dag.get_search_plugins(provider=self.group[1])
-        )
+        plugin1 = list(self.dag.get_search_plugins(provider=self.group[0]))
+        plugin2 = list(self.dag.get_search_plugins(provider=self.group[1]))
 
-        group_plugins = list(
-            self.dag.get_search_plugins(provider=self.group_name)
-        )
+        group_plugins = list(self.dag.get_search_plugins(provider=self.group_name))
 
         self.assertCountEqual(group_plugins, [*plugin1, *plugin2])
 
