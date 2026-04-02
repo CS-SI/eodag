@@ -749,31 +749,22 @@ class EOProduct:
 
         return {"path": url}
 
-    def _get_auth_headers(self, auth: object) -> dict[str, str]:
-        """Return headers exposed by an auth object when available."""
-        get_auth_headers = getattr(auth, "get_auth_headers", None)
-        if callable(get_auth_headers):
-            return cast(dict[str, str], get_auth_headers())
-        return {}
-
     def request_asset(
         self,
         url: str,
-        auth: Optional[AuthBase] = None,
     ) -> requests.Response:
-        """Perform a GET request to the given URL with authentication if provided."""
-        headers = self._get_auth_headers(auth) if auth is not None else {}
-        return requests.get(url, auth=auth, headers=headers, stream=True)
+        """Perform a GET request to the given URL using product's authentication headers."""
+        headers = self.get_storage_options().get("headers", {})
+        return requests.get(url, headers=headers, stream=True)
 
     def list_zarr_files_from_metadata(
         self,
         base_url: str,
-        auth: Optional[object] = None,
     ) -> list[str]:
         """List file paths from a Zarr store metadata file."""
         import fsspec  # type: ignore[import-untyped]
 
-        headers = self._get_auth_headers(auth) if auth is not None else {}
+        headers = self.get_storage_options().get("headers", {})
         mapper = fsspec.get_mapper(
             base_url,
             client_kwargs={"headers": headers, "trust_env": False},

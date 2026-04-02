@@ -43,9 +43,14 @@ from tests import EODagTestBase
 from tests.context import (
     DEFAULT_SHAPELY_GEOMETRY,
     NOT_AVAILABLE,
+    USER_AGENT,
+    AwsAuth,
+    DatasetCreationError,
     DatasetDriver,
     Download,
     EOProduct,
+    HTTPHeaderAuth,
+    HttpQueryStringAuth,
     ProgressCallback,
     mock,
 )
@@ -554,30 +559,41 @@ class TestEOProduct(EODagTestBase):
         product_zip_file = "{}.zip".format(product_dir_path)
         self.assertTrue(os.path.isfile(product_zip_file))
 
-    def test_eoproduct_get_auth_headers_uses_auth_object_helper(self):
-        """EOProduct._get_auth_headers must expose auth headers when available."""
-        product = self._dummy_product()
-        auth = mock.Mock()
-        auth.get_auth_headers.return_value = {"Authorization": "Basic abc"}
-
-        self.assertEqual(
-            product._get_auth_headers(auth),
-            {"Authorization": "Basic abc"},
-        )
-
     @mock.patch("eodag.api.product._product.requests.get")
-    def test_eoproduct_request_asset_passes_auth_and_headers(self, mock_get):
-        """EOProduct.request_asset must pass auth headers returned by the auth object."""
+    def test_eoproduct_request_asset(self, mock_get):
+        """EOProduct.request_asset must perform a GET request with storage options headers."""
         product = self._dummy_product()
-        auth = mock.Mock()
-        auth.get_auth_headers.return_value = {"Authorization": "Basic abc"}
 
-        product.request_asset("https://example.com/zarr/.zmetadata", auth)
+        product.request_asset("https://example.com/zarr/.zmetadata")
 
         mock_get.assert_called_once_with(
             "https://example.com/zarr/.zmetadata",
-            auth=auth,
-            headers={"Authorization": "Basic abc"},
+            headers={},
+            stream=True,
+        )
+
+    @mock.patch("eodag.api.product._product.requests.get")
+    def test_eoproduct_request_asset_with_auth_headers(self, mock_get):
+        """EOProduct.request_asset must forward authentication headers from get_storage_options."""
+        product = self._dummy_product()
+        # Mock downloader and auth
+        mock_downloader = mock.MagicMock()
+        mock_auth = mock.MagicMock()
+        product.register_downloader(mock_downloader, mock_auth)
+
+        # Mock get_storage_options to return auth headers
+        product.get_storage_options = mock.MagicMock(
+            return_value={
+                "path": "https://example.com/zarr/.zmetadata",
+                "headers": {"Authorization": "Bearer token123"},
+            }
+        )
+
+        product.request_asset("https://example.com/zarr/.zmetadata")
+
+        mock_get.assert_called_once_with(
+            "https://example.com/zarr/.zmetadata",
+            headers={"Authorization": "Bearer token123"},
             stream=True,
         )
 
@@ -607,24 +623,19 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(files, [".zmetadata", ".zgroup", ".zattrs", "foo/.zarray"])
 
     @mock.patch("fsspec.get_mapper")
-    def test_eoproduct_list_zarr_files_from_zmetadata_with_basic_auth(
-        self, mock_get_mapper
-    ):
-        """EOProduct.list_zarr_files_from_metadata must forward auth headers to fsspec for `.zmetadata`."""
+    def test_eoproduct_list_zarr_files_from_zmetadata_headers(self, mock_get_mapper):
+        """EOProduct.list_zarr_files_from_metadata must forward storage options headers to fsspec."""
         product = self._dummy_product()
-        auth = mock.Mock()
-        auth.get_auth_headers.return_value = {"Authorization": "Basic abc"}
         mock_get_mapper.return_value = {".zmetadata": json.dumps({"metadata": {}})}
 
         files = product.list_zarr_files_from_metadata(
             "https://example.com/zarr",
-            auth,
         )
 
         mock_get_mapper.assert_called_once_with(
             "https://example.com/zarr",
             client_kwargs={
-                "headers": {"Authorization": "Basic abc"},
+                "headers": {},
                 "trust_env": False,
             },
         )
