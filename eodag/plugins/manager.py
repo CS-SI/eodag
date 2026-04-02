@@ -167,24 +167,22 @@ class PluginManager:
 
         # raise an error if a provider is given but is not found
         if provider is not None:
-            provider_names = self._db.get_federation_backends(
-                enabled=True, names=[provider]
-            )
-            if not provider_names:
+            providers = self._db.get_federation_backends(names={provider}, enabled=True)
+            if not providers:
                 msg = f"Provider {provider} unknown or not enabled"
                 raise UnsupportedProvider(msg)
 
-        provider_names = self._db.get_federation_backends(
-            enabled=True, collection=collection, names=[provider] if provider else None
+        providers = self._db.get_federation_backends(
+            names={provider} if provider else None, enabled=True, collection=collection
         )
-        if not provider_names:
+        if not providers:
             logger.info("UnsupportedCollection: %s, using generic settings", collection)
             collection = GENERIC_COLLECTION
-            provider_names = self._db.get_federation_backends(
+            providers = self._db.get_federation_backends(
                 enabled=True, collection=collection
             )
 
-        for p_name in provider_names:
+        for p_name in providers:
             pc = self._db.get_fb_config(p_name, {collection} if collection else None)
 
             if "search" in pc:
