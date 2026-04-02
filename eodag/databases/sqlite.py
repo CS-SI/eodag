@@ -102,7 +102,6 @@ class SQLiteDatabase(Database):
         """Close the connection to the database."""
         if self._con:
             self._con.close()
-            self._con = None
 
     def _execute(self, sql: str, parameters: Optional[_Parameters] = None) -> Cursor:
         """
@@ -351,13 +350,15 @@ class SQLiteDatabase(Database):
                 if val := getattr(config, k, None):
                     plugins_config[k] = strip_credentials(val.__dict__)
 
-            federation_backend_configs.append((
-                config.name,
-                plugins_config,
-                getattr(config, "priority", 0),
-                metadata,
-                config.enabled,
-            ))
+            federation_backend_configs.append(
+                (
+                    config.name,
+                    plugins_config,
+                    getattr(config, "priority", 0),
+                    metadata,
+                    config.enabled,
+                )
+            )
 
             topics_cfg: dict[str, dict[str, Any]] = {}
             products_cfg = getattr(config, "products", {})
@@ -478,39 +479,38 @@ class SQLiteDatabase(Database):
 
     def get_federation_backends(
         self,
-        collection: Optional[str] = None,
+        names: Optional[set[str]] = None,
         enabled: Optional[bool] = None,
+        collection: Optional[str] = None,
         limit: Optional[int] = None,
-        names: Optional[list[str]] = None,
     ) -> dict[str, dict[str, Any]]:
         """
         Return federation backends according to filters.
         Results are sorted by priority DESC then name ASC.
         """
-
-        # TODO: Add params binding by name
         sql = (
             "SELECT fb.name, fb.priority, fb.enabled, "
             'json(fb.metadata) AS "metadata [dict]" '
             "FROM federation_backends fb"
         )
         where_clauses = []
-        params: list[Any] = []
+        params: dict[str, Any] = {}
 
         if collection:
             sql += (
                 " INNER JOIN collections_federation_backends cfb "
-                "ON fb.name = cfb.federation_backend_name AND cfb.collection_id = ?"
+                "ON fb.name = cfb.federation_backend_name AND cfb.collection_id = :collection"
             )
-            params.append(collection)
+            params["collection"] = collection
 
         if enabled is not None:
             where_clauses.append(f"{'NOT ' if not enabled else ''}fb.enabled")
 
         if names:
-            placeholders = ",".join("?" for _ in names)
+            placeholders = ",".join(f":{name}" for name in names)
             where_clauses.append(f"fb.name IN ({placeholders})")
-            params.extend(names)
+            for name in names:
+                params[name] = name
 
         if where_clauses:
             sql += " WHERE " + " AND ".join(where_clauses)
@@ -519,7 +519,7 @@ class SQLiteDatabase(Database):
         if limit is not None:
             sql += f" LIMIT {limit}"
 
-        rows = self._execute(sql, tuple(params)).fetchall()
+        rows = self._execute(sql, params).fetchall()
 
         return {
             row["name"]: {
@@ -648,18 +648,20 @@ def _strip_accents(text: str | None) -> str | None:
 
 def _st_makeenvelope(xmin: float, ymin: float, xmax: float, ymax: float) -> str:
     """Convert bounding-box coordinates to a GeoJSON Polygon string."""
-    return orjson.dumps({
-        "type": "Polygon",
-        "coordinates": [
-            [
-                [xmin, ymin],
-                [xmax, ymin],
-                [xmax, ymax],
-                [xmin, ymax],
-                [xmin, ymin],
-            ]
-        ],
-    }).decode()
+    return orjson.dumps(
+        {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [xmin, ymin],
+                    [xmax, ymin],
+                    [xmax, ymax],
+                    [xmin, ymax],
+                    [xmin, ymin],
+                ]
+            ],
+        }
+    ).decode()
 
 
 def _make_spatial_func(
@@ -939,52 +941,62 @@ def _stac_search_to_where(
         cql2_conditions.append(cql2_json)
 
     if ids:
-        cql2_conditions.append({
-            "op": "or",
-            "args": [
-                {
-                    "op": "in",
-                    "args": [{"property": "id"}, ids],
-                },
-                {
-                    "op": "in",
-                    "args": [{"property": "internal_id"}, ids],
-                },
-            ],
-        })
+        cql2_conditions.append(
+            {
+                "op": "or",
+                "args": [
+                    {
+                        "op": "in",
+                        "args": [{"property": "id"}, ids],
+                    },
+                    {
+                        "op": "in",
+                        "args": [{"property": "internal_id"}, ids],
+                    },
+                ],
+            }
+        )
 
     if federation_backends:
-        cql2_conditions.append({
-            "op": "a_overlaps",
-            "args": [{"property": "federation_backends"}, federation_backends],
-        })
+        cql2_conditions.append(
+            {
+                "op": "a_overlaps",
+                "args": [{"property": "federation_backends"}, federation_backends],
+            }
+        )
 
     if geometry:
         geom = get_geometry_from_various(geometry=geometry)
         if geom is not None:
-            cql2_conditions.append({
-                "op": "s_intersects",
-                "args": [
-                    {"property": "geometry"},
-                    shapely.geometry.mapping(geom),
-                ],
-            })
+            cql2_conditions.append(
+                {
+                    "op": "s_intersects",
+                    "args": [
+                        {"property": "geometry"},
+                        shapely.geometry.mapping(geom),
+                    ],
+                }
+            )
 
     if datetime:
         start_date_str, end_date_str = get_datetime({"datetime": datetime})
         if end_date_str:
-            cql2_conditions.append({
-                "op": "<=",
-                "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
-            })
+            cql2_conditions.append(
+                {
+                    "op": "<=",
+                    "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
+                }
+            )
         if start_date_str:
-            cql2_conditions.append({
-                "op": ">=",
-                "args": [
-                    {"property": "end_datetime"},
-                    {"timestamp": start_date_str},
-                ],
-            })
+            cql2_conditions.append(
+                {
+                    "op": ">=",
+                    "args": [
+                        {"property": "end_datetime"},
+                        {"timestamp": start_date_str},
+                    ],
+                }
+            )
 
     # Merge all conditions into one CQL2 AND filter
     where_clause = "True"
