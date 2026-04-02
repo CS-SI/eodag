@@ -30,11 +30,15 @@ import geojson
 import orjson
 import requests
 from pystac import Item
-from requests import RequestException
+from boto3 import Session
+from boto3.resources.base import ServiceResource
+from requests import PreparedRequest, RequestException
 from requests.auth import AuthBase
+from requests.structures import CaseInsensitiveDict
 from shapely import geometry
 from shapely.errors import ShapelyError
 
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 
@@ -75,7 +79,12 @@ from eodag.utils.deserialize import (
     _import_stac_item_from_known_provider,
     _import_stac_item_from_unknown_provider,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
+from eodag.utils.exceptions import (
+    DatasetCreationError,
+    DownloadError,
+    MisconfiguredError,
+    ValidationError,
+)
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
@@ -643,31 +652,73 @@ class EOProduct:
             **kwargs,
         )
 
-    def _get_auth_headers(self, auth: object) -> dict[str, str]:
-        """Return headers exposed by an auth object when available."""
-        get_auth_headers = getattr(auth, "get_auth_headers", None)
-        if callable(get_auth_headers):
-            return cast(dict[str, str], get_auth_headers())
-        return {}
+    def get_storage_options(
+        self,
+        asset_key: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """
+        Get fsspec storage_options keyword arguments
+        """
+        auth = self.downloader_auth.authenticate() if self.downloader_auth else None
+        if self.downloader is None:
+            return {}
+
+        # default url and headers
+        try:
+            url = self.assets[asset_key]["href"] if asset_key else self.location
+        except KeyError as e:
+            raise DatasetCreationError(f"{asset_key} not found in {self} assets") from e
+        headers = {**USER_AGENT}
+
+        if isinstance(auth, ServiceResource) and isinstance(
+            self.downloader_auth, AwsAuth
+        ):
+            auth_kwargs: dict[str, Any] = dict()
+            # AwsAuth
+            if s3_endpoint := getattr(self.downloader_auth.config, "s3_endpoint", None):
+                auth_kwargs["client_kwargs"] = {"endpoint_url": s3_endpoint}
+            if creds := cast(
+                Session, self.downloader_auth.s3_session
+            ).get_credentials():
+                auth_kwargs["key"] = creds.access_key
+                auth_kwargs["secret"] = creds.secret_key
+                if creds.token:
+                    auth_kwargs["token"] = creds.token
+                if requester_pays := getattr(
+                    self.downloader_auth.config, "requester_pays", False
+                ):
+                    auth_kwargs["requester_pays"] = requester_pays
+            else:
+                auth_kwargs["anon"] = True
+            return {"path": url, **auth_kwargs}
+
+        if isinstance(auth, AuthBase):
+            # update url and headers with auth
+            req = PreparedRequest()
+            req.url = url
+            req.headers = CaseInsensitiveDict(headers)
+            if auth:
+                auth(req)
+            return {"path": req.url, "headers": dict(req.headers)}
+
+        return {"path": url}
 
     def request_asset(
         self,
         url: str,
-        auth: Optional[AuthBase] = None,
     ) -> requests.Response:
-        """Perform a GET request to the given URL with authentication if provided."""
-        headers = self._get_auth_headers(auth) if auth is not None else {}
-        return requests.get(url, auth=auth, headers=headers, stream=True)
+        """Perform a GET request to the given URL using product's authentication headers."""
+        headers = self.get_storage_options().get("headers", {})
+        return requests.get(url, headers=headers, stream=True)
 
     def list_zarr_files_from_metadata(
         self,
         base_url: str,
-        auth: Optional[object] = None,
     ) -> list[str]:
         """List file paths from a Zarr store metadata file."""
         import fsspec  # type: ignore[import-untyped]
 
-        headers = self._get_auth_headers(auth) if auth is not None else {}
+        headers = self.get_storage_options().get("headers", {})
         mapper = fsspec.get_mapper(
             base_url,
             client_kwargs={"headers": headers, "trust_env": False},
