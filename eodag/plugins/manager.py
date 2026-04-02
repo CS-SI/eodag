@@ -247,17 +247,17 @@ class PluginManager:
         if provider:
             self.check_provider_available(provider)
 
-        provider_names = self._db.get_federation_backends(
-            enabled=True, collection=collection, names=[provider] if provider else None
+        providers = self._db.get_federation_backends(
+            names={provider} if provider else None, enabled=True, collection=collection
         )
-        if not provider_names:
+        if not providers:
             logger.info("UnsupportedCollection: %s, using generic settings", collection)
             collection = GENERIC_COLLECTION
-            provider_names = self._db.get_federation_backends(
+            providers = self._db.get_federation_backends(
                 enabled=True, collection=collection
             )
 
-        for p_name in provider_names:
+        for p_name in providers:
             pc = self._db.get_fb_config(p_name, {collection} if collection else None)
 
             if "search" in pc:

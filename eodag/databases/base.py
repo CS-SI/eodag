@@ -90,10 +90,10 @@ class Database(ABC):
     @abstractmethod
     def get_federation_backends(
         self,
-        collection: Optional[str] = None,
+        names: Optional[set[str]] = None,
         enabled: Optional[bool] = None,
+        collection: Optional[str] = None,
         limit: Optional[int] = None,
-        names: Optional[list[str]] = None,
     ) -> dict[str, dict[str, Any]]:
         """
         Get federation backends from the database
