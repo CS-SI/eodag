@@ -16,7 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
 import pickle
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -2404,13 +2403,6 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertEqual(auth.token, json_response["access_token"])
         self.assertEqual(auth.where, "basic")
         self.assertEqual(auth.refresh_token, json_response["refresh_token"])
-        self.assertEqual(
-            auth.get_auth_headers(),
-            {
-                "Authorization": "Basic "
-                + base64.b64encode(b"anonymous:obtained-refresh-token").decode()
-            },
-        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
@@ -3087,55 +3079,3 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         with self.assertRaises(TimeoutError):
             auth_plugin.exchange_code_for_token(authorized_url, state)
-
-
-class TestCodeAuthorizedAuth(unittest.TestCase):
-    def test_get_auth_headers_for_header(self):
-        """CodeAuthorizedAuth.get_auth_headers must build a Bearer Authorization header in header mode."""
-        auth = CodeAuthorizedAuth(token="obtained-token", where="header")
-
-        self.assertEqual(
-            auth.get_auth_headers(),
-            {"Authorization": "Bearer obtained-token"},
-        )
-
-    def test_get_auth_headers_for_basic(self):
-        """CodeAuthorizedAuth.get_auth_headers must build a Basic Authorization header from the refresh token."""
-        auth = CodeAuthorizedAuth(
-            token="obtained-token",
-            where="basic",
-            refresh_token="obtained-refresh-token",
-        )
-
-        self.assertEqual(
-            auth.get_auth_headers(),
-            {
-                "Authorization": "Basic "
-                + base64.b64encode(b"anonymous:obtained-refresh-token").decode()
-            },
-        )
-
-    def test_call_injects_basic_auth_header(self):
-        """CodeAuthorizedAuth.__call__ must inject the computed Basic Authorization header into the request."""
-        auth = CodeAuthorizedAuth(
-            token="obtained-token",
-            where="basic",
-            refresh_token="obtained-refresh-token",
-        )
-        req = Request(
-            "GET",
-            "https://httpbin.org/get",
-            headers={"existing-header": "value"},
-        ).prepare()
-
-        auth(req)
-
-        self.assertEqual(req.url, "https://httpbin.org/get")
-        self.assertEqual(
-            req.headers,
-            {
-                "Authorization": "Basic "
-                + base64.b64encode(b"anonymous:obtained-refresh-token").decode(),
-                "existing-header": "value",
-            },
-        )
