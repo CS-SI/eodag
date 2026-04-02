@@ -52,12 +52,6 @@ def _build_stac_schema_map():
         schema_id = schema.get("$id")
         if schema_id:
             schema_map[schema_id.rstrip("#")] = filepath
-    # common.json has $id "commonjson" (upstream typo), but is referenced as common.json
-    common_item_path = os.path.join(STAC_SCHEMAS_DIR, "common-item-v1.1.0.json")
-    if os.path.exists(common_item_path):
-        schema_map[
-            "https://schemas.stacspec.org/v1.1.0/item-spec/json-schema/common.json"
-        ] = common_item_path
     return schema_map
 
 
