@@ -2974,6 +2974,14 @@
       next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       max_limit: 200
       next_page_token_key: skip
+    sort:
+      sort_by_tpl: '{{"sortOrder": "{sort_order}"}}'
+      sort_param_mapping:
+      # start_datetime for consistency between providers, but it's unused for the actual sorting
+        start_datetime: unused
+      sort_order_mapping:
+        ascending: ASC
+        descending: DESC
     discover_collections:
       fetch_url: null
     discover_queryables:
