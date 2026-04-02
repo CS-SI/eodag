@@ -94,7 +94,6 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.product import EOProduct
     from eodag.databases.base import Database
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
