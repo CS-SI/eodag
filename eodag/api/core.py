@@ -257,7 +257,10 @@ class EODataAccessGateway:
         :class:`~eodag.api.provider.ProvidersDict` instance.
         """
         providers = self.db.get_federation_backends(
-            collection=collection, enabled=enabled, limit=limit, names=names
+            names=set(names) if names else None,
+            enabled=enabled,
+            collection=collection,
+            limit=limit,
         )
 
         # TODO: how to see collections for each provider?
@@ -752,11 +755,13 @@ class EODataAccessGateway:
         """
         # TODO: review this method as well!
         all_new_collections: list[Collection] = []
-        all_backend_names = self.db.get_federation_backends(enabled_only=False).keys()
+        all_backend_names = self.db.get_federation_backends(enabled=False).keys()
 
         for provider, new_collections_conf in ext_collections_conf.items():
             if new_collections_conf and provider in all_backend_names:
-                fb_data = self.db.get_federation_backends([provider]).get(provider, {})
+                fb_data = self.db.get_federation_backends(names={provider}).get(
+                    provider, {}
+                )
                 fb_pc = fb_data.get("plugins_config", {})
                 search_conf = fb_pc.get("search") or fb_pc.get("api")
                 fetchable = bool(
@@ -954,7 +959,9 @@ class EODataAccessGateway:
         if collection:
             # only providers configured for this collection
             fb_configs = self.db.get_collection_federation_backends(collection).keys()
-            all_fb = self.db.get_federation_backends(list(fb_configs))
+            all_fb = self.db.get_federation_backends(
+                names=set(fb_configs) if fb_configs else None
+            )
         else:
             all_fb = self.db.get_federation_backends()
 
