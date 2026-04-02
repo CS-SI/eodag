@@ -37,6 +37,32 @@ from tests.context import (
     mock,
 )
 
+STAC_SCHEMAS_DIR = os.path.join(TEST_RESOURCES_PATH, "stac", "schemas")
+
+
+def _build_stac_schema_map():
+    """Build a mapping of remote schema URLs to local file paths from $id fields."""
+    schema_map = {}
+    for filename in os.listdir(STAC_SCHEMAS_DIR):
+        if not filename.endswith(".json"):
+            continue
+        filepath = os.path.join(STAC_SCHEMAS_DIR, filename)
+        with open(filepath) as f:
+            schema = json.load(f)
+        schema_id = schema.get("$id")
+        if schema_id:
+            schema_map[schema_id.rstrip("#")] = filepath
+    # common.json has $id "commonjson" (upstream typo), but is referenced as common.json
+    common_item_path = os.path.join(STAC_SCHEMAS_DIR, "common-item-v1.1.0.json")
+    if os.path.exists(common_item_path):
+        schema_map[
+            "https://schemas.stacspec.org/v1.1.0/item-spec/json-schema/common.json"
+        ] = common_item_path
+    return schema_map
+
+
+STAC_SCHEMA_MAP = _build_stac_schema_map()
+
 
 class TestCoreSearchResults(EODagTestCase):
     def setUp(self):
@@ -124,7 +150,10 @@ class TestCoreSearchResults(EODagTestCase):
                 path = self.dag.serialize(self.search_result, filename=f.name)
                 self.assertEqual(path, f.name)
             stac = stac_validator.StacValidate(
-                path, item_collection=True, links=True, assets=True
+                path,
+                item_collection=True,
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
             for msg in stac.message:
@@ -151,7 +180,11 @@ class TestCoreSearchResults(EODagTestCase):
             collection_path = tmpdir_path / f"{self.search_result[0].collection}.json"
             self.assertTrue(collection_path.exists())
             # validate STAC collection
-            stac = stac_validator.StacValidate(str(collection_path))
+            stac = stac_validator.StacValidate(
+                str(collection_path),
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
+            )
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
@@ -180,7 +213,10 @@ class TestCoreSearchResults(EODagTestCase):
                 path = self.dag.serialize(self.search_result, filename=f.name)
                 self.assertEqual(path, f.name)
             stac = stac_validator.StacValidate(
-                path, item_collection=True, links=True, assets=True
+                path,
+                item_collection=True,
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
             for msg in stac.message:
@@ -192,11 +228,19 @@ class TestCoreSearchResults(EODagTestCase):
             self.assertTrue(collection1_path.exists())
             self.assertTrue(collection2_path.exists())
             # validate STAC collections
-            stac = stac_validator.StacValidate(str(collection1_path))
+            stac = stac_validator.StacValidate(
+                str(collection1_path),
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
+            )
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
-            stac = stac_validator.StacValidate(str(collection2_path))
+            stac = stac_validator.StacValidate(
+                str(collection2_path),
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
+            )
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
