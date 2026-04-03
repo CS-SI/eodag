@@ -162,7 +162,8 @@ class TokenAuth(Authentication):
                     DEFAULT_TOKEN_EXPIRATION_MARGIN,
                 )
             )
-            self.validate_config_credentials()
+            if self.token == "":
+                self.validate_config_credentials()
             if (
                 self.token
                 and self.token_expiration - datetime.now() > expiration_margin

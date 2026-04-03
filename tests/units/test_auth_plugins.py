@@ -207,6 +207,20 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
+    def test_plugins_auth_tokenauth_authenticate_format_url_ok(self, mock_request):
+        """TokenAuth.authenticate must be ok if it can format url"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_format_url")
+
+        auth_plugin.config.credentials = {"foo": "bar", "username": "jo{hn"}
+        auth_plugin.authenticate()
+
+        # validate_config_credentials should have been called a 2nd time in authenticate
+        # to format already parsed auth_uri (would fail as credentials contain a non-escaped '{' character)
+        auth_plugin.authenticate()
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
     def test_plugins_auth_tokenauth_text_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using text token"""
         auth_plugin = self.get_auth_plugin("provider_text_token_header")
@@ -220,6 +234,9 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
         self.assertTrue(isinstance(auth, AuthBase))
+
+        # token was set in the plugin
+        self.assertEqual(auth_plugin.token, "this_is_test_token")
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
