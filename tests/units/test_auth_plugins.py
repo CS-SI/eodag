@@ -157,6 +157,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
                         "request_method": "GET",
+                        "auth_tuple": ["username", "password1", "password2"],
                     },
                 },
                 "provider_text_token_auth_error_code": {
@@ -242,7 +243,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         args, kwargs = mock_requests_post.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertDictEqual(kwargs["data"], {"foo": "bar", "baz": "qux"})
-        self.assertIsNone(kwargs["auth"])
+        self.assertNotIn("auth", kwargs)
         self.assertDictEqual(
             kwargs["headers"], dict(auth_plugin.config.headers, **USER_AGENT)
         )
@@ -282,7 +283,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertDictEqual(
             kwargs["data"], {"foo": "bar", "baz": "qux", "auth_for_token": "a_token"}
         )
-        self.assertIsNone(kwargs["auth"])
+        self.assertNotIn("auth", kwargs)
         self.assertDictEqual(
             kwargs["headers"], dict(auth_plugin.config.retrieve_headers, **USER_AGENT)
         )
@@ -326,7 +327,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self, mock_requests_post
     ):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token
-        If there is an existing, valid token this token msut be used
+        If there is an existing, valid token this token must be used
         """
         auth_plugin = self.get_auth_plugin("provider_json_token_with_expiration")
         auth_plugin.__init__(
@@ -356,7 +357,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
             verify=True,
-            auth=None,
         )
         mock_requests_post.reset_mock()
         # second call should use existing token
@@ -381,7 +381,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
             verify=True,
-            auth=None,
         )
 
     @mock.patch(
@@ -428,7 +427,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
             verify=True,
-            auth=None,
         )
 
         # Serialize then deserialize the auth plugin, check that it still works the same
@@ -498,7 +496,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             kwargs["data"],
             {"grant_type": "client_credentials", "foo": "bar", "baz": "qux"},
         )
-        self.assertIsNone(kwargs["auth"])
+        self.assertNotIn("auth", kwargs)
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
 
         # check if token is integrated to the request
@@ -509,13 +507,15 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
-    def test_plugins_auth_tokenauth_get_method_request_authenticate(
-        self, mock_requests_get
-    ):
-        """TokenAuth.authenticate must return a RequestsTokenAuth object with 'GET' method request"""
+    def test_plugins_auth_tokenauth_get_method_auth_tuple(self, mock_requests_get):
+        """TokenAuth.authenticate must return a RequestsTokenAuth object with 'GET' method request and auth tuple"""
         auth_plugin = self.get_auth_plugin("provider_text_token_get_method")
 
-        auth_plugin.config.credentials = {"username": "bar", "password": "qux"}
+        auth_plugin.config.credentials = {
+            "username": "bar",
+            "password1": "qux",
+            "password2": "quux",
+        }
 
         # mock token get request response
         mock_requests_get.return_value = mock.Mock()
@@ -529,13 +529,35 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         args, kwargs = mock_requests_get.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertNotIn("data", kwargs)
-        self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
+        self.assertTupleEqual(kwargs["auth"], ("bar", "qux", "quux"))
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
         self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_get_method_auth_tuple_incomplete(
+        self, mock_requests_get
+    ):
+        """TokenAuth.authenticate must fail with 'GET' method request and incomplete auth tuple"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_get_method")
+
+        auth_plugin.config.credentials = {"username": "bar", "password1": "qux"}
+
+        # mock token get request response
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.text = "this_is_test_token"
+
+        # check if returned auth object is an instance of requests.AuthBase
+        with self.assertRaisesRegex(
+            MisconfiguredError,
+            r"Missing credentials inputs for provider provider_text_token_get_method: \['password2'\]",
+        ):
+            auth_plugin.authenticate()
 
     def test_plugins_auth_tokenauth_request_error(self):
         """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""

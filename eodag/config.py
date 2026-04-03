@@ -542,6 +542,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.sas_auth.SASAuth` Key to get the signed url
     signed_url_key: str
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: If expected, list of keys to be sent as a tuple through the 'auth' parameter of the request
+    auth_tuple: list[str]
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: Credentials json structure if they should be sent as POST data
     req_data: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
