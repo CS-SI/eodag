@@ -88,8 +88,7 @@ class TokenAuth(Authentication):
           should be sent as data in the post request, the json structure can be given in this parameter
         * :attr:`~eodag.config.PluginConfig.post_credentials` (``bool``): if ``True``, credentials are always
           sent as POST data; if ``False``, they are never sent; if not set, credentials are sent only when they are not
-          already embedded in :attr:`~eodag.config.PluginConfig.auth_uri`;
-          default: ``None``
+          already embedded in :attr:`~eodag.config.PluginConfig.auth_uri`
         * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
           total number of retries to allow; default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
