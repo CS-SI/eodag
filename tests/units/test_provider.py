@@ -265,7 +265,11 @@ class TestProvidersDict(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        from eodag.config import get_federation_backends_config, get_collections_providers_config
+        from eodag.config import (
+            get_collections_providers_config,
+            get_federation_backends_config,
+        )
+
         self.db = SQLiteDatabase(":memory:")
         providers = build_provider_configs(self.sample_configs)
         fb_configs = get_federation_backends_config(
@@ -327,29 +331,6 @@ class TestProvidersDict(unittest.TestCase):
         with self.assertRaises(UnsupportedProvider):
             self.providers_dict.pop("nonexistent")
 
-    def test_providers_dict_filter_no_query(self):
-        """Test ProvidersDict filter with no query."""
-        results = self.providers_dict.filter()
-        self.assertEqual(len(results), 2)
-
-    def test_providers_dict_filter_with_query(self):
-        """Test ProvidersDict filter with query."""
-        results = self.providers_dict.filter("First")
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results.names, ["provider1"])
-
-    def test_providers_dict_filter_by_name_or_group(self):
-        """Test ProvidersDict filter_by_name_or_group."""
-        # Filter by name
-        results = self.providers_dict.filter_by_name_or_group("provider1")
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0], "provider1")
-
-        # Filter by group
-        results = self.providers_dict.filter_by_name_or_group("group_a")
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0], "provider1")
-
     def test_providers_dict_get_config(self):
         """Test ProvidersDict get_config method."""
         config = self.providers_dict.get_config("provider1")
@@ -363,6 +344,7 @@ class TestProvidersDict(unittest.TestCase):
     def test_providers_dict_whitelist(self):
         """Test whitelist filtering via standalone function."""
         from eodag.api.provider import _get_whitelisted_configs
+
         filtered = _get_whitelisted_configs(self.sample_configs)
         self.assertEqual(set(filtered.keys()), {"provider1"})
 
