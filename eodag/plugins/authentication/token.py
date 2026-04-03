@@ -101,6 +101,7 @@ class TokenAuth(Authentication):
         self.refresh_token = ""
         self.token_expiration = datetime.now()
         self.auth_lock = Lock()
+        self._unformatted_auth_uri: Optional[str] = None
 
     def __getstate__(self):
         """Exclude attributes that can't be pickled from serialization."""
@@ -117,9 +118,14 @@ class TokenAuth(Authentication):
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         super(TokenAuth, self).validate_config_credentials()
+
+        # keep the unformatted auth_uri to be able to reformat it with credentials when needed
+        if self._unformatted_auth_uri is None:
+            self._unformatted_auth_uri = self.config.auth_uri
+
         try:
             # format auth_uri using credentials if needed
-            self.config.auth_uri = self.config.auth_uri.format(
+            self.config.auth_uri = self._unformatted_auth_uri.format(
                 **self.config.credentials
             )
 
