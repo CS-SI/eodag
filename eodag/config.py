@@ -191,7 +191,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Mapping for collection properties which can be parsed from the result and are not collection metadata
         generic_collection_parsable_properties: dict[str, str]
         #: Mapping for collection properties which cannot be parsed from the result and are not collection metadata
-        generic_collection_unparsable_properties: dict[str, str]
+        generic_collection_unparsable_properties: dict[str, Any]
         #: URL to fetch data for a single collection
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection

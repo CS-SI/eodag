@@ -374,6 +374,16 @@ class QueryStringSearch(Search):
                         "single_collection_parsable_metadata"
                     ]
                 )
+            if "metadata_mapping" in self.config.discover_collections.get(
+                "generic_collection_unparsable_properties", {}
+            ):
+                self.config.discover_collections[
+                    "generic_collection_unparsable_properties"
+                ]["metadata_mapping"] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_collections[
+                        "generic_collection_unparsable_properties"
+                    ]["metadata_mapping"]
+                )
 
         # parse jsonpath on init: queryables discovery
         if (
@@ -597,13 +607,29 @@ class QueryStringSearch(Search):
                         generic_collection_id = extracted_mapping.pop(
                             "generic_collection_id"
                         )
+                        unparsable_properties = deepcopy(
+                            self.config.discover_collections.get(
+                                "generic_collection_unparsable_properties", {}
+                            )
+                        )
+                        if "metadata_mapping" in unparsable_properties:
+                            # merge with default metadata mapping
+                            merged_metadata_mapping = deepcopy(
+                                self.config.metadata_mapping
+                            )
+                            for metadata, mapping in unparsable_properties[
+                                "metadata_mapping"
+                            ].items():
+                                merged_metadata_mapping.pop(metadata, None)
+                                merged_metadata_mapping[metadata] = mapping
+                            unparsable_properties[
+                                "metadata_mapping"
+                            ] = merged_metadata_mapping
                         conf_update_dict["providers_config"][
                             generic_collection_id
                         ] = dict(
                             extracted_mapping,
-                            **self.config.discover_collections.get(
-                                "generic_collection_unparsable_properties", {}
-                            ),
+                            **unparsable_properties,
                         )
                         # collections_config extraction
                         collection_properties = properties_from_json(
