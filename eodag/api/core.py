@@ -479,10 +479,8 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
         if providers:
-            all_names = self.db.get_federation_backends().keys()
-            # TODO: handle groups
-            # all_groups = self.db.list_federation_backend_groups(enabled_only=False)
-            known = set(all_names)  # | set(all_groups)
+            # TODO: deal with providers enabled or not
+            known = set(self.db.get_federation_backends().keys())
             unknown = set(providers) - known
             if unknown:
                 for p in unknown:
@@ -517,7 +515,7 @@ class EODataAccessGateway:
         If strict mode is enabled (by setting the ``EODAG_STRICT_COLLECTIONS`` environment variable
         to a truthy value), this method will not fetch or update collections and will return immediately.
 
-        :param provider: The name of a provider or provider-group for which collections
+        :param provider: The name of a provider for which collections
                          list should be updated. Defaults to all providers (None value).
         """
         # TODO: Review this function to adjust with the DB.
@@ -531,10 +529,15 @@ class EODataAccessGateway:
         ] = {}
         # check if any provider has not already been fetched for collections
         already_fetched = True
-        # filter backends by name or group, then check fetchable
-        # TODO: handle filter
-        backend_names = []  # self.db.filter_federation_backends(provider)
-        fetchable_backends = self.db.get_federation_backends_fetchable(backend_names)
+        # check if providers are fetchable
+        # TODO: handle fetchable
+        providers = list(
+            self.db.get_federation_backends(
+                names={provider} if provider else None
+            ).keys()
+        )
+        fetchable_backends = self.db.get_federation_backends_fetchable(providers)
+
         for fb in fetchable_backends:
             fb_name = fb["name"]
             discover_conf = fb["plugins_config"]["search"]["discover_collections"]
@@ -639,19 +642,21 @@ class EODataAccessGateway:
     ) -> Optional[dict[str, Any]]:
         """Fetch providers for collections.
 
-        :param provider: The name of a provider or provider-group to fetch. Defaults to
+        :param provider: The name of a provider to fetch. Defaults to
                          all providers (None value).
         :returns: external collections configuration
         """
-        backend_names = self.db.filter_federation_backends(provider)
+        providers = self.db.get_federation_backends(
+            names={provider} if provider else None
+        )
 
-        if provider and not any(providers_check):
+        if provider:
             self._plugins_manager.check_provider_available(provider)
 
         ext_collections_conf: dict[str, Any] = {}
 
         kwargs: dict[str, Any] = {}
-        fetchable_backends = self.db.get_federation_backends_fetchable(backend_names)
+        fetchable_backends = self.db.get_federation_backends_fetchable(providers)
         for fb in fetchable_backends:
             p_name = fb["name"]
 
@@ -893,21 +898,10 @@ class EODataAccessGateway:
         """
         candidates = []
 
-        # use DB to get providers sorted by priority
-        if collection:
-            # only providers configured for this collection
-            fb_configs = self.db.get_collection_federation_backends(collection).keys()
-            all_fb = self.db.get_federation_backends(
-                names=set(fb_configs) if fb_configs else None
-            )
-        else:
-            all_fb = self.db.get_federation_backends()
+        # use DB to get providers sorted by priority and name
+        all_fb = self.db.get_federation_backends(enabled=True, collection=collection)
 
-        for key, fb_data in sorted(
-            all_fb.items(), key=lambda item: (-item[1]["priority"], item[0])
-        ):
-            if not fb_data.get("enabled"):
-                continue
+        for key, fb_data in all_fb.items():
             group = (fb_data.get("metadata") or {}).get("group")
             name = group if by_group and group else key
             candidates.append((name, fb_data["priority"]))
