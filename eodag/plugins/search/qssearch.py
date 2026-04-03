@@ -374,6 +374,16 @@ class QueryStringSearch(Search):
                         "single_collection_parsable_metadata"
                     ]
                 )
+            if "metadata_mapping" in self.config.discover_collections.get(
+                "generic_collection_unparsable_properties", {}
+            ):
+                self.config.discover_collections[
+                    "generic_collection_unparsable_properties"
+                ]["metadata_mapping"] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_collections[
+                        "generic_collection_unparsable_properties"
+                    ]["metadata_mapping"]
+                )
 
         # parse jsonpath on init: queryables discovery
         if (
