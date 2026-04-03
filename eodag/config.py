@@ -1151,6 +1151,18 @@ def parse_discovery_config_jsonpath(
         ] = mtd_cfg_as_conversion_and_querypath(
             discovery_conf["single_collection_parsable_metadata"]
         )
+    if "metadata_mapping" in discovery_conf.get(
+        "generic_collection_unparsable_properties", {}
+    ):
+        discovery_conf_parsed[
+            "generic_collection_unparsable_properties"
+        ] = {
+            "metadata_mapping": mtd_cfg_as_conversion_and_querypath(
+                discovery_conf[
+                    "generic_collection_unparsable_properties"
+                ]["metadata_mapping"]
+            )
+        }
 
     return discovery_conf_parsed
 
