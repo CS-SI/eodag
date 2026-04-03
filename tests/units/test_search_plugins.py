@@ -462,6 +462,59 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # restore configuration
         search_plugin.config.discover_collections["results_entry"] = results_entry
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_querystringsearch_discover_collections_unparsable_metadata_mapping(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_collections must merge unparsable metadata_mapping with default"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.collection, provider)
+
+        # backup and set unparsable_properties with a metadata_mapping override
+        discover_collections_conf = copy_deepcopy(
+            search_plugin.config.discover_collections
+        )
+        from eodag.api.product.metadata_mapping import (
+            mtd_cfg_as_conversion_and_querypath,
+        )
+
+        search_plugin.config.discover_collections[
+            "generic_collection_unparsable_properties"
+        ] = {
+            "metadata_mapping": mtd_cfg_as_conversion_and_querypath(
+                {"eo:cloud_cover": "$.null"}
+            )
+        }
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "title": "The FOO collection",
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_collections()
+        providers_config = conf_update_dict["providers_config"]["foo_collection"]
+
+        # unparsable metadata_mapping should be merged with default metadata_mapping
+        self.assertIn("metadata_mapping", providers_config)
+        merged_mapping = providers_config["metadata_mapping"]
+
+        # should contain the override from unparsable_properties
+        self.assertIn("eo:cloud_cover", merged_mapping)
+
+        # should also contain keys from the default metadata_mapping
+        self.assertIn("id", merged_mapping)
+        self.assertIn("geometry", merged_mapping)
+        self.assertIn("start_datetime", merged_mapping)
+
+        # restore configuration
+        search_plugin.config.discover_collections = discover_collections_conf
+
     def test_plugins_search_querystringsearch_discover_collections_paginated(self):
         """QueryStringSearch.discover_collections must handle pagination"""
         # One of the providers that has a QueryStringSearch Search plugin and discover_collections configured
