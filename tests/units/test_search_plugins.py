@@ -2066,6 +2066,44 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products[0].assets["normalized_key"]["title"], "normalized_key"
         )
 
+        mock_guess_asset_key_and_roles.reset_mock()
+        # no-extension href: driver returns (None, None), original key and roles are kept
+        mock_guess_asset_key_and_roles.return_value = (None, None)
+        mock_properties_from_json.return_value = {
+            "geometry": "POINT (0 0)",
+            "assets": {
+                "some-asset": {
+                    "href": "https://example.com/foo",
+                    "roles": ["bar"],
+                },
+            },
+        }
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
+        products = search_plugin.normalize_results([{}])
+        self.assertEqual(len(products[0].assets), 1)
+        self.assertIn("some-asset", products[0].assets)
+        self.assertEqual(products[0].assets["some-asset"]["roles"], ["bar"])
+        self.assertEqual(products[0].assets["some-asset"]["title"], "some-asset")
+
+        mock_guess_asset_key_and_roles.reset_mock()
+        # no-extension href with existing title: original title is preserved
+        mock_guess_asset_key_and_roles.return_value = (None, None)
+        mock_properties_from_json.return_value = {
+            "geometry": "POINT (0 0)",
+            "assets": {
+                "some-asset": {
+                    "href": "https://example.com/foo",
+                    "roles": ["bar"],
+                    "title": "My custom title",
+                },
+            },
+        }
+        search_plugin = self.get_search_plugin(self.collection, "earth_search")
+        products = search_plugin.normalize_results([{}])
+        self.assertEqual(len(products[0].assets), 1)
+        self.assertIn("some-asset", products[0].assets)
+        self.assertEqual(products[0].assets["some-asset"]["title"], "My custom title")
+
     @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
     def test_plugins_search_stacsearch_opened_time_intervals(self, mock_requests_post):
         """Opened time intervals must be handled by StacSearch plugin"""
