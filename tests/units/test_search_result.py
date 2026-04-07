@@ -21,6 +21,7 @@ from collections import UserList
 
 import geojson
 from lxml import html
+from pystac import ItemCollection
 from shapely.geometry.collection import GeometryCollection
 
 from tests.context import EOProduct, SearchResult
@@ -73,6 +74,10 @@ class TestSearchResult(unittest.TestCase):
         self.assertIsInstance(wkt_object, str)
         self.assertTrue(wkt_object.startswith("GEOMETRYCOLLECTION"))
 
+    def test_search_result_as_pystac_object(self):
+        pystac_object = self.search_result.as_pystac_object()
+        self.assertIsInstance(pystac_object, ItemCollection)
+
     def test_search_result_is_list_like(self):
         """SearchResult must provide a list interface"""
         self.assertIsInstance(self.search_result, UserList)
@@ -81,6 +86,13 @@ class TestSearchResult(unittest.TestCase):
         """SearchResult instances must be build-able from feature collection geojson"""
         same_search_result = SearchResult.from_dict(
             geojson.loads(geojson.dumps(self.search_result))
+        )
+        self.assertEqual(len(same_search_result), len(self.search_result))
+
+    def test_search_result_from_pystac(self):
+        """SearchResult instances must be build-able from feature collection geojson"""
+        same_search_result = SearchResult.from_pystac(
+            ItemCollection.from_dict(self.search_result.as_dict())
         )
         self.assertEqual(len(same_search_result), len(self.search_result))
 
