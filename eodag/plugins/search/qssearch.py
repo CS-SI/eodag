@@ -1314,14 +1314,21 @@ class QueryStringSearch(Search):
             product.assets.update(additional_assets)
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
-                norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
+                norm_key, norm_roles = product.driver.guess_asset_key_and_roles(
                     asset.get("href", "") if asset_key_from_href else key,
                     product,
                 )
+                # Keep original key and roles if driver couldn't guess
+                # (e.g., filename without extension)
+                if norm_key is None:
+                    norm_key = key
+                else:
+                    asset["roles"] = norm_roles
+                    asset["title"] = norm_key
                 if norm_key:
                     product.assets[norm_key] = asset
-                    # Normalize title with key
-                    product.assets[norm_key]["title"] = norm_key
+                    # Set title if not already set
+                    product.assets[norm_key].setdefault("title", norm_key)
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
             products.append(product)

@@ -721,11 +721,11 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[1].collection, "bar-collection")
         self.assertEqual(len(results[1].assets), 2)
         self.assertEqual(
-            results[1].assets["asset-1-link"]["href"],
+            results[1].assets["asset-1"]["href"],
             "https://provider-url/asset-1-link",
         )
         self.assertEqual(
-            results[1].assets["asset-2-link"]["href"],
+            results[1].assets["asset-2"]["href"],
             "https://provider-url/asset-2-link",
         )
         self.assertIsInstance(results[1].downloader, Download)
