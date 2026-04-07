@@ -168,6 +168,22 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "auth_error_code": 401,
                     },
                 },
+                "provider_text_token_post_credentials_true": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar?username={username}",
+                        "post_credentials": True,
+                    },
+                },
+                "provider_text_token_post_credentials_false": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "post_credentials": False,
+                    },
+                },
             }
         )
 
@@ -558,6 +574,67 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             r"Missing credentials inputs for provider provider_text_token_get_method: \['password2'\]",
         ):
             auth_plugin.authenticate()
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_post_credentials_true(self, mock_requests_post):
+        """TokenAuth.authenticate must post credentials when post_credentials is True even if creds are in URI"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_post_credentials_true")
+
+        auth_plugin.config.credentials = {"username": "bar", "baz": "qux"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # credentials must be in data even though they are embedded in auth_uri
+        args, kwargs = mock_requests_post.call_args
+        self.assertDictEqual(kwargs["data"], {"username": "bar", "baz": "qux"})
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_post_credentials_false(self, mock_requests_post):
+        """TokenAuth.authenticate must not post credentials when post_credentials is False"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_post_credentials_false")
+
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # credentials must NOT be in data even though they are not in auth_uri
+        args, kwargs = mock_requests_post.call_args
+        self.assertDictEqual(kwargs["data"], {})
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_post_credentials_default(self, mock_requests_post):
+        """TokenAuth.authenticate must not post credentials by default when they are already in auth_uri"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_format_url")
+
+        # use a single credential whose value will appear in the formatted auth_uri
+        auth_plugin.config.credentials = {"username": "bar"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # credentials must NOT be in data because all values are in auth_uri
+        args, kwargs = mock_requests_post.call_args
+        self.assertDictEqual(kwargs["data"], {})
 
     def test_plugins_auth_tokenauth_request_error(self):
         """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""

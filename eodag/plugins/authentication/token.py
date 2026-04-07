@@ -86,6 +86,9 @@ class TokenAuth(Authentication):
           returned in case of an authentication error
         * :attr:`~eodag.config.PluginConfig.req_data` (``dict[str, Any]``): if the credentials
           should be sent as data in the post request, the json structure can be given in this parameter
+        * :attr:`~eodag.config.PluginConfig.post_credentials` (``bool``): if ``True``, credentials are always
+          sent as POST data; if ``False``, they are never sent; if not set, credentials are sent only when they are not
+          already embedded in :attr:`~eodag.config.PluginConfig.auth_uri`
         * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
           total number of retries to allow; default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
@@ -265,8 +268,17 @@ class TokenAuth(Authentication):
             if method != "POST":
                 return
 
-            # append req_data to credentials if specified in config
-            data = dict(getattr(self.config, "req_data", {}), **self.config.credentials)
+            # send req_data if specified in config
+            data = getattr(self.config, "req_data", {})
+            # append credendials if needed
+            creds_in_auth_uri = all(
+                x in self.config.auth_uri for x in self.config.credentials.values()
+            )
+            post_credentials = getattr(self.config, "post_credentials", None)
+            if post_credentials is True or (
+                post_credentials is None and not creds_in_auth_uri
+            ):
+                data |= self.config.credentials
 
             # when refreshing the token, we pass only the client_id/secret if present,
             # not other parameters (username/password, scope, ...)

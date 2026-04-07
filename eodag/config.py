@@ -548,6 +548,10 @@ class PluginConfig(yaml.YAMLObject):
     #: Credentials json structure if they should be sent as POST data
     req_data: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: Whether to send credentials as POST data. If ``True``, always sent; if ``False``, never sent;
+    #: if not set, sent only when credentials are not embedded in ``auth_uri``
+    post_credentials: bool
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: URL used to fetch the access token with a refresh token
     refresh_uri: str
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
