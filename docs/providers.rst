@@ -724,6 +724,39 @@ No credentials are needed
 
 ----
 
+**theia**
+-----------------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Theia, environmental thematic hub for land data access.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://www.theia-land.fr/
+        :color: primary
+        :outline:
+        :tooltip: Theia website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Go to `https://gate.stac.teledetection.fr/ <https://gate.stac.teledetection.fr/>`_, then sign in or create an account by
+  clicking on ``Data-Terra`` in the bottom, then ``Register``. Once logged-in, create an API key.
+  You will then see ``access-key`` and ``secret-key`` that you can use in EODAG provider auth credentials.
+
+----
+
 **Destination Earth**
 ======================
 
