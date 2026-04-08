@@ -2272,8 +2272,8 @@ class GeodesSearch(StacSearch, PostJsonSearch):
         PostJsonSearch.__init__(self, provider, config)
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> list[Any]:
+        self, prep: PreparedSearch = PreparedSearch(), **kwargs: Any
+    ) -> RawSearchResult:
         """
         Perform a search on an OpenSearch-like interface and then a second query to retrieve status of the product
         """

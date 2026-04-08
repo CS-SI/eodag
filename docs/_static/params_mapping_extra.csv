@@ -1,14 +1,14 @@
 parameter,cop_dataspace,cop_marine,creodias,earth_search,earth_search_gcs,ecmwf,eocat,eumetsat_ds,fedeo_ceda,geodes,planetary_computer,sara,usgs_satapi_aws
-_collection,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`
+_collection,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`
 _processor_name,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 _provider,metadata only,,metadata only,,,,,,,,,metadata only,
 acquisitionInformation,,,,,,,,metadata only,,,,,
 assets,,,,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only
 beginningDateTime,metadata only,,metadata only,,,,,,,,,,
 collection,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
-constellation,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
+constellation,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`
 created,,,,,,,,,,,,metadata only,
-datetime,,,,metadata only,metadata only,,metadata only,,metadata only,metadata only,metadata only,,metadata only
+datetime,,,,metadata only,metadata only,,metadata only,,metadata only,,metadata only,,metadata only
 description,,,,,,,,,,,,metadata only,
 end_datetime,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 endingDateTime,metadata only,,metadata only,,,,,,,,,,
@@ -21,12 +21,13 @@ eodag:thumbnail,metadata only,,metadata only,metadata only,metadata only,,metada
 extraInformation,,,,,,,,metadata only,,,,,
 geometry,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 grid:code,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,,,,,,:green:`queryable metadata`,:green:`queryable metadata`,,
-gsd,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
+gsd,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 id,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 instruments,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`
 keywords,,,,,,,,,,metadata only,,metadata only,
 license,,,,,,,,,,,,metadata only,
 order:status,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+polarizationChannels,,,,,,,,,,:green:`queryable metadata`,,,
 processing:datetime,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 processing:facility,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,,
 processing:level,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,,,,,:green:`queryable metadata`,
