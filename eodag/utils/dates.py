@@ -17,6 +17,7 @@
 # limitations under the License.
 """eodag.rest.dates methods that must be importable without eodag[server] installeds"""
 
+import calendar
 import datetime
 import re
 from datetime import date
@@ -402,3 +403,189 @@ def format_date_range(start: dt, end: dt) -> str:
         '2020-12-02/2020-12-31'
     """
     return f"{format_date(start)}/{format_date(end)}"
+
+
+def validate_datetime_param(
+    value: Optional[Union[str, list[str]]],
+    param_name: str,
+    formatters: list[str],
+) -> Optional[list[str]]:
+    """Validate and collect parameter values matching any of the given datetime formats.
+
+    Ensures each value can be parsed by at least one of the ``formatters``
+    (``datetime.strptime`` patterns), and returns the sorted list of valid values.
+
+    :param value: Raw value(s) from search parameters (string or list of strings)
+    :param param_name: Parameter name (used in error messages)
+    :param formatters: ``datetime.strptime`` format strings used for validation
+    :returns: Sorted list of valid values, or ``None`` if ``value`` is ``None``
+    :raises ValidationError: If none of the values match any formatter
+
+    Examples:
+        >>> validate_datetime_param(["2023", "2024"], "year", ["%Y"])
+        ['2023', '2024']
+        >>> validate_datetime_param("12:00", "time", ["%H:%M", "%H%M"])
+        ['12:00']
+        >>> validate_datetime_param(None, "year", ["%Y"]) is None
+        True
+        >>> validate_datetime_param("bad", "year", ["%Y"])  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+            ...
+        eodag.utils.exceptions.ValidationError: Malformed parameter "year": ...
+    """
+    if value is None:
+        return None
+
+    if not isinstance(value, list):
+        value = [value]
+
+    buffer = []
+    has_error = None
+    for item in value:
+        for formatter in formatters:
+            try:
+                dt.strptime(item, formatter)
+                buffer.append(item)
+            except Exception as e:
+                has_error = e
+
+    if has_error is not None and len(buffer) == 0:
+        raise ValidationError(
+            'Malformed parameter "{}": {}'.format(param_name, str(has_error))
+        )
+
+    buffer.sort()
+    return buffer
+
+
+def time_values_to_hhmm(time_values: list[str]) -> list[str]:
+    """Convert time values to 4-digit HHMM format.
+
+    Strips non-digit characters (e.g. ``"12:00"`` -> ``"1200"``, ``"06:00"`` -> ``"0600"``),
+    then right-pads with zeros to handle 2-digit hour-only values (e.g. ``"06"`` -> ``"0600"``).
+    Deduplicates while preserving order.
+
+    :param time_values: List of time strings in various formats
+    :returns: List of unique time strings in HHMM format
+
+    Examples:
+        >>> time_values_to_hhmm(["12:00", "06:00"])
+        ['1200', '0600']
+        >>> time_values_to_hhmm(["12:00", "12:00"])
+        ['1200']
+        >>> time_values_to_hhmm(["06"])
+        ['0600']
+    """
+    buffer: list[str] = []
+    for time_str in time_values:
+        time_str = re.sub("[^0-9]+", "", time_str)
+        time_str = time_str.ljust(4, "0")
+        if time_str not in buffer:
+            buffer.append(time_str)
+    return buffer
+
+
+def to_iso_utc_string(
+    raw: Optional[Union[dt, str]],
+) -> Optional[str]:
+    """Convert a datetime or date string to an ISO 8601 UTC string.
+
+    :param raw: A datetime object or date string to convert
+    :returns: ISO 8601 formatted UTC string (``YYYY-MM-DDTHH:MM:SSZ``), or ``None``
+
+    Examples:
+        >>> from datetime import datetime
+        >>> to_iso_utc_string(datetime(2020, 1, 1, 12, 0))
+        '2020-01-01T12:00:00Z'
+        >>> to_iso_utc_string("2020-01-01")
+        '2020-01-01T00:00:00Z'
+        >>> to_iso_utc_string(None) is None
+        True
+    """
+    if raw is None:
+        return None
+    if isinstance(raw, dt):
+        raw = raw.replace(tzinfo=tz.UTC)
+        return raw.strftime("%Y-%m-%dT%H:%M:%SZ")
+    if not isinstance(raw, str):
+        return None
+
+    try:
+        parsed_datetime = isoparse(raw)
+        if parsed_datetime.tzinfo is None:
+            parsed_datetime = parsed_datetime.replace(tzinfo=tz.UTC)
+        return parsed_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (ValueError, OverflowError):
+        return None
+
+
+def compute_date_range_from_params(
+    date: Optional[str] = None,
+    time: Optional[list[str]] = None,
+    year: Optional[list[str]] = None,
+    month: Optional[list[str]] = None,
+    day: Optional[list[str]] = None,
+) -> tuple[Optional[str], Optional[str]]:
+    """Compute start/end ISO UTC datetime strings from date parameters.
+
+    Handles two modes:
+
+    - **date** + optional **time**: parse the date string and apply time bounds
+    - **year** + optional **month**/**day**/**time**: compute bounds from year/month/day/time ranges
+
+    Time values are expected in HHMM format (see :func:`time_values_to_hhmm`).
+
+    Returns ``(None, None)`` if neither ``date`` nor ``year`` is provided.
+
+    :param date: Date string (single date, or interval with ``/`` or ``/to/``)
+    :param time: List of normalized time strings in HHMM format
+    :param year: List of year strings
+    :param month: List of month strings (zero-padded)
+    :param day: List of day strings (zero-padded)
+    :returns: Tuple of (start_datetime, end_datetime) as ISO UTC strings
+
+    Examples:
+        >>> compute_date_range_from_params(date="2020-12-15")
+        ('2020-12-15T00:00:00Z', '2020-12-15T00:00:00Z')
+        >>> compute_date_range_from_params(date="2020-12-15", time=["0600", "1800"])
+        ('2020-12-15T06:00:00Z', '2020-12-15T18:00:00Z')
+        >>> compute_date_range_from_params(year=["2020", "2021"])
+        ('2020-01-01T00:00:00Z', '2021-12-31T23:59:59Z')
+        >>> compute_date_range_from_params(year=["2020"], month=["03"], day=["15"])
+        ('2020-03-15T00:00:00Z', '2020-03-15T23:59:59Z')
+        >>> compute_date_range_from_params()
+        (None, None)
+    """
+    if date is not None:
+        start, end = parse_date(date, time)
+        return to_iso_utc_string(start), to_iso_utc_string(end)
+
+    if year is not None:
+        min_year, max_year = year[0], year[-1]
+
+        if month:
+            min_month, max_month = month[0], month[-1]
+        else:
+            min_month, max_month = "01", "12"
+
+        _, last_day = calendar.monthrange(int(max_year), int(max_month))
+        min_day = "01"
+        max_day = str(last_day).zfill(2)
+
+        if day:
+            if min_day <= day[0] <= max_day:
+                min_day = day[0]
+            if min_day <= day[-1] <= max_day:
+                max_day = day[-1]
+
+        if time:
+            min_time = f"{time[0][0:2]}:{time[0][2:4]}:00"
+            max_time = f"{time[-1][0:2]}:{time[-1][2:4]}:00"
+        else:
+            min_time, max_time = "00:00:00", "23:59:59"
+
+        start_str = f"{min_year}-{min_month}-{min_day}T{min_time}Z"
+        end_str = f"{max_year}-{max_month}-{max_day}T{max_time}Z"
+        return start_str, end_str
+
+    return None, None

@@ -17,14 +17,13 @@
 # limitations under the License.
 from __future__ import annotations
 
-import calendar
 import hashlib
 import logging
 import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from types import MethodType
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -65,10 +64,13 @@ from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_RANGE_PATTERN,
+    compute_date_range_from_params,
     format_date,
     is_range_in_range,
     parse_date,
     parse_year_month_day,
+    time_values_to_hhmm,
+    validate_datetime_param,
 )
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
@@ -629,95 +631,35 @@ class ECMWFSearch(PostJsonSearch):
 
     def _preprocess_indirect_date_parameters(self, params: dict[str, Any]) -> dict:
         """
-        Compute start_datetime / computed from "date", "time", "year", "month", "day"
+        Compute start_datetime / end_datetime from "date", "time", "year", "month", "day"
         """
         indirects: dict[str, Any] = {}
 
-        def __compute_indirect(
-            params: dict, param_name: str, formatters: list[str], indirect: dict
-        ):
-            """Validate and collect parameter values matching any of the given datetime formats.
-
-            Retrieves ``param_name`` from ``params``, ensures each value can be parsed by at
-            least one of the ``formatters`` (``datetime.strptime`` patterns), and stores the
-            sorted list of valid values in ``indirect``.
-
-            :param params: Search parameters dict to read from
-            :param param_name: Key to look up in ``params``
-            :param formatters: ``datetime.strptime`` format strings used for validation
-            :param indirect: Output dict where validated values are stored under ``param_name``
-            :raises ValidationError: If none of the values match any formatter
-
-            >>> indirect = {}
-            >>> __compute_indirect({"year": ["2023", "2024"]}, "year", ["%Y"], indirect)
-            >>> indirect
-            {'year': ['2023', '2024']}
-
-            >>> indirect = {}
-            >>> __compute_indirect({"time": "12:00"}, "time", ["%H:%M", "%H%M"], indirect)
-            >>> indirect
-            {'time': ['12:00']}
-
-            >>> indirect = {}
-            >>> __compute_indirect({}, "year", ["%Y"], indirect)
-            >>> indirect
-            {}
-
-            >>> __compute_indirect({"year": "bad"}, "year", ["%Y"], {})
-            Traceback (most recent call last):
-                ...
-            eodag.utils.exceptions.ValidationError: Malformed parameter "year": ...
-            """
-            value = params.get(param_name)
-            if value is not None:
-                if not isinstance(value, list):
-                    value = [value]
-                buffer = []
-                has_error = None
-                for item in value:
-                    for formatter in formatters:
-                        try:
-                            _ = datetime.strptime(item, formatter)
-                            buffer.append(item)
-                        except Exception as e:
-                            has_error = e
-
-                if has_error is not None and len(buffer) == 0:
-                    raise ValidationError(
-                        'Malformed parameter "{}": {}'.format(
-                            param_name, str(has_error)
-                        )
-                    )
-                else:
-                    buffer.sort()
-                    indirect[param_name] = buffer
-
-        __compute_indirect(
-            params, "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"], indirects
+        # Validate and collect indirect date parameters
+        time = validate_datetime_param(
+            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"]
         )
-        __compute_indirect(params, "year", ["%Y"], indirects)
-        __compute_indirect(params, "month", ["%m"], indirects)
-        __compute_indirect(params, "day", ["%d"], indirects)
+        year = validate_datetime_param(params.get("year"), "year", ["%Y"])
+        month = validate_datetime_param(params.get("month"), "month", ["%m"])
+        day = validate_datetime_param(params.get("day"), "day", ["%d"])
 
-        # Post process
-        if "time" in indirects:
-            # Normalize time values to 4-digit HHMM format.
-            # Strip non-digit characters (e.g. "12:00" -> "1200", "06:00" -> "0600")
-            # then right-pad with zeros to handle 2-digit hour-only values (e.g. "06" -> "0600").
-            buffer = []
-            for time_str in indirects["time"]:
-                time_str = re.sub("[^0-9]+", "", time_str)
-                time_str = time_str.ljust(4, "0")
-                if time_str not in buffer:
-                    buffer.append(time_str)
-            indirects["time"] = buffer
+        if time is not None:
+            time = time_values_to_hhmm(time)
+            indirects["time"] = time
+        if year is not None:
+            indirects["year"] = year
+        if month is not None:
+            indirects["month"] = month
+        if day is not None:
+            indirects["day"] = day
 
+        # Compute date range from "date" param (takes precedence)
         date = params.get("date", None)
         if date is not None:
             try:
-                start, end = parse_date(date, indirects.get("time", None))
-                indirects["start_datetime"] = self._preprocess_parse_iso_date(start)
-                indirects["end_datetime"] = self._preprocess_parse_iso_date(end)
+                start, end = compute_date_range_from_params(date=date, time=time)
+                indirects["start_datetime"] = start
+                indirects["end_datetime"] = end
                 return indirects
             except Exception as e:
                 raise ValidationError(
@@ -726,62 +668,16 @@ class ECMWFSearch(PostJsonSearch):
                     )
                 )
 
-        years = indirects.get("year")
-        if years is not None:
-            min_year, max_year = years[0], years[-1]
-
-            months = indirects.get("month")
-            if months:
-                min_month, max_month = months[0], months[-1]
-            else:
-                min_month, max_month = "01", "12"
-
-            _, last_day = calendar.monthrange(int(max_year), int(max_month))
-            min_day = "01"
-            max_day = str(last_day).zfill(2)
-
-            days = indirects.get("day")
-            if days:
-                if min_day <= days[0] <= max_day:
-                    min_day = days[0]
-                if min_day <= days[-1] <= max_day:
-                    max_day = days[-1]
-
-            time = indirects.get("time")
-            if time:
-                min_time = f"{time[0][0:2]}:{time[0][2:4]}:00"
-                max_time = f"{time[-1][0:2]}:{time[-1][2:4]}:00"
-            else:
-                min_time, max_time = "00:00:00", "23:59:59"
-
-            indirects[
-                "start_datetime"
-            ] = f"{min_year}-{min_month}-{min_day}T{min_time}Z"
-            indirects["end_datetime"] = f"{max_year}-{max_month}-{max_day}T{max_time}Z"
+        # Compute date range from year/month/day/time params
+        start, end = compute_date_range_from_params(
+            year=year, month=month, day=day, time=time
+        )
+        if start is not None:
+            indirects["start_datetime"] = start
+        if end is not None:
+            indirects["end_datetime"] = end
 
         return indirects
-
-    def _preprocess_parse_iso_date(
-        self, raw: Optional[Union[datetime, str]]
-    ) -> Optional[str]:
-        """
-        Force mixed date format to iso format date
-        """
-        if raw is None:
-            return None
-        if isinstance(raw, datetime):
-            raw = raw.replace(tzinfo=tzutc())
-            return raw.strftime("%Y-%m-%dT%H:%M:%SZ")
-        if not isinstance(raw, str):
-            return None
-
-        try:
-            parsed_datetime = isoparse(raw)
-            if parsed_datetime.tzinfo is None:
-                parsed_datetime = parsed_datetime.replace(tzinfo=tzutc())
-            return parsed_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
-        except (ValueError, OverflowError):
-            return None
 
     def _get_collection_queryables(
         self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
