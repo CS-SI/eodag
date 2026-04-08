@@ -3,8 +3,28 @@ Release history
 ===============
 
 
-v4.1.0 (2026-04-07)
+v4.1.0 (2026-04-08)
 ===================
+
+Features
+--------
+
+* **core**: Exposed stream_download method (`#2021`_, `241bc8a`_)
+
+* **core**: New (de)serialization methods (`#2121`_, `f19b7a9`_)
+
+* **core**: Pystac interfaces (`#2129`_, `69efba9`_)
+
+* **providers**: Add eocat provider (`#1811`_, `7d68327`_)
+
+* **plugins**: Configurable TokenAuth auth_tuple (`#2132`_, `7705137`_)
+
+* **plugins**: Control how credentials are post using TokenAuth (`#2133`_, `9764be1`_)
+
+Refactoring
+-----------
+
+* Remove peps provider (`#2114`_, `42bf3ab`_)
 
 Bug Fixes
 ---------
@@ -41,26 +61,6 @@ Continuous Integration
 ----------------------
 
 * Skip doc build on draft PRs (`#2124`_, `18b68c3`_)
-
-Features
---------
-
-* **core**: Exposed stream_download method (`#2021`_, `241bc8a`_)
-
-* **core**: New (de)serialization methods (`#2121`_, `f19b7a9`_)
-
-* **core**: Pystac interfaces (`#2129`_, `69efba9`_)
-
-* **plugins**: Configurable TokenAuth auth_tuple (`#2132`_, `7705137`_)
-
-* **plugins**: Control how credentials are post using TokenAuth (`#2133`_, `9764be1`_)
-
-* **providers**: Add eocat provider (`#1811`_, `7d68327`_)
-
-Refactoring
------------
-
-* Remove peps provider (`#2114`_, `42bf3ab`_)
 
 Testing
 -------
