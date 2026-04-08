@@ -444,7 +444,12 @@ def validate_datetime_param(
     for item in value:
         for formatter in formatters:
             try:
-                dt.strptime(item, formatter)
+                # Prepend a dummy year when format contains %d without %Y
+                # to avoid ambiguity (deprecated in 3.14, error in 3.15+)
+                if "%d" in formatter and "%Y" not in formatter:
+                    dt.strptime(f"2000 {item}", f"%Y {formatter}")
+                else:
+                    dt.strptime(item, formatter)
                 buffer.append(item)
             except Exception as e:
                 has_error = e
