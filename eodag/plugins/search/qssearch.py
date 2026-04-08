@@ -374,6 +374,16 @@ class QueryStringSearch(Search):
                         "single_collection_parsable_metadata"
                     ]
                 )
+            if "metadata_mapping" in self.config.discover_collections.get(
+                "generic_collection_unparsable_properties", {}
+            ):
+                self.config.discover_collections[
+                    "generic_collection_unparsable_properties"
+                ]["metadata_mapping"] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_collections[
+                        "generic_collection_unparsable_properties"
+                    ]["metadata_mapping"]
+                )
 
         # parse jsonpath on init: queryables discovery
         if (
@@ -597,13 +607,29 @@ class QueryStringSearch(Search):
                         generic_collection_id = extracted_mapping.pop(
                             "generic_collection_id"
                         )
+                        unparsable_properties = deepcopy(
+                            self.config.discover_collections.get(
+                                "generic_collection_unparsable_properties", {}
+                            )
+                        )
+                        if "metadata_mapping" in unparsable_properties:
+                            # merge with default metadata mapping
+                            merged_metadata_mapping = deepcopy(
+                                self.config.metadata_mapping
+                            )
+                            for metadata, mapping in unparsable_properties[
+                                "metadata_mapping"
+                            ].items():
+                                merged_metadata_mapping.pop(metadata, None)
+                                merged_metadata_mapping[metadata] = mapping
+                            unparsable_properties[
+                                "metadata_mapping"
+                            ] = merged_metadata_mapping
                         conf_update_dict["providers_config"][
                             generic_collection_id
                         ] = dict(
                             extracted_mapping,
-                            **self.config.discover_collections.get(
-                                "generic_collection_unparsable_properties", {}
-                            ),
+                            **unparsable_properties,
                         )
                         # collections_config extraction
                         collection_properties = properties_from_json(
@@ -1288,14 +1314,21 @@ class QueryStringSearch(Search):
             product.assets.update(additional_assets)
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
-                norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
+                norm_key, norm_roles = product.driver.guess_asset_key_and_roles(
                     asset.get("href", "") if asset_key_from_href else key,
                     product,
                 )
+                # Keep original key and roles if driver couldn't guess
+                # (e.g., filename without extension)
+                if norm_key is None:
+                    norm_key = key
+                else:
+                    asset["roles"] = norm_roles
+                    asset["title"] = norm_key
                 if norm_key:
                     product.assets[norm_key] = asset
-                    # Normalize title with key
-                    product.assets[norm_key]["title"] = norm_key
+                    # Set title if not already set
+                    product.assets[norm_key].setdefault("title", norm_key)
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
             products.append(product)

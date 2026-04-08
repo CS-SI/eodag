@@ -229,6 +229,8 @@ class CopMarineSearch(StaticStacSearch):
             "geometry": geometry,
             "eodag:download_link": download_url,
             "dataset": dataset_item["id"],
+            # order:status set to succeeded for consistency between providers
+            "order:status": "succeeded",
         }
         if use_dataset_dates:
             dates = _get_dates_from_dataset_data(dataset_item)
@@ -328,7 +330,7 @@ class CopMarineSearch(StaticStacSearch):
         start_index = limit * (token - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
-            if len(products) >= limit and not prep.count:
+            if len(products) >= limit and not prep.count and limit > 0:
                 break
             # Filter by geometry
             if "id" not in kwargs and geometry:

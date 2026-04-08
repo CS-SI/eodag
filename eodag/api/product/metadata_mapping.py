@@ -156,6 +156,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``csv_list``: convert to a comma separated list
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``dict_with_roles``: keep only dict items with given roles in their "roles" list
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``from_alternate``: update assets using given alternate
         - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
@@ -734,6 +735,25 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             )
             args_str = f"('{old}', '{new}')"
             return MetadataFormatter.convert_recursive_sub_str(filtered, args_str)
+
+        @staticmethod
+        def convert_dict_with_roles(
+            input_dict: dict[Any, Any], roles_str: str
+        ) -> dict[Any, Any]:
+            """Keep only dict items with given roles in their "roles" list"""
+            roles = ast.literal_eval(roles_str)
+            if not isinstance(roles, (list, tuple)):
+                raise TypeError(
+                    f"convert_keep_dict_with_roles expects a list/tuple of roles. Got {type(roles)}: {roles}"
+                )
+            result = {}
+            for k, v in input_dict.items():
+                if not isinstance(v, dict):
+                    continue
+                item_roles = v.get("roles", [])
+                if any(role in item_roles for role in roles):
+                    result[k] = v
+            return result
 
         @staticmethod
         def convert_from_alternate(

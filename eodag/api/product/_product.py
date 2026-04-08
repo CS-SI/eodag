@@ -23,10 +23,12 @@ import os
 import re
 import tempfile
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
+import geojson
 import orjson
 import requests
+from pystac import Item
 from requests import RequestException
 from requests.auth import AuthBase
 from shapely import geometry
@@ -56,11 +58,20 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_SHAPELY_GEOMETRY,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
+    GENERIC_STAC_PROVIDER,
     STAC_VERSION,
     USER_AGENT,
     ProgressCallback,
+    StreamResponse,
+    _deprecated,
+    deepcopy,
     format_string,
     get_geometry_from_various,
+)
+from eodag.utils.deserialize import (
+    _import_stac_item_from_eodag_server,
+    _import_stac_item_from_known_provider,
+    _import_stac_item_from_unknown_provider,
 )
 from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
 from eodag.utils.repr import dict_to_html_table
@@ -69,6 +80,7 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
+    from eodag import EODataAccessGateway
     from eodag.api.product.drivers.base import DatasetDriver
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
@@ -76,7 +88,6 @@ if TYPE_CHECKING:
     from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
-
 
 logger = logging.getLogger("eodag.product")
 
@@ -208,10 +219,11 @@ class EOProduct:
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
 
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
         :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
         """
@@ -237,33 +249,39 @@ class EOProduct:
             stac_properties["providers"] = stac_providers
 
         props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
-        props_validated = props_model.safe_validate(stac_properties)
+        props_validated = props_model.safe_validate(
+            stac_properties, skip_invalid=skip_invalid
+        )
         stac_extensions: set[str] = set(props_validated.get_conformance_classes())
 
         # skip invalid properties
-        invalid_properties = {
-            k
-            for k in stac_properties.keys()
-            if k not in props_validated.model_dump() and props_model.has_field(k)
-        }
-        for key in invalid_properties:
-            stac_properties.pop(key, None)
+        if skip_invalid:
+            invalid_properties = {
+                k
+                for k in stac_properties.keys()
+                if k not in props_validated.model_dump() and props_model.has_field(k)
+            }
+            for key in invalid_properties:
+                stac_properties.pop(key, None)
 
         # get conformance classes for assets properties
         assets_dict = {**self.assets.as_dict()}
         for asset_key, asset_properties in self.assets.as_dict().items():
-            asset_props_validated = props_model.safe_validate(asset_properties)
+            asset_props_validated = props_model.safe_validate(
+                asset_properties, skip_invalid=skip_invalid
+            )
             stac_extensions.update(asset_props_validated.get_conformance_classes())
 
             # skip invalid assets properties
-            invalid_asset_properties = {
-                k
-                for k in asset_properties.keys()
-                if k not in asset_props_validated.model_dump()
-                and props_model.has_field(k)
-            }
-            for key in invalid_asset_properties:
-                assets_dict[asset_key].pop(key, None)
+            if skip_invalid:
+                invalid_asset_properties = {
+                    k
+                    for k in asset_properties.keys()
+                    if k not in asset_props_validated.model_dump()
+                    and props_model.has_field(k)
+                }
+                for key in invalid_asset_properties:
+                    assets_dict[asset_key].pop(key, None)
 
         geojson_repr: dict[str, Any] = {
             "type": "Feature",
@@ -285,7 +303,101 @@ class EOProduct:
         }
         return geojson_repr
 
+    def as_pystac_object(self, skip_invalid: bool = True) -> Item:
+        """Builds a representation of EOProduct as a pystac Item to enable its manipulation with pystac methods
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a :class:`pystac.Item`
+        """
+        prod_dict = self.as_dict(skip_invalid=skip_invalid)
+        return Item.from_dict(prod_dict)
+
     @classmethod
+    def from_dict(
+        cls,
+        feature: dict[str, Any],
+        dag: Optional[EODataAccessGateway] = None,
+        raise_errors: bool = False,
+    ) -> EOProduct:
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
+        serialized representation as a Python dict.
+
+        :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
+                        as a Python dict
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
+                    provided, the downloader and authenticator will not be registered.
+        :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.
+                             If False, and if ``dag`` is given, several import methods will be tried: from serialized,
+                             from eodag-server, from known provider, from unknown provider.
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        if dag is not None:
+            # add a generic STAC provider that might be needed to handle the items
+            dag.add_provider(GENERIC_STAC_PROVIDER)
+
+            plugin_manager = dag._plugins_manager
+            product = cls._from_stac_item(
+                feature, plugin_manager, provider=None, raise_errors=raise_errors
+            )
+            if product is None:
+                raise ValidationError(
+                    "Unable to build EOProduct from the provided dictionary, no import method succeeded"
+                )
+        else:
+            product = cls._import_stac_item_from_serialized(feature)
+        return product
+
+    @classmethod
+    def from_file(
+        cls,
+        filepath: str,
+        dag: Optional[EODataAccessGateway] = None,
+        raise_errors: bool = False,
+    ) -> EOProduct:
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from a file containing its serialized
+        representation as geojson.
+
+        :param filepath: The path to the file containing the serialized representation of a product
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
+                    provided, the downloader and authenticator will not be registered.
+        :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.
+                             If False, several import methods will be tried: from serialized, from eodag-server, from
+                             known provider, from unknown provider.
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        with open(filepath, "r") as fh:
+            feature = geojson.load(fh)
+
+        return cls.from_dict(feature, dag=dag, raise_errors=raise_errors)
+
+    @classmethod
+    def from_pystac(
+        cls,
+        item: Item,
+        dag: Optional[EODataAccessGateway] = None,
+        raise_errors: bool = False,
+    ) -> EOProduct:
+        """Builds an :class:`~eodag.api.product._product.EOProduct` object from a pystac Item.
+
+        :param item: The :class:`pystac.Item` containing the metadata of the product
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the product downloader. If not
+                    provided, the downloader and authenticator will not be registered.
+        :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.
+                             If False, several import methods will be tried: from serialized, from eodag-server, from
+                             known provider, from unknown provider.
+        :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        feature = item.to_dict()
+        return cls.from_dict(feature, dag=dag, raise_errors=raise_errors)
+
+    @classmethod
+    @_deprecated(
+        reason="Please use 'EOProduct.from_dict' instead",
+        version="4.1.0",
+    )
     def from_geojson(cls, feature: dict[str, Any]) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
@@ -295,22 +407,7 @@ class EOProduct:
         :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
-        try:
-            collection = feature.get("collection")
-            properties = feature["properties"]
-            properties["geometry"] = feature["geometry"]
-            properties["id"] = feature["id"]
-            provider = properties.pop("eodag:provider")
-            search_intersection = properties.pop("eodag:search_intersection")
-        except KeyError as e:
-            raise ValidationError(
-                "Key %s not found in geojson, make sure it comes from a serialized SearchResult"
-                % e.args[0]
-            ) from e
-        obj = cls(provider, properties, collection=collection)
-        obj.search_intersection = geometry.shape(search_intersection)
-        obj.assets = AssetsDict(obj, feature.get("assets", {}))
-        return obj
+        return cls.from_dict(feature, raise_errors=True)
 
     # Implementation of geo-interface protocol (See
     # https://gist.github.com/sgillies/2217756)
@@ -481,6 +578,50 @@ class EOProduct:
 
         return fs_path
 
+    def stream_download(
+        self,
+        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        compress: Literal["zip", "raw", "auto"] = "auto",
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        **kwargs: Unpack[DownloadConf],
+    ) -> StreamResponse:
+        """Download as StreamResponse the EO product using the provided download plugin and the
+        authenticator if necessary.
+
+        :param byte_range: (optional) Tuple of first index / last index byte to read
+        :param compress: (optional) "zip", "raw", "auto"
+        :param wait: (optional) If download fails, wait time in minutes between
+                     two download tries
+        :param timeout: (optional) If download fails, maximum time in minutes
+                        before stop retrying to download
+        :param kwargs: additional kwargs like `dl_url_params` (dict) can be provided
+                        and will override any other values defined in a configuration
+                        file or with environment variables.
+        :returns: StreamResponse Stream representation of a file
+        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
+        :raises: :class:`RuntimeError`
+        """
+        if self.downloader is None:
+            raise RuntimeError(
+                "EO product is unable to stream_download itself due to lacking of a "
+                "download plugin"
+            )
+        auth = (
+            self.downloader_auth.authenticate()
+            if self.downloader_auth is not None
+            else self.downloader_auth
+        )
+        return self.downloader.stream_download(
+            self,
+            auth,
+            byte_range,
+            compress,
+            wait=wait,
+            timeout=timeout,
+            **kwargs,
+        )
+
     def _init_progress_bar(
         self,
         progress_callback: Optional[ProgressCallback],
@@ -536,7 +677,7 @@ class EOProduct:
             verify=ssl_verify,
         ) as stream:
             stream.raise_for_status()
-            stream_size = int(stream.headers.get("content-length", 0))
+            stream_size = int(stream.headers.get("Content-Length", 0))
             progress_callback.reset(stream_size)
             with open(quicklook_file, "wb") as fhandle:
                 for chunk in stream.iter_content(chunk_size=64 * 1024):
@@ -765,3 +906,83 @@ class EOProduct:
         :returns: updated EOProduct
         """
         raise NotImplementedError("Install eodag-cube to make this method available.")
+
+    @classmethod
+    def _import_stac_item_from_serialized(
+        cls, feature: dict[str, Any], plugins_manager: Optional[PluginManager] = None
+    ) -> EOProduct:
+        """Import a STAC item from a EODAG serialized EOProduct.
+
+        :param feature: A STAC item as a dictionary
+        :param plugins_manager: The EODAG plugin manager instance
+        :returns: An EOProduct created from the STAC item
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        try:
+            collection = feature.get("collection")
+            properties = deepcopy(feature["properties"])
+            properties["geometry"] = feature["geometry"]
+            properties["id"] = feature["id"]
+            provider = properties.pop("eodag:provider")
+            search_intersection = properties.pop("eodag:search_intersection")
+        except KeyError as e:
+            raise ValidationError(
+                "Key %s not found in geojson, make sure it comes from a serialized SearchResult or EOProduct"
+                % e.args[0]
+            ) from e
+        obj = cls(provider, properties, collection=collection)
+        obj.search_intersection = geometry.shape(search_intersection)
+        obj.assets.update(feature.get("assets", {}))
+
+        if plugins_manager is not None:
+            # register
+            downloader = plugins_manager.get_download_plugin(obj)
+            auth = obj.downloader_auth
+            if auth is None:
+                auth = plugins_manager.get_auth_plugin(downloader, obj)
+            obj.register_downloader(downloader, auth)
+
+        return obj
+
+    @classmethod
+    def _from_stac_item(
+        cls,
+        feature: dict[str, Any],
+        plugins_manager: PluginManager,
+        provider: Optional[str] = None,
+        raise_errors: bool = False,
+    ) -> Optional[EOProduct]:
+        """Create a SearchResult from a STAC item.
+
+        :param feature: A STAC item as a dictionary
+        :param plugins_manager: The EODAG plugin manager instance
+        :provider: (optional) The provider to which the STAC item belongs, if known. If not provided, the method will
+                   try to determine it from the STAC item properties.
+        :param raise_errors: (optional) Whether to raise exceptions in case of errors during the deserialize process.
+                             If False, several import methods will be tried: from serialized, from eodag-server, from
+                             known provider, from unknown provider.
+        :returns: An EOProduct created from the STAC item
+        """
+        result: Optional[EOProduct] = None
+        try:
+            # try importing from a serialized EODAG EOProduct
+            if result := cls._import_stac_item_from_serialized(
+                feature, plugins_manager
+            ):
+                return result
+        except ValidationError:
+            if raise_errors:
+                raise
+
+        # Try importing from EODAG Server
+        if result := _import_stac_item_from_eodag_server(feature, plugins_manager):
+            return result
+
+        # try importing from a known STAC provider
+        if result := _import_stac_item_from_known_provider(
+            feature, plugins_manager, provider
+        ):
+            return result
+
+        # try importing from an unknown STAC provider
+        return _import_stac_item_from_unknown_provider(feature, plugins_manager)

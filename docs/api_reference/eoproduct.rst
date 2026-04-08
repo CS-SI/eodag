@@ -29,13 +29,17 @@ Download
 --------
 
 .. automethod:: EOProduct.download
+.. automethod:: EOProduct.stream_download
 .. automethod:: EOProduct.get_quicklook
 
 Conversion
 ----------
 
 .. automethod:: EOProduct.as_dict
-.. automethod:: EOProduct.from_geojson
+.. automethod:: EOProduct.as_pystac_object
+.. automethod:: EOProduct.from_dict
+.. automethod:: EOProduct.from_file
+.. automethod:: EOProduct.from_pystac
 
 Interface
 ---------

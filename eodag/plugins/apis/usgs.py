@@ -417,7 +417,7 @@ class UsgsApi(Api):
                         raise NotAvailableError(error_message)
                     else:
                         stream_size = (
-                            int(stream.headers.get("content-length", 0)) or None
+                            int(stream.headers.get("Content-Length", 0)) or None
                         )
                         progress_callback.reset(total=stream_size)
                         with open(fs_path, "wb") as fhandle:

@@ -24,6 +24,7 @@ import shutil
 import tarfile
 import tempfile
 import zipfile
+from abc import abstractmethod
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
@@ -102,6 +103,7 @@ class Download(PluginTopic):
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
 
+    @abstractmethod
     def download(
         self,
         product: EOProduct,
@@ -134,7 +136,8 @@ class Download(PluginTopic):
             "A Download plugin must implement a method named download"
         )
 
-    def _stream_download_dict(
+    @abstractmethod
+    def stream_download(
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
@@ -145,7 +148,7 @@ class Download(PluginTopic):
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
-        Base _stream_download_dict method. Not available, it must be defined for each plugin.
+        Base stream_download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :param auth: (optional) authenticated object
@@ -160,7 +163,7 @@ class Download(PluginTopic):
         :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         raise NotImplementedError(
-            "Download streaming must be implemented using a method named _stream_download_dict"
+            "Download streaming must be implemented using a method named stream_download"
         )
 
     def _prepare_download(
@@ -390,7 +393,9 @@ class Download(PluginTopic):
             tmp_dir = tempfile.TemporaryDirectory()
             extraction_dir = os.path.join(tmp_dir.name, os.path.basename(product_dir))
 
-            if fs_path.endswith(".zip"):
+            extract_complete = False
+            fs_path_lower = fs_path.lower()
+            if fs_path_lower.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
 
@@ -410,8 +415,12 @@ class Download(PluginTopic):
                 ):
                     os.makedirs(product_dir)
                 shutil.move(product_extraction_path, product_dir)
-
-            elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
+                extract_complete = True
+            elif (
+                fs_path_lower.endswith(".tar")
+                or fs_path_lower.endswith(".tar.gz")
+                or fs_path_lower.endswith(".tgz")
+            ):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
@@ -424,12 +433,13 @@ class Download(PluginTopic):
                 ):
                     os.makedirs(product_dir)
                 shutil.move(product_extraction_path, product_dir)
+                extract_complete = True
             else:
                 progress_callback(1, total=1)
 
             tmp_dir.cleanup()
 
-            if delete_archive and os.path.isfile(fs_path):
+            if delete_archive and os.path.isfile(fs_path) and extract_complete:
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
             elif os.path.isfile(fs_path):
@@ -766,3 +776,6 @@ class Download(PluginTopic):
 
         if thread_name_prefix:
             executor._thread_name_prefix = "eodag-download-all"
+
+
+__all__ = ["Download"]

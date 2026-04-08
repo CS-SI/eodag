@@ -65,6 +65,7 @@ class CommonStacMetadata(ItemProperties):
     title: Annotated[str, Field(None)]
     description: Annotated[str, Field(None)]
     license: Annotated[str, Field(None)]
+    keywords: Annotated[list[str], Field(None)]
 
     _conformance_classes: ClassVar[dict[str, str]]
     get_conformance_classes: ClassVar[Callable[[Any], list[str]]]
@@ -212,10 +213,12 @@ class CommonStacMetadata(ItemProperties):
     def safe_validate(
         cls: Type[T],
         data: dict,
+        skip_invalid: bool = True,
     ) -> T:
         """Validate only fields with correct types, drop others with a warning.
 
         :param data: data to validate
+        :param skip_invalid: whether to skip invalid fields
         :returns: validated model"""
         valid = {}
 
@@ -224,15 +227,21 @@ class CommonStacMetadata(ItemProperties):
             if value is None:
                 continue
             try:
-                TypeAdapter(field.annotation).validate_python(value)
+                annotated_type = (
+                    Annotated[tuple([field.annotation] + field.metadata)]
+                    if field.metadata
+                    else field.annotation
+                )
+                TypeAdapter(annotated_type).validate_python(value)
                 valid[name] = value
             except ValidationError as e:
-                logger.warning(
-                    "Dropped property %s: %s, %s",
-                    name,
-                    value,
-                    e.errors()[0]["msg"],
-                )
+                if skip_invalid:
+                    logger.warning(
+                        "Skipped property %s: %s, %s",
+                        name,
+                        value,
+                        e.errors()[0]["msg"],
+                    )
         return cls.model_validate(valid)
 
 

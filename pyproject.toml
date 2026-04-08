@@ -161,6 +161,7 @@ EcmwfApi = "eodag.plugins.apis.ecmwf:EcmwfApi [ecmwf]"
 
 [project.entry-points."eodag.plugins.auth"]
 GenericAuth = "eodag.plugins.authentication.generic:GenericAuth"
+EOIAMAuth = "eodag.plugins.authentication.eoiam:EOIAMAuth"
 HTTPHeaderAuth = "eodag.plugins.authentication.header:HTTPHeaderAuth"
 AwsAuth = "eodag.plugins.authentication.aws_auth:AwsAuth"
 TokenAuth = "eodag.plugins.authentication.token:TokenAuth"
@@ -206,7 +207,7 @@ include = ["eodag*"]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.0.3.dev0"
+fallback_version = "4.1.1.dev0"
 
 [tool.isort]
 multi_line_output = 3

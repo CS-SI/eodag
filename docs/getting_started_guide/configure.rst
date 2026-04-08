@@ -28,12 +28,12 @@ in a local directory (``~/.config/eodag/eodag.yml`` on Linux).
 
 This YAML file contains a template that shows how to complete the configuration of one or
 more providers. It allows to either **override** an existing setting or **add** a missing
-one (e.g. credentials). *PEPS*'s configuration template is shown below:
+one (e.g. credentials). *cop_dataspace*'s configuration template is shown below:
 
 .. code-block:: yaml
 
-   peps:
-       priority: # Lower value means lower priority (Default: 1)
+   cop_dataspace:
+       priority: # Lower value means lower priority (Default: 0)
        search:  # Search parameters configuration
        download:
            extract:  # whether to extract the downloaded products (true or false).
@@ -179,7 +179,7 @@ Example usage:
 
 .. code-block:: bash
 
-   export EODAG_PROVIDERS_WHITELIST=peps,creodias,cop_dataspace
+   export EODAG_PROVIDERS_WHITELIST=cop_dataspace,geodes
    export EODAG_STRICT_COLLECTIONS=true
    export EODAG_VALIDATE_COLLECTIONS=true
 

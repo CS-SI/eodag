@@ -724,39 +724,6 @@ No credentials are needed
 
 ----
 
-
-**peps**
---------
-
-.. grid:: 2
-   :gutter: 2
-   :class-container: sd-d-flex sd-align-items-center
-
-   .. grid-item::
-      :columns: 10
-
-      French National Space Agency (CNES) catalog for Sentinel products.
-
-   .. grid-item::
-      :columns: 2
-      :class: sd-text-right
-
-      .. button-link:: https://peps.cnes.fr/rocket/#/home
-        :color: primary
-        :outline:
-        :tooltip: PEPS website
-
-        :fas:`external-link-alt`
-
-.. dropdown:: Registration info
-  :color: muted
-  :class-container: dropdown-fade-in slim-dropdown
-
-  create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag
-  credentials.
-
-----
-
 **Destination Earth**
 ======================
 
@@ -936,6 +903,43 @@ No credentials are needed
         :fas:`external-link-alt`
 
 No credentials are needed
+
+**eocat**
+----------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      EOCAT (ESA Catalog) providing access to ESA Earth observation missions data, including Heritage and Third Party
+      missions.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://eocat.esa.int/eo-catalogue?httpAccept=text/html
+        :color: primary
+        :outline:
+        :tooltip: EOCAT / ESA Catalog website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account `here <https://eoiam-idp.eo.esa.int>`__.
+
+  Then use *email* as ``username`` and ``password`` in eodag credentials.
+
+  .. note:: **Additional consent**
+
+     Some collections will require additional consent for download. If so, a form URL will be will be provided in the
+     authentication error message. You will need to open the URL, fill in the form and try again.
 
 ----
 

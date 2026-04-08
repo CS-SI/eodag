@@ -37,7 +37,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.authentication.aws_auth import AwsAuth, raise_if_auth_error
-from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -61,6 +60,8 @@ from eodag.utils.exceptions import (
     TimeOutError,
 )
 from eodag.utils.s3 import S3FileInfo, open_s3_zipped_object, stream_download_from_s3
+
+from .base import Download
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -680,7 +681,7 @@ class AwsDownload(Download):
 
         return unique_product_chunks
 
-    def _stream_download_dict(
+    def stream_download(
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
@@ -1176,3 +1177,6 @@ class AwsDownload(Download):
 
         logger.debug(f"Downloading {chunk.key} to {product_path}")
         return product_path
+
+
+__all__ = ["AwsDownload"]

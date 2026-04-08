@@ -69,6 +69,8 @@ class TokenAuth(Authentication):
           keys/value pairs that should be added to the headers for token retrieve only
         * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
           access token with a refresh token
+        * :attr:`~eodag.config.PluginConfig.auth_tuple` (``list[str]``) : If expected, list of keys to be sent as a
+          tuple through the 'auth' parameter of the request
         * :attr:`~eodag.config.PluginConfig.token_type` (``str``): type of the token (``json``
           or ``text``); default: ``text``
         * :attr:`~eodag.config.PluginConfig.token_key` (``str``): (mandatory if token_type=json)
@@ -84,6 +86,9 @@ class TokenAuth(Authentication):
           returned in case of an authentication error
         * :attr:`~eodag.config.PluginConfig.req_data` (``dict[str, Any]``): if the credentials
           should be sent as data in the post request, the json structure can be given in this parameter
+        * :attr:`~eodag.config.PluginConfig.post_credentials` (``bool``): if ``True``, credentials are always
+          sent as POST data; if ``False``, they are never sent; if not set, credentials are sent only when they are not
+          already embedded in :attr:`~eodag.config.PluginConfig.auth_uri`
         * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
           total number of retries to allow; default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
@@ -101,6 +106,7 @@ class TokenAuth(Authentication):
         self.refresh_token = ""
         self.token_expiration = datetime.now()
         self.auth_lock = Lock()
+        self._unformatted_auth_uri: Optional[str] = None
 
     def __getstate__(self):
         """Exclude attributes that can't be pickled from serialization."""
@@ -117,9 +123,14 @@ class TokenAuth(Authentication):
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         super(TokenAuth, self).validate_config_credentials()
+
+        # keep the unformatted auth_uri to be able to reformat it with credentials when needed
+        if self._unformatted_auth_uri is None:
+            self._unformatted_auth_uri = self.config.auth_uri
+
         try:
             # format auth_uri using credentials if needed
-            self.config.auth_uri = self.config.auth_uri.format(
+            self.config.auth_uri = self._unformatted_auth_uri.format(
                 **self.config.credentials
             )
 
@@ -162,7 +173,8 @@ class TokenAuth(Authentication):
                     DEFAULT_TOKEN_EXPIRATION_MARGIN,
                 )
             )
-            self.validate_config_credentials()
+            if self.token == "":
+                self.validate_config_credentials()
             if (
                 self.token
                 and self.token_expiration - datetime.now() > expiration_margin
@@ -256,8 +268,17 @@ class TokenAuth(Authentication):
             if method != "POST":
                 return
 
-            # append req_data to credentials if specified in config
-            data = dict(getattr(self.config, "req_data", {}), **self.config.credentials)
+            # send req_data if specified in config
+            data = getattr(self.config, "req_data", {})
+            # append credendials if needed
+            creds_in_auth_uri = all(
+                x in self.config.auth_uri for x in self.config.credentials.values()
+            )
+            post_credentials = getattr(self.config, "post_credentials", None)
+            if post_credentials is True or (
+                post_credentials is None and not creds_in_auth_uri
+            ):
+                data |= self.config.credentials
 
             # when refreshing the token, we pass only the client_id/secret if present,
             # not other parameters (username/password, scope, ...)
@@ -294,17 +315,15 @@ class TokenAuth(Authentication):
 
         set_request_data(call_refresh=False)
 
-        # credentials as auth tuple if possible
-        req_kwargs["auth"] = (
-            (
-                self.config.credentials["username"],
-                self.config.credentials["password"],
+        # credentials as auth tuple if needed
+        auth_tuple = getattr(self.config, "auth_tuple", None)
+        if auth_tuple and all(k in self.config.credentials for k in auth_tuple):
+            req_kwargs["auth"] = tuple(self.config.credentials[k] for k in auth_tuple)
+        elif auth_tuple:
+            missing_keys = [k for k in auth_tuple if k not in self.config.credentials]
+            raise MisconfiguredError(
+                f"Missing credentials inputs for provider {self.provider}: {missing_keys}"
             )
-            if all(
-                k in self.config.credentials.keys() for k in ["username", "password"]
-            )
-            else None
-        )
 
         return session.request(
             method=method,

@@ -175,3 +175,16 @@ class TestEOProductDriverSentinel2Driver(EODagTestCase):
             ),
             ("foo.bar", ["auxiliary"]),
         )
+        # no extension: return None to keep original key and roles
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/some-key", self.product
+            ),
+            (None, None),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "https://example.com/path/no-ext-file?foo=bar", self.product
+            ),
+            (None, None),
+        )

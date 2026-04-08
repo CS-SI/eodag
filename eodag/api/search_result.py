@@ -21,26 +21,26 @@ import logging
 from collections import UserList
 from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
 
+import geojson
+from pystac import ItemCollection
 from shapely.geometry import GeometryCollection
 from shapely.geometry import mapping as shapely_mapping
 from shapely.geometry import shape
 from typing_extensions import Doc
 
-from eodag.api.product import EOProduct, unregistered_product_from_item
+from eodag.api.product import EOProduct
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
-from eodag.utils import GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS, STAC_VERSION
-from eodag.utils.exceptions import MisconfiguredError
+from eodag.utils import STAC_VERSION, _deprecated
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.core import EODataAccessGateway
     from eodag.plugins.crunch.base import Crunch
-    from eodag.plugins.manager import PluginManager
 
 
 logger = logging.getLogger("eodag.search_result")
@@ -184,16 +184,21 @@ class SearchResult(UserList[EOProduct]):
         """
         return self.filter_property(**{"order:status": "succeeded"})
 
-    @staticmethod
-    def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:
+    @classmethod
+    def from_dict(
+        cls,
+        feature_collection: dict[str, Any],
+        dag: Optional[EODataAccessGateway] = None,
+    ) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
 
         :param feature_collection: A collection representing a search result.
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
         :returns: An eodag representation of a search result
         """
 
         products = [
-            EOProduct.from_geojson(feature)
+            EOProduct.from_dict(feature, dag=dag)
             for feature in feature_collection.get("features", [])
         ]
         props = feature_collection.get("metadata", {}) or {}
@@ -202,7 +207,7 @@ class SearchResult(UserList[EOProduct]):
         if eodag_search_params and eodag_search_params.get("geometry"):
             eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
 
-        return SearchResult(
+        results = cls(
             products=products,
             number_matched=props.get("eodag:number_matched"),
             next_page_token=props.get("eodag:next_page_token"),
@@ -210,9 +215,62 @@ class SearchResult(UserList[EOProduct]):
             search_params=eodag_search_params or None,
             raise_errors=props.get("eodag:raise_errors"),
         )
+        if dag is not None:
+            results._dag = dag
+        return results
 
-    def as_geojson_object(self) -> dict[str, Any]:
-        """GeoJSON representation of SearchResult"""
+    @classmethod
+    def from_file(
+        cls,
+        filepath: str,
+        dag: Optional[EODataAccessGateway] = None,
+    ) -> SearchResult:
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from a geojson file
+
+        :param filepath: Path to the file containing the feature collection.
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
+        :returns: An eodag representation of a search result
+        """
+        with open(filepath, "r") as fh:
+            feature = geojson.load(fh)
+
+        return cls.from_dict(feature, dag=dag)
+
+    @classmethod
+    def from_pystac(
+        cls,
+        item_collection: ItemCollection,
+        dag: Optional[EODataAccessGateway] = None,
+    ) -> SearchResult:
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from a pystac ItemCollection
+
+        :param item_collection: The :class:`pystac.ItemCollection` containing the metadata of the products.
+        :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
+        :returns: An eodag representation of a search result
+        """
+        features_collection = item_collection.to_dict()
+
+        return cls.from_dict(features_collection, dag=dag)
+
+    @staticmethod
+    @_deprecated(
+        reason="Please use 'SearchResult.from_dict' instead",
+        version="4.1.0",
+    )
+    def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:
+        """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
+
+        :param feature_collection: A collection representing a search result.
+        :returns: An eodag representation of a search result
+        """
+        return SearchResult.from_dict(feature_collection)
+
+    def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
+        """GeoJSON representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a Python dict
+        """
 
         geojson_search_params = {} | (self.search_params or {})
         # search_params shapely geometry to wkt
@@ -223,7 +281,9 @@ class SearchResult(UserList[EOProduct]):
 
         return {
             "type": "FeatureCollection",
-            "features": [product.as_dict() for product in self],
+            "features": [
+                product.as_dict(skip_invalid=skip_invalid) for product in self
+            ],
             "metadata": {
                 "eodag:number_matched": self.number_matched,
                 "eodag:next_page_token": self.next_page_token,
@@ -236,18 +296,51 @@ class SearchResult(UserList[EOProduct]):
             "stac_version": STAC_VERSION,
         }
 
-    def as_shapely_geometry_object(self) -> GeometryCollection:
-        """:class:`shapely.GeometryCollection` representation of SearchResult"""
+    @_deprecated(
+        reason="Please use 'SearchResult.as_dict' instead",
+        version="4.1.0",
+    )
+    def as_geojson_object(self, skip_invalid: bool = True) -> dict[str, Any]:
+        """GeoJSON representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a Python dict
+        """
+        return self.as_dict(skip_invalid=skip_invalid)
+
+    def as_shapely_geometry_object(
+        self, skip_invalid: bool = True
+    ) -> GeometryCollection:
+        """:class:`shapely.GeometryCollection` representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a
+                  :class:`shapely.GeometryCollection`
+        """
         return GeometryCollection(
             [
                 shape(feature["geometry"]).buffer(0)
-                for feature in self.as_geojson_object()["features"]
+                for feature in self.as_dict(skip_invalid=skip_invalid)["features"]
             ]
         )
 
-    def as_wkt_object(self) -> str:
-        """WKT representation of SearchResult"""
-        return self.as_shapely_geometry_object().wkt
+    def as_wkt_object(self, skip_invalid: bool = True) -> str:
+        """WKT representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a WKT string
+        """
+        return self.as_shapely_geometry_object(skip_invalid=skip_invalid).wkt
+
+    def as_pystac_object(self, skip_invalid: bool = True) -> ItemCollection:
+        """Pystac ItemCollection representation of SearchResult
+
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
+        :returns: The representation of a :class:`~eodag.api.search_result.SearchResult` as a
+                  :class:`pystac.ItemCollection`
+        """
+        results_dict = self.as_dict(skip_invalid=skip_invalid)
+        return ItemCollection.from_dict(results_dict)
 
     @property
     def __geo_interface__(self) -> dict[str, Any]:
@@ -377,159 +470,6 @@ class SearchResult(UserList[EOProduct]):
             if not new_results:
                 break
         return
-
-    @classmethod
-    def _from_stac_item(
-        cls, feature: dict[str, Any], plugins_manager: PluginManager
-    ) -> SearchResult:
-        """Create a SearchResult from a STAC item.
-
-        :param feature: A STAC item as a dictionary
-        :param plugins_manager: The EODAG plugin manager instance
-        :returns: A SearchResult containing the EOProduct(s) created from the STAC item
-        """
-        # Try importing from EODAG Server
-        if results := _import_stac_item_from_eodag_server(feature, plugins_manager):
-            return results
-
-        # try importing from a known STAC provider
-        if results := _import_stac_item_from_known_provider(feature, plugins_manager):
-            return results
-
-        # try importing from an unknown STAC provider
-        return _import_stac_item_from_unknown_provider(feature, plugins_manager)
-
-
-def _import_stac_item_from_eodag_server(
-    feature: dict[str, Any], plugins_manager: PluginManager
-) -> Optional[SearchResult]:
-    """Import a STAC item from EODAG Server.
-
-    :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
-    :returns: A SearchResult containing the EOProduct(s) created from the STAC item
-    """
-    provider = None
-    if backends := feature["properties"].get("federation:backends"):
-        provider = backends[0]
-    elif providers := feature["properties"].get("providers"):
-        provider = providers[0].get("name")
-    if provider is not None:
-        logger.debug("Trying to import STAC item from EODAG Server")
-        # assets coming from a STAC provider
-        assets = {
-            k: v["alternate"]["origin"]
-            for k, v in feature.get("assets", {}).items()
-            if k not in ("thumbnail", "downloadLink", "eodag:download_link")
-            and "origin" in v.get("alternate", {})
-        }
-        if assets:
-            updated_item = {**feature, **{"assets": assets}}
-        else:
-            # item coming from a non-STAC provider
-            updated_item = {**feature}
-            download_link = (
-                feature.get("assets", {})
-                .get("downloadLink", {})
-                .get("alternate", {})
-                .get("origin", {})
-                .get("href")
-            ) or (
-                feature.get("assets", {})
-                .get("eodag:download_link", {})
-                .get("alternate", {})
-                .get("origin", {})
-                .get("href")
-            )
-            if download_link:
-                updated_item["assets"] = {}
-                updated_item["links"] = [{"rel": "self", "href": download_link}]
-            else:
-                updated_item = {}
-        try:
-            eo_product = unregistered_product_from_item(
-                updated_item, GENERIC_STAC_PROVIDER, plugins_manager
-            )
-        except MisconfiguredError:
-            eo_product = None
-        if eo_product is not None:
-            eo_product.provider = provider
-            eo_product._register_downloader_from_manager(plugins_manager)
-            return SearchResult([eo_product])
-    return None
-
-
-def _import_stac_item_from_known_provider(
-    feature: dict[str, Any], plugins_manager: PluginManager
-) -> Optional[SearchResult]:
-    """Import a STAC item from an already-configured STAC provider.
-
-    :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
-    :returns: A SearchResult containing the EOProduct(s) created from the STAC item
-    """
-    item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
-    item_href = item_hrefs[0]["href"] if len(item_hrefs) > 0 else None
-    imported_products = SearchResult([])
-    for search_plugin in plugins_manager.get_search_plugins():
-        # only try STAC search plugins
-        if (
-            search_plugin.config.type in STAC_SEARCH_PLUGINS
-            and search_plugin.provider != GENERIC_STAC_PROVIDER
-            and hasattr(search_plugin, "normalize_results")
-        ):
-            provider_base_url = search_plugin.config.api_endpoint.removesuffix(
-                "/search"
-            )
-            # compare the item href with the provider base URL
-            if item_href and item_href.startswith(provider_base_url):
-                products = search_plugin.normalize_results([feature])
-                if len(products) == 0 or len(products[0].assets) == 0:
-                    continue
-                logger.debug(
-                    "Trying to import STAC item from %s", search_plugin.provider
-                )
-                eo_product = products[0]
-
-                configured_cols = [
-                    k
-                    for k, v in search_plugin.config.products.items()
-                    if v.get("_collection") == feature.get("collection")
-                ]
-                if len(configured_cols) > 0:
-                    eo_product.collection = configured_cols[0]
-                else:
-                    eo_product.collection = feature.get("collection")
-
-                eo_product._register_downloader_from_manager(plugins_manager)
-                imported_products.append(eo_product)
-    if len(imported_products) > 0:
-        return imported_products
-    return None
-
-
-def _import_stac_item_from_unknown_provider(
-    feature: dict[str, Any], plugins_manager: PluginManager
-) -> SearchResult:
-    """Import a STAC item from an unknown STAC provider.
-
-    :param feature: A STAC item as a dictionary
-    :param plugins_manager: The EODAG plugin manager instance
-    :returns: A SearchResult containing the EOProduct(s) created from the STAC item
-    """
-    try:
-        logger.debug("Trying to import STAC item from unknown provider")
-        eo_product = unregistered_product_from_item(
-            feature, GENERIC_STAC_PROVIDER, plugins_manager
-        )
-    except MisconfiguredError:
-        pass
-    if eo_product is not None:
-        eo_product.collection = feature.get("collection")
-        eo_product._register_downloader_from_manager(plugins_manager)
-        return SearchResult([eo_product])
-    else:
-        return SearchResult([])
 
 
 class RawSearchResult(UserList[dict[str, Any]]):

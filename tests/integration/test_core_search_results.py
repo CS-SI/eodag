@@ -21,6 +21,7 @@ import os
 import tempfile
 from pathlib import Path
 
+import responses
 from requests.models import Response
 from shapely import geometry
 from stac_validator import stac_validator
@@ -35,6 +36,26 @@ from tests.context import (
     SearchResult,
     mock,
 )
+
+STAC_SCHEMAS_DIR = os.path.join(TEST_RESOURCES_PATH, "stac", "schemas")
+
+
+def _build_stac_schema_map():
+    """Build a mapping of remote schema URLs to local file paths from $id fields."""
+    schema_map = {}
+    for filename in os.listdir(STAC_SCHEMAS_DIR):
+        if not filename.endswith(".json"):
+            continue
+        filepath = os.path.join(STAC_SCHEMAS_DIR, filename)
+        with open(filepath) as f:
+            schema = json.load(f)
+        schema_id = schema.get("$id")
+        if schema_id:
+            schema_map[schema_id.rstrip("#")] = filepath
+    return schema_map
+
+
+STAC_SCHEMA_MAP = _build_stac_schema_map()
 
 
 class TestCoreSearchResults(EODagTestCase):
@@ -56,10 +77,10 @@ class TestCoreSearchResults(EODagTestCase):
                         "keyword": {},
                         "product:type": "OCN",
                         "eodag:download_link": (
-                            "https://peps.cnes.fr/resto/collections/S1/"
-                            "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
+                            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+                            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
                         ),
-                        "eodag:provider": "peps",
+                        "eodag:provider": "cop_dataspace",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
                         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
@@ -98,7 +119,7 @@ class TestCoreSearchResults(EODagTestCase):
             ],
             "type": "FeatureCollection",
         }
-        self.search_result = SearchResult.from_geojson(self.geojson_repr)
+        self.search_result = SearchResult.from_dict(self.geojson_repr)
         self.search_result._dag = self.dag
         # Ensure that each product in a search result has geometry and search
         # intersection as a shapely geometry
@@ -123,7 +144,10 @@ class TestCoreSearchResults(EODagTestCase):
                 path = self.dag.serialize(self.search_result, filename=f.name)
                 self.assertEqual(path, f.name)
             stac = stac_validator.StacValidate(
-                path, item_collection=True, links=True, assets=True
+                path,
+                item_collection=True,
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
             for msg in stac.message:
@@ -150,7 +174,11 @@ class TestCoreSearchResults(EODagTestCase):
             collection_path = tmpdir_path / f"{self.search_result[0].collection}.json"
             self.assertTrue(collection_path.exists())
             # validate STAC collection
-            stac = stac_validator.StacValidate(str(collection_path))
+            stac = stac_validator.StacValidate(
+                str(collection_path),
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
+            )
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
@@ -179,7 +207,10 @@ class TestCoreSearchResults(EODagTestCase):
                 path = self.dag.serialize(self.search_result, filename=f.name)
                 self.assertEqual(path, f.name)
             stac = stac_validator.StacValidate(
-                path, item_collection=True, links=True, assets=True
+                path,
+                item_collection=True,
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
             for msg in stac.message:
@@ -191,11 +222,19 @@ class TestCoreSearchResults(EODagTestCase):
             self.assertTrue(collection1_path.exists())
             self.assertTrue(collection2_path.exists())
             # validate STAC collections
-            stac = stac_validator.StacValidate(str(collection1_path))
+            stac = stac_validator.StacValidate(
+                str(collection1_path),
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
+            )
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
-            stac = stac_validator.StacValidate(str(collection2_path))
+            stac = stac_validator.StacValidate(
+                str(collection2_path),
+                core=True,
+                schema_map=STAC_SCHEMA_MAP,
+            )
             stac.run()
             for msg in stac.message:
                 self.assertTrue(msg["valid_stac"], stac.message)
@@ -213,6 +252,55 @@ class TestCoreSearchResults(EODagTestCase):
                 self.assertTrue((Path(tmpdir) / "search_results.geojson").exists())
             finally:
                 os.chdir(current_dir)
+
+    def test_core_serialize_search_results_skip_invalid(self):
+        """The core api must serialize a search results to STAC and skip invalid properties"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # bad formatted property
+                self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
+
+                self.dag.serialize(self.search_result, filename=f.name)
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property skipped
+                self.assertNotIn(
+                    "eo:cloud_cover", serialized["features"][0]["properties"]
+                )
+
+    def test_core_serialize_search_results_keep_invalid(self):
+        """The core api must serialize a search results to STAC and keep invalid properties if asked"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # bad formatted property
+                self.search_result[0].properties["eo:cloud_cover"] = "bad-formatted"
+
+                self.dag.serialize(
+                    self.search_result, filename=f.name, skip_invalid=False
+                )
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property not skipped
+                self.assertEqual(
+                    serialized["features"][0]["properties"]["eo:cloud_cover"],
+                    "bad-formatted",
+                )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch._request",
@@ -293,18 +381,18 @@ class TestCoreSearchResults(EODagTestCase):
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
         autospec=True,
     )
-    def test_core_serialize_deserialize_peps_results(self, mock__request):
-        """The core api must be able to serialize and deserialize a search result from peps provider"""
-        peps_resp_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses", "peps_search.json"
+    def test_core_serialize_deserialize_cop_dataspace_results(self, mock__request):
+        """The core api must be able to serialize and deserialize a search result from cop_dataspace provider"""
+        cop_dataspace_resp_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "cop_dataspace_search.json"
         )
         mock__request.return_value = mock.Mock()
-        with open(peps_resp_file) as f:
+        with open(cop_dataspace_resp_file) as f:
             mock__request.return_value.json.side_effect = [
                 json.load(f),
             ]
         prods = self.dag.search(
-            provider="peps", collection="S2_MSI_L1C", raise_errors=True
+            provider="cop_dataspace", collection="S2_MSI_L1C", raise_errors=True
         )
         self.assertGreater(len(prods), 0)
 
@@ -348,7 +436,7 @@ class TestCoreSearchResults(EODagTestCase):
     def _minimal_eoproduct_geojson_repr(eo_id, geom_coords, geom_type="Polygon"):
         return {
             "properties": {
-                "eodag:provider": "peps",
+                "eodag:provider": "cop_dataspace",
                 "eodag:search_intersection": {
                     "coordinates": geom_coords,
                     "type": geom_type,
@@ -364,13 +452,13 @@ class TestCoreSearchResults(EODagTestCase):
         geom_coords_2 = [[[90, 3], [91, 3], [91, 4], [90, 4], [90, 3]]]
         geom_coords_3 = [[[92, 4], [92, 4], [92, 5], [91, 5], [91, 4]]]
 
-        eo_geom1 = EOProduct.from_geojson(
+        eo_geom1 = EOProduct.from_dict(
             self._minimal_eoproduct_geojson_repr("1", geom_coords_1)
         )
-        eo_geom2 = EOProduct.from_geojson(
+        eo_geom2 = EOProduct.from_dict(
             self._minimal_eoproduct_geojson_repr("2", geom_coords_2)
         )
-        eo_geom3 = EOProduct.from_geojson(
+        eo_geom3 = EOProduct.from_dict(
             self._minimal_eoproduct_geojson_repr("3", geom_coords_3)
         )
         first_search = SearchResult([eo_geom1])
@@ -398,6 +486,7 @@ class TestCoreSearchResults(EODagTestCase):
         products_paths = self.dag.download_all(None)
         self.assertFalse(products_paths)
 
+    @responses.activate
     def test_download_all_callback(self):
         product = self._dummy_downloadable_product()
         search_result = SearchResult([product])
@@ -418,6 +507,7 @@ class TestCoreSearchResults(EODagTestCase):
             for product_path in products_paths:
                 self._clean_product(product_path)
 
+    @responses.activate
     def test_download_all_callback_and_skipped(self):
         """Download.download_all must skip products on download error and update callback on downloaded"""
         product = self._dummy_downloadable_product()
@@ -455,14 +545,14 @@ class TestCoreSearchResults(EODagTestCase):
     def test_core_search_results_registered(self, mock_query):
         """The core api must register search results downloaders"""
         # QueryStringSearch provider
-        self.dag.set_preferred_provider("peps")
+        self.dag.set_preferred_provider("cop_dataspace")
 
         search_results_file = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+            TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )
         with open(search_results_file, encoding="utf-8") as f:
             search_results_geojson = json.load(f)
-        products = SearchResult.from_geojson(search_results_geojson)
+        products = SearchResult.from_dict(search_results_geojson)
 
         mock_query.return_value = (products.data, len(products))
 
@@ -480,7 +570,7 @@ class TestCoreSearchResults(EODagTestCase):
         """The core api must register search results downloaders"""
         self.dag.set_preferred_provider("creodias")
         search_results_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses/peps_search.json"
+            TEST_RESOURCES_PATH, "provider_responses/cop_dataspace_search.json"
         )
         with open(search_results_file, encoding="utf-8") as f:
             payload = json.load(f)
@@ -488,9 +578,11 @@ class TestCoreSearchResults(EODagTestCase):
         fake_response.status_code = 200
         fake_response._content = json.dumps(payload).encode("utf-8")
         mock_request.return_value = fake_response
-        search_results = self.dag.search(collection="S2_MSI_L1C", provider="peps")
+        search_results = self.dag.search(
+            collection="S2_MSI_L1C", provider="cop_dataspace"
+        )
         # use given provider and not preferred provider
-        self.assertEqual("peps", search_results[0].provider)
+        self.assertEqual("cop_dataspace", search_results[0].provider)
 
     @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
     def test_core_search_with_count(self, mock_urlopen):
@@ -629,11 +721,11 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[1].collection, "bar-collection")
         self.assertEqual(len(results[1].assets), 2)
         self.assertEqual(
-            results[1].assets["asset-1-link"]["href"],
+            results[1].assets["asset-1"]["href"],
             "https://provider-url/asset-1-link",
         )
         self.assertEqual(
-            results[1].assets["asset-2-link"]["href"],
+            results[1].assets["asset-2"]["href"],
             "https://provider-url/asset-2-link",
         )
         self.assertIsInstance(results[1].downloader, Download)

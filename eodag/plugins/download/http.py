@@ -662,7 +662,7 @@ class HTTPDownload(Download):
             **kwargs: Unpack[DownloadConf],
         ) -> os.PathLike:
             is_empty = True
-            chunk_iterator = self._stream_download(
+            chunk_iterator = self._raw_stream_download(
                 product, auth, progress_callback, **kwargs
             )
             if fs_path is not None:
@@ -740,7 +740,7 @@ class HTTPDownload(Download):
 
     def _check_product_filename(self, product: EOProduct) -> str:
         filename = None
-        asset_content_disposition = product._stream.headers.get("content-disposition")
+        asset_content_disposition = product._stream.headers.get("Content-Disposition")
         if asset_content_disposition:
             filename = cast(
                 Optional[str],
@@ -762,7 +762,7 @@ class HTTPDownload(Download):
                         filename += ext
         return filename
 
-    def _stream_download_dict(
+    def stream_download(
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
@@ -802,7 +802,7 @@ class HTTPDownload(Download):
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
                 with executor:
-                    assets_stream_list = self._stream_download_assets(
+                    assets_stream_list = self._raw_stream_download_assets(
                         product,
                         executor,
                         auth,
@@ -815,7 +815,7 @@ class HTTPDownload(Download):
                 if len(assets_stream_list) == 1:
                     asset_stream = assets_stream_list[0]
                     if assets_values[0].get("type"):
-                        asset_stream.headers["content-type"] = assets_values[0]["type"]
+                        asset_stream.headers["Content-Type"] = assets_values[0]["type"]
                     return asset_stream
 
                 # multiple assets in zip
@@ -853,7 +853,7 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunk_iterator = self._stream_download(product, auth, None, **kwargs)
+        chunk_iterator = self._raw_stream_download(product, auth, None, **kwargs)
 
         # start reading chunks to set product.headers
         try:
@@ -962,7 +962,7 @@ class HTTPDownload(Download):
             product, auth
         )
 
-    def _stream_download(
+    def _raw_stream_download(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -1075,7 +1075,7 @@ class HTTPDownload(Download):
             product.filename = filename
             return product._stream.iter_content(chunk_size=64 * 1024)
 
-    def _stream_download_assets(
+    def _raw_stream_download_assets(
         self,
         product: EOProduct,
         executor: ThreadPoolExecutor,
@@ -1095,11 +1095,9 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = (
-            self._get_asset_sizes(assets_values, executor, auth, params) or None
-        )
+        total_size = self._get_asset_sizes(assets_values, executor, auth, params)
 
-        progress_callback.reset(total=total_size)
+        progress_callback.reset(total=total_size or None)
 
         # loop for assets paths and get common_subdir
         asset_rel_paths_list = []
@@ -1110,7 +1108,10 @@ class HTTPDownload(Download):
             ]
             asset.rel_path = os.path.join(*asset_rel_path_parts_sanitized)
             asset_rel_paths_list.append(asset.rel_path)
-        if asset_rel_paths_list:
+
+        assets_common_subdir = ""
+        if isinstance(asset_rel_paths_list, list) and len(asset_rel_paths_list) > 1:
+            # If only one asset, common subdir must not == asset dir
             assets_common_subdir = os.path.commonpath(asset_rel_paths_list)
 
         # product conf overrides provider conf for "flatten_top_dirs"
@@ -1159,19 +1160,19 @@ class HTTPDownload(Download):
                     stream.raise_for_status()
 
                     # Process asset path
-                    asset_rel_path = (
-                        asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
-                        if flatten_top_dirs
-                        else asset.rel_path
-                    )
+                    asset_rel_path = asset.rel_path
+                    if flatten_top_dirs:
+                        asset_rel_path = asset_rel_path.replace(
+                            assets_common_subdir, ""
+                        ).strip(os.sep)
                     asset_rel_dir = os.path.dirname(asset_rel_path)
 
                     if not getattr(asset, "filename", None):
                         # try getting filename in GET header if was not found in HEAD result
                         asset_content_disposition = stream.headers.get(
-                            "content-disposition"
+                            "Content-Disposition", None
                         )
-                        if asset_content_disposition:
+                        if asset_content_disposition is not None:
                             asset.filename = cast(
                                 Optional[str],
                                 parse_header(asset_content_disposition).get_param(
@@ -1252,7 +1253,7 @@ class HTTPDownload(Download):
 
         assets_values = product.assets.get_values(kwargs.get("asset"))
 
-        assets_stream_list = self._stream_download_assets(
+        assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
         )
 
@@ -1299,6 +1300,12 @@ class HTTPDownload(Download):
                     os.path.basename(asset_abs_path),
                 )
                 os.rename(asset_abs_path_temp, asset_abs_path)
+            else:
+                skipped_size = os.path.getsize(asset_abs_path)
+                logger.debug(
+                    "Asset already exists at '%s', skipping download", asset_abs_path
+                )
+                progress_callback(skipped_size)
             return
 
         # use parallelization if possible
@@ -1378,6 +1385,17 @@ class HTTPDownload(Download):
         params: Optional[dict[str, str]],
         zipped: bool = False,
     ) -> int:
+
+        # Try to get sizes from metadata first
+        sizes_from_metadata = [
+            int(asset["file:size"])
+            for asset in assets_values
+            if asset.get("file:size") is not None
+        ]
+        # If available, use the sum of sizes from metadata to avoid making HEAD requests for each asset
+        if sizes_from_metadata:
+            return sum(sizes_from_metadata)
+
         total_size = 0
 
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
@@ -1405,21 +1423,21 @@ class HTTPDownload(Download):
                     asset_headers = CaseInsensitiveDict()
 
                 if not getattr(asset, "size", 0):
-                    # size from HEAD header / Content-length
-                    asset.size = int(asset_headers.get("Content-length", 0))
+                    # size from HEAD header / Content-Length
+                    asset.size = int(asset_headers.get("Content-Length", 0))
 
                 header_content_disposition = Message()
                 if not getattr(asset, "size", 0) or not getattr(asset, "filename", 0):
-                    # header content-disposition
+                    # header Content-Disposition
                     header_content_disposition = parse_header(
-                        asset_headers.get("content-disposition", "")
+                        asset_headers.get("Content-Disposition", "")
                     )
                 if not getattr(asset, "size", 0):
-                    # size from HEAD header / content-disposition / size
+                    # size from HEAD header / Content-Disposition / size
                     size_str = str(header_content_disposition.get_param("size", 0))
                     asset.size = int(size_str) if size_str.isdigit() else 0
                 if not getattr(asset, "filename", 0):
-                    # filename from HEAD header / content-disposition / size
+                    # filename from HEAD header / Content-Disposition / size
                     asset_filename = header_content_disposition.get_param(
                         "filename", None
                     )
@@ -1437,12 +1455,12 @@ class HTTPDownload(Download):
                         verify=ssl_verify,
                     ) as stream:
                         # size from GET header / Content-length
-                        asset.size = int(stream.headers.get("Content-length", 0))
+                        asset.size = int(stream.headers.get("Content-Length", 0))
                         if not getattr(asset, "size", 0):
-                            # size from GET header / content-disposition / size
+                            # size from GET header / Content-Disposition / size
                             size_str = str(
                                 parse_header(
-                                    stream.headers.get("content-disposition", "")
+                                    stream.headers.get("Content-Disposition", "")
                                 ).get_param("size", 0)
                             )
                             asset.size = int(size_str) if size_str.isdigit() else 0
@@ -1465,3 +1483,6 @@ class HTTPDownload(Download):
             [f.result() for f in as_completed(futures)]
 
         return total_size
+
+
+__all__ = ["HTTPDownload"]
