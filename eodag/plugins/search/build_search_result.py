@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import calendar
 import hashlib
 import logging
 import re
@@ -635,7 +636,39 @@ class ECMWFSearch(PostJsonSearch):
         def __compute_indirect(
             params: dict, param_name: str, formatters: list[str], indirect: dict
         ):
-            value = params.get(param_name, None)
+            """Validate and collect parameter values matching any of the given datetime formats.
+
+            Retrieves ``param_name`` from ``params``, ensures each value can be parsed by at
+            least one of the ``formatters`` (``datetime.strptime`` patterns), and stores the
+            sorted list of valid values in ``indirect``.
+
+            :param params: Search parameters dict to read from
+            :param param_name: Key to look up in ``params``
+            :param formatters: ``datetime.strptime`` format strings used for validation
+            :param indirect: Output dict where validated values are stored under ``param_name``
+            :raises ValidationError: If none of the values match any formatter
+
+            >>> indirect = {}
+            >>> __compute_indirect({"year": ["2023", "2024"]}, "year", ["%Y"], indirect)
+            >>> indirect
+            {'year': ['2023', '2024']}
+
+            >>> indirect = {}
+            >>> __compute_indirect({"time": "12:00"}, "time", ["%H:%M", "%H%M"], indirect)
+            >>> indirect
+            {'time': ['12:00']}
+
+            >>> indirect = {}
+            >>> __compute_indirect({}, "year", ["%Y"], indirect)
+            >>> indirect
+            {}
+
+            >>> __compute_indirect({"year": "bad"}, "year", ["%Y"], {})
+            Traceback (most recent call last):
+                ...
+            eodag.utils.exceptions.ValidationError: Malformed parameter "year": ...
+            """
+            value = params.get(param_name)
             if value is not None:
                 if not isinstance(value, list):
                     value = [value]
@@ -668,6 +701,9 @@ class ECMWFSearch(PostJsonSearch):
 
         # Post process
         if "time" in indirects:
+            # Normalize time values to 4-digit HHMM format.
+            # Strip non-digit characters (e.g. "12:00" -> "1200", "06:00" -> "0600")
+            # then right-pad with zeros to handle 2-digit hour-only values (e.g. "06" -> "0600").
             buffer = []
             for time_str in indirects["time"]:
                 time_str = re.sub("[^0-9]+", "", time_str)
@@ -690,70 +726,38 @@ class ECMWFSearch(PostJsonSearch):
                     )
                 )
 
-        year = indirects.get("year", None)
-        if year is not None:
-            min_year = year[0]
-            max_year = year[-1]
+        years = indirects.get("year")
+        if years is not None:
+            min_year, max_year = years[0], years[-1]
 
-            month = indirects.get("month", None)
-            if month is not None and len(month) > 0:
-                min_month = month[0]
-                max_month = month[-1]
+            months = indirects.get("month")
+            if months:
+                min_month, max_month = months[0], months[-1]
             else:
-                min_month = "01"
-                max_month = "12"
+                min_month, max_month = "01", "12"
 
-            day = indirects.get("day", None)
-
-            # Day cleaver
+            _, last_day = calendar.monthrange(int(max_year), int(max_month))
             min_day = "01"
-            max_day = None
-            if max_month in ["01", "03", "05", "07", "08", "10", "12"]:
-                max_day = "31"
-            elif max_month in ["04", "06", "09", "11"]:
-                max_day = "30"
-            elif max_month == "02":
-                int_year = int(max_year)
-                leap_year = ((int_year % 4) == 0) and (
-                    (int_year % 100) > 0 or (int_year % 400) == 0
-                )
-                if leap_year:
-                    max_day = "29"
-                else:
-                    max_day = "28"
+            max_day = str(last_day).zfill(2)
 
-            # Not allow impossible day, trunc in possible day in month
-            if day is not None and len(day) > 0:
-                rmin_day = min_day
-                rmax_day = max_day
-                if day[0] >= min_day and day[0] <= max_day:
-                    rmin_day = day[0]
-                if day[-1] >= min_day and day[-1] <= max_day:
-                    rmax_day = day[-1]
-                min_day, max_day = (rmin_day, rmax_day)
+            days = indirects.get("day")
+            if days:
+                if min_day <= days[0] <= max_day:
+                    min_day = days[0]
+                if min_day <= days[-1] <= max_day:
+                    max_day = days[-1]
 
-            time = indirects.get("time", None)
-            if time is not None and len(time) > 0:
-                min_hour = time[0][0:2]
-                min_min = time[0][2:4]
-                max_hour = time[-1][0:2]
-                max_min = time[-1][2:4]
-                min_sec = "00"
-                max_sec = "00"
+            time = indirects.get("time")
+            if time:
+                min_time = f"{time[0][0:2]}:{time[0][2:4]}:00"
+                max_time = f"{time[-1][0:2]}:{time[-1][2:4]}:00"
             else:
-                min_hour = "00"
-                min_min = "00"
-                max_hour = "23"
-                max_min = "59"
-                min_sec = "00"
-                max_sec = "59"
+                min_time, max_time = "00:00:00", "23:59:59"
 
-            indirects["start_datetime"] = "{}-{}-{}T{}:{}:{}Z".format(
-                min_year, min_month, min_day, min_hour, min_min, min_sec
-            )
-            indirects["end_datetime"] = "{}-{}-{}T{}:{}:{}Z".format(
-                max_year, max_month, max_day, max_hour, max_min, max_sec
-            )
+            indirects[
+                "start_datetime"
+            ] = f"{min_year}-{min_month}-{min_day}T{min_time}Z"
+            indirects["end_datetime"] = f"{max_year}-{max_month}-{max_day}T{max_time}Z"
 
         return indirects
 
@@ -761,7 +765,7 @@ class ECMWFSearch(PostJsonSearch):
         self, raw: Optional[Union[datetime, str]]
     ) -> Optional[str]:
         """
-        Focrce mixed date format to iso format date
+        Force mixed date format to iso format date
         """
         if raw is None:
             return None
@@ -771,33 +775,13 @@ class ECMWFSearch(PostJsonSearch):
         if not isinstance(raw, str):
             return None
 
-        for date_format in [
-            "%Y-%m-%d",
-            "%Y-%m-%dT",
-            "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%d %H:%M:%SZ",
-            "%Y-%m-%dT%H:%M:%SZ",
-            "%Y-%m-%d %H:%M:%S%Z",
-            "%Y-%m-%dT%H:%M:%S%Z",
-            "%Y-%m-%d %H:%M:%S.000Z",
-            "%Y-%m-%dT%H:%M:%S.000Z",
-            "%Y-%m-%d %H:%M:%S.%LZ",
-            "%Y-%m-%dT%H:%M:%S.%LZ",
-            "%Y-%m-%d %H:%M:%S.000%Z",
-            "%Y-%m-%dT%H:%M:%S.000%Z",
-            "%Y-%m-%d %H:%M:%S.%L%Z",
-            "%Y-%m-%dT%H:%M:%S.%L%Z",
-        ]:
-            try:
-                parsed_datetime = datetime.strptime(raw, date_format)
+        try:
+            parsed_datetime = isoparse(raw)
+            if parsed_datetime.tzinfo is None:
                 parsed_datetime = parsed_datetime.replace(tzinfo=tzutc())
-                return parsed_datetime.strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                )  # Force iso formatted
-            except Exception:
-                pass
-        return None
+            return parsed_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except (ValueError, OverflowError):
+            return None
 
     def _get_collection_queryables(
         self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
