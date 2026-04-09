@@ -46,6 +46,7 @@ from eodag.api.provider import Provider, ProvidersDict
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
     PluginImplementationError,
+    QuotaExceededError,
     UnsupportedCollection,
     ValidationError,
 )
@@ -415,6 +416,18 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # restore the original config
         self.sara_search_plugin.config = provider_search_plugin_config
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    def test_plugins_search_querystringsearch_search_quota_exceeded(
+        self, mock__request
+    ):
+        """A query with a QueryStringSearch must handle a 429 response returned by the provider"""
+        response = MockResponse({}, status_code=429)
+        mock__request.side_effect = requests.exceptions.HTTPError(response=response)
+        with self.assertRaises(QuotaExceededError):
+            self.sara_search_plugin.query(
+                collection="S2_MSI_L1C", **{"eo:cloud_cover": 50}
+            )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -1115,6 +1128,20 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 )
 
         run()
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_postjsonsearch_search_quota_exceeded(self, mock__request):
+        """A query with a PostJsonSearch must handle a 429 response returned by the provider"""
+
+        class MockResponseRequestsException(MockResponse):
+            def raise_for_status(self):
+                if self.status_code != 200:
+                    raise requests.RequestException()
+
+        response = MockResponseRequestsException({}, status_code=429)
+        mock__request.return_value = response
+        with self.assertRaises(QuotaExceededError):
+            self.awseos_search_plugin.query(collection="S2_MSI_L2A")
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_count_and_search_awseos(self, mock__request):

@@ -36,6 +36,7 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NoMatchingCollection,
+    QuotaExceededError,
     ValidationError,
 )
 from tests import TEST_RESOURCES_PATH
@@ -778,6 +779,28 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Product location not changed
         self.assertEqual(self.product.location, "http://somewhere")
         self.assertEqual(self.product.remote_location, "http://somewhere")
+
+    @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_too_many_requests_error(
+        self, mock_requests_get, mock_requests_head, mock_asset_size
+    ):
+        """HTTPDownload.download() must handle a 429 (Too many requests) error"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        self.product.assets.update({"bar": {"href": "http://somewhere/anotherthing"}})
+        res = MockResponse({"a": "a"}, 429)
+        mock_requests_get.side_effect = res
+        mock_requests_head.return_value.headers = CaseInsensitiveDict(
+            {"Content-Disposition": ""}
+        )
+        with self.assertRaises(QuotaExceededError):
+            plugin.download(self.product, output_dir=self.output_dir)
 
     def test_plugins_download_http_stream_dict_misconfigured(self):
         """HTTPDownload.stream_download() must raise an error if misconfigured"""
