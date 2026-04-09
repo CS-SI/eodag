@@ -232,7 +232,6 @@ COP_GHSL_SEARCH_KWARGS = {
 }
 
 
-
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
     @classmethod
