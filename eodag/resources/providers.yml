@@ -4424,7 +4424,6 @@
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true
-    dates_required: True
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
@@ -4622,7 +4621,6 @@
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true
-    dates_required: True
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null

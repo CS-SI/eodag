@@ -242,10 +242,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             """
             if isinstance(key, str):
                 original_key = key.replace("__", ":")
-                key_with_COLON = key.replace("__", "_COLON_")
                 result = kwargs.get(original_key)
                 if result is not None:
                     return result
+                key_with_COLON = key.replace("__", "_COLON_")
                 return kwargs.get(key_with_COLON)
             return super().get_value(key, args, kwargs)
 
@@ -963,6 +963,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             start_date_object = datetime.strptime(
                 start_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ"
             )
+            if end_utc_date == "None":
+                end_utc_date = start_utc_date
             end_date_object = datetime.strptime(end_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
 
             delta_utc_date = end_date_object - start_date_object

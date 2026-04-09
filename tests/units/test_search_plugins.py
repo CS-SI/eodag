@@ -22,7 +22,6 @@ import re
 import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
-from datetime import datetime
 from pathlib import Path
 from typing import Literal, Union, get_origin
 from unittest import mock
@@ -50,7 +49,6 @@ from eodag.utils.exceptions import (
     ValidationError,
 )
 from tests.context import (
-    DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     NOT_AVAILABLE,
@@ -1298,7 +1296,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         provider = "wekeo_ecmwf"
         search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
         search_plugin = next(search_plugins)
-        search_plugin.config.dates_required = True
         mock_request.return_value = MockResponse({"features": []}, 200)
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
@@ -1385,10 +1382,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
-                "year": ["1940"],
-                "month": ["01"],
-                "day": ["01"],
-                "time": ["00:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "itemsPerPage": 20,
                 "startIndex": 0,
@@ -1428,13 +1421,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             **{"_collection": "CAMS_EAC4"},
         )
         search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
-        # `date` mapping to pass validation of ECMWF parameters
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
-                "startdate": "2003-01-01T00:00:00.000Z",
-                "enddate": "2003-01-01T00:00:00.000Z",
-                "date": "2003-01-01/2003-01-01",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "itemsPerPage": 20,
                 "startIndex": 0,
@@ -1443,8 +1432,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
-        # restore previous config
-        delattr(search_plugin.config, "dates_required")
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_query_params_wekeo(self, mock__request):
@@ -2717,9 +2704,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["end_datetime"],
         )
 
-    def test_plugins_search_ecmwfsearch_dates_missing(self):
+    def test_plugins_search_ecmwfsearch_dates(self):
         """ECMWFSearch.query must use default dates if missing"""
-        self.search_plugin.config.dates_required = True
 
         # given start & stop
         results = self.search_plugin.query(
@@ -2742,46 +2728,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             collection=self.collection,
         )
         eoproduct = results.data[0]
-        self.assertIn(
-            eoproduct.properties["start_datetime"],
-            DEFAULT_MISSION_START_DATE,
-        )
-        exp_end_date = datetime.strptime(
-            DEFAULT_MISSION_START_DATE, "%Y-%m-%dT%H:%M:%S.%fZ"
-        )
-        self.assertIn(
-            eoproduct.properties["end_datetime"],
-            exp_end_date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")[:-4] + "Z",
-        )
-
-        # missing start & stop and plugin.collection_config set (set in core._prepare_search)
-        self.search_plugin.config.collection_config = {
-            "_collection": self.collection,
-            "extent": {
-                "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
-                "temporal": {"interval": [["1985-10-26", "2015-10-21"]]},
-            },
-        }
-        results = self.search_plugin.query(
-            collection=self.collection,
-        )
-        eoproduct = results.data[0]
-        self.assertEqual(
-            eoproduct.properties["start_datetime"],
-            "1985-10-26T00:00:00.000Z",
-        )
-        self.assertEqual(
-            eoproduct.properties["end_datetime"],
-            "1985-10-26T00:00:00.000Z",
-        )
-
-        # restore previous config
-        delattr(self.search_plugin.config, "dates_required")
+        self.assertNotIn("start_datetime", eoproduct.properties)
+        self.assertNotIn("end_datetime", eoproduct.properties)
 
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
-        self.search_plugin.config.dates_required = True
-
         results = self.search_plugin.query(
             prep=PreparedSearch(),
             collection="ERA5_SL",
@@ -2814,9 +2765,6 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["ecmwf:day"],
             ["20", "21"],
         )
-
-        # restore previous config
-        delattr(self.search_plugin.config, "dates_required")
 
     def test_plugins_search_ecmwfsearch_collection_with_alias(self):
         """alias of collection must be used in search result"""

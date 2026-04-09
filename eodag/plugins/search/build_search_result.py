@@ -30,7 +30,6 @@ import geojson
 import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
-from dateutil.utils import today
 from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
@@ -52,7 +51,6 @@ from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import (
-    DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
@@ -66,10 +64,13 @@ from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_RANGE_PATTERN,
+    compute_date_range_from_params,
     format_date,
     is_range_in_range,
     parse_date,
     parse_year_month_day,
+    time_values_to_hhmm,
+    validate_datetime_param,
 )
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
@@ -395,7 +396,6 @@ class ECMWFSearch(PostJsonSearch):
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
-        * :attr:`~eodag.config.PluginConfig.dates_required` (``bool``): if date parameters are mandatory in the request
         * :attr:`~eodag.config.PluginConfig.discover_queryables`
           (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
           provider queryables endpoint; It has the following keys:
@@ -566,16 +566,22 @@ class ECMWFSearch(PostJsonSearch):
             if v is not None
         }
 
-        # dates
-        # check if default dates have to be added
-        if getattr(self.config, "dates_required", False):
-            self._check_date_params(params, collection)
-
         # read 'start_datetime' and 'end_datetime' from 'date' range
         if "date" in params:
             start_date, end_date = parse_date(params["date"])
             params[START] = format_date(start_date)
             params[END] = format_date(end_date)
+
+        # start_datetime /  computed from "date", "time", "year", "month", "day"
+        indirects = self._preprocess_indirect_date_parameters(params)
+        if params.get(START) is None:
+            value = indirects.get("start_datetime", None)
+            if value is not None:
+                params[START] = value
+        if params.get(END) is None:
+            value = indirects.get("end_datetime", None)
+            if value is not None:
+                params[END] = value
 
         # adapt end date if it is midnight
         if END in params:
@@ -623,51 +629,55 @@ class ECMWFSearch(PostJsonSearch):
 
         return params
 
-    def _check_date_params(
-        self, keywords: dict[str, Any], collection: Optional[str]
-    ) -> None:
-        """checks if start and end date are present in the keywords and adds them if not"""
+    def _preprocess_indirect_date_parameters(self, params: dict[str, Any]) -> dict:
+        """
+        Compute start_datetime / end_datetime from "date", "time", "year", "month", "day"
+        """
+        indirects: dict[str, Any] = {}
 
-        if START in keywords and END in keywords:
-            return
+        # Validate and collect indirect date parameters
+        time = validate_datetime_param(
+            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"]
+        )
+        year = validate_datetime_param(params.get("year"), "year", ["%Y"])
+        month = validate_datetime_param(params.get("month"), "month", ["%m"])
+        day = validate_datetime_param(params.get("day"), "day", ["%d"])
 
-        collection_conf = getattr(self.config, "metadata_mapping", {})
-        if (
-            collection
-            and collection in self.config.products
-            and "metadata_mapping" in self.config.products[collection]
-        ):
-            collection_conf = self.config.products[collection]["metadata_mapping"]
+        if time is not None:
+            time = time_values_to_hhmm(time)
+            indirects["time"] = time
+        if year is not None:
+            indirects["year"] = year
+        if month is not None:
+            indirects["month"] = month
+        if day is not None:
+            indirects["day"] = day
 
-        # start time given, end time missing
-        if START in keywords:
-            keywords[END] = (
-                keywords[START]
-                if END in collection_conf
-                # else self.get_collection_cfg_value(
-                else self.get_collection_cfg_dates(None, today().isoformat())[1]
-            )
-            return
-
-        if END in collection_conf:
-            mapping = collection_conf[START]
-            if not isinstance(mapping, list):
-                mapping = collection_conf[END]
-            if isinstance(mapping, list):
-                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
-                # no default date is required
-                start, end = ecmwf_temporal_to_eodag(keywords)
-                if start is None:
-                    col_start, col_end = self.get_collection_cfg_dates(
-                        DEFAULT_MISSION_START_DATE, today().isoformat()
+        # Compute date range from "date" param (takes precedence)
+        date = params.get("date", None)
+        if date is not None:
+            try:
+                start, end = compute_date_range_from_params(date=date, time=time)
+                indirects["start_datetime"] = start
+                indirects["end_datetime"] = end
+                return indirects
+            except Exception as e:
+                raise ValidationError(
+                    'Malformed parameter "date" (date given "{}", time given: "{}"): {}'.format(
+                        params.get("date"), params.get("time"), str(e)
                     )
-                    keywords[START] = col_start
-                    keywords[END] = (
-                        keywords[START] if END in collection_conf else col_end
-                    )
-                else:
-                    keywords[START] = start
-                    keywords[END] = end
+                )
+
+        # Compute date range from year/month/day/time params
+        start, end = compute_date_range_from_params(
+            year=year, month=month, day=day, time=time
+        )
+        if start is not None:
+            indirects["start_datetime"] = start
+        if end is not None:
+            indirects["end_datetime"] = end
+
+        return indirects
 
     def _get_collection_queryables(
         self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]

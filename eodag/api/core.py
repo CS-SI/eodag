@@ -1879,10 +1879,10 @@ class EODataAccessGateway:
 
             search_result = search_plugin.query(prep, **search_params)
 
-            if not isinstance(search_result.data, list):
+            if not isinstance(search_result, SearchResult):
                 raise PluginImplementationError(
-                    "The query function of a Search plugin must return a list of "
-                    "results, got {} instead".format(type(search_result.data))
+                    "The query function of a Search plugin must return a SearchResult "
+                    "results, got {} instead".format(type(search_result))
                 )
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself
@@ -1893,7 +1893,7 @@ class EODataAccessGateway:
             # WARNING: this means an eo_product that has an invalid geometry can still
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
-            for eo_product in search_result.data:
+            for eo_product in search_result:
                 # if collection is not defined, try to guess using properties
                 if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")
