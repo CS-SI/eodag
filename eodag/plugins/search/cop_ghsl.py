@@ -298,6 +298,7 @@ class CopGhslSearch(Search):
         current_index = 0
         for year in list_years:
             properties = deepcopy(params)
+            properties["order:status"] = "succeeded"
             properties["start_datetime"] = datetime.datetime(
                 year=int(year), month=1, day=1
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -361,6 +362,7 @@ class CopGhslSearch(Search):
         ]
         properties = {}
         properties["geometry"] = default_geometry[1]
+        properties["order:status"] = "succeeded"
         collection_config = self.config.products.get(collection, {})
         download_link = collection_config.get("metadata_mapping", {}).get(
             "eodag:download_link", None
@@ -373,7 +375,7 @@ class CopGhslSearch(Search):
         # collection with assets mapping
         assets_mapping = filters.pop("assets_mapping", None)
         products = []
-        per_page = getattr(prep, "items_per_page", DEFAULT_LIMIT)
+        per_page = getattr(prep, "limit", DEFAULT_LIMIT)
         page = getattr(prep, "PAGE", 1)
         start_index = per_page * (page - 1)
         end_index = start_index + per_page - 1
@@ -547,7 +549,7 @@ class CopGhslSearch(Search):
         :returns: list of products and total number of products
         """
         page = int(getattr(prep, "next_page_token") or "1")
-        items_per_page = getattr(prep, "items_per_page") or DEFAULT_LIMIT
+        limit = getattr(prep, "limit") or DEFAULT_LIMIT
         number_matched = kwargs.pop("number_matched", None)
 
         # get year/month from start/end time if not given separately
@@ -555,7 +557,7 @@ class CopGhslSearch(Search):
 
         # search params for SearchResult
         search_params = deepcopy(kwargs)
-        search_params["items_per_page"] = items_per_page
+        search_params["limit"] = limit
 
         collection = kwargs.get("collection", None)
         if not collection:
@@ -586,7 +588,7 @@ class CopGhslSearch(Search):
         # create products from tiles
         kwargs.update(collection_config)
         kwargs["page"] = page
-        kwargs["per_page"] = items_per_page
+        kwargs["per_page"] = limit
         constraints_filters = self._fetch_constraints(collection)
         additional_filter = constraints_filters.get("additional_filter")
         need_count = prep.count and not number_matched

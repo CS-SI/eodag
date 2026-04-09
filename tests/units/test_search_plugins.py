@@ -4581,7 +4581,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
     def test_plugins_search_cop_ghsl_create_products_without_tiles(self):
         """test if products are created correctly for product types without tiles"""
 
-        prep = PreparedSearch(items_per_page=5)
+        prep = PreparedSearch(limit=5)
         # product type with one file
         collection = "GHS_FUA"
         plugin = next(
