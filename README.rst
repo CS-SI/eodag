@@ -137,7 +137,7 @@ Start playing with the CLI:
 
   The request above searches for ``S2_MSI_L1C`` collections in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 
-  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
+  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloud-cover 20``. For more information on available options::
 
      eodag search --help
 
