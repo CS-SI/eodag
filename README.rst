@@ -174,7 +174,7 @@ Don't hesitate and open an issue or submit a pull request, contributions are mos
 For guidance on setting up a development environment and how to make a
 contribution to eodag, see the `contributing guidelines`_.
 
-.. _contributing guidelines: https://github.com/CS-SI/eodag/blob/develop/CONTRIBUTING.rst
+.. _contributing guidelines: https://eodag.readthedocs.io/en/latest/contribute.html
 
 
 License
