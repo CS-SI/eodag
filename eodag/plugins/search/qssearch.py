@@ -1415,6 +1415,21 @@ class QueryStringSearch(Search):
         else:
             return tuple(provider_collection)
 
+    def _raise_request_error(
+        self, err_msg: str, exception_message: Optional[str], url: str, e: Exception
+    ):
+        if exception_message:
+            logger.exception("%s %s" % (exception_message, err_msg))
+        else:
+            logger.exception(
+                "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
+                url,
+                self.provider,
+                self.__class__.__name__,
+                err_msg,
+            )
+        raise RequestError.from_error(e, exception_message) from e
+
     def _request(
         self,
         prep: PreparedSearch,
@@ -1501,7 +1516,12 @@ class QueryStringSearch(Search):
                 raise QuotaExceededError(
                     f"Too many requests on provider {self.provider}, please check your quota!"
                 )
-        except (requests.RequestException, URLError) as err:
+            err_msg = e.msg
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except URLError as e:
+            err_msg = str(e)
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except requests.RequestException as err:
             if (
                 err.response
                 and err.response.status_code
@@ -1511,17 +1531,7 @@ class QueryStringSearch(Search):
                     f"Too many requests on provider {self.provider}, please check your quota!"
                 )
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
-            if exception_message:
-                logger.exception("%s %s" % (exception_message, err_msg))
-            else:
-                logger.exception(
-                    "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
-                    url,
-                    self.provider,
-                    self.__class__.__name__,
-                    err_msg,
-                )
-            raise RequestError.from_error(err, exception_message) from err
+            self._raise_request_error(err_msg, exception_message, url, err)
         return response
 
 

@@ -904,7 +904,8 @@ class HTTPDownload(Download):
     ) -> None:
         self._check_auth_exception(e)
         if (
-            e.response is not None
+            e
+            and e.response is not None
             and e.response.status_code
             and e.response.status_code == 429
         ):
