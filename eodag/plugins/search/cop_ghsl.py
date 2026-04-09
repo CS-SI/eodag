@@ -21,7 +21,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, HTTP_REQ_TIMEOUT, deepcopy
+from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, deepcopy
 from eodag.utils.cache import instance_cached_method
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -373,7 +373,7 @@ class CopGhslSearch(Search):
         # collection with assets mapping
         assets_mapping = filters.pop("assets_mapping", None)
         products = []
-        per_page = getattr(prep, "items_per_page", DEFAULT_ITEMS_PER_PAGE)
+        per_page = getattr(prep, "items_per_page", DEFAULT_LIMIT)
         page = getattr(prep, "PAGE", 1)
         start_index = per_page * (page - 1)
         end_index = start_index + per_page - 1
@@ -547,7 +547,7 @@ class CopGhslSearch(Search):
         :returns: list of products and total number of products
         """
         page = int(getattr(prep, "next_page_token") or "1")
-        items_per_page = getattr(prep, "items_per_page") or DEFAULT_ITEMS_PER_PAGE
+        items_per_page = getattr(prep, "items_per_page") or DEFAULT_LIMIT
         number_matched = kwargs.pop("number_matched", None)
 
         # get year/month from start/end time if not given separately
