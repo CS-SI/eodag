@@ -78,7 +78,7 @@ EODAG is available on `PyPI <https://pypi.org/project/eodag/>`_:
 
 .. code-block:: bash
 
-   python -m pip install eodag
+   pip install eodag
 
 And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-forge/eodag>`_:
 
@@ -88,9 +88,8 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
 ..
 
-  [!IMPORTANT]
+  [!NOTE]
 
-  `Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ **in v3.0.0**:
   Please note that EODAG
   comes with a minimal set of dependencies. If you want more features, please install using one of the
   `available extras <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_.
@@ -126,15 +125,6 @@ Example usage for interacting with the api in your Python code:
 This will search for Sentinel 2 level-1C products on the default provider and return the found products first page and
 an estimated total number of products matching the search criteria. And then it will download these products. Please
 check the `Python API User Guide <https://eodag.readthedocs.io/en/latest/api_user_guide.html>`_ for more details.
-
-..
-
-  [!IMPORTANT]
-
-  `Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ **in v3.0.0**:
-  `search() <https://eodag.readthedocs.io/en/latest/api_reference/core.html#eodag.api.core.EODataAccessGateway.search>`_ method now returns
-  only a single ``SearchResult`` instead of a 2 values tuple.
-
 
 Command line interface
 ----------------------
