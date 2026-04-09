@@ -793,6 +793,10 @@ class TestEOProduct(EODagTestBase):
         )
         pystac_item = product.as_pystac_object()
         self.assertIsInstance(pystac_item, Item)
+        # remove extensions and corresponding properties to avoid http request
+        pystac_item.stac_extensions = []
+        pystac_item.properties.pop("storage:tier")
+        pystac_item.properties.pop("federation:backends")
         pystac_item.validate()
 
     def test_eoproduct_from_pystac(self):
