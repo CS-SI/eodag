@@ -59,9 +59,6 @@ dependencies = [
     "typing_extensions >= 4.8.0",
     "urllib3",
     "zipstream-ng",
-    "fsspec",
-    "aiohttp",
-    "requests"
 ]
 dynamic = ["version"]
 
