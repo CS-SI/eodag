@@ -130,7 +130,8 @@ def _get_available_values_from_constraints(
             for const in constraints:
                 constraints_values.extend(const[filter_key])
             raise ValidationError(
-                f"No values for {filter_key} available in given range; available values {set(constraints_values)}"
+                f"No values for {filter_key} available in given range; available values "
+                f"{sorted(set(constraints_values))}"
             )
 
     for constraint in filtered_constraints:
@@ -276,6 +277,7 @@ class CopGhslSearch(Search):
         if not dataset:
             raise MisconfiguredError(f"dataset mapping not available for {collection}")
         id_params = deepcopy(params)
+        id_params["proj:code"] = id_params["proj:code"].replace("EPSG:", "")
         if "tile_size" in parsed_metadata_mapping:
             # format tile_size
             tile_size = properties_from_json(
@@ -316,6 +318,8 @@ class CopGhslSearch(Search):
 
             params["year"] = year
             params = {k.replace(":", "_"): v for k, v in params.items()}
+            # remove EPSG prefix for download url
+            params["proj_code"] = params["proj_code"].replace("EPSG:", "")
             dataset = dataset.format(**params)
             dataset = dataset.replace(
                 "__", "_"
@@ -363,6 +367,8 @@ class CopGhslSearch(Search):
         properties = {}
         properties["geometry"] = default_geometry[1]
         properties["order:status"] = "succeeded"
+        if "proj:code" in filters:
+            filters["proj:code"] = filters["proj:code"].replace("EPSG:", "")
         collection_config = self.config.products.get(collection, {})
         download_link = collection_config.get("metadata_mapping", {}).get(
             "eodag:download_link", None
@@ -394,6 +400,8 @@ class CopGhslSearch(Search):
                 product_id = collection + "__" + "_".join(format_params.values())
                 properties["id"] = properties["title"] = product_id
                 properties.update(format_params)
+                if "proj:code" in filter_params:
+                    properties["proj:code"] = filter_params["proj:code"]
                 properties["eodag:download_link"] = download_link.format(
                     **format_params
                 )
@@ -456,7 +464,10 @@ class CopGhslSearch(Search):
         collection_config = deepcopy(self.config.products.get(collection, {}))
         for key, values in available_values.items():
             for value in values:
-                if value in filter_part:
+                param_value = value
+                if key == "proj:code":
+                    param_value = value.replace("EPSG:", "")
+                if param_value in filter_part:
                     query_params[key] = value
                     break
         tiles_or_none = self._get_tiles_for_filters(collection_config, query_params)
@@ -505,11 +516,13 @@ class CopGhslSearch(Search):
         else:
             list_years = params["year"]
         all_tiles = {}
+        # remove EPSG prefix for request to provider
+        proj_code = params["proj:code"].replace("EPSG:", "")
         for year in list_years:
             try:
                 filter_str = (
                     f"{provider_product_type}_{year}_"
-                    f"{params['tile_size']}_{params['proj:code']}"
+                    f"{params['tile_size']}_{proj_code}"
                 )
             except KeyError:
                 logger.warning(f"no tiles available for {collection}")
@@ -521,7 +534,7 @@ class CopGhslSearch(Search):
                     return None
                 res.raise_for_status()
                 tiles = res.json()["grid"]
-                if params["proj:code"] == "3035":
+                if params["proj:code"] == "EPSG:3035":
                     tiles = []
                     for t_id, bbox in res.json()["BBoxes"].items():
                         tiles.append({"tileID": t_id, "BBox_3035": bbox})

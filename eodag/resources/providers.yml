@@ -6486,7 +6486,7 @@
       _collection: builtC
       year: '2018'
       tile_size: 10m
-      proj:code: '54009'
+      proj:code: 'EPSG:54009'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_C_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
@@ -6494,7 +6494,7 @@
     GHS_LAND:
       _collection: land
       year: '2018'
-      proj:code: '54009'
+      proj:code: 'EPSG:54009'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_LAND_E2018_GLOBE_R2022A_{proj_code}_{tile_size}
@@ -6508,7 +6508,7 @@
     GHS_SMOD:
       _collection: SMOD
       tile_size: 1k
-      proj:code: '54009'
+      proj:code: 'EPSG:54009'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("k", "000")}'
         dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
@@ -6516,7 +6516,7 @@
     GHS_ESM:
       _collection: ESM
       year: '2015'
-      proj:code: '3035'
+      proj:code: 'EPSG:3035'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}

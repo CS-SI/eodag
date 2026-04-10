@@ -4179,12 +4179,12 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.constraints = [
             {
                 "year": ["2000", "2005", "2010"],
-                "proj:code": ["54009"],
+                "proj:code": ["EPSG:54009"],
                 "tile_size": ["10m"],
             },
             {
                 "year": ["2000", "2005", "2010"],
-                "proj:code": ["4326"],
+                "proj:code": ["EPSG:4326"],
                 "tile_size": ["3ss"],
             },
         ]
@@ -4228,33 +4228,37 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
                 self.constraints,
-                {"proj:code": "54009", "year": "2020", "tile_size": "10m"},
+                {"proj:code": "EPSG:54009", "year": "2020", "tile_size": "10m"},
                 "PT1",
             )
         # invalid combination
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
                 self.constraints,
-                {"proj:code": "54009", "year": "2000", "tile_size": "3ss"},
+                {"proj:code": "EPSG:54009", "year": "2000", "tile_size": "3ss"},
                 "PT1",
             )
         # timespan without valid value for year
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(
                 self.constraints,
-                {"proj:code": "54009", "year": ["2011", "2012"], "tile_size": "10m"},
+                {
+                    "proj:code": "EPSG:54009",
+                    "year": ["2011", "2012"],
+                    "tile_size": "10m",
+                },
                 "PT1",
             )
 
         # valid request for one year
         available_values = _get_available_values_from_constraints(
             self.constraints,
-            {"proj:code": "54009", "year": "2000", "tile_size": "10m"},
+            {"proj:code": "EPSG:54009", "year": "2000", "tile_size": "10m"},
             "PT1",
         )
         expected_available = {
             "year": ["2000", "2005", "2010"],
-            "proj:code": ["54009"],
+            "proj:code": ["EPSG:54009"],
             "tile_size": ["10m"],
         }
         self.assertDictEqual(expected_available, available_values)
@@ -4262,7 +4266,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         available_values = _get_available_values_from_constraints(
             self.constraints,
             {
-                "proj:code": "54009",
+                "proj:code": "EPSG:54009",
                 "year": ["1999", "2000", "2001"],
                 "tile_size": "10m",
             },
@@ -4270,7 +4274,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         )
         expected_available = {
             "year": ["2000"],
-            "proj:code": ["54009"],
+            "proj:code": ["EPSG:54009"],
             "tile_size": ["10m"],
         }
         self.assertDictEqual(expected_available, available_values)
@@ -4321,25 +4325,25 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
         plugin = next(self.plugins_manager.get_search_plugins(provider="cop_ghsl"))
         # missing parameter
-        input_params = {"year": "2020", "proj:code": "54009"}
+        input_params = {"year": "2020", "proj:code": "EPSG:54009"}
         with self.assertRaises(ValidationError):
             plugin._check_input_parameters_valid("PT1", input_params)
 
         # valid input with one year
-        input_params = {"year": "2000", "proj:code": "54009", "tile_size": "10m"}
+        input_params = {"year": "2000", "proj:code": "EPSG:54009", "tile_size": "10m"}
         plugin._check_input_parameters_valid(
             "PT1", input_params
         )  # nothing should be raised
         # valid input several years
         input_params = {
             "year": ["1999", "2000", "2001"],
-            "proj:code": "54009",
+            "proj:code": "EPSG:54009",
             "tile_size": "10m",
         }
         plugin._check_input_parameters_valid("PT1", input_params)
         expected_params = {
             "year": ["2000"],
-            "proj:code": "54009",
+            "proj:code": "EPSG:54009",
             "tile_size": "10m",
         }
         # year in input params should be updated
@@ -4350,13 +4354,13 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             {
                 "year": ["2000", "2005", "2010"],
                 "month": ["01", "02", "03"],
-                "proj:code": ["54009"],
+                "proj:code": ["EPSG:54009"],
                 "tile_size": ["10m"],
             },
             {
                 "year": ["2000", "2005", "2010"],
                 "month": ["01", "02", "03"],
-                "proj:code": ["4326"],
+                "proj:code": ["EPSG:4326"],
                 "tile_size": ["3ss"],
             },
         ]
@@ -4364,7 +4368,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         input_params = {
             "year": "2000",
             "month": ["02", "03", "04"],
-            "proj:code": "54009",
+            "proj:code": "EPSG:54009",
             "tile_size": "10m",
             "grouped_by": "month",
         }
@@ -4372,14 +4376,14 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         expected_params = {
             "year": "2000",
             "month": ["02", "03"],
-            "proj:code": "54009",
+            "proj:code": "EPSG:54009",
             "tile_size": "10m",
         }
         self.assertDictEqual(expected_params, input_params)
         # valid input with grouped_by param, grouping param not given
         input_params = {
             "year": "2000",
-            "proj:code": "54009",
+            "proj:code": "EPSG:54009",
             "tile_size": "10m",
             "grouped_by": "month",
         }
@@ -4387,7 +4391,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         expected_params = {
             "year": "2000",
             "month": ["01", "02", "03"],
-            "proj:code": "54009",
+            "proj:code": "EPSG:54009",
             "tile_size": "10m",
         }
         self.assertDictEqual(expected_params, input_params)
@@ -4431,7 +4435,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         input_params = {
             "year": ["2000", "2005"],
-            "proj:code": "4326",
+            "proj:code": "EPSG:4326",
             "tile_size": "3ss",
             "collection": collection,
         }
@@ -4553,7 +4557,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         params = product_type_config
         params["year"] = ["2000", "2005"]
-        params["proj:code"] = "4326"
+        params["proj:code"] = "EPSG:4326"
         params["tile_size"] = "3ss"
         params["classification"] = "TOTAL"
         params["per_page"] = 5
@@ -4567,7 +4571,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual("2000-01-01T00:00:00Z", properties["start_datetime"])
         self.assertEqual("2000-12-31T23:59:59Z", properties["end_datetime"])
         self.assertEqual("2000", properties["year"])
-        self.assertEqual("4326", properties["proj:code"])
+        self.assertEqual("EPSG:4326", properties["proj:code"])
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
             "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R3_C3.zip",
@@ -4650,7 +4654,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             "grouped_by": "month",
             "month": "02",
             "tile_size": "30ss",
-            "proj:code": "4326",
+            "proj:code": "EPSG:4326",
         }
         product_type_mapping = deepcopy(plugin.config.products.get(collection, {}))
         filters.update(product_type_mapping)
@@ -4703,12 +4707,12 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertIn(Literal["10m", "3ss"], get_args(tile_size_queryable))
 
         # test filtering queryables
-        kwargs["proj:code"] = "54009"
+        kwargs["proj:code"] = "EPSG:54009"
         queryables = plugin.discover_queryables(**kwargs)
         tile_size_queryable = queryables["tile_size"]
         self.assertIn(Literal["10m"], get_args(tile_size_queryable))
         # with array
-        kwargs["proj:code"] = ["54009"]
+        kwargs["proj:code"] = ["EPSG:54009"]
         queryables = plugin.discover_queryables(**kwargs)
         tile_size_queryable = queryables["tile_size"]
         self.assertIn(Literal["10m"], get_args(tile_size_queryable))
