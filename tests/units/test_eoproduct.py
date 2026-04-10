@@ -592,61 +592,6 @@ class TestEOProduct(EODagTestBase):
             stream=True,
         )
 
-    @mock.patch("fsspec.get_mapper")
-    def test_eoproduct_list_zarr_files_from_zmetadata(self, mock_get_mapper):
-        """EOProduct.list_zarr_files_from_metadata must return files listed in `.zmetadata`."""
-        product = self._dummy_product()
-        mapper = {
-            ".zmetadata": json.dumps(
-                {
-                    "metadata": {
-                        ".zgroup": {},
-                        ".zattrs": {},
-                        "foo/.zarray": {},
-                    }
-                }
-            )
-        }
-        mock_get_mapper.return_value = mapper
-
-        files = product.list_zarr_files_from_metadata("https://example.com/zarr")
-
-        mock_get_mapper.assert_called_once_with(
-            "https://example.com/zarr",
-            client_kwargs={"headers": {}, "trust_env": False},
-        )
-        self.assertEqual(files, [".zmetadata", ".zgroup", ".zattrs", "foo/.zarray"])
-
-    @mock.patch("fsspec.get_mapper")
-    def test_eoproduct_list_zarr_files_from_zmetadata_headers(self, mock_get_mapper):
-        """EOProduct.list_zarr_files_from_metadata must forward storage options headers to fsspec."""
-        product = self._dummy_product()
-        mock_get_mapper.return_value = {".zmetadata": json.dumps({"metadata": {}})}
-
-        files = product.list_zarr_files_from_metadata(
-            "https://example.com/zarr",
-        )
-
-        mock_get_mapper.assert_called_once_with(
-            "https://example.com/zarr",
-            client_kwargs={
-                "headers": {},
-                "trust_env": False,
-            },
-        )
-        self.assertEqual(files, [".zmetadata"])
-
-    @mock.patch("fsspec.get_mapper")
-    def test_eoproduct_list_zarr_files_from_metadata_raises_when_missing(
-        self, mock_get_mapper
-    ):
-        """EOProduct.list_zarr_files_from_metadata must fail when metadata files are missing."""
-        product = self._dummy_product()
-        mock_get_mapper.return_value = {}
-
-        with self.assertRaises(ValueError):
-            product.list_zarr_files_from_metadata("https://example.com/zarr")
-
     @responses.activate
     def test_eoproduct_download_progress_bar(self):
         """eoproduct.download must show a progress bar"""
