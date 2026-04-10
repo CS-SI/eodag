@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 import base64
-import json
 import logging
 import os
 import re
@@ -710,29 +709,6 @@ class EOProduct:
         """Perform a GET request to the given URL using product's authentication headers."""
         headers = self.get_storage_options().get("headers", {})
         return requests.get(url, headers=headers, stream=True)
-
-    def list_zarr_files_from_metadata(
-        self,
-        base_url: str,
-    ) -> list[str]:
-        """List file paths from a Zarr store metadata file."""
-        import fsspec  # type: ignore[import-untyped]
-
-        headers = self.get_storage_options().get("headers", {})
-        mapper = fsspec.get_mapper(
-            base_url,
-            client_kwargs={"headers": headers, "trust_env": False},
-        )
-
-        if ".zmetadata" in mapper:
-            meta = json.loads(mapper[".zmetadata"])
-            return [".zmetadata", *meta["metadata"].keys()]
-
-        # TODO: Support Zarr v3 when test data becomes available.
-        # Zarr v2 uses `.zmetadata`, while Zarr v3 exposes `zarr.json`.
-        # The implementation should be straightforward once we can validate it
-        # against real examples.
-        raise ValueError(f"No Zarr metadata file found at {base_url}")
 
     def _init_progress_bar(
         self,
