@@ -28,9 +28,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 import geojson
 import orjson
 import requests
-from pystac import Item
 from boto3 import Session
 from boto3.resources.base import ServiceResource
+from pystac import Item
 from requests import PreparedRequest, RequestException
 from requests.auth import AuthBase
 from requests.structures import CaseInsensitiveDict
