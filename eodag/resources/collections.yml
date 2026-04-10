@@ -7150,7 +7150,7 @@ SPACENET_BUILDINGS_DETECTION_V2:
   platform: SN2
   processing:level:
   keywords: ["Vegas", "Paris", "Shanghai", "Khartoum", "Building", "Building Detection v2", "Building Detection", "v2", "SpaceNet", "Chipped Training Dataset"]
-  eodag:sensor_type:
+  eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 2: Building Detection v2"
   extent: {"spatial": {"bbox": [[-115.3075176, 15.5138111999, 121.7498742, 49.0582359 ], [-115.3075176, 36.1212776997, -115.1513226, 36.2616777], [2.18641139997, 48.9757509, 2.30048639992, 49.0582359], [121.5901692, 31.1978709001, 121.7498742, 31.4277759], [32.4858384, 15.5138111999, 32.5665684, 15.7402062]]}, "temporal": {"interval": [["2015-04-13T00:00:00Z", null]]}}
