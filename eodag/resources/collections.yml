@@ -7164,7 +7164,7 @@ SPACENET_ROADS_NETWORK_DETECTION:
   platform: SN3
   processing:level:
   keywords: ["Vegas", "Paris", "Shanghai", "Khartoum", "Road", "Road Network Detection", "SpaceNet", "Chipped Training Dataset"]
-  eodag:sensor_type:
+  eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 3: Road Network Detection"
   extent: {"spatial": {"bbox": [[ -115.3075176, 15.5138111999, 121.7498742, 49.0582359], [-115.3075176, 36.1212776997, -115.1513226, 36.2616777], [2.18641139997, 48.9757509, 2.30048639992, 49.0582359], [121.5901692, 31.1978709001, 121.7498742, 31.4277759], [32.4858384, 15.5138111999, 32.5665684, 15.7402062]]}, "temporal": {"interval": [["2015-04-13T00:00:00Z", null]]}}
@@ -7177,7 +7177,7 @@ SPACENET_OFF_NADIR_BUILDING:
   platform: SN4
   processing:level:
   keywords: ["Atlanta", "Buildings", "Chipped Training Dataset", "Off-Nadir Buildings", "Off-Nadir", "v1", "SpaceNet"]
-  eodag:sensor_type:
+  eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 4: Off-Nadir Buildings"
   extent: {"spatial": {"bbox": [[ 732701.0, 3720189.0, 748901.0, 3744039.0]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
@@ -7190,7 +7190,7 @@ SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
   platform: SN5
   processing:level:
   keywords: ["Moscow", "Road", "Road Network Extraction", "Road Network", "Route Travel Time Estimation", "Route Travel", "SpaceNet"]
-  eodag:sensor_type:
+  eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 5: Automated Road Network Extraction and Route Travel Time Estimation from Satellite Imagery"
   extent: {"spatial": {"bbox": [[-43.7753747662, -23.0106794336, 72.89403328656945, 55.746917105720065], [37.62123533463809, 55.60938704097397, 37.78303540799408, 55.746917105720065], [72.7844259905958, 18.885500500608433, 72.89403328656945, 19.0645257518164]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
@@ -7203,7 +7203,7 @@ SPACENET_ALL_WEATHER_MAPPING:
   platform: SN6
   processing:level:
   keywords: ["Rotterdam", "Buildings", "Building Detection", "SpaceNet", "Multi-Sensor", "All-Weather Mapping", "SAR", "Optical"]
-  eodag:sensor_type:
+  eodag:sensor_type: OPTICAL,RADAR
   license: CC-BY-4.0
   title: "SpaceNet 6: All-Weather Mapping"
   extent: {"spatial": {"bbox": [[590111.9563080214, 5745470.427302527, 596702.0547804891, 5753195.130788647]]}, "temporal": {"interval": [["2019-08-04T00:00:00Z", "2019-08-23T00:00:00Z"]]}}
