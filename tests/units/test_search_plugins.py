@@ -424,9 +424,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         """A query with a QueryStringSearch must handle a 429 response returned by the provider"""
         response = MockResponse({}, status_code=429)
         mock__request.side_effect = requests.exceptions.HTTPError(response=response)
+        prep = PreparedSearch(collection="S2_MSI_L1C", count=False)
         with self.assertRaises(QuotaExceededError):
             self.sara_search_plugin.query(
-                collection="S2_MSI_L1C", **{"eo:cloud_cover": 50}
+                prep=prep, collection="S2_MSI_L1C", **{"eo:cloud_cover": 50}
             )
 
     @mock.patch(
