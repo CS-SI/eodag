@@ -7137,7 +7137,7 @@ SPACENET_BUILDINGS_DETECTION_V1:
   platform: SN1
   processing:level:
   keywords: ["Rio", "Building", "Building Detection v1", "Building Detection", "v1", "SpaceNet", "Chipped Training Dataset"]
-  eodag:sensor_type:
+  eodag:sensor_type: OPTICAL
   license: CC-BY-4.0
   title: "SpaceNet 1: Building Detection v1"
   extent: {"spatial": {"bbox": [[-43.7753747662, -23.0106794336, -43.4847465904, -22.8256549561]]}, "temporal": {"interval": [["2016-02-29T00:00:00Z", null]]}}
