@@ -138,7 +138,6 @@ from eodag.utils.exceptions import (
     UnsupportedProvider,
     ValidationError,
     InvalidDataError,
-    DatasetCreationError,
 )
 from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
