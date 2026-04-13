@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+# Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from __future__ import annotations
+
 import datetime
 import logging
 import math
@@ -21,7 +40,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
-from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, deepcopy
+from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.cache import instance_cached_method
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -529,7 +548,9 @@ class CopGhslSearch(Search):
                 return None
             tiles_url = self.config.api_endpoint + "/tilesDLD_" + filter_str + ".json"
             try:
-                res = requests.get(tiles_url, verify=ssl_verify, timeout=timeout)
+                res = requests.get(
+                    tiles_url, verify=ssl_verify, timeout=timeout, headers=USER_AGENT
+                )
                 if res.status_code == 404:
                     return None
                 res.raise_for_status()
@@ -638,7 +659,7 @@ class CopGhslSearch(Search):
         )
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         try:
-            res = requests.get(constraints_url)
+            res = requests.get(constraints_url, timeout=timeout, headers=USER_AGENT)
             if res.status_code == 404:
                 logger.warning(f"no constraints found for {collection}")
                 return {"constraints": {}}

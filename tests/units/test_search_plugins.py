@@ -4452,11 +4452,13 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
                     "https://human-settlement.emergency.copernicus.eu/data/tilesDLD/tilesDLD_BUILT_2000_3ss_4326.json",
                     verify=ssl_verify,
                     timeout=5,
+                    headers=USER_AGENT,
                 ),
                 mock.call(
                     "https://human-settlement.emergency.copernicus.eu/data/tilesDLD/tilesDLD_BUILT_2005_3ss_4326.json",
                     verify=ssl_verify,
                     timeout=5,
+                    headers=USER_AGENT,
                 ),
             ]
         )
