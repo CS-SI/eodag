@@ -2977,7 +2977,7 @@
     sort:
       sort_by_tpl: '{{"sortOrder": "{sort_order}"}}'
       sort_param_mapping:
-      # start_datetime for consistency between providers, but it's unused for the actual sorting
+        # start_datetime for consistency between providers, but it's unused for the actual sorting
         start_datetime: unused
       sort_order_mapping:
         ascending: ASC
