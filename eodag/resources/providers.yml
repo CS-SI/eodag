@@ -3288,7 +3288,7 @@
         sortOrder:
           - '{{"sortOrder": "{sortOrder}"}}'
           - '$.null'
-        format: # TODO waiting confirmation from WEkEO
+        format:
           - '{{"fileFormat": "{format}"}}'
           - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
