@@ -140,7 +140,3 @@ class TimeOutError(RequestError):
             f"Request timeout {timeout_msg} for URL {url}" if url else str(exception)
         )
         super().__init__(message)
-
-
-class DatasetCreationError(EodagError):
-    """An error indicating that :class:`xarray.Dataset` or :class:`eodag_cube.types.XarrayDict` could not be created"""

@@ -38,8 +38,8 @@ from tests.context import (
     DEFAULT_SHAPELY_GEOMETRY,
     NOT_AVAILABLE,
     USER_AGENT,
+    AddressNotFound,
     AwsAuth,
-    DatasetCreationError,
     DatasetDriver,
     Download,
     EOProduct,
@@ -1026,6 +1026,6 @@ class TestEOProduct(EODagTestBase):
         )
         product.downloader = mock.MagicMock()
         with self.assertRaises(
-            DatasetCreationError, msg=f"foo not found in {product} assets"
+            AddressNotFound, msg=f"foo not found in {product} assets"
         ):
             product.get_storage_options(asset_key="foo")
