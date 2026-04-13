@@ -2941,9 +2941,6 @@
     sat:relative_orbit:
       - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
       - '$.null'
-    sortOrder:
-      - '{{"sortOrder": "{sortOrder}"}}'
-      - '$.null'
   anchor_orbit_cycle: &orbit_cycle
     sat:relative_orbit:
       - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
@@ -3092,9 +3089,6 @@
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
-        sortOrder:
-          - '{{"sortOrder": "{sortOrder}"}}'
-          - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SAFE", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
@@ -3120,9 +3114,6 @@
           - '$.null'
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
-          - '$.null'
-        sortOrder:
-          - '{{"sortOrder": "{sortOrder}"}}'
           - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
@@ -3225,9 +3216,6 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        sortOrder:
-          - '{{"sortOrder": "{sortOrder}"}}'
-          - '$.null'
         sat:absolute_orbit:
           - '{{"orbitNumber": "{sat:absolute_orbit}"}}'
           - '$.null'
@@ -3251,9 +3239,6 @@
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
       metadata_mapping:
-        sortOrder:
-          - '{{"sortOrder": "{sortOrder}"}}'
-          - '$.null'
         gsd:
           - '{{"spatialResolution": "{gsd}"}}'
           - '$.null'
@@ -3284,9 +3269,6 @@
           - '$.null'
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
-          - '$.null'
-        sortOrder:
-          - '{{"sortOrder": "{sortOrder}"}}'
           - '$.null'
         format:
           - '{{"fileFormat": "{format}"}}'
