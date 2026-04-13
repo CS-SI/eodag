@@ -12,9 +12,9 @@ Earth Observation Data Access Gateway (|version|)
 :raw-html:`<a class="reference external image-reference" href="https://badge.fury.io/py/eodag" rel="nofollow"><img src="https://badge.fury.io/py/eodag.svg" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://anaconda.org/conda-forge/eodag" rel="nofollow"><img src="https://img.shields.io/conda/vn/conda-forge/eodag" type="image/svg+xml"/></a>`
 :raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://img.shields.io/pypi/pyversions/eodag.svg" type="image/svg+xml"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://doi.org/10.5281/zenodo.18552649"><img src="https://zenodo.org/badge/203819248.svg" alt="DOI"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://doi.org/10.5281/zenodo.18552649"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzenodo.org%2Fapi%2Frecords%2F18552649%2Fversions%2Flatest&query=doi&label=DOI&color=blue" alt="DOI"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb" rel="nofollow"><img src="https://mybinder.org/badge_logo.svg" type="image/svg+xml"></a>`
-:raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://img.shields.io/pypi/dm/eodag.svg" type="image/svg+xml"></a>`
+:raw-html:`<a class="reference external image-reference" href="https://pypi.org/project/eodag/" rel="nofollow"><img src="https://badgen.net/pypi/dm/eodag" type="image/svg+xml"></a>`
 :raw-html:`<a class="reference external image-reference" href="https://github.com/CS-SI/eodag" rel="nofollow"><img src="https://img.shields.io/github/stars/CS-SI/eodag?style=social" type="image/svg+xml"/></a>`
 
 **EODAG (Earth Observation Data Access Gateway) is a command line tool and a Python library for searching and downloading

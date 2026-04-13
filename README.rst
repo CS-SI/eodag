@@ -23,7 +23,7 @@
 
 |pypi-badge| |conda-badge| |rtd-badge| |gha-badge| |ghi-badge| |binder-badge|
 
-.. |pypi-dl-badge| image:: https://img.shields.io/pypi/dm/eodag.svg?
+.. |pypi-dl-badge| image:: https://badgen.net/pypi/dm/eodag
     :target: https://pypi.org/project/eodag/
 
 .. |license-badge| image:: https://img.shields.io/pypi/l/eodag.svg?
@@ -32,8 +32,8 @@
 .. |versions-badge| image:: https://img.shields.io/pypi/pyversions/eodag.svg?
     :target: https://pypi.org/project/eodag/
 
-.. |zenodo-badge| image:: https://zenodo.org/badge/203819248.svg?
-  :target: https://doi.org/10.5281/zenodo.18552649
+.. |zenodo-badge| image:: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzenodo.org%2Fapi%2Frecords%2F18552649%2Fversions%2Flatest&query=doi&label=DOI&color=blue
+   :target: https://doi.org/10.5281/zenodo.18552649
 
 |pypi-dl-badge| |license-badge| |versions-badge| |zenodo-badge|
 
@@ -67,7 +67,7 @@ integrate new data providers. Three types of plugins compose the tool:
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
-.. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/eodag_overview.png
+.. image:: https://cs-si.github.io/eodag/docs/_static/eodag_overview.png
    :alt: EODAG overview
    :class: no-scaled-link
 
