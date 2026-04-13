@@ -80,7 +80,7 @@ from eodag.utils.deserialize import (
     _import_stac_item_from_unknown_provider,
 )
 from eodag.utils.exceptions import (
-    DatasetCreationError,
+    AddressNotFound,
     DownloadError,
     MisconfiguredError,
     ValidationError,
@@ -667,7 +667,7 @@ class EOProduct:
         try:
             url = self.assets[asset_key]["href"] if asset_key else self.location
         except KeyError as e:
-            raise DatasetCreationError(f"{asset_key} not found in {self} assets") from e
+            raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
         headers = {**USER_AGENT}
 
         if isinstance(auth, ServiceResource) and isinstance(
