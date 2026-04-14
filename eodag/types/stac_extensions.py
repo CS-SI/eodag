@@ -20,9 +20,7 @@
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Ge, Le
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-from eodag.utils import ONLINE_STATUS
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Percentage = Annotated[float, Ge(0), Le(100)]
 
@@ -270,16 +268,8 @@ class StorageFields(BaseModel):
     https://github.com/stac-extensions/storage
     """
 
-    storage_platform: Annotated[str, Field(None)]
-    storage_region: Annotated[str, Field(None)]
-    storage_requester_pays: Annotated[bool, Field(None)]
-    storage_tier: Annotated[str, Field(None)]
-
-    @field_validator("storage_tier")
-    @classmethod
-    def tier_to_stac(cls, v: Optional[str]) -> str:
-        """Convert tier from EODAG naming to STAC"""
-        return "online" if v == ONLINE_STATUS else "offline"
+    storage_schemes: Annotated[dict[str, Any], Field(None)]
+    storage_refs: Annotated[list[str], Field(None)]
 
 
 class StorageExtension(BaseStacExtension):

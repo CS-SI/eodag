@@ -52,7 +52,6 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
-    OFFLINE_STATUS,
     ONLINE_STATUS,
 )
 from eodag.utils import (
@@ -245,9 +244,6 @@ class EOProduct:
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
             "federation:backends": [self.provider],
-            "storage:tier": self.properties["order:status"]
-            if "order:status" in self.properties
-            else OFFLINE_STATUS,
         }
         stac_providers = self.properties.get("providers", [])
         if not any("host" in p.get("roles", []) for p in stac_providers):
