@@ -218,6 +218,19 @@ EOCAT_SEARCH_ARGS = [
     None,
 ]
 
+COP_GHSL_SEARCH_ARGS = [
+    "cop_ghsl",
+    "GHS_BUILT_S",
+    "2020-01-01",
+    "2021-01-01",
+    [-69.3363, -75.9038, -39.3465, -68.2361],
+]
+COP_GHSL_SEARCH_KWARGS = {
+    "proj:code": "4326",
+    "tile_size": "3ss",
+    "classification": "TOTAL",
+}
+
 
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
@@ -534,6 +547,13 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_eumetsat_ds(self):
         product = self.execute_search(*EUMETSAT_DS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cop_ghsl(self):
+        product = self.execute_search(
+            *COP_GHSL_SEARCH_ARGS, search_kwargs_dict=COP_GHSL_SEARCH_KWARGS
+        )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
