@@ -7452,11 +7452,11 @@ GBIF_OCCURRENCE:
   constellation:
   platform:
   processing:level:
-  keywords: ["GBIF", "Global Biodiversity Information Facility", "Occurrence", "Species", "Biodiversity", "Ecology"]
+  keywords: ["GBIF", "Biodiversity", "Species"]
   eodag:sensor_type:
   license: CC-BY-4.0
-  title: "GBIF Occurrence Dataset"
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1700-01-01T00:00:00Z", null]]}}
+  title: "Global Biodiversity Information Facility (GBIF)"
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2021-04-13T00:00:00Z", null]]}}
 
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_COLLECTION:
@@ -7465,8 +7465,8 @@ GENERIC_COLLECTION:
   constellation:
   platform:
   processing:level:
-  keywords: ["GBIF", "Biodiversity", "Species"]
+  keywords:
   eodag:sensor_type:
-  license: CC-BY-4.0
-  title: "Global Biodiversity Information Facility (GBIF)"
-  extent: {"spatial": {"bbox": [[-180, -90, 180, 90]]}, "temporal": {"interval": [["2021-04-13T00:00:00Z", null]]}}
+  license:
+  title:
+  extent: {"spatial": {"bbox": [[-180, -90, 180, 90]]}, "temporal": {"interval": [[null, null]]}}
