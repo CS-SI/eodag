@@ -658,6 +658,7 @@ class TestCore(TestCoreBase):
         "meteoblue",
         "planetary_computer",
         "sara",
+        "theia",
         "usgs",
         "usgs_satapi_aws",
         "wekeo_cmems",
@@ -2067,6 +2068,10 @@ class TestCore(TestCoreBase):
                     "sar:instrument_mode",
                 ],
                 "max_sort_params": 1,
+            },
+            "theia": {
+                "sortables": [],
+                "max_sort_params": None,
             },
             "usgs": None,
             "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},

@@ -6440,3 +6440,40 @@
     type: EOIAMAuth
     matching_url: https://[-\w\.]+.eo.esa.int
     auth_uri: 'https://eoiam-idp.eo.esa.int'
+---
+!provider # MARK: theia
+  name: theia
+  priority: 0
+  description: API STAC du CDS THEIA de la Maison de la Teledetection
+  roles:
+    - host
+  url: https://api.datastore-mtd.theia.data-terra.org/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://api.datastore-mtd.theia.data-terra.org/search'
+    ssl_verify: false
+    timeout: 90
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+    discover_collections:
+      fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections?limit=50'
+      result_type: json
+      results_entry: '$.collections[?(@.links[*].rel=="items")]'
+      single_collection_fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections/{_collection}'
+      single_collection_parsable_metadata:
+        platform: '{$.summaries.platform#csv_list}'
+  products:
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: SASAuth
+    matching_url: https://s3-data.meso.umontpellier.fr
+    auth_uri: 'https://signing.stac.teledetection.fr/sign?url={url}'
+    signed_url_key: href
+    ssl_verify: true
+    headers:
+      access-key: "{access_key}"
+      secret-key: "{secret_key}"

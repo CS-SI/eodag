@@ -219,6 +219,13 @@ sara:
         credentials:
             username:
             password:
+theia:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            access_key:
+            secret_key:
 usgs:
     priority: # Lower value means lower priority (Default: 0)
     api:
