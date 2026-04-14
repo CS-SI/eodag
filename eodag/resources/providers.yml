@@ -2834,8 +2834,8 @@
       _collection: modis-43A4-061
     NAIP:
       _collection: naip
-    GBIF_OCCURRENCE:
-      _collection: EO.GBIF.DAT.OCCURRENCE
+    GBIF:
+      _collection: gbif
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
