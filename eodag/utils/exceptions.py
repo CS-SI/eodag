@@ -166,5 +166,5 @@ class QuotaExceededError(RequestError):
             status_code = getattr(error, "code", None)
         if status_code and status_code == 429:
             raise QuotaExceededError(
-                f"Too many requests on provider {provider}, please check your quota!"
+                f"Too many requests on provider {provider}, please check your quota."
             )
