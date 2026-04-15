@@ -960,7 +960,7 @@ def _stac_search_to_where(
         cql2_conditions.append(
             {
                 "op": "a_overlaps",
-                "args": [{"property": "federation_backends"}, federation_backends],
+                "args": [{"property": "federation:backends"}, federation_backends],
             }
         )
 
