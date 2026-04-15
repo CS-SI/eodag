@@ -18,11 +18,11 @@
 from __future__ import annotations
 
 import base64
+import datetime as dt
 import logging
 import os
 import re
 import tempfile
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import geojson
@@ -139,7 +139,7 @@ class EOProduct:
     #: Product search keyword arguments, stored during search
     search_kwargs: Any
     #: Datetime for download next try
-    next_try: datetime
+    next_try: dt.datetime
     #: Stream for requests
     _stream: requests.Response
 

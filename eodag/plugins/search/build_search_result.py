@@ -17,11 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import timedelta
 from types import MethodType
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 from urllib.parse import quote_plus, unquote_plus
@@ -460,7 +460,7 @@ class ECMWFSearch(PostJsonSearch):
                 and end_date
                 == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
             ):
-                end_date += timedelta(days=-1)
+                end_date += dt.timedelta(days=-1)
                 params[END] = to_iso_utc_string(end_date)
 
         # geometry

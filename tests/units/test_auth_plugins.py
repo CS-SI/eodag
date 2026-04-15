@@ -16,9 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime as dt
 import pickle
 import unittest
-from datetime import datetime, timedelta
 from unittest import mock
 
 import boto3
@@ -382,7 +382,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertTrue(isinstance(auth, AuthBase))
         mock_requests_post.assert_not_called()
         # reset expiration -> token should be fetched again
-        auth_plugin.token_expiration = datetime.now()
+        auth_plugin.token_expiration = dt.datetime.now()
         mock_requests_post.return_value.json.return_value = {
             "not_token": "this_is_not_test_token",
             "token_is_here": "this_is_a_new_token",
@@ -458,7 +458,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # reset expiration -> token should be fetched again
         # The refresh token mechanism will be used.
-        auth_plugin.token_expiration = datetime.now()
+        auth_plugin.token_expiration = dt.datetime.now()
         mock_requests_post.return_value.json.return_value = {
             "not_token": "this_is_not_test_token",
             "token_is_here": "this_is_a_refreshed_token",
@@ -1852,7 +1852,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -1898,7 +1898,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -1935,7 +1935,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         # backup token_provision and change it to header mode
@@ -2257,7 +2257,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         }
         mock_request_new_token.return_value = json_response
         mock_get_token_with_refresh_token.return_value = json_response
-        expiration = current_time + timedelta(
+        expiration = current_time + dt.timedelta(
             seconds=float(json_response["expires_in"])
         )
         mock_decode.return_value = {"exp": expiration.timestamp()}
@@ -2297,9 +2297,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         # Refresh token available but expired and access token expired-> new auth
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time - timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time - dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -2309,9 +2309,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Refresh token available but expires in a minute (60s) and access token expired-> new auth
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(seconds=60)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -2321,7 +2321,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Refresh token *not* available and access token expired - new auth
         auth_plugin.access_token = "old-access-token"
         auth_plugin.refresh_token = ""
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
 
         _authenticate(
             mock_request_new_token,
@@ -2333,7 +2333,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.access_token = "old-access-token"
         auth_plugin.refresh_token = ""
-        auth_plugin.access_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(seconds=60)
 
         _authenticate(
             mock_request_new_token,
@@ -2343,9 +2343,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         # Refresh token available and access token expired -> refresh
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
         _authenticate(
             mock_get_token_with_refresh_token,
             mock_request_new_token,
@@ -2355,9 +2355,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Refresh token available and access token expires in a minute (60s)-> refresh
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(seconds=60)
         _authenticate(
             mock_get_token_with_refresh_token,
             mock_request_new_token,
@@ -2367,9 +2367,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Both Refresh token and access token expire in a minute (60s)-> new auth
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(seconds=60)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(seconds=60)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -2378,9 +2378,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         # Access token not expired -> use already retrieved token
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time + timedelta(hours=2)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(hours=2)
         auth = auth_plugin.authenticate()
         mock_request_new_token.assert_not_called()
         mock_get_token_with_refresh_token.assert_not_called()
@@ -2424,7 +2424,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_compute_state.return_value = state
         mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         auth = auth_plugin.authenticate()

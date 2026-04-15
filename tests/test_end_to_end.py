@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
+import datetime as dt
 import hashlib
 import os
 import re
@@ -113,9 +113,9 @@ HYDROWBEB_NEXT_SEARCH_ARGS = [
 ]
 # As of 2021-01-14 the products previously required in 2020-08 were offline.
 # Trying here to retrieve the most recent products which are more likely to be online.
-today = datetime.date.today()
-week_span = datetime.timedelta(days=7)
-day_span = datetime.timedelta(days=1)
+today = dt.date.today()
+week_span = dt.timedelta(days=7)
+day_span = dt.timedelta(days=1)
 USGS_RECENT_SEARCH_ARGS = [
     "usgs",
     "LANDSAT_C2L1",
@@ -765,8 +765,8 @@ class TestEODagEndToEndComplete(EndToEndBase):
         ].download.output_dir = self.tmp_download_path
 
         # Search for products that are online and as small as possible (smallest area first)
-        today = datetime.date.today()
-        month_span = datetime.timedelta(weeks=4)
+        today = dt.date.today()
+        month_span = dt.timedelta(weeks=4)
         search_results = self.eodag.search(
             collection="S2_MSI_L1C",
             start=(today - month_span).isoformat(),

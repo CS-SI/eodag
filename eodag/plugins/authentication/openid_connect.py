@@ -17,10 +17,10 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import re
 import string
-from datetime import datetime, timedelta, timezone
 from random import SystemRandom
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlparse
@@ -66,10 +66,10 @@ class OIDCRefreshTokenBase(Authentication):
     jwks_client: jwt.PyJWKClient
 
     access_token: str
-    access_token_expiration: datetime
+    access_token_expiration: dt.datetime
 
     refresh_token: str
-    refresh_token_expiration: datetime
+    refresh_token_expiration: dt.datetime
 
     token_endpoint: str
     authorization_endpoint: str
@@ -78,9 +78,9 @@ class OIDCRefreshTokenBase(Authentication):
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
 
         self.access_token = ""
-        self.access_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
+        self.access_token_expiration = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
         self.refresh_token = ""
-        self.refresh_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
+        self.refresh_token_expiration = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
         self.session = requests.Session()
 
         auth_config = self._get_oidc_endpoints()
@@ -125,8 +125,8 @@ class OIDCRefreshTokenBase(Authentication):
             raise AuthenticationError(e)
 
     def _get_access_token(self) -> str:
-        now = datetime.now(timezone.utc)
-        expiration_margin = timedelta(
+        now = dt.datetime.now(dt.timezone.utc)
+        expiration_margin = dt.timedelta(
             seconds=getattr(
                 self.config, "token_expiration_margin", DEFAULT_TOKEN_EXPIRATION_MARGIN
             )
@@ -151,19 +151,19 @@ class OIDCRefreshTokenBase(Authentication):
             response = self._request_new_token()
 
         self.access_token = response[getattr(self.config, "token_key", "access_token")]
-        self.access_token_expiration = datetime.fromtimestamp(
-            self.decode_jwt_token(self.access_token)["exp"], timezone.utc
+        self.access_token_expiration = dt.datetime.fromtimestamp(
+            self.decode_jwt_token(self.access_token)["exp"], dt.timezone.utc
         )
         self.refresh_token = response.get(
             getattr(self.config, "refresh_token_key", "refresh_token"), ""
         )
         if self.refresh_token and response.get("refresh_expires_in", "0"):
-            self.refresh_token_expiration = now + timedelta(
+            self.refresh_token_expiration = now + dt.timedelta(
                 seconds=int(response["refresh_expires_in"])
             )
         else:
             # refresh token does not expire but will be changed at each request
-            self.refresh_token_expiration = now + timedelta(days=1000)
+            self.refresh_token_expiration = now + dt.timedelta(days=1000)
 
         return self.access_token
 

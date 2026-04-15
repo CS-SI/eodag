@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import copy
-import datetime
+import datetime as dt
 import logging
 import os
 import re
@@ -47,9 +47,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(
-    date_str: str, item_key: str
-) -> Optional[datetime.datetime]:
+def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[dt.datetime]:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
@@ -57,7 +55,7 @@ def _get_date_from_yyyymmdd(
     else:
         day = "1"
     try:
-        date = datetime.datetime(
+        date = dt.datetime(
             int(year),
             int(month),
             int(day),
@@ -492,7 +490,7 @@ class CopMarineSearch(StaticStacSearch):
                             asset_properties = {}
 
                             last_modified_date = obj.get("LastModified")
-                            if isinstance(last_modified_date, datetime.datetime):
+                            if isinstance(last_modified_date, dt.datetime):
                                 asset_properties[
                                     "updated"
                                 ] = last_modified_date.strftime("%Y-%m-%dT%H:%I:%SZ")

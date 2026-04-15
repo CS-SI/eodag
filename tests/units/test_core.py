@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import copy
+import datetime as dt
 import glob
 import json
 import logging
@@ -24,7 +25,6 @@ import os
 import shutil
 import tempfile
 import unittest
-from datetime import datetime, timezone
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
@@ -2832,7 +2832,7 @@ class TestCoreSearch(TestCoreBase):
         # with dates
         self.assertEqual(
             self.dag.collections_config["S2_MSI_L1C"].extent.temporal.interval[0][0],
-            datetime(2015, 6, 23, 0, 0, tzinfo=timezone.utc),
+            dt.datetime(2015, 6, 23, 0, 0, tzinfo=dt.timezone.utc),
         )
         self.assertNotIn(
             "S2_MSI_L1C",

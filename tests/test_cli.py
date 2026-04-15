@@ -15,13 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime as dt
 import logging
 import os
 import re
 import unittest
 from collections import defaultdict
 from contextlib import contextmanager
-from datetime import datetime
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 from typing import Optional, Tuple
@@ -616,7 +616,7 @@ class TestEodagCli(unittest.TestCase):
             collection = "whatever"
             start_date_str = "2022-01-01"
             start_date_datetime = to_iso_utc_string(
-                datetime.strptime(start_date_str, "%Y-%m-%d")
+                dt.datetime.strptime(start_date_str, "%Y-%m-%d")
             )
             exit_code, output, error = self.eodag_command(
                 [
@@ -662,7 +662,7 @@ class TestEodagCli(unittest.TestCase):
             collection = "whatever"
             stop_date_str = "2022-01-01"
             stop_date_datetime = to_iso_utc_string(
-                datetime.strptime(stop_date_str, "%Y-%m-%d")
+                dt.datetime.strptime(stop_date_str, "%Y-%m-%d")
             )
             exit_code, output, error = self.eodag_command(
                 [

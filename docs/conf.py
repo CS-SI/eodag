@@ -19,9 +19,9 @@
 #
 from __future__ import annotations
 
+import datetime as dt
 import os
 import re
-from datetime import datetime
 from importlib.metadata import metadata
 from typing import Any
 
@@ -108,7 +108,9 @@ try:
     )
 except (KeyError, IndexError):
     author = "CS GROUP - France"
-copyright = f"2018-{datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
+copyright = (
+    f"2018-{dt.dt.datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
+)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

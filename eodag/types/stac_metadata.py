@@ -17,9 +17,9 @@
 # limitations under the License.
 """property fields."""
 
+import datetime as dt
 import logging
 from collections.abc import Callable
-from datetime import datetime as dt
 from typing import Annotated, Any, ClassVar, Optional, Type, TypeVar, Union, cast
 
 from pydantic import (
@@ -52,11 +52,13 @@ class CommonStacMetadata(ItemProperties):
     # TODO: replace dt by stac_pydantic.shared.UtcDatetime.
     # Requires timezone to be set in EODAG datetime properties
     # Tested with EFAS FORECAST
-    datetime: Annotated[dt, Field(None, validation_alias="start_datetime")]
-    start_datetime: Annotated[dt, Field(None)]  # TODO do not set if start = end
-    end_datetime: Annotated[dt, Field(None)]  # TODO do not set if start = end
-    created: Annotated[dt, Field(None)]
-    updated: Annotated[dt, Field(None)]
+    datetime: Annotated[dt.datetime, Field(None, validation_alias="start_datetime")]
+    start_datetime: Annotated[
+        dt.datetime, Field(None)
+    ]  # TODO do not set if start = end
+    end_datetime: Annotated[dt.datetime, Field(None)]  # TODO do not set if start = end
+    created: Annotated[dt.datetime, Field(None)]
+    updated: Annotated[dt.datetime, Field(None)]
     platform: Annotated[str, Field(None)]
     instruments: Annotated[list[str], Field(None)]
     constellation: Annotated[str, Field(None)]
@@ -74,7 +76,7 @@ class CommonStacMetadata(ItemProperties):
     @field_serializer(
         "datetime", "start_datetime", "end_datetime", "created", "updated"
     )
-    def format_datetime(self, value: dt):
+    def format_datetime(self, value: dt.datetime):
         """format datetime properties"""
         if not value:
             return None

@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import logging
 import math
 from calendar import monthrange
@@ -229,7 +229,7 @@ class CopGhslSearch(Search):
     ) -> dict[str, str]:
         """get the start and end time from year/month in the properties or missionStart/EndDate"""
         if "month" in properties:
-            start_date = datetime.datetime(
+            start_date = dt.datetime(
                 year=int(properties["year"]),
                 month=int(properties["month"]),
                 day=1,
@@ -238,7 +238,7 @@ class CopGhslSearch(Search):
                 second=0,
             )
             end_day = monthrange(int(properties["year"]), int(properties["month"]))[1]
-            end_date = datetime.datetime(
+            end_date = dt.datetime(
                 year=int(properties["year"]),
                 month=int(properties["month"]),
                 day=end_day,
@@ -247,10 +247,10 @@ class CopGhslSearch(Search):
                 second=59,
             )
         elif "year" in properties:
-            start_date = datetime.datetime(
+            start_date = dt.datetime(
                 year=int(properties["year"]), month=1, day=1, hour=0, minute=0, second=0
             )
-            end_date = datetime.datetime(
+            end_date = dt.datetime(
                 year=int(properties["year"]),
                 month=12,
                 day=31,
@@ -322,10 +322,10 @@ class CopGhslSearch(Search):
             properties = deepcopy(params)
             properties["order:status"] = "succeeded"
             properties["start_datetime"] = to_iso_utc_string(
-                datetime.datetime(year=int(year), month=1, day=1)
+                dt.datetime(year=int(year), month=1, day=1)
             )
             properties["end_datetime"] = to_iso_utc_string(
-                datetime.datetime(
+                dt.datetime(
                     year=int(year), month=12, day=31, hour=23, minute=59, second=59
                 )
             )

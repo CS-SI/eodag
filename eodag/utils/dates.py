@@ -18,11 +18,8 @@
 """eodag.rest.dates methods that must be importable without eodag[server] installeds"""
 
 import calendar
-import datetime
+import datetime as dt
 import re
-from datetime import date
-from datetime import datetime as dt
-from datetime import timezone
 from typing import Any, Iterator, Optional, Union
 
 import dateutil.parser
@@ -76,7 +73,7 @@ def get_timestamp(date_time: str) -> float:
     return dt.timestamp()
 
 
-def datetime_range(start: dt, end: dt) -> Iterator[dt]:
+def datetime_range(start: dt.datetime, end: dt.datetime) -> Iterator[dt.datetime]:
     """Generator function for all dates in-between ``start`` and ``end`` date.
 
     :param start: Start date
@@ -99,7 +96,7 @@ def datetime_range(start: dt, end: dt) -> Iterator[dt]:
     """
     delta = end - start
     for nday in range(delta.days + 1):
-        yield start + datetime.timedelta(days=nday)
+        yield start + dt.timedelta(days=nday)
 
 
 def is_range_in_range(valid_range: str, check_range: str) -> bool:
@@ -213,7 +210,7 @@ def get_date(date: Optional[str]) -> Optional[str]:
     return result
 
 
-def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
+def rfc3339_str_to_datetime(s: str) -> dt.datetime:
     """Convert a string conforming to RFC 3339 to a :class:`datetime.datetime`.
 
     :param s: The string to convert to :class:`datetime.datetime`
@@ -238,7 +235,7 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
     if not result:
         raise ValidationError("Invalid RFC3339 datetime.")
 
-    return dateutil.parser.isoparse(s).replace(tzinfo=datetime.timezone.utc)
+    return dateutil.parser.isoparse(s).replace(tzinfo=dt.timezone.utc)
 
 
 def get_min_max(
@@ -263,7 +260,7 @@ def get_min_max(
     return value, value
 
 
-def append_time(input_date: date, time: Optional[str] = None) -> dt:
+def append_time(input_date: dt.date, time: Optional[str] = None) -> dt.datetime:
     """Appends a string-formatted time to a date.
 
     :param input_date: Date to combine with the time
@@ -287,14 +284,16 @@ def append_time(input_date: date, time: Optional[str] = None) -> dt:
     time = re.sub(":|_", "", time)
     if time == "2400":
         time = "0000"
-    combined_dt = dt.combine(input_date, dt.strptime(time, "%H%M").time())
-    combined_dt.replace(tzinfo=timezone.utc)
+    combined_dt = dt.datetime.combine(
+        input_date, dt.datetime.strptime(time, "%H%M").time()
+    )
+    combined_dt.replace(tzinfo=dt.timezone.utc)
     return combined_dt
 
 
 def parse_date(
     date: str, time: Optional[Union[str, list[str]]] = None
-) -> tuple[dt, dt]:
+) -> tuple[dt.datetime, dt.datetime]:
     """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals.
 
     :param date: Single or interval date string
@@ -340,7 +339,7 @@ def parse_year_month_day(
     month: Optional[Union[str, list[str]]] = None,
     day: Optional[Union[str, list[str]]] = None,
     time: Optional[Union[str, list[str]]] = None,
-) -> tuple[dt, dt]:
+) -> tuple[dt.datetime, dt.datetime]:
     """Returns minimum and maximum datetimes from given lists of years, months, days, times.
 
     :param year: List of years or a single one
@@ -354,9 +353,9 @@ def parse_year_month_day(
         (datetime.datetime(2020, 1, 1, 0, 0), datetime.datetime(2022, 5, 1, 12, 0))
     """
 
-    def build_date(year, month=None, day=None, time=None) -> dt:
+    def build_date(year, month=None, day=None, time=None) -> dt.datetime:
         """Datetime from default_date with updated year, month, day and time."""
-        updated_date = dt(int(year), 1, 1).replace(
+        updated_date = dt.datetime(int(year), 1, 1).replace(
             month=int(month) if month is not None else 1,
             day=int(day) if day is not None else 1,
         )
@@ -375,7 +374,7 @@ def parse_year_month_day(
     return start_date, end_date
 
 
-def format_date(date: dt) -> str:
+def format_date(date: dt.datetime) -> str:
     """Format a ``datetime`` with the format 'YYYY-MM-DD'.
 
     :param date: Datetime to format
@@ -391,7 +390,7 @@ def format_date(date: dt) -> str:
     return date.isoformat()[:10]
 
 
-def format_date_range(start: dt, end: dt) -> str:
+def format_date_range(start: dt.datetime, end: dt.datetime) -> str:
     """Format a range with the format 'YYYY-MM-DD/YYYY-MM-DD'.
 
     :param start: Start datetime
@@ -448,9 +447,9 @@ def validate_datetime_param(
                 # Prepend a dummy year when format contains %d without %Y
                 # to avoid ambiguity (deprecated in 3.14, error in 3.15+)
                 if "%d" in formatter and "%Y" not in formatter:
-                    dt.strptime(f"2000 {item}", f"%Y {formatter}")
+                    dt.datetime.strptime(f"2000 {item}", f"%Y {formatter}")
                 else:
-                    dt.strptime(item, formatter)
+                    dt.datetime.strptime(item, formatter)
                 buffer.append(item)
             except Exception as e:
                 has_error = e
@@ -491,7 +490,7 @@ def time_values_to_hhmm(time_values: list[str]) -> list[str]:
     return buffer
 
 
-def ensure_utc(value: dt) -> dt:
+def ensure_utc(value: dt.datetime) -> dt.datetime:
     """Ensure a datetime is UTC-aware.
 
     If the datetime is naive, it is assumed to be UTC.
@@ -512,7 +511,7 @@ def ensure_utc(value: dt) -> dt:
     return value.astimezone(tz.UTC)
 
 
-def parse_to_utc(raw: str) -> dt:
+def parse_to_utc(raw: str) -> dt.datetime:
     """Parse a date string to a UTC-aware datetime.
 
     Uses ``dateutil.parser.isoparse`` for ISO strings. Falls back to
@@ -546,7 +545,7 @@ def parse_to_utc(raw: str) -> dt:
 
 
 def to_iso_utc_string(
-    raw: Optional[Union[dt, str]],
+    raw: Optional[Union[dt.datetime, str]],
 ) -> Optional[str]:
     """Convert a datetime or date string to an ISO 8601 UTC string with millisecond precision.
 
@@ -567,7 +566,7 @@ def to_iso_utc_string(
     if raw is None:
         return None
     try:
-        utc_dt = ensure_utc(raw) if isinstance(raw, dt) else parse_to_utc(raw)
+        utc_dt = ensure_utc(raw) if isinstance(raw, dt.datetime) else parse_to_utc(raw)
         return utc_dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
     except (ValidationError, OverflowError):
         return None

@@ -18,10 +18,10 @@
 from __future__ import annotations
 
 import ast
+import datetime as dt
 import json
 import logging
 import re
-from datetime import datetime, timedelta
 from string import Formatter
 from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
 
@@ -303,7 +303,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             try:
                 return cast(
                     str,
-                    to_iso_utc_string(datetime.fromtimestamp(timestamp / 1e3, tzutc())),
+                    to_iso_utc_string(
+                        dt.datetime.fromtimestamp(timestamp / 1e3, tzutc())
+                    ),
                 )
             except TypeError:
                 return timestamp
@@ -322,10 +324,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
             try:
-                dt = parse_to_utc(date_time)
+                parsed_dt = parse_to_utc(date_time)
             except (ValidationError, ValueError):
                 return date_time
-            return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
+            return parsed_dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
         def convert_to_iso_date(
@@ -337,10 +339,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             "2021-04-21" => "2021-04-21"
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
-            dt = parse_to_utc(datetime_string)
+            parsed_dt = parse_to_utc(datetime_string)
             time_delta_args = ast.literal_eval(time_delta_args_str)
-            dt += timedelta(*time_delta_args)
-            return dt.isoformat()[:10]
+            parsed_dt += dt.timedelta(*time_delta_args)
+            return parsed_dt.isoformat()[:10]
 
         @staticmethod
         def convert_to_non_separated_date(datetime_string):
@@ -859,11 +861,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {"collection": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
-            start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
+            start_date = dt.datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - dt.timedelta(
                 seconds=1
             )
             params["startDate"] = cast(str, to_iso_utc_string(start_date))
-            end_date = datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + timedelta(
+            end_date = dt.datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + dt.timedelta(
                 seconds=1
             )
             params["endDate"] = cast(str, to_iso_utc_string(end_date))
@@ -882,12 +884,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 dates = re.findall(date_format_2, product_id)
                 date = dates[0]
             if len(date) == 10:
-                date_time = datetime.strptime(dates[0], "%Y%m%d%H")
+                date_time = dt.datetime.strptime(dates[0], "%Y%m%d%H")
             else:
-                date_time = datetime.strptime(dates[0], "%Y%m%d")
+                date_time = dt.datetime.strptime(dates[0], "%Y%m%d")
             return {
                 "min_date": to_iso_utc_string(date_time),
-                "max_date": to_iso_utc_string(date_time + timedelta(days=1)),
+                "max_date": to_iso_utc_string(date_time + dt.timedelta(days=1)),
             }
 
         @staticmethod
@@ -973,7 +975,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             days = set()
 
             for i in range(delta_utc_date.days + 1):
-                date_object = start_date_object + timedelta(days=i)
+                date_object = start_date_object + dt.timedelta(days=i)
                 years.add(date_object.strftime("%Y"))
                 months.add(date_object.strftime("%m"))
                 days.add(date_object.strftime("%d"))
@@ -1009,8 +1011,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
             dates_str = match.group()
             dates = dates_str.split(split_param)
-            start_date = datetime.strptime(dates[0], "%Y%m%d")
-            end_date = datetime.strptime(dates[1], "%Y%m%d")
+            start_date = dt.datetime.strptime(dates[0], "%Y%m%d")
+            end_date = dt.datetime.strptime(dates[1], "%Y%m%d")
             return {
                 "startDate": to_iso_utc_string(start_date),
                 "endDate": to_iso_utc_string(end_date),
