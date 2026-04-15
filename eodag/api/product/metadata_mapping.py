@@ -29,9 +29,8 @@ import geojson
 import orjson
 import pyproj
 import shapely
-from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from dateutil.tz import UTC, tzutc
+from dateutil.tz import tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
@@ -55,7 +54,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
-from eodag.utils.dates import get_timestamp
+from eodag.utils.dates import get_timestamp, parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -302,10 +301,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             1619029639123 => "2021-04-21T18:27:19.123Z"
             """
             try:
-                return (
-                    datetime.fromtimestamp(timestamp / 1e3, tzutc())
-                    .isoformat(timespec="milliseconds")
-                    .replace("+00:00", "Z")
+                return cast(
+                    str,
+                    to_iso_utc_string(datetime.fromtimestamp(timestamp / 1e3, tzutc())),
                 )
             except TypeError:
                 return timestamp
@@ -324,13 +322,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
             try:
-                dt = isoparse(date_time)
-            except ValueError:
+                dt = parse_to_utc(date_time)
+            except (ValidationError, ValueError):
                 return date_time
-            if not dt.tzinfo:
-                dt = dt.replace(tzinfo=UTC)
-            elif dt.tzinfo is not UTC:
-                dt = dt.astimezone(UTC)
             return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
@@ -343,11 +337,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             "2021-04-21" => "2021-04-21"
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
-            dt = isoparse(datetime_string)
-            if not dt.tzinfo:
-                dt = dt.replace(tzinfo=UTC)
-            elif dt.tzinfo is not UTC:
-                dt = dt.astimezone(UTC)
+            dt = parse_to_utc(datetime_string)
             time_delta_args = ast.literal_eval(time_delta_args_str)
             dt += timedelta(*time_delta_args)
             return dt.isoformat()[:10]
@@ -872,11 +862,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
                 seconds=1
             )
-            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            params["startDate"] = cast(str, to_iso_utc_string(start_date))
             end_date = datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + timedelta(
                 seconds=1
             )
-            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            params["endDate"] = cast(str, to_iso_utc_string(end_date))
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]
             return params
@@ -896,10 +886,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             else:
                 date_time = datetime.strptime(dates[0], "%Y%m%d")
             return {
-                "min_date": date_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "max_date": (date_time + timedelta(days=1)).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                ),
+                "min_date": to_iso_utc_string(date_time),
+                "max_date": to_iso_utc_string(date_time + timedelta(days=1)),
             }
 
         @staticmethod
@@ -934,7 +922,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             }
             """
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
-            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object = parse_to_utc(utc_date)
             if format == "list":
                 return {
                     "year": [date_object.strftime("%Y")],
@@ -973,12 +961,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             start, end = date.split(separator)
             start_utc_date = MetadataFormatter.convert_to_iso_utc_datetime(start)
             end_utc_date = MetadataFormatter.convert_to_iso_utc_datetime(end)
-            start_date_object = datetime.strptime(
-                start_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            start_date_object = parse_to_utc(start_utc_date)
             if end_utc_date == "None":
                 end_utc_date = start_utc_date
-            end_date_object = datetime.strptime(end_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            end_date_object = parse_to_utc(end_utc_date)
 
             delta_utc_date = end_date_object - start_date_object
 
@@ -1026,14 +1012,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             start_date = datetime.strptime(dates[0], "%Y%m%d")
             end_date = datetime.strptime(dates[1], "%Y%m%d")
             return {
-                "startDate": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "startDate": to_iso_utc_string(start_date),
+                "endDate": to_iso_utc_string(end_date),
             }
 
         @staticmethod
         def convert_get_hydrological_year(date: str):
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
-            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object = parse_to_utc(utc_date)
             date_object_second_year = date_object + relativedelta(years=1)
             return [
                 f"{date_object.strftime('%Y')}_{date_object_second_year.strftime('%y')}"

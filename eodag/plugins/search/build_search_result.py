@@ -21,15 +21,13 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from types import MethodType
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
 import orjson
-from dateutil.parser import isoparse
-from dateutil.tz import tzutc
 from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
@@ -69,8 +67,10 @@ from eodag.utils.dates import (
     format_date,
     is_range_in_range,
     parse_date,
+    parse_to_utc,
     parse_year_month_day,
     time_values_to_hhmm,
+    to_iso_utc_string,
     validate_datetime_param,
 )
 from eodag.utils.exceptions import (
@@ -253,7 +253,7 @@ def ecmwf_temporal_to_eodag(
         start, end = parse_year_month_day(year, month, day, time)
 
     if start and end:
-        return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return to_iso_utc_string(start), to_iso_utc_string(end)
     else:
         return None, None
 
@@ -450,21 +450,9 @@ class ECMWFSearch(PostJsonSearch):
         # adapt end date if it is midnight
         if END in params:
             end_date_excluded = getattr(self.config, "end_date_excluded", True)
-            is_datetime = True
-            try:
-                end_date = datetime.strptime(params[END], "%Y-%m-%dT%H:%M:%SZ")
-                end_date = end_date.replace(tzinfo=tzutc())
-            except ValueError:
-                try:
-                    end_date = datetime.strptime(
-                        params[END],
-                        "%Y-%m-%dT%H:%M:%S.%fZ",
-                    )
-                    end_date = end_date.replace(tzinfo=tzutc())
-                except ValueError:
-                    end_date = isoparse(params[END])
-                    is_datetime = False
-            start_date = isoparse(params[START])
+            is_datetime = "T" in str(params[END])
+            end_date = parse_to_utc(params[END])
+            start_date = parse_to_utc(params[START])
             if (
                 not end_date_excluded
                 and is_datetime
@@ -473,7 +461,7 @@ class ECMWFSearch(PostJsonSearch):
                 == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
             ):
                 end_date += timedelta(days=-1)
-                params[END] = end_date.isoformat()
+                params[END] = to_iso_utc_string(end_date)
 
         # geometry
         if "geometry" in params:

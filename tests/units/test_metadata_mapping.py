@@ -675,8 +675,8 @@ class TestMetadataFormatter(unittest.TestCase):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
             "collection": "OL_2_LRR___",
-            "startDate": "2021-06-01T22:38:21Z",
-            "endDate": "2021-06-01T23:22:48Z",
+            "startDate": "2021-06-01T22:38:21.000Z",
+            "endDate": "2021-06-01T23:22:48.000Z",
             "timeliness": "NT",
             "sat": "Sentinel-3B",
         }
@@ -747,8 +747,8 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, text="20231019-20231020"),
             str(
                 {
-                    "startDate": "2023-10-19T00:00:00Z",
-                    "endDate": "2023-10-20T00:00:00Z",
+                    "startDate": "2023-10-19T00:00:00.000Z",
+                    "endDate": "2023-10-20T00:00:00.000Z",
                 }
             ),
         )
@@ -757,8 +757,8 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, text="20231019_20231020"),
             str(
                 {
-                    "startDate": "2023-10-19T00:00:00Z",
-                    "endDate": "2023-10-20T00:00:00Z",
+                    "startDate": "2023-10-19T00:00:00.000Z",
+                    "endDate": "2023-10-20T00:00:00.000Z",
                 }
             ),
         )
@@ -805,8 +805,8 @@ class TestMetadataFormatter(unittest.TestCase):
             ),
             str(
                 {
-                    "min_date": "2021-12-11T02:00:00Z",
-                    "max_date": "2021-12-12T02:00:00Z",
+                    "min_date": "2021-12-11T02:00:00.000Z",
+                    "max_date": "2021-12-12T02:00:00.000Z",
                 }
             ),
         )
@@ -817,8 +817,8 @@ class TestMetadataFormatter(unittest.TestCase):
             ),
             str(
                 {
-                    "min_date": "2022-06-01T00:00:00Z",
-                    "max_date": "2022-06-02T00:00:00Z",
+                    "min_date": "2022-06-01T00:00:00.000Z",
+                    "max_date": "2022-06-02T00:00:00.000Z",
                 }
             ),
         )

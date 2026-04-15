@@ -23,13 +23,11 @@ import time
 from datetime import datetime as dt
 from typing import TYPE_CHECKING, Any
 
-import dateutil.parser
-from dateutil import tz
-
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
 
 from eodag.plugins.crunch.base import Crunch
+from eodag.utils.dates import parse_to_utc
 
 logger = logging.getLogger("eodag.crunch.date")
 
@@ -54,7 +52,7 @@ class FilterDate(Crunch):
             # Retrieve year, month, day, hour, minute, second of EPOCH start
             epoch = time.gmtime(0)[:-3]
             start_date = datetime.datetime(*epoch).isoformat()
-        return dateutil.parser.parse(start_date)
+        return parse_to_utc(start_date)
 
     def proceed(
         self, products: list[EOProduct], **search_params: Any
@@ -71,18 +69,14 @@ class FilterDate(Crunch):
         # filter start date
         filter_start_str = self.config.__dict__.get("start")
         if filter_start_str:
-            filter_start = dateutil.parser.parse(filter_start_str)
-            if not filter_start.tzinfo:
-                filter_start = filter_start.replace(tzinfo=tz.UTC)
+            filter_start = parse_to_utc(filter_start_str)
         else:
             filter_start = None
 
         # filter end date
         filter_end_str = self.config.__dict__.get("end")
         if filter_end_str:
-            filter_end = dateutil.parser.parse(filter_end_str)
-            if not filter_end.tzinfo:
-                filter_end = filter_end.replace(tzinfo=tz.UTC)
+            filter_end = parse_to_utc(filter_end_str)
         else:
             filter_end = None
 
@@ -95,18 +89,14 @@ class FilterDate(Crunch):
             # product start date
             product_start_str = product.properties.get("start_datetime")
             if product_start_str:
-                product_start = dateutil.parser.parse(product_start_str)
-                if not product_start.tzinfo:
-                    product_start = product_start.replace(tzinfo=tz.UTC)
+                product_start = parse_to_utc(product_start_str)
             else:
                 product_start = None
 
             # product end date
             product_end_str = product.properties.get("end_datetime")
             if product_end_str:
-                product_end = dateutil.parser.parse(product_end_str)
-                if not product_end.tzinfo:
-                    product_end = product_end.replace(tzinfo=tz.UTC)
+                product_end = parse_to_utc(product_end_str)
             else:
                 product_end = None
 

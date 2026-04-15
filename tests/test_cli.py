@@ -36,6 +36,7 @@ from packaging import version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_COLLECTION
+from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import UnsupportedProvider
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -614,9 +615,9 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             collection = "whatever"
             start_date_str = "2022-01-01"
-            start_date_datetime = datetime.strptime(
-                start_date_str, "%Y-%m-%d"
-            ).isoformat()
+            start_date_datetime = to_iso_utc_string(
+                datetime.strptime(start_date_str, "%Y-%m-%d")
+            )
             exit_code, output, error = self.eodag_command(
                 [
                     "search",
@@ -660,9 +661,9 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             collection = "whatever"
             stop_date_str = "2022-01-01"
-            stop_date_datetime = datetime.strptime(
-                stop_date_str, "%Y-%m-%d"
-            ).isoformat()
+            stop_date_datetime = to_iso_utc_string(
+                datetime.strptime(stop_date_str, "%Y-%m-%d")
+            )
             exit_code, output, error = self.eodag_command(
                 [
                     "search",

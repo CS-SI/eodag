@@ -21,7 +21,7 @@ import datetime
 import logging
 import math
 from calendar import monthrange
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, cast
 
 import dateutil
 import requests
@@ -42,6 +42,7 @@ from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.cache import instance_cached_method
+from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
@@ -263,9 +264,9 @@ class CopGhslSearch(Search):
             end_date_str = interval[0][1]
             return {"start_date": start_date_str, "end_date": end_date_str}
 
-        result = {}
-        result["start_date"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        result["end_date"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        result: dict[str, str] = {}
+        result["start_date"] = cast(str, to_iso_utc_string(start_date))
+        result["end_date"] = cast(str, to_iso_utc_string(end_date))
         return result
 
     def _create_products_from_tiles(
@@ -320,12 +321,14 @@ class CopGhslSearch(Search):
         for year in list_years:
             properties = deepcopy(params)
             properties["order:status"] = "succeeded"
-            properties["start_datetime"] = datetime.datetime(
-                year=int(year), month=1, day=1
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-            properties["end_datetime"] = datetime.datetime(
-                year=int(year), month=12, day=31, hour=23, minute=59, second=59
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            properties["start_datetime"] = to_iso_utc_string(
+                datetime.datetime(year=int(year), month=1, day=1)
+            )
+            properties["end_datetime"] = to_iso_utc_string(
+                datetime.datetime(
+                    year=int(year), month=12, day=31, hour=23, minute=59, second=59
+                )
+            )
             properties["year"] = year
 
             # information for id and download path

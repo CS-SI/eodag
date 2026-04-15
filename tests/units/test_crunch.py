@@ -20,7 +20,6 @@ from collections import UserList
 from typing import Any
 from unittest import mock
 
-import dateutil
 import shapely
 from shapely import Polygon, geometry
 from shapely.errors import ShapelyError
@@ -44,7 +43,7 @@ class TestPluginCrunch(unittest.TestCase):
     __product_id: int = 0
 
     def __fake_search_result(
-        self, products_properties: list[dict[str:Any]]
+        self, products_properties: list[dict[str, Any]]
     ) -> SearchResult:
         """Mock search result"""
         search_results = []
@@ -156,7 +155,7 @@ class TestPluginCrunch(unittest.TestCase):
                 FilterDate(dict(start="invalid_date", end="2025-01-18"))
             )
             self.fail("Must not let pass invalid date format")
-        except dateutil.parser._parser.ParserError:
+        except ValidationError:
             pass
 
         try:
@@ -164,7 +163,7 @@ class TestPluginCrunch(unittest.TestCase):
                 FilterDate(dict(start="2025-01-16", end="wrong_date"))
             )
             self.fail("Must not let pass invalid date format")
-        except dateutil.parser._parser.ParserError:
+        except ValidationError:
             pass
 
         # Uncomplete products

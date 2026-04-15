@@ -2916,8 +2916,8 @@ class TestCoreSearch(TestCoreBase):
         # with datetime
         base = {"datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z"}
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["start_datetime"], "2021-01-01T00:00:00")
-        self.assertEqual(prepared_search["end_datetime"], "2021-01-02T00:00:00")
+        self.assertEqual(prepared_search["start_datetime"], "2021-01-01T00:00:00.000Z")
+        self.assertEqual(prepared_search["end_datetime"], "2021-01-02T00:00:00.000Z")
         # with both, start/end overwrites datetime
         base = {
             "start": "2020-01-01",

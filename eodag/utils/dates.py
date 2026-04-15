@@ -32,6 +32,8 @@ from dateutil.tz import UTC
 
 from eodag.utils.exceptions import ValidationError
 
+STAC_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
 RFC3339_PATTERN = (
     r"^(\d{4})-(\d{2})-(\d{2})"
     r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
@@ -58,6 +60,7 @@ def get_timestamp(date_time: str) -> float:
 
     :param date_time: The datetime string to return as timestamp
     :returns: The timestamp corresponding to the ``date_time`` string in seconds
+    :raises ValueError: If ``date_time`` cannot be parsed as ISO8601
 
     Examples:
         >>> get_timestamp("2023-09-23T12:34:56Z")  # doctest: +ELLIPSIS
@@ -108,6 +111,7 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
     :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
     :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
     :returns: True if check_range is within valid_range, otherwise False.
+    :raises ValueError: If date parts cannot be parsed as ISO8601
 
     Examples:
         >>> is_range_in_range("2023-01-01/2023-12-31", "2023-03-01/2023-03-31")
@@ -128,11 +132,11 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
     start_valid, end_valid = valid_range.split("/")
     start_check, end_check = check_range.split("/")
 
-    # Convert the strings to datetime objects using fromisoformat
-    start_valid_dt = datetime.datetime.fromisoformat(start_valid)
-    end_valid_dt = datetime.datetime.fromisoformat(end_valid)
-    start_check_dt = datetime.datetime.fromisoformat(start_check)
-    end_check_dt = datetime.datetime.fromisoformat(end_check)
+    # Convert the strings to datetime objects
+    start_valid_dt = isoparse(start_valid)
+    end_valid_dt = isoparse(end_valid)
+    start_check_dt = isoparse(start_check)
+    end_check_dt = isoparse(end_check)
 
     # Check if check_range is within valid_range
     return start_valid_dt <= start_check_dt and end_valid_dt >= end_check_dt
@@ -143,18 +147,19 @@ def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str
 
     :param arguments: dict containing a single date or `/` separated dates in `datetime` item
     :returns: Start date and end date from datetime string (duplicate value if only one date as input)
+    :raises ValidationError: If a date string cannot be parsed
 
     Examples:
         >>> get_datetime({"datetime": "2023-03-01/2023-03-31"})
-        ('2023-03-01T00:00:00', '2023-03-31T00:00:00')
+        ('2023-03-01T00:00:00.000Z', '2023-03-31T00:00:00.000Z')
         >>> get_datetime({"datetime": "2023-03-01"})
-        ('2023-03-01T00:00:00', '2023-03-01T00:00:00')
+        ('2023-03-01T00:00:00.000Z', '2023-03-01T00:00:00.000Z')
         >>> get_datetime({"datetime": "../2023-03-31"})
-        (None, '2023-03-31T00:00:00')
+        (None, '2023-03-31T00:00:00.000Z')
         >>> get_datetime({"datetime": "2023-03-01/.."})
-        ('2023-03-01T00:00:00', None)
+        ('2023-03-01T00:00:00.000Z', None)
         >>> get_datetime({"dtstart": "2023-03-01", "dtend": "2023-03-31"})
-        ('2023-03-01T00:00:00', '2023-03-31T00:00:00')
+        ('2023-03-01T00:00:00.000Z', '2023-03-31T00:00:00.000Z')
         >>> get_datetime({})
         (None, None)
     """
@@ -185,12 +190,13 @@ def get_date(date: Optional[str]) -> Optional[str]:
     Check if the input date can be parsed as a date
 
     :param date: The date to parse
-    :returns: The datetime represented with ISO format
+    :returns: The datetime represented with ISO 8601 UTC format
+    :raises ValidationError: If the date string cannot be parsed
 
     Examples:
         >>> from eodag.utils.exceptions import ValidationError
         >>> get_date("2023-09-23")
-        '2023-09-23T00:00:00'
+        '2023-09-23T00:00:00.000Z'
         >>> get_date(None) is None
         True
         >>> get_date("invalid-date")  # doctest: +IGNORE_EXCEPTION_DETAIL
@@ -201,16 +207,10 @@ def get_date(date: Optional[str]) -> Optional[str]:
 
     if not date:
         return None
-    try:
-        return (
-            dateutil.parser.parse(date)
-            .replace(tzinfo=tz.UTC)
-            .isoformat()
-            .replace("+00:00", "")
-        )
-    except ValueError as e:
-        exc = ValidationError("invalid input date: %s" % e)
-        raise exc
+    result = to_iso_utc_string(date)
+    if result is None:
+        raise ValidationError("invalid input date: %s" % date)
+    return result
 
 
 def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
@@ -218,7 +218,7 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
 
     :param s: The string to convert to :class:`datetime.datetime`
     :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
-    :raises: :class:`ValidationError`
+    :raises ValidationError: If the string does not conform to RFC 3339
 
     Examples:
         >>> from eodag.utils.exceptions import ValidationError
@@ -299,12 +299,13 @@ def parse_date(
 
     :param date: Single or interval date string
     :returns: A tuple with the start and end datetime
+    :raises ValidationError: If a date string cannot be parsed
 
     Examples:
         >>> parse_date("2020-12-15")
-        (datetime.datetime(2020, 12, 15, 0, 0), datetime.datetime(2020, 12, 15, 0, 0))
+        (datetime.datetime(2020, 12, 15, 0, 0, tzinfo=tzutc()), datetime.datetime(2020, 12, 15, 0, 0, tzinfo=tzutc()))
         >>> parse_date("2020-12-15/to/20201230")
-        (datetime.datetime(2020, 12, 15, 0, 0), datetime.datetime(2020, 12, 30, 0, 0))
+        (datetime.datetime(2020, 12, 15, 0, 0, tzinfo=tzutc()), datetime.datetime(2020, 12, 30, 0, 0, tzinfo=tzutc()))
     """
     if "to" in date:
         start_date_str, end_date_str = date.split("/to/")
@@ -323,8 +324,8 @@ def parse_date(
     if re.match(r"^\d{8}$", end_date_str):
         end_date_str = f"{end_date_str[:4]}-{end_date_str[4:6]}-{end_date_str[6:]}"
 
-    start_date = dt.fromisoformat(start_date_str.rstrip("Z"))
-    end_date = dt.fromisoformat(end_date_str.rstrip("Z"))
+    start_date = parse_to_utc(start_date_str)
+    end_date = parse_to_utc(end_date_str)
 
     if time:
         start_t, end_t = get_min_max(time)
@@ -490,37 +491,85 @@ def time_values_to_hhmm(time_values: list[str]) -> list[str]:
     return buffer
 
 
+def _ensure_utc(value: dt) -> dt:
+    """Ensure a datetime is UTC-aware.
+
+    If the datetime is naive, it is assumed to be UTC.
+    If it already has a timezone, it is converted to UTC.
+
+    :param value: A datetime object
+    :returns: A timezone-aware datetime in UTC
+
+    Examples:
+        >>> from datetime import datetime, timezone
+        >>> _ensure_utc(datetime(2020, 1, 1, 12, 0))
+        datetime.datetime(2020, 1, 1, 12, 0, tzinfo=tzutc())
+        >>> _ensure_utc(datetime(2021, 4, 21, 0, 0, tzinfo=timezone.utc))
+        datetime.datetime(2021, 4, 21, 0, 0, tzinfo=tzutc())
+    """
+    if not value.tzinfo:
+        return value.replace(tzinfo=tz.UTC)
+    return value.astimezone(tz.UTC)
+
+
+def parse_to_utc(raw: str) -> dt:
+    """Parse a date string to a UTC-aware datetime.
+
+    Uses ``dateutil.parser.isoparse`` for ISO strings. Falls back to
+    ``dateutil.parser.parse`` for non-ISO formats. Always returns a
+    timezone-aware datetime in UTC.
+
+    :param raw: A date string
+    :returns: A timezone-aware datetime in UTC
+    :raises ValidationError: If the string cannot be parsed
+
+    Examples:
+        >>> parse_to_utc("2020-01-01")
+        datetime.datetime(2020, 1, 1, 0, 0, tzinfo=tzutc())
+        >>> parse_to_utc("2021-04-21T00:00:00+02:00")
+        datetime.datetime(2021, 4, 20, 22, 0, tzinfo=tzutc())
+        >>> parse_to_utc("invalid")  # doctest: +IGNORE_EXCEPTION_DETAIL
+        Traceback (most recent call last):
+            ...
+        ValidationError
+    """
+    try:
+        parsed = isoparse(raw)
+    except (ValueError, TypeError):
+        try:
+            parsed = dateutil.parser.parse(raw)
+        except (ValueError, TypeError) as e:
+            raise ValidationError(f"Cannot parse date: {raw!r}") from e
+    if not parsed.tzinfo:
+        parsed = parsed.replace(tzinfo=tz.UTC)
+    return parsed.astimezone(tz.UTC)
+
+
 def to_iso_utc_string(
     raw: Optional[Union[dt, str]],
 ) -> Optional[str]:
-    """Convert a datetime or date string to an ISO 8601 UTC string.
+    """Convert a datetime or date string to an ISO 8601 UTC string with millisecond precision.
 
     :param raw: A datetime object or date string to convert
-    :returns: ISO 8601 formatted UTC string (``YYYY-MM-DDTHH:MM:SSZ``), or ``None``
+    :returns: ISO 8601 formatted UTC string (``YYYY-MM-DDTHH:MM:SS.sssZ``), or ``None``
 
     Examples:
         >>> from datetime import datetime
         >>> to_iso_utc_string(datetime(2020, 1, 1, 12, 0))
-        '2020-01-01T12:00:00Z'
+        '2020-01-01T12:00:00.000Z'
         >>> to_iso_utc_string("2020-01-01")
-        '2020-01-01T00:00:00Z'
+        '2020-01-01T00:00:00.000Z'
+        >>> to_iso_utc_string("2021-04-21T00:00:00+02:00")
+        '2021-04-20T22:00:00.000Z'
         >>> to_iso_utc_string(None) is None
         True
     """
     if raw is None:
         return None
-    if isinstance(raw, dt):
-        raw = raw.replace(tzinfo=tz.UTC)
-        return raw.strftime("%Y-%m-%dT%H:%M:%SZ")
-    if not isinstance(raw, str):
-        return None
-
     try:
-        parsed_datetime = isoparse(raw)
-        if parsed_datetime.tzinfo is None:
-            parsed_datetime = parsed_datetime.replace(tzinfo=tz.UTC)
-        return parsed_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
-    except (ValueError, OverflowError):
+        utc_dt = _ensure_utc(raw) if isinstance(raw, dt) else parse_to_utc(raw)
+        return utc_dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    except (ValidationError, OverflowError):
         return None
 
 
@@ -548,16 +597,17 @@ def compute_date_range_from_params(
     :param month: List of month strings (zero-padded)
     :param day: List of day strings (zero-padded)
     :returns: Tuple of (start_datetime, end_datetime) as ISO UTC strings
+    :raises ValidationError: If a date string cannot be parsed
 
     Examples:
         >>> compute_date_range_from_params(date="2020-12-15")
-        ('2020-12-15T00:00:00Z', '2020-12-15T00:00:00Z')
+        ('2020-12-15T00:00:00.000Z', '2020-12-15T00:00:00.000Z')
         >>> compute_date_range_from_params(date="2020-12-15", time=["0600", "1800"])
-        ('2020-12-15T06:00:00Z', '2020-12-15T18:00:00Z')
+        ('2020-12-15T06:00:00.000Z', '2020-12-15T18:00:00.000Z')
         >>> compute_date_range_from_params(year=["2020", "2021"])
-        ('2020-01-01T00:00:00Z', '2021-12-31T23:59:59Z')
+        ('2020-01-01T00:00:00.000Z', '2021-12-31T23:59:59.000Z')
         >>> compute_date_range_from_params(year=["2020"], month=["03"], day=["15"])
-        ('2020-03-15T00:00:00Z', '2020-03-15T23:59:59Z')
+        ('2020-03-15T00:00:00.000Z', '2020-03-15T23:59:59.000Z')
         >>> compute_date_range_from_params()
         (None, None)
     """
@@ -584,10 +634,10 @@ def compute_date_range_from_params(
                 max_day = day[-1]
 
         if time:
-            min_time = f"{time[0][0:2]}:{time[0][2:4]}:00"
-            max_time = f"{time[-1][0:2]}:{time[-1][2:4]}:00"
+            min_time = f"{time[0][0:2]}:{time[0][2:4]}:00.000"
+            max_time = f"{time[-1][0:2]}:{time[-1][2:4]}:00.000"
         else:
-            min_time, max_time = "00:00:00", "23:59:59"
+            min_time, max_time = "00:00:00.000", "23:59:59.000"
 
         start_str = f"{min_year}-{min_month}-{min_day}T{min_time}Z"
         end_str = f"{max_year}-{max_month}-{max_day}T{max_time}Z"

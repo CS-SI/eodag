@@ -22,12 +22,12 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-import dateutil.parser
 from shapely.errors import ShapelyError
 from shapely.geometry.base import BaseGeometry
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils import get_geometry_from_various
+from eodag.utils.dates import parse_to_utc
 
 if TYPE_CHECKING:
     from datetime import datetime as dt
@@ -52,7 +52,7 @@ class FilterLatestIntersect(Crunch):
             # Retrieve year, month, day, hour, minute, second of EPOCH start
             epoch = time.gmtime(0)[:-3]
             start_date = datetime.datetime(*epoch).isoformat()
-        return dateutil.parser.parse(start_date)
+        return parse_to_utc(start_date)
 
     def proceed(
         self, products: list[EOProduct], **search_params: dict[str, Any]

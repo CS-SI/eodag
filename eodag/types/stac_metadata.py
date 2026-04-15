@@ -39,6 +39,7 @@ from stac_pydantic.shared import Provider
 from typing_extensions import Self
 
 from eodag.types.stac_extensions import STAC_EXTENSIONS, BaseStacExtension
+from eodag.utils.dates import to_iso_utc_string
 
 logger = logging.getLogger("eodag.types.stac_metadata")
 
@@ -77,7 +78,7 @@ class CommonStacMetadata(ItemProperties):
         """format datetime properties"""
         if not value:
             return None
-        return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        return to_iso_utc_string(value)
 
     @model_validator(mode="before")
     @classmethod
