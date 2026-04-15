@@ -491,7 +491,7 @@ def time_values_to_hhmm(time_values: list[str]) -> list[str]:
     return buffer
 
 
-def _ensure_utc(value: dt) -> dt:
+def ensure_utc(value: dt) -> dt:
     """Ensure a datetime is UTC-aware.
 
     If the datetime is naive, it is assumed to be UTC.
@@ -502,9 +502,9 @@ def _ensure_utc(value: dt) -> dt:
 
     Examples:
         >>> from datetime import datetime, timezone
-        >>> _ensure_utc(datetime(2020, 1, 1, 12, 0))
+        >>> ensure_utc(datetime(2020, 1, 1, 12, 0))
         datetime.datetime(2020, 1, 1, 12, 0, tzinfo=tzutc())
-        >>> _ensure_utc(datetime(2021, 4, 21, 0, 0, tzinfo=timezone.utc))
+        >>> ensure_utc(datetime(2021, 4, 21, 0, 0, tzinfo=timezone.utc))
         datetime.datetime(2021, 4, 21, 0, 0, tzinfo=tzutc())
     """
     if not value.tzinfo:
@@ -567,7 +567,7 @@ def to_iso_utc_string(
     if raw is None:
         return None
     try:
-        utc_dt = _ensure_utc(raw) if isinstance(raw, dt) else parse_to_utc(raw)
+        utc_dt = ensure_utc(raw) if isinstance(raw, dt) else parse_to_utc(raw)
         return utc_dt.isoformat(timespec="milliseconds").replace("+00:00", "Z")
     except (ValidationError, OverflowError):
         return None
