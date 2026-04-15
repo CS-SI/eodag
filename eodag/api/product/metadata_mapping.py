@@ -325,7 +325,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             """
             try:
                 parsed_dt = parse_to_utc(date_time)
-            except (ValidationError, ValueError):
+            except ValidationError:
                 return date_time
             return parsed_dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
