@@ -144,3 +144,27 @@ class TimeOutError(RequestError):
 
 class QuotaExceededError(RequestError):
     """An error indicating that too many requests were sent to a provider"""
+
+    @staticmethod
+    def raise_if_quota_exceeded(error: Exception, provider: str) -> None:
+        """Raise :class:`QuotaExceededError` if the HTTP status code is 429.
+
+        Supports ``requests.RequestException`` (via ``.response.status_code``) and
+        ``urllib.error.HTTPError`` (via ``.code``).
+
+        :param error: An exception to inspect for a 429 status code
+        :param provider: The provider name used in the error message
+        :raises QuotaExceededError: if the status code is 429
+        """
+        status_code = None
+        # requests.RequestException with .response
+        response = getattr(error, "response", None)
+        if response is not None:
+            status_code = getattr(response, "status_code", None)
+        # urllib HTTPError with .code
+        if status_code is None:
+            status_code = getattr(error, "code", None)
+        if status_code and status_code == 429:
+            raise QuotaExceededError(
+                f"Too many requests on provider {provider}, please check your quota!"
+            )

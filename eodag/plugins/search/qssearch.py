@@ -1512,24 +1512,14 @@ class QueryStringSearch(Search):
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
         except HTTPError as e:  # raised by urlopen
-            if e.code and e.code == 429:
-                raise QuotaExceededError(
-                    f"Too many requests on provider {self.provider}, please check your quota!"
-                )
+            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
             err_msg = e.msg
             self._raise_request_error(err_msg, exception_message, url, e)
         except URLError as e:
             err_msg = str(e)
             self._raise_request_error(err_msg, exception_message, url, e)
         except requests.RequestException as err:
-            if (
-                err.response
-                and err.response.status_code
-                and err.response.status_code == 429
-            ):
-                raise QuotaExceededError(
-                    f"Too many requests on provider {self.provider}, please check your quota!"
-                )
+            QuotaExceededError.raise_if_quota_exceeded(err, self.provider)
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             self._raise_request_error(err_msg, exception_message, url, err)
         return response

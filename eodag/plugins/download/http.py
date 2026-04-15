@@ -223,15 +223,8 @@ class HTTPDownload(Download):
                     product.properties["order:status"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
+                    QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
                     msg = f"{product.properties['title']} could not be ordered"
-                    if (
-                        e.response is not None
-                        and e.response.status_code
-                        and e.response.status_code == 429
-                    ):
-                        raise QuotaExceededError(
-                            f"Too many requests on provider {self.provider}, please check your quota!"
-                        )
                     if e.response is not None and e.response.status_code == 400:
                         raise ValidationError.from_error(e, msg) from e
                     else:
@@ -903,15 +896,8 @@ class HTTPDownload(Download):
         self, e: Optional[RequestException], product: EOProduct, ordered_message: str
     ) -> None:
         self._check_auth_exception(e)
-        if (
-            e
-            and e.response is not None
-            and e.response.status_code
-            and e.response.status_code == 429
-        ):
-            raise QuotaExceededError(
-                f"Too many requests on provider {self.provider}, please check your quota!"
-            )
+        if e is not None:
+            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
         response_text = (
             e.response.text.strip() if e is not None and e.response is not None else ""
         )
@@ -1380,29 +1366,11 @@ class HTTPDownload(Download):
         return fs_dir_path
 
     def _handle_asset_exception(self, e: RequestException, asset: Asset) -> None:
-        # check if error is identified as auth_error in provider conf
-        if (
-            e.response is not None
-            and e.response.status_code
-            and e.response.status_code == 429
-        ):
-            raise QuotaExceededError(
-                f"Too many requests on provider {self.provider}, please check your quota!"
-            )
-        auth_errors = getattr(self.config, "auth_error_code", [None])
-        if not isinstance(auth_errors, list):
-            auth_errors = [auth_errors]
-        if e.response is not None and e.response.status_code in auth_errors:
-            raise AuthenticationError(
-                f"Please check your credentials for {self.provider}.",
-                f"HTTP Error {e.response.status_code} returned.",
-                e.response.text.strip(),
-            )
-        else:
-            logger.error(
-                "Unexpected error at download of asset %s: %s", asset["href"], e
-            )
-            raise DownloadError(e)
+        # check if error is identified as auth_error or quota_exceeded in provider conf
+        self._check_auth_exception(e)
+        QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
+        logger.error("Unexpected error at download of asset %s: %s", asset["href"], e)
+        raise DownloadError(e)
 
     def _get_asset_sizes(
         self,
