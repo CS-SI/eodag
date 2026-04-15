@@ -17,10 +17,8 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import logging
-import time
-from datetime import datetime as dt
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -45,13 +43,11 @@ class FilterDate(Crunch):
     """
 
     @staticmethod
-    def sort_product_by_start_date(product: EOProduct) -> dt:
+    def sort_product_by_start_date(product: EOProduct) -> dt.datetime:
         """Get product start date"""
         start_date = product.properties.get("start_datetime")
         if not start_date:
-            # Retrieve year, month, day, hour, minute, second of EPOCH start
-            epoch = time.gmtime(0)[:-3]
-            start_date = datetime.datetime(*epoch).isoformat()
+            return dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
         return parse_to_utc(start_date)
 
     def proceed(
