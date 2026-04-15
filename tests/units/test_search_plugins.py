@@ -23,7 +23,7 @@ import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
 from pathlib import Path
-from typing import Union, get_origin
+from typing import Literal, Union, get_origin
 from unittest import mock
 from unittest.mock import call
 
