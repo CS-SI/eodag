@@ -4429,6 +4429,10 @@
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
       form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_{dataset}.json"
+    discover_metadata:
+      auto_discovery: true
+      search_param: '{metadata}'
+      metadata_pattern: '^(feature|interpolation|grid)$'
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'

@@ -583,6 +583,26 @@ class ECMWFSearch(PostJsonSearch):
                     return dc["discover_queryables"]
         return {}
 
+    def _is_discoverable_metadata_key(self, key: str) -> bool:
+        """Check if a key can bypass strict queryables validation via discover_metadata."""
+        discover_metadata = getattr(self.config, "discover_metadata", {}) or {}
+        if not discover_metadata.get("auto_discovery", False):
+            return False
+
+        metadata_pattern = discover_metadata.get("metadata_pattern", "")
+        if not metadata_pattern:
+            return False
+
+        try:
+            return bool(re.match(metadata_pattern, key))
+        except re.error:
+            logger.warning(
+                "Invalid discover_metadata.metadata_pattern for provider %s: %s",
+                self.provider,
+                metadata_pattern,
+            )
+            return False
+
     def discover_queryables(
         self,
         **kwargs: Any,
@@ -644,7 +664,7 @@ class ECMWFSearch(PostJsonSearch):
                 START,
                 END,
                 "geometry",
-            }:
+            } and not self._is_discoverable_metadata_key(key):
                 raise ValidationError(
                     f"'{key}' is not a queryable parameter for {self.provider}", {key}
                 )
@@ -692,6 +712,9 @@ class ECMWFSearch(PostJsonSearch):
         # available values or the collection config (available values calculated from the
         # constraints might not include all queryables)
         for keyword in processed_filters:
+            normalized_keyword = keyword.removeprefix(ECMWF_PREFIX).removeprefix(
+                f"{ECMWF_PREFIX[:-1]}_"
+            )
             if (
                 keyword
                 not in available_values.keys()
@@ -702,10 +725,9 @@ class ECMWFSearch(PostJsonSearch):
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
-                and keyword.removeprefix(ECMWF_PREFIX).removeprefix(
-                    f"{ECMWF_PREFIX[:-1]}_"
-                )
+                and normalized_keyword
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
+                and not self._is_discoverable_metadata_key(normalized_keyword)
             ):
                 raise ValidationError("'%s' is not a queryable parameter" % keyword)
 
