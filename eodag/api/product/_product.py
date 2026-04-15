@@ -251,9 +251,6 @@ class EOProduct:
             stac_properties["providers"] = stac_providers
 
         props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
-        props_validated = props_model.safe_validate(
-            stac_properties, skip_invalid=skip_invalid
-        )
         try:
             props_model.model_validate(
                 stac_properties

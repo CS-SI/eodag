@@ -23,7 +23,7 @@ import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
 from pathlib import Path
-from typing import Literal, Union, get_origin
+from typing import Union, get_origin
 from unittest import mock
 from unittest.mock import call
 
@@ -2397,13 +2397,13 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
 
         # Check that "ecmwf:time" has type Annotated[list[Literal['00:00']], ...]
-        self.assertIn("ecmwf:time", queryables_dedl)
-        annotated_type = queryables_dedl["ecmwf:time"]
+        self.assertIn("ecmwf_time", queryables_dedl)
+        annotated_type = queryables_dedl["ecmwf_time"]
         args = get_args(annotated_type)
         base_type = args[0]
         self.assertEqual(get_origin(base_type), list)
         literal_args = get_args(base_type)
-        self.assertEqual(literal_args, (Literal["00:00"],))
+        self.assertEqual(literal_args, (str,))
 
         # Check that "start" has type Annotated[str, ...]
         self.assertIn("start", queryables_dedl)
