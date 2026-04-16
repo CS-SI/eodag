@@ -4594,7 +4594,7 @@
       experiment: cont
       realization: "1"
       model: IFS-FESOM
-    DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
+    DT_CLIMATE_G2_BASELINE_HIST_ICON_R1:
       discover_queryables:
         form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_climate-dt-phase2.json"
       dataset: climate-dt
@@ -4603,9 +4603,21 @@
       expver: "0001"
       type: fc
       activity: baseline
-      experiment: cont
+      experiment: hist
       realization: "1"
-      model: IFS-NEMO
+      model: ICON
+    DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1:
+      discover_queryables:
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: baseline
+      experiment: hist
+      realization: "1"
+      model: IFS-FESOM
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -4698,6 +4710,30 @@
       experiment: SSP3-7.0
       realization: "1"
       model: IFS-FESOM
+    DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
+      discover_queryables:
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: baseline
+      experiment: cont
+      realization: "1"
+      model: IFS-NEMO
+    DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1:
+      discover_queryables:
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: baseline
+      experiment: hist
+      realization: "1"
+      model: IFS-NEMO
   download: !plugin
     type: HTTPDownload
     ssl_verify: true

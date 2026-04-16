@@ -5684,6 +5684,96 @@ DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
   title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Control Simulation - IFS-NEMO - Generation-2
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1990-01-01T00:00:00Z", "1999-12-31T23:59:59Z"]]}}
 
+DT_CLIMATE_G2_BASELINE_HIST_ICON_R1:
+  description: |
+    The DestinE Digital Twin for Climate Change Adaptation (Climate DT) supports adaptation activities by providing innovative climate information on multi-decadal
+    timescales, globally, at scales at which many impacts of climate change are observed. It combines cutting-edge global Earth-system models, impact-sector
+    applications and observations into a unified framework to provide global climate projections and impact-sector information on multi-decadal timescales
+    (1990 to ~2050), at very high spatial resolutions (5 to 10 km).\n\nThe Climate DT represents the first ever attempt to operationalise the production of
+    global multi-decadal climate projections, leveraging the world-leading supercomputing facilities of the EuroHPC Joint Undertaking along with some of the
+    leading European climate models. A concise overview of what the Climate DT aims to achieve, and of the different concepts essential for an understanding
+    of the Digital Twin’s characteristics, is included in the [Climate DT factsheet](https://destine.ecmwf.int/wp-content/uploads/2024/06/2024.06.07_Climate-DT-Fact-Sheet_V7-2.pdf)
+    \n\n## Control Simulation \n\n Repetitive 1990 forcing with no change in forcing over time. These simulations allow to quantify model drift and simulated
+    inter-annual variability and provides relevant context for interpreting historical and scenario simulations.\n\n## Models\n\nThe Climate DT exploits and
+     further evolves a new generation of global storm-resolving and eddy-rich models built through a cooperative model development approach. For more
+     information on models please click [here](https://destine.ecmwf.int/climate-change-adaptation-digital-twin-climate-dt/#models)
+     \n\n## Simulations\n\nThe Climate DT team carries out several types of digital twin simulations on the EuroHPC supercomputers.
+     Multi-decadal simulations are produced to cover the recent past (from 1990) and possible future evolutions of the climate up to 2050.
+     See [here](https://destine.ecmwf.int/climate-change-adaptation-digital-twin-climate-dt/#simulations) for more information on Simulations
+     \n\n## Parameters\n\nBelow we see the list of parameters extracted from the 'DestinE Climate DT data portfolio', for more information please refer to
+     the pages [Climate DT Phase2 CLTE Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clte+Parameters) and
+     [Climate DT Phase2 CLMN Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clmn+Parameters)".
+     This Generation-2 Collection gives access to 'Historical Simulation' data based on the 'ICON' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "baseline", "ICON", "hist", "Phase 2"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - ICON - Generation-2
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1990-01-01T00:00:00Z", "2014-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1:
+  description: |
+    The DestinE Digital Twin for Climate Change Adaptation (Climate DT) supports adaptation activities by providing innovative climate information on multi-decadal
+    timescales, globally, at scales at which many impacts of climate change are observed. It combines cutting-edge global Earth-system models, impact-sector
+    applications and observations into a unified framework to provide global climate projections and impact-sector information on multi-decadal timescales
+    (1990 to ~2050), at very high spatial resolutions (5 to 10 km).\n\nThe Climate DT represents the first ever attempt to operationalise the production of
+    global multi-decadal climate projections, leveraging the world-leading supercomputing facilities of the EuroHPC Joint Undertaking along with some of the
+    leading European climate models. A concise overview of what the Climate DT aims to achieve, and of the different concepts essential for an understanding
+    of the Digital Twin’s characteristics, is included in the [Climate DT factsheet](https://destine.ecmwf.int/wp-content/uploads/2024/06/2024.06.07_Climate-DT-Fact-Sheet_V7-2.pdf)
+    \n\n## Control Simulation \n\n Repetitive 1990 forcing with no change in forcing over time. These simulations allow to quantify model drift and simulated
+    inter-annual variability and provides relevant context for interpreting historical and scenario simulations.\n\n## Models\n\nThe Climate DT exploits and
+     further evolves a new generation of global storm-resolving and eddy-rich models built through a cooperative model development approach. For more
+     information on models please click [here](https://destine.ecmwf.int/climate-change-adaptation-digital-twin-climate-dt/#models)
+     \n\n## Simulations\n\nThe Climate DT team carries out several types of digital twin simulations on the EuroHPC supercomputers.
+     Multi-decadal simulations are produced to cover the recent past (from 1990) and possible future evolutions of the climate up to 2050.
+     See [here](https://destine.ecmwf.int/climate-change-adaptation-digital-twin-climate-dt/#simulations) for more information on Simulations
+     \n\n## Parameters\n\nBelow we see the list of parameters extracted from the 'DestinE Climate DT data portfolio', for more information please refer to
+     the pages [Climate DT Phase2 CLTE Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clte+Parameters) and
+     [Climate DT Phase2 CLMN Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clmn+Parameters)".
+     This Generation-2 Collection gives access to 'Historical Simulation' data based on the 'IFS-FESOM' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "baseline", "IFS-FESOM", "hist", "Phase 2"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - IFS-FESOM - Generation-2
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1990-01-01T00:00:00Z", "2014-12-31T23:59:59Z"]]}}
+
+DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1:
+  description: |
+    The DestinE Digital Twin for Climate Change Adaptation (Climate DT) supports adaptation activities by providing innovative climate information on multi-decadal
+    timescales, globally, at scales at which many impacts of climate change are observed. It combines cutting-edge global Earth-system models, impact-sector
+    applications and observations into a unified framework to provide global climate projections and impact-sector information on multi-decadal timescales
+    (1990 to ~2050), at very high spatial resolutions (5 to 10 km).\n\nThe Climate DT represents the first ever attempt to operationalise the production of
+    global multi-decadal climate projections, leveraging the world-leading supercomputing facilities of the EuroHPC Joint Undertaking along with some of the
+    leading European climate models. A concise overview of what the Climate DT aims to achieve, and of the different concepts essential for an understanding
+    of the Digital Twin’s characteristics, is included in the [Climate DT factsheet](https://destine.ecmwf.int/wp-content/uploads/2024/06/2024.06.07_Climate-DT-Fact-Sheet_V7-2.pdf)
+    \n\n## Control Simulation \n\n Repetitive 1990 forcing with no change in forcing over time. These simulations allow to quantify model drift and simulated
+    inter-annual variability and provides relevant context for interpreting historical and scenario simulations.\n\n## Models\n\nThe Climate DT exploits and
+     further evolves a new generation of global storm-resolving and eddy-rich models built through a cooperative model development approach. For more
+     information on models please click [here](https://destine.ecmwf.int/climate-change-adaptation-digital-twin-climate-dt/#models)
+     \n\n## Simulations\n\nThe Climate DT team carries out several types of digital twin simulations on the EuroHPC supercomputers.
+     Multi-decadal simulations are produced to cover the recent past (from 1990) and possible future evolutions of the climate up to 2050.
+     See [here](https://destine.ecmwf.int/climate-change-adaptation-digital-twin-climate-dt/#simulations) for more information on Simulations
+     \n\n## Parameters\n\nBelow we see the list of parameters extracted from the 'DestinE Climate DT data portfolio', for more information please refer to
+     the pages [Climate DT Phase2 CLTE Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clte+Parameters) and
+     [Climate DT Phase2 CLMN Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clmn+Parameters)".
+     This Generation-2 Collection gives access to 'Historical Simulation' data based on the 'IFS-NEMO' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "baseline", "IFS-NEMO", "hist", "Phase 2"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: Climate Change Adaptation Digital Twin (Climate Adaptation DT) - Historical Simulation - IFS-NEMO - Generation-2
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1990-01-01T00:00:00Z", "2014-12-31T23:59:59Z"]]}}
+
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:
   description: |
