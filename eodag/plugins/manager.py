@@ -273,7 +273,7 @@ class PluginManager:
         if cached is not None:
             return cached
 
-        auth_conf["credentials"] = self._creds_store.get(provider, {}).get(auth_key, {})
+        auth_conf["credentials"] = self.creds_store.get(provider, {}).get(auth_key, {})
         plugin_conf = PluginConfig.from_mapping(auth_conf | {"priority": priority})
         plugin = Authentication.get_plugin_by_class_name(auth_conf["type"])(
             provider, plugin_conf

@@ -41,6 +41,7 @@ from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from typing_extensions import TypedDict
 
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     AUTH_TOPIC_KEYS,
     HTTP_REQ_TIMEOUT,
@@ -705,6 +706,7 @@ class ProviderConfig(yaml.YAMLObject):
     group: str
     priority: int = 0
     enabled: bool = True
+    fetchable: bool
     roles: list[str]
     description: str
     url: str
@@ -1061,6 +1063,9 @@ def merge_provider_configs(
             operation = "updating" if name in configs else "creating"
             logger.warning("%s: skipped %s due to invalid config", name, operation)
             logger.debug("Traceback:\n%s", traceback.format_exc())
+        else:
+            # set attributes which can not be set during the creation or update of the config
+            set_provider_fetchable_attr(configs[name])
 
     _share_credentials(configs)
 
@@ -1108,6 +1113,46 @@ def _parse_env_provider_configs() -> dict[str, dict[str, Any]]:
                 result,
             )
     return result
+
+
+def parse_discovery_config_jsonpath(
+    discovery_conf: PluginConfig.DiscoverCollections,
+) -> PluginConfig.DiscoverCollections:
+    """Parse discovery configuration jsonpath expressions into compiled jsonpath objects.
+
+    :param discovery_conf: The discovery configuration to parse
+    :returns: The discovery configuration with parsed jsonpath expressions
+    """
+    if discovery_conf["result_type"] != "json" or not isinstance(
+        discovery_conf["results_entry"], str
+    ):
+        return discovery_conf
+
+    # parse jsonpath expressions for common discovery configuration entries
+    discovery_conf_parsed: PluginConfig.DiscoverCollections = {
+        **discovery_conf,
+        "results_entry": string_to_jsonpath(
+            discovery_conf["results_entry"], force=True
+        ),
+        "generic_collection_id": mtd_cfg_as_conversion_and_querypath(
+            {"foo": discovery_conf["generic_collection_id"]}
+        )["foo"],
+        "generic_collection_parsable_properties": mtd_cfg_as_conversion_and_querypath(
+            discovery_conf["generic_collection_parsable_properties"]
+        ),
+        "generic_collection_parsable_metadata": mtd_cfg_as_conversion_and_querypath(
+            discovery_conf["generic_collection_parsable_metadata"]
+        ),
+    }
+    # parse jsonpath expressions for optional discovery configuration entries if they exist
+    if "single_collection_parsable_metadata" in discovery_conf:
+        discovery_conf_parsed[
+            "single_collection_parsable_metadata"
+        ] = mtd_cfg_as_conversion_and_querypath(
+            discovery_conf["single_collection_parsable_metadata"]
+        )
+
+    return discovery_conf_parsed
 
 
 def build_provider_configs(
@@ -1222,3 +1267,15 @@ def disable_providers(
                 "%s: provider has been disabled because no api or search plugin could be found",
                 name,
             )
+
+
+def set_provider_fetchable_attr(config: ProviderConfig) -> None:
+    """Set the ``fetchable`` attribute of the provider config according to its search or api plugin configuration.
+
+    :param config: Provider config object.
+    """
+    search_conf = getattr(config, "search", None) or getattr(config, "api", None)
+    config.fetchable = bool(
+        search_conf
+        and getattr(search_conf, "discover_collections", {}).get("fetch_url")
+    )
