@@ -20,9 +20,8 @@ from __future__ import annotations
 import logging
 from collections import UserDict
 from textwrap import shorten
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from eodag.config import ProviderConfig
 from eodag.utils.exceptions import UnsupportedProvider
 from eodag.utils.repr import dict_to_html_table, str_as_href
 
@@ -34,28 +33,30 @@ logger = logging.getLogger("eodag.provider")
 
 class Provider:
     """
-    Represents a data provider with its configuration and utility methods.
-
-    :param config: Provider configuration as :meth:`~eodag.api.provider.ProviderConfig` instance or :class:`dict`
-    :param collections_fetched: Flag indicating whether collections have been fetched
+    Represents a data provider with its priority, enabled status, metadata and utility methods.
 
     Example
     -------
 
     >>> from eodag.api.provider import Provider
-    >>> config = {
+    >>> content = {
     ...     'name': 'example_provider',
-    ...     'description': 'Example provider for testing',
-    ...     'search': {'type': 'StacSearch'},
-    ...     'products': {'S2_MSI_L1C': {'_collection': 'S2_MSI_L1C'}}
+    ...     'priority': 1,
+    ...     'enabled': True,
+    ...     'metadata': {
+    ...         'description': 'Example provider for testing',
+    ...         'roles': ['role1'],
+    ...         'url': 'https://example.com',
+    ...         'group': 'test_group'
+    ...     }
     ... }
-    >>> provider = Provider(config)
+    >>> provider = Provider(content)
     >>> provider.name
     'example_provider'
     >>> 'S2_MSI_L1C' in provider.collections_config
     True
-    >>> provider.priority  # Default priority
-    0
+    >>> provider.priority
+    1
     """
 
     name: str
@@ -95,7 +96,9 @@ class Provider:
 
     def _repr_html_(self, embedded: bool = False) -> str:
         """HTML representation for Jupyter/IPython display."""
-        group_display = f" ({group})" if (group := self.group) else ""
+        group_display = (
+            f" ({group})" if (group := self.metadata.get("group", None)) else ""
+        )
         thead = (
             f"""<thead><tr><td style='text-align: left; color: grey;'>
                 {type(self).__name__}("<span style='color: black'>{self.name}{group_display}</span>")</td></tr></thead>
@@ -107,11 +110,11 @@ class Provider:
 
         summaries = {
             "name": self.name,
-            "title": self.title,
-            "url": self.url,
+            "title": self.metadata.get("description", None),
+            "url": self.metadata.get("url", None),
             "priority": self.priority,
         }
-        if group := self.group:
+        if group := self.metadata.get("group", None):
             summaries["group"] = group
 
         col_html_table = dict_to_html_table(summaries, depth=1, brackets=False)
@@ -122,21 +125,6 @@ class Provider:
             f"{col_html_table}</td></tr>"
             "</tbody></table>"
         )
-
-    @property
-    def title(self) -> Optional[str]:
-        """The title of the provider."""
-        return self.metadata.get("description", None)
-
-    @property
-    def url(self) -> Optional[str]:
-        """The url of the provider."""
-        return self.metadata.get("url", None)
-
-    @property
-    def group(self) -> Optional[str]:
-        """Return the provider's group, if any."""
-        return self.metadata.get("group", None)
 
 
 class ProvidersDict(UserDict[str, Provider]):
@@ -217,9 +205,9 @@ class ProvidersDict(UserDict[str, Provider]):
                         {"'priority': '<span style='color: black'>" + str(v.priority) + "</span>',&ensp;"
                          if v.priority is not None else ""}
                         {"'title': '<span style='color: black'>"
-                         + shorten(v.title, width=70, placeholder="[...]") + "</span>',&ensp;"
-                         if v.title else ""}
-                        {"'url': '" + str_as_href(v.url) + "'" if v.url else ""}
+                         + shorten(title, width=70, placeholder="[...]") + "</span>',&ensp;"
+                         if (title := v.metadata.get("description", None)) else ""}
+                        {"'url': '" + str_as_href(url) + "'" if (url := v.metadata.get("url", None)) else ""}
                     )
                 </summary>
                     {v._repr_html_(embedded=True)}
@@ -249,17 +237,11 @@ class ProvidersDict(UserDict[str, Provider]):
         :return: List of provider groups if exist or names.
         """
         return list(
-            set(provider.group or provider.name for provider in self.data.values())
+            set(
+                provider.metadata.get("group", None) or provider.name
+                for provider in self.data.values()
+            )
         )
-
-    @property
-    def configs(self) -> dict[str, ProviderConfig]:
-        """
-        Dictionary of provider configs keyed by provider name.
-
-        :return: Dictionary mapping provider name to :class:`~eodag.api.provider.ProviderConfig`.
-        """
-        return {provider.name: provider.config for provider in self.data.values()}
 
     @property
     def priorities(self) -> dict[str, int]:
