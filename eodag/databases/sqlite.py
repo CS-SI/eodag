@@ -30,7 +30,8 @@ import orjson
 import shapely
 from shapely.geometry import shape
 
-from eodag.api.collection import Collection
+from eodag.api.collection import Collection, CollectionsDict
+from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.databases.base import Database
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
@@ -40,6 +41,7 @@ from eodag.utils import (
     get_geometry_from_various,
 )
 from eodag.utils.dates import get_datetime
+from eodag.utils.env import is_env_var_true
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -47,7 +49,6 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.collection import CollectionsDict
     from eodag.config import ProviderConfig
 
 logger = logging.getLogger("eodag.databases.sqlite_database")
@@ -251,18 +252,16 @@ class SQLiteDatabase(Database):
             coll_fb_configs,
         )
 
-        logger.debug(
-            "Upserted %d collection-provider config(s); ", len(coll_fb_configs)
-        )
+        logger.debug("Upserted %d collection-provider config(s)", len(coll_fb_configs))
 
-    def _refresh_collections_denorm(self, changed_providers: list[str]):
+    def _refresh_collections_denorm(self, changed_fbs: list[str]) -> None:
         """
         Refresh the denormalized ``federation_backends`` and ``priority`` column
         on affected collections.
         """
-        if not changed_providers:
+        if not changed_fbs:
             return
-        provider_qmarks = ", ".join(["?"] * len(changed_providers))
+        provider_qmarks = ", ".join(["?"] * len(changed_fbs))
 
         self._execute(
             """
@@ -290,7 +289,7 @@ class SQLiteDatabase(Database):
             FROM collections_federation_backends cfb
             WHERE cfb.federation_backend_name IN ({provider_qmarks});
             """,
-            tuple(changed_providers),
+            tuple(changed_fbs),
         )
         self._execute(
             f"""
@@ -333,14 +332,24 @@ class SQLiteDatabase(Database):
     def upsert_fb_configs(self, configs: list[ProviderConfig]) -> None:
         """Add or update federation backend configs (providers) in the database."""
         federation_backend_configs = []
-        collections_provider_configs = []
-        changed_providers = set()
+        coll_fb_configs = []
+        changed_fbs = set()
+        known_collections = {
+            coll["id"] for coll in self.collections_search(with_fbs_only=False)[0]
+        } | {GENERIC_COLLECTION, "GENERIC_PRODUCT_TYPE"}
+        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
+        collections_to_add = []
 
         def strip_credentials(plugin_conf: dict[str, Any]) -> dict[str, Any]:
             return {k: v for k, v in plugin_conf.items() if k != "credentials"}
 
         for config in configs:
-            exclude_keys = set(PLUGINS_TOPIC_KEYS) | {"priority", "name", "products"}
+            exclude_keys = set(PLUGINS_TOPIC_KEYS) | {
+                "name",
+                "priority",
+                "enabled",
+                "products",
+            }
             metadata = {
                 k: v for k, v in config.__dict__.items() if k not in exclude_keys
             }
@@ -377,17 +386,37 @@ class SQLiteDatabase(Database):
 
             for topic, products_cfg in topics_cfg.items():
                 for coll_id, cfg in products_cfg.items():
+                    # add collections config only if collections are known or in collections permissive mode
+                    if strict_mode and coll_id not in known_collections:
+                        continue
+                    # add empty collections to DB for unknown collections in collections permissive mode
+                    # it allows to synchronize collections to federation backends
+                    if coll_id not in known_collections:
+                        collections_to_add.append(
+                            Collection(
+                                id=coll_id, title=coll_id, description=NOT_AVAILABLE
+                            )
+                        )
+
                     tmp[coll_id][topic] = cfg
 
             for coll_id, cfg in tmp.items():
-                collections_provider_configs.append((coll_id, config.name, cfg))
+                coll_fb_configs.append((coll_id, config.name, cfg))
 
-            changed_providers.add(config.name)
+            changed_fbs.add(config.name)
 
         with self._con:
+            # Add new collections to DB first to enable to set their column
+            # "federation_backends" during federation backends config update
+            if collections_to_add:
+                self.upsert_collections(CollectionsDict(collections_to_add))
+                logger.debug(
+                    "Collections permissive mode, %s added",
+                    ", ".join(c.id for c in collections_to_add),
+                )
             self._upsert_federation_backends(federation_backend_configs)
-            self._upsert_collections_federation_backends(collections_provider_configs)
-            self._refresh_collections_denorm(sorted(changed_providers))
+            self._upsert_collections_federation_backends(coll_fb_configs)
+            self._refresh_collections_denorm(sorted(changed_fbs))
 
     def set_priority(self, name: str, priority: int) -> None:
         """
@@ -411,6 +440,7 @@ class SQLiteDatabase(Database):
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
         sortby: Optional[list[dict[str, str]]] = None,
+        with_fbs_only: bool = True,
     ) -> tuple[list[dict[str, Any]], int]:
         """Search collections matching the given parameters.
 
@@ -430,7 +460,11 @@ class SQLiteDatabase(Database):
         )
 
         from_clause = "FROM collections c"
-        where_parts = [where] + ["c.federation_backends IS NOT NULL"]
+        where_parts = (
+            [where] + ["c.federation_backends IS NOT NULL"]
+            if with_fbs_only
+            else [where]
+        )
         params: list[Any] = []
         order_terms: list[str] = []
         select_score = ""
@@ -481,6 +515,7 @@ class SQLiteDatabase(Database):
         self,
         names: Optional[set[str]] = None,
         enabled: Optional[bool] = None,
+        fetchable: Optional[bool] = None,
         collection: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> dict[str, dict[str, Any]]:
@@ -505,6 +540,11 @@ class SQLiteDatabase(Database):
 
         if enabled is not None:
             where_clauses.append(f"{'NOT ' if not enabled else ''}fb.enabled")
+
+        if fetchable is not None:
+            where_clauses.append(
+                f"{'NOT ' if not fetchable else ''}{_JSON_EXTRACT}(fb.metadata, '$.fetchable')"
+            )
 
         if names:
             placeholders = ",".join(f":{name}" for name in names)
@@ -571,7 +611,8 @@ class SQLiteDatabase(Database):
 
         rows = self._execute(sql, params).fetchall()
         if not rows or not rows[0]["provider_plugins_config"]:
-            raise KeyError(f"Provider '{name}' not found")
+            msg = f"Provider '{name}' not found"
+            raise KeyError(msg)
         base: dict[str, Any] = (
             rows[0]["provider_plugins_config"]
             | (rows[0]["provider_metadata"] or {})
