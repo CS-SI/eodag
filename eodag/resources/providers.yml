@@ -4727,6 +4727,7 @@
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.downloadLink.href'
+      federation:backends: '$.null'
       storage:schemes: '$.null'
       storage:tier: '$.null'
       assets: '$.null'
