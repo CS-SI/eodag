@@ -108,9 +108,7 @@ try:
     )
 except (KeyError, IndexError):
     author = "CS GROUP - France"
-copyright = (
-    f"2018-{dt.dt.datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
-)
+copyright = f"2018-{dt.datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
