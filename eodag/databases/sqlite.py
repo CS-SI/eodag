@@ -462,7 +462,7 @@ class SQLiteDatabase(Database):
 
         sql = (
             f'SELECT json(c.content) AS "c.content [collection_dict]", '
-            f'json(c.federation_backends) as "c.federation_backends"{select_score} '
+            f'json(c.federation_backends) as "c.federation_backends [dict]"{select_score} '
             f"{from_clause} WHERE {full_where}{order_by}"
         )
         if limit is not None:
@@ -601,6 +601,8 @@ def _adapt_collection(collection: Collection) -> str:
     to an SQLite-compatible type (here a string) when injected to queries"""
     data = collection.model_dump(mode="json")
     data["_id"] = collection._id
+    # remove "federation:backends" from the stored content as it is computed in a separate column
+    del data["federation:backends"]
     return orjson.dumps(data).decode()
 
 
