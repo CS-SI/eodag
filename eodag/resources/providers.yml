@@ -2823,7 +2823,7 @@
       metadata_mapping:
         processing:level:
           - '{{"query":{{"s1:processing_level":{{"eq":"{processing:level}"}}}}}}'
-          - '$.properties."s1:processing_level"'
+          - '{$.properties."s1:processing_level"#replace_str(r"^(.+)$",r"L\1")}'
     S2_MSI_L2A:
       _collection: sentinel-2-l2a
     LANDSAT_C2L1:
