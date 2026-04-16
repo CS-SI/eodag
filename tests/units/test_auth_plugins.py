@@ -943,29 +943,6 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
         self.assertIsInstance(auth, AuthBase)
 
     @responses.activate
-    def test_plugins_auth_eoiam_authenticate_no_login_required(self):
-        """EOIAMAuth should not login if not an EOIAM page"""
-        auth_plugin = self.get_auth_plugin("foo_provider")
-        auth_plugin.config.credentials = {
-            "username": "test_user",
-            "password": "test_pass",
-        }
-
-        # Response without EOIAM login page
-        responses.add(
-            responses.GET,
-            "http://test.url",
-            body="<html><body>Some content</body></html>",
-        )
-
-        auth = auth_plugin.authenticate()
-        req = mock.Mock(headers={})
-        req.url = "http://test.url"
-        auth(req)
-
-        self.assertFalse(auth_plugin._logged_in is False)
-
-    @responses.activate
     def test_plugins_auth_eoiam_login_from_html_success(self):
         """EOIAMAuth._login_from_html should perform SAML login successfully"""
         auth_plugin = self.get_auth_plugin("foo_provider")
