@@ -439,9 +439,9 @@ class LabelFields(BaseModel):
         return values
 
     label_properties: Annotated[list[str], Field(None)]
-    label_classes: Optional[list[LabelClassObject]] = Field(default=None)
-    label_description: str = Field(default="")
-    label_type: str = Field(default="")
+    label_classes: Annotated[list[LabelClassObject], Field(None)]
+    label_description: Annotated[str, Field("")]
+    label_type: Annotated[str, Field("")]
     label_tasks: Annotated[list[str], Field(None)]
     label_methods: Annotated[list[str], Field(None)]
     label_overviews: Annotated[list[LabelOverview], Field(None)]
