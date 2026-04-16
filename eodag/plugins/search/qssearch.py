@@ -31,7 +31,7 @@ from typing import (
     cast,
     get_args,
 )
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import (
     parse_qs,
     parse_qsl,
@@ -99,6 +99,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     PluginImplementationError,
+    QuotaExceededError,
     RequestError,
     TimeOutError,
     ValidationError,
@@ -1414,6 +1415,21 @@ class QueryStringSearch(Search):
         else:
             return tuple(provider_collection)
 
+    def _raise_request_error(
+        self, err_msg: str, exception_message: Optional[str], url: str, e: Exception
+    ):
+        if exception_message:
+            logger.exception("%s %s" % (exception_message, err_msg))
+        else:
+            logger.exception(
+                "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
+                url,
+                self.provider,
+                self.__class__.__name__,
+                err_msg,
+            )
+        raise RequestError.from_error(e, exception_message) from e
+
     def _request(
         self,
         prep: PreparedSearch,
@@ -1495,19 +1511,17 @@ class QueryStringSearch(Search):
         except socket.timeout:
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
-        except (requests.RequestException, URLError) as err:
+        except HTTPError as e:  # raised by urlopen
+            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
+            err_msg = e.msg
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except URLError as e:
+            err_msg = str(e)
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except requests.RequestException as err:
+            QuotaExceededError.raise_if_quota_exceeded(err, self.provider)
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
-            if exception_message:
-                logger.exception("%s %s" % (exception_message, err_msg))
-            else:
-                logger.exception(
-                    "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
-                    url,
-                    self.provider,
-                    self.__class__.__name__,
-                    err_msg,
-                )
-            raise RequestError.from_error(err, exception_message) from err
+            self._raise_request_error(err_msg, exception_message, url, err)
         return response
 
 
@@ -1591,7 +1605,15 @@ class ODataV4Search(QueryStringSearch):
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-                except requests.RequestException:
+                except requests.RequestException as e:
+                    if (
+                        e.response
+                        and e.response.status_code
+                        and e.response.status_code == 429
+                    ):
+                        logger.error(
+                            f"Too many requests on provider {self.provider}, please check your quota!"
+                        )
                     logger.exception(
                         "Skipping error while searching for %s %s instance",
                         self.provider,
@@ -2041,6 +2063,10 @@ class PostJsonSearch(QueryStringSearch):
                     f"Please check your credentials for {self.provider}.",
                     f"HTTP Error {response.status_code} returned.",
                     response.text.strip(),
+                )
+            if response.status_code and response.status_code == 429:
+                raise QuotaExceededError(
+                    f"Too many requests on provider {self.provider}, please check your quota!"
                 )
             if exception_message:
                 logger.exception(exception_message)
