@@ -171,6 +171,25 @@ class CommonStacMetadata(ItemProperties):
         return False
 
     @classmethod
+    def get_field_from_alias(cls, value: str) -> str:
+        """Get field name from alias
+
+        >>> CommonStacMetadata.get_field_from_alias('collection')
+        'collection'
+        """
+        for name, field_info in cls.model_fields.items():
+            if field_info.alias:
+                if isinstance(field_info.alias, AliasChoices):
+                    aliases = field_info.alias.choices
+                    if value in aliases:
+                        return name
+                else:
+                    if value == field_info.alias:
+                        return name
+
+        return value
+
+    @classmethod
     def from_stac(cls, field_name: str) -> str:
         """Convert a STAC parameter to its matching python-style name.
 

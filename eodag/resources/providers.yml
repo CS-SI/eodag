@@ -5254,16 +5254,25 @@
     # Spacenet
     SPACENET_BUILDINGS_DETECTION_V1:
       _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V1
+      metadata_mapping:
+        label:properties:
+          - '{{"query":{{"label:properties":{{"eq":{label:properties}}}}}}}'
+          - '{$.properties.label:properties#replace_str("Not Available","None")}'
     SPACENET_BUILDINGS_DETECTION_V2:
       _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V2
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_ROADS_NETWORK_DETECTION:
       _collection: EO.SPACENET.DAT.ROADS_NETWORK_DETECTION
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_OFF_NADIR_BUILDING:
       _collection: EO.SPACENET.DAT.OFF_NADIR_BUILDING
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
       _collection: EO.SPACENET.DAT.ROADS_NETWORK_ROUTE_TRAVEL
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_ALL_WEATHER_MAPPING:
       _collection: EO.SPACENET.DAT.ALL_WEATHER_MAPPING
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
 
 
 ---

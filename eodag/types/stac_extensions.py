@@ -438,7 +438,7 @@ class LabelFields(BaseModel):
                 values["methods"].remove(None)
         return values
 
-    label_properties: Annotated[list[str], Field(None)]
+    label_properties: Annotated[Optional[list[str]], Field(None)]
     label_classes: Annotated[list[LabelClassObject], Field(None)]
     label_description: Annotated[str, Field("")]
     label_type: Annotated[str, Field("")]

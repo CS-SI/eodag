@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import geojson
 import orjson
-import pydantic_core
 import requests
 from pystac import Item
 from requests import RequestException
@@ -161,7 +160,6 @@ class EOProduct:
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
             and not key.startswith("_")
-            and value is not None
         }
         self.properties.setdefault(
             "datetime",
@@ -251,12 +249,6 @@ class EOProduct:
             stac_properties["providers"] = stac_providers
 
         props_model = cast(type[CommonStacMetadata], create_stac_metadata_model())
-        try:
-            props_model.model_validate(
-                stac_properties
-            )  # triggers before_validate actions
-        except pydantic_core._pydantic_core.ValidationError as e:
-            logger.warning("Validation failed: %s", e)
         props_validated = props_model.safe_validate(
             stac_properties, skip_invalid=skip_invalid
         )
@@ -264,13 +256,24 @@ class EOProduct:
 
         # skip invalid properties
         if skip_invalid:
+            props_validated_dict = props_validated.model_dump(
+                by_alias=False, exclude_unset=False
+            )
+            pythonic_fields_properties = {
+                props_model.get_field_from_alias(k): v
+                for k, v in stac_properties.items()
+            }
             invalid_properties = {
                 k
-                for k in stac_properties.keys()
-                if k not in props_validated.model_dump() and props_model.has_field(k)
+                for k, v in pythonic_fields_properties.items()
+                # keep none values
+                if props_model.has_field(k)
+                and props_validated_dict[k] is None
+                and v is not None
             }
             for key in invalid_properties:
-                stac_properties.pop(key, None)
+                stac_key = props_model.model_fields[key].alias or key
+                stac_properties.pop(stac_key, None)
 
         # get conformance classes for assets properties
         assets_dict = {**self.assets.as_dict()}

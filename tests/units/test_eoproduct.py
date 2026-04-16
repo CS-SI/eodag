@@ -734,7 +734,7 @@ class TestEOProduct(EODagTestBase):
         )
 
     def test_eoproduct_none_properties(self):
-        """eoproduct none properties must skipped"""
+        """eoproduct none properties must be kept"""
         product = self._dummy_product(
             properties={
                 "geometry": "POINT (0 0)",
@@ -746,6 +746,7 @@ class TestEOProduct(EODagTestBase):
             product.properties,
             {
                 "b_property": "b_value",
+                "a_property": None,
                 "datetime": None,
             },
         )
