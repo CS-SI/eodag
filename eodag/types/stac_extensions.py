@@ -44,9 +44,9 @@ class CubeDimension(BaseModel):
     type: Optional[str] = Field(None)
     axis: Optional[str] = Field(None)
     description: Optional[str] = Field(None)
-    extent: Optional[list[float]] = Field(None)
-    values: Optional[list[float]] = Field(None)
-    step: Optional[float] = Field(None)
+    extent: Optional[list[Union[float, str]]] = Field(None)
+    values: Optional[list[Union[float, str]]] = Field(None)
+    step: Optional[Union[float, str]] = Field(None)
     unit: Optional[str] = Field(None)
     reference_system: Optional[Union[str, int, dict[str, Any]]] = Field(None)
 
