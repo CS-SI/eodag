@@ -77,6 +77,8 @@ class Link(StacBaseModel):
 
 
 class Links(RootModel[List[Link]]):
+    """A class representing a list of :class:`~eodag.api.collection.Link` objects."""
+
     root: List[Link]
 
     def link_iterator(self) -> Iterator[Link]:
@@ -89,6 +91,7 @@ class Links(RootModel[List[Link]]):
             link.resolve(base_url)
 
     def append(self, link: Link) -> None:
+        """Append a link to the collection links"""
         self.root.append(link)
 
     def __len__(self) -> int:
@@ -125,6 +128,12 @@ class Collection(StacCollection):
     keywords: Optional[list[str]] = None
     links: Links = Field(default=Links(root=[]))
 
+    # fields which are not part of the StacCollection model
+    # but which can be used at the root of a STAC collection instance
+    federation_backends: Optional[list[str]] = Field(
+        default=None, alias="federation:backends"
+    )
+
     # summaries
     constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
     instruments: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
@@ -157,7 +166,9 @@ class Collection(StacCollection):
     _dag: Optional[EODataAccessGateway] = PrivateAttr(default=None)
 
     # only STAC fields
-    __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys())
+    __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [
+        "federation_backends"
+    ]
 
     # mandatory STAC fields which are fixed by their default value
     __static_fields__: ClassVar[list[str]] = ["type", "stac_version"]
