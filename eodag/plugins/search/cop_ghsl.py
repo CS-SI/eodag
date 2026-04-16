@@ -265,6 +265,7 @@ class CopGhslSearch(Search):
             return {"start_date": start_date_str, "end_date": end_date_str}
 
         result: dict[str, str] = {}
+        # cast to tell the type checker that value won't be None here
         result["start_date"] = cast(str, to_iso_utc_string(start_date))
         result["end_date"] = cast(str, to_iso_utc_string(end_date))
         return result

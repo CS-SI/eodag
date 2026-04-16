@@ -864,6 +864,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             start_date = dt.datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - dt.timedelta(
                 seconds=1
             )
+            # cast to tell the type checker that value won't be None here
             params["startDate"] = cast(str, to_iso_utc_string(start_date))
             end_date = dt.datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + dt.timedelta(
                 seconds=1
