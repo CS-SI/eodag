@@ -77,6 +77,7 @@ class Database(ABC):
         cql2_text: Optional[str] = None,
         cql2_json: Optional[dict[str, Any]] = None,
         sortby: Optional[list[dict[str, str]]] = None,
+        with_fbs_only: bool = True,
     ) -> tuple[list[dict[str, Any]], int]:
         """Search collections matching the given parameters.
 
@@ -92,6 +93,7 @@ class Database(ABC):
         self,
         names: Optional[set[str]] = None,
         enabled: Optional[bool] = None,
+        fetchable: Optional[bool] = None,
         collection: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> dict[str, dict[str, Any]]:
