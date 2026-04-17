@@ -2799,6 +2799,30 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["ecmwf:day"],
             ["20", "21"],
         )
+        # month with one digit
+        results = self.search_plugin.query(
+            prep=PreparedSearch(),
+            collection="ERA5_SL",
+            **{
+                "ecmwf:year": "2020",
+                "ecmwf:month": ["2"],
+                "ecmwf:day": ["20", "21"],
+                "ecmwf:time": ["01:00"],
+            },
+        )
+        eoproduct = results.data[0]
+        self.assertEqual(
+            eoproduct.properties["start_datetime"],
+            "2020-02-20T01:00:00.000Z",
+        )
+        self.assertEqual(
+            eoproduct.properties["end_datetime"],
+            "2020-02-21T01:00:00.000Z",
+        )
+        self.assertEqual(
+            eoproduct.properties["ecmwf:month"],
+            ["2"],
+        )
 
     def test_plugins_search_ecmwfsearch_collection_with_alias(self):
         """alias of collection must be used in search result"""

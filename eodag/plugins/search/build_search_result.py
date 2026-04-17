@@ -495,7 +495,7 @@ class ECMWFSearch(PostJsonSearch):
         collection = prep.collection
         if not collection:
             collection = kwargs.get("collection")
-        kwargs = self._preprocess_search_params(kwargs, collection)
+        kwargs = self._preprocess_search_params(kwargs)
         result = super().query(prep, **kwargs)
         if prep.count and not result.number_matched:
             result.number_matched = 1
@@ -529,9 +529,7 @@ class ECMWFSearch(PostJsonSearch):
             collection=collection, query_dict=ordered_kwargs
         )
 
-    def _preprocess_search_params(
-        self, params: dict[str, Any], collection: Optional[str]
-    ) -> dict[str, Any]:
+    def _preprocess_search_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
@@ -540,7 +538,6 @@ class ECMWFSearch(PostJsonSearch):
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
-        :param collection: (optional) collection id
         """
 
         _dc_qs = params.get("_dc_qs")
@@ -571,17 +568,6 @@ class ECMWFSearch(PostJsonSearch):
             start_date, end_date = parse_date(params["date"])
             params[START] = format_date(start_date)
             params[END] = format_date(end_date)
-
-        # start_datetime /  computed from "date", "time", "year", "month", "day"
-        indirects = self._preprocess_indirect_date_parameters(params)
-        if params.get(START) is None:
-            value = indirects.get("start_datetime", None)
-            if value is not None:
-                params[START] = value
-        if params.get(END) is None:
-            value = indirects.get("end_datetime", None)
-            if value is not None:
-                params[END] = value
 
         # adapt end date if it is midnight
         if END in params:
@@ -649,9 +635,9 @@ class ECMWFSearch(PostJsonSearch):
         if year is not None:
             indirects["year"] = year
         if month is not None:
-            indirects["month"] = month
+            indirects["month"] = ["{:02d}".format(int(m)) for m in month]
         if day is not None:
-            indirects["day"] = day
+            indirects["day"] = ["{:02d}".format(int(d)) for d in day]
 
         # Compute date range from "date" param (takes precedence)
         date = params.get("date", None)
@@ -670,7 +656,10 @@ class ECMWFSearch(PostJsonSearch):
 
         # Compute date range from year/month/day/time params
         start, end = compute_date_range_from_params(
-            year=year, month=month, day=day, time=time
+            year=year,
+            month=(indirects["month"] if month else None),
+            day=(indirects["day"] if day else None),
+            time=time,
         )
         if start is not None:
             indirects["start_datetime"] = start
@@ -738,9 +727,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # extract default datetime and convert geometry
         try:
-            processed_filters = self._preprocess_search_params(
-                deepcopy(filters), collection
-            )
+            processed_filters = self._preprocess_search_params(deepcopy(filters))
         except Exception as e:
             raise ValidationError(e.args[0]) from e
 
@@ -1261,6 +1248,17 @@ class ECMWFSearch(PostJsonSearch):
                 **result_data,
                 **{k: v for k, v in kwargs.items() if v is not None},
             }
+
+            # start_datetime /  computed from "date", "time", "year", "month", "day"
+            indirects = self._preprocess_indirect_date_parameters(result_data)
+            if result_data.get(START) is None:
+                value = indirects.get("start_datetime", None)
+                if value is not None:
+                    result_data[START] = value
+            if result_data.get(END) is None:
+                value = indirects.get("end_datetime", None)
+                if value is not None:
+                    result_data[END] = value
 
             properties = properties_from_json(
                 result_data,
