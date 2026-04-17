@@ -190,7 +190,8 @@ class SQLiteDatabase(Database):
         upserted_coll_nb = self._executemany(
             f"""
             INSERT INTO collections (content) VALUES ({_JSON_STORE}(?))
-            ON CONFLICT(id) DO UPDATE SET content = excluded.content;
+            ON CONFLICT(id) DO UPDATE SET content = excluded.content
+            ON CONFLICT(internal_id) DO UPDATE SET content=excluded.content;
             """,
             [
                 (c,)
