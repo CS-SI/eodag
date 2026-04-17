@@ -1123,8 +1123,8 @@ def parse_discovery_config_jsonpath(
     :param discovery_conf: The discovery configuration to parse
     :returns: The discovery configuration with parsed jsonpath expressions
     """
-    if discovery_conf["result_type"] != "json" or not isinstance(
-        discovery_conf["results_entry"], str
+    if discovery_conf.get("result_type") != "json" or not isinstance(
+        discovery_conf.get("results_entry"), str
     ):
         return discovery_conf
 
@@ -1154,13 +1154,11 @@ def parse_discovery_config_jsonpath(
     if "metadata_mapping" in discovery_conf.get(
         "generic_collection_unparsable_properties", {}
     ):
-        discovery_conf_parsed[
-            "generic_collection_unparsable_properties"
-        ] = {
+        discovery_conf_parsed["generic_collection_unparsable_properties"] = {
             "metadata_mapping": mtd_cfg_as_conversion_and_querypath(
-                discovery_conf[
-                    "generic_collection_unparsable_properties"
-                ]["metadata_mapping"]
+                discovery_conf["generic_collection_unparsable_properties"][
+                    "metadata_mapping"
+                ]
             )
         }
 
