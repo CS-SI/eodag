@@ -293,19 +293,24 @@ class SQLiteDatabase(Database):
         )
         self._execute(
             f"""
-            INSERT INTO tmp_agg(collection_id, federation_backends, priority)
+           INSERT INTO tmp_agg(collection_id, federation_backends, priority)
             SELECT
                 cfb.collection_id,
-                COALESCE({_JSON_GROUP_ARRAY}(
-                    fb.name ORDER BY fb.priority DESC
-                ), {_JSON_STORE}('[]')) AS federation_backends,
+                COALESCE(
+                    {_JSON_GROUP_ARRAY}(fb.name),
+                    json('[]')
+                ) AS federation_backends,
                 COALESCE(MAX(fb.priority), 0) AS priority
             FROM tmp_affected a
             JOIN collections_federation_backends cfb
-            ON cfb.collection_id = a.collection_id
-            JOIN federation_backends fb
-            ON fb.name = cfb.federation_backend_name
-            WHERE fb.enabled = 1
+                ON cfb.collection_id = a.collection_id
+            JOIN (
+                SELECT name, priority
+                FROM federation_backends
+                WHERE enabled = 1
+                ORDER BY priority DESC
+            ) fb
+                ON fb.name = cfb.federation_backend_name
             GROUP BY cfb.collection_id;
             """
         )
