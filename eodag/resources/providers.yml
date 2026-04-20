@@ -4835,6 +4835,71 @@
       experiment: cont
       realization: "5"
       model: IFS-FESOM
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R1:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/climate-dt_story-nudging_hist_IFS-FESOM_2_1.json"
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "1"
+      model: IFS-FESOM
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R2:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/climate-dt_story-nudging_hist_IFS-FESOM_2_2.json"
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "2"
+      model: IFS-FESOM
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R3:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/climate-dt_story-nudging_hist_IFS-FESOM_2_3.json"
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "3"
+      model: IFS-FESOM
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R4:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/climate-dt_story-nudging_hist_IFS-FESOM_2_4.json"
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "4"
+      model: IFS-FESOM
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R5:
+      discover_queryables:
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/climate-dt_story-nudging_hist_IFS-FESOM_2_5.json"
+        form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
+      dataset: climate-dt
+      class: d1
+      generation: "2"
+      expver: "0001"
+      type: fc
+      activity: story-nudging
+      experiment: hist
+      realization: "5"
+      model: IFS-FESOM
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
