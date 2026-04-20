@@ -183,20 +183,30 @@ class PluginManager:
             )
 
         for p_name in providers:
-            pc = self._db.get_fb_config(p_name, {collection} if collection else None)
+            p_c = self._db.get_fb_config(p_name, {collection} if collection else None)
 
-            if "search" in pc:
+            # add configuration for another collection if needed to have a mapping for metadata from it
+            other_product_for_mapping: Optional[str] = (
+                p_c["products"]
+                .get(collection, {})
+                .get("metadata_mapping_from_product", None)
+            )
+            if other_product_for_mapping:
+                op_c = self._db.get_fb_config(p_name, {other_product_for_mapping})
+                p_c["products"].update(op_c["products"])
+
+            if "search" in p_c:
                 mode, topic_class = "search", Search
-            elif "api" in pc:
+            elif "api" in p_c:
                 mode, topic_class = "api", Api
             else:
                 raise MisconfiguredError(
                     f"No search or api plugin configured for provider {p_name}."
                 )
 
-            plugin_conf = pc[mode] | {
-                "priority": pc["priority"],
-                "products": pc["products"],
+            plugin_conf = p_c[mode] | {
+                "priority": p_c["priority"],
+                "products": p_c["products"],
             }
 
             yield topic_class.get_plugin_by_class_name(plugin_conf["type"])(
