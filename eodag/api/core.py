@@ -1707,11 +1707,6 @@ class EODataAccessGateway:
             )[0]
             search_plugins.remove(provider_plugin)
             search_plugins.insert(0, provider_plugin)
-        # Add collections_config to plugin config. This dict contains product
-        # type metadata that will also be stored in each product's properties.
-        for search_plugin in search_plugins:
-            if collection is not None:
-                self._attach_collection_config(search_plugin, collection)
 
         return search_plugins, kwargs
 
@@ -1797,6 +1792,10 @@ class EODataAccessGateway:
                     search_params[
                         re.sub(r"^" + search_plugin.provider + r"[_:]", "", param)
                     ] = value
+
+            # Add collections_config to plugin config. This dict contains product
+            # type metadata that will also be stored in each product's properties.
+            self._attach_collection_config(search_plugin, search_params.get("collection"))
 
             if validate:
                 search_plugin.validate(search_params, prep.auth)
