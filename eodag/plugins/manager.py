@@ -302,7 +302,7 @@ class PluginManager:
             matching_url: Optional[str],
             matching_conf: Optional[PluginConfig],
         ) -> bool:
-            plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
+            plugin_matching_conf = auth_conf.get("matching_conf", {})
             if matching_conf:
                 if (
                     plugin_matching_conf
@@ -310,7 +310,7 @@ class PluginManager:
                 ):
                     # conf matches
                     return True
-            plugin_matching_url = getattr(auth_conf, "matching_url", None)
+            plugin_matching_url = auth_conf.get("matching_url", None)
             if matching_url:
                 if plugin_matching_url and re.match(
                     rf"{plugin_matching_url}", matching_url
