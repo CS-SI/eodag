@@ -343,7 +343,7 @@ class PluginManager:
                     else False
                 )
 
-                if not unconfigured_match and not _is_auth_plugin_matching(
+                if unconfigured_match or _is_auth_plugin_matching(
                     auth_conf, matching_url, matching_conf
                 ):
                     yield self._get_or_create_auth_plugin(
