@@ -336,7 +336,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     def _request_new_token(self) -> dict[str, str]:
         """Fetch the access token with a new authentication"""
         logger.debug("Fetching access token from %s", self.token_endpoint)
-        state = self.compute_state()
+        state = OIDCAuthorizationCodeFlowAuth.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
 
