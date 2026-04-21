@@ -772,19 +772,19 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(prod_dict["properties"]["grid:code"], "MGRS-31TCJ")
         self.assertEqual(prod_dict["assets"]["foo"]["proj:shape"], [3, 343, 343])
         self.assertTrue(
-            any("grid" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/grid/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         self.assertTrue(
-            any("proj" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/projection/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         # badly formatted properties must be skipped
         self.assertNotIn("eo:cloud_cover", prod_dict["properties"])
         self.assertNotIn("mgrs:utm_zone", prod_dict["assets"]["foo"])
         self.assertFalse(
-            any("eo/" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/eo/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         self.assertFalse(
-            any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/mgrs/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
 
     def test_eoproduct_as_pystac_object(self):
@@ -794,9 +794,6 @@ class TestEOProduct(EODagTestBase):
         )
         pystac_item = product.as_pystac_object()
         self.assertIsInstance(pystac_item, Item)
-        # remove extensions and corresponding properties to avoid http request
-        pystac_item.stac_extensions = []
-        pystac_item.properties.pop("federation:backends")
         pystac_item.validate()
 
     def test_eoproduct_from_pystac(self):
