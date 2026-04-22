@@ -52,7 +52,7 @@ import requests
 import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
-from pydantic import create_model
+from pydantic import ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
@@ -2208,7 +2208,6 @@ class StacSearch(PostJsonSearch):
                 return None
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
-            eodag_queryables_and_defaults: list[tuple[str, Any]] = []
             StacQueryables = Queryables.from_stac_models()
             for json_param, json_mtd in json_queryables.items():
                 param = get_queryable_from_provider(
@@ -2218,28 +2217,58 @@ class StacSearch(PostJsonSearch):
                 if param == "datetime" or param.startswith("_"):
                     continue
 
-                default = kwargs.get(param, json_mtd.get("default"))
-
-                if param in StacQueryables.model_fields:
-                    # use eodag queryable as default
-                    eodag_queryables_and_defaults += [(param, default)]
-                    continue
-
                 # convert provider json field definition to python
                 default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
                 field_definition = get_args(annotated_def)
+
+                if param in StacQueryables.model_fields:
+                    # update provider queryable using eodag queryable definition
+                    eodag_queryable = StacQueryables.get_with_default(param, default)
+                    eodag_queryable_args = get_args(eodag_queryable)
+                    if len(field_definition) == 2 and len(eodag_queryable_args) == 2:
+                        (
+                            provider_queryable_type,
+                            provider_queryable_fieldinfo,
+                        ) = field_definition
+                        (
+                            eodag_queryable_type,
+                            eodag_queryable_fieldinfo,
+                        ) = eodag_queryable_args
+                        if ".Literal[" not in str(provider_queryable_type):
+                            # use eodag queryable type if provider one has no constraints
+                            field_definition = eodag_queryable_type, field_definition[1]
+
+                        # merge provider and eodag queryables FieldInfo metadata
+                        merged_metadata = (
+                            field_definition[1].metadata
+                            + eodag_queryable_fieldinfo.metadata
+                        )
+                        # build merged attributes: use provider value if set, otherwise fall back to eodag value
+                        merged_attrs = {
+                            attr_k: (
+                                attr_v or getattr(eodag_queryable_fieldinfo, attr_k)
+                            )
+                            for attr_k, attr_v in provider_queryable_fieldinfo.asdict()
+                            .get("attributes", {})
+                            .items()
+                        }
+                        # rebuild using Field()
+                        merged_fieldinfo = Field(**merged_attrs)
+                        merged_fieldinfo.metadata = merged_metadata
+                        field_definition = field_definition[0], merged_fieldinfo
+
                 field_definitions[param] = field_definition
 
-            python_queryables = create_model("m", **field_definitions).model_fields
+            python_queryables = create_model(
+                "m",
+                __config__=ConfigDict(arbitrary_types_allowed=True),
+                **field_definitions,
+            ).model_fields
 
             queryables_dict = model_fields_to_annotated(python_queryables)
-
-            # append eodag queryables
-            for param, default in eodag_queryables_and_defaults:
-                queryables_dict[param] = StacQueryables.get_with_default(param, default)
 
             # append "datetime" as "start" & "end" if needed
             if "datetime" in json_queryables:

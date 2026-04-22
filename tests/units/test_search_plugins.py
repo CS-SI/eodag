@@ -2403,7 +2403,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         base_type = args[0]
         self.assertEqual(get_origin(base_type), list)
         literal_args = get_args(base_type)
-        self.assertEqual(literal_args, (str,))
+        self.assertEqual(literal_args, (Literal["00:00"],))
 
         # Check that "start" has type Annotated[str, ...]
         self.assertIn("start", queryables_dedl)
@@ -2427,6 +2427,134 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                 if isinstance(arg, type)
             )
         )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_stacsearch_discover_queryables_merge(self, mock_request):
+        """discover_queryables must merge provider and eodag queryable types, aliases, and attributes"""
+        from pydantic import AliasChoices
+
+        provider_queryables = {
+            "type": "object",
+            "properties": {
+                # no constrained type: eodag's str type expected
+                "start_datetime": {
+                    "title": "Start datetime",
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "provider start description",
+                },
+                # simple object: should get eodag's Union type (no Literal constraint)
+                "geometry": {
+                    "title": "Geometry",
+                    "description": "provider geometry description",
+                },
+                # not in eodag queryables: kept as-is from provider
+                "some_provider_param": {
+                    "title": "Some param",
+                    "type": "integer",
+                    "description": "provider-only param",
+                },
+            },
+        }
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.side_effect = [provider_queryables]
+        plugin = self.get_search_plugin(provider="dedl")
+        queryables = plugin.discover_queryables(
+            collection="CAMS_GAC_FORECAST", provider="dedl"
+        )
+
+        # 1. "start" should be present (mapped from "start_datetime" via alias)
+        self.assertIn("start", queryables)
+        start_args = get_args(queryables["start"])
+        start_type, start_fi = start_args[0], start_args[1]
+        # type should be eodag's str (no Literal from provider)
+        self.assertEqual(start_type, str)
+        # alias from eodag should be preserved (AliasChoices with "start_datetime")
+        self.assertIsInstance(start_fi.alias, AliasChoices)
+        self.assertIn("start_datetime", start_fi.alias.choices)
+        # non-empty attributes from provider
+        self.assertEqual(start_fi.description, "provider start description")
+        self.assertEqual(start_fi.title, "Start datetime")
+
+        # 2. "geom" should be present (mapped from "geometry" via alias)
+        self.assertIn("geom", queryables)
+        geom_args = get_args(queryables["geom"])
+        geom_type, geom_fi = geom_args[0], geom_args[1]
+        # type should be eodag's Union (provider has no constraints)
+        self.assertEqual(get_origin(geom_type), Union)
+        # alias from eodag should be preserved
+        self.assertIsInstance(geom_fi.alias, AliasChoices)
+        self.assertIn("geometry", geom_fi.alias.choices)
+        # non-empty attributes from provider
+        self.assertEqual(geom_fi.description, "provider geometry description")
+        self.assertEqual(geom_fi.title, "Geometry")
+
+        # 3. "end" should be present (added from "datetime" split)
+        #    "datetime" isn't in provider_queryables, so "end" won't be auto-added
+        self.assertNotIn("end", queryables)
+        self.assertNotIn("datetime", queryables)
+
+        # 4. check "some_provider_param" is kept as-is
+        self.assertIn("some_provider_param", queryables)
+        sp_args = get_args(queryables["some_provider_param"])
+        sp_type, sp_fi = sp_args[0], sp_args[1]
+        self.assertEqual(sp_type, int)
+        # non-empty attributes from provider
+        self.assertEqual(sp_fi.description, "provider-only param")
+        self.assertEqual(sp_fi.title, "Some param")
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_stacsearch_discover_queryables_datetime_split(
+        self, mock_request
+    ):
+        """discover_queryables must split provider 'datetime' into 'start' and 'end'"""
+        from pydantic import AliasChoices
+
+        provider_queryables = {
+            "type": "object",
+            "properties": {
+                "datetime": {
+                    "title": "Datetime",
+                    "type": "string",
+                    "format": "date-time",
+                },
+                "some_param": {
+                    "title": "Some param",
+                    "type": "string",
+                },
+            },
+        }
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.side_effect = [provider_queryables]
+        plugin = self.get_search_plugin(provider="dedl")
+        queryables = plugin.discover_queryables(
+            collection="CAMS_GAC_FORECAST", provider="dedl"
+        )
+
+        # "datetime" itself must not appear in queryables
+        self.assertNotIn("datetime", queryables)
+
+        # "start" and "end" must be added from eodag definitions
+        self.assertIn("start", queryables)
+        self.assertIn("end", queryables)
+
+        # check "start" has the expected eodag alias
+        start_args = get_args(queryables["start"])
+        start_fi = start_args[1]
+        self.assertIsInstance(start_fi.alias, AliasChoices)
+        self.assertIn("start_datetime", start_fi.alias.choices)
+
+        # check "end" has the expected eodag alias
+        end_args = get_args(queryables["end"])
+        end_fi = end_args[1]
+        self.assertEqual(end_fi.alias, "end_datetime")
+
+        # provider-only param still present
+        self.assertIn("some_param", queryables)
 
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
