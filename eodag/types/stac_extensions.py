@@ -20,7 +20,7 @@
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Ge, Le
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 Percentage = Annotated[float, Ge(0), Le(100)]
 
@@ -608,6 +608,27 @@ class EcmwfExtension(BaseStacExtension):
     FIELDS: type[BaseModel] = EcmwfItemProperties
 
     field_name_prefix: Optional[str] = "ecmwf"
+
+    @model_validator(mode="after")
+    def setup_field_aliases(self) -> "EcmwfExtension":
+        """Set up aliases for ECMWF fields, accepting both stac-prefixed and
+        no-prefix forms (e.g. 'ecmwf:data_format' and 'data_format') as input,
+        while serializing as the stac-prefixed form.
+        """
+        if self.field_name_prefix is None:
+            return self
+
+        fields: dict[str, Any] = getattr(self.FIELDS, "model_fields", {})
+        for k, v in fields.items():
+            prefixed = k.replace(
+                f"{self.field_name_prefix}_", f"{self.field_name_prefix}:"
+            )
+            unprefixed = k.replace(f"{self.field_name_prefix}_", "")
+            v.alias = prefixed
+            v.validation_alias = AliasChoices(prefixed, unprefixed)
+            v.serialization_alias = prefixed
+            v.metadata.insert(0, {"extension": self.__class__.__name__})
+        return self
 
 
 STAC_EXTENSIONS = [
