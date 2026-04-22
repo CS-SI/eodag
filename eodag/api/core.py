@@ -53,10 +53,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import (
-    ALLOWED_KEYWORDS as ECMWF_ALLOWED_KEYWORDS,
-)
-from eodag.plugins.search.build_search_result import ECMWF_PREFIX, MeteoblueSearch
+from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
@@ -1854,20 +1851,12 @@ class EODataAccessGateway:
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
             queryables_fields = Queryables.from_stac_models().model_fields
-            ecmwf_queryables = [
-                f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
-            ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
                 if param in queryables_fields:
                     param_alias = queryables_fields[param].alias or param
                     search_params[param_alias] = value
-                elif param in ecmwf_queryables:
-                    # alias equivalent for ECMWF queryables
-                    search_params[
-                        re.sub(rf"^{ECMWF_PREFIX[:-1]}_", f"{ECMWF_PREFIX}", param)
-                    ] = value
                 else:
                     # remove `provider:` or `provider_` prefix if any
                     search_params[

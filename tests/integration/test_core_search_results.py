@@ -302,6 +302,31 @@ class TestCoreSearchResults(EODagTestCase):
                     "bad-formatted",
                 )
 
+    def test_core_serialize_search_results_keep_none(self):
+        """The core api must serialize a search results to STAC and keep none properties"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", dir=tmpdir_path, delete=False
+            ) as f:
+
+                # none property
+                self.search_result[0].properties["label:properties"] = None
+
+                self.dag.serialize(
+                    self.search_result, filename=f.name, skip_invalid=False
+                )
+
+                # check links
+                with open(f.name) as sf:
+                    serialized = json.load(sf)
+
+                # property not skipped
+                self.assertIsNone(
+                    serialized["features"][0]["properties"]["label:properties"]
+                )
+
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch._request",
         autospec=True,

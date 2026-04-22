@@ -734,7 +734,7 @@ class TestEOProduct(EODagTestBase):
         )
 
     def test_eoproduct_none_properties(self):
-        """eoproduct none properties must skipped"""
+        """eoproduct none properties must be kept"""
         product = self._dummy_product(
             properties={
                 "geometry": "POINT (0 0)",
@@ -746,6 +746,7 @@ class TestEOProduct(EODagTestBase):
             product.properties,
             {
                 "b_property": "b_value",
+                "a_property": None,
                 "datetime": None,
             },
         )
@@ -771,19 +772,19 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(prod_dict["properties"]["grid:code"], "MGRS-31TCJ")
         self.assertEqual(prod_dict["assets"]["foo"]["proj:shape"], [3, 343, 343])
         self.assertTrue(
-            any("grid" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/grid/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         self.assertTrue(
-            any("proj" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/projection/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         # badly formatted properties must be skipped
         self.assertNotIn("eo:cloud_cover", prod_dict["properties"])
         self.assertNotIn("mgrs:utm_zone", prod_dict["assets"]["foo"])
         self.assertFalse(
-            any("eo" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/eo/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
         self.assertFalse(
-            any("mgrs" in ext for ext in prod_dict.get("stac_extensions", []))
+            any("/mgrs/" in ext for ext in prod_dict.get("stac_extensions", []))
         )
 
     def test_eoproduct_as_pystac_object(self):

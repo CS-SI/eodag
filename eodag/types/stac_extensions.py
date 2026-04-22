@@ -20,9 +20,7 @@
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Ge, Le
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-from eodag.utils import ONLINE_STATUS
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 Percentage = Annotated[float, Ge(0), Le(100)]
 
@@ -46,9 +44,9 @@ class CubeDimension(BaseModel):
     type: Optional[str] = Field(None)
     axis: Optional[str] = Field(None)
     description: Optional[str] = Field(None)
-    extent: Optional[list[float]] = Field(None)
-    values: Optional[list[float]] = Field(None)
-    step: Optional[float] = Field(None)
+    extent: Optional[list[Union[float, str]]] = Field(None)
+    values: Optional[list[Union[float, str]]] = Field(None)
+    step: Optional[Union[float, str]] = Field(None)
     unit: Optional[str] = Field(None)
     reference_system: Optional[Union[str, int, dict[str, Any]]] = Field(None)
 
@@ -270,16 +268,8 @@ class StorageFields(BaseModel):
     https://github.com/stac-extensions/storage
     """
 
-    storage_platform: Annotated[str, Field(None)]
-    storage_region: Annotated[str, Field(None)]
-    storage_requester_pays: Annotated[bool, Field(None)]
-    storage_tier: Annotated[str, Field(None)]
-
-    @field_validator("storage_tier")
-    @classmethod
-    def tier_to_stac(cls, v: Optional[str]) -> str:
-        """Convert tier from EODAG naming to STAC"""
-        return "online" if v == ONLINE_STATUS else "offline"
+    storage_schemes: Annotated[dict[str, Any], Field(None)]
+    storage_refs: Annotated[list[str], Field(None)]
 
 
 class StorageExtension(BaseStacExtension):
@@ -390,6 +380,257 @@ class DatacubeExtension(BaseStacExtension):
     field_name_prefix: Optional[str] = "cube"
 
 
+class LabelCountObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]
+    count: Annotated[int, Field(None)]
+
+
+class LabelStatsObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]
+    value: Annotated[float, Field(None)]
+
+
+class LabelClassObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]  # required but may be null
+    classes: Annotated[list[Union[str, int]], Field(None)]
+
+
+class LabelOverview(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    property_key: Annotated[str, Field(None)]
+    counts: Annotated[list[LabelCountObject], Field(None)]
+    statistics: Annotated[list[LabelStatsObject], Field(None)]
+
+
+class LabelFields(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_methods(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """
+        Convert methods ``str`` to ``list``.
+        """
+        if methods := values.get("methods"):
+            values["methods"] = (
+                ",".join(methods.split()).split(",")
+                if isinstance(methods, str)
+                else methods
+            )
+            if None in values["methods"]:
+                values["methods"].remove(None)
+        return values
+
+    label_properties: Annotated[Optional[list[str]], Field(None)]
+    label_classes: Annotated[list[LabelClassObject], Field(None)]
+    label_description: Annotated[str, Field("")]
+    label_type: Annotated[str, Field("")]
+    label_tasks: Annotated[list[str], Field(None)]
+    label_methods: Annotated[list[str], Field(None)]
+    label_overviews: Annotated[list[LabelOverview], Field(None)]
+
+
+class LabelExtension(BaseStacExtension):
+    """STAC label extension."""
+
+    FIELDS: type[BaseModel] = LabelFields
+
+    schema_href: str = "https://stac-extensions.github.io/label/v1.0.1/schema.json"
+    field_name_prefix: Optional[str] = "label"
+
+
+class FederationFields(BaseModel):
+    """
+    https://github.com/Open-EO/openeo-api/tree/master/extensions/federation
+    """
+
+    federation_backends: Annotated[list[str], Field(None)]
+
+
+class FederationExtension(BaseStacExtension):
+    """STAC federation extension."""
+
+    FIELDS: type[BaseModel] = FederationFields
+
+    field_name_prefix: Optional[str] = "federation"
+
+
+class EcmwfItemProperties(BaseModel):
+    """
+    STAC extension from ECMWF MARS keywords.
+
+    https://confluence.ecmwf.int/display/UDOC/Keywords+in+MARS+and+Dissemination+requests
+    """
+
+    # ECMWF DEDT properties
+    ecmwf_accuracy: Annotated[str, Field(None)]
+    ecmwf_activity: Annotated[str, Field(None)]
+    ecmwf_anoffset: Annotated[str, Field(None)]
+    ecmwf_area: Annotated[Union[str, list[float]], Field(None)]
+    ecmwf_block: Annotated[str, Field(None)]
+    ecmwf_channel: Annotated[str, Field(None)]
+    ecmwf_class: Optional[str] = Field(default=None, alias="class")
+    ecmwf_dataset: Annotated[str, Field(None)]
+    ecmwf_date: Annotated[str, Field(None)]
+    ecmwf_diagnostic: Annotated[str, Field(None)]
+    ecmwf_direction: Annotated[str, Field(None)]
+    ecmwf_domain: Annotated[str, Field(None)]
+    ecmwf_duplicates: Annotated[str, Field(None)]
+    ecmwf_expect: Annotated[str, Field(None)]
+    ecmwf_expver: Annotated[str, Field(None)]
+    ecmwf_fcmonth: Annotated[list[str], Field(None)]
+    ecmwf_fcperiod: Annotated[str, Field(None)]
+    ecmwf_feature: Annotated[dict[str, Any], Field(None)]
+    ecmwf_fieldset: Annotated[str, Field(None)]
+    ecmwf_filter: Annotated[str, Field(None)]
+    ecmwf_format: Annotated[str, Field(None)]
+    ecmwf_frame: Annotated[str, Field(None)]
+    ecmwf_frequency: Annotated[str, Field(None)]
+    ecmwf_generation: Annotated[str, Field(None)]
+    ecmwf_grid: Annotated[str, Field(None)]
+    ecmwf_hdate: Annotated[str, Field(None)]
+    ecmwf_ident: Annotated[str, Field(None)]
+    ecmwf_interpolation: Annotated[str, Field(None)]
+    ecmwf_intgrid: Annotated[str, Field(None)]
+    ecmwf_iteration: Annotated[str, Field(None)]
+    ecmwf_latitude: Annotated[str, Field(None)]
+    ecmwf_levelist: Annotated[list[str], Field(None)]
+    ecmwf_levtype: Annotated[str, Field(None)]
+    ecmwf_longitude: Annotated[str, Field(None)]
+    ecmwf_lsm: Annotated[str, Field(None)]
+    ecmwf_method: Annotated[str, Field(None)]
+    ecmwf_number: Annotated[str, Field(None)]
+    ecmwf_obsgroup: Annotated[str, Field(None)]
+    ecmwf_obstype: Annotated[str, Field(None)]
+    ecmwf_origin: Annotated[str, Field(None)]
+    ecmwf_packing: Annotated[str, Field(None)]
+    ecmwf_padding: Annotated[str, Field(None)]
+    ecmwf_param: Annotated[list[str], Field(None)]
+    ecmwf_priority: Annotated[str, Field(None)]
+    ecmwf_product: Annotated[str, Field(None)]
+    ecmwf_range: Annotated[str, Field(None)]
+    ecmwf_realization: Annotated[str, Field(None)]
+    ecmwf_refdate: Annotated[str, Field(None)]
+    ecmwf_reference: Annotated[str, Field(None)]
+    ecmwf_reportype: Annotated[str, Field(None)]
+    ecmwf_repres: Annotated[str, Field(None)]
+    ecmwf_resolution: Annotated[str, Field(None)]
+    ecmwf_rotation: Annotated[str, Field(None)]
+    ecmwf_section: Annotated[str, Field(None)]
+    ecmwf_source: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_step: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_stream: Annotated[str, Field(None)]
+    ecmwf_system: Annotated[str, Field(None)]
+    ecmwf_target: Annotated[str, Field(None)]
+    ecmwf_time: Annotated[list[str], Field(None)]
+    ecmwf_truncation: Annotated[str, Field(None)]
+    ecmwf_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_use: Annotated[str, Field(None)]
+
+    # additional properties from Copernicus Datastore
+    ecmwf_system_version: Annotated[list[str], Field(None)]
+    ecmwf_variable: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_model_levels: Annotated[str, Field(None)]
+    ecmwf_soil_level: Annotated[list[str], Field(None)]
+    ecmwf_hyear: Annotated[list[str], Field(None)]
+    ecmwf_hmonth: Annotated[list[str], Field(None)]
+    ecmwf_hday: Annotated[list[str], Field(None)]
+    ecmwf_data_format: Annotated[str, Field(None)]
+    ecmwf_download_format: Annotated[str, Field(None)]
+    ecmwf_originating_centre: Annotated[str, Field(None)]
+    ecmwf_product_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_year: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_month: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_day: Annotated[list[str], Field(None)]
+    ecmwf_leadtime_hour: Annotated[list[str], Field(None)]
+    ecmwf_hydrological_model: Annotated[list[str], Field(None)]
+    ecmwf_dataset_type: Annotated[str, Field(None)]
+    ecmwf_release_version: Annotated[str, Field(None)]
+    ecmwf_pressure_level: Annotated[list[str], Field(None)]
+    ecmwf_model_level: Annotated[list[str], Field(None)]
+    ecmwf_model: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_level: Annotated[list[str], Field(None)]
+    ecmwf_forcing_type: Annotated[str, Field(None)]
+    ecmwf_band: Annotated[list[str], Field(None)]
+    ecmwf_sky_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_version: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_aerosol_type: Annotated[list[str], Field(None)]
+    ecmwf_time_step: Annotated[str, Field(None)]
+    ecmwf_time_reference: Annotated[str, Field(None)]
+    ecmwf_quantity: Annotated[str, Field(None)]
+    ecmwf_input_observations: Annotated[str, Field(None)]
+    ecmwf_time_aggregation: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_statistic: Annotated[list[str], Field(None)]
+    ecmwf_hydrological_year: Annotated[list[str], Field(None)]
+    ecmwf_product_version: Annotated[str, Field(None)]
+    ecmwf_processing_level: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_sensor_and_algorithm: Annotated[list[str], Field(None)]
+    ecmwf_sensor: Annotated[str, Field(None)]
+    ecmwf_region: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_nominal_day: Annotated[list[str], Field(None)]
+    ecmwf_cdr_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_satellite_mission: Annotated[list[str], Field(None)]
+    ecmwf_temporal_resolution: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_temporal_aggregation: Annotated[str, Field(None)]
+    ecmwf_leadtime_month: Annotated[list[str], Field(None)]
+    ecmwf_processing_type: Annotated[str, Field(None)]
+    ecmwf_variable_type: Annotated[str, Field(None)]
+    ecmwf_horizontal_resolution: Annotated[str, Field(None)]
+    ecmwf_experiment: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_rcm: Annotated[str, Field(None)]
+    ecmwf_gcm: Annotated[str, Field(None)]
+    ecmwf_ensemble_member: Annotated[list[str], Field(None)]
+    ecmwf_period: Annotated[list[str], Field(None)]
+    ecmwf_altitude: Annotated[int, Field(None)]
+    ecmwf_location: Annotated[dict[str, int], Field(None)]
+
+
+class EcmwfExtension(BaseStacExtension):
+    """STAC SAR extension."""
+
+    FIELDS: type[BaseModel] = EcmwfItemProperties
+
+    field_name_prefix: Optional[str] = "ecmwf"
+
+    @model_validator(mode="after")
+    def setup_field_aliases(self) -> "EcmwfExtension":
+        """Set up aliases for ECMWF fields, accepting both stac-prefixed and
+        no-prefix forms (e.g. 'ecmwf:data_format' and 'data_format') as input,
+        while serializing as the stac-prefixed form.
+        """
+        if self.field_name_prefix is None:
+            return self
+
+        fields: dict[str, Any] = getattr(self.FIELDS, "model_fields", {})
+        for k, v in fields.items():
+            prefixed = k.replace(
+                f"{self.field_name_prefix}_", f"{self.field_name_prefix}:"
+            )
+            unprefixed = k.replace(f"{self.field_name_prefix}_", "")
+            v.alias = prefixed
+            v.validation_alias = AliasChoices(prefixed, unprefixed)
+            v.serialization_alias = prefixed
+            v.metadata.insert(0, {"extension": self.__class__.__name__})
+        return self
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),
@@ -405,4 +646,7 @@ STAC_EXTENSIONS = [
     MgrsExtension(),
     ProjectionExtension(),
     DatacubeExtension(),
+    LabelExtension(),
+    FederationExtension(),
+    EcmwfExtension(),
 ]

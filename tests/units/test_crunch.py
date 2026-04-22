@@ -658,13 +658,12 @@ class TestPluginCrunch(unittest.TestCase):
         filtered_result = search_results.crunch(FilterProperty({"myproperty": "2"}))
         self.assertEqual(len(filtered_result), 1)
 
+        filtered_result = search_results.crunch(FilterProperty({"myproperty": None}))
+        self.assertEqual(len(filtered_result), 1)
+
         # Mismatch filter value type makes no filter wihtout error
         filtered_result = search_results.crunch(FilterProperty({"myproperty": True}))
         self.assertEqual(len(filtered_result), 1)
-
-        # Invalid filter value type makes no results
-        filtered_result = search_results.crunch(FilterProperty({"myproperty": None}))
-        self.assertEqual(len(filtered_result), 0)
 
         # Multitypes data with operator set
         for value in [42, "myvalue", True]:

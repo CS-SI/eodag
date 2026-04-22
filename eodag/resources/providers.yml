@@ -2823,7 +2823,7 @@
       metadata_mapping:
         processing:level:
           - '{{"query":{{"s1:processing_level":{{"eq":"{processing:level}"}}}}}}'
-          - '$.properties."s1:processing_level"'
+          - '{$.properties."s1:processing_level"#replace_str(r"^(.+)$",r"L\1")}'
     S2_MSI_L2A:
       _collection: sentinel-2-l2a
     LANDSAT_C2L1:
@@ -4727,6 +4727,9 @@
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.downloadLink.href'
+      federation:backends: '$.null'
+      storage:schemes: '$.null'
+      storage:tier: '$.null'
       assets: '$.null'
     discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
@@ -5251,16 +5254,25 @@
     # Spacenet
     SPACENET_BUILDINGS_DETECTION_V1:
       _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V1
+      metadata_mapping:
+        label:properties:
+          - '{{"query":{{"label:properties":{{"eq":{label:properties}}}}}}}'
+          - '{$.properties.label:properties#replace_str("Not Available","None")}'
     SPACENET_BUILDINGS_DETECTION_V2:
       _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V2
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_ROADS_NETWORK_DETECTION:
       _collection: EO.SPACENET.DAT.ROADS_NETWORK_DETECTION
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_OFF_NADIR_BUILDING:
       _collection: EO.SPACENET.DAT.OFF_NADIR_BUILDING
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
       _collection: EO.SPACENET.DAT.ROADS_NETWORK_ROUTE_TRAVEL
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
     SPACENET_ALL_WEATHER_MAPPING:
       _collection: EO.SPACENET.DAT.ALL_WEATHER_MAPPING
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
 
 
 ---
