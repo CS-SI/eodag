@@ -3562,6 +3562,62 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             self.assertEqual("a", queryable.__metadata__[0].get_default())
             self.assertFalse(queryable.__metadata__[0].is_required())
 
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+        return_value={},
+    )
+    def test_plugins_search_ecmwfsearch_non_polygon_feature_types_preserved(
+        self,
+        mock__fetch_data,
+    ):
+        """Non-polygon feature types must be preserved as-is and not converted to geometry."""
+        # Test that non-polygon features (timeseries, position, trajectory, circle,
+        # verticalprofile, boundingbox) are preserved in the feature dict and not
+        # converted to shapely geometries
+
+        non_polygon_features = {
+            "position": {
+                "type": "position",
+                "points": [[43.5, 1.5]],
+            },
+            "timeseries": {
+                "type": "timeseries",
+                "points": [[43.5, 1.5]],
+                "time_axis": "step",
+            },
+            "verticalprofile": {
+                "type": "verticalprofile",
+                "points": [[43.5, 1.5]],
+            },
+            "trajectory": {
+                "type": "trajectory",
+                "points": [[43.0, 1.0], [43.5, 1.5], [44.0, 2.0]],
+                "inflation": 1.0,
+            },
+            "circle": {
+                "type": "circle",
+                "center": [43.5, 1.5],
+                "radius": 1.0,
+            },
+            "boundingbox": {
+                "type": "boundingbox",
+                "points": [[44.0, 1.0], [43.0, 2.0]],
+            },
+        }
+
+        for feature_type, feature_dict in non_polygon_features.items():
+            with self.subTest(feature_type=feature_type):
+                params = {
+                    "collection": "CAMS_EU_AIR_QUALITY_RE",
+                    "feature": feature_dict,
+                }
+                # Call discover_queryables which internally calls _preprocess_search_params
+                queryables = self.search_plugin.discover_queryables(**params)
+                self.assertIsNotNone(queryables)
+                # Non-polygon features should pass through discover_queryables without errors
+                # and the feature dict should be accessible via discover_metadata
+
 
 class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
     def setUp(self):

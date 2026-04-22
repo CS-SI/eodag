@@ -1186,6 +1186,110 @@ def get_geometry_from_various(
     return geom
 
 
+def validate_ecmwf_feature(geom: dict[str, Any]) -> str:
+    """Validate ECMWF Polytope feature payload and return normalized feature type."""
+    supported_types = {
+        "polygon",
+        "boundingbox",
+        "timeseries",
+        "verticalprofile",
+        "trajectory",
+        "circle",
+        "position",
+    }
+
+    def _extract_lat_lon(position: Any) -> tuple[float, float]:
+        if isinstance(position, dict):
+            lat = position.get("latitude")
+            lon = position.get("longitude")
+            if lat is None or lon is None:
+                raise TypeError(
+                    "Position dictionaries must contain latitude and longitude"
+                )
+            try:
+                return float(lat), float(lon)
+            except (TypeError, ValueError):
+                raise TypeError("Position coordinates must be numbers")
+
+        if isinstance(position, list) and len(position) >= 2:
+            try:
+                return float(position[0]), float(position[1])
+            except (TypeError, ValueError):
+                raise TypeError("Position coordinates must be numbers")
+
+        raise TypeError("Position must be either [latitude, longitude] or a dictionary")
+
+    def _extract_first_point(points: Any) -> tuple[float, float]:
+        if not isinstance(points, list) or len(points) == 0:
+            raise TypeError("Points must be a non-empty list")
+        return _extract_lat_lon(points[0])
+
+    if not isinstance(geom, dict):
+        raise TypeError("Geometry must be a dictionary")
+
+    geom_type = str(geom.get("type", "")).lower()
+    if not geom_type:
+        raise TypeError("Missing type in the geometry")
+    if geom_type not in supported_types:
+        raise TypeError(
+            "Geometry type must be one of: " + ", ".join(sorted(supported_types))
+        )
+
+    if geom_type == "polygon":
+        if "shape" not in geom:
+            raise TypeError("Missing shape in the geometry")
+        if not isinstance(geom["shape"], list):
+            raise TypeError("Geometry shape must be a list")
+        for p in geom["shape"]:
+            _extract_lat_lon(p)
+
+    elif geom_type == "boundingbox":
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if not isinstance(geom["points"], list) or len(geom["points"]) < 2:
+            raise TypeError(
+                "Bounding box points must be a list of at least 2 positions."
+                " the first corresponding to the top left of the requested box,"
+                " and the second corresponding to the bottom right coordinate."
+            )
+        for p in geom["points"]:
+            _extract_lat_lon(p)
+
+    elif geom_type in {"position", "timeseries", "verticalprofile"}:
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if geom_type == "timeseries" and geom.get("time_axis") in (None, ""):
+            raise TypeError("Missing time_axis in the geometry")
+        _extract_first_point(geom["points"])
+
+    elif geom_type == "trajectory":
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if geom.get("inflation") in (None, ""):
+            raise TypeError("Missing inflation in the geometry")
+        if not isinstance(geom["points"], list) or len(geom["points"]) < 2:
+            raise TypeError("Trajectory points must be a list of at least 2 positions")
+        for p in geom["points"]:
+            _extract_lat_lon(p)
+
+    elif geom_type == "circle":
+        if "center" not in geom:
+            raise TypeError("Missing center in the geometry")
+        if geom.get("radius") in (None, ""):
+            raise TypeError("Missing radius in the geometry")
+        try:
+            float(geom["radius"])
+        except (TypeError, ValueError):
+            raise TypeError("Circle radius must be a number")
+
+        center = geom["center"]
+        if isinstance(center, list) and len(center) == 1:
+            center = center[0]
+        _extract_lat_lon(center)
+
+    return geom_type
+
+
 def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry:
     """
     Creates a ``shapely.geometry`` from ECMWF Polytope shape.
