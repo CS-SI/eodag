@@ -1520,6 +1520,11 @@ class EODataAccessGateway:
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
             plugin.clear()
 
+            # Add collections_config to plugin config. This dict contains product
+            # type metadata that will also be stored in each product's properties.
+            if collection is not None:
+                self._attach_collection_config(plugin, collection)
+
             # adds maximal pagination to be able to do a search-all + crunch if more
             # than one result are returned
             limit = plugin.config.pagination.get("max_limit", DEFAULT_MAX_LIMIT)
