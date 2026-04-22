@@ -635,9 +635,9 @@ class ECMWFSearch(PostJsonSearch):
         if year is not None:
             indirects["year"] = year
         if month is not None:
-            indirects["month"] = ["{:02d}".format(int(m)) for m in month]
+            indirects["month"] = [f"{int(m):02d}" for m in month]
         if day is not None:
-            indirects["day"] = ["{:02d}".format(int(d)) for d in day]
+            indirects["day"] = [f"{int(d):02d}" for d in day]
 
         # Compute date range from "date" param (takes precedence)
         date = params.get("date", None)
@@ -657,8 +657,8 @@ class ECMWFSearch(PostJsonSearch):
         # Compute date range from year/month/day/time params
         start, end = compute_date_range_from_params(
             year=year,
-            month=(indirects["month"] if month else None),
-            day=(indirects["day"] if day else None),
+            month=indirects.get("month"),
+            day=indirects.get("day"),
             time=time,
         )
         if start is not None:
@@ -1251,14 +1251,9 @@ class ECMWFSearch(PostJsonSearch):
 
             # start_datetime /  computed from "date", "time", "year", "month", "day"
             indirects = self._preprocess_indirect_date_parameters(result_data)
-            if result_data.get(START) is None:
-                value = indirects.get("start_datetime", None)
-                if value is not None:
-                    result_data[START] = value
-            if result_data.get(END) is None:
-                value = indirects.get("end_datetime", None)
-                if value is not None:
-                    result_data[END] = value
+            for key in (START, END):
+                if result_data.get(key) is None and indirects.get(key) is not None:
+                    result_data[key] = indirects[key]
 
             properties = properties_from_json(
                 result_data,
