@@ -2584,6 +2584,249 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         # provider-only param still present
         self.assertIn("some_param", queryables)
 
+    def test_plugins_search_stacsearch_missing_results_entry_misconfigured(self):
+        """StacSearch must raise MisconfiguredError when results_entry is missing
+        for a subclass not referenced in STAC_SEARCH_PLUGINS"""
+        from eodag.config import PluginConfig
+        from eodag.plugins.search.qssearch import StacSearch
+
+        class _UnregisteredStacSearch(StacSearch):
+            pass
+
+        config = PluginConfig()
+        # do not set results_entry on purpose
+        with self.assertRaises(MisconfiguredError) as ctx:
+            _UnregisteredStacSearch("some_provider", config)
+        self.assertIn("results_entry", str(ctx.exception))
+        self.assertIn("_UnregisteredStacSearch", str(ctx.exception))
+        self.assertIn("STAC_SEARCH_PLUGINS", str(ctx.exception))
+
+    def test_plugins_search_stacsearch_missing_results_entry_reraises_for_known_plugin(
+        self,
+    ):
+        """StacSearch must re-raise AttributeError when results_entry is missing
+        for a subclass referenced in STAC_SEARCH_PLUGINS"""
+        from eodag.config import PluginConfig
+        from eodag.plugins.search.geodes import GeodesSearch
+
+        config = PluginConfig()
+        # GeodesSearch is in STAC_SEARCH_PLUGINS so AttributeError must be re-raised
+        with self.assertRaises(AttributeError):
+            GeodesSearch("geodes", config)
+
+
+class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginGeodesSearch, self).setUp()
+        self.provider = "geodes"
+        self.search_plugin = self.get_search_plugin(provider=self.provider)
+
+    def test_plugins_search_geodes_plugin_class(self):
+        """The geodes provider must use the GeodesSearch plugin"""
+        from eodag.plugins.search.geodes import GeodesSearch
+
+        self.assertIsInstance(self.search_plugin, GeodesSearch)
+
+    def _build_product(
+        self, identifier, checksum, endpoint_url="https://geodes.example/data"
+    ):
+        download_link = f"https://geodes.example/data/{identifier}/file_{checksum}.tif"
+        return EOProduct(
+            self.provider,
+            {
+                "id": identifier,
+                "geometry": "POINT (0 0)",
+                "eodag:download_link": download_link,
+                "geodes:endpoint_url": endpoint_url,
+            },
+        )
+
+    @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
+    def test_plugins_search_geodes_get_availability(self, mock__request):
+        """_get_availability must POST to the fastavailability endpoint with the
+        download_link and endpoint_url for each product"""
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"products": []}
+        mock__request.return_value = mock_response
+
+        p1 = self._build_product("PROD1", "abc")
+        p2 = self._build_product("PROD2", "def")
+
+        result = self.search_plugin._get_availability([p1, p2])
+
+        self.assertEqual(result, {"products": []})
+        self.assertEqual(mock__request.call_count, 1)
+        prep = mock__request.call_args.args[1]
+        # url must be derived from api_endpoint (replacing api/stac/search by fastavailability)
+        self.assertEqual(
+            prep.url,
+            self.search_plugin.config.api_endpoint.replace(
+                "api/stac/search", "fastavailability"
+            ),
+        )
+        self.assertEqual(
+            prep.query_params,
+            {
+                "availability": [
+                    {
+                        "href": p1.properties["eodag:download_link"],
+                        "endpointURL": "https://geodes.example/data",
+                    },
+                    {
+                        "href": p2.properties["eodag:download_link"],
+                        "endpointURL": "https://geodes.example/data",
+                    },
+                ]
+            },
+        )
+
+    @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
+    def test_plugins_search_geodes_get_availability_skips_missing_fields(
+        self, mock__request
+    ):
+        """Products without eodag:download_link or geodes:endpoint_url must be skipped
+        in the availability request body"""
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"products": []}
+        mock__request.return_value = mock_response
+
+        p_ok = self._build_product("PROD1", "abc")
+        p_no_url = EOProduct(
+            self.provider,
+            {
+                "id": "PROD2",
+                "geometry": "POINT (0 0)",
+                "eodag:download_link": "https://geodes.example/data/PROD2/file.tif",
+            },
+        )
+        p_no_link = EOProduct(
+            self.provider,
+            {
+                "id": "PROD3",
+                "geometry": "POINT (0 0)",
+                "geodes:endpoint_url": "https://geodes.example/data",
+            },
+        )
+
+        self.search_plugin._get_availability([p_ok, p_no_url, p_no_link])
+
+        prep = mock__request.call_args.args[1]
+        self.assertEqual(len(prep.query_params["availability"]), 1)
+        self.assertEqual(
+            prep.query_params["availability"][0]["href"],
+            p_ok.properties["eodag:download_link"],
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
+    )
+    def test_plugins_search_geodes_set_availability_online(self, mock_get_availability):
+        """_set_availability must set order:status to ONLINE when asset is available"""
+        from eodag.api.product.metadata_mapping import ONLINE_STATUS
+
+        product = self._build_product("PROD1", "abc")
+        mock_get_availability.return_value = {
+            "products": [
+                {
+                    "id": "PROD1",
+                    "files": [{"checksum": "abc", "available": True}],
+                }
+            ]
+        }
+
+        self.search_plugin._set_availability([product])
+
+        self.assertEqual(product.properties["order:status"], ONLINE_STATUS)
+
+    @mock.patch(
+        "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
+    )
+    def test_plugins_search_geodes_set_availability_offline(
+        self, mock_get_availability
+    ):
+        """_set_availability must set order:status to OFFLINE when asset is not available"""
+        from eodag.api.product.metadata_mapping import OFFLINE_STATUS
+
+        product = self._build_product("PROD1", "abc")
+        mock_get_availability.return_value = {
+            "products": [
+                {
+                    "id": "PROD1",
+                    "files": [{"checksum": "abc", "available": False}],
+                }
+            ]
+        }
+
+        self.search_plugin._set_availability([product])
+
+        self.assertEqual(product.properties["order:status"], OFFLINE_STATUS)
+
+    @mock.patch(
+        "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
+    )
+    def test_plugins_search_geodes_set_availability_no_match(
+        self, mock_get_availability
+    ):
+        """When no matching product/asset is found in the availability response,
+        order:status must be left unchanged and a warning must be logged"""
+        product = self._build_product("PROD1", "abc")
+        product.properties["order:status"] = "untouched"
+        # no matching id in response
+        mock_get_availability.return_value = {"products": []}
+
+        with self.assertLogs("eodag.search.geodes", level="WARNING") as log_ctx:
+            self.search_plugin._set_availability([product])
+
+        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertTrue(
+            any("Could not update availability" in m for m in log_ctx.output)
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
+    )
+    def test_plugins_search_geodes_set_availability_ambiguous_asset(
+        self, mock_get_availability
+    ):
+        """Products whose checksum matches more than one file must be skipped"""
+        product = self._build_product("PROD1", "abc")
+        product.properties["order:status"] = "untouched"
+        mock_get_availability.return_value = {
+            "products": [
+                {
+                    "id": "PROD1",
+                    "files": [
+                        {"checksum": "abc", "available": True},
+                        {"checksum": "abc", "available": False},
+                    ],
+                }
+            ]
+        }
+
+        with self.assertLogs("eodag.search.geodes", level="WARNING"):
+            self.search_plugin._set_availability([product])
+
+        self.assertEqual(product.properties["order:status"], "untouched")
+
+    @mock.patch(
+        "eodag.plugins.search.geodes.GeodesSearch._set_availability", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.normalize_results", autospec=True
+    )
+    def test_plugins_search_geodes_normalize_results_calls_set_availability(
+        self, mock_super_normalize, mock_set_availability
+    ):
+        """normalize_results must delegate to StacSearch.normalize_results and
+        then call _set_availability with the resulting products"""
+        product = self._build_product("PROD1", "abc")
+        mock_super_normalize.return_value = [product]
+
+        results = self.search_plugin.normalize_results([{}])
+
+        self.assertEqual(results, [product])
+        mock_set_availability.assert_called_once_with(self.search_plugin, [product])
+
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
