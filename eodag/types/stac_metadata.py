@@ -242,7 +242,32 @@ class CommonStacMetadata(ItemProperties):
         valid = {}
 
         for name, field in cls.model_fields.items():
-            value = data.get(name, data.get(field.validation_alias))
+            # loop on validation_alias to find the first matching key in data
+            field_alias = field.validation_alias
+            value = None
+            matched_key: Any = name
+            if isinstance(field_alias, AliasChoices):
+                for alias in field_alias.choices:
+                    if isinstance(alias, str) and data.get(alias) is not None:
+                        value = data[alias]
+                        matched_key = alias
+                        break
+            elif isinstance(field_alias, AliasPath):
+                first = field_alias.path[0] if field_alias.path else None
+                if isinstance(first, str) and data.get(first) is not None:
+                    value = data[first]
+                    matched_key = first
+            elif isinstance(field_alias, str):
+                if data.get(field_alias) is not None:
+                    value = data[field_alias]
+                    matched_key = field_alias
+                elif data.get(name) is not None:
+                    value = data[name]
+                    matched_key = name
+            else:
+                if data.get(name) is not None:
+                    value = data[name]
+                    matched_key = name
             if value is None:
                 continue
             try:
@@ -252,7 +277,7 @@ class CommonStacMetadata(ItemProperties):
                     else field.annotation
                 )
                 TypeAdapter(annotated_type).validate_python(value)
-                valid[name] = value
+                valid[matched_key] = value
             except ValidationError as e:
                 if skip_invalid:
                     logger.warning(
