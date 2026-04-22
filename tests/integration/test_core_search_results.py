@@ -389,9 +389,8 @@ class TestCoreSearchResults(EODagTestCase):
         )
         mock__request.return_value = mock.Mock()
         with open(geodes_resp_file) as f:
-            mock__request.return_value.json.side_effect = [
-                json.load(f),
-            ]
+            # mock search result, then availability
+            mock__request.return_value.json.side_effect = [json.load(f), {}]
         prods = self.dag.search(
             provider="geodes", collection="S2_MSI_L1C", raise_errors=True
         )

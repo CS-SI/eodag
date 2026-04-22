@@ -2040,13 +2040,14 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
+    @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
     @mock.patch(
         "eodag.api.product.drivers.base.DatasetDriver.guess_asset_key_and_roles",
         autospec=True,
     )
     @mock.patch.dict(QueryStringSearch.extract_properties, {"json": mock.MagicMock()})
     def test_plugins_search_stacsearch_normalize_asset_key_from_href(
-        self, mock_guess_asset_key_and_roles
+        self, mock_guess_asset_key_and_roles, mock_geodes_search_request
     ):
         """normalize_results must guess asset key from href if asset_key_from_href is set to True"""
 
