@@ -60,7 +60,6 @@ from eodag.utils import (
     get_geometry_from_ecmwf_feature,
     get_geometry_from_ecmwf_location,
     get_geometry_from_various,
-    validate_ecmwf_feature,
 )
 from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import (
@@ -488,10 +487,9 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
-        # ECMWF Polytope uses non-geojson structure for features
-        # Validate all features, but only convert polygon features to geometry.
-        # Non-polygon features (timeseries, position, trajectory, circle, etc.)
-        # are kept as-is for discover_metadata to pass through as custom parameters.
+        # ECMWF Polytope uses non-geojson structure for features.
+        # Only polygon feature is converted to geometry.
+        # Other feature types are kept untouched for discover_metadata.
         if "feature" in params:
             feature = params["feature"]
             feature_type = (
@@ -499,13 +497,9 @@ class ECMWFSearch(PostJsonSearch):
                 if isinstance(feature, dict)
                 else ""
             )
-            # Convert only polygon features to geometry.
-            # For non-polygon features, only validate payload and keep it as-is.
             if feature_type == "polygon":
                 params["geometry"] = get_geometry_from_ecmwf_feature(feature)
                 params.pop("feature")
-            else:
-                validate_ecmwf_feature(feature)
         # bounding box in area format
         if "area" in params:
             params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
