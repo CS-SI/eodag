@@ -177,7 +177,7 @@ class Collection(StacCollection):
     __summaries_fields__: ClassVar[Optional[list[str]]] = None
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="allow",
         validate_return=True,
         validate_by_name=True,
         serialize_by_alias=True,
