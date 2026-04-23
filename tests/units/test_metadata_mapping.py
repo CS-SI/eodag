@@ -23,11 +23,13 @@ from jsonpath_ng.ext import parse
 from lxml import etree
 from shapely import LineString, Polygon, wkt
 
+from eodag.api.product import AssetsDict, EOProduct
 from eodag.api.product.metadata_mapping import (
     WKT_MAX_LEN,
     get_provider_queryable_key,
     get_provider_queryable_path,
     get_queryable_from_provider,
+    normalize_bands,
     properties_from_xml,
 )
 from eodag.types.queryables import Queryables
@@ -1032,3 +1034,183 @@ class TestMetadataMappingFunctions(unittest.TestCase):
             ),
             NOT_AVAILABLE,
         )
+
+
+class TestMetadataMappingNormalize(unittest.TestCase):
+    def test_eoproduct_normalize(self):
+        product = EOProduct(
+            provider="planetary_computer",
+            properties={"id": "LC08_L2SP_090013_20240502_02_T1"},
+            collection="LANDSAT_C2L2",
+        )
+        # Reduce eo:bands and raster:bands
+        assets = AssetsDict(product=product)
+        assets.update(
+            {
+                "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF": {
+                    "href": "https://landsateuwest.blob.core.windows.net/landsat-c2/level-2/standard/oli-tirs/2024/"
+                    + "090/013/LC08_L2SP_090013_20240502_20240513_02_T1/"
+                    + "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "roles": ["data"],
+                    "title": "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+                    "eo:bands": [
+                        {
+                            "name": "OLI_B1",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        }
+                    ],
+                    "description": "Collection 2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance",
+                    "raster:bands": [
+                        {
+                            "scale": 2.75e-05,
+                            "nodata": 0,
+                            "offset": -0.2,
+                            "data_type": "uint16",
+                            "spatial_resolution": 30,
+                        }
+                    ],
+                },
+            }
+        )
+        product.assets.update(assets)  # trigger normalise
+        normalize_bands(product)
+
+        asset = product.assets[
+            "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF"
+        ].as_dict()
+        self.assertIsNone(asset.get("eo:bands"))
+        self.assertIsNone(asset.get("raster:bands"))
+        self.assertEqual(asset.get("raster:scale"), 2.75e-05)
+        self.assertEqual(asset.get("nodata"), 0)
+        self.assertEqual(asset.get("raster:offset"), -0.2)
+        self.assertEqual(asset.get("data_type"), "uint16")
+        self.assertEqual(asset.get("raster:spatial_resolution"), 30)
+
+        # Reduce multibands of eo:bands: only join and move parameters with same value
+        assets = AssetsDict(product=product)
+        assets.update(
+            {
+                "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF": {
+                    "href": "https://landsateuwest.blob.core.windows.net/landsat-c2/level-2/standard/oli-tirs/2024/090/"
+                    + "013/LC08_L2SP_090013_20240502_20240513_02_T1/LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "roles": ["data"],
+                    "title": "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+                    "eo:bands": [
+                        {
+                            "name": "OLI_B1",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B2",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B3",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                    ],
+                    "description": "Collection 2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance",
+                },
+            }
+        )
+        product.assets.update(assets)
+        asset = product.assets[
+            "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF"
+        ].as_dict()
+        normalize_bands(product)
+
+        self.assertIsNone(asset.get("eo:bands"))
+        self.assertEqual(asset.get("eo:center_wavelength"), 0.44)
+        self.assertEqual(asset.get("eo:full_width_half_max"), 0.02)
+        self.assertEqual(
+            asset.get("bands"),
+            [
+                {"name": "OLI_B1", "eo:common_name": "coastal"},
+                {"name": "OLI_B2", "eo:common_name": "coastal"},
+                {"name": "OLI_B3", "eo:common_name": "coastal"},
+            ],
+        )
+
+        # Reduce multibands of mix raster:bands and eo:bands
+        assets = AssetsDict(product=product)
+        assets.update(
+            {
+                "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF": {
+                    "href": "https://landsateuwest.blob.core.windows.net/landsat-c2/level-2/standard/oli-tirs/2024/090/"
+                    + "013/LC08_L2SP_090013_20240502_20240513_02_T1/LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "roles": ["data"],
+                    "title": "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+                    "eo:bands": [
+                        {
+                            "name": "OLI_B1",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B2",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B3",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                    ],
+                    "description": "Collection 2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance",
+                    "raster:bands": [
+                        {
+                            "scale": 2.75e-05,
+                            "nodata": 0,
+                            "offset": -0.2,
+                            "data_type": "uint16",
+                            "spatial_resolution": 30,
+                        }
+                    ],
+                },
+            }
+        )
+        product.assets.update(assets)
+        normalize_bands(product)
+
+        asset = product.assets[
+            "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF"
+        ].as_dict()
+        self.assertIsNone(asset.get("eo:bands"))
+        self.assertIsNone(asset.get("raster:bands"))
+        self.assertEqual(asset.get("eo:center_wavelength"), 0.44)
+        self.assertEqual(asset.get("eo:full_width_half_max"), 0.02)
+        self.assertEqual(
+            asset.get("bands"),
+            [
+                {"name": "OLI_B1", "eo:common_name": "coastal"},
+                {"name": "OLI_B2", "eo:common_name": "coastal"},
+                {"name": "OLI_B3", "eo:common_name": "coastal"},
+            ],
+        )
+        self.assertEqual(asset.get("raster:scale"), 2.75e-05)
+        self.assertEqual(asset.get("nodata"), 0)
+        self.assertEqual(asset.get("raster:offset"), -0.2)
+        self.assertEqual(asset.get("data_type"), "uint16")
+        self.assertEqual(asset.get("raster:spatial_resolution"), 30)

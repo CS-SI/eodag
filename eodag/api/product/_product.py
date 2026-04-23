@@ -33,7 +33,6 @@ from requests import RequestException
 from requests.auth import AuthBase
 from shapely import geometry
 from shapely.errors import ShapelyError
-from typing_extensions import Self
 
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
@@ -41,11 +40,10 @@ from eodag.types.stac_metadata import create_stac_metadata_model
 try:
     # import from eodag-cube if installed
     from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
-        Asset,
         AssetsDict,
     )
 except ImportError:
-    from ._assets import AssetsDict, Asset
+    from ._assets import AssetsDict
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
@@ -143,8 +141,6 @@ class EOProduct:
     next_try: datetime
     #: Stream for requests
     _stream: requests.Response
-    #: For normalize
-    _normalizing: bool = False
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
@@ -221,7 +217,6 @@ class EOProduct:
         self.driver = self.get_driver()
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
-        self.normalize()
 
     def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -424,129 +419,6 @@ class EOProduct:
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         return cls.from_dict(feature, raise_errors=True)
-
-    def normalize(self) -> Self:
-        """Method used to normalize product"""
-        # Restrict panic recursion
-        # set/update during "normalize" must not trigger new "normalize"
-        # to avoid recursion loop by accessors
-        if not self._normalizing:
-            self._normalizing = True
-
-            # Bands
-            if hasattr(self, "properties"):
-                self.properties = EOProduct.stac_normalize_bands(self.properties)
-            if hasattr(self, "assets"):
-                for key in self.assets:
-                    self.assets[key] = EOProduct.stac_normalize_bands(self.assets[key])
-
-            self._normalizing = False
-
-        return self
-
-    @staticmethod
-    def stac_normalize_bands(data: Union[dict, Asset]) -> dict:
-        """Normalize bands in product.properties or product.assets from STAC 1.0 to STAC 1.1"""
-
-        UNPREFIX_BAND_FIELDNAME = [
-            "name",
-            "description",
-            "data_type",
-            "nodata",
-            "unit",
-            "statistics",
-        ]
-        EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME = ["name", "eo:common_name"]
-
-        # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
-        # Migrate band STAC 1.0 to 1.1
-        if isinstance(data, dict) or isinstance(data, Asset):
-
-            # Gather eo:band et raster:bands
-            bands: dict[str, Any] = {"eo:bands": [], "raster:bands": []}
-            hasData = False
-            for fieldname in bands:
-                if fieldname in data:
-                    if isinstance(data[fieldname], list):
-                        bands[fieldname] = data[fieldname]
-                    else:
-                        bands[fieldname] = [data[fieldname]]
-                    hasData = True
-                    del data[fieldname]
-
-            if hasData:
-                processed_bands = []
-
-                # migrate eo:bands > bands
-                if len(bands["eo:bands"]) > 0:
-                    for item in bands["eo:bands"]:
-                        band = {}
-                        for key in item:
-                            if key in UNPREFIX_BAND_FIELDNAME:
-                                band[key] = item[key]
-                            else:
-                                band["eo:{}".format(key)] = item[key]
-                        processed_bands.append(band)
-
-                # migrate raster:bands > bands
-                if len(bands["raster:bands"]) > 0:
-                    index = 0
-                    for item in bands["raster:bands"]:
-                        band = processed_bands[index]
-                        for key in item:
-                            if key in UNPREFIX_BAND_FIELDNAME:
-                                band[key] = item[key]
-                            else:
-                                band["raster:{}".format(key)] = item[key]
-                        if index < len(processed_bands):
-                            processed_bands[index] = band
-                        else:
-                            processed_bands.append(band)
-                        index += 1
-
-                # When a property has same value for each band, have to be moved into parent scope
-                if len(processed_bands) > 0:
-                    field_values: dict[str, Any] = {}
-
-                    # Lists each distinct value for a field of the same name on each band
-                    for band in processed_bands:
-                        for key in band:
-                            if key not in field_values:
-                                field_values[key] = []
-                            if band[key] not in field_values[key]:
-                                field_values[key].append(band[key])
-
-                        # Move band fields from asset to parent if all fields shared same value
-                        # (distincs values == 1)
-                        remove_band_fields = []
-                        for key in field_values:
-                            if (
-                                key not in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
-                                and len(field_values[key]) == 1
-                            ):
-                                # All band have same value
-                                data[key] = field_values[key][0]
-                                # Tag field "to remove" from assets
-                                remove_band_fields.append(key)
-                    del field_values
-
-                # Remove from assets field moved to parent
-                cleaned_bands = []
-                for band in processed_bands:
-                    cleaned_band = {}
-                    for key in band:
-                        if key not in remove_band_fields:
-                            cleaned_band[key] = band[key]
-                    if len(list(cleaned_band.keys())) > 0:
-                        cleaned_bands.append(cleaned_band)
-                processed_bands = cleaned_bands
-                del cleaned_bands
-
-                # Remap éband" field if contains at least one value
-                if len(processed_bands) > 0:
-                    data["bands"] = processed_bands
-
-        return data
 
     # Implementation of geo-interface protocol (See
     # https://gist.github.com/sgillies/2217756)
