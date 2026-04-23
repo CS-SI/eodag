@@ -116,6 +116,15 @@ dedt_mn5:
         credentials:
             username:
             password:
+desp_cache:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+    download:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
 earth_search:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration

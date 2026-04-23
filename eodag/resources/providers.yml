@@ -4704,8 +4704,7 @@
 ---
 !provider # MARK: desp_cache
   name: desp_cache
-  group: dedl
-  priority: 2
+  priority: 0
   roles:
     - host
   description: Destination Earth Digital Twin for Climate Change Adaptation through Earth Observation (DESP) - Cache
