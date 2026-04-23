@@ -28,20 +28,14 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import cql2
 import orjson
-import shapely
 from shapely.geometry import shape
 
 from eodag.api.collection import Collection, CollectionsDict
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE
-from eodag.databases.base import Database
+from eodag.databases.base import Database, stac_search_to_where, stac_sortby_to_order_by
 from eodag.databases.sqlite_cql2 import cql2_json_to_sql
 from eodag.databases.sqlite_fts import stac_q_to_fts5
-from eodag.utils import (
-    GENERIC_COLLECTION,
-    PLUGINS_TOPIC_KEYS,
-    get_geometry_from_various,
-)
-from eodag.utils.dates import get_datetime
+from eodag.utils import GENERIC_COLLECTION, PLUGINS_TOPIC_KEYS
 from eodag.utils.env import is_env_var_true
 
 if TYPE_CHECKING:
@@ -480,8 +474,13 @@ class SQLiteDatabase(Database):
             if cql2_text:
                 cql2_json = cql2.parse_text(cql2_text).to_json()
 
-            where = _stac_search_to_where(
-                geometry, datetime, ids, federation_backends, cql2_json
+            where = stac_search_to_where(
+                cql2_json_to_sql,
+                geometry,
+                datetime,
+                ids,
+                federation_backends,
+                cql2_json,
             )
 
             from_clause = "FROM collections c"
@@ -508,7 +507,7 @@ class SQLiteDatabase(Database):
                     order_terms = ["rank_score ASC"]
 
             if sortby:
-                order_terms = _stac_sortby_to_order_by(sortby)
+                order_terms = stac_sortby_to_order_by(sortby)
 
             order_terms.extend(["c.priority DESC", "c.id ASC"])
             order_by = " ORDER BY " + ", ".join(order_terms)
@@ -1000,124 +999,3 @@ def create_collections_federation_backends_table(con: sqlite3.Connection) -> Non
         ON collections_federation_backends (federation_backend_name, collection_id);
         """
     )
-
-
-def _stac_search_to_where(
-    geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
-    datetime: Optional[str] = None,
-    ids: Optional[list[str]] = None,
-    federation_backends: Optional[list[str]] = None,
-    cql2_json: Optional[dict[str, Any]] = None,
-) -> str:
-    """Build the WHERE clause for the collections search query based on the provided parameters."""
-
-    cql2_conditions: list[dict[str, Any]] = []
-
-    if cql2_json:
-        cql2_conditions.append(cql2_json)
-
-    if ids:
-        cql2_conditions.append(
-            {
-                "op": "or",
-                "args": [
-                    {
-                        "op": "in",
-                        "args": [{"property": "id"}, ids],
-                    },
-                    {
-                        "op": "in",
-                        "args": [{"property": "internal_id"}, ids],
-                    },
-                ],
-            }
-        )
-
-    if federation_backends:
-        cql2_conditions.append(
-            {
-                "op": "a_overlaps",
-                "args": [{"property": "federation:backends"}, federation_backends],
-            }
-        )
-
-    if geometry:
-        geom = get_geometry_from_various(geometry=geometry)
-        if geom is not None:
-            cql2_conditions.append(
-                {
-                    "op": "s_intersects",
-                    "args": [
-                        {"property": "geometry"},
-                        shapely.geometry.mapping(geom),
-                    ],
-                }
-            )
-
-    if datetime:
-        start_date_str, end_date_str = get_datetime({"datetime": datetime})
-        if end_date_str:
-            cql2_conditions.append(
-                {
-                    "op": "<=",
-                    "args": [{"property": "datetime"}, {"timestamp": end_date_str}],
-                }
-            )
-        if start_date_str:
-            cql2_conditions.append(
-                {
-                    "op": ">=",
-                    "args": [
-                        {"property": "end_datetime"},
-                        {"timestamp": start_date_str},
-                    ],
-                }
-            )
-
-    # Merge all conditions into one CQL2 AND filter
-    where_clause = "True"
-    if cql2_conditions:
-        combined = (
-            cql2_conditions[0]
-            if len(cql2_conditions) == 1
-            else {"op": "and", "args": cql2_conditions}
-        )
-        where_clause = cql2_json_to_sql(combined)
-    return where_clause
-
-
-COLLECTIONS_SORTABLES: dict[str, str] = {
-    "id": "c.id",
-    "datetime": "c.datetime",
-    "end_datetime": "c.end_datetime",
-}
-
-_VALID_DIRECTIONS = {"asc", "desc"}
-
-
-def _stac_sortby_to_order_by(sortby: list[dict[str, str]]) -> list[str]:
-    """Convert a STAC ``sortby`` list to SQL ORDER BY clauses.
-
-    :param sortby: e.g. ``[{"field": "datetime", "direction": "desc"}]``
-    :returns: list of SQL order expressions, e.g. ``["c.datetime DESC"]``
-    :raises ValueError: on unknown field or invalid direction
-    """
-    clauses: list[str] = []
-    for item in sortby:
-        field = item.get("field", "")
-        direction = item.get("direction", "asc").lower()
-
-        if field not in COLLECTIONS_SORTABLES:
-            raise ValueError(
-                f"Unsupported sortby field: {field}. "
-                f"Allowed fields: {', '.join(sorted(COLLECTIONS_SORTABLES))}"
-            )
-        if direction not in _VALID_DIRECTIONS:
-            raise ValueError(
-                f"Invalid sortby direction: {direction}. "
-                f"Allowed values: {', '.join(sorted(_VALID_DIRECTIONS))}"
-            )
-
-        clauses.append(f"{COLLECTIONS_SORTABLES[field]} {direction.upper()}")
-
-    return clauses
