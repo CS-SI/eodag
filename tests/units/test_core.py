@@ -189,6 +189,8 @@ class TestCore(TestCoreBase):
         "DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1": ["dedt_lumi"],
         "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_ICON_R1": ["dedt_lumi"],
         "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_FESOM_R1": ["dedt_lumi"],
+        "DT_CLIMATE_ADAPTATION_IFS_NEMO": ["desp_cache"],
+        "DT_CLIMATE_ADAPTATION_ICON": ["desp_cache"],
         "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
@@ -920,6 +922,7 @@ class TestCore(TestCoreBase):
         "dedt_lumi",
         "dedt_mn5",
         "dlr_eoc_geoservice",
+        "desp_cache",
         "earth_search",
         "earth_search_gcs",
         "ecmwf",
@@ -2283,6 +2286,13 @@ class TestCore(TestCoreBase):
                     "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
+            "desp_cache": {
+                "max_sort_params": None,
+                "sortables": [
+                    "id",
+                    "start_datetime",
+                    "end_datetime",
+                ],
             },
             "earth_search": {
                 "sortables": [
