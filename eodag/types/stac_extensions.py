@@ -462,6 +462,7 @@ class FederationFields(BaseModel):
     """
 
     federation_backends: Annotated[list[str], Field(None)]
+    federation: Annotated[dict[str, dict[str, Any]], Field(None)]
 
 
 class FederationExtension(BaseStacExtension):
