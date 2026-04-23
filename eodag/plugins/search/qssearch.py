@@ -85,6 +85,7 @@ from eodag.utils import (
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
+    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     copy_deepcopy,
     deepcopy,
@@ -2102,8 +2103,19 @@ class StacSearch(PostJsonSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # backup results_entry overwritten by init
-        results_entry = config.results_entry
+        try:
+            # backup results_entry overwritten by init
+            results_entry = config.results_entry
+        except AttributeError:
+            plugin_name = self.__class__.__name__
+            if plugin_name not in STAC_SEARCH_PLUGINS:
+                raise MisconfiguredError(
+                    "Missing results_entry in %s configuration. If %s is expected to be used as "
+                    "a STAC plugin, it must be referenced in STAC_SEARCH_PLUGINS."
+                    % (provider, plugin_name)
+                )
+            else:
+                raise
 
         super(StacSearch, self).__init__(provider, config)
 

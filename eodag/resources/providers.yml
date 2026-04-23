@@ -5934,7 +5934,7 @@
   description: French National Space Agency (CNES) Earth Observation portal
   url: https://geodes.cnes.fr
   search: !plugin
-    type: StacSearch
+    type: GeodesSearch
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
     asset_key_from_href: false
@@ -6017,8 +6017,8 @@
       eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+      # order:status set to orderable by default and then updated from plugin
+      order:status: '{$.null#replace_str("Not Available","orderable")}'
   products:
     S1_SAR_OCN:
       product:type: OCN
