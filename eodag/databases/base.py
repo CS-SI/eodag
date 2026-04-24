@@ -49,6 +49,7 @@ BASE_COLLECTION_TABLE_COLUMNS: dict[str, str] = {
     "geometry": "geometry",
     "content": "content",
     "federation:backends": "federation_backends",
+    "priority": "priority",
 }
 
 SUPPORTED_CONFORMANCE_CLASSES: tuple[str, ...] = (
