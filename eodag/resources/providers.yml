@@ -2814,6 +2814,8 @@
         start_datetime: properties.datetime
         platform: properties.platform
     metadata_mapping:
+      created: '$.properties.created'
+      description: '$.properties.description'
       grid:code:
         - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
         - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'

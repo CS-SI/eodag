@@ -557,20 +557,21 @@ def update_assets_from_s3(
                 ).get("Contents", [])
             ]
 
+        assets = {}
         for asset_url in assets_urls:
             out_of_zip_url = asset_url.split("!")[-1]
             key, roles = product.driver.guess_asset_key_and_roles(
                 out_of_zip_url, product
             )
-
             if key and key not in product.assets:
-                product.assets[key] = {
+                assets[key] = {
                     "title": key,  # Normalize title with key
                     "roles": roles,
                     "href": asset_url,
                 }
                 if mime_type := guess_file_type(asset_url):
-                    product.assets[key]["type"] = mime_type
+                    assets[key]["type"] = mime_type
+        product.assets.update(assets)
 
         # sort assets
         product.assets.data = dict(sorted(product.assets.data.items()))

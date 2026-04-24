@@ -39,6 +39,7 @@ from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import transform
 
+from eodag.api.product._assets import Asset
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
@@ -1812,3 +1813,117 @@ def get_provider_queryable_key(
         return ""
     else:
         return eodag_key
+
+
+def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
+    """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
+    ``bands`` array, in place. Returns ``data`` for convenience.
+
+    :param data: properties dict or Asset to migrate
+    :returns: the same data with migrated bands
+    """
+    UNPREFIX_BAND_FIELDNAME = [
+        "name",
+        "description",
+        "data_type",
+        "nodata",
+        "unit",
+        "statistics",
+    ]
+    EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME = ["name", "eo:common_name"]
+
+    # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
+    # Migrate band STAC 1.0 to 1.1
+    if isinstance(data, dict) or isinstance(data, Asset):
+
+        # Gather eo:band et raster:bands
+        bands: dict[str, Any] = {"eo:bands": [], "raster:bands": []}
+        hasData = False
+        for fieldname in bands:
+            if fieldname in data:
+                if isinstance(data[fieldname], list):
+                    bands[fieldname] = data[fieldname]
+                else:
+                    bands[fieldname] = [data[fieldname]]
+                hasData = True
+                del data[fieldname]
+
+        if hasData:
+            processed_bands = []
+
+            # migrate eo:bands -> bands
+            if len(bands["eo:bands"]) > 0:
+                for item in bands["eo:bands"]:
+                    band = {}
+                    for key in item:
+                        if key in UNPREFIX_BAND_FIELDNAME:
+                            band[key] = item[key]
+                        else:
+                            band["eo:{}".format(key)] = item[key]
+                    processed_bands.append(band)
+
+            # migrate raster:bands -> bands
+            if len(bands["raster:bands"]) > 0:
+                index = 0
+                for item in bands["raster:bands"]:
+                    band = processed_bands[index]
+                    for key in item:
+                        if key in UNPREFIX_BAND_FIELDNAME:
+                            band[key] = item[key]
+                        else:
+                            band["raster:{}".format(key)] = item[key]
+                    if index < len(processed_bands):
+                        processed_bands[index] = band
+                    else:
+                        processed_bands.append(band)
+                    index += 1
+
+            # When a property has the same value for each band, move it in parent scope
+            if len(processed_bands) > 0:
+                field_values: dict[str, Any] = {}
+
+                # Lists each distinct value for a field of the same name on each band
+                for band in processed_bands:
+                    for key in band:
+                        if key not in field_values:
+                            field_values[key] = []
+                        if band[key] not in field_values[key]:
+                            field_values[key].append(band[key])
+
+                    # Move band fields from asset to parent if all fields shared same value
+                    # (distinct values == 1)
+                    remove_band_fields = []
+                    for key in field_values:
+                        if (
+                            key in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
+                            or len(field_values[key]) != 1
+                        ):
+                            continue
+                        # Do not overwrite a value already set on the parent
+                        # (e.g. an Asset's own `description`); keep the
+                        # per-band value on the `bands` array instead.
+                        if key in data and data[key] != field_values[key][0]:
+                            continue
+                        # All bands have same value
+                        data[key] = field_values[key][0]
+                        # Tag field "to remove" from assets
+                        remove_band_fields.append(key)
+                del field_values
+
+            # Remove from assets field moved to parent
+            cleaned_bands = []
+            for band in processed_bands:
+                cleaned_band = {}
+                for key in band:
+                    if key not in remove_band_fields:
+                        cleaned_band[key] = band[key]
+                if len(list(cleaned_band.keys())) > 0:
+                    cleaned_bands.append(cleaned_band)
+            processed_bands = cleaned_bands
+            del cleaned_bands
+
+            # Remap band field if contains at least one value
+            if len(processed_bands) > 0:
+                data["bands"] = processed_bands
+
+    return data

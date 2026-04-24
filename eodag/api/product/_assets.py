@@ -60,6 +60,10 @@ class AssetsDict(UserDict):
         self.product = product
         super(AssetsDict, self).__init__(*args, **kwargs)
 
+    def update(self, data: dict[str, Any]) -> None:  # type: ignore
+        """Update assets"""
+        super().update(data)
+
     def __setitem__(self, key: str, value: dict[str, Any]) -> None:
         super().__setitem__(key, Asset(self.product, key, value))
 

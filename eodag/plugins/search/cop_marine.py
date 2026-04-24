@@ -294,6 +294,7 @@ class CopMarineSearch(StaticStacSearch):
         assets.update(additional_assets)
         product = EOProduct(self.provider, properties, collection=collection)
         product.assets = AssetsDict(product, assets)
+        product._normalize_bands()
         return product
 
     def query(

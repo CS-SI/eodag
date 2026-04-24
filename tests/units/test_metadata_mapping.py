@@ -23,6 +23,7 @@ from jsonpath_ng.ext import parse
 from lxml import etree
 from shapely import LineString, Polygon, wkt
 
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     WKT_MAX_LEN,
     get_provider_queryable_key,
@@ -1031,4 +1032,270 @@ class TestMetadataMappingFunctions(unittest.TestCase):
                 value="any value",
             ),
             NOT_AVAILABLE,
+        )
+
+
+class TestMetadataMappingBandsNormalize(unittest.TestCase):
+    def test_eoproduct_normalize_assets_bands(self):
+        """Test normalisation of eo:bands and raster:bands in EOProduct assets."""
+        asset_id = "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF"
+        href = (
+            "https://landsateuwest.blob.core.windows.net/landsat-c2/level-2/"
+            "standard/oli-tirs/2024/090/013/"
+            "LC08_L2SP_090013_20240502_20240513_02_T1/"
+            "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF"
+        )
+        common_asset_fields = {
+            "href": href,
+            "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+            "roles": ["data"],
+            "title": "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+            "description": (
+                "Collection 2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance"
+            ),
+        }
+
+        product = EOProduct(
+            provider="planetary_computer",
+            properties={"id": "LC08_L2SP_090013_20240502_02_T1"},
+            collection="LANDSAT_C2L2",
+        )
+
+        # Reduce eo:bands and raster:bands (single band each): every legacy
+        # field gets promoted to the asset; ``bands`` keeps name + common_name.
+        product.assets.update(
+            {
+                asset_id: {
+                    **common_asset_fields,
+                    "eo:bands": [
+                        {
+                            "name": "OLI_B1",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        }
+                    ],
+                    "raster:bands": [
+                        {
+                            "scale": 2.75e-05,
+                            "nodata": 0,
+                            "offset": -0.2,
+                            "data_type": "uint16",
+                            "spatial_resolution": 30,
+                        }
+                    ],
+                },
+            }
+        )
+        product._normalize_bands()
+
+        self.assertDictEqual(
+            product.assets[asset_id].as_dict(),
+            {
+                **common_asset_fields,
+                "eo:center_wavelength": 0.44,
+                "eo:full_width_half_max": 0.02,
+                "raster:scale": 2.75e-05,
+                "nodata": 0,
+                "raster:offset": -0.2,
+                "data_type": "uint16",
+                "raster:spatial_resolution": 30,
+                "bands": [
+                    {
+                        "name": "OLI_B1",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    }
+                ],
+            },
+        )
+
+        # Reduce multibands of eo:bands: only join and move parameters with
+        # the same value; per-band fields stay on the bands list.
+        product.assets.update(
+            {
+                asset_id: {
+                    **common_asset_fields,
+                    "eo:bands": [
+                        {
+                            "name": "OLI_B1",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B2",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B3",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                    ],
+                },
+            }
+        )
+        product._normalize_bands()
+
+        self.assertDictEqual(
+            product.assets[asset_id].as_dict(),
+            {
+                **common_asset_fields,
+                "eo:center_wavelength": 0.44,
+                "eo:full_width_half_max": 0.02,
+                "bands": [
+                    {
+                        "name": "OLI_B1",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B2",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B3",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                ],
+            },
+        )
+
+        # Reduce multibands of mixed raster:bands and eo:bands.
+        product.assets.update(
+            {
+                asset_id: {
+                    **common_asset_fields,
+                    "eo:bands": [
+                        {
+                            "name": "OLI_B1",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B2",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                        {
+                            "name": "OLI_B3",
+                            "common_name": "coastal",
+                            "description": "Coastal/Aerosol",
+                            "center_wavelength": 0.44,
+                            "full_width_half_max": 0.02,
+                        },
+                    ],
+                    "raster:bands": [
+                        {
+                            "scale": 2.75e-05,
+                            "nodata": 0,
+                            "offset": -0.2,
+                            "data_type": "uint16",
+                            "spatial_resolution": 30,
+                        }
+                    ],
+                },
+            }
+        )
+        product._normalize_bands()
+
+        self.assertDictEqual(
+            product.assets[asset_id].as_dict(),
+            {
+                **common_asset_fields,
+                "eo:center_wavelength": 0.44,
+                "eo:full_width_half_max": 0.02,
+                "raster:scale": 2.75e-05,
+                "nodata": 0,
+                "raster:offset": -0.2,
+                "data_type": "uint16",
+                "raster:spatial_resolution": 30,
+                "bands": [
+                    {
+                        "name": "OLI_B1",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B2",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B3",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                ],
+            },
+        )
+
+    def test_eoproduct_normalize_properties_bands(self):
+        """``EOProduct._normalize_bands`` should also migrate
+        ``eo:bands``/``raster:bands`` declared at the product properties level.
+        """
+        product = EOProduct(
+            provider="planetary_computer",
+            properties={
+                "id": "LC08_L2SP_090013_20240502_02_T1",
+                "eo:bands": [
+                    {
+                        "name": "OLI_B1",
+                        "common_name": "coastal",
+                        "center_wavelength": 0.44,
+                        "full_width_half_max": 0.02,
+                    },
+                    {
+                        "name": "OLI_B2",
+                        "common_name": "blue",
+                        "center_wavelength": 0.48,
+                        "full_width_half_max": 0.02,
+                    },
+                ],
+                "raster:bands": [
+                    {"nodata": 0, "data_type": "uint16", "spatial_resolution": 30},
+                    {"nodata": 0, "data_type": "uint16", "spatial_resolution": 30},
+                ],
+            },
+            collection="LANDSAT_C2L2",
+        )
+
+        product._normalize_bands()
+
+        self.assertNotIn("eo:bands", product.properties)
+        self.assertNotIn("raster:bands", product.properties)
+        # fields shared by every band are promoted to the parent
+        self.assertEqual(product.properties.get("eo:full_width_half_max"), 0.02)
+        self.assertEqual(product.properties.get("nodata"), 0)
+        self.assertEqual(product.properties.get("data_type"), "uint16")
+        self.assertEqual(product.properties.get("raster:spatial_resolution"), 30)
+        # remaining per-band fields end up in the STAC 1.1 ``bands`` array
+        self.assertEqual(
+            product.properties.get("bands"),
+            [
+                {
+                    "name": "OLI_B1",
+                    "eo:common_name": "coastal",
+                    "eo:center_wavelength": 0.44,
+                },
+                {
+                    "name": "OLI_B2",
+                    "eo:common_name": "blue",
+                    "eo:center_wavelength": 0.48,
+                },
+            ],
         )

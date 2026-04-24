@@ -1301,6 +1301,7 @@ class QueryStringSearch(Search):
         products: list[EOProduct] = []
         asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         product_kwargs = deepcopy(kwargs)
+
         # collection alias as collection property for product
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
             product_kwargs["collection"] = alias
@@ -1314,25 +1315,25 @@ class QueryStringSearch(Search):
 
             additional_assets = self.get_assets_from_mapping(result)
             product.assets.update(additional_assets)
+
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
-                norm_key, norm_roles = product.driver.guess_asset_key_and_roles(
-                    asset.get("href", "") if asset_key_from_href else key,
+                url = asset.get("href", "")
+                norm_key, roles = product.driver.guess_asset_key_and_roles(
+                    url if asset_key_from_href else key,
                     product,
                 )
-                # Keep original key and roles if driver couldn't guess
-                # (e.g., filename without extension)
-                if norm_key is None:
-                    norm_key = key
-                else:
-                    asset["roles"] = norm_roles
+                if norm_key is not None:
                     asset["title"] = norm_key
-                if norm_key:
+                    asset["roles"] = roles
                     product.assets[norm_key] = asset
-                    # Set title if not already set
-                    product.assets[norm_key].setdefault("title", norm_key)
+                else:
+                    asset["title"] = asset.get("title", key)
+                    product.assets[key] = asset
+
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
+            product._normalize_bands()
             products.append(product)
         return products
 
