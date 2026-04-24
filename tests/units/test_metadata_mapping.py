@@ -1050,11 +1050,10 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             "type": "image/tiff; application=geotiff; profile=cloud-optimized",
             "roles": ["data"],
             "title": "LC08_L2SP_090013_20240502_20240513_02_T1_SR_B1.TIF",
+            "description": (
+                "Collection 2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance"
+            ),
         }
-        # Note: legacy band description overwrites the asset's own
-        asset_description = (
-            "Collection 2 Level-2 Coastal/Aerosol Band (SR_B1) Surface Reflectance"
-        )
 
         product = EOProduct(
             provider="planetary_computer",
@@ -1068,7 +1067,6 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             {
                 asset_id: {
                     **common_asset_fields,
-                    "description": asset_description,
                     "eo:bands": [
                         {
                             "name": "OLI_B1",
@@ -1096,7 +1094,6 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             product.assets[asset_id].as_dict(),
             {
                 **common_asset_fields,
-                "description": "Coastal/Aerosol",
                 "eo:center_wavelength": 0.44,
                 "eo:full_width_half_max": 0.02,
                 "raster:scale": 2.75e-05,
@@ -1104,7 +1101,13 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
                 "raster:offset": -0.2,
                 "data_type": "uint16",
                 "raster:spatial_resolution": 30,
-                "bands": [{"name": "OLI_B1", "eo:common_name": "coastal"}],
+                "bands": [
+                    {
+                        "name": "OLI_B1",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    }
+                ],
             },
         )
 
@@ -1114,7 +1117,6 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             {
                 asset_id: {
                     **common_asset_fields,
-                    "description": asset_description,
                     "eo:bands": [
                         {
                             "name": "OLI_B1",
@@ -1147,13 +1149,24 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             product.assets[asset_id].as_dict(),
             {
                 **common_asset_fields,
-                "description": "Coastal/Aerosol",
                 "eo:center_wavelength": 0.44,
                 "eo:full_width_half_max": 0.02,
                 "bands": [
-                    {"name": "OLI_B1", "eo:common_name": "coastal"},
-                    {"name": "OLI_B2", "eo:common_name": "coastal"},
-                    {"name": "OLI_B3", "eo:common_name": "coastal"},
+                    {
+                        "name": "OLI_B1",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B2",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B3",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
                 ],
             },
         )
@@ -1163,7 +1176,6 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             {
                 asset_id: {
                     **common_asset_fields,
-                    "description": asset_description,
                     "eo:bands": [
                         {
                             "name": "OLI_B1",
@@ -1205,7 +1217,6 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
             product.assets[asset_id].as_dict(),
             {
                 **common_asset_fields,
-                "description": "Coastal/Aerosol",
                 "eo:center_wavelength": 0.44,
                 "eo:full_width_half_max": 0.02,
                 "raster:scale": 2.75e-05,
@@ -1214,9 +1225,21 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
                 "data_type": "uint16",
                 "raster:spatial_resolution": 30,
                 "bands": [
-                    {"name": "OLI_B1", "eo:common_name": "coastal"},
-                    {"name": "OLI_B2", "eo:common_name": "coastal"},
-                    {"name": "OLI_B3", "eo:common_name": "coastal"},
+                    {
+                        "name": "OLI_B1",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B2",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
+                    {
+                        "name": "OLI_B3",
+                        "eo:common_name": "coastal",
+                        "description": "Coastal/Aerosol",
+                    },
                 ],
             },
         )

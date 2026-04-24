@@ -1851,7 +1851,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
         if hasData:
             processed_bands = []
 
-            # migrate eo:bands > bands
+            # migrate eo:bands -> bands
             if len(bands["eo:bands"]) > 0:
                 for item in bands["eo:bands"]:
                     band = {}
@@ -1862,7 +1862,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                             band["eo:{}".format(key)] = item[key]
                     processed_bands.append(band)
 
-            # migrate raster:bands > bands
+            # migrate raster:bands -> bands
             if len(bands["raster:bands"]) > 0:
                 index = 0
                 for item in bands["raster:bands"]:
@@ -1878,7 +1878,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                         processed_bands.append(band)
                     index += 1
 
-            # When a property has same value for each band, have to be moved into parent scope
+            # When a property has the same value for each band, move it in parent scope
             if len(processed_bands) > 0:
                 field_values: dict[str, Any] = {}
 
@@ -1891,17 +1891,23 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                             field_values[key].append(band[key])
 
                     # Move band fields from asset to parent if all fields shared same value
-                    # (distincs values == 1)
+                    # (distinct values == 1)
                     remove_band_fields = []
                     for key in field_values:
                         if (
-                            key not in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
-                            and len(field_values[key]) == 1
+                            key in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
+                            or len(field_values[key]) != 1
                         ):
-                            # All band have same value
-                            data[key] = field_values[key][0]
-                            # Tag field "to remove" from assets
-                            remove_band_fields.append(key)
+                            continue
+                        # Do not overwrite a value already set on the parent
+                        # (e.g. an Asset's own `description`); keep the
+                        # per-band value on the `bands` array instead.
+                        if key in data and data[key] != field_values[key][0]:
+                            continue
+                        # All bands have same value
+                        data[key] = field_values[key][0]
+                        # Tag field "to remove" from assets
+                        remove_band_fields.append(key)
                 del field_values
 
             # Remove from assets field moved to parent
