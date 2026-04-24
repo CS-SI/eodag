@@ -441,6 +441,18 @@ class SQLiteDatabase(Database):
             )
             self._refresh_collections_denorm([name])
 
+    def set_status(self, status: dict[str, dict[str, Any]]) -> None:
+        """
+        Set the federation status.
+
+        :param status: Dictionary mapping collection IDs to their backend status.
+        """
+        with self._con:
+            self._executemany(
+                "UPDATE collections SET federation = ? WHERE id = ? OR internal_id = ?",
+                [(status, c, c) for c, status in status.items()],
+            )
+
     def collections_search(
         self,
         geometry: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
@@ -512,7 +524,8 @@ class SQLiteDatabase(Database):
 
             sql = (
                 f'SELECT json(c.content) AS "c.content [collection_dict]", '
-                f'json(c.federation_backends) as "c.federation_backends [dict]"{select_score} '
+                f'json(c.federation_backends) as "c.federation_backends [dict]", '
+                f'json(c.federation) as "c.federation [dict]"{select_score} '
                 f"{from_clause} WHERE {full_where}{order_by}"
             )
             if limit is not None:
@@ -522,6 +535,7 @@ class SQLiteDatabase(Database):
             for row in self._execute(sql, tuple(params) or None).fetchall():
                 coll = row["c.content"]
                 coll["federation:backends"] = row["c.federation_backends"]
+                coll["federation"] = row["c.federation"]
                 collections_list.append(coll)
 
             return collections_list, number_matched
@@ -662,6 +676,7 @@ def _adapt_collection(collection: Collection) -> str:
     data["_id"] = collection._id
     # remove "federation:backends" from the stored content as it is computed in a separate column
     del data["federation:backends"]
+    del data["federation"]
     return orjson.dumps(data).decode()
 
 
@@ -827,6 +842,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 END
             ) STORED,
             federation_backends {_CONTENT_TYPE},
+            federation {_CONTENT_TYPE},
             priority INTEGER
         );
         """
