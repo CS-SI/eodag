@@ -2823,6 +2823,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["ecmwf:month"],
             ["2"],
         )
+        # qs (used for order request) should contain year/month/day but not date
+        self.assertIn("qs", eoproduct.properties)
+        self.assertIn("day", eoproduct.properties["qs"])
+        self.assertIn("month", eoproduct.properties["qs"])
+        self.assertIn("year", eoproduct.properties["qs"])
+        self.assertNotIn("date", eoproduct.properties["qs"])
 
     def test_plugins_search_ecmwfsearch_collection_with_alias(self):
         """alias of collection must be used in search result"""
