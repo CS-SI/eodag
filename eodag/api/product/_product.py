@@ -52,6 +52,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
     ONLINE_STATUS,
+    normalize_bands,
 )
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -423,6 +424,14 @@ class EOProduct:
     # Implementation of geo-interface protocol (See
     # https://gist.github.com/sgillies/2217756)
     __geo_interface__ = property(as_dict)
+
+    def _normalize_bands(self) -> None:
+        """Normalize bands in properties and each asset
+        from STAC 1.0 (``eo:bands`` / ``raster:bands``) to STAC 1.1 (``bands``), in place.
+        """
+        normalize_bands(self.properties)
+        for key in self.assets:
+            normalize_bands(self.assets[key])
 
     def __repr__(self) -> str:
         try:

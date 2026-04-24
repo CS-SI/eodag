@@ -66,7 +66,6 @@ from eodag.api.product.metadata_mapping import (
     format_query_params,
     get_queryable_from_provider,
     mtd_cfg_as_conversion_and_querypath,
-    normalize_bands,
     properties_from_json,
     properties_from_xml,
 )
@@ -1334,7 +1333,7 @@ class QueryStringSearch(Search):
 
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
-            normalize_bands(product)
+            product._normalize_bands()
             products.append(product)
         return products
 

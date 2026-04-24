@@ -34,7 +34,6 @@ from dateutil.utils import today
 
 from eodag import EOProduct
 from eodag.api.product import AssetsDict
-from eodag.api.product.metadata_mapping import normalize_bands
 from eodag.api.search_result import SearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
@@ -295,7 +294,7 @@ class CopMarineSearch(StaticStacSearch):
         assets.update(additional_assets)
         product = EOProduct(self.provider, properties, collection=collection)
         product.assets = AssetsDict(product, assets)
-        normalize_bands(product)
+        product._normalize_bands()
         return product
 
     def query(

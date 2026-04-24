@@ -63,7 +63,6 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.product._product import EOProduct
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
@@ -1816,17 +1815,13 @@ def get_provider_queryable_key(
         return eodag_key
 
 
-def normalize_bands(product: EOProduct):
-    """Normalize bands in product"""
-    if hasattr(product, "properties"):
-        product.properties = _stac_normalize_bands(product.properties)  # type: ignore
-    if hasattr(product, "assets"):
-        for key in product.assets:
-            product.assets[key] = _stac_normalize_bands(product.assets[key])  # type: ignore
+def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
+    """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
+    ``bands`` array, in place. Returns ``data`` for convenience.
 
-
-def _stac_normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
-    """Normalize bands in product.properties or product.assets from STAC 1.0 to STAC 1.1"""
+    :param data: properties dict or Asset to migrate
+    :returns: the same data with migrated bands
+    """
     UNPREFIX_BAND_FIELDNAME = [
         "name",
         "description",
@@ -1921,7 +1916,7 @@ def _stac_normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
             processed_bands = cleaned_bands
             del cleaned_bands
 
-            # Remap éband" field if contains at least one value
+            # Remap band field if contains at least one value
             if len(processed_bands) > 0:
                 data["bands"] = processed_bands
 
