@@ -132,6 +132,9 @@ class Collection(StacCollection):
     federation_backends: Optional[list[str]] = Field(
         default=None, alias="federation:backends"
     )
+    sci_doi: Optional[str] = Field(
+        default=None, alias="sci:doi"
+    )
 
     # summaries
     constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
@@ -139,9 +142,6 @@ class Collection(StacCollection):
     platform: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
     processing_level: Optional[list[str]] = Field(
         default=None, alias="processing:level", exclude=True, repr=False
-    )
-    sci_doi: Optional[list[str]] = Field(
-        default=None, alias="sci:doi", exclude=True, repr=False
     )
     eodag_sensor_type: Optional[list[str]] = Field(
         default=None, alias="eodag:sensor_type", exclude=True, repr=False
@@ -166,7 +166,7 @@ class Collection(StacCollection):
 
     # only STAC fields
     __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [
-        "federation_backends"
+        "federation_backends", "sci_doi"
     ]
 
     # mandatory STAC fields which are fixed by their default value
