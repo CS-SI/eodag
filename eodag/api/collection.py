@@ -141,9 +141,6 @@ class Collection(StacCollection):
     processing_level: Optional[list[str]] = Field(
         default=None, alias="processing:level", exclude=True, repr=False
     )
-    sci_doi: Optional[list[str]] = Field(
-        default=None, alias="sci:doi", exclude=True, repr=False
-    )
     eodag_sensor_type: Optional[list[str]] = Field(
         default=None, alias="eodag:sensor_type", exclude=True, repr=False
     )
