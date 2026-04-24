@@ -1220,3 +1220,59 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
                 ],
             },
         )
+
+    def test_eoproduct_normalize_properties_bands(self):
+        """``EOProduct._normalize_bands`` should also migrate
+        ``eo:bands``/``raster:bands`` declared at the product properties level.
+        """
+        product = EOProduct(
+            provider="planetary_computer",
+            properties={
+                "id": "LC08_L2SP_090013_20240502_02_T1",
+                "eo:bands": [
+                    {
+                        "name": "OLI_B1",
+                        "common_name": "coastal",
+                        "center_wavelength": 0.44,
+                        "full_width_half_max": 0.02,
+                    },
+                    {
+                        "name": "OLI_B2",
+                        "common_name": "blue",
+                        "center_wavelength": 0.48,
+                        "full_width_half_max": 0.02,
+                    },
+                ],
+                "raster:bands": [
+                    {"nodata": 0, "data_type": "uint16", "spatial_resolution": 30},
+                    {"nodata": 0, "data_type": "uint16", "spatial_resolution": 30},
+                ],
+            },
+            collection="LANDSAT_C2L2",
+        )
+
+        product._normalize_bands()
+
+        self.assertNotIn("eo:bands", product.properties)
+        self.assertNotIn("raster:bands", product.properties)
+        # fields shared by every band are promoted to the parent
+        self.assertEqual(product.properties.get("eo:full_width_half_max"), 0.02)
+        self.assertEqual(product.properties.get("nodata"), 0)
+        self.assertEqual(product.properties.get("data_type"), "uint16")
+        self.assertEqual(product.properties.get("raster:spatial_resolution"), 30)
+        # remaining per-band fields end up in the STAC 1.1 ``bands`` array
+        self.assertEqual(
+            product.properties.get("bands"),
+            [
+                {
+                    "name": "OLI_B1",
+                    "eo:common_name": "coastal",
+                    "eo:center_wavelength": 0.44,
+                },
+                {
+                    "name": "OLI_B2",
+                    "eo:common_name": "blue",
+                    "eo:center_wavelength": 0.48,
+                },
+            ],
+        )
