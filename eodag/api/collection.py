@@ -169,7 +169,8 @@ class Collection(StacCollection):
 
     # only STAC fields
     __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [
-        "federation_backends"
+        "federation_backends",
+        "federation",
     ]
 
     # mandatory STAC fields which are fixed by their default value
