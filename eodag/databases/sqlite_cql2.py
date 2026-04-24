@@ -34,7 +34,6 @@ BASE_COLLECTION_TABLE_COLUMNS = {
     "geometry": "geometry",
     "content": "content",
     "federation:backends": "federation_backends",
-    "federation": "federation",
 }
 
 SUPPORTED_CONFORMANCE_CLASSES = (
