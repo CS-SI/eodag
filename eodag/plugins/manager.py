@@ -181,8 +181,7 @@ class PluginManager:
 
     @staticmethod
     def get_crunch_plugin(name: str, **options: Any) -> Crunch:
-        """Instantiate a eodag Crunch plugin whose class name is ``name``,
-        and configure it with ``options``.
+        """Instantiate a eodag Crunch plugin whose class name is ``name``, and configure it with ``options``.
 
         :param name: The name of the Crunch plugin to instantiate
         :param options: The configuration parameters of the cruncher
@@ -290,8 +289,10 @@ class PluginManager:
 
     def get_download_plugin(self, product: EOProduct) -> Union[Download, Api]:
         """Build and return the download plugin for the given product."""
+        self.check_provider_available(product.provider)
+
         pc = self._db.get_fb_config(product.provider, {product.collection})
-        if not pc:
+        if product.collection not in pc["products"]:
             raise UnsupportedProvider(
                 f"Provider {product.provider} not found with collection {product.collection}"
             )

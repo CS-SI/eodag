@@ -23,6 +23,7 @@ isort:skip_file
 # ruff: noqa
 import os
 import sys
+from typing import Optional, Union
 from unittest import mock
 
 from eodag import EODataAccessGateway, api, config, setup_logging
@@ -45,11 +46,13 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag_cli, list_col, search_crunch
-from eodag.api.provider import Provider, ProviderConfig, ProvidersDict, build_provider_configs
+from eodag.api.provider import Provider, ProvidersDict
 from eodag.config import (
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
     PluginConfig,
+    ProviderConfig,
+    build_provider_configs,
     get_ext_collections_conf,
     load_provider_configs,
     load_stac_provider_config,
@@ -154,3 +157,44 @@ from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
 from usgs.api import TMPFILE as USGS_TMPFILE
 from usgs.api import USGSAuthExpiredError, USGSError
+
+
+def make_plugins_manager(providers: Optional[dict[str, ProviderConfig]] = None):
+    """Test helper: build a :class:`PluginManager` backed by an in-memory
+    SQLite database, optionally pre-populated with the given providers.
+
+    :param providers: Optional dictionary of provider configurations to pre-populate the database with.
+    :returns: An instance of :class:`PluginManager` backed by an in-memory SQLite database.
+    """
+    from eodag.config import extract_credentials
+    from eodag.databases.sqlite import SQLiteDatabase
+
+    db = SQLiteDatabase(":memory:")
+    pm = PluginManager(db)
+    if providers:
+        db.upsert_fb_configs(list(providers.values()))
+        creds = extract_credentials(providers)
+    else:
+        creds = {}
+    pm.creds_store = creds
+    return pm
+
+
+def add_provider_to_pm(plugins_manager: PluginManager, provider_config: ProviderConfig) -> None:
+    """Register an additional ``ProviderConfig`` in ``plugins_manager``'s DB.
+
+    Mirrors what :meth:`EODataAccessGateway.add_provider` does at a low level:
+    upsert the federation backend config and merge any credentials in the
+    creds_store.
+
+    :param plugins_manager: The PluginManager instance to which the provider will be added.
+    :param provider_config: The ProviderConfig instance to add to the PluginManager's database.
+    """
+    from eodag.config import extract_credentials
+
+    plugins_manager._db.upsert_fb_configs([provider_config])
+    creds = extract_credentials({provider_config.name: provider_config})
+    if creds:
+        store = plugins_manager.creds_store or {}
+        store.update(creds)
+        plugins_manager.creds_store = store

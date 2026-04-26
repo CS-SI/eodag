@@ -614,7 +614,7 @@ class SQLiteDatabase(Database):
         params = (name, *cfb_params, name)
 
         rows = self._execute(sql, params).fetchall()
-        if not rows or not rows[0]["provider_plugins_config"]:
+        if not rows or not rows[0]["provider_plugins_config"] and not isinstance(rows[0]["provider_plugins_config"], dict):
             msg = f"Provider '{name}' not found"
             raise KeyError(msg)
         base: dict[str, Any] = (
