@@ -47,10 +47,11 @@ class Provider:
     ...         'description': 'Example provider for testing',
     ...         'roles': ['role1'],
     ...         'url': 'https://example.com',
+    ...         'fetchable': True,
     ...         'group': 'test_group'
     ...     }
     ... }
-    >>> provider = Provider(content)
+    >>> provider = Provider(**content)
     >>> provider.name
     'example_provider'
     >>> 'S2_MSI_L1C' in provider.collections_config

@@ -26,7 +26,6 @@ from typing import Any
 import orjson
 import shapely.geometry
 
-from eodag.config import CollectionProviderConfig
 from eodag.databases.sqlite import (
     SQLiteDatabase,
     create_collections_table,
@@ -42,12 +41,12 @@ def _norm(sql: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Fixture – one unified set of collections
+# Fixture - one unified set of collections
 #
-#   ONE   – full properties, open-ended temporal, tags=earth+observation
-#   TWO   – full properties, closed temporal,     tags=ml+observation
-#   THREE – full properties, closed temporal,     tags=earth, accented desc
-#   FOUR  – no license / tags / count / score,    open-ended temporal
+#   ONE   - full properties, open-ended temporal, tags=earth+observation
+#   TWO   - full properties, closed temporal,     tags=ml+observation
+#   THREE - full properties, closed temporal,     tags=earth, accented desc
+#   FOUR  - no license / tags / count / score,    open-ended temporal
 # ---------------------------------------------------------------------------
 
 COLLECTIONS = [
@@ -117,7 +116,7 @@ COLLECTIONS = [
     },
 ]
 
-ALL_IDS = sorted(c["id"] for c in COLLECTIONS)
+ALL_IDS = {c["id"] for c in COLLECTIONS}
 
 
 # ---------------------------------------------------------------------------
@@ -188,13 +187,29 @@ def _arith(arith_op: str, prop: str, operand, cmp_op: str, value):
     }
 
 
-def _make_coll_fb(provider: str, collection_id: str) -> CollectionProviderConfig:
-    """Create a CollectionProviderConfig for testing federation backends."""
-    return CollectionProviderConfig(
-        id=collection_id,
-        provider=provider,
-        plugins_config={"search": {"type": "StacSearch"}},
-    )
+def _make_coll_fb(provider: str, collection_id: str) -> tuple[str, str, dict]:
+    """Create a (collection_id, fb_name, plugins_config) tuple for the
+    private :meth:`SQLiteDatabase._upsert_collections_federation_backends`."""
+    return (collection_id, provider, {"search": {"type": "StacSearch"}})
+
+
+def _register_fb_and_collections(
+    db: SQLiteDatabase, coll_fb_tuples: list[tuple[str, str, dict]]
+) -> None:
+    """Register federation backends + their per-collection configs and
+    refresh the denormalized columns. Mirrors what :meth:`SQLiteDatabase.upsert_fb_configs`
+    does internally, but works directly from the lightweight test tuples.
+    """
+    fb_names = sorted({fb_name for _, fb_name, _ in coll_fb_tuples})
+    if not fb_names:
+        return
+    fb_configs: list[
+        tuple[str, dict[str, dict[str, Any]], int, dict[str, Any], bool]
+    ] = [(name, {"search": {"type": "StacSearch"}}, 0, {}, True) for name in fb_names]
+    with db._con:
+        db._upsert_federation_backends(fb_configs)
+        db._upsert_collections_federation_backends(coll_fb_tuples)
+        db._refresh_collections_denorm(fb_names)
 
 
 class TestCQL2JsonToSql(unittest.TestCase):
@@ -244,14 +259,14 @@ class TestCQL2JsonToSql(unittest.TestCase):
         rows = self.conn.execute(
             f"SELECT id FROM collections WHERE {where_sql} ORDER BY id"
         ).fetchall()
-        self.assertEqual(sorted(r[0] for r in rows), sorted(expected_ids))
+        self.assertSetEqual({r[0] for r in rows}, set(expected_ids))
 
         return where_sql
 
-    # -- A.1 – Basic CQL2 (comparison, isNull, and/or/not) ---------------
+    # -- A.1 - Basic CQL2 (comparison, isNull, and/or/not) ---------------
 
     def test_a1_basic_comparison(self):
-        """A.1 – All six comparison operators with property-literal."""
+        """A.1 - All six comparison operators with property-literal."""
         cases = [
             ("eq", "=", "id", "ONE", ["ONE"], "id = 'ONE'"),
             ("neq", "<>", "id", "ONE", ["FOUR", "THREE", "TWO"], "id <> 'ONE'"),
@@ -293,7 +308,7 @@ class TestCQL2JsonToSql(unittest.TestCase):
                 self.assert_filter(_cmp(op, prop, val), ids, where)
 
     def test_a1_basic_is_null(self):
-        """A.1 – isNull on a JSON property that may be absent."""
+        """A.1 - isNull on a JSON property that may be absent."""
         self.assert_filter(
             {"op": "isNull", "args": [{"property": "license"}]},
             ["FOUR"],
@@ -301,7 +316,7 @@ class TestCQL2JsonToSql(unittest.TestCase):
         )
 
     def test_a1_basic_logical(self):
-        """A.1 – and, or, not."""
+        """A.1 - and, or, not."""
         cases = [
             (
                 "and",
@@ -338,10 +353,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids, where)
 
-    # -- A.2 – Advanced Comparison (like, between, in) --------------------
+    # -- A.2 - Advanced Comparison (like, between, in) --------------------
 
     def test_a2_advanced_comparison(self):
-        """A.2 – like, between, in operators."""
+        """A.2 - like, between, in operators."""
         cases = [
             (
                 "like",
@@ -373,10 +388,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids, where)
 
-    # -- A.5 – Case-insensitive Comparison (casei) ------------------------
+    # -- A.5 - Case-insensitive Comparison (casei) ------------------------
 
     def test_a5_case_insensitive(self):
-        """A.5 – casei() wrapping property and/or literal operands."""
+        """A.5 - casei() wrapping property and/or literal operands."""
         cases = [
             (
                 "eq_lower",
@@ -413,10 +428,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids, where)
 
-    # -- A.6 – Accent-insensitive Comparison (accenti) --------------------
+    # -- A.6 - Accent-insensitive Comparison (accenti) --------------------
 
     def test_a6_accent_insensitive(self):
-        """A.6 – accenti() wrapping property and/or literal operands."""
+        """A.6 - accenti() wrapping property and/or literal operands."""
         cases = [
             (
                 "eq_no_accents",
@@ -451,10 +466,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids, where)
 
-    # -- A.7 – Basic Spatial (s_intersects with point & bbox) -------------
+    # -- A.7 - Basic Spatial (s_intersects with point & bbox) -------------
 
     def test_a7_basic_spatial(self):
-        """A.7 – s_intersects with Point and bbox literals."""
+        """A.7 - s_intersects with Point and bbox literals."""
         cases = [
             (
                 "point",
@@ -471,10 +486,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids)
 
-    # -- A.8/A.9 – Spatial Functions (full predicate set) -----------------
+    # -- A.8/A.9 - Spatial Functions (full predicate set) -----------------
 
     def test_a8_a9_spatial_functions(self):
-        """A.8/A.9 – Full spatial predicate set with arbitrary geometry types."""
+        """A.8/A.9 - Full spatial predicate set with arbitrary geometry types."""
         # fmt: off
         cases = [
             ("s_intersects",
@@ -539,10 +554,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids)
 
-    # -- A.10 – Property-Property Comparisons -----------------------------
+    # -- A.10 - Property-Property Comparisons -----------------------------
 
     def test_a10_property_property(self):
-        """A.10 – Both sides of a comparison may be property references."""
+        """A.10 - Both sides of a comparison may be property references."""
         cases = [
             (
                 "eq",
@@ -573,10 +588,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids, where)
 
-    # -- A.11 – Temporal Functions ----------------------------------------
+    # -- A.11 - Temporal Functions ----------------------------------------
 
     def test_a11_temporal_timestamp(self):
-        """A.11 – All 15 temporal operators with a timestamp literal (instant vs instant)."""
+        """A.11 - All 15 temporal operators with a timestamp literal (instant vs instant)."""
         ts = "2021-01-01T00:00:00Z"
         # fmt: off
         cases = [
@@ -602,7 +617,7 @@ class TestCQL2JsonToSql(unittest.TestCase):
                 self.assert_filter(cql2_json, ids)
 
     def test_a11_temporal_interval(self):
-        """A.11 – All 15 temporal operators with an interval literal (instant vs interval)."""
+        """A.11 - All 15 temporal operators with an interval literal (instant vs interval)."""
         iv = ["2020-06-01T00:00:00Z", "2021-06-01T00:00:00Z"]
         # fmt: off
         cases = [
@@ -627,10 +642,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids)
 
-    # -- A.12 – Array Functions -------------------------------------------
+    # -- A.12 - Array Functions -------------------------------------------
 
     def test_a12_array_functions(self):
-        """A.12 – a_contains, a_containedby, a_equals, a_overlaps."""
+        """A.12 - a_contains, a_containedby, a_equals, a_overlaps."""
         cases = [
             (
                 "a_contains_both",
@@ -664,10 +679,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
             with self.subTest(name):
                 self.assert_filter(cql2_json, ids)
 
-    # -- A.13 – Arithmetic ------------------------------------------------
+    # -- A.13 - Arithmetic ------------------------------------------------
 
     def test_a13_arithmetic(self):
-        """A.13 – Arithmetic operators: +, -, *, /, %, ^, div."""
+        """A.13 - Arithmetic operators: +, -, *, /, %, ^, div."""
         cases = [
             ("+", _arith("+", "count", 1, "=", 6), ["TWO"]),
             ("-", _arith("-", "count", 2, "=", 3), ["TWO"]),
@@ -700,7 +715,7 @@ class TestCQL2JsonToSql(unittest.TestCase):
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
-# FTS fixtures – real STAC collections inserted via create_collections_table
+# FTS fixtures - real STAC collections inserted via create_collections_table
 # triggers, exercising the actual title/description/keywords extraction.
 # ---------------------------------------------------------------------------
 
@@ -1050,7 +1065,7 @@ class TestStacQToFts5(unittest.TestCase):
             (fts,),
         ).fetchall()
         # title hit first, then description, then keywords
-        self.assertEqual([r[0] for r in rows], ["TITLE_HIT", "DESC_HIT", "KW_HIT"])
+        self.assertListEqual([r[0] for r in rows], ["TITLE_HIT", "DESC_HIT", "KW_HIT"])
         conn.close()
 
     # -- diacritics / accent handling -------------------------------------
@@ -1102,12 +1117,13 @@ class TestCollectionsSearch(unittest.TestCase):
         #   TWO   -> ["backend_b"]
         #   THREE -> (none)
         #   FOUR  -> (none)
-        cls.db.upsert_collections_federation_backends(
+        _register_fb_and_collections(
+            cls.db,
             [
                 _make_coll_fb("backend_a", "ONE"),
                 _make_coll_fb("backend_b", "ONE"),
                 _make_coll_fb("backend_b", "TWO"),
-            ]
+            ],
         )
 
     def _ids(self, result: tuple[list[dict[str, Any]], int]) -> list[str]:
@@ -1118,10 +1134,19 @@ class TestCollectionsSearch(unittest.TestCase):
         return result[1]
 
     def test_no_params(self):
-        """No parameters returns all collections, default order by id ASC."""
+        """Default (with_fbs_only=True) returns only collections that have at least one
+        federation backend, ordered by id ASC.  with_fbs_only=False returns everything.
+        """
+        # Fixture: ONE & TWO have backends; THREE & FOUR do not.
         result = self.db.collections_search()
-        self.assertEqual(self._ids(result), ALL_IDS)
-        self.assertEqual(self._matched(result), 4)
+        self.assertListEqual(self._ids(result), ["ONE", "TWO"])
+        self.assertEqual(self._matched(result), 2)
+
+        result_all = self.db.collections_search(with_fbs_only=False)
+        # Ordering: priority DESC (ONE/TWO have priority=0 from their backends;
+        # THREE/FOUR have priority=NULL → sorted last), then id ASC within each tier.
+        self.assertListEqual(self._ids(result_all), ["ONE", "TWO", "FOUR", "THREE"])
+        self.assertEqual(self._matched(result_all), 4)
 
     def test_returns_dicts(self):
         """collections_search returns list of dicts with 'id' keys."""
@@ -1131,111 +1156,94 @@ class TestCollectionsSearch(unittest.TestCase):
         self.assertIn("id", collections[0])
 
     def test_limit(self):
+        """Limit caps the page size; total matched reflects the full result set.
+
+        with_fbs_only=True (default) - only ONE & TWO visible (matched=2).
+        with_fbs_only=False           - all four collections visible (matched=4).
+        """
         cases = [
-            ("limit=2", 2, 2, 4),
-            ("limit=1", 1, 1, 4),
+            # (name, limit, with_fbs_only, expected_page_len, expected_matched)
+            ("limit=2 with_fbs_only=True", 2, True, 2, 2),
+            ("limit=1 with_fbs_only=True", 1, True, 1, 2),
+            ("limit=2 with_fbs_only=False", 2, False, 2, 4),
+            ("limit=1 with_fbs_only=False", 1, False, 1, 4),
         ]
-        for name, limit, expected_len, expected_matched in cases:
+        for name, limit, with_fbs_only, expected_len, expected_matched in cases:
             with self.subTest(name):
-                result = self.db.collections_search(limit=limit)
+                result = self.db.collections_search(
+                    limit=limit, with_fbs_only=with_fbs_only
+                )
                 self.assertEqual(len(result[0]), expected_len)
                 self.assertEqual(self._matched(result), expected_matched)
 
     def test_datetime(self):
         cases = [
-            ("single instant", "2021-06-01T00:00:00Z", ["ONE", "TWO"]),
+            ("single instant", "2021-06-01T00:00:00Z", {"ONE", "TWO"}),
             (
                 "closed range",
                 "2021-06-01T00:00:00Z/2022-06-01T00:00:00Z",
-                ["ONE", "THREE", "TWO"],
+                {"ONE", "THREE", "TWO"},
             ),
-            ("open start", "../2020-06-01T00:00:00Z", ["ONE"]),
-            ("open end", "2022-06-01T00:00:00Z/..", ["FOUR", "ONE", "THREE"]),
+            ("open start", "../2020-06-01T00:00:00Z", {"ONE"}),
+            ("open end", "2022-06-01T00:00:00Z/..", {"FOUR", "ONE", "THREE"}),
         ]
         for name, dt, expected_ids in cases:
             with self.subTest(name):
-                result = self.db.collections_search(datetime=dt)
-                self.assertEqual(sorted(self._ids(result)), sorted(expected_ids))
+                result = self.db.collections_search(datetime=dt, with_fbs_only=False)
+                self.assertSetEqual(set(self._ids(result)), expected_ids)
 
     def test_geometry(self):
         cases = [
-            ("point in ONE", shapely.geometry.Point(5.0, 5.0), ["ONE"]),
+            ("point in ONE", shapely.geometry.Point(5.0, 5.0), {"ONE"}),
             (
                 "box ONE+TWO",
                 shapely.geometry.box(5.0, 5.0, 25.0, 25.0),
-                ["ONE", "TWO"],
+                {"ONE", "TWO"},
             ),
-            ("no match", shapely.geometry.Point(100.0, 100.0), []),
+            ("no match", shapely.geometry.Point(100.0, 100.0), set()),
         ]
         for name, geom, expected_ids in cases:
             with self.subTest(name):
                 result = self.db.collections_search(geometry=geom)
-                self.assertEqual(sorted(self._ids(result)), sorted(expected_ids))
+                self.assertSetEqual(set(self._ids(result)), expected_ids)
 
     def test_sortby(self):
-        cases = [
+        all_cases = [
             (
-                "id asc",
+                "id asc all",
                 [{"field": "id", "direction": "asc"}],
-                {},
-                ALL_IDS,
+                ["FOUR", "ONE", "THREE", "TWO"],
             ),
             (
-                "id desc",
+                "id desc all",
                 [{"field": "id", "direction": "desc"}],
-                {},
                 ["TWO", "THREE", "ONE", "FOUR"],
             ),
             (
-                "id default direction",
-                [{"field": "id"}],
-                {},
-                ALL_IDS,
-            ),
-            (
-                "id case-insensitive DESC",
-                [{"field": "id", "direction": "DESC"}],
-                {},
-                ["TWO", "THREE", "ONE", "FOUR"],
-            ),
-            (
-                "datetime asc",
+                "datetime asc all",
                 [{"field": "datetime", "direction": "asc"}],
-                {},
                 ["ONE", "TWO", "THREE", "FOUR"],
             ),
             (
-                "datetime desc",
+                "datetime desc all",
                 [{"field": "datetime", "direction": "desc"}],
-                {},
                 ["FOUR", "THREE", "TWO", "ONE"],
             ),
             (
-                "end_datetime asc",
+                "end_datetime asc all",
                 [{"field": "end_datetime", "direction": "asc"}],
-                {},
-                ["TWO", "THREE", "FOUR", "ONE"],
-            ),
-            (
-                "multiple fields",
                 [
-                    {"field": "datetime", "direction": "desc"},
-                    {"field": "id", "direction": "asc"},
-                ],
-                {},
-                ["FOUR", "THREE", "TWO", "ONE"],
-            ),
-            (
-                "with datetime filter",
-                [{"field": "id", "direction": "desc"}],
-                {"datetime": "2021-06-01T00:00:00Z/2022-06-01T00:00:00Z"},
-                ["TWO", "THREE", "ONE"],
+                    "TWO",
+                    "THREE",
+                    "ONE",
+                    "FOUR",
+                ],  # ONE (priority=0) before FOUR (NULL) in tie-break
             ),
         ]
-        for name, sortby, kwargs, expected_ids in cases:
+        for name, sortby, expected_ids in all_cases:
             with self.subTest(name):
-                result = self.db.collections_search(sortby=sortby, **kwargs)
-                self.assertEqual(self._ids(result), expected_ids)
+                result = self.db.collections_search(sortby=sortby, with_fbs_only=False)
+                self.assertListEqual(self._ids(result), expected_ids)
 
     def test_sortby_errors(self):
         cases = [
@@ -1259,38 +1267,45 @@ class TestCollectionsSearch(unittest.TestCase):
 
     def test_q(self):
         cases = [
-            ("radar", "radar", {}, ["FOUR", "TWO"]),
-            ("no match", "nonexistent", {}, []),
+            ("radar", "radar", {}, {"FOUR", "TWO"}),
+            ("no match", "nonexistent", {}, set()),
             (
                 "satellite + datetime",
                 "satellite",
                 {"datetime": "../2021-06-01T00:00:00Z"},
-                ["ONE", "TWO"],
+                {"ONE", "TWO"},
             ),
         ]
         for name, q, kwargs, expected_ids in cases:
             with self.subTest(name):
-                result = self.db.collections_search(q=q, **kwargs)
-                self.assertEqual(sorted(self._ids(result)), sorted(expected_ids))
+                result = self.db.collections_search(q=q, with_fbs_only=False, **kwargs)
+                self.assertSetEqual(set(self._ids(result)), expected_ids)
 
     def test_q_sortby_overrides_bm25(self):
         """Explicit sortby overrides BM25 ranking order."""
         result = self.db.collections_search(
             q="satellite",
             sortby=[{"field": "id", "direction": "desc"}],
+            with_fbs_only=False,
         )
         # satellite in keywords: ONE, TWO, FOUR → sorted id desc
-        self.assertEqual(self._ids(result), ["TWO", "ONE", "FOUR"])
+        self.assertListEqual(self._ids(result), ["TWO", "ONE", "FOUR"])
 
     def test_cql2(self):
         cases = [
-            ("json", {"cql2_json": _cmp("=", "id", "THREE")}, ["THREE"]),
-            ("text", {"cql2_text": "id = 'THREE'"}, ["THREE"]),
+            ("json match", {"cql2_json": _cmp("=", "id", "ONE")}, ["ONE"]),
+            ("text match", {"cql2_text": "id = 'TWO'"}, ["TWO"]),
+            (
+                "json match no backend",
+                {"cql2_json": _cmp("=", "id", "THREE")},
+                ["THREE"],
+            ),
+            ("text match no backend", {"cql2_text": "id = 'THREE'"}, ["THREE"]),
         ]
         for name, kwargs, expected_ids in cases:
             with self.subTest(name):
-                result = self.db.collections_search(**kwargs)
-                self.assertEqual(self._ids(result), expected_ids)
+                result = self.db.collections_search(with_fbs_only=False, **kwargs)
+                self.assertListEqual(self._ids(result), expected_ids)
 
     def test_cql2_text_and_json_raises(self):
         with self.assertRaises(ValueError):
@@ -1310,42 +1325,49 @@ class TestCollectionsSearch(unittest.TestCase):
         )
         # Spatial: all 4.  Temporal: ONE, TWO, THREE.  CQL2: not THREE → ONE, TWO.
         # Sorted datetime desc: TWO(2021), ONE(2020)
-        self.assertEqual(self._ids(result), ["TWO", "ONE"])
+        self.assertListEqual(self._ids(result), ["TWO", "ONE"])
         self.assertEqual(self._matched(result), 2)
 
     def test_federation_backends(self):
         """Filter collections by federation_backends."""
         cases = [
-            ("no filter", None, {}, ALL_IDS, 4),
-            ("single backend", ["backend_a"], {}, ["ONE"], 1),
-            ("shared backend", ["backend_b"], {}, ["ONE", "TWO"], 2),
+            # (name, fb_filter, extra_kwargs, expected_ids, expected_matched)
+            (
+                "no filter - with_fbs_only=False returns all",
+                None,
+                {"with_fbs_only": False},
+                ALL_IDS,
+                4,
+            ),
+            ("single backend", ["backend_a"], {}, {"ONE"}, 1),
+            ("shared backend", ["backend_b"], {}, {"ONE", "TWO"}, 2),
             (
                 "multiple backends (union)",
                 ["backend_a", "backend_b"],
                 {},
-                ["ONE", "TWO"],
+                {"ONE", "TWO"},
                 2,
             ),
-            ("nonexistent backend", ["backend_z"], {}, [], 0),
+            ("nonexistent backend", ["backend_z"], {}, set(), 0),
             (
                 "with geometry",
                 ["backend_a"],
                 {"geometry": shapely.geometry.box(-5, -5, 15, 15)},
-                ["ONE"],
+                {"ONE"},
                 1,
             ),
             (
                 "with datetime",
                 ["backend_b"],
                 {"datetime": "2021-01-01T00:00:00Z/.."},
-                ["ONE", "TWO"],
+                {"ONE", "TWO"},
                 2,
             ),
         ]
         for name, fb, kwargs, expected_ids, expected_matched in cases:
             with self.subTest(name):
                 result = self.db.collections_search(federation_backends=fb, **kwargs)
-                self.assertEqual(sorted(self._ids(result)), expected_ids)
+                self.assertSetEqual(set(self._ids(result)), expected_ids)
                 self.assertEqual(self._matched(result), expected_matched)
 
     def test_federation_backends_denormalization_update(self):
@@ -1372,8 +1394,8 @@ class TestCollectionsSearch(unittest.TestCase):
         for name, to_add, fb_filter, expected_matched in cases:
             with self.subTest(name):
                 if to_add:
-                    db.upsert_collections_federation_backends(
-                        [_make_coll_fb(prov, coll) for prov, coll in to_add]
+                    _register_fb_and_collections(
+                        db, [_make_coll_fb(prov, coll) for prov, coll in to_add]
                     )
                 result = db.collections_search(federation_backends=fb_filter)
                 self.assertEqual(self._matched(result), expected_matched)
@@ -1381,5 +1403,4 @@ class TestCollectionsSearch(unittest.TestCase):
         db.close()
 
 
-if __name__ == "__main__":
-    unittest.main()
+# TODO: add tests on all methods of SQLiteDatabase, not only on collections search.

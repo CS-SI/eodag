@@ -44,8 +44,8 @@ from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
-from eodag.api.provider import Provider, build_provider_configs
 from eodag.api.search_result import RawSearchResult
+from eodag.config import build_provider_configs
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
     _convert_bbox_to_lonlat_mollweide,
@@ -69,17 +69,18 @@ from tests.context import (
     EOProduct,
     MisconfiguredError,
     NotAvailableError,
-    PluginManager,
     PreparedSearch,
     QueryablesDict,
     QueryStringSearch,
     RequestError,
     TimeOutError,
+    add_provider_to_pm,
     cached_parse,
     cached_yaml_load_all,
     ecmwf_temporal_to_eodag,
     get_geometry_from_various,
     load_default_config,
+    make_plugins_manager,
 )
 
 
@@ -87,7 +88,7 @@ class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
         providers = build_provider_configs(load_default_config())
-        self.plugins_manager = PluginManager(providers)
+        self.plugins_manager = make_plugins_manager(providers)
         self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
         geometry = get_geometry_from_various([], geometry=geom)
@@ -144,7 +145,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         provider_name, mundi_config = next(iter(mundi_config_dict.items()))
         if "name" not in mundi_config:
             mundi_config["name"] = provider_name
-        self.plugins_manager.add_provider(provider, Provider(mundi_config))
+        add_provider_to_pm(self.plugins_manager, mundi_config)
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         self.mundi_search_plugin = self.get_search_plugin(self.collection, provider)
@@ -1619,7 +1620,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         provider_name, onda_config = next(iter(onda_config_dict.items()))
         if "name" not in onda_config:
             onda_config["name"] = provider_name
-        self.plugins_manager.add_provider("onda", Provider(onda_config))
+        add_provider_to_pm(self.plugins_manager, onda_config)
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
@@ -3173,7 +3174,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     def setUpClass(cls):
         super(TestSearchPluginECMWFSearch, cls).setUpClass()
         providers = build_provider_configs(load_default_config())
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def setUp(self):
         self.provider = "cop_ads"

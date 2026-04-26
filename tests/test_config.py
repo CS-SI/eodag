@@ -25,8 +25,13 @@ from tempfile import TemporaryDirectory
 import pytest
 import yaml
 
-from eodag.api.provider import ProviderConfig, build_provider_configs, merge_provider_configs, _parse_env_provider_configs
-from eodag.config import PluginConfig
+from eodag.config import (
+    PluginConfig,
+    ProviderConfig,
+    _parse_env_provider_configs,
+    build_provider_configs,
+    merge_provider_configs,
+)
 from eodag.utils import deepcopy
 from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
@@ -225,7 +230,7 @@ class TestProviderConfig(unittest.TestCase):
             {
                 "provider1": provider1_config2,
                 "provider3": provider3_config2,
-            }
+            },
         )
 
         self.assertEqual(len(providers), 3)
@@ -349,7 +354,7 @@ class TestConfigFunctions(unittest.TestCase):
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
                 """
-            )
+            ),
         )
 
         my_new_provider_conf = providers["my_new_provider"].config
