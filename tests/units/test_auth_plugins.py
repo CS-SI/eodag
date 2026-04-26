@@ -33,7 +33,8 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
-from eodag.api.provider import ProvidersDict, build_provider_configs
+from eodag.api.provider import ProvidersDict
+from eodag.config import build_provider_configs
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.utils import MockResponse
 from tests.context import (
@@ -47,6 +48,7 @@ from tests.context import (
     PluginManager,
     RequestError,
     TimeOutError,
+    make_plugins_manager,
     raise_if_auth_error,
 )
 
@@ -55,13 +57,13 @@ class BaseAuthPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.plugins_manager = PluginManager()
+        cls.plugins_manager = make_plugins_manager()
         cls.auth_plugins = {}
 
     def tearDown(self):
         super().tearDown()
         # remove credentials set during tests
-        for provider in self.plugins_manager.providers:
+        for provider in self.plugins_manager._db.get_federation_backends():
             self.get_auth_plugin(provider).config.__dict__.pop("credentials", None)
 
     def get_auth_plugin(self, provider):
@@ -194,7 +196,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             }
         )
 
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_tokenauth_validate_credentials_empty(self):
         """TokenAuth.validate_credentials must raise an error on empty credentials"""
@@ -737,7 +739,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
@@ -1567,7 +1569,7 @@ class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_header_validate_credentials_empty(self):
         """HTTPHeaderAuth.validate_credentials must raise an error on empty credentials"""
@@ -1625,7 +1627,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_qsauth_validate_credentials_empty(self):
         """HttpQueryStringAuth.validate_credentials must raise an error on empty credentials"""
@@ -1709,7 +1711,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
                 }
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_sasauth_validate_credentials_ok(self):
         """SASAuth.validate_credentials must be ok on empty or non-empty credentials"""
@@ -1851,7 +1853,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 }
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
         oidc_config = {
             "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
@@ -2234,7 +2236,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def get_auth_plugin(self, provider):
         with mock.patch(

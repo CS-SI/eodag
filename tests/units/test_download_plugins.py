@@ -50,11 +50,11 @@ from tests.context import (
     HTTPDownload,
     NotAvailableError,
     PluginConfig,
-    PluginManager,
     S3FileInfo,
     StreamResponse,
     build_provider_configs,
     load_default_config,
+    make_plugins_manager,
     path_to_uri,
     uri_to_path,
 )
@@ -65,7 +65,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def setUpClass(cls):
         super(BaseDownloadPluginTest, cls).setUpClass()
         providers = build_provider_configs(load_default_config())
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
         expanduser_mock_side_effect = (

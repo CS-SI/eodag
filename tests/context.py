@@ -45,11 +45,13 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag_cli, list_col, search_crunch
-from eodag.api.provider import Provider, ProviderConfig, ProvidersDict, build_provider_configs
+from eodag.api.provider import Provider, ProvidersDict
 from eodag.config import (
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
     PluginConfig,
+    ProviderConfig,
+    build_provider_configs,
     get_ext_collections_conf,
     load_default_config,
     load_stac_provider_config,
@@ -153,3 +155,42 @@ from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
 from usgs.api import TMPFILE as USGS_TMPFILE
 from usgs.api import USGSAuthExpiredError, USGSError
+
+
+def make_plugins_manager(providers=None):
+    """Test helper: build a :class:`PluginManager` backed by an in-memory
+    SQLite database, optionally pre-populated with the given providers."""
+    from eodag.config import extract_credentials
+    from eodag.databases.sqlite import SQLiteDatabase
+
+    db = SQLiteDatabase(":memory:")
+    pm = PluginManager(db)
+    if providers:
+        provider_list = (
+            list(providers.values())
+            if hasattr(providers, "values")
+            else list(providers)
+        )
+        db.upsert_fb_configs(provider_list)
+        creds = extract_credentials(providers if hasattr(providers, "values") else {})
+    else:
+        creds = {}
+    pm.creds_store = creds
+    return pm
+
+
+def add_provider_to_pm(plugins_manager, provider_config) -> None:
+    """Register an additional ``ProviderConfig`` in ``plugins_manager``'s DB.
+
+    Mirrors what :meth:`EODataAccessGateway.add_provider` does at a low level:
+    upsert the federation backend config and merge any credentials in the
+    creds_store.
+    """
+    from eodag.config import extract_credentials
+
+    plugins_manager._db.upsert_fb_configs([provider_config])
+    creds = extract_credentials({provider_config.name: provider_config})
+    if creds:
+        store = plugins_manager._creds_store or {}
+        store.update(creds)
+        plugins_manager.creds_store = store
