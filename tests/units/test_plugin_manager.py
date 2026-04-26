@@ -5,18 +5,21 @@ from unittest import mock
 from tests.context import (
     GENERIC_COLLECTION,
     Authentication,
-    Download,
     FilterDate,
     MisconfiguredError,
     PluginManager,
-    ProvidersDict,
+    ProviderConfig,
     UnsupportedProvider,
+    build_provider_configs,
+    make_plugins_manager,
 )
 
 
 class TestPluginManager(unittest.TestCase):
-    def setUp(self):
-        self.providers = ProvidersDict.from_configs(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.providers = build_provider_configs(
             {
                 "low": {
                     "products": {"FOO": {"metadata_mapping": {"title": "$.title"}}},
@@ -42,53 +45,68 @@ class TestPluginManager(unittest.TestCase):
                 },
             }
         )
-        self.manager = PluginManager(self.providers)
+        cls.manager = make_plugins_manager(cls.providers)
 
-    def test_rebuild_replaces_provider_mapping_and_cache(self):
-        """Rebuilding replaces the provider map and clears cached plugins."""
-        self.manager._built_plugins_cache[("low", "Search", "")] = mock.sentinel.plugin
-
-        replacement = ProvidersDict.from_configs(
-            {
-                "replacement": {
-                    "products": {"BAR": {}},
-                    "search": {
-                        "type": "QueryStringSearch",
-                        "api_endpoint": "https://replacement.example",
-                        "metadata_mapping": {"title": "$.title"},
-                    },
-                }
-            }
-        )
-        self.manager.rebuild(replacement)
-
-        self.assertIs(self.manager.providers, replacement)
-        self.assertEqual(list(self.manager.collection_to_provider_config_map), ["BAR"])
-        self.assertEqual(self.manager._built_plugins_cache, {})
-
-    def test_build_collection_map_sorts_by_priority(self):
-        """Collection providers are ordered by descending priority."""
-        configs = self.manager.collection_to_provider_config_map["FOO"]
-
-        self.assertEqual([config.name for config in configs], ["high", "low"])
 
     def test_get_skipped_plugin_messages(self):
         """Skipped plugin messages are returned for configured plugin types."""
-        provider_config = self.providers["low"].config
+        provider_config = self.providers["low"]
         provider_config.search.type = "MissingSearch"
         self.manager.skipped_plugins = {"MissingSearch": "missing dependency"}
 
-        self.assertEqual(
+        self.assertListEqual(
             self.manager.get_skipped_plugin_messages(provider_config),
             ["missing dependency"],
         )
 
     def test_check_provider_available(self):
         """Provider availability checks accept known and reject unknown providers."""
+        # known provider name: no error
         self.manager.check_provider_available("low")
 
-        with self.assertRaises(UnsupportedProvider):
+        # unknown provider: UnsupportedProvider
+        with self.assertRaisesRegex(
+            UnsupportedProvider, "unknown: provider is not recognised by eodag"
+        ):
             self.manager.check_provider_available("unknown")
+
+        # disable the provider "low" until the test ends
+        provider = "low"
+        cfg = ProviderConfig.from_mapping(self.manager._db.get_fb_config(provider))
+        cfg.enabled = False
+        self.manager._db.upsert_fb_configs([cfg])
+        self.addCleanup(self.manager._db.restore_fbs())
+
+        with self.assertRaisesRegex(
+            UnsupportedProvider,
+            "low: provider has been pruned and is not available"
+        ):
+            self.manager.check_provider_available("low")
+
+        # pruned provider: MisconfiguredError takes precedence over UnsupportedProvider
+        self.manager.pruned_providers_reasons["low"] = {
+            "reason": "provider needing auth for search was pruned because no credentials could be found",
+            "reason_type": "missing_credentials",
+        }
+        with self.assertRaisesRegex(
+            MisconfiguredError,
+            "low: provider needing auth for search was pruned "
+            "because no credentials could be found",
+        ):
+            self.manager.check_provider_available("low")
+
+        self.manager.pruned_providers_reasons["low"] = {
+            "reason": "SkippedSearch plugin skipped",
+            "reason_type": "skipped_plugin",
+        }
+        with self.assertRaisesRegex(
+            UnsupportedProvider,
+            "low: provider is not available because SkippedSearch plugin skipped",
+        ):
+            self.manager.check_provider_available("low")
+
+        # Clean up the pruned provider reason for "low" to avoid side effects in other tests.
+        del self.manager.pruned_providers_reasons["low"]
 
     def test_get_search_plugins_uses_collection_and_priority(self):
         """Search plugins use collection settings and priority ordering."""
@@ -98,7 +116,7 @@ class TestPluginManager(unittest.TestCase):
 
     def test_get_search_plugins_uses_generic_collection_fallback(self):
         """Unsupported collections fall back to generic collection settings."""
-        generic_provider = ProvidersDict.from_configs(
+        generic_provider = build_provider_configs(
             {
                 "generic": {
                     "products": {
@@ -112,15 +130,15 @@ class TestPluginManager(unittest.TestCase):
                 }
             }
         )
-        manager = PluginManager(generic_provider)
+        manager = make_plugins_manager(generic_provider)
 
         plugins = list(manager.get_search_plugins(collection="missing"))
 
-        self.assertEqual([plugin.provider for plugin in plugins], ["generic"])
+        self.assertListEqual([plugin.provider for plugin in plugins], ["generic"])
 
     def test_get_search_plugins_rejects_provider_without_search_or_api(self):
         """Search plugin construction fails for providers without a search plugin."""
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "broken": {
                     "products": {GENERIC_COLLECTION: {}},
@@ -132,42 +150,48 @@ class TestPluginManager(unittest.TestCase):
                 }
             }
         )
-        manager = PluginManager(providers)
-        manager.providers["broken"].config.search = None
+        delattr(providers["broken"], "search")
+        manager = make_plugins_manager(providers)
 
-        with self.assertRaisesRegex(MisconfiguredError, "No search plugin configured"):
-            list(manager.get_search_plugins(collection="FOO"))
+        with self.assertRaisesRegex(MisconfiguredError, "No search or api plugin configured for provider broken."):
+            list(manager.get_search_plugins(collection=GENERIC_COLLECTION))
 
-    @mock.patch.object(PluginManager, "_build_plugin")
-    def test_get_download_plugin_builds_download_plugin(self, build_plugin):
-        """Download selection builds the configured download plugin type."""
-        expected = mock.sentinel.download
-        build_plugin.return_value = expected
-        product = SimpleNamespace(provider="download")
+    def test_get_download_plugin_ok(self):
+        """Download selection succeeds for known correctly configured providers having the product collection."""
+        product = SimpleNamespace(provider="download", collection="BAR")
+        plugin = self.manager.get_download_plugin(product)
+        self.assertIsNotNone(plugin)
 
-        self.assertIs(self.manager.get_download_plugin(product), expected)
-        build_plugin.assert_called_once()
-        self.assertIs(build_plugin.call_args.args[2], Download)
-
-    def test_get_download_plugin_rejects_unknown_provider(self):
-        """Download selection rejects products from unknown providers."""
-        with self.assertRaisesRegex(UnsupportedProvider, "Provider unknown not found"):
+    def test_get_download_plugin_ko(self):
+        """Download selection rejects products from unknown providers,
+        misconfigured providers, and providers not having the product collection.
+        """
+        with self.assertRaisesRegex(UnsupportedProvider, "unknown: provider is not recognised by eodag"):
             self.manager.get_download_plugin(SimpleNamespace(provider="unknown"))
 
-    @mock.patch.object(PluginManager, "_build_plugin")
-    def test_get_auth_plugins_matches_url(self, build_plugin):
+        with self.assertRaisesRegex(MisconfiguredError, "No download plugin configured for provider low."):
+            self.manager.get_download_plugin(SimpleNamespace(provider="low", collection="FOO"))
+
+        with self.assertRaisesRegex(UnsupportedProvider, "Provider download not found with collection unknown"):
+            self.manager.get_download_plugin(SimpleNamespace(provider="download", collection="unknown"))
+
+    @mock.patch.object(PluginManager, "_get_or_create_auth_plugin")
+    def test_get_auth_plugins_matches_url(self, get_or_create_auth_plugin):
         """Authentication plugins match a configured URL pattern."""
         auth_type = "TokenAuth"
         matching_pattern = "provider-a"
         matching_url = "provider-a-endpoint"
         auth_config = SimpleNamespace(type=auth_type, matching_url=matching_pattern)
-        self.providers["low"].config.auth = auth_config
-        build_plugin.return_value = mock.sentinel.auth
+        cfg = ProviderConfig.from_mapping(self.manager._db.get_fb_config("low"))
+        cfg.auth = auth_config
+        self.manager._db.upsert_fb_configs([cfg])
+
+        get_or_create_auth_plugin.return_value = mock.sentinel.auth
 
         plugins = list(self.manager.get_auth_plugins("low", matching_url=matching_url))
 
-        self.assertEqual(plugins, [mock.sentinel.auth])
-        build_plugin.assert_called_once_with("low", auth_config, Authentication)
+        self.assertListEqual(plugins, [mock.sentinel.auth])
+        get_or_create_auth_plugin.assert_called_once_with("low", auth_config.__dict__, "auth", 1)
 
     @mock.patch.object(PluginManager, "get_auth_plugins")
     def test_get_auth_plugin_uses_associated_plugin(self, get_auth_plugins):
@@ -213,15 +237,3 @@ class TestPluginManager(unittest.TestCase):
         """Authentication returns None when no plugin matches."""
         self.assertIsNone(self.manager.get_auth("low"))
         get_auth_plugins.assert_called_once_with("low", None, None)
-
-    def test_set_priority_updates_configs_and_cached_plugins(self):
-        """Setting priority updates provider configuration and cached plugins."""
-        plugin = next(self.manager.get_search_plugins(provider="low"))
-        self.assertEqual(plugin.config.priority, 1)
-
-        self.manager.set_priority("low", 10)
-
-        self.assertEqual(plugin.priority, 10)
-        self.assertEqual(
-            self.manager.collection_to_provider_config_map["FOO"][1].priority, 2
-        )

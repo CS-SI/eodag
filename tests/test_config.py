@@ -26,8 +26,12 @@ from tempfile import TemporaryDirectory
 import pytest
 import yaml
 
-from eodag.api.provider import ProviderConfig, build_provider_configs, merge_provider_configs, _parse_env_provider_configs
-from eodag.config import PluginConfig
+from eodag.config import (
+    PluginConfig,
+    ProviderConfig,
+    _parse_env_provider_configs,
+    merge_provider_configs,
+)
 from eodag.utils import deepcopy
 from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
@@ -37,12 +41,14 @@ from tests.context import (
     USER_AGENT,
     ECMWFSearch,
     EODataAccessGateway,
-    PluginManager,
     StacSearch,
     ValidationError,
+    build_provider_configs,
     config,
     get_ext_collections_conf,
+    load_provider_configs,
     load_stac_provider_config,
+    make_plugins_manager,
     mock,
 )
 
@@ -209,7 +215,7 @@ class TestProviderConfig(unittest.TestCase):
             {
                 "provider1": provider1_config2,
                 "provider3": provider3_config2,
-            }
+            },
         )
 
         self.assertEqual(len(providers), 3)
@@ -371,8 +377,9 @@ class TestConfigFunctions(unittest.TestCase):
                 f"{provider_name} uses eodag:download_link in its products config",
             )
 
-        plugins_manager = PluginManager(ProvidersDict.from_configs(providers_config))
-        for provider_name in plugins_manager.providers:
+        providers = build_provider_configs(providers_config)
+        plugins_manager = make_plugins_manager(providers)
+        for provider_name in plugins_manager._db.get_federation_backends():
             search_plugin = next(
                 plugins_manager.get_search_plugins(provider=provider_name)
             )
@@ -390,7 +397,7 @@ class TestConfigFunctions(unittest.TestCase):
         """Config must be loaded with only the selected whitelist of providers"""
         try:
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
-            providers = build_provider_configs(config.load_provider_configs())
+            providers = load_provider_configs()
 
             self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
@@ -399,7 +406,7 @@ class TestConfigFunctions(unittest.TestCase):
     def test_override_config_from_str(self):
         """Default configuration must be overridden from a yaml conf str"""
 
-        providers = build_provider_configs(config.load_provider_configs())
+        providers = load_provider_configs()
         merge_provider_configs(
             providers,
             yaml.safe_load("""
@@ -435,7 +442,7 @@ class TestConfigFunctions(unittest.TestCase):
         )
 
     def test_override_config_from_file(self):
-        """Default configuration must be overridden from a conf file
+        """Default configuration must be overridden from a conf file.
 
         # noqa: E800
         Content of file_config_override.yml
@@ -482,7 +489,7 @@ class TestConfigFunctions(unittest.TestCase):
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
         """
-        providers = build_provider_configs(config.load_provider_configs())
+        providers = load_provider_configs()
         file_path_override = os.path.join(
             os.path.dirname(__file__), "resources", "file_config_override.yml"
         )
@@ -543,7 +550,7 @@ class TestConfigFunctions(unittest.TestCase):
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""
-        providers = build_provider_configs(config.load_provider_configs())
+        providers = load_provider_configs()
         os.environ["EODAG__USGS__PRIORITY"] = "5"
         os.environ["EODAG__USGS__API__EXTRACT"] = "false"
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
