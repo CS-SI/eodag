@@ -1630,7 +1630,7 @@ class TestCore(TestCoreBase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_auth_plugin",
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
     @mock.patch(
@@ -1832,7 +1832,9 @@ class TestCore(TestCoreBase):
         self, mock_discover_queryables: mock.Mock
     ):
         plugin = next(
-            self.dag.get_search_plugins(provider="cop_cds", collection="ERA5_SL")
+            self.dag._plugins_manager.get_search_plugins(
+                provider="cop_cds", collection="ERA5_SL"
+            )
         )
         # default values should be added to params
         self.dag.list_queryables(provider="cop_cds", collection="ERA5_SL")
@@ -1879,7 +1881,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_auth_plugin",
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
     @mock.patch(
@@ -1951,7 +1953,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_auth_plugin",
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
     @mock.patch(
@@ -2001,7 +2003,7 @@ class TestCore(TestCoreBase):
         self.assertEqual(queryables.additional_properties, True)
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_auth_plugin",
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
     @mock.patch(
@@ -2235,7 +2237,7 @@ class TestCore(TestCoreBase):
             self.assertIsNone(sortables["planetary_computer"]["max_sort_params"])
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_auth_plugin",
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
     @mock.patch("eodag.plugins.search.base.Search.validate", autospec=True)
@@ -2275,7 +2277,7 @@ class TestCore(TestCoreBase):
         mock_validate.reset_mock()
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_auth_plugin",
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
     @mock.patch(
@@ -3044,9 +3046,9 @@ class TestCoreSearch(TestCoreBase):
         autospec=True,
         return_value=(SearchResult([mock.Mock()], 1)),
     )
-    @mock.patch("eodag.api.core.EODataAccessGateway.get_auth_plugin", autospec=True)
+    @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.get_search_plugins",
+        "eodag.plugins.manager.PluginManager.get_search_plugins",
         autospec=True,
         return_value=[mock.Mock()],
     )
@@ -3694,7 +3696,9 @@ class TestCoreSearch(TestCoreBase):
         dag.update_providers_config(dummy_provider_config)
         dag.set_preferred_provider("dummy_provider")
 
-        search_plugin = next(dag.get_search_plugins(collection="S2_MSI_L1C"))
+        search_plugin = next(
+            dag._plugins_manager.get_search_plugins(collection="S2_MSI_L1C")
+        )
         self.assertIsNone(search_plugin.next_page_url)
         self.assertEqual(
             search_plugin.config.pagination["next_page_url_tpl"],
@@ -4039,7 +4043,7 @@ class TestCoreSearch(TestCoreBase):
         collection = "S2_MSI_L1C"
         dag = EODataAccessGateway()
 
-        for plugin in dag.get_search_plugins(collection=collection):
+        for plugin in dag._plugins_manager.get_search_plugins(collection=collection):
             plugin.query = mock.MagicMock()
             plugin.query.side_effect = RequestError
 
@@ -4076,13 +4080,13 @@ class TestCoreSearch(TestCoreBase):
         plugin.discover_collections = mock.Mock(return_value={"product1": {}})
 
         dag = EODataAccessGateway()
-        dag.get_search_plugins = mock.Mock(return_value=iter([plugin]))
+        dag._plugins_manager.get_search_plugins = mock.Mock(return_value=iter([plugin]))
         auth_mock = mock.Mock()
-        dag.get_auth = mock.Mock(return_value=auth_mock)
+        dag._plugins_manager.get_auth = mock.Mock(return_value=auth_mock)
         dag.update_collections_list = mock.Mock()
         dag._fetch_external_collection(provider, collection)
 
-        dag.get_auth.assert_called_once_with(
+        dag._plugins_manager.get_auth.assert_called_once_with(
             plugin.provider, plugin.config.api_endpoint, plugin.config
         )
         plugin.discover_collections.assert_called_once_with(
@@ -4139,12 +4143,16 @@ class TestCoreSearch(TestCoreBase):
         dag = EODataAccessGateway()
         downloader_mock = mock.Mock()
         auth_mock = mock.Mock()
-        dag.get_download_plugin = mock.Mock(return_value=downloader_mock)
-        dag.get_auth_plugin = mock.Mock(return_value=auth_mock)
+        dag._plugins_manager.get_download_plugin = mock.Mock(
+            return_value=downloader_mock
+        )
+        dag._plugins_manager.get_auth_plugin = mock.Mock(return_value=auth_mock)
         dag._setup_downloader(product)
 
-        dag.get_download_plugin.assert_called_once_with(product)
-        dag.get_auth_plugin.assert_called_once_with(downloader_mock, product)
+        dag._plugins_manager.get_download_plugin.assert_called_once_with(product)
+        dag._plugins_manager.get_auth_plugin.assert_called_once_with(
+            downloader_mock, product
+        )
         product.register_downloader.assert_called_once_with(downloader_mock, auth_mock)
 
     def test_setup_downloader_with_existing_auth(self):
@@ -4156,12 +4164,14 @@ class TestCoreSearch(TestCoreBase):
 
         dag = EODataAccessGateway()
         downloader_mock = mock.Mock()
-        dag.get_download_plugin = mock.Mock(return_value=downloader_mock)
-        dag.get_auth_plugin = mock.Mock()
+        dag._plugins_manager.get_download_plugin = mock.Mock(
+            return_value=downloader_mock
+        )
+        dag._plugins_manager.get_auth_plugin = mock.Mock()
 
         dag._setup_downloader(product)
-        dag.get_download_plugin.assert_called_once_with(product)
-        dag.get_auth_plugin.assert_not_called()
+        dag._plugins_manager.get_download_plugin.assert_called_once_with(product)
+        dag._plugins_manager.get_auth_plugin.assert_not_called()
         product.register_downloader.assert_called_once_with(
             downloader_mock, auth_existing
         )
@@ -4486,7 +4496,7 @@ class TestCoreProviderGroup(TestCoreBase):
         ]
         for provider in self.group:
             provider_search_plugin = next(
-                self.dag.get_search_plugins(provider=provider)
+                self.dag._plugins_manager.get_search_plugins(provider=provider)
             )
             if self.dag.providers[provider].fetchable:
                 self.assertIn(provider_search_plugin, mock_call_args_list)
@@ -4513,10 +4523,16 @@ class TestCoreProviderGroup(TestCoreBase):
         The method get_search_plugins is called with provider group
         It returns a list containing the 2 grouped plugins
         """
-        plugin1 = list(self.dag.get_search_plugins(provider=self.group[0]))
-        plugin2 = list(self.dag.get_search_plugins(provider=self.group[1]))
+        plugin1 = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group[0])
+        )
+        plugin2 = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group[1])
+        )
 
-        group_plugins = list(self.dag.get_search_plugins(provider=self.group_name))
+        group_plugins = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group_name)
+        )
 
         self.assertCountEqual(group_plugins, [*plugin1, *plugin2])
 

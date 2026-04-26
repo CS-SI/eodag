@@ -28,7 +28,7 @@ from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
-from eodag.api.provider import ProvidersDict, build_provider_configs
+from eodag.config import build_provider_configs
 from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
@@ -40,13 +40,13 @@ from tests.context import (
     EODataAccessGateway,
     EOProduct,
     NotAvailableError,
-    PluginManager,
     PreparedSearch,
     SearchResult,
     USGSAuthExpiredError,
     USGSError,
     get_geometry_from_various,
     load_default_config,
+    make_plugins_manager,
     path_to_uri,
     urlsplit,
 )
@@ -57,11 +57,11 @@ class BaseApisPluginTest(unittest.TestCase):
     def setUpClass(cls):
         super(BaseApisPluginTest, cls).setUpClass()
         providers = build_provider_configs(load_default_config())
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = (
-            lambda *x: x[0]
+        expanduser_mock_side_effect = lambda *x: (
+            x[0]
             .replace("~user", cls.tmp_home_dir.name)
             .replace("~", cls.tmp_home_dir.name)
         )
