@@ -185,12 +185,14 @@ class _EOIAMSessionAuth(AuthBase):
         We use the session's get/post to ensure login happens if needed.
         """
         session = self.auth_plugin.session
+        try:
+            resp = session.get(request.url, allow_redirects=True)
+            if "Earth Observation Identity and Access Management System" in resp.text:
+                resp = self.auth_plugin._login_from_html(resp.text, request.url)
 
-        resp = session.get(request.url, allow_redirects=True)
-        if "Earth Observation Identity and Access Management System" in resp.text:
-            self.auth_plugin._login_from_html(resp.text, req_url=request.url)
+            # Copy cookies from session to the request
+            request.prepare_cookies(self.auth_plugin.session.cookies)
 
-        # Copy cookies from session to the request
-        request.prepare_cookies(self.auth_plugin.session.cookies)
-
-        return request
+            return request
+        finally:
+            self.auth_plugin.session = requests.Session()

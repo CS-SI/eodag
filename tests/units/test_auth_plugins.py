@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from unittest import mock
 
 import boto3
+import requests
 import responses
 from mypy_boto3_s3.service_resource import BucketObjectsCollection
 from pystac.utils import now_in_utc
@@ -31,6 +32,7 @@ from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
+from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
 from eodag.utils.exceptions import RequestError
@@ -1387,6 +1389,78 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
             AuthenticationError, f"Data access request required: .* {final_url}"
         ):
             auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    def test_eoiam_session_auth_call_triggers_login_and_prepares_cookies(self):
+        """_EOIAMSessionAuth.__call__ should trigger login when landing on EOIAM page"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        # prepare a requests PreparedRequest
+        req = Request("GET", "http://service.test/resource").prepare()
+
+        # initial session.get returns EOIAM page
+        initial_resp = requests.Response()
+        initial_resp._content = (
+            b"Earth Observation Identity and Access Management System"
+        )
+        initial_resp.url = "http://login"
+
+        # login result is a normal response
+        login_result = requests.Response()
+        login_result._content = b"{}"
+
+        old_session = auth_plugin.session
+
+        with mock.patch.object(auth_plugin.session, "get", return_value=initial_resp):
+            with mock.patch.object(
+                auth_plugin, "_login_from_html", return_value=login_result
+            ) as mock_login:
+                # ensure there is a cookie jar so prepare_cookies can operate
+                jar = requests.cookies.RequestsCookieJar()
+                jar.set("sid", "1234", domain="service.test", path="/")
+                auth_plugin.session.cookies = jar
+
+                auth = _EOIAMSessionAuth(auth_plugin)
+                returned = auth(req)
+
+                mock_login.assert_called_once_with(initial_resp.text, req.url)
+                self.assertIs(returned, req)
+
+        self.assertIsInstance(auth_plugin.session, requests.Session)
+        self.assertIsNot(auth_plugin.session, old_session)
+
+    def test_eoiam_session_auth_call_resets_session_on_login_error(self):
+        """_EOIAMSessionAuth.__call__ should reset session even when login fails"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        req = Request("GET", "http://service.test/resource").prepare()
+        initial_resp = requests.Response()
+        initial_resp._content = (
+            b"Earth Observation Identity and Access Management System"
+        )
+        initial_resp.url = "http://login"
+
+        old_session = auth_plugin.session
+
+        with mock.patch.object(auth_plugin.session, "get", return_value=initial_resp):
+            with mock.patch.object(
+                auth_plugin,
+                "_login_from_html",
+                side_effect=AuthenticationError("boom"),
+            ):
+                auth = _EOIAMSessionAuth(auth_plugin)
+                with self.assertRaises(AuthenticationError):
+                    auth(req)
+
+        self.assertIsInstance(auth_plugin.session, requests.Session)
+        self.assertIsNot(auth_plugin.session, old_session)
 
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
