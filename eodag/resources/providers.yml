@@ -6577,6 +6577,7 @@
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
+---
 !provider # MARK: cop_dataspace_s3
   name: cop_dataspace_s3
   priority: 0
