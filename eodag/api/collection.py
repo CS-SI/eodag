@@ -133,6 +133,11 @@ class Collection(StacCollection):
         default=None, alias="federation:backends"
     )
 
+    # Federation extension fields
+    federation: Optional[dict[str, dict[str, Optional[str]]]] = Field(
+        default=None, alias="federation"
+    )
+
     # summaries
     constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
     instruments: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
@@ -163,7 +168,8 @@ class Collection(StacCollection):
 
     # only STAC fields
     __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [
-        "federation_backends"
+        "federation_backends",
+        "federation",
     ]
 
     # mandatory STAC fields which are fixed by their default value

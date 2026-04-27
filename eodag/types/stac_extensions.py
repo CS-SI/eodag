@@ -390,6 +390,22 @@ class DatacubeExtension(BaseStacExtension):
     field_name_prefix: Optional[str] = "cube"
 
 
+class FederationFields(BaseModel):
+    """
+    https://github.com/Open-EO/openeo-api/tree/master/extensions/federation
+    """
+
+    federation: Annotated[dict[str, dict[str, Any]], Field(None)]
+
+
+class FederationExtension(BaseStacExtension):
+    """STAC federation extension."""
+
+    FIELDS: type[BaseModel] = FederationFields
+
+    field_name_prefix: Optional[str] = "federation"
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),

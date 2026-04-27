@@ -49,6 +49,7 @@ BASE_COLLECTION_TABLE_COLUMNS: dict[str, str] = {
     "geometry": "geometry",
     "content": "content",
     "federation:backends": "federation_backends",
+    "federation": "federation",
     "priority": "priority",
 }
 
