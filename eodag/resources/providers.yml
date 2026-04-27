@@ -6581,14 +6581,14 @@
 !provider # MARK: cop_dataspace_s3
   name: cop_dataspace_s3
   priority: 0
-  description: Copernicus Data Space Ecosystem
+  description: Copernicus Data Space Ecosystem through S3 protocol
   roles:
     - host
   url: https://dataspace.copernicus.eu/
   search: !plugin
     type: CreodiasS3Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
-    s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
     need_auth: true
     timeout: 120
     ssl_verify: true
@@ -6599,11 +6599,15 @@
       - '='
       - '&'
       - ':'
+      - '%'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
-      max_items_per_page: 1_000
+      max_limit: 1_000
     sort:
       sort_by_default:
         - !!python/tuple [start_datetime, ASC]
@@ -6631,8 +6635,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platform#replace_str(\"^S[1-3]\", \"\")}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{gsd}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{providers}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:absolute_orbit}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq '{sat:relative_orbit}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq {sat:absolute_orbit})"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq {sat:relative_orbit})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
@@ -6711,7 +6715,7 @@
         - '$.Attributes.processingCenter'
       processing:version:
         - null
-        - '$.Attributes.processorVersion'
+        - '{$.Attributes.processorVersion#to_geojson}'
       _processor_name:
         - null
         - '$.Attributes.processorName'
@@ -6813,7 +6817,7 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
+      eodag:download_link: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
@@ -6823,15 +6827,16 @@
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
   download: !plugin
     type: AwsDownload
-    s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
     s3_bucket: 'eodata.dataspace.copernicus.eu'
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
-    s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
+    support_presign_url: False
     matching_conf:
-      s3_endpoint: 'https://eodata.dataspace.copernicus.eu/'
+      s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
   products:
     # S2
     S2_MSI_L1C:
@@ -6849,6 +6854,54 @@
           - null
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
     # S1
+    S1_AUX_GNSSRD:
+      product:type: AUX_GNSSRD
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_MOEORB:
+      product:type: AUX_MOEORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_POEORB:
+      product:type: AUX_POEORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_PREORB:
+      product:type: AUX_PREORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_PROQUA:
+      product:type: AUX_PROQUA
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_RESORB:
+      product:type: AUX_RESORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
     S1_SAR_RAW:
       product:type: RAW
       _collection: SENTINEL-1
@@ -6932,6 +6985,30 @@
           - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
     S3_LAN:
       product:type: SR_2_LAN___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN_HY:
+      product:type: SR_2_LAN_HY
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN_SI:
+      product:type: SR_2_LAN_SI
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN_LI:
+      product:type: SR_2_LAN_LI
       _collection: SENTINEL-3
       metadata_mapping:
         eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
