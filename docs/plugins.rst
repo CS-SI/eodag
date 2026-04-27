@@ -47,6 +47,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_dataspace``      | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_dataspace_s3``   | |CreodiasS3Search|                 | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_ghsl``           | |CopGhslSearch|                    | ``None``                        | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_marine``         | |CopMarineSearch|                  | |AwsAuth|                       | |AwsDownload|    |
