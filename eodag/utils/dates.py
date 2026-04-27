@@ -146,15 +146,15 @@ def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str
 
     Examples:
         >>> get_datetime({"datetime": "2023-03-01/2023-03-31"})
-        ('2023-03-01T00:00:00', '2023-03-31T00:00:00')
+        ('2023-03-01T00:00:00Z', '2023-03-31T00:00:00Z')
         >>> get_datetime({"datetime": "2023-03-01"})
-        ('2023-03-01T00:00:00', '2023-03-01T00:00:00')
+        ('2023-03-01T00:00:00Z', '2023-03-01T00:00:00Z')
         >>> get_datetime({"datetime": "../2023-03-31"})
-        (None, '2023-03-31T00:00:00')
+        (None, '2023-03-31T00:00:00Z')
         >>> get_datetime({"datetime": "2023-03-01/.."})
-        ('2023-03-01T00:00:00', None)
+        ('2023-03-01T00:00:00Z', None)
         >>> get_datetime({"dtstart": "2023-03-01", "dtend": "2023-03-31"})
-        ('2023-03-01T00:00:00', '2023-03-31T00:00:00')
+        ('2023-03-01T00:00:00Z', '2023-03-31T00:00:00Z')
         >>> get_datetime({})
         (None, None)
     """
@@ -190,7 +190,7 @@ def get_date(date: Optional[str]) -> Optional[str]:
     Examples:
         >>> from eodag.utils.exceptions import ValidationError
         >>> get_date("2023-09-23")
-        '2023-09-23T00:00:00'
+        '2023-09-23T00:00:00Z'
         >>> get_date(None) is None
         True
         >>> get_date("invalid-date")  # doctest: +IGNORE_EXCEPTION_DETAIL
@@ -206,7 +206,7 @@ def get_date(date: Optional[str]) -> Optional[str]:
             dateutil.parser.parse(date)
             .replace(tzinfo=tz.UTC)
             .isoformat()
-            .replace("+00:00", "")
+            .replace("+00:00", "Z")
         )
     except ValueError as e:
         exc = ValidationError("invalid input date: %s" % e)
