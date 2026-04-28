@@ -111,34 +111,28 @@ class GeodesSearch(StacSearch):
         """Build EOProducts from provider results"""
 
         # Preprocess parsable description
-        for index in range(0, len(results)):
-            assets = results[index].get("assets", {})
-            for key in assets:
-                segments = assets[key].get("description", "").split("\n")
+        for result in results:
+            for asset in result.get("assets", {}).values():
+                for segment in asset.get("description", "").split("\n"):
+                    key, sep, value = segment.strip("\r\t").partition(":")
+                    if not sep:
+                        continue
+                    value = value.strip()
 
-                for segment in segments:
-                    segment = segment.strip("\r\t")
-
-                    if segment.startswith("File size") and (segment.endswith("byte")):
-                        filesize = segment[10:-4].strip()
+                    if key == "File size":
+                        filesize = (
+                            value.removesuffix("bytes").removesuffix("byte").strip()
+                        )
                         if filesize.isnumeric():
-                            assets[key]["file:size"] = int(filesize)
-                    elif segment.startswith("File size") and (
-                        segment.endswith("bytes")
-                    ):
-                        filesize = segment[10:-5].strip()
-                        if filesize.isnumeric():
-                            assets[key]["file:size"] = int(filesize)
-                    elif segment.startswith("Is reference:"):
-                        assets[key]["geodes:reference"] = segment[14:].lower() == "true"
-                    elif segment.startswith("Is online:"):
-                        assets[key]["geodes:online"] = segment[11:].lower() == "true"
-                    elif segment.startswith("Datatype:"):
-                        assets[key]["geodes:datatype"] = segment[10:]
-                    elif segment.startswith("Checksum MD5:"):
-                        assets[key]["file:checksum"] = segment[14:].lower()
-
-            results[index]["assets"] = assets
+                            asset["file:size"] = int(filesize)
+                    elif key == "Is reference":
+                        asset["geodes:reference"] = value.lower() == "true"
+                    elif key == "Is online":
+                        asset["geodes:online"] = value.lower() == "true"
+                    elif key == "Datatype":
+                        asset["geodes:datatype"] = value
+                    elif key == "Checksum MD5":
+                        asset["file:checksum"] = value.lower()
 
         products = super(GeodesSearch, self).normalize_results(results, **kwargs)
 
