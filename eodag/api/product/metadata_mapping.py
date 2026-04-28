@@ -1863,6 +1863,8 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                     processed_bands.append(band)
 
             # migrate raster:bands -> bands
+            if not processed_bands:
+                processed_bands = [{}]
             if len(bands["raster:bands"]) > 0:
                 index = 0
                 for item in bands["raster:bands"]:
