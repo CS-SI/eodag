@@ -36,8 +36,7 @@ from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
-from shapely.geometry import LineString, MultiPolygon, Point, Polygon, shape
-from shapely.geometry.base import GEOMETRY_TYPES
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import transform
 
 from eodag.types.queryables import Queryables
@@ -433,31 +432,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_to_geojson_polytope(
-            value: Any,
-        ) -> Union[dict[Any, Any], str, None]:
+            value: BaseGeometry,
+        ) -> Union[dict[Any, Any], str]:
             # ECMWF Polytope uses non-geojson structure for features
-            if value is None:
-                return None
-            if isinstance(value, dict):
-                if value.get("type") in (
-                    "polygon",
-                    "boundingbox",
-                    "position",
-                    "timeseries",
-                    "verticalprofile",
-                    "trajectory",
-                    "circle",
-                ):
-                    return value
-                if value.get("type") in GEOMETRY_TYPES:
-                    value = shape(value)
-                elif "coordinates" in value:
-                    value = shape(value)
-                else:
-                    raise ValidationError(
-                        "to_geojson_polytope only accepts shapely Polygon, Point, LineString, "
-                        "geojson geometry objects or ECMWF polytope feature dicts"
-                    )
             if isinstance(value, Polygon):
                 return {
                     "type": "polygon",
@@ -472,8 +449,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                     "inflation": 0,
                 }
             raise ValidationError(
-                "to_geojson_polytope only accepts shapely Polygon, Point, LineString, "
-                "geojson geometry objects or ECMWF polytope feature dicts"
+                "to_geojson_polytope only accepts shapely Polygon, Point and LineString"
             )
 
         @staticmethod

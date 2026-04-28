@@ -711,9 +711,6 @@ class ECMWFSearch(PostJsonSearch):
         # available values or the collection config (available values calculated from the
         # constraints might not include all queryables)
         for keyword in processed_filters:
-            normalized_keyword = keyword.removeprefix(ECMWF_PREFIX).removeprefix(
-                f"{ECMWF_PREFIX[:-1]}_"
-            )
             if (
                 keyword
                 not in available_values.keys()
@@ -724,9 +721,9 @@ class ECMWFSearch(PostJsonSearch):
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
-                and normalized_keyword
+                and keyword
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
-                and not self._is_discoverable_metadata_key(normalized_keyword)
+                and not self._is_discoverable_metadata_key(keyword)
             ):
                 raise ValidationError("'%s' is not a queryable parameter" % keyword)
 
