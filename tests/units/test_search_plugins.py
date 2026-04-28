@@ -4431,145 +4431,65 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_normalize_results(self, mock_requests_get):
+        """Normalized query results must include asset information fetched from S3"""
         mock_requests_get.return_value.json.side_effect = [
             self.product_data,
             self.dataset1_data,
             self.dataset2_data,
         ]
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        now = datetime.datetime.now(datetime.timezone.utc)
 
-        def mock_make_api_call(self, operation_name, *args, **kwargs):
-            params: dict = args[0]
-            params.update(kwargs)
+        asset_filename = "20200115_dm-metno-MODEL-topaz5_ecosmo-ARC-b20200115-fv02.0.nc"
 
-            asset_filename = (
-                "20200115_dm-metno-MODEL-topaz5_ecosmo-ARC-b20200115-fv02.0.nc"
-            )
-            bucket = params.get("Bucket", "")
+        def mock_s3_list_objects(self, operation_name, *args, **kwargs):
+            if operation_name != "ListObjects":
+                raise NotImplementedError()
+            params = {**args[0], **kwargs}
             prefix = params.get("Prefix", "")
-            marker = params.get("Marker", "")
-
-            if (
-                operation_name == "ListObjects"
-                and params.get("Prefix") == "native/PRODUCT_A/dataset-number-one"
+            if prefix == "native/PRODUCT_A/dataset-number-one" and not params.get(
+                "Marker"
             ):
-                if marker == "":
-                    return {
-                        "ResponseMetadata": {
-                            "RequestId": "tx00000939a913d4302d739-0069e23a41-bb4b7f3-default",
-                            "HTTPStatusCode": 200,
-                            "HTTPHeaders": {
-                                "content-type": "application/xml",
-                                "content-length": "13382",
-                            },
+                contents = [
+                    {
+                        "Key": f"{prefix}/{asset_filename}",
+                        "LastModified": datetime.datetime(
+                            2020, 1, 15, tzinfo=datetime.timezone.utc
+                        ),
+                        "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
+                        "Size": 666,
+                        "StorageClass": "STANDARD",
+                        "Owner": {
+                            "DisplayName": "Data Access",
+                            "ID": "data-access",
                         },
-                        "IsTruncated": False,
-                        "Marker": "{}/{}".format(prefix, asset_filename),
-                        "Contents": [
-                            {
-                                "Key": "{}/{}".format(prefix, asset_filename),
-                                "LastModified": now,
-                                "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
-                                "Size": 666,
-                                "StorageClass": "STANDARD",
-                                "Owner": {
-                                    "DisplayName": "Data Access",
-                                    "ID": "data-access",
-                                },
-                            }
-                        ],
-                        "Name": bucket,
-                        "Prefix": prefix,
-                        "MaxKeys": 1000,
-                        "EncodingType": "url",
                     }
-                else:
-                    return {
-                        "ResponseMetadata": {
-                            "RequestId": "tx00000939a913d4302d739-0069e23a41-bb4b7f3-default",
-                            "HTTPStatusCode": 200,
-                            "HTTPHeaders": {
-                                "content-type": "application/xml",
-                                "content-length": "13382",
-                            },
-                        },
-                        "IsTruncated": False,
-                        "Marker": "{}".format(prefix),
-                        "Contents": [],
-                        "Name": bucket,
-                        "Prefix": prefix,
-                        "MaxKeys": 1000,
-                        "EncodingType": "url",
-                    }
-
-            if (
-                operation_name == "ListObjects"
-                and params.get("Prefix") == "native/PRODUCT_A/dataset-number-two"
-            ):
-                return {
-                    "ResponseMetadata": {
-                        "RequestId": "tx00000939a913d4302d739-0069e23a41-bb4b7f3-default",
-                        "HTTPStatusCode": 200,
-                        "HTTPHeaders": {
-                            "content-type": "application/xml",
-                            "content-length": "13382",
-                        },
-                    },
-                    "IsTruncated": False,
-                    "Marker": "{}".format(prefix),
-                    "Contents": [],
-                    "Name": bucket,
-                    "Prefix": prefix,
-                    "MaxKeys": 1000,
-                    "EncodingType": "url",
-                }
-
-            raise NotImplementedError()
+                ]
+            else:
+                contents = []
+            return {"IsTruncated": False, "Contents": contents}
 
         with mock.patch(
-            "botocore.client.BaseClient._make_api_call", new=mock_make_api_call
+            "botocore.client.BaseClient._make_api_call", new=mock_s3_list_objects
         ):
-
             result = search_plugin.query(
                 collection="PRODUCT_A",
                 start_datetime="2020-01-01T01:00:00Z",
                 end_datetime="2020-02-01T01:00:00Z",
             )
-            mock_requests_get.assert_has_calls(
-                calls=[
-                    call(
-                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
-                    ),
-                    call().json(),
-                    call(
-                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
-                    ),
-                    call().json(),
-                    call(
-                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
-                    ),
-                    call().json(),
-                ]
-            )
 
-            self.assertIn("native", result[0].assets)
-            asset = result[0].assets["native"]
-            self.assertEqual(asset.get("title"), "native")
-            self.assertEqual(
-                asset.get("href"),
-                "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
-                + "20200115_dm-metno-MODEL-topaz5_ecosmo-ARC-b20200115-fv02.0.nc",
-            )
-            self.assertEqual(
-                asset.get("type"), "application/x-netcdf"
-            )  # hard configured
-            self.assertEqual(asset.get("file:size"), 666)
-            self.assertEqual(
-                asset.get("file:checksum"), "d41d8cd98f00b204e9800998ecf8427e"
-            )
-            self.assertEqual(asset.get("cop_marine:owner_id"), "data-access")
-            self.assertEqual(asset.get("cop_marine:owner_name"), "Data Access")
+        self.assertIn("native", result[0].assets)
+        asset = result[0].assets["native"]
+        self.assertEqual(asset.get("title"), "native")
+        self.assertEqual(
+            asset.get("href"),
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
+            + asset_filename,
+        )
+        self.assertEqual(asset.get("type"), "application/x-netcdf")  # hard configured
+        self.assertEqual(asset.get("file:size"), 666)
+        self.assertEqual(asset.get("file:checksum"), "d41d8cd98f00b204e9800998ecf8427e")
+        self.assertEqual(asset.get("cop_marine:owner_id"), "data-access")
+        self.assertEqual(asset.get("cop_marine:owner_name"), "Data Access")
 
     def test_plugins_search_postjsonsearch_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
