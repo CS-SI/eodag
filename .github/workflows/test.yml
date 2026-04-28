@@ -162,6 +162,8 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
         args: >
+          -Dsonar.projectKey=cs-si_eodag
+          -Dsonar.organization=cs-si
           -Dsonar.python.version=3.9,3.10,3.11,3.12,3.13,3.14
           -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
           -Dsonar.sources=eodag/
