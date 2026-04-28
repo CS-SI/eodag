@@ -73,7 +73,12 @@ from eodag.utils.dates import (
     time_values_to_hhmm,
     validate_datetime_param,
 )
-from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
+from eodag.utils.exceptions import (
+    DownloadError,
+    MisconfiguredError,
+    NotAvailableError,
+    ValidationError,
+)
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
@@ -487,19 +492,10 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
-        # ECMWF Polytope uses non-geojson structure for features.
-        # Only polygon feature is converted to geometry.
-        # Other feature types are kept untouched for discover_metadata.
+        # ECMWF Polytope uses non-geojson structure for features
         if "feature" in params:
-            feature = params["feature"]
-            feature_type = (
-                str(feature.get("type", "")).lower()
-                if isinstance(feature, dict)
-                else ""
-            )
-            if feature_type == "polygon":
-                params["geometry"] = get_geometry_from_ecmwf_feature(feature)
-                params.pop("feature")
+            params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
+            params.pop("feature")
         # bounding box in area format
         if "area" in params:
             params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
@@ -594,23 +590,17 @@ class ECMWFSearch(PostJsonSearch):
 
     def _is_discoverable_metadata_key(self, key: str) -> bool:
         """Check if a key can bypass strict queryables validation via discover_metadata."""
-        discover_metadata = getattr(self.config, "discover_metadata", {}) or {}
-        if not discover_metadata.get("auto_discovery", False):
+
+        discover_metadata = getattr(self.config, "discover_metadata", None) or {}
+        if not discover_metadata.get("auto_discovery"):
             return False
 
-        metadata_pattern = discover_metadata.get("metadata_pattern", "")
-        if not metadata_pattern:
-            return False
-
+        pattern = discover_metadata.get("metadata_pattern") or ""
         try:
-            return bool(re.match(metadata_pattern, key))
+            return bool(pattern and re.match(pattern, key))
         except re.error:
-            logger.warning(
-                "Invalid discover_metadata.metadata_pattern for provider %s: %s",
-                self.provider,
-                metadata_pattern,
-            )
-            return False
+            msg = f"Invalid discover_metadata.metadata_pattern for provider {self.provider}: {pattern}"
+            raise MisconfiguredError(msg)
 
     def discover_queryables(
         self,

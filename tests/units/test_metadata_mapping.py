@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import ast
 import unittest
 from unittest import mock
 
@@ -189,6 +190,31 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, fieldname=geom),
             '{"type": "Point", "coordinates": [0.11, 1.22]}',
+        )
+
+    def test_convert_to_geojson_polytope_supports_ecmwf_feature_and_geometry(self):
+        to_format = "{fieldname#to_geojson_polytope}"
+
+        point = get_geometry_from_various(geometry="POINT (0.11 1.22)")
+        self.assertEqual(
+            ast.literal_eval(format_metadata(to_format, fieldname=point)),
+            {"type": "position", "points": [[1.22, 0.11]]},
+        )
+
+        line = get_geometry_from_various(geometry="LINESTRING (0 0, 1 1)")
+        self.assertEqual(
+            ast.literal_eval(format_metadata(to_format, fieldname=line)),
+            {
+                "type": "trajectory",
+                "points": [[0.0, 0.0], [1.0, 1.0]],
+                "inflation": 0,
+            },
+        )
+
+        ecmwf_feature = {"type": "position", "points": [[43.5, 1.5]]}
+        self.assertEqual(
+            ast.literal_eval(format_metadata(to_format, fieldname=ecmwf_feature)),
+            ecmwf_feature,
         )
 
     def test_convert_from_ewkt(self):

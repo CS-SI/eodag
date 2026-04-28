@@ -36,7 +36,8 @@ from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon, shape
+from shapely.geometry.base import GEOMETRY_TYPES
 from shapely.ops import transform
 
 from eodag.types.queryables import Queryables
@@ -432,15 +433,48 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_to_geojson_polytope(
-            value: BaseGeometry,
-        ) -> Union[dict[Any, Any], str]:
+            value: Any,
+        ) -> Union[dict[Any, Any], str, None]:
             # ECMWF Polytope uses non-geojson structure for features
+            if value is None:
+                return None
+            if isinstance(value, dict):
+                if value.get("type") in (
+                    "polygon",
+                    "boundingbox",
+                    "position",
+                    "timeseries",
+                    "verticalprofile",
+                    "trajectory",
+                    "circle",
+                ):
+                    return value
+                if value.get("type") in GEOMETRY_TYPES:
+                    value = shape(value)
+                elif "coordinates" in value:
+                    value = shape(value)
+                else:
+                    raise ValidationError(
+                        "to_geojson_polytope only accepts shapely Polygon, Point, LineString, "
+                        "geojson geometry objects or ECMWF polytope feature dicts"
+                    )
             if isinstance(value, Polygon):
                 return {
                     "type": "polygon",
                     "shape": [[y, x] for x, y in value.exterior.coords],
                 }
-            raise ValidationError("to_geojson_polytope only accepts shapely Polygon")
+            if isinstance(value, Point):
+                return {"type": "position", "points": [[value.y, value.x]]}
+            if isinstance(value, LineString):
+                return {
+                    "type": "trajectory",
+                    "points": [[y, x] for x, y in value.coords],
+                    "inflation": 0,
+                }
+            raise ValidationError(
+                "to_geojson_polytope only accepts shapely Polygon, Point, LineString, "
+                "geojson geometry objects or ECMWF polytope feature dicts"
+            )
 
         @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:

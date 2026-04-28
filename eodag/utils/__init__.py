@@ -68,7 +68,7 @@ from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError, Response
-from shapely.geometry import Polygon, box, shape
+from shapely.geometry import LineString, Point, Polygon, box, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
@@ -1128,6 +1128,19 @@ def get_geometry_from_various(
                     (geom_arg["lonmax"], geom_arg["latmin"]),
                 )
             )
+        elif isinstance(geom_arg, dict) and "feature" in geom_arg:
+            feature = geom_arg["feature"]
+            if isinstance(feature, dict):
+                if feature.get("type") in GEOMETRY_TYPES or "coordinates" in feature:
+                    geom = get_geometry_from_various(geometry=feature)
+                else:
+                    geom = get_geometry_from_ecmwf_feature(feature)
+            elif feature is None:
+                pass
+            else:
+                raise TypeError("Unexpected geometry type: {}".format(type(feature)))
+        elif isinstance(geom_arg, dict) and "type" in geom_arg:
+            geom = get_geometry_from_ecmwf_feature(geom_arg)
         elif isinstance(geom_arg, (list, tuple)) and len(geom_arg) >= 4:
             # bbox list
             geom = Polygon(
@@ -1186,25 +1199,108 @@ def get_geometry_from_various(
     return geom
 
 
-def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry:
-    """
-    Creates a ``shapely.geometry`` from ECMWF Polytope shape.
+def _ecmwf_point_to_lonlat(
+    point: list[Any], axes: Optional[Union[list[str], str]] = None
+) -> tuple[float, float]:
+    if not isinstance(point, (list, tuple)) or len(point) < 2:
+        raise TypeError("ECMWF feature point must be a list of at least 2 values")
 
-    :param geom: ECMWF Polytope shape.
-    :returns: A Shapely polygon.
+    if axes is None:
+        lat, lon = point[0], point[1]
+    else:
+        axis_list = [axes] if isinstance(axes, str) else list(axes)
+        axis_list_lower = [str(axis).lower() for axis in axis_list]
+        lat_index = None
+        lon_index = None
+        for name in ("latitude", "lat"):
+            if name in axis_list_lower:
+                lat_index = axis_list_lower.index(name)
+                break
+        for name in ("longitude", "lon"):
+            if name in axis_list_lower:
+                lon_index = axis_list_lower.index(name)
+                break
+        if lat_index is None or lon_index is None:
+            lat, lon = point[0], point[1]
+        else:
+            lat = point[lat_index]
+            lon = point[lon_index]
+
+    return float(lon), float(lat)
+
+
+def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeometry]:
+    """
+    Creates a ``shapely.geometry`` from an ECMWF Polytope feature.
+
+    Supported ECMWF feature types:
+      - ``polygon``: returns a :class:`~shapely.geometry.Polygon`
+      - ``boundingbox``: returns a :class:`~shapely.geometry.Polygon` via :func:`~shapely.geometry.box`
+      - ``position``, ``timeseries``, ``verticalprofile``: return a :class:`~shapely.geometry.Point`
+      - ``trajectory``: returns a :class:`~shapely.geometry.LineString`
+      - ``circle``: no direct Shapely equivalent, returns ``None`` and lets default geometry take over
+
+    :param geom: ECMWF Polytope feature.
+    :returns: A Shapely geometry or ``None`` for circle features.
     """
     if not isinstance(geom, dict):
         raise TypeError("Geometry must be a dictionary")
-    if "type" not in geom or geom["type"] != "polygon":
-        raise TypeError("Geometry type must be 'polygon'")
-    if "shape" not in geom:
-        raise TypeError("Missing shape in the geometry")
-    if not isinstance(geom["shape"], list):
-        raise TypeError("Geometry shape must be a list")
+    if "type" not in geom:
+        raise TypeError("Geometry type must be specified")
 
-    shape: list = geom["shape"]
-    polygon_args = [(p[1], p[0]) for p in shape]
-    return Polygon(polygon_args)
+    geom_type = geom["type"].lower()
+    axes = geom.get("axes")
+
+    if geom_type == "polygon":
+        if "shape" not in geom:
+            raise TypeError("Missing shape in the geometry")
+        if not isinstance(geom["shape"], list):
+            raise TypeError("Geometry shape must be a list")
+        polygon_shape: list[Any] = geom["shape"]
+        polygon_args = [_ecmwf_point_to_lonlat(point, axes) for point in polygon_shape]
+        return Polygon(polygon_args)
+
+    if geom_type == "boundingbox":
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if not isinstance(geom["points"], list):
+            raise TypeError("Geometry points must be a list")
+        bbox_points = [_ecmwf_point_to_lonlat(point, axes) for point in geom["points"]]
+        lon_values = [lon for lon, _ in bbox_points]
+        lat_values = [lat for _, lat in bbox_points]
+        return box(min(lon_values), min(lat_values), max(lon_values), max(lat_values))
+
+    if geom_type in ("position", "timeseries", "verticalprofile"):
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if geom_type == "timeseries" and geom.get("time_axis") in (None, ""):
+            raise TypeError("Missing time_axis in the geometry")
+        if not isinstance(geom["points"], list) or not geom["points"]:
+            raise TypeError("Geometry points must be a non-empty list")
+        lon, lat = _ecmwf_point_to_lonlat(geom["points"][0], axes)
+        return Point(lon, lat)
+
+    if geom_type == "trajectory":
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if geom.get("inflation") in (None, ""):
+            raise TypeError("Missing inflation in the geometry")
+        if not isinstance(geom["points"], list) or len(geom["points"]) < 2:
+            raise TypeError("Trajectory points must be a list of at least 2 positions")
+        line_coords = [_ecmwf_point_to_lonlat(point, axes) for point in geom["points"]]
+        return LineString(line_coords)
+
+    if geom_type == "circle":
+        if "center" not in geom:
+            raise TypeError("Missing center in the geometry")
+        if geom.get("radius") in (None, ""):
+            raise TypeError("Missing radius in the geometry")
+        return None
+
+    raise TypeError(
+        "Unsupported ECMWF geometry type. "
+        "Supported types are: polygon, boundingbox, position, timeseries, verticalprofile, trajectory, circle."
+    )
 
 
 def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
