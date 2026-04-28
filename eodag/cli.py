@@ -48,7 +48,6 @@ from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
-from concurrent.futures import ThreadPoolExecutor
 
 from eodag.api.collection import CollectionsList
 from eodag.api.core import EODataAccessGateway, SearchResult
@@ -622,10 +621,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     else:
         # Download products
-        executor = ThreadPoolExecutor(max_workers=kwargs.pop("max_workers"))
-        downloaded_files = satim_api.download_all(
-            search_results, output_dir=output_dir, executor=executor
-        )
+        downloaded_files = satim_api.download_all(search_results, output_dir=output_dir)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
                 if downloaded_file is None:

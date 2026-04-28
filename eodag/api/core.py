@@ -52,9 +52,7 @@ from eodag.config import (
     load_yml_config,
 )
 from eodag.plugins.manager import PluginManager
-from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import MeteoblueSearch
-from eodag.plugins.search.qssearch import PostJsonSearch
+from eodag.plugins.search import MeteoblueSearch, PostJsonSearch, PreparedSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
@@ -70,7 +68,6 @@ from eodag.utils import (
     makedirs,
     sort_dict,
     string_to_jsonpath,
-    uri_to_path,
 )
 from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
 from eodag.utils.env import is_env_var_true
@@ -86,12 +83,11 @@ from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
-    from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.plugins.apis.base import Api
-    from eodag.plugins.crunch.base import Crunch
-    from eodag.plugins.search.base import Search
+    from eodag.plugins.apis import Api
+    from eodag.plugins.crunch import Crunch
+    from eodag.plugins.search import Search
     from eodag.types import ProviderSortables
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
@@ -350,6 +346,7 @@ class EODataAccessGateway:
 
         # loop over a copy to allow popping items
         for name, provider in list(self._providers.items()):
+
             conf = provider.config
 
             # remove providers using skipped plugins
@@ -1760,6 +1757,7 @@ class EODataAccessGateway:
         if not provider:
             provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
+
         if provider not in providers:
             logger.debug(
                 "Collection '%s' is not available with preferred provider '%s'.",
@@ -1774,8 +1772,8 @@ class EODataAccessGateway:
             search_plugins.insert(0, provider_plugin)
         # Add collections_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
-        for search_plugin in search_plugins:
-            if collection is not None:
+        if collection is not None:
+            for search_plugin in search_plugins:
                 self._attach_collection_config(search_plugin, collection)
 
         return search_plugins, kwargs
@@ -1867,7 +1865,6 @@ class EODataAccessGateway:
                 search_plugin.validate(search_params, prep.auth)
 
             search_result = search_plugin.query(prep, **search_params)
-
             if not isinstance(search_result, SearchResult):
                 raise PluginImplementationError(
                     "The query function of a Search plugin must return a SearchResult "
@@ -1910,7 +1907,7 @@ class EODataAccessGateway:
                         eo_product.collection = guesses[0].id
 
                 if eo_product.search_intersection is not None:
-                    eo_product._register_downloader_from_manager(self._plugins_manager)
+                    eo_product.register_plugin_manager(self._plugins_manager)
 
             # Make next_page not available if the current one returned less than the maximum number of items asked for.
             if not prep.limit or len(search_result) < prep.limit:
@@ -1975,7 +1972,6 @@ class EODataAccessGateway:
         search_result: SearchResult,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -1993,40 +1989,35 @@ class EODataAccessGateway:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param executor: (optional) An executor to download EO products of ``search_result`` in parallel
-                                    which will also be reused to download assets of these products in parallel.
         :param wait: (optional) If download fails, wait time in minutes between
-                     two download tries of the same product
+                                two download tries of the same product
         :param timeout: (optional) If download fails, maximum time in minutes
-                        before stop retrying to download
+                                   before stop retrying to download
         :param kwargs: Additional keyword arguments from the download plugin configuration class that can
                        be provided to override any other values defined in a configuration file
                        or with environment variables:
-
                        * ``output_dir`` - where to store downloaded products, as an absolute file path
-                         (Default: local temporary directory)
+                           (Default: local temporary directory)
                        * ``output_extension`` - downloaded file extension
                        * ``extract`` - whether to extract the downloaded products, only applies to archived products
                        * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
                        * ``delete_archive`` - whether to delete the downloaded archives
-                       * ``asset`` - regex filter to identify assets to download
         :returns: A collection of the absolute paths to the downloaded products
         """
         paths = []
         if search_result:
             logger.info("Downloading %s products", len(search_result))
-            # Get download plugin using first product assuming all plugins use base.Download.download_all
+            # Get download plugin using first product assuming all plugins use protocol.base.Download.download_all
             download_plugin = self._plugins_manager.get_download_plugin(
-                search_result[0]
+                search_result[0].provider
             )
             paths = download_plugin.download_all(
                 search_result,
                 downloaded_callback=downloaded_callback,
                 progress_callback=progress_callback,
-                executor=executor,
                 wait=wait,
                 timeout=timeout,
-                **kwargs,
+                **kwargs,  # type: ignore
             )
         else:
             logger.info("Empty search result, nothing to be downloaded !")
@@ -2067,22 +2058,23 @@ class EODataAccessGateway:
             return filename
         collections = set(p.collection for p in search_result)
         for collection in collections:
-            collection_obj = search_result._dag.collections_config.get(
-                collection, Collection(id=collection)
-            )
-            collection_dict = collection_obj.serialize()
-            # add links
-            collection_dict.setdefault("links", [])
-            collection_dict["links"].append(
-                {
-                    "rel": "self",
-                    "href": f"{collection}.json",
-                    "type": "application/json",
-                },
-            )
-            with open(Path(filename).parent / f"{collection}.json", "w") as fh:
-                geojson.dump(collection_dict, fh)
-                logger.debug("Collection '%s' saved to %s", collection, fh.name)
+            if collection is not None:
+                collection_obj = search_result._dag.collections_config.get(
+                    collection, Collection(id=collection)
+                )
+                collection_dict = collection_obj.serialize()
+                # add links
+                collection_dict.setdefault("links", [])
+                collection_dict["links"].append(
+                    {
+                        "rel": "self",
+                        "href": f"{collection}.json",
+                        "type": "application/json",
+                    },
+                )
+                with open(Path(filename).parent / f"{collection}.json", "w") as fh:
+                    geojson.dump(collection_dict, fh)
+                    logger.debug("Collection '%s' saved to %s", collection, fh.name)
 
         return filename
 
@@ -2105,17 +2097,19 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`, ready for download and pagination
         """
-        return SearchResult.from_file(filename, self)
+        products = SearchResult.from_file(filename, self)
+        for _, product in enumerate(products):
+            product.register_plugin_manager(self._plugins_manager)
+        return products
 
     def download(
         self,
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> str:
+    ) -> list[str]:
         """Download a single product.
 
         This is an alias to the method of the same name on
@@ -2135,23 +2129,19 @@ class EODataAccessGateway:
         provider ``creodias`` to have their ``eodag:download_link`` metadata point to something like:
         ``file:///12345-678``, making this method immediately return the later string without
         trying to download the product.
-
         :param product: The EO product to download
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param executor: (optional) An executor to download assets of ``product`` in parallel if it has any. If ``None``
-                         , a default executor will be created
         :param wait: (optional) If download fails, wait time in minutes between
-                    two download tries
+                     two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
         :param kwargs: Additional keyword arguments from the download plugin configuration class that can
                        be provided to override any other values defined in a configuration file
                        or with environment variables:
-
                        * ``output_dir`` - where to store downloaded products, as an absolute file path
                          (Default: local temporary directory)
                        * ``output_extension`` - downloaded file extension
@@ -2163,27 +2153,13 @@ class EODataAccessGateway:
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
-        if product.location.startswith("file:/"):
-            logger.info("Local product detected. Download skipped")
-            return uri_to_path(product.location)
-        self._setup_downloader(product)
-        path = product.download(
+
+        return product.download(
             progress_callback=progress_callback,
-            executor=executor,
             wait=wait,
             timeout=timeout,
             **kwargs,
         )
-
-        return path
-
-    def _setup_downloader(self, product: EOProduct) -> None:
-        if product.downloader is None:
-            downloader = self._plugins_manager.get_download_plugin(product)
-            auth = product.downloader_auth
-            if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(downloader, product)
-            product.register_downloader(downloader, auth)
 
     def get_cruncher(self, name: str, **options: Any) -> Crunch:
         """Build a crunch plugin from a configuration
@@ -2389,6 +2365,6 @@ class EODataAccessGateway:
             if product := EOProduct._from_stac_item(
                 json_item, self._plugins_manager, provider
             ):
-                results.append(product)
+                results.append(product)  # type: ignore
 
         return results

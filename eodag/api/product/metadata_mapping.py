@@ -24,6 +24,7 @@ import re
 from datetime import datetime, timedelta
 from string import Formatter
 from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
+from urllib.parse import unquote
 
 import geojson
 import orjson
@@ -39,7 +40,6 @@ from shapely import wkt
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import transform
 
-from eodag.api.product._assets import Asset
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
@@ -63,6 +63,7 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.api.product._assets import Asset
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
@@ -110,7 +111,7 @@ def get_metadata_path(
     Then the metadata `id` is not queryable for this provider meanwhile `platform`
     is queryable. The first value of the `metadata_mapping.platform` is how the
     eodag search parameter `platform` is interpreted in the
-    :class:`~eodag.plugins.search.base.Search` plugin implemented by `provider`, and is
+    :class:`~eodag.plugins.search.Search` plugin implemented by `provider`, and is
     used when eodag delegates search process to the corresponding plugin.
 
     :param map_value: The value originating from the definition of `metadata_mapping`
@@ -191,6 +192,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_rounded_wkt``: simplify the WKT of a geometry
         - ``to_title``: Convert a string to title case
         - ``to_upper``: Convert a string to uppercase
+        - ``url_decode``: Convert a string url_encoded to decoded ones
+        - ``round``: Convert a string number to another one without decimal part
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -802,6 +805,28 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_to_upper(string: str) -> str:
             """Convert a string to uppercase."""
             return string.upper()
+
+        @staticmethod
+        def convert_url_decode(string: str):
+            return unquote(string)
+
+        @staticmethod
+        def convert_round(string: Any) -> str:
+            """Convert a number string to integer string"""
+            if isinstance(string, float):
+                return str(int(string))
+            elif isinstance(string, int):
+                return str(string)
+            elif isinstance(string, str):
+                formatted = ""
+                for i in range(0, len(string)):
+                    char = string[i]
+                    if char == ".":
+                        break
+                    if "0123456789".find(char) >= 0:
+                        formatted += char
+                return formatted
+            return string
 
         @staticmethod
         def convert_to_title(string: str) -> str:
@@ -1541,10 +1566,17 @@ def format_query_params(
 
         if COMPLEX_QS_REGEX.match(provider_search_param):
             parts = provider_search_param.split("=")
+
             if len(parts) == 1:
-                formatted_query_param = format_metadata(
-                    provider_search_param, collection, **query_dict
-                )
+
+                # If part contains something to interprete
+                if parts[0].strip("{}").find("{") >= 0:
+                    formatted_query_param = format_metadata(
+                        provider_search_param, collection, **query_dict
+                    )
+                else:
+                    formatted_query_param = "{" + parts[0].strip("{}") + "}"
+
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_param:
                     # retrieve values from hashes where keys are given in the param
@@ -1816,12 +1848,7 @@ def get_provider_queryable_key(
 
 
 def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
-    """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
-    ``bands`` array, in place. Returns ``data`` for convenience.
-
-    :param data: properties dict or Asset to migrate
-    :returns: the same data with migrated bands
-    """
+    """Normalize bands in product.properties or product.assets from STAC 1.0 to STAC 1.1"""
     UNPREFIX_BAND_FIELDNAME = [
         "name",
         "description",
@@ -1834,7 +1861,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
 
     # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
     # Migrate band STAC 1.0 to 1.1
-    if isinstance(data, dict) or isinstance(data, Asset):
+    if isinstance(data, dict) or data.__class__.__name__ == "Asset":
 
         # Gather eo:band et raster:bands
         bands: dict[str, Any] = {"eo:bands": [], "raster:bands": []}
@@ -1851,7 +1878,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
         if hasData:
             processed_bands = []
 
-            # migrate eo:bands -> bands
+            # migrate eo:bands > bands
             if len(bands["eo:bands"]) > 0:
                 for item in bands["eo:bands"]:
                     band = {}
@@ -1862,7 +1889,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                             band["eo:{}".format(key)] = item[key]
                     processed_bands.append(band)
 
-            # migrate raster:bands -> bands
+            # migrate raster:bands > bands
             if len(bands["raster:bands"]) > 0:
                 index = 0
                 for item in bands["raster:bands"]:
@@ -1878,7 +1905,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                         processed_bands.append(band)
                     index += 1
 
-            # When a property has the same value for each band, move it in parent scope
+            # When a property has same value for each band, have to be moved into parent scope
             if len(processed_bands) > 0:
                 field_values: dict[str, Any] = {}
 
@@ -1891,23 +1918,17 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
                             field_values[key].append(band[key])
 
                     # Move band fields from asset to parent if all fields shared same value
-                    # (distinct values == 1)
+                    # (distincs values == 1)
                     remove_band_fields = []
                     for key in field_values:
                         if (
-                            key in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
-                            or len(field_values[key]) != 1
+                            key not in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
+                            and len(field_values[key]) == 1
                         ):
-                            continue
-                        # Do not overwrite a value already set on the parent
-                        # (e.g. an Asset's own `description`); keep the
-                        # per-band value on the `bands` array instead.
-                        if key in data and data[key] != field_values[key][0]:
-                            continue
-                        # All bands have same value
-                        data[key] = field_values[key][0]
-                        # Tag field "to remove" from assets
-                        remove_band_fields.append(key)
+                            # All band have same value
+                            data[key] = field_values[key][0]
+                            # Tag field "to remove" from assets
+                            remove_band_fields.append(key)
                 del field_values
 
             # Remove from assets field moved to parent
@@ -1922,7 +1943,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
             processed_bands = cleaned_bands
             del cleaned_bands
 
-            # Remap band field if contains at least one value
+            # Remap éband" field if contains at least one value
             if len(processed_bands) > 0:
                 data["bands"] = processed_bands
 

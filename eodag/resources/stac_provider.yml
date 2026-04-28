@@ -108,11 +108,5 @@ search:
     eo:cloud_cover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":{eo:cloud_cover}}}}}}}'
       - '$.properties."eo:cloud_cover"'
-    # eodag metadata
-    eodag:download_link: '$.links[?(@.rel="self")].href'
-    eodag:quicklook: '$.assets.quicklook.href'
-    eodag:thumbnail: '$.assets.thumbnail.href'
-    # order:status set to succeeded for consistency between providers
-    order:status: '{$.null#replace_str("Not Available","succeeded")}'
     # Normalization code moves assets from properties to product's attr
     assets: '$.assets'

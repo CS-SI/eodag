@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -16,16 +16,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG authentication package"""
-from __future__ import annotations
+from .aws_auth import AwsAuth, create_s3_session, raise_if_auth_error
+from .base import Authentication
+from .dummy import DummyAuth
+from .eoiam import EOIAMAuth, EOIAMSessionAuth
+from .generic import GenericAuth
+from .header import HeaderAuth, HTTPHeaderAuth
+from .keycloak import KeycloakOIDCPasswordAuth
+from .openid_connect import (
+    CodeAuthorizedAuth,
+    OIDCAuthorizationCodeFlowAuth,
+    OIDCRefreshTokenBase,
+)
+from .qsauth import HttpQueryStringAuth, QueryStringAuth
+from .sas_auth import RequestsSASAuth, SASAuth
+from .token import RequestsTokenAuth, TokenAuth
+from .token_exchange import OIDCTokenExchangeAuth
 
-from requests.auth import AuthBase
-
-from eodag.plugins.authentication.base import Authentication
-
-
-class DummyAuth(Authentication):
-    """Dummy authentication"""
-
-    def authenticate(self) -> AuthBase:
-        """authenticate"""
-        return AuthBase()
+__all__ = [
+    "Authentication",
+    "DummyAuth",
+    "AwsAuth",
+    "create_s3_session",
+    "raise_if_auth_error",
+    "GenericAuth",
+    "HTTPHeaderAuth",
+    "HeaderAuth",
+    "KeycloakOIDCPasswordAuth",
+    "CodeAuthorizedAuth",
+    "OIDCRefreshTokenBase",
+    "OIDCAuthorizationCodeFlowAuth",
+    "HttpQueryStringAuth",
+    "QueryStringAuth",
+    "RequestsSASAuth",
+    "SASAuth",
+    "RequestsTokenAuth",
+    "TokenAuth",
+    "OIDCTokenExchangeAuth",
+    "EOIAMSessionAuth",
+    "EOIAMAuth",
+]

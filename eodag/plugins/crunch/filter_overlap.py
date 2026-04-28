@@ -22,8 +22,9 @@ from typing import TYPE_CHECKING, Any
 
 from shapely.errors import ShapelyError
 
-from eodag.plugins.crunch.base import Crunch
 from eodag.utils import get_geometry_from_various
+
+from .base import Crunch
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct

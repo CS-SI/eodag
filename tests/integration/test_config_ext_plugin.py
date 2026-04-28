@@ -21,11 +21,12 @@ import shutil
 import sys
 import unittest
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 from pytest import MonkeyPatch
 
-from tests import TEST_RESOURCES_PATH
-from tests.context import EODataAccessGateway, mock
+from eodag import EODataAccessGateway
+from tests.utils import TEST_RESOURCES_PATH
 
 
 class TestExternalPluginConfig(unittest.TestCase):

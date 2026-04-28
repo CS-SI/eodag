@@ -22,24 +22,22 @@ import unittest
 from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 import yaml
 
+from eodag import EODataAccessGateway, config
 from eodag.api.provider import ProvidersDict
-from eodag.config import PluginConfig
-from eodag.utils import deepcopy
-from tests.context import (
+from eodag.config import (
     EXT_COLLECTIONS_CONF_URI,
-    HTTP_REQ_TIMEOUT,
-    TEST_RESOURCES_PATH,
-    USER_AGENT,
-    EODataAccessGateway,
-    ValidationError,
-    config,
+    PluginConfig,
     get_ext_collections_conf,
     load_stac_provider_config,
-    mock,
 )
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
+from eodag.utils.exceptions import ValidationError
+
+from .utils import TEST_RESOURCES_PATH
 
 
 class TestProviderConfig(unittest.TestCase):

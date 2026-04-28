@@ -16,7 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
-from collections import UserList
 from typing import Any
 from unittest import mock
 
@@ -34,7 +33,7 @@ from eodag.crunch import (
     FilterOverlap,
     FilterProperty,
 )
-from eodag.plugins.crunch.base import Crunch
+from eodag.plugins.crunch import Crunch
 from eodag.utils import DEFAULT_SHAPELY_GEOMETRY
 from eodag.utils.exceptions import ValidationError
 
@@ -44,7 +43,7 @@ class TestPluginCrunch(unittest.TestCase):
     __product_id: int = 0
 
     def __fake_search_result(
-        self, products_properties: list[dict[str:Any]]
+        self, products_properties: list[dict[str, Any]]
     ) -> SearchResult:
         """Mock search result"""
         search_results = []
@@ -65,7 +64,7 @@ class TestPluginCrunch(unittest.TestCase):
                 )
             )
 
-        return SearchResult(UserList(search_results))
+        return SearchResult(search_results)
 
     def test_crunch_base(self):
         """Crunch base test"""

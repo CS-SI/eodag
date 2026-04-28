@@ -17,20 +17,16 @@
 # limitations under the License.
 from __future__ import annotations
 
-import base64
 import logging
 import os
-import re
+import shutil
 import tempfile
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
+import zipfile
+from typing import TYPE_CHECKING, Any, Iterable, Optional, cast
 
 import geojson
 import orjson
-import requests
 from pystac import Item
-from requests import RequestException
-from requests.auth import AuthBase
 from shapely import geometry
 from shapely.errors import ShapelyError
 
@@ -43,7 +39,7 @@ try:
         AssetsDict,
     )
 except ImportError:
-    from ._assets import AssetsDict
+    from ._assets import AssetsDict  # type: ignore
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
@@ -51,41 +47,35 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
-    ONLINE_STATUS,
     normalize_bands,
 )
+from eodag.plugins.download import StreamResponse
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_SHAPELY_GEOMETRY,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     GENERIC_STAC_PROVIDER,
     STAC_VERSION,
-    USER_AGENT,
+    Eventable,
+    Processor,
     ProgressCallback,
-    StreamResponse,
     _deprecated,
     deepcopy,
-    format_string,
     get_geometry_from_various,
 )
 from eodag.utils.deserialize import (
-    _import_stac_item_from_eodag_server,
-    _import_stac_item_from_known_provider,
-    _import_stac_item_from_unknown_provider,
+    import_stac_item_from_eodag_server,
+    import_stac_item_from_known_provider,
+    import_stac_item_from_unknown_provider,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
+from eodag.utils.exceptions import MisconfiguredError, ValidationError
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
-    from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
     from eodag import EODataAccessGateway
     from eodag.api.product.drivers.base import DatasetDriver
-    from eodag.plugins.apis.base import Api
-    from eodag.plugins.authentication.base import Authentication
-    from eodag.plugins.download.base import Download
     from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
@@ -93,17 +83,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.product")
 
 
-class EOProduct:
+class EOProduct(Eventable):
     """A wrapper around an Earth Observation Product originating from a search.
 
     Every Search plugin instance must build an instance of this class for each of
     the result of its query method, and return a list of such instances. A EOProduct
     has a `location` attribute that initially points to its remote location, but is
     later changed to point to its path on the filesystem when the product has been
-    downloaded. It also has a `remote_location` that always points to the remote
-    location, so that the product can be downloaded at anytime if it is deleted from
-    the filesystem. An EOProduct instance also has a reference to the search
-    parameters that led to its creation.
+    downloaded.
 
     :param provider: The provider from which the product originates
     :param properties: The metadata of the product
@@ -126,34 +113,25 @@ class EOProduct:
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
     search_intersection: Optional[BaseGeometry]
-    #: The path to the product, either remote or local if downloaded
-    location: str
-    #: The remote path to the product
-    remote_location: str
     #: Assets of the product
     assets: AssetsDict
     #: Driver enables additional methods to be called on the EOProduct
     driver: DatasetDriver
-    #: Product data filename, stored during download
-    filename: str
     #: Product search keyword arguments, stored during search
     search_kwargs: Any
-    #: Datetime for download next try
-    next_try: datetime
-    #: Stream for requests
-    _stream: requests.Response
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
+        super().__init__()
+
         self.provider = provider
         self.collection = (
             kwargs.get("collection")
             or properties.pop("collection", None)
             or properties.get("_collection")
         )
-        self.location = self.remote_location = properties.get("eodag:download_link", "")
-        self.assets = AssetsDict(self)
+        self.assets = AssetsDict(self)  # type: ignore[arg-type]
         self.properties = {
             key: value
             for key, value in properties.items()
@@ -216,8 +194,7 @@ class EOProduct:
                 )
                 self.search_intersection = None
         self.driver = self.get_driver()
-        self.downloader: Optional[Union[Api, Download]] = None
-        self.downloader_auth: Optional[Authentication] = None
+        self.plugins_manager: Optional[PluginManager] = None
 
     def as_dict(self, skip_invalid: bool = True) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -299,7 +276,7 @@ class EOProduct:
             "type": "Feature",
             "geometry": orjson.loads(orjson.dumps(self.geometry.__geo_interface__)),
             "bbox": list(self.geometry.bounds),
-            "id": self.properties["id"],
+            "id": self.properties.get("id"),
             "assets": assets_dict,
             "properties": stac_properties,
             "links": [
@@ -347,7 +324,6 @@ class EOProduct:
         if dag is not None:
             # add a generic STAC provider that might be needed to handle the items
             dag.add_provider(GENERIC_STAC_PROVIDER)
-
             plugin_manager = dag._plugins_manager
             product = cls._from_stac_item(
                 feature, plugin_manager, provider=None, raise_errors=raise_errors
@@ -358,6 +334,13 @@ class EOProduct:
                 )
         else:
             product = cls._import_stac_item_from_serialized(feature)
+
+        features_assets = feature.get("assets", {})
+        assets = AssetsDict(product)
+        for key in features_assets:
+            assets.update({key: feature["assets"][key]})
+        product.assets.update(assets)
+
         return product
 
     @classmethod
@@ -421,10 +404,6 @@ class EOProduct:
         """
         return cls.from_dict(feature, raise_errors=True)
 
-    # Implementation of geo-interface protocol (See
-    # https://gist.github.com/sgillies/2217756)
-    __geo_interface__ = property(as_dict)
-
     def _normalize_bands(self) -> None:
         """Normalize bands in properties and each asset
         from STAC 1.0 (``eo:bands`` / ``raster:bands``) to STAC 1.1 (``bands``), in place.
@@ -432,6 +411,10 @@ class EOProduct:
         normalize_bands(self.properties)
         for key in self.assets:
             normalize_bands(self.assets[key])
+
+    # Implementation of geo-interface protocol (See
+    # https://gist.github.com/sgillies/2217756)
+    __geo_interface__ = property(as_dict)
 
     def __repr__(self) -> str:
         try:
@@ -443,275 +426,189 @@ class EOProduct:
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def _register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
-        """Register the downloader and authenticator for this EOProduct using the
-        provided plugins manager.
-        This method is typically called after the EOProduct has been created and
-        before any download operation is performed.
-
-        :param plugins_manager: The plugins manager instance to use for retrieving
-                                the download and authentication plugins.
+    def register_plugin_manager(self, plugins_manager: PluginManager):
+        """Register the plugin manager
+        :param plugins_manager: The plugins manager instance.
         """
-        download_plugin = plugins_manager.get_download_plugin(self)
-        if len(self.assets) > 0:
-            matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("order:status") != ONLINE_STATUS:
-            matching_url = self.properties.get(
-                "eodag:order_link"
-            ) or self.properties.get("eodag:download_link")
-        else:
-            matching_url = self.properties.get("eodag:download_link")
-
-        try:
-            auth_plugin = next(
-                plugins_manager.get_auth_plugins(
-                    self.provider,
-                    matching_url=matching_url,
-                    matching_conf=download_plugin.config,
-                )
-            )
-        except StopIteration:
-            auth_plugin = None
-        self.register_downloader(download_plugin, auth_plugin)
-
-    def register_downloader(
-        self, downloader: Union[Api, Download], authenticator: Optional[Authentication]
-    ) -> None:
-        """Give to the product the information needed to download itself.
-
-        :param downloader: The download method that it can use
-                          :class:`~eodag.plugins.download.base.Download` or
-                          :class:`~eodag.plugins.api.base.Api`
-        :param authenticator: The authentication method needed to perform the download
-                             :class:`~eodag.plugins.authentication.base.Authentication`
-        """
-        self.downloader = downloader
-        self.downloader_auth = authenticator
-
-        # resolve locations and properties if needed with downloader configuration
-        location_attrs = ("location", "remote_location")
-        for location_attr in location_attrs:
-            if "%(" in getattr(self, location_attr):
-                try:
-                    setattr(
-                        self,
-                        location_attr,
-                        getattr(self, location_attr) % vars(self.downloader.config),
-                    )
-                except ValueError as e:
-                    logger.debug(
-                        f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
-                        f" in register_downloader: {str(e)}"
-                    )
-
-        for k, v in self.properties.items():
-            if isinstance(v, str) and "%(" in v:
-                try:
-                    self.properties[k] = v % vars(self.downloader.config)
-                except (TypeError, ValueError) as e:
-                    logger.debug(
-                        f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
-                    )
+        self.plugins_manager = plugins_manager
+        self.fire("register_plugin_manager", self)
 
     def download(
         self,
         progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        no_cache: bool = False,
         **kwargs: Unpack[DownloadConf],
-    ) -> str:
-        """Download the EO product using the provided download plugin and the
-        authenticator if necessary.
+    ) -> list[str]:
+        """Download the EO product as local_file
 
-        The actual download of the product occurs only at the first call of this
-        method. A side effect of this method is that it changes the ``location``
-        attribute of an EOProduct, from its remote address to the local address.
-
-        :param progress_callback: (optional) A method or a callable object
-                                  which takes a current size and a maximum
-                                  size as inputs and handle progress bar
-                                  creation and update to give the user a
-                                  feedback on the download progress
-        :param executor: (optional) An executor to download assets of the product in parallel if it has any. If ``None``
-                         , a default executor will be created
-        :param wait: (optional) If download fails, wait time in minutes between
-                     two download tries
-        :param timeout: (optional) If download fails, maximum time in minutes
-                        before stop retrying to download
+        :param Optional[ProgressCallback] progress_callback: Used to manage progress bar in console
+        :param float wait: (optional) on fails, time in minutes to wait before retry
+        :param float timeout: (optional) Total time in minute before timeout
         :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: The absolute path to the downloaded product on the local filesystem
-        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
-        :raises: :class:`RuntimeError`
+        :returns str|None: local_path
         """
-        if self.downloader is None:
-            raise RuntimeError(
-                "EO product is unable to download itself due to lacking of a "
-                "download plugin"
+
+        # Try download asset 'download_link"
+        if "download_link" in self.assets:
+            fs_path = self.assets["download_link"].download(
+                progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
+                no_cache=no_cache,
+                **kwargs,
             )
-        auth = (
-            self.downloader_auth.authenticate()
-            if self.downloader_auth is not None
-            else self.downloader_auth
-        )
+            if fs_path is not None:
+                return [fs_path]
+            else:
+                logger.debug(
+                    "Product download: download_link not found, download all assets"
+                )
 
-        progress_callback, close_progress_callback = self._init_progress_bar(
-            progress_callback, executor
-        )
+        # Download all assets
+        assets = []
+        for key in self.assets:
+            if key != "download_link":
+                assets.append(self.assets[key])
 
-        fs_path = self.downloader.download(
-            self,
-            auth=auth,
-            progress_callback=progress_callback,
-            executor=executor,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )
+        if len(assets) == 0:
+            return []
+        elif len(assets) == 1:
+            fs_path = assets[0].download(
+                progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
+                no_cache=no_cache,
+                **kwargs,
+            )
+            if fs_path is not None:
+                return [fs_path]
+        else:
+            # Parallelize download
+            shared: dict[str, list] = {"list_path": [], "errors": []}
 
-        # shutdown executor if it was not created during parallel product downloads
-        if (
-            executor is not None
-            and executor._thread_name_prefix != "eodag-download-all"
-        ):
-            executor.shutdown(wait=True)
+            def callback(path, error):
+                if error is not None:
+                    shared["errors"].append(error)
+                    logger.warning(error)
+                else:
+                    if path is not None:
+                        shared["list_path"].append(path)
 
-        # close progress bar if needed
-        if close_progress_callback:
-            progress_callback.close()
+            ids: list = []
+            for asset in assets:
+                taskid = Processor.queue(
+                    asset.download,
+                    progress_callback=progress_callback,
+                    wait=wait,
+                    timeout=timeout,
+                    no_cache=no_cache,
+                    q_timeout=int(timeout * 60),
+                    q_callback=callback,
+                    **kwargs,
+                )
+                ids.append(taskid)
+            Processor.wait(ids)
 
-        if fs_path is None:
-            raise DownloadError("Missing file location returned by download process")
-        logger.debug(
-            "Product location updated from '%s' to '%s'",
-            self.remote_location,
-            self.location,
-        )
-        logger.info(
-            "Remote location of the product is still available through its "
-            "'remote_location' property: %s",
-            self.remote_location,
-        )
+            for error in shared["errors"]:
+                logger.error(error)
 
-        return fs_path
+            return shared["list_path"]
+
+        return []
 
     def stream_download(
         self,
-        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
-        compress: Literal["zip", "raw", "auto"] = "auto",
+        progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        no_cache: bool = False,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
-        """Download as StreamResponse the EO product using the provided download plugin and the
-        authenticator if necessary.
+        """Download the EO product as StreamResponse
 
-        :param byte_range: (optional) Tuple of first index / last index byte to read
-        :param compress: (optional) "zip", "raw", "auto"
-        :param wait: (optional) If download fails, wait time in minutes between
-                     two download tries
-        :param timeout: (optional) If download fails, maximum time in minutes
-                        before stop retrying to download
-        :param kwargs: additional kwargs like `dl_url_params` (dict) can be provided
+        :param Optional[ProgressCallback] progress_callback: Used to manage progress bar in console
+        :param float wait: (optional) on fails, time in minutes to wait before retry
+        :param float timeout: (optional) Total time in minute before timeout
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
+                        and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: StreamResponse Stream representation of a file
-        :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
-        :raises: :class:`RuntimeError`
+        :returns StreamResponse:
         """
-        if self.downloader is None:
-            raise RuntimeError(
-                "EO product is unable to stream_download itself due to lacking of a "
-                "download plugin"
+        if "download_link" in self.assets:
+            return self.assets["download_link"].stream_download(
+                progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
+                no_cache=no_cache,
+                **kwargs,
             )
-        auth = (
-            self.downloader_auth.authenticate()
-            if self.downloader_auth is not None
-            else self.downloader_auth
-        )
-        return self.downloader.stream_download(
-            self,
-            auth,
-            byte_range,
-            compress,
-            wait=wait,
-            timeout=timeout,
-            **kwargs,
-        )
-
-    def _init_progress_bar(
-        self,
-        progress_callback: Optional[ProgressCallback],
-        executor: Optional[ThreadPoolExecutor],
-    ) -> tuple[ProgressCallback, bool]:
-        # determine position of the progress bar with a counter of executor passings
-        # to avoid bar overwriting in case of parallel downloads
-        count = executor._counter() if executor is not None else 1  # type: ignore
-
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = ProgressCallback(position=count)
-            # one shot progress callback to close after download
-            close_progress_callback = True
         else:
-            close_progress_callback = False
-            progress_callback.pos = count
-            # update units as bar may have been previously used for extraction
-            progress_callback.unit = "B"
-            progress_callback.unit_scale = True
-        progress_callback.desc = str(self.properties.get("id", ""))
-        progress_callback.refresh()
-        return (progress_callback, close_progress_callback)
+            # Parallelize download
+            proc = Processor()
+            list_path = []
 
-    def _download_quicklook(
+            def callback(path, error):
+                if error is not None:
+                    logger.warning(error)
+                else:
+                    if path is not None:
+                        list_path.append(path)
+
+            for key in self.assets:
+                if key != "download_link":
+                    proc.queue(
+                        self.assets[key].download,
+                        progress_callback=progress_callback,
+                        wait=wait,
+                        timeout=timeout,
+                        no_cache=no_cache,
+                        q_timeout=int(timeout * 60),
+                        callback=callback,
+                    )
+            proc.wait()
+
+            if len(list_path) == 0:
+                raise FileNotFoundError("No any file to download found")
+
+            tmp = tempfile.NamedTemporaryFile(delete=False)
+            tmp_file = tmp.name
+            with zipfile.ZipFile(tmp_file, "w") as zf:
+                for path in list_path:
+                    zf.write(path, os.path.basename(path))
+
+            return StreamResponse.from_file(tmp_file)
+
+    def download_quicklook(
         self,
-        quicklook_file: str,
-        progress_callback: ProgressCallback,
-        ssl_verify: Optional[bool] = None,
-        auth: Optional[AuthBase] = None,
-    ):
-        """Download the quicklook image from the EOProduct's quicklook URL.
-
-        This method performs an HTTP GET request to retrieve the quicklook image and saves it
-        locally at the specified path. It optionally verifies SSL certificates, uses HTTP
-        authentication, and can display a download progress if a callback is provided.
-
-        :param quicklook_file: The full path (including filename) where the quicklook will be saved.
-        :param progress_callback: A callable that accepts the current and total download sizes
-                                to display or log the download progress. It must support `reset(total)`
-                                and be callable with downloaded chunk sizes.
-        :param ssl_verify: (optional) Whether to verify SSL certificates. Defaults to True.
-        :param auth: (optional) Authentication credentials (e.g., tuple or object) used for the
-                        HTTP request if the resource requires authentication.
-        :raises HTTPError: If the HTTP request to the quicklook URL fails.
-        """
-        with requests.get(
-            self.properties["eodag:quicklook"],
-            stream=True,
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            verify=ssl_verify,
-        ) as stream:
-            stream.raise_for_status()
-            stream_size = int(stream.headers.get("Content-Length", 0))
-            progress_callback.reset(stream_size)
-            with open(quicklook_file, "wb") as fhandle:
-                for chunk in stream.iter_content(chunk_size=64 * 1024):
-                    if chunk:
-                        fhandle.write(chunk)
-                        progress_callback(len(chunk))
-            logger.info("Download recorded in %s", quicklook_file)
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        no_cache: bool = False,
+        **kwargs: Unpack[DownloadConf],
+    ) -> Optional[str]:
+        """Download the quicklook image from the EOProduct's quicklook URL"""
+        if "quicklook" in self.assets:
+            return self.assets["quicklook"].download(
+                progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
+                no_cache=no_cache,
+            )
+        return None
 
     def get_quicklook(
         self,
         filename: Optional[str] = None,
         output_dir: Optional[str] = None,
+        no_cache: bool = False,
         progress_callback: Optional[ProgressCallback] = None,
-    ) -> str:
+    ) -> Optional[str]:
         """Download the quicklook image of a given EOProduct from its provider if it
         exists.
 
@@ -729,110 +626,33 @@ class EOProduct:
                                    creation and update to give the user a feedback on the download progress
         :returns: The absolute path of the downloaded quicklook
         """
+        fs_path = self.download_quicklook(progress_callback, no_cache=no_cache)
+        if fs_path is not None:
+            if filename is None:
+                filename = self.properties.get("id", os.path.basename(fs_path))
+            if output_dir is not None:
+                dest_path = os.path.join(output_dir, filename)
+                shutil.copyfile(fs_path, dest_path)
+                return dest_path
+        return fs_path
 
-        def format_quicklook_address() -> None:
-            """If the quicklook address is a Python format string, resolve the
-            formatting with the properties of the product."""
-            fstrmatch = re.match(r".*{.+}*.*", self.properties["eodag:quicklook"])
-            if fstrmatch:
-                self.properties["eodag:quicklook"] = format_string(
-                    None,
-                    self.properties["eodag:quicklook"],
-                    **{
-                        prop_key: prop_val
-                        for prop_key, prop_val in self.properties.items()
-                        if prop_key != "eodag:quicklook"
-                    },
-                )
-
-        if self.properties.get("eodag:quicklook") is None:
-            logger.warning(
-                "Missing information to retrieve quicklook for EO product: %s",
-                self.properties["id"],
+    def download_thumbnail(
+        self,
+        progress_callback: Optional[ProgressCallback] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        no_cache: bool = False,
+        **kwargs: Unpack[DownloadConf],
+    ) -> Optional[str]:
+        """Download the thumbnail image from the EOProduct's quicklook URL"""
+        if "thumbnail" in self.assets:
+            return self.assets["quicklook"].download(
+                progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
+                no_cache=no_cache,
             )
-            return ""
-
-        format_quicklook_address()
-
-        if output_dir is not None:
-            quicklooks_output_dir = os.path.abspath(os.path.realpath(output_dir))
-        else:
-            tempdir = tempfile.gettempdir()
-            downloader_output_dir = (
-                getattr(self.downloader.config, "output_dir", tempdir)
-                if self.downloader
-                else tempdir
-            )
-            quicklooks_output_dir = os.path.join(downloader_output_dir, "quicklooks")
-        if not os.path.isdir(quicklooks_output_dir):
-            os.makedirs(quicklooks_output_dir)
-        quicklook_file = os.path.join(
-            quicklooks_output_dir,
-            filename if filename is not None else self.properties["id"],
-        )
-
-        if not os.path.isfile(quicklook_file):
-            # progress bar init
-            if progress_callback is None:
-                progress_callback = ProgressCallback()
-                # one shot progress callback to close after download
-                close_progress_callback = True
-            else:
-                close_progress_callback = False
-                # update units as bar may have been previously used for extraction
-                progress_callback.unit = "B"
-                progress_callback.unit_scale = True
-            progress_callback.desc = "quicklooks/%s" % self.properties.get("id", "")
-            # VERY SPECIAL CASE (introduced by the onda provider): first check if
-            # it is a HTTP URL. If not, we assume it is a base64 string, in which case
-            # we just decode the content, write it into the quicklook_file and return it.
-            if not (
-                self.properties["eodag:quicklook"].startswith("http")
-                or self.properties["eodag:quicklook"].startswith("https")
-            ):
-                with open(quicklook_file, "wb") as fd:
-                    img = self.properties["eodag:quicklook"].encode("ascii")
-                    fd.write(base64.b64decode(img))
-                return quicklook_file
-
-            auth = (
-                self.downloader_auth.authenticate()
-                if self.downloader_auth is not None
-                else None
-            )
-            if not isinstance(auth, AuthBase):
-                auth = None
-            # Read the ssl_verify parameter used on the provider config
-            # to ensure the same behavior for get_quicklook as other download functions
-            ssl_verify = (
-                getattr(self.downloader.config, "ssl_verify", True)
-                if self.downloader
-                else True
-            )
-            try:
-                self._download_quicklook(
-                    quicklook_file, progress_callback, ssl_verify, auth
-                )
-            except RequestException as e:
-                logger.debug(
-                    f"Error while getting resource with authentication. {e} \nTrying without authentication..."
-                )
-                try:
-                    self._download_quicklook(
-                        quicklook_file, progress_callback, ssl_verify, None
-                    )
-                except RequestException as e_no_auth:
-                    logger.error(
-                        f"Failed to get resource with authentication: {e} \n \
-                        Failed to get resource even without authentication. {e_no_auth}"
-                    )
-                    return ""
-
-            # close progress bar if needed
-            if close_progress_callback:
-                progress_callback.close()
-
-        return quicklook_file
+        return None
 
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
@@ -942,7 +762,7 @@ class EOProduct:
             collection = feature.get("collection")
             properties = deepcopy(feature["properties"])
             properties["geometry"] = feature["geometry"]
-            properties["id"] = feature["id"]
+            properties["id"] = feature.get("id")
             provider = properties.pop("eodag:provider")
             search_intersection = properties.pop("eodag:search_intersection")
         except KeyError as e:
@@ -956,11 +776,7 @@ class EOProduct:
 
         if plugins_manager is not None:
             # register
-            downloader = plugins_manager.get_download_plugin(obj)
-            auth = obj.downloader_auth
-            if auth is None:
-                auth = plugins_manager.get_auth_plugin(downloader, obj)
-            obj.register_downloader(downloader, auth)
+            obj.register_plugin_manager(plugins_manager)
 
         return obj
 
@@ -995,14 +811,17 @@ class EOProduct:
                 raise
 
         # Try importing from EODAG Server
-        if result := _import_stac_item_from_eodag_server(feature, plugins_manager):
+        if result := import_stac_item_from_eodag_server(feature, plugins_manager):
             return result
 
         # try importing from a known STAC provider
-        if result := _import_stac_item_from_known_provider(
+        if result := import_stac_item_from_known_provider(
             feature, plugins_manager, provider
         ):
             return result
 
         # try importing from an unknown STAC provider
-        return _import_stac_item_from_unknown_provider(feature, plugins_manager)
+        return import_stac_item_from_unknown_provider(feature, plugins_manager)
+
+
+__all__ = ["EOProduct"]

@@ -32,24 +32,24 @@ from unittest import mock
 from dateutil import parser as dateutil_parser
 from requests.exceptions import RequestException
 
-from tests.context import (
+from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     DownloadedCallback,
     ProgressCallback,
-    RequestError,
     deepcopy,
-    fetch_json,
     flatten_top_directories,
     get_bucket_name_and_prefix,
     get_ssl_context,
-    get_timestamp,
-    is_env_var_true,
     merge_mappings,
     path_to_uri,
-    setup_logging,
     uri_to_path,
 )
+from eodag.utils.dates import get_timestamp
+from eodag.utils.env import is_env_var_true
+from eodag.utils.exceptions import RequestError
+from eodag.utils.logging import setup_logging
+from eodag.utils.requests import fetch_json
 
 
 class TestUtils(unittest.TestCase):

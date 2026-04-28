@@ -29,18 +29,20 @@ from shapely.geometry import shape
 from typing_extensions import Doc
 
 from eodag.api.product import EOProduct
-from eodag.plugins.crunch.filter_date import FilterDate
-from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
-from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
-from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.plugins.crunch.filter_property import FilterProperty
+from eodag.plugins.crunch import (
+    Crunch,
+    FilterDate,
+    FilterLatestByName,
+    FilterLatestIntersect,
+    FilterOverlap,
+    FilterProperty,
+)
 from eodag.utils import STAC_VERSION, _deprecated
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.core import EODataAccessGateway
-    from eodag.plugins.crunch.base import Crunch
 
 
 logger = logging.getLogger("eodag.search_result")
@@ -196,19 +198,18 @@ class SearchResult(UserList[EOProduct]):
         :param dag: (optional) The EODataAccessGateway instance to use for registering the products.
         :returns: An eodag representation of a search result
         """
+        products: list[EOProduct] = []
+        for feature in feature_collection.get("features", []):
+            product = EOProduct.from_dict(feature, dag=dag)
+            products.append(product)
 
-        products = [
-            EOProduct.from_dict(feature, dag=dag)
-            for feature in feature_collection.get("features", [])
-        ]
         props = feature_collection.get("metadata", {}) or {}
-
         eodag_search_params = props.get("eodag:search_params", {})
         if eodag_search_params and eodag_search_params.get("geometry"):
             eodag_search_params["geometry"] = shape(eodag_search_params["geometry"])
 
-        results = cls(
-            products=products,
+        results = SearchResult(
+            products=products,  # type: ignore
             number_matched=props.get("eodag:number_matched"),
             next_page_token=props.get("eodag:next_page_token"),
             next_page_token_key=props.get("eodag:next_page_token_key"),

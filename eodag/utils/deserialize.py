@@ -55,7 +55,7 @@ def unregistered_product_from_item(
     return None
 
 
-def _import_stac_item_from_eodag_server(
+def import_stac_item_from_eodag_server(
     feature: dict[str, Any], plugins_manager: PluginManager
 ) -> Optional[EOProduct]:
     """Import a STAC item from EODAG Server.
@@ -109,12 +109,12 @@ def _import_stac_item_from_eodag_server(
             eo_product = None
         if eo_product is not None:
             eo_product.provider = provider
-            eo_product._register_downloader_from_manager(plugins_manager)
+            eo_product.register_plugin_manager(plugins_manager)
             return eo_product
     return None
 
 
-def _import_stac_item_from_known_provider(
+def import_stac_item_from_known_provider(
     feature: dict[str, Any],
     plugins_manager: PluginManager,
     provider: Optional[str] = None,
@@ -158,13 +158,13 @@ def _import_stac_item_from_known_provider(
                 else:
                     eo_product.collection = feature.get("collection")
 
-                eo_product._register_downloader_from_manager(plugins_manager)
+                eo_product.register_plugin_manager(plugins_manager)
                 return eo_product
 
     return None
 
 
-def _import_stac_item_from_unknown_provider(
+def import_stac_item_from_unknown_provider(
     feature: dict[str, Any], plugins_manager: PluginManager
 ) -> Optional[EOProduct]:
     """Import a STAC item from an unknown STAC provider.
@@ -182,7 +182,15 @@ def _import_stac_item_from_unknown_provider(
         pass
     if eo_product is not None:
         eo_product.collection = feature.get("collection")
-        eo_product._register_downloader_from_manager(plugins_manager)
+        eo_product.register_plugin_manager(plugins_manager)
         return eo_product
     else:
         return None
+
+
+__all__ = [
+    "unregistered_product_from_item",
+    "import_stac_item_from_eodag_server",
+    "import_stac_item_from_known_provider",
+    "import_stac_item_from_unknown_provider",
+]

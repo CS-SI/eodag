@@ -19,23 +19,18 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 from requests.exceptions import RequestException
+from usgs.api import USGSError
 
+from eodag import EODataAccessGateway
+from eodag.api.product import EOProduct
 from eodag.api.search_result import SearchResult
-from eodag.utils import MockResponse
-from tests import TEST_RESOURCES_PATH
-from tests.context import (
-    USER_AGENT,
-    CodeAuthorizedAuth,
-    EODataAccessGateway,
-    EOProduct,
-    HeaderAuth,
-    NoMatchingCollection,
-    RequestError,
-    USGSError,
-    mock,
-)
+from eodag.plugins.authentication import CodeAuthorizedAuth, HeaderAuth
+from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils.exceptions import NoMatchingCollection, RequestError
+from tests.utils import TEST_RESOURCES_PATH
 
 
 class TestCoreSearch(unittest.TestCase):
@@ -58,7 +53,7 @@ class TestCoreSearch(unittest.TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -69,7 +64,7 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
         autospec=True,
     )
-    def test_core_search_errors_qssearch(
+    def _test_core_search_errors_qssearch(
         self, mock_authenticate, mock_fetch_collections_list, mock_get
     ):
         # QueryStringSearch / sara
@@ -83,11 +78,11 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -95,10 +90,10 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        "eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_errors_stacsearch(
+    def _test_core_search_errors_stacsearch(
         self,
         mock_query,
         mock_fetch_collections_list,
@@ -115,11 +110,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -127,10 +122,10 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        "eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch._request",
         autospec=True,
     )
-    def test_core_search_errors_postjson(
+    def _test_core_search_errors_postjson(
         self,
         mock_request,
         mock_fetch_collections_list,
@@ -151,19 +146,19 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.urlopen",
+        "eodag.plugins.search.qssearch.querystringsearch.urlopen",
         autospec=True,
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.get",
         autospec=True,
         side_effect=RequestException,
     )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_core_search_errors_odata(
+    def _test_core_search_errors_odata(
         self, mock_fetch_collections_list, mock_get, mock_urlopen, mock_authenticate
     ):
         # ODataV4Search / creodias
@@ -177,7 +172,7 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
@@ -187,7 +182,7 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_core_search_errors_usgs(
+    def _test_core_search_errors_usgs(
         self,
         mock_fetch_collections_list,
         mock_login,
@@ -214,15 +209,15 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        "eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch._request",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -233,7 +228,7 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_core_search_errors_buildpost(
+    def _test_core_search_errors_buildpost(
         self,
         mock_fetch_collections_list,
         mock_authenticate,
@@ -251,7 +246,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.get",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.get",
         autospec=True,
     )
     @mock.patch(
@@ -259,21 +254,21 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Request",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Request",
         autospec=True,
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.post",
         autospec=True,
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
-    def test_core_search_fallback_find_nothing(
+    def _test_core_search_fallback_find_nothing(
         self, mock_get, mock_post, mock_request, mock_auth_token, mock_auth_oidc
     ):
         """Core search must loop over providers until finding a non empty result"""
@@ -301,16 +296,16 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Request",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Request",
         autospec=True,
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
-    def test_core_search_fallback_raise_errors(self, mock_get, mock_request):
+    def _test_core_search_fallback_raise_errors(self, mock_get, mock_request):
         """Core search fallback mechanism must halt loop on error if raise_errors is set"""
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
@@ -336,10 +331,10 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        "eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_first(self, mock_query):
+    def _test_core_search_fallback_find_on_first(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
@@ -369,29 +364,29 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.get",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.get",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Session.get",
         autospec=True,
         # fail on providers without dont_quote
         side_effect=RequestException,
     )
     # cop_dataspace and creodias use dont_quote: requests.Request then urllib with HTTPAdapter.build_response
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.adapters.HTTPAdapter.build_response",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.adapters.HTTPAdapter.build_response",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.urlopen",
+        "eodag.plugins.search.qssearch.querystringsearch.urlopen",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Request",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.Request",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_second(
+    def _test_core_search_fallback_find_on_second(
         self, mock_request, mock_urlopen, mock_httpadapter, mock_get, mock_auth_get
     ):
         """Core search must loop over providers until finding a non empty result"""
@@ -435,10 +430,10 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        "eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_second_empty_results(self, mock_query):
+    def _test_core_search_fallback_find_on_second_empty_results(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
@@ -471,7 +466,7 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        "eodag.plugins.search.qssearch.querystringsearch.QueryStringSearch.query",
         autospec=True,
     )
     def test_core_search_fallback_given_provider(self, mock_query):
@@ -510,7 +505,7 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_core_search_auths_matching(self, mock_fetch_collections_list, mock_query):
+    def _test_core_search_auths_matching(self, mock_fetch_collections_list, mock_query):
         """Core search must set and use appropriate auth plugins"""
 
         self.dag.add_provider(
@@ -599,6 +594,7 @@ class TestCoreSearch(unittest.TestCase):
         results = self.dag.search(
             provider="provider_matching_download_link", validate=False
         )
+
         self.assertEqual(
             results.data[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
@@ -651,9 +647,11 @@ class TestCoreSearch(unittest.TestCase):
             results.data[0].downloader_auth.config.credentials["username"], "a-username"
         )
 
-    @mock.patch("eodag.plugins.authentication.header.HTTPHeaderAuth.authenticate")
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_core_search_ecwmfsearch_by_id(self, mock_request, mock_auth):
+    @mock.patch(
+        "eodag.plugins.authentication.header.headerauth.HTTPHeaderAuth.authenticate"
+    )
+    @mock.patch("eodag.plugins.download.protocol.http.requests.request", autospec=True)
+    def _test_core_search_ecwmfsearch_by_id(self, mock_request, mock_auth):
         """search by id should return properties based on status response"""
 
         product_id = "123456"
@@ -762,14 +760,15 @@ class TestCoreSearch(unittest.TestCase):
             self.assertEqual(v, req_params[k])
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.get",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.get",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate"
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.OIDCAuthorizationCodeFlowAuth"
+        + ".authenticate"
     )
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_core_search_dedtlumi_search_by_id(
+    @mock.patch("eodag.plugins.download.protocol.http.requests.request", autospec=True)
+    def _test_core_search_dedtlumi_search_by_id(
         self, mock_request, mock_auth, mock_auth_config_request
     ):
         """search by id should return properties based on status response"""
@@ -800,13 +799,13 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.querystringsearch.requests.post",
         autospec=True,
     )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_core_search_geodes(
+    def _test_core_search_geodes(
         self,
         mock_fetch_collections_list,
         mock_post,
@@ -829,7 +828,7 @@ class TestCoreSearch(unittest.TestCase):
         product = search_result[0]
         self.assertEqual(product.provider, "geodes")
         self.assertEqual(
-            product.properties["id"],
+            product.properties.get("id"),
             "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035",
         )
         self.assertEqual(

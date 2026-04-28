@@ -30,16 +30,12 @@ from tempfile import TemporaryDirectory
 import pytest
 from stac_validator import stac_validator
 
+from eodag.api.core import EODataAccessGateway
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
-from tests import TEST_RESOURCES_PATH
-from tests.context import (
-    GENERIC_COLLECTION,
-    AuthenticationError,
-    EODataAccessGateway,
-    SearchResult,
-    sanitize,
-    uri_to_path,
-)
+from eodag.utils.exceptions import AuthenticationError
+from eodag.utils import GENERIC_COLLECTION, sanitize, uri_to_path
+from tests.utils import TEST_RESOURCES_PATH
+from eodag.api.search_result import SearchResult
 
 GEODES_SEARCH_ARGS = [
     "geodes",

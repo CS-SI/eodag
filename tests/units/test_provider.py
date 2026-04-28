@@ -20,12 +20,10 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from tests.context import (
-    EODataAccessGateway,
-    PluginConfig,
-    Provider,
-    ProviderConfig,
-    ProvidersDict,
+from eodag import EODataAccessGateway
+from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
+from eodag.config import PluginConfig
+from eodag.utils.exceptions import (
     UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,

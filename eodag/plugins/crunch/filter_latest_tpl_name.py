@@ -21,8 +21,9 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
+
+from .base import Crunch
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct

@@ -40,13 +40,27 @@
       start_datetime: '{$.temporalCoverage.startDate#to_iso_utc_datetime}'
       end_datetime: '{$.temporalCoverage.endDate#to_iso_utc_datetime}'
       published: '{$.publishDate#to_iso_utc_datetime}'
-      eodag:thumbnail: '$.browse[0].thumbnailPath'
-      eodag:quicklook: '$.browse[0].browsePath'
-      order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
-      eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
-      # metadata needed for download
-      usgs:entityId: '$.entityId'
-      usgs:productId: '$.id'
+      assets: "$.assets"
+    assets_mapping:
+      download_link:
+        href: '$.assets[?(@.roles[0]="archive")].href'
+        roles: '$.assets[?(@.roles[0]="archive")].roles'
+        type: '$.assets[?(@.roles[0]="archive")].type'
+        # Propertuies necessary to download, href is a false pretense
+        usgs:entityId: '$.assets[?(@.roles[0]="archive")]."usgs:entityId"'
+        usgs:productId: '$.assets[?(@.roles[0]="archive")]."usgs:productId"'
+      quicklook:
+        href: '$.browse[0].browsePath'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: 'image/jpeg'
+      thumbnail:
+        href: '$.browse[0].thumbnailPath'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: 'image/jpeg'
     extract: True
     order_enabled: true
     max_workers: 2
@@ -71,9 +85,6 @@
       _collection: landsat_etm_c2_l2
     S2_MSI_L1C:
       _collection: SENTINEL_2A
-    GENERIC_COLLECTION:
-      _collection: '{collection}'
-
 ---
 !provider # MARK: aws_eos
   name: aws_eos
@@ -110,8 +121,9 @@
       geometry:
         - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
         - '$.dataGeometry'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+    assets_mapping:
+      download_link:
+        order:status: 'succeeded'
   products:
     CBERS4_PAN10M_L2:
       instruments: PAN10M
@@ -147,25 +159,47 @@
           - '{{"search":{{"sunElevation":"{view:sun_elevation}" }} }}'
           - '$.sunElevation'
         # Custom parameters (not defined in the base document referenced above)
-        _aws_path: '$.downloadUrl'
-        eodag:download_link: 's3://cbers-pds/{_aws_path}'
-        eodag:mtd_download_link: 's3://cbers-meta-pds/{_aws_path}'
-        _preview_basename: '{$.sceneID#replace_str("_L2","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://cbers-pds/{$.downloadUrl}'
+          roles:
+          - 'archive'
+          - 'data'
+          order:status: 'succeded'
+          eodag:mtd_download_link: 's3://cbers-meta-pds/{$.downloadUrl}'
+        quicklook:
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L2","")}.jpg'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/jpeg'
+        thumbnail:
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L2","")}_small.jpeg'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/jpeg'
     CBERS4_PAN10M_L4:
       instruments: PAN10M
       _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      assets_mapping:
+        quicklook:
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L4","")}.jpg'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/jpeg'
+        thumbnail:
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L4","")}_small.jpeg'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/jpeg'
     CBERS4_PAN5M_L2:
       instruments: PAN5M
       _collection: cbers4
@@ -175,12 +209,7 @@
       instruments: PAN5M
       _collection: cbers4
       processing:level: 4
-      metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      metadata_mapping_from_product: CBERS4_PAN10M_L4
     CBERS4_MUX_L2:
       instruments: MUX
       _collection: cbers4
@@ -190,12 +219,7 @@
       instruments: MUX
       _collection: cbers4
       processing:level: 4
-      metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      metadata_mapping_from_product: CBERS4_PAN10M_L4
     CBERS4_AWFI_L2:
       instruments: AWFI
       _collection: cbers4
@@ -205,12 +229,7 @@
       instruments: AWFI
       _collection: cbers4
       processing:level: 4
-      metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      metadata_mapping_from_product: CBERS4_PAN10M_L4
     L8_OLI_TIRS_C1L1:
       _collection: landsat8
       _on_amazon: true
@@ -247,14 +266,28 @@
         _on_amazon:
           - '{{"search":{{"onAmazon":"{_on_amazon}" }} }}'
           - '$.onAmazon'
-        _path: '$.path'
-        _row: '$.row'
-        eodag:download_link: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
-        eodag:thumbnail: '$.thumbnail'
-        eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
         id:
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://landsat-pds/c1/L8/{$.path#round}/{$.row#round}/{title}/'
+          roles:
+          - 'archive'
+          - 'data'
+          order:status: 'succeded'
+        quicklook:
+          href: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{$.path#round}/{$.row#round}/{title}/{title}_thumb_large.jpg'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '$.thumbnail'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/jpeg'
     MODIS_MCD43A4:
       _collection: modis
       metadata_mapping:
@@ -279,15 +312,29 @@
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.EndingDateTime'
         # Custom parameters (not defined in the base document referenced above)
-        _vertical_tile_nb: '$.verticalTileNumber'
-        _horizontal_tile_nb: '$.horizontalTileNumber'
-        _doy_date: '{$.sceneID#slice_str(9,16,1)}'
-        eodag:download_link: 's3://modis-pds/MCD43A4.006/{_horizontal_tile_nb:02.0f}/{_vertical_tile_nb:02.0f}/{_doy_date}/'
-        eodag:thumbnail: '$.thumbnail'
-        eodag:quicklook: '$.thumbnail'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://modis-pds/MCD43A4.006/{$.horizontalTileNumber#round}/{$.verticalTileNumber#round}/{$.sceneID#slice_str(9,16,1)}/'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+        quicklook:
+          href: '$.thumbnail'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '$.thumbnail'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/jpeg'
     NAIP:
       _collection: naip
       metadata_mapping:
@@ -308,11 +355,17 @@
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.date'
         # Custom parameters (not defined in the base document referenced above)
-        _aws_path: '$.awsPath'
-        eodag:download_link: 's3://naip-analytic/{_aws_path}'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://naip-analytic/{$.awsPath}'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
     S1_SAR_GRD:
       product:type: GRD
       _collection: sentinel1
@@ -347,13 +400,29 @@
           - '{{"search":{{"polarization":"{sar:polarizations#replace_tuple(((["HH"],"SH"),(["VV"],"SV"),(["HH","HV"], "DH"),(["VV","VH"],"DV")))}" }} }}'
           - '{$.polarization#replace_tuple((("SH",["HH"]),("SV",["VV"]),("DH",["HH","HV"]),("DV",["VV","VH"])))}'
         # Custom parameters (not defined in the base document referenced above)
-        _aws_path: '$.awsPath'
-        eodag:download_link: 's3://sentinel-s1-l1c/{_aws_path}'
-        eodag:thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
-        eodag:quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://sentinel-s1-l1c/{$.awsPath}'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+        quicklook:
+          href: 'https://render.eosda.com/S1/thumb/{title}.png'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/png'
+        thumbnail:
+          href: 'https://render.eosda.com/S1/thumb/{title}.png'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/png'
     S2_MSI_L1C:
       _collection: sentinel2
       metadata_mapping:
@@ -385,14 +454,32 @@
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
         eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        _aws_path: '$.awsPath'
-        eodag:download_link: 's3://sentinel-s2-l1c/{_aws_path}'
-        eodag:product_path: '$.productPath'
         id:
           - '{{"search":{{"productName":"{id}" }} }}'
           - '{title}'
         _processed_l2a: '$.null'
         _aws_path_l2a: '$.null'
+      assets_mapping:
+        download_link:
+          href: 's3://sentinel-s2-l1c/{$.awsPath}'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+          eodag:product_path: '$.productPath'
+        quicklook:
+          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/jpeg'
     S2_MSI_L2A:
       _collection: sentinel2
       _processed_l2a: true
@@ -413,14 +500,20 @@
           id:
             - 'title'
             - '{title}'
-          _aws_path_l2a: '$.tiles[0].path'
-          eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
-          eodag:product_path: '$.path'
           start_datetime: '$.timestamp'
           end_datetime: '$.timestamp'
           geometry: '$.tileDataGeometry'
-          eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
           originalSceneID: '$.tiles[0].datastrip.id'
+        assets_mapping:
+          download_link:
+            href: 's3://sentinel-s2-l2a/{$.tiles[0].path}'
+            roles:
+            - 'archive'
+            - 'data'
+            type: 'application/octet-stream'
+            order:status: 'succeded'
+            eodag:product_path: '$.path'
+            eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         product:type: '$.null'
@@ -447,20 +540,34 @@
           - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        eodag:quicklook: '{eodag:thumbnail}'
-        eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
-        _aws_path: '$.null'
         eodag:product_path: '$.null'
-        eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
         id:
           - '{id#s2msil2a_title_to_aws_productinfo}'
           - '{title}'
         _processed_l2a:
           - '{{"search":{{"processedL2A":"{_processed_l2a}" }} }}'
           - '$.processedL2A'
-        _aws_path_l2a: '$.awsPathL2A'
-
+      assets_mapping:
+        download_link:
+          href: 's3://sentinel-s2-l2a/{$.awsPathL2A}'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+          eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{$.awsPathL2A}/productInfo.json'
+        quicklook:
+          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+          title: "quicklook"
+          roles:
+          - 'overwiev'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: 'image/jpeg'
   download: !plugin
     type: AwsDownload
     ssl_verify: true
@@ -468,16 +575,16 @@
       CBERS4_MUX_L2:
         default_bucket: 'cbers-pds'
         complementary_url_key:
-          - eodag:mtd_download_link
+          - '{eodag:mtd_download_link}'
       CBERS4_AWFI_L2:
         complementary_url_key:
-          - eodag:mtd_download_link
+          - '{eodag:mtd_download_link}'
       CBERS4_PAN5M_L2:
         complementary_url_key:
-          - eodag:mtd_download_link
+          - '{eodag:mtd_download_link}'
       CBERS4_PAN10M_L2:
         complementary_url_key:
-          - eodag:mtd_download_link
+          - '{eodag:mtd_download_link}'
       S1_SAR_GRD:
         default_bucket: 'sentinel-s1-l1c'
         build_safe: true
@@ -485,7 +592,7 @@
         default_bucket: 'sentinel-s2-l1c'
         build_safe: true
         complementary_url_key:
-          - eodag:product_path
+          - '{eodag:product_path}'
       S2_MSI_L2A:
         default_bucket: 'sentinel-s2-l2a'
         build_safe: true
@@ -497,7 +604,7 @@
             id: '{title}'
             eodag:product_path: '$.path'
         complementary_url_key:
-          - eodag:product_path
+          - '{eodag:product_path}'
   download_auth: !plugin
     type: AwsAuth
     matching_url: s3://
@@ -620,7 +727,6 @@
       # within the context of the data provider)
       # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
       #   but `free_text_search_operations.$filter.operations.and` entries are then used instead.
-      uid: '$.Id'
       # OpenSearch Parameters for Collection Search (Table 3)
       product:type:
         - null
@@ -739,16 +845,34 @@
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
-      # order:status: must be one of succeeded, ordered, orderable
-      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      assets: '$.Assets'
+    assets_mapping:
+      download_link:
+        title: 'downloadlink'
+        href: 'https://zipper.creodias.eu/odata/v1/Products({$.Id})/$value'
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.ContentType'
+        file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
+        file:size: '$.ContentLength'
+        # order:status: must be one of succeeded, ordered, orderable
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: "image/jpeg"
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -1185,6 +1309,19 @@
     # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
       assets: '{$.assets#from_alternate(s3)}'
+    assets_mapping:
+      quicklook:
+        href: '$.assets.reduced_resolution_browse.alternate.s3.href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: '$.assets.reduced_resolution_browse.type'
+      thumbnail:
+        href: '$.assets.thumbnail.alternate.s3.href'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: '$.assets.thumbnail.type'
   products:
     LANDSAT_C2L1:
       _collection: landsat-c2l1
@@ -1308,8 +1445,8 @@
         default_bucket: 'sentinel-s2-l1c'
         build_safe: true
         complementary_url_key:
-          - eodag:product_path
-          - eodag:tile_path
+          - '{eodag:product_path}'
+          - '{eodag:tile_path}'
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
@@ -1364,19 +1501,56 @@
         mgrs:utm_zone: '$.properties."sentinel:utm_zone"'
         mgrs:latitude_band: '$.properties."sentinel:latitude_band"'
         mgrs:grid_square: '$.properties."sentinel:grid_square"'
-        eodag:download_link: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
+      assets_mapping:
+        download_link:
+          href: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeeded'
+        quicklook:
+          href: '$.assets.thumbnail.href'
+          title: "thumbnail"
+          roles:
+          - 'overwiev'
+          type: '$.assets.thumbnail.type'
+        thumbnail:
+          href: '$.assets.thumbnail.href'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: '$.assets.thumbnail.type'
     L8_OLI_TIRS_C1L1:
       _collection: landsat-8-l1-c1
       metadata_mapping:
         wrsPath: '$.properties."landsat:wrs_path"'
         wrsRow: '$.properties."landsat:wrs_row"'
-        eodag:download_link: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://gcp-public-data-landsat/LC08/01/{wrsPath#round}/{wrsRow#round}/{title}'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order:status: 'succeeded'
+        quicklook:
+          href: '$.assets.thumbnail.href'
+          title: "thumbnail"
+          roles:
+          - 'overwiev'
+          type: '$.assets.thumbnail.type'
+        thumbnail:
+          href: '$.assets.thumbnail.href'
+          title: "thumbnail"
+          roles:
+          - 'thumbnail'
+          type: '$.assets.thumbnail.type'
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://storage.googleapis.com
-    ignore_assets: True
     ssl_verify: true
     products:
       S2_MSI_L1C:
@@ -1410,10 +1584,14 @@
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       qs: $.qs
-      eodag:download_link: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
+    assets_mapping:
+      download_link:
+        href: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
   products:
     # See Archive Catalog in https://apps.ecmwf.int/archive-catalogue/
     # See available Public Datasets in https://apps.ecmwf.int/datasets/
@@ -1472,7 +1650,7 @@
       on_success:
         need_search: true
         metadata_mapping:
-          eodag:download_link: $.json.asset.value.href
+          href: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -1497,7 +1675,15 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ""
+        roles:
+        - archive
+        - data
+        type: "application/netcdf"
+        order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
@@ -1641,7 +1827,7 @@
       on_success:
         need_search: true
         metadata_mapping:
-          eodag:download_link: $.json.asset.value.href
+          href: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -1667,7 +1853,15 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      eodag:order_link: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ""
+        roles:
+        - archive
+        - data
+        type: "application/netcdf"
+        order_link: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
     AG_ERA5:
@@ -1887,15 +2081,34 @@
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
-      # The url of the quicklook
-      eodag:quicklook: '$.properties.quicklook'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.properties.services.download.url'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      eodag:thumbnail: '$.properties.thumbnail'
+      # Unset field from product
+      sara:quicklook: '$.null'
+      sara:thumbnail: '$.null'
+    assets_mapping:
+      download_link:
+        # The url to download the product "as is" (literal or as a template to be completed either after the search result
+        # is obtained from the provider or during the eodag download phase)
+        href: '$.properties.services.download.url'
+        roles:
+        - 'archive'
+        - 'data'
+        type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
+        file:size: '$.properties.services.download.size'
+        file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")#to_lower}'
+        # order:status set to succeeded for consistency between providers
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.properties.quicklook'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: "image/png"
+      thumbnail:
+        href: '$.properties.thumbnail'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: "image/png"
   products:
     # Sentinel 1
     S1_SAR_OCN:
@@ -2083,9 +2296,6 @@
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       collection: '$.queries[0].domain'
-      order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
-      qs: $.qs
-      eodag:download_link: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
       # Meteoblue specific parameters
       datapoints: '$.datapoints'
       requiresJobQueue: '$.requiresJobQueue'
@@ -2102,7 +2312,16 @@
       timeIntervalsAlignment:
         - '{{"timeIntervalsAlignment": {timeIntervalsAlignment#to_geojson} }}'
         - '$.timeIntervalsAlignment'
-      eodag:order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
+      qs: $.qs
+    assets_mapping:
+      download_link:
+        href: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
+        order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
   products:
     NEMSGLOBAL_TCDC:
       product:type: NEMSGLOBAL
@@ -2142,8 +2361,8 @@
         eodag:order_status: error
       on_success:
         metadata_mapping:
+          href: 'http://queueresults.meteoblue.com/{eodag:order_id}'
           eodag:order_id: '$.json.id'
-          eodag:download_link: 'http://queueresults.meteoblue.com/{eodag:order_id}'
           eodag:download_method: '{$.null#replace_str("Not Available","GET")}'
   auth: !plugin
     type: HttpQueryStringAuth
@@ -2389,14 +2608,31 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
-      # order:status: must be one of succeeded, ordered, orderable
-      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+    assets_mapping:
+      download_link:
+        href: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.ContentType'
+        file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
+        file:size: '$.ContentLength'
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: "image/jpeg"
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -2819,6 +3055,20 @@
       grid:code:
         - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
         - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      assets: '$.assets'
+    assets_mapping:
+      quicklook:
+        href: '$.assets[?(@.rel == "preview")].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: '$.assets[?(@.rel == "preview")].type'
+      thumbnail:
+        href: '$.assets[?(@.rel == "preview")].href'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: '$.assets[?(@.rel == "preview")].type'
   products:
     S1_SAR_GRD:
       _collection: sentinel-1-grd
@@ -2901,6 +3151,7 @@
       spatial:scene_id:
         - '{{"query":{{"spatial:scene_id":{{"eq":{spatial:scene_id}}}}}}}'
         - '$.properties.spatial:scene_id'
+      assets: '$.assets'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -2923,44 +3174,6 @@
     - host
   description: WEkEO - Sentinel and some various Copernicus data
   url: https://www.wekeo.eu/
-  # anchors to avoid duplications
-  anchor_s1_sar: &s1_sar_params
-    processing:level:
-      - '{{"processingLevel": "{processing:level}"}}'
-      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, LEVEL\\4)`'
-    sar:instrument_mode:
-      - '{{"sensorMode": "{sar:instrument_mode}"}}'
-      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, \\2)`'
-    swath:
-      - '{{"swath": "{swath}"}}'
-      - '$.null'
-    polarisation:
-      - '{{"polarisation": "{polarisation}"}}'
-      - '$.null'
-    sat:relative_orbit:
-      - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
-      - '$.null'
-    missionTakeId:
-      - '{{"missionTakeId": "{missionTakeId}"}}'
-      - '$.null'
-  anchor_orbit_cycle: &orbit_cycle
-    sat:relative_orbit:
-      - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
-      - '$.null'
-    sat:absolute_orbit:
-      - '{{"orbit": "{sat:absolute_orbit}"}}'
-      - '$.null'
-    sat:orbit_cycle:
-      - '{{"cycle": "{sat:orbit_cycle}"}}'
-      - '$.null'
-  anchor_id_from_date: &id_from_date
-    id:
-      - |
-        {{
-          "startdate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}",
-          "enddate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}"
-        }}
-      - '$.id'
   search: !plugin
     type: WekeoSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
@@ -2997,11 +3210,7 @@
       end_datetime:
         - '{{"enddate": "{end_datetime}"}}'
         - '$.properties.enddate'
-      eodag:download_link: '$.properties.location'
-      eodag:quicklook: '$.properties.thumbnail'
-      eodag:thumbnail: '$.properties.thumbnail'
       title: '$.id'
-      order:status: 'orderable'
       processing:level:
         - '{{"processingLevel": "{processing:level}"}}'
         - '$.null'
@@ -3044,13 +3253,58 @@
       satellite:
         - '{{"satellite": {satellite}}}'
         - '$.null'
+    assets_mapping:
+      download_link:
+        href: '$.properties.location'
+        roles:
+        - 'archive'
+        - 'data'
+        type: ''
+        file:size: '$.properties.size'
+        order:status: 'orderable'
+      quicklook:
+        href: '$.properties.thumbnail'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: 'image/jpeg'
+      thumbnail:
+        href: '$.properties.thumbnail'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: 'image/jpeg'
   products:
     S1_SAR_GRD:
       _collection: EO:ESA:DAT:SENTINEL-1
       product:type: GRD
       metadata_mapping:
-        <<: *s1_sar_params
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SAFE", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        processing:level:
+          - '{{"processingLevel": "{processing:level}"}}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, LEVEL\\4)`'
+        sar:instrument_mode:
+          - '{{"sensorMode": "{sar:instrument_mode}"}}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, \\2)`'
+        swath:
+          - '{{"swath": "{swath}"}}'
+          - '$.null'
+        polarisation:
+          - '{{"polarisation": "{polarisation}"}}'
+          - '$.null'
+        sat:relative_orbit:
+          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"missionTakeId": "{missionTakeId}"}}'
+          - '$.null'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.SAFE", "dataset_id": "{_collection}"}'
     S1_SAR_RAW:
       _collection: EO:ESA:DAT:SENTINEL-1
       product:type: RAW
@@ -3074,7 +3328,14 @@
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SAFE", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.SAFE", "dataset_id": "{_collection}"}'
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI2A
@@ -3088,7 +3349,14 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.SEN3", "dataset_id": "{_collection}"}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_SI
@@ -3124,38 +3392,41 @@
           - '{{"sat": "{constellation}"}}'
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
-        <<: *orbit_cycle
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
+        sat:relative_orbit:
+          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
+          - '$.null'
+        sat:absolute_orbit:
+          - '{{"orbit": "{sat:absolute_orbit}"}}'
+          - '$.null'
+        sat:orbit_cycle:
+          - '{{"cycle": "{sat:orbit_cycle}"}}'
+          - '$.null'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.SEN3", "dataset_id": "{_collection}"}'
     S3_ERR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping_from_product: S3_EFR
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       metadata_mapping_from_product: S3_EFR
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       metadata_mapping_from_product: S3_EFR
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       metadata_mapping_from_product: S3_EFR
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       metadata_mapping_from_product: S3_EFR
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       metadata_mapping_from_product: S3_EFR
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
     S3_SLSTR_L1RBT:
       _collection: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
       product:type: SL_1_RBT___
@@ -3167,15 +3438,37 @@
           - '{{"sat": "{constellation}"}}'
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platform: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
-        <<: *orbit_cycle
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
+        sat:relative_orbit:
+          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
+          - '$.null'
+        sat:absolute_orbit:
+          - '{{"orbit": "{sat:absolute_orbit}"}}'
+          - '$.null'
+        sat:orbit_cycle:
+          - '{{"cycle": "{sat:orbit_cycle}"}}'
+          - '$.null'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.SEN3", "dataset_id": "{_collection}"}}'
     S3_WAT:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startdate": {id#split_id_into_s3_params}["startDate"], "enddate": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.SEN3", "dataset_id": "{_collection}"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L1B
@@ -3186,7 +3479,14 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.nc", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}.nc", "dataset_id": "{_collection}"}}'
     S5P_L2_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L2
@@ -3201,12 +3501,25 @@
           resolution:
               - '{{"resolution": "{resolution}"}}'
               - '{$.id#replace_str(r"^.*_R([0-9]+m)_.*$",r"\1")}'
-          eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:HRL:TCF"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     COP_DEM_GLO30_DGED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
-      metadata_mapping:
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DTE_30
@@ -3222,17 +3535,27 @@
     CLMS_GLO_NDVI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
-      _product_identifier: ndvi_global_300m_10daily_v1
       metadata_mapping:
         _product_identifier:
-        - '{{"productIdentifier": "{_product_identifier}"}}'
+        - '{{"productIdentifier": "ndvi_global_300m_10daily_v1"}'
         - '$.null'
         id: '$.id'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
-      _product_identifier: ndvi-lts_global_1km_10daily_v2
+      metadata_mapping:
+        _product_identifier:
+        - '{{"productIdentifier": "ndvi-lts_global_1km_10daily_v2"}'
+        - '$.null'
+        id: '$.id'
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
@@ -3243,37 +3566,63 @@
         id:
           - '{{"format": "{id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}"}}'
           - '$.id'
-        start_datetime: '$.properties.startdate'
-        end_datetime: '$.properties.enddate'
+        start_datetime:
+          - $.null
+          - '$.properties.startdate'
+        end_datetime:
+          - $.null
+          - '$.properties.enddate'
         format:
           - '{{"format": "{format}"}}'
           - '{$.id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}'
         eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_GLO_FCOVER_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      _product_identifier: fcover_global_300m_10daily_v1
+      metadata_mapping:
+        _product_identifier:
+        - '{{"productIdentifier": "fcover_global_300m_10daily_v1"}'
+        - '$.null'
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_DMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      _product_identifier: dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1
+      metadata_mapping:
+        _product_identifier:
+        - '{{"productIdentifier": "dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1"}'
+        - '$.null'
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_GDMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      _product_identifier: gdmp_global_300m_10daily_v1
+      metadata_mapping:
+        _product_identifier:
+        - '{{"productIdentifier": "gdmp_global_300m_10daily_v1"}'
+        - '$.null'
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_FAPAR_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      _product_identifier: fapar_global_300m_10daily_v1
+      metadata_mapping:
+        _product_identifier:
+        - '{{"productIdentifier": "fapar_global_300m_10daily_v1"}'
+        - '$.null'
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_LAI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      _product_identifier: lai_global_300m_10daily_v1
+      metadata_mapping:
+        _product_identifier:
+        - '{{"productIdentifier": "lai_global_300m_10daily_v1"}'
+        - '$.null'
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_HRVPP_ST:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST
@@ -3281,28 +3630,56 @@
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_ST"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_HRVPP_ST_LAEA:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST-LAEA
       metadata_mapping:
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_ST-LAEA"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_HRVPP_VPP:
       _collection: EO:EEA:DAT:CLMS_HRVPP_VPP
       metadata_mapping:
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_HRVPP_VPP_LAEA:
       _collection: EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA
       metadata_mapping:
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA"}}'
+      assets_mapping:
+        download_link:
+          href: ''
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/octet-stream'
+          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -3323,7 +3700,7 @@
       metadata_mapping:
         eodag:order_id: '$.json.download_id'
         eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={eodag:order_id}'
-        eodag:download_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:order_id}'
+        href: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:order_id}'
     order_status:
       request:
         method: GET
@@ -3339,7 +3716,7 @@
       on_success:
         metadata_mapping:
           eodag:download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
+          href: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
 
 ---
 !provider  # MARK: wekeo_ecmwf
@@ -3445,11 +3822,17 @@
       product:type:
         - dataset_id
         - $.dataset
-      eodag:download_link: $.properties.location
       dataset:
         - dataset_id
         - $.dataset
-      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
+    assets_mapping:
+      download_link:
+        href: ''
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.ContentType'
+        "order_link": 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{dataset}"}'
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
@@ -3655,7 +4038,7 @@
       on_success:
         metadata_mapping:
           eodag:download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
+          href: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}'
     products:
       FIRE_HISTORICAL:
         output_extension: .grib
@@ -3726,10 +4109,15 @@
       variable:
         - '{{"variable": "{variable}"}}'
         - '{$.properties.location#get_variables_from_path}'
-      eodag:download_link: '$.properties.location'
       title: '$.id'
-      order:status: 'orderable'
-      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
+    assets_mapping:
+      download_link:
+        href: '$.properties.location'
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -3765,7 +4153,7 @@
       on_success:
         metadata_mapping:
           eodag:download_id: $.json.features[0]._id
-          eodag:download_link: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}
+          href: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:download_id}'
 
 ---
 !provider # MARK: creodias_s3
@@ -4002,16 +4390,29 @@
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
-      # order:status: must be one of succeeded, ordered, orderable
-      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+    assets_mapping:
+      download_link:
+        href: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: "image/jpeg"
   download: !plugin
     type: AwsDownload
     s3_endpoint: 'https://eodata.cloudferro.com'
@@ -4443,7 +4844,15 @@
         - dataset
         - $.dataset
       qs: $.qs
-      eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ''
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{"verb": "retrieve", "request": {qs#to_geojson} }'
   products:
     DT_CLIMATE_ADAPTATION:
       discover_queryables:
@@ -4552,6 +4961,7 @@
       discover_queryables:
         form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1.json"
         constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/climate-dt_{activity}_{experiment}_{model}.json"
+      dataset: climate-dt
       class: ng
       generation: "1"
       expver: "0001"
@@ -4599,7 +5009,7 @@
       on_success:
         result_type: json
         metadata_mapping:
-          eodag:download_link: $.headers.Location
+          href: $.headers.Location
     no_auth_download: True
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
@@ -4640,7 +5050,15 @@
         - dataset
         - $.dataset
       qs: $.qs
-      eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ''
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
       dataset: climate-dt
@@ -4691,7 +5109,7 @@
       on_success:
         result_type: json
         metadata_mapping:
-          eodag:download_link: $.headers.Location
+          href: $.headers.Location
     no_auth_download: True
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
@@ -4712,12 +5130,34 @@
   description: DEDL STAC
   url: https://hda.data.destination-earth.eu/stac/v2/
   # anchors to avoid duplications
-  anchor_orderable_mm: &orderable_mm
-    _order_href: '$.links[?rel=="retrieve"].href'
-    _order_body: '$.links[?rel=="retrieve"].body'
-    eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
-    eodag:download_link: '$.null'
-    assets: '$.null'
+  anchor_orderable: &orderable_mm
+    metadata_mapping:
+      assets: '$.null'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ''
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.assets.downloadLink.type'
+        alternate: '$.assets.downloadLink.alternate'
+        order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
+        order_link: "{$.links[?rel==\"retrieve\"].href}?{$.links[?rel==\"retrieve\"].href#replace_str(\"'\", '\"')}"
+      quicklook:
+        href: '$.assets["ql.jpg"].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: '$.assets["ql.jpg"].type'
+        alternate: '$.assets["ql.jpg"].alternate'
+      thumbnail:
+        href: '$.assets["ql.jpg"].href'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: $.assets["ql.jpg"].type
+        alternate: '$.assets["ql.jpg"].alternate'
   search: !plugin
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
@@ -4726,13 +5166,34 @@
     asset_key_from_href: false
     metadata_mapping:
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      eodag:quicklook: '{eodag:thumbnail}'
-      order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
-      eodag:download_link: '$.assets.downloadLink.href'
+      assets: '$.assets'
       federation:backends: '$.null'
       storage:schemes: '$.null'
       storage:tier: '$.null'
-      assets: '$.null'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: '$.assets.downloadLink.href'
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.assets.downloadLink.type'
+        alternate: '$.assets.downloadLink.alternate'
+        order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
+      quicklook:
+        href: '$.assets["ql.jpg"].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: '$.assets["ql.jpg"].type'
+        alternate: '$.assets["ql.jpg"].alternate'
+      thumbnail:
+        href: '$.assets["ql.jpg"].href'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: $.assets["ql.jpg"].type
+        alternate: '$.assets["ql.jpg"].alternate'
     discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
       result_type: json
@@ -4778,7 +5239,7 @@
         http_code: 200
       on_success:
         metadata_mapping:
-          eodag:download_link: '$.json.assets.downloadLink.href'
+          href: '$.json.assets.downloadLink.href'
           order:status: $.json.properties."order:status"
   auth: !plugin
     type: OIDCTokenExchangeAuth
@@ -4811,6 +5272,8 @@
       _collection: EO.ESA.DAT.SENTINEL-2.MSI.L1C
     S2_MSI_L2A:
       _collection: EO.ESA.DAT.SENTINEL-2.MSI.L2A
+
+
     # Sentinel 3 - S3 OLCI L1
     S3_EFR:
       _collection: EO.EUM.DAT.SENTINEL-3.OL_1_EFR___
@@ -4855,92 +5318,70 @@
     # ECMWF - COPERNICUS CDS
     ERA5_SL:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     ERA5_SL_MONTHLY:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     ERA5_PL:
       _collection: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     ERA5_PL_MONTHLY:
       _collection: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     ERA5_LAND:
       _collection: EO.ECMWF.DAT.ERA5_LAND_HOURLY
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     ERA5_LAND_MONTHLY:
       _collection: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     UERRA_EUROPE_SL:
       _collection: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     GRIDDED_GLACIERS_MASS_CHANGE:
       _collection: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     GLACIERS_DIST_RANDOLPH:
       _collection: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SATELLITE_CARBON_DIOXIDE:
       _collection: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SATELLITE_METHANE:
       _collection: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SEASONAL_POSTPROCESSED_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SATELLITE_SEA_LEVEL_GLOBAL:
       _collection: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SATELLITE_SEA_ICE_EDGE_TYPE:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SATELLITE_SEA_ICE_THICKNESS:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_THICKNESS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SATELLITE_SEA_ICE_CONCENTRATION:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_CONCENTRATION
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SEASONAL_POSTPROCESSED_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SEASONAL_ORIGINAL_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SEASONAL_ORIGINAL_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SEASONAL_MONTHLY_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SEASONAL_MONTHLY_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     SIS_HYDRO_MET_PROJ:
       _collection: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     # ECMWF - CEMS
     FIRE_HISTORICAL:
       _collection: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
@@ -4967,56 +5408,43 @@
     # COPERNICUS ADS
     CAMS_GAC_FORECAST:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_FORECAST:
       _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GFE_GFAS:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_SOLAR_RADIATION:
       _collection: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GREENHOUSE_INVERSION:
       _collection: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_EAC4_MONTHLY:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_RE:
       _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_EAC4:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GRF_AUX:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GRF:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     CAMS_GLOBAL_EMISSIONS:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
-      metadata_mapping:
-        <<: *orderable_mm
+      <<: *orderable_mm
     # COPERNICUS ADS - Digital Elevation Model
     COP_DEM_GLO30_DGED:
       _collection: EO.DEM.DAT.COP-DEM_GLO-30-DGED
@@ -5131,14 +5559,10 @@
     # DT Output
     DT_EXTREMES:
       _collection: EO.ECMWF.DAT.DT_EXTREMES
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      <<: *orderable_mm
     DT_CLIMATE_ADAPTATION:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      <<: *orderable_mm
     # AERIS
     AERIS_IAGOS:
       _collection: EO.AERIS.DAT.IAGOS
@@ -5251,8 +5675,6 @@
       _collection: EO.ISIMIP.DAT.CLIMATE-FORCING_ISIMIP3b
     ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
       _collection: EO.ISIMIP.DAT.SOCIO-ECONOMIC-FORCING_ISIMIP3b
-    GENERIC_COLLECTION:
-      _collection: '{collection}'
     # Spacenet
     SPACENET_BUILDINGS_DETECTION_V1:
       _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V1
@@ -5275,8 +5697,6 @@
     SPACENET_ALL_WEATHER_MAPPING:
       _collection: EO.SPACENET.DAT.ALL_WEATHER_MAPPING
       metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
-
-
 ---
 !provider # MARK: eumetsat_ds
   name: eumetsat_ds
@@ -5377,13 +5797,6 @@
         - 'geo={geometry#to_rounded_wkt}'
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # The url of the quicklook
-      eodag:quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.properties.links.data[?(@.title="Product download")].href'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       size: '$.properties.productInformation.size'
@@ -5392,6 +5805,27 @@
       acquisitionInformation: '$.null'
       productInformation: '$.null'
       extraInformation: '$.null'
+    assets_mapping:
+      download_link:
+        title: 'downloadlink'
+        href: '$.properties.links.data[?(@.title="Product download")].href'
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.properties.links.data[?(@.title="Product download")].mediaType'
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.properties.links.previews[?(@.title="Quicklook")].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.properties.links.previews[?(@.title="Quicklook")].href'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: "image/jpeg"
   products:
     # S3 SRAL
     S3_SRA:
@@ -5743,7 +6177,6 @@
   download: !plugin
     type: HTTPDownload
     extract: true
-    ignore_assets: True
     ssl_verify: true
   auth: !plugin
     type: TokenAuth
@@ -6016,11 +6449,26 @@
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
       sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
-      eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
-      eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # order:status set to orderable by default and then updated from plugin
-      order:status: '{$.null#replace_str("Not Available","orderable")}'
+    assets_mapping:
+      download_link:
+        title: 'downloadlink'
+        href: '$.assets[?(@.roles[0] == "data") & (@.type == "application/zip")].href'
+        roles:
+        - 'archive'
+        - 'data'
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+      quicklook:
+        href: '$.assets[?(@.roles[0] == "overview")].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.assets[?(@.roles[0] == "overview")].href'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: "image/jpeg"
   products:
     S1_SAR_OCN:
       product:type: OCN
@@ -6049,7 +6497,6 @@
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
-    ignore_assets: true
     archive_depth: 2
     auth_error_code:
       - 401
@@ -6150,11 +6597,26 @@
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
       sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
-      eodag:download_link: '$.properties.endpoint_url'
-      eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+    assets_mapping:
+      download_link:
+        href: '$.properties.endpoint_url'
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: 'image/jpeg'
+      thumbnail:
+        href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+        title: "thumbnail"
+        roles:
+        - 'thumbnail'
+        type: 'image/jpeg'
   products:
     S1_SAR_OCN:
       product:type: OCN
@@ -6184,7 +6646,6 @@
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
-    ignore_assets: True
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
@@ -6290,7 +6751,7 @@
       on_success:
         need_search: true
         metadata_mapping:
-          eodag:download_link: $.json.asset.value.href
+          href: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -6315,7 +6776,15 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    assets_mapping:
+      download_link:
+        href: ''
+        title: "downloadlink"
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical
@@ -6444,6 +6913,27 @@
       assets: '{$.assets#dict_with_roles(["data", "thumbnail", "overview"])}'
       eodag:download_link: '$.assets.enclosure.href'
       instrument: '{$.properties.instruments#csv_list}'
+      _collection: '{collection}'
+    assets_mapping:
+      download_link:
+        href: '$.assets.enclosure.href'
+        roles:
+        - 'archive'
+        - 'data'
+        type: '$.assets[?(@.roles[0]="data")].type'
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.assets[?(@.roles[0] == "overview")].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: '$.assets[?(@.roles[0] == "overview")].type'
+      thumbnail:
+        href: '$.assets[?(@.roles[0] == "thumbnail")].href'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: '$.assets[?(@.roles[0] == "thumbnail")].type'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -6482,20 +6972,41 @@
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_BUILT_S_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_BUILT_H:
       _collection: builtH
       year: '2018'
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_H_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_BUILT_V:
       _collection: builtV
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_BUILT_V_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_BUILT_C:
       _collection: builtC
       year: '2018'
@@ -6504,7 +7015,14 @@
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("m", "")}'
         dataset: GHS_BUILT_C_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_LAND:
       _collection: land
       year: '2018'
@@ -6512,13 +7030,27 @@
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_LAND_E2018_GLOBE_R2022A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_POP:
       _collection: POP
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
         dataset: GHS_POP_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_SMOD:
       _collection: SMOD
       tile_size: 1k
@@ -6526,7 +7058,14 @@
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("k", "000")}'
         dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_ESM:
       _collection: ESM
       year: '2015'
@@ -6534,46 +7073,90 @@
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     # produc types with one file
     GHS_DUC:
       _collection: DUC
-      metadata_mapping:
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_DUC_GLOBE_R2023A/V2-0/GHS_DUC_MT_GLOBE_R2023A_V2_0.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_DUC_GLOBE_R2023A/V2-0/GHS_DUC_MT_GLOBE_R2023A_V2_0.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_FUA:
       _collection: FUA
-      metadata_mapping:
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_BUILT_LAUSTAT:
       _collection: BUILT_LAUSTAT
-      metadata_mapping:
-        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     # products with several files
     GHS_ENACT_POP:
       _collection: ENACT_POP
       grouped_by: month
       year: '2011'
-      metadata_mapping:
-        eodag:download_link: https://jeodpp.jrc.ec.europa.eu
       assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
         day:
+          title: "day"
           href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
           type: "application/zip"
           title: Daytime grid
         night:
+          title: "night"
           href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
           type: "application/zip"
           title: Nightime grid
     GHS_UCDB_DOMAIN:
       _collection: UCDB
       grouped_by: thematic_domain
-      metadata_mapping:
-        eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_THEME_GLOBE_R2024A/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A/V1-1/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A_V1_1.zip
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_THEME_GLOBE_R2024A/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A/V1-1/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A_V1_1.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
     GHS_UCDB_REGION:
       _collection: UCDB
       grouped_by: region
-      metadata_mapping:
-        eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A/GHS_UCDB_REGION_{region}_R2024A/V1-1/GHS_UCDB_REGION_{region}_R2024A_V1_1.zip
+      assets_mapping:
+        download_link:
+          title: "downloadlink"
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A/GHS_UCDB_REGION_{region}_R2024A/V1-1/GHS_UCDB_REGION_{region}_R2024A_V1_1.zip'
+          roles:
+          - 'archive'
+          - 'data'
+          type: 'application/zip'
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -6825,6 +7408,29 @@
         - $.null
       eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      assets: '$.Assets'
+    assets_mapping:
+      download_link:
+        href: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
+        roles:
+        - 'archive'
+        - 'data'
+        type: 'application/octet-stream'
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        # Mixed protocol makes error, http with S3 downloader
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: 'image/jpeg'
+      thumbnail:
+        # Mixed protocol makes error, http with S3 downloader
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles:
+        - 'overwiev'
+        type: 'image/jpeg'
   download: !plugin
     type: AwsDownload
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'

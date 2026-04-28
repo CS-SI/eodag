@@ -17,8 +17,8 @@
 # limitations under the License.
 from __future__ import annotations
 
-from eodag.plugins.download.base import Download
-from eodag.plugins.search.base import Search
+from eodag.plugins.download import Download
+from eodag.plugins.search import Search
 
 
 class Api(Search, Download):
@@ -40,22 +40,12 @@ class Api(Search, Download):
       (``True`` by default)
     - save a product in an archive/directory (in ``output_dir``) whose name must be
       the product's ``title`` property
-    - update the product's ``location`` attribute once its data is downloaded (and
-      eventually after it's extracted) to the product's location given as a file URI
-      (e.g. 'file:///tmp/product_folder' on Linux or
-      'file:///C:/Users/username/AppData/Local/Temp' on Windows)
-    - save a *record* file in the directory ``output_dir/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
-      attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
-      and whose content is the product's ``remote_location`` attribute itself.
-    - not try to download a product whose ``location`` attribute already points to an
-      existing file/directory
-    - not try to download a product if its *record* file exists as long as the expected
-      product's file/directory. If the *record* file only is found, it must be deleted
-      (it certainly indicates that the download didn't complete)
 
     :param provider: An EODAG provider name
     :type provider: str
     :param config: An EODAG plugin configuration
     :type config: dict[str, Any]
     """
+
+
+__all__ = ["Api"]

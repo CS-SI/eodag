@@ -168,3 +168,25 @@ class QuotaExceededError(RequestError):
             raise QuotaExceededError(
                 f"Too many requests on provider {provider}, please check your quota."
             )
+
+
+__all__ = [
+    "EodagError",
+    "PluginNotFoundError",
+    "PluginImplementationError",
+    "MisconfiguredError",
+    "AddressNotFound",
+    "UnsupportedProvider",
+    "UnsupportedCollection",
+    "UnsupportedDatasetAddressScheme",
+    "AuthenticationError",
+    "NotAvailableError",
+    "NoMatchingCollection",
+    "STACOpenerError",
+    "InvalidDataError",
+    "RequestError",
+    "ValidationError",
+    "DownloadError",
+    "TimeOutError",
+    "QuotaExceededError",
+]

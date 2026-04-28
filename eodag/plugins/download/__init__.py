@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -15,9 +15,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""EODAG download package"""
-from .aws import AwsDownload
-from .base import Download
-from .http import HTTPDownload
+""" Plugin download module """
 
-__all__ = ["Download", "AwsDownload", "HTTPDownload"]
+from .contentiterator import (
+    FileContentIterator,
+    ResponseContentIterator,
+    S3ObjectContentIterator,
+)
+from .httputils import HttpUtils
+from .protocol import AwsDownload, Download, HTTPDownload
+from .streamresponse import StreamResponse
+
+__all__ = [
+    "Download",
+    "AwsDownload",
+    "HTTPDownload",
+    "StreamResponse",
+    "FileContentIterator",
+    "ResponseContentIterator",
+    "S3ObjectContentIterator",
+    "HttpUtils",
+]

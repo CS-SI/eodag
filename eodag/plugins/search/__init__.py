@@ -15,44 +15,62 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""EODAG search package"""
-from __future__ import annotations
+""" Plugin search module """
+from .base import MappingInterpretor, Search
+from .build_search_result import (
+    ALLOWED_KEYWORDS,
+    ECMWF_PREFIX,
+    END,
+    START,
+    ECMWFSearch,
+    MeteoblueSearch,
+    WekeoECMWFSearch,
+    ecmwf_format,
+    ecmwf_mtd,
+    ecmwf_temporal_to_eodag,
+    update_properties_from_element,
+)
+from .cop_ghsl import CopGhslSearch
+from .cop_marine import CopMarineSearch
+from .creodias_s3 import CreodiasS3Search
+from .csw import CSWSearch
+from .preparesearch import PreparedSearch
+from .qssearch import (
+    GeodesSearch,
+    ODataV4Search,
+    PostJsonSearch,
+    QueryStringSearch,
+    StacSearch,
+    WekeoSearch,
+)
+from .stac_list_assets import StacListAssets
+from .static_stac_search import StaticStacSearch
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
-
-from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
-
-if TYPE_CHECKING:
-    from typing import Any, Optional, Union
-
-    from mypy_boto3_s3 import S3ServiceResource
-    from requests.auth import AuthBase
-
-    from eodag.plugins.authentication.base import Authentication
-
-
-@dataclass
-class PreparedSearch:
-    """An object collecting needed information for search."""
-
-    collection: Optional[str] = None
-    page: Optional[int] = DEFAULT_PAGE
-    limit: Optional[int] = DEFAULT_LIMIT
-    auth: Optional[Union[AuthBase, S3ServiceResource]] = None
-    auth_plugin: Optional[Authentication] = None
-    count: bool = True
-    url: Optional[str] = None
-    info_message: Optional[str] = None
-    exception_message: Optional[str] = None
-    next_page_token: Optional[str] = None
-    next_page_token_key: Optional[str] = None
-
-    need_count: bool = field(init=False, repr=False)
-    query_params: dict[str, Any] = field(init=False, repr=False)
-    query_string: str = field(init=False, repr=False)
-    search_urls: list[str] = field(init=False, repr=False)
-    collection_def_params: dict[str, Any] = field(init=False, repr=False)
-    total_items_nb: int = field(init=False, repr=False)
-    sort_by_qs: str = field(init=False, repr=False)
-    raise_errors: Optional[bool] = field(init=False, repr=False)
+__all__ = [
+    "Search",
+    "MappingInterpretor",
+    "PreparedSearch",
+    "ECMWFSearch",
+    "MeteoblueSearch",
+    "WekeoECMWFSearch",
+    "CopMarineSearch",
+    "CopGhslSearch",
+    "ODataV4Search",
+    "PostJsonSearch",
+    "QueryStringSearch",
+    "StacSearch",
+    "WekeoSearch",
+    "CreodiasS3Search",
+    "CSWSearch",
+    "GeodesSearch",
+    "StacListAssets",
+    "StaticStacSearch",
+    "ecmwf_mtd",
+    "update_properties_from_element",
+    "ecmwf_format",
+    "ecmwf_temporal_to_eodag",
+    "ECMWF_PREFIX",
+    "ALLOWED_KEYWORDS",
+    "END",
+    "START",
+]

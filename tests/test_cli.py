@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
 import os
 import re
@@ -25,6 +26,7 @@ from datetime import datetime
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 from typing import Optional, Tuple
+from unittest import mock
 
 import click
 import responses
@@ -34,22 +36,23 @@ from faker import Faker
 from packaging import version
 
 from eodag.api.collection import Collection, CollectionsList
+from eodag.api.core import DEFAULT_LIMIT
 from eodag.api.search_result import SearchResult
+from eodag.cli import download, eodag_cli, search_crunch
 from eodag.utils import GENERIC_COLLECTION
-from eodag.utils.exceptions import UnsupportedProvider
-from tests import TEST_RESOURCES_PATH
-from tests.context import (
-    DEFAULT_LIMIT,
+from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     NoMatchingCollection,
-    download,
-    eodag_cli,
-    mock,
-    search_crunch,
+    UnsupportedProvider,
 )
-from tests.units import test_core
-from tests.utils import no_blanks, write_eodag_conf_with_fake_credentials
+from tests.utils import (
+    SUPPORTED_COLLECTIONS,
+    SUPPORTED_PROVIDERS,
+    TEST_RESOURCES_PATH,
+    no_blanks,
+    write_eodag_conf_with_fake_credentials,
+)
 
 
 class TestEodagCli(unittest.TestCase):
@@ -118,7 +121,7 @@ class TestEodagCli(unittest.TestCase):
         if isinstance(result, click.testing.Result):
             exit_code = result.exit_code
             output = result.output
-            error = result.exception
+            error = result.exception  # type: ignore
 
         return exit_code, output, error
 
@@ -478,7 +481,7 @@ class TestEodagCli(unittest.TestCase):
                 count=False, limit=DEFAULT_LIMIT, page=1, **criteria
             )
             api_obj.download_all.assert_called_once_with(
-                search_results, output_dir=None, executor=mock.ANY
+                search_results, output_dir=None
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -732,7 +735,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag list without provider should return all supported collections"""
         all_supported_collections = [
             col
-            for col, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
+            for col, provs in SUPPORTED_COLLECTIONS.items()
             if len(provs) != 0 and col != GENERIC_COLLECTION
         ]
         exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
@@ -743,10 +746,10 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_list_collection_with_provider_ok(self):
         """Calling eodag list with provider should return all supported collections of specified provider"""  # noqa
-        for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
+        for provider in SUPPORTED_PROVIDERS:
             provider_supported_collections = [
                 col
-                for col, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
+                for col, provs in SUPPORTED_COLLECTIONS.items()
                 if provider in provs
                 if col != GENERIC_COLLECTION
             ]
@@ -771,10 +774,10 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, SystemExit)
         self.assertIn("Unsupported provider. You may have a typo", output)
-        self.assertIn(
-            f"Available providers: {', '.join(test_core.TestCore.SUPPORTED_PROVIDERS)}",
-            output,
-        )
+
+        self.assertIn("Available providers:", output)
+        for provider in SUPPORTED_PROVIDERS:
+            self.assertIn(provider, output)
 
     @mock.patch("eodag.cli.EODataAccessGateway.fetch_collections_list", autospec=True)
     def test_eodag_list_collection_fetch(self, mock_fetch_collections_list):
@@ -1002,7 +1005,7 @@ class TestEodagCli(unittest.TestCase):
         self.assertIn("A file may have been downloaded but we cannot locate it", output)
 
         dag.return_value.download_all.assert_called_with(
-            mock.ANY, output_dir=output_dir, executor=mock.ANY
+            mock.ANY, output_dir=output_dir
         )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -1051,11 +1054,11 @@ class TestEodagCli(unittest.TestCase):
                 ["foo", "bar"],
             )
             dag.return_value.download_all.assert_called_once_with(
-                fake_result, output_dir=None, executor=mock.ANY
+                fake_result, output_dir=None
             )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.sessions.Session.request",
         autospec=True,
     )
     def test_eodag_download_missingcredentials(self, oidc_request):
@@ -1079,7 +1082,7 @@ class TestEodagCli(unittest.TestCase):
         self.assertIsInstance(error, MisconfiguredError)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase._get_oidc_endpoints",
+        "eodag.plugins.authentication.openid_connect.oidcrefreshtokenbase.OIDCRefreshTokenBase._get_oidc_endpoints",
         autospec=True,
     )
     @responses.activate
@@ -1110,7 +1113,8 @@ class TestEodagCli(unittest.TestCase):
         self.assertIsInstance(error, AuthenticationError)
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+        "eodag.plugins.authentication.openid_connect.oidcauthorizationcodeflowauth.requests.get",
+        autospec=True,
     )
     @mock.patch("eodag.api.product._product.EOProduct.get_quicklook", autospec=True)
     def test_eodag_download_quicklooks(self, mock_get_quicklook, mock_oidc_get):

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, cast
 
 import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
@@ -27,33 +27,33 @@ from ecmwfapi.api import APIException, Connection, get_apikey_values
 from pydantic.fields import FieldInfo
 
 from eodag.api.search_result import RawSearchResult
-from eodag.plugins.apis.base import Api
-from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.base import Search
-from eodag.plugins.search.build_search_result import ECMWFSearch, ecmwf_mtd
+from eodag.plugins.download import FileContentIterator, StreamResponse
+from eodag.plugins.search import ECMWFSearch, PreparedSearch, Search, ecmwf_mtd
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    Mime,
+    Processor,
+    ProgressCallback,
     get_geometry_from_various,
-    path_to_uri,
-    sanitize,
     urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
+from .base import Api
+
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
-    from concurrent.futures import ThreadPoolExecutor
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product import EOProduct
+    from eodag.api.product import Asset
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import ProgressCallback, Unpack
+    from eodag.utils import Unpack
 
 
 logger = logging.getLogger("eodag.apis.ecmwf")
@@ -145,18 +145,31 @@ class EcmwfApi(Api, ECMWFSearch):
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
         """
         # Get credentials from eodag or using ecmwf conf
-        email = getattr(self.config, "credentials", {}).get("username")
-        key = getattr(self.config, "credentials", {}).get("password")
+        email = getattr(self.config, "credentials", {}).get("username", None)
+        key = getattr(self.config, "credentials", {}).get("password", None)
         url = getattr(self.config, "auth_endpoint", None)
+
+        # if some data missing, Load env
         if not all([email, key, url]):
             key, url, email = get_apikey_values()
 
+        # Check auth parameters
+        if email is None or email == "":
+            raise AuthenticationError(
+                "Please check your ECMWF credentials (missing or empty username)"
+            )
+        if key is None or key == "":
+            raise AuthenticationError(
+                "Please check your ECMWF credentials (missing or empty password)"
+            )
+        if url is None or url == "":
+            raise AuthenticationError(
+                "Please check your ECMWF credentials (missing or empty auth_endpoint)"
+            )
+
         # APIRequest to check credentials
-        ecmwf_connection = Connection(
-            url=url,
-            email=email,
-            key=key,
-        )
+        ecmwf_connection = Connection(url=url, email=email, key=key)
+
         try:
             ecmwf_connection.call("{}/{}".format(url, "who-am-i"))
             logger.debug("Credentials checked on ECMWF")
@@ -166,61 +179,144 @@ class EcmwfApi(Api, ECMWFSearch):
 
         return {"key": key, "url": url, "email": email}
 
-    def download(
+    def download(  # type: ignore
         self,
-        product: EOProduct,
+        asset: Asset,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        executor: Optional[ThreadPoolExecutor] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+        no_cache: bool = False,
+        stream: bool = False,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[str]:
+    ) -> Union[Optional[str], StreamResponse]:
         """Download data from ECMWF MARS"""
-        product_format = product.properties.get("format", "grib")
-        product_extension = ECMWF_MARS_KNOWN_FORMATS.get(product_format, product_format)
-        kwargs["output_extension"] = kwargs.get(
-            "output_extension", f".{product_extension}"
-        )
 
-        # Prepare download
-        fs_path, record_filename = self._prepare_download(
-            product,
-            progress_callback=progress_callback,
+        # Force create progress_callback
+        if not isinstance(progress_callback, ProgressCallback):
+            logger.info("Progress bar unavailable")
+            progress_callback = ProgressCallback(disable=True)
+        progress_callback = cast(ProgressCallback, progress_callback)
+
+        if asset.key == "download_link":
+            product_format = asset.product.properties.get("format", "grib")
+            product_extension = ECMWF_MARS_KNOWN_FORMATS.get(
+                product_format, product_format
+            )
+            if isinstance(product_extension, str) and "output_extension" not in kwargs:
+                kwargs["output_extension"] = ".{}".format(product_extension)  # type: ignore
+
+        # Gather current asset statements
+        statements = self.get_statements(asset, **kwargs)
+        local_path: str = statements.get("local_path", "")
+
+        # Already downloaded ? (cache)
+        if not no_cache:
+            cache = self.get_cache(asset, statements, stream)
+            if cache is not None:
+                progress_callback.reset()
+                return cache
+
+        # Check if need order
+        max_workers = getattr(self.config, "max_workers", os.cpu_count())
+
+        shared: dict[str, Any] = {"error": None}
+
+        def callback(_, error: Optional[Exception]):
+            if error is not None:
+                shared["error"] = error
+                logger.warning(error)
+
+        taskid = Processor.queue(
+            self._download,
+            asset,
+            local_path,
             **kwargs,
+            q_parallelize=max_workers,
+            q_callback=callback,
         )
+        Processor.wait(taskid)
+        if shared["error"] is not None:
+            raise shared["error"]
 
-        if not fs_path or not record_filename:
-            if fs_path:
-                product.location = path_to_uri(fs_path)
-            return fs_path
+        self._download(asset, local_path, **kwargs)
 
-        new_fs_path = os.path.join(
-            os.path.dirname(fs_path), sanitize(product.properties["title"])
-        )
-        if not os.path.isdir(new_fs_path):
-            os.makedirs(new_fs_path)
-        fs_path = os.path.join(new_fs_path, os.path.basename(fs_path))
+        # Post process archive
+        local_path = self.unpack_archive(asset, local_path, progress_callback, **kwargs)  # type: ignore
+        self.asset_metadata_from_file(asset, local_path)
+
+        # Update cache location
+        statements["local_path"] = local_path
+        statements["href"] = asset.get("href")
+        self.set_statements(asset, statements, **kwargs)
+
+        if stream:
+
+            if os.path.isdir(local_path):
+                local_path = self.pack_archive(asset, local_path)
+
+                # Watch when stream end to remove archive
+                fci = FileContentIterator(local_path)
+
+                def on_complete():
+                    if os.path.isfile(local_path):
+                        os.remove(local_path)
+
+                fci.on("complete", on_complete)
+
+                def on_error(error: Exception):
+                    if os.path.isfile(local_path):
+                        os.remove(local_path)
+
+                fci.on("error", on_error)
+
+                # Update asset from file
+                self.asset_metadata_from_file(asset, local_path)
+
+                # Build stream response from file
+                logger.debug(
+                    "Cache found, served as stream from file {}".format(local_path)
+                )
+                return StreamResponse(
+                    content=fci,
+                    filename=asset.filename,
+                    size=asset.size,
+                    headers={
+                        "Content-Length": str(asset.size),
+                        "Content-Type": asset.get("type", Mime.DEFAULT),
+                    },
+                    media_type=asset.get("type", Mime.DEFAULT),
+                    status_code=200,
+                    arcname=None,
+                )
+            else:
+                # Update asset from file
+                self.asset_metadata_from_file(asset, local_path)
+                return StreamResponse.from_file(local_path)
+
+        else:
+            return local_path
+
+    def _download(self, asset: Asset, local_path: str, **kwargs):
 
         # get download request dict from product.location/eodag:download_link url query string
         # separate url & parameters
-        download_request = geojson.loads(urlsplit(product.location).query)
+        download_request = geojson.loads(urlsplit(asset.get("href")).query)
 
         # Set verbosity
         eodag_verbosity = get_logging_verbose()
+        ecmwf_verbose = False
+        ecmwf_log = logger.info
         if eodag_verbosity is not None and eodag_verbosity >= 3:
             # debug verbosity
             ecmwf_verbose = True
             ecmwf_log = logger.debug
-        else:
-            # default verbosity
-            ecmwf_verbose = False
-            ecmwf_log = logger.info
 
         auth_dict = self.authenticate()
 
         # Send download request to ECMWF web API
         logger.info("Request download on ECMWF: %s" % download_request)
+
         try:
             if "dataset" in download_request and not download_request[
                 "dataset"
@@ -229,32 +325,19 @@ class EcmwfApi(Api, ECMWFSearch):
                 ecmwf_server = ECMWFDataServer(
                     verbose=ecmwf_verbose, log=ecmwf_log, **auth_dict
                 )
-                ecmwf_server.retrieve(dict(download_request, **{"target": fs_path}))
+                ecmwf_server.retrieve(dict(download_request, **{"target": local_path}))
             else:
                 # Operational Archive
                 ecmwf_server = ECMWFService(
                     service="mars", verbose=ecmwf_verbose, log=ecmwf_log, **auth_dict
                 )
                 download_request.pop("dataset", None)
-                ecmwf_server.execute(download_request, fs_path)
+                ecmwf_server.execute(download_request, local_path)
         except APIException as e:
             logger.error(e)
             raise DownloadError(e)
 
-        with open(record_filename, "w") as fh:
-            fh.write(product.properties["eodag:download_link"])
-        logger.debug("Download recorded in %s", record_filename)
-
-        # do not try to extract a directory
-        kwargs["extract"] = False
-
-        product_path = self._finalize(
-            new_fs_path,
-            progress_callback=progress_callback,
-            **kwargs,
-        )
-        product.location = path_to_uri(product_path)
-        return product_path
+        return None
 
     def clear(self) -> None:
         """Clear search context"""
@@ -272,3 +355,6 @@ class EcmwfApi(Api, ECMWFSearch):
         """
         collection = kwargs.get("collection")
         return self.queryables_from_metadata_mapping(collection)
+
+
+__all__ = ["EcmwfApi"]

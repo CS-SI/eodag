@@ -1,0 +1,24 @@
+{
+  "name" : "S2B_MSIL1C_20211130T235939_N0301_R116_T59VMF_20211201T012623",
+  "id" : "c4ccc063-1db7-4971-a50f-47b462977642",
+  "path" : "products/2021/11/30/S2B_MSIL1C_20211130T235939_N0301_R116_T59VMF_20211201T012623",
+  "timestamp" : "2021-11-30T23:59:39.024Z",
+  "datatakeIdentifier" : "GS2B_20211130T235939_024738_N03.01",
+  "sciHubIngestion" : "2021-12-01T02:05:26.185Z",
+  "s3Ingestion" : "2021-12-01T02:08:35.399Z",
+  "tiles" : [ {
+    "path" : "tiles/59/V/MF/2021/12/1/0",
+    "timestamp" : "2021-12-01T00:00:02.032Z",
+    "utmZone" : 59,
+    "latitudeBand" : "V",
+    "gridSquare" : "MF",
+    "datastrip" : {
+      "id" : "S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01",
+      "path" : "products/2021/11/30/S2B_MSIL1C_20211130T235939_N0301_R116_T59VMF_20211201T012623/datastrip/0"
+    }
+  } ],
+  "datastrips" : [ {
+    "id" : "S2B_OPER_MSI_L1C_DS_VGS4_20211201T012623_S20211130T235940_N03.01",
+    "path" : "products/2021/11/30/S2B_MSIL1C_20211130T235939_N0301_R116_T59VMF_20211201T012623/datastrip/0"
+  } ]
+}

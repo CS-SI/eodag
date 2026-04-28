@@ -1,0 +1,347 @@
+# -*- coding: utf-8 -*-
+# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import random
+import shutil
+import tempfile
+import unittest
+from collections import OrderedDict, namedtuple
+from io import StringIO
+from pathlib import Path
+from unittest import mock  # PY3
+
+import responses
+from owslib.etree import etree
+from owslib.ows import ExceptionReport
+from shapely import wkt
+
+from eodag.api.product import EOProduct
+from eodag.api.provider import ProvidersDict
+from eodag.config import load_default_config
+from eodag.plugins.manager import PluginManager
+
+TEST_RESOURCES_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "resources")
+)
+RESOURCES_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "eodag", "resources")
+)
+
+
+class EODagTestBase(unittest.TestCase):
+    """Base test case with common product test data and factory methods."""
+
+    def setUp(self):
+        super().setUp()
+
+        providers = ProvidersDict.from_configs(load_default_config())
+        self.plugins_manager = PluginManager(providers)
+
+        self.provider = "creodias"
+        self.download_url = (
+            "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
+        )
+        self.local_filename = (
+            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911"
+        )
+        self.local_product_abspath = os.path.abspath(
+            os.path.join(TEST_RESOURCES_PATH, "products", self.local_filename)
+        )
+        self.local_product_as_archive_path = os.path.abspath(
+            os.path.join(
+                TEST_RESOURCES_PATH,
+                "products",
+                "as_archive",
+                "{}.zip".format(self.local_filename),
+            )
+        )
+        self.local_asset_path = os.path.join(
+            TEST_RESOURCES_PATH,
+            "products",
+            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911",
+            "GRANULE",
+            "L1C_T31TDH_A013204_20180101T105435",
+            "IMG_DATA",
+            "T31TDH_20180101T105441_B01.jp2",
+        )
+        self.local_band_file = os.path.join(
+            self.local_product_abspath,
+            "GRANULE",
+            "L1C_T31TDH_A013204_20180101T105435",
+            "IMG_DATA",
+            "T31TDH_20180101T105441_B01.jp2",
+        )
+        # A good valid geometry of a sentinel 2 product around Toulouse
+        self.geometry = wkt.loads(
+            "POLYGON((0.495928592903789 44.22596415476343, 1.870237286761489 "
+            "44.24783068396879, "
+            "1.888683014192297 43.25939191053712, 0.536772323136669 43.23826255332707, "
+            "0.495928592903789 44.22596415476343))"
+        )
+        # The footprint requested
+        self.footprint = {
+            "lonmin": 1.3128662109375002,
+            "latmin": 43.65197548731186,
+            "lonmax": 1.6754150390625007,
+            "latmax": 43.699651229671446,
+        }
+        self.collection = "S2_MSI_L1C"
+        self.platform = "S2A"
+        self.instrument = "MSI"
+        self.provider_id = "9deb7e78-9341-5530-8fe8-f81fd99c9f0f"
+
+        self.eoproduct_props = {
+            "id": "9deb7e78-9341-5530-8fe8-f81fd99c9f0f",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.495928592903789, 44.22596415476343],
+                        [1.870237286761489, 44.24783068396879],
+                        [1.888683014192297, 43.25939191053712],
+                        [0.536772323136669, 43.23826255332707],
+                        [0.495928592903789, 44.22596415476343],
+                    ]
+                ],
+            },
+            "collection": self.collection,
+            "constellation": "Sentinel-2",
+            "platform": self.platform,
+            "instruments": [self.instrument],
+            "title": self.local_filename,
+            "eodag:download_link": self.download_url,
+        }
+
+    def tearDown(self):
+        unwanted_product_dir = os.path.join(
+            os.path.dirname(self.local_product_as_archive_path), self.local_filename
+        )
+        if os.path.isdir(unwanted_product_dir):
+            shutil.rmtree(unwanted_product_dir)
+        super().tearDown()
+
+    def override_properties(self, **kwargs):
+        """Overrides the properties with the values specified in the input parameters"""
+        self.__dict__.update(
+            {
+                prop: new_value
+                for prop, new_value in kwargs.items()
+                if prop in self.__dict__ and new_value != self.__dict__[prop]
+            }
+        )
+
+    @staticmethod
+    def _tuples_to_lists(shapely_mapping):
+        """Transforms all tuples in shapely mapping to lists.
+
+        When doing for example::
+            shapely_mapping = geometry.mapping(geom)
+
+        ``shapely_mapping['coordinates']`` will contain only tuples.
+
+        When doing for example::
+            geojson_load = geojson.loads(geojson.dumps(obj_with_geo_interface))
+
+        ``geojson_load['coordinates']`` will contain only lists.
+
+        Then this helper exists to transform all tuples in
+        ``shapely_mapping['coordinates']`` to lists in-place, so
+        that ``shapely_mapping['coordinates']`` can be compared to
+        ``geojson_load['coordinates']``
+        """
+        shapely_mapping["coordinates"] = list(shapely_mapping["coordinates"])
+        for i, coords in enumerate(shapely_mapping["coordinates"]):
+            shapely_mapping["coordinates"][i] = list(coords)
+            coords = shapely_mapping["coordinates"][i]
+            for j, pair in enumerate(coords):
+
+                # Coordinates rounded to 6 decimals by geojson lib
+                # So rounding coordinates in order to be able to compare
+                # coordinates after a `geojson.loads`
+                # see https://github.com/jazzband/geojson.git
+                pair = tuple(round(i, 6) for i in pair)
+
+                coords[j] = list(pair)
+        return shapely_mapping
+
+    def compute_csw_records(self, mock_catalog, raise_error_for="", *args, **kwargs):
+        if raise_error_for:
+            for constraint in kwargs["constraints"]:
+                if constraint.propertyname == raise_error_for:
+                    exception_report = etree.parse(
+                        StringIO(
+                            '<ExceptionReport xmlns="http://www.opengis.net/ows/1.1" '
+                            'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation='  # noqa
+                            '"http://schemas.opengis.net/ows/1.1.0/owsExceptionReport.xsd" version="1.0.0" language="en">'  # noqa
+                            '<Exception exceptionCode="NoApplicableCode"><ExceptionText>Unknown exception</ExceptionText>'  # noqa
+                            "</Exception></ExceptionReport>"
+                        )
+                    )
+                    raise ExceptionReport(exception_report)
+        bbox_wgs84 = random.choice(
+            [
+                None,
+                (
+                    self.footprint["lonmin"],
+                    self.footprint["latmin"],
+                    self.footprint["lonmax"],
+                    self.footprint["latmax"],
+                ),
+            ]
+        )
+        Record = namedtuple(
+            "CswRecord",
+            [
+                "identifier",
+                "title",
+                "creator",
+                "publisher",
+                "description",
+                "subjects",
+                "date",
+                "references",
+                "bbox_wgs84",
+                "bbox",
+                "xml",
+            ],
+        )
+        BBox = namedtuple("BBox", ["minx", "miny", "maxx", "maxy", "crs"])
+        Crs = namedtuple("Crs", ["code", "id"])
+        mock_catalog.records = OrderedDict(
+            {
+                "id ent ifier": Record(
+                    identifier="id ent ifier",
+                    title="MyRecord",
+                    creator="eodagUnitTests",
+                    publisher="eodagUnitTests",
+                    abstract="A dumb CSW record for testing purposes",
+                    subjects=[],
+                    date="",
+                    references=[
+                        {
+                            "scheme": "WWW:DOWNLOAD-1.0-http--download",
+                            "url": "http://www.url.eu/dl",
+                        }
+                    ],
+                    bbox_wgs84=bbox_wgs84,
+                    bbox=BBox(
+                        minx=self.footprint["lonmin"],
+                        miny=self.footprint["latmin"],
+                        maxx=self.footprint["lonmax"],
+                        maxy=self.footprint["latmax"],
+                        crs=Crs(code=4326, id="EPSG"),
+                    ),
+                    xml="""
+                    <csw:Record xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+                        xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/"    # noqa
+                        xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml"    # noqa
+                        xmlns:ows="http://www.opengis.net/ows" xmlns:xs="http://www.w3.org/2001/XMLSchema"    # noqa
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <dc:identifier>urn:x-gs:resource:localhost::52</dc:identifier>
+                        <dc:title>S2 mosaic on Madrid</dc:title>
+                        <dc:format/>
+                        <dct:references scheme="WWW:LINK-1.0-http--link">
+                            http://localhost:8000/admin/storm_csw/resource/52/change/
+                        </dct:references>
+                        <dct:modified>2017-05-05 13:02:35.548758+00:00</dct:modified>
+                        <dct:abstract/>
+                        <dc:date>2017-05-05 13:02:35.139807+00:00</dc:date>
+                        <dc:creator> </dc:creator>
+                        <dc:coverage/>
+                        <ows:BoundingBox dimensions="2" crs="EPSG">
+                        <ows:LowerCorner>40.405012373 -3.70433905592</ows:LowerCorner>
+                        <ows:UpperCorner>40.420696583 -3.67011406889</ows:UpperCorner>
+                        </ows:BoundingBox>
+                    </csw:Record>
+                """,
+                )
+            }
+        )
+        return mock.DEFAULT
+
+    def _dummy_product(self, provider=None, properties=None, collection=None, **kwargs):
+        product = EOProduct(
+            self.provider if provider is None else provider,
+            self.eoproduct_props if properties is None else properties,
+            collection=self.collection if collection is None else collection,
+            **kwargs,
+        )
+        product.register_plugin_manager(self.plugins_manager)
+        return product
+
+    def _dummy_downloadable_product(
+        self,
+        product=None,
+        assets=None,
+        base_uri=None,
+        output_dir=None,
+        extract=None,
+        delete_archive=None,
+    ):
+        if product is None:
+            product = self._dummy_product()
+
+        # Mock product download url
+        with open(self.local_product_as_archive_path, "rb") as fh:
+            responses.add(
+                responses.GET,
+                product.assets["download_link"].get("href"),
+                body=fh.read(),
+                status=200,
+                content_type="application/zip",
+                auto_calculate_content_length=True,
+            )
+
+        # Mock asset download urls
+        if assets is not None:
+            with open(self.local_asset_path, "rb") as fh:
+                asset_content = fh.read()
+                for name in assets:
+                    asset_url = assets[name].get("href")
+                    asset_type = assets[name].get("type", "image/jp2")
+                    if asset_url is not None:
+                        responses.add(
+                            responses.GET,
+                            asset_url,
+                            body=asset_content,
+                            status=200,
+                            content_type=asset_type,
+                            auto_calculate_content_length=True,
+                        )
+            product.assets.update(assets)
+
+        # Output directory
+        if output_dir is None:
+            if hasattr(self, "output_dir"):
+                output_dir = self.output_dir
+            else:
+                self.tmp_download_dir = tempfile.TemporaryDirectory()
+                output_dir = str(Path(self.tmp_download_dir.name))
+
+        product.register_plugin_manager(self.plugins_manager)
+        return product
+
+    def _clean_product(self, product_path):
+        if os.path.exists(product_path):
+            shutil.rmtree(product_path)
+        if hasattr(self, "tmp_download_dir"):
+            self.tmp_download_dir.cleanup()
+
+
+__all__ = ["TEST_RESOURCES_PATH", "RESOURCES_PATH", "EODagTestBase"]

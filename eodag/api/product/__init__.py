@@ -28,8 +28,8 @@ try:
         EOProduct,
     )
 except ImportError:
-    from ._assets import Asset, AssetsDict  # type: ignore[assignment]
-    from ._product import EOProduct  # type: ignore[assignment]
+    from ._assets import Asset, AssetsDict
+    from ._product import EOProduct
 
 
 # exportable content

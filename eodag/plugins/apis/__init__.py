@@ -16,3 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG plugins.apis package"""
+
+from .base import Api
+from .ecmwf import EcmwfApi
+from .usgs import UsgsApi
+
+__all__ = ["Api", "EcmwfApi", "UsgsApi"]

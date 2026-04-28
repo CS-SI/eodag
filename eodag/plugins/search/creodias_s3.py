@@ -16,47 +16,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from types import MethodType
 from typing import Any
 
 from botocore.exceptions import BotoCoreError
 
 from eodag.api.product import EOProduct  # type: ignore
 from eodag.api.search_result import RawSearchResult
-from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils.exceptions import MisconfiguredError, RequestError
 from eodag.utils.s3 import update_assets_from_s3
 
-logger = logging.getLogger("eodag.search.creodiass3")
+from .qssearch import ODataV4Search
 
-
-def patched_register_downloader(self, downloader, authenticator):
-    """Add the download information to the product.
-
-    :param self: product to which information should be added
-    :param downloader: The download method that it can use
-                      :class:`~eodag.plugins.download.base.Download` or
-                      :class:`~eodag.plugins.api.base.Api`
-    :param authenticator: The authentication method needed to perform the download
-                         :class:`~eodag.plugins.authentication.base.Authentication`
-    """
-    # verify credentials
-    required_creds = ["aws_access_key_id", "aws_secret_access_key"]
-    credentials = getattr(authenticator.config, "credentials", {}) or {}
-    if not all(x in credentials and credentials[x] for x in required_creds):
-        raise MisconfiguredError(
-            f"Incomplete credentials for {self.provider}, missing "
-            f"{[x for x in required_creds if x not in credentials or not credentials[x]]}"
-        )
-    # register downloader
-    self.register_downloader_only(downloader, authenticator)
-    # and also update assets
-    try:
-        update_assets_from_s3(
-            self, authenticator, getattr(downloader.config, "s3_endpoint", None)
-        )
-    except BotoCoreError as e:
-        raise RequestError.from_error(e, "could not update assets") from e
+logger = logging.getLogger("eodag.search.creodias_s3")
 
 
 class CreodiasS3Search(ODataV4Search):
@@ -79,15 +50,45 @@ class CreodiasS3Search(ODataV4Search):
         self, results: RawSearchResult, **kwargs: Any
     ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
-
         products = super(CreodiasS3Search, self).normalize_results(results, **kwargs)
-
         for product in products:
-            # backup original register_downloader to register_downloader_only
-            product.register_downloader_only = product.register_downloader
-            # patched register_downloader that will also update assets
-            product.register_downloader = MethodType(
-                patched_register_downloader, product
-            )
+            # Update asset from s3 when product has registered plugin_manager
+            if product.plugins_manager is not None:
+                self._update_product_assets(product)
+            else:
+                product.on("register_plugin_manager", self._update_product_assets)
 
         return products
+
+    def _update_product_assets(self, product: EOProduct):
+        """Add the download information to the product.
+        :param product: product to which information should be added
+        """
+        if product.plugins_manager is not None:
+            downloader = product.plugins_manager.get_download_plugin(product.provider)
+            authenticator = product.plugins_manager.get_auth_plugin(downloader, None)  # type: ignore
+            if downloader is not None and authenticator is not None:
+
+                # verify credentials
+                required_creds = ["aws_access_key_id", "aws_secret_access_key"]
+                credentials = getattr(authenticator.config, "credentials", {}) or {}
+                if not all(x in credentials and credentials[x] for x in required_creds):
+                    raise MisconfiguredError(
+                        f"Incomplete credentials for {product.provider}, missing "
+                        f"{[x for x in required_creds if x not in credentials or not credentials[x]]}"
+                    )
+
+                product.off("register_plugin_manager")
+
+                # and also update assets
+                try:
+                    update_assets_from_s3(
+                        product,
+                        authenticator,  # type: ignore
+                        getattr(downloader.config, "s3_endpoint", None),
+                    )
+                except BotoCoreError as e:
+                    raise RequestError.from_error(e, "could not update assets") from e
+
+
+__all__ = ["CreodiasS3Search"]

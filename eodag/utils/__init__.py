@@ -72,16 +72,16 @@ from shapely.geometry import Polygon, box, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
+from .eventable import Eventable
 from .exceptions import MisconfiguredError
 from .logging import get_disable_tqdm
-from .logging import logging as eodag_logging
-from .streamresponse import StreamResponse
+from .mime import Mime
+from .processor import Processor
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
 
-    from eodag.api.product._product import EOProduct
-
+    from eodag.api.product import EOProduct
 
 logger = py_logging.getLogger("eodag.utils")
 
@@ -1508,38 +1508,6 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
     return new_type(value)
 
 
-def guess_file_type(file: str) -> Optional[str]:
-    """Guess the mime type of a file or URL based on its extension,
-    using eodag extended mimetypes definition
-
-    >>> guess_file_type('foo.tiff')
-    'image/tiff'
-    >>> guess_file_type('foo.grib')
-    'application/x-grib'
-
-    :param file: file url or path
-    :returns: guessed mime type
-    """
-    mime_type, _ = mimetypes.guess_type(file, False)
-    if mime_type == "text/xml":
-        return "application/xml"
-    return mime_type
-
-
-def guess_extension(type: str) -> Optional[str]:
-    """Guess extension from mime type, using eodag extended mimetypes definition
-
-    >>> guess_extension('image/tiff')
-    '.tiff'
-    >>> guess_extension('application/x-grib')
-    '.grib'
-
-    :param type: mime type
-    :returns: guessed file extension
-    """
-    return mimetypes.guess_extension(type, strict=False)
-
-
 @functools.lru_cache(maxsize=2)
 def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     """
@@ -1711,6 +1679,11 @@ def get_collection_dates(
     return mission_start, mission_end
 
 
+def guess_extension(type: str) -> Optional[str]:
+    """Alias used by eodag-cube"""
+    return Mime.guess_extension(type)
+
+
 __all__ = [
     "GENERIC_COLLECTION",
     "GENERIC_STAC_PROVIDER",
@@ -1738,10 +1711,12 @@ __all__ = [
     "WORKABLE_JSONPATH_MATCH",
     "ARRAY_FIELD_MATCH",
     "FloatRange",
-    "StreamResponse",
     "DownloadedCallback",
     "ProgressCallback",
     "MockResponse",
+    "Processor",
+    "Eventable",
+    "Mime",
     "Unpack",
     "_deprecated",
     "slugify",
@@ -1783,8 +1758,6 @@ __all__ = [
     "deepcopy",
     "parse_header",
     "cast_scalar_value",
-    "guess_file_type",
-    "guess_extension",
     "get_ssl_context",
     "sort_dict",
     "dict_md5sum",
@@ -1793,5 +1766,5 @@ __all__ = [
     "parse_le_uint16",
     "format_pydantic_error",
     "get_collection_dates",
-    "eodag_logging",
+    "guess_extension",
 ]
