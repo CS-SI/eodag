@@ -5303,7 +5303,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 
 class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
     def test_plugins_search_eumetsatds_normalize(self):
-
+        """Test the normalization of search results for eumetsat_ds provider"""
         with open(
             self.provider_resp_dir / "eumetsat_ds_search.json", encoding="utf-8"
         ) as f:
