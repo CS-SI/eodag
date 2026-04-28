@@ -131,6 +131,7 @@ REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
 DEFAULT_DOWNLOAD_WAIT = 0.2
 #: default timeout (in minutes) for download attempts
 DEFAULT_DOWNLOAD_TIMEOUT = 10
+
 #: default token expiration margin (in seconds). Safety buffer to prevent token rejection from unexpected expiry
 #: between validity check and request. Default value of :attr:`~eodag.config.PluginConfig.token_expiration_margin`
 DEFAULT_TOKEN_EXPIRATION_MARGIN = 60

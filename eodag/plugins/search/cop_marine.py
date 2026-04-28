@@ -145,7 +145,7 @@ class CopMarineSearch(StaticStacSearch):
 
         logger.debug("fetch data for collection %s", collection)
         provider_collection = self.config.products.get(collection, {}).get(
-            "_collection", None
+            "_collection"
         )
         if not provider_collection:
             provider_collection = collection
@@ -238,9 +238,7 @@ class CopMarineSearch(StaticStacSearch):
             if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
                 properties[key] = value
 
-        code_mapping = self.config.products.get(collection, {}).get(
-            "code_mapping", None
-        )
+        code_mapping = self.config.products.get(collection, {}).get("code_mapping")
         if code_mapping:
             id_parts = item_id.split("_")
             if len(id_parts) > code_mapping["index"]:
@@ -374,7 +372,7 @@ class CopMarineSearch(StaticStacSearch):
                         )
                         if (
                             object_metadata.get("ResponseMetadata", {}).get(
-                                "HTTPStatusCode", None
+                                "HTTPStatusCode"
                             )
                             == 200
                         ):
