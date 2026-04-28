@@ -5304,119 +5304,39 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
     def test_plugins_search_eumetsatds_normalize(self):
 
-        raw_result = RawSearchResult(
-            [
-                {
-                    "type": "Feature",
-                    "id": "PREmm20201201000000120IMPGS01GL",
-                    "geometry": {},
-                    "properties": {
-                        "type": "Properties",
-                        "identifier": "PREmm20201201000000120IMPGS01GL",
-                        "parentIdentifier": "EO:EUM:DAT:0921",
-                        "title": "PREmm20201201000000120IMPGS01GL",
-                        "date": "2020-12-01T00:00:00Z/2021-01-01T00:00:00Z",
-                        "updated": "2025-06-27T06:28:57.035Z",
-                        "acquisitionInformation": [
-                            {
-                                "platform": {"platformShortName": "multi platform"},
-                                "instrument": {"instrumentShortName": ""},
-                                "acquisitionParameters": {
-                                    "safAcquisition": {"statisticType": "mean"}
-                                },
-                            }
-                        ],
-                        "productInformation": {"productType": "PRE", "size": 353},
-                        "extraInformation": {
-                            "md5": "ef3ad778470d8206e98b649d9ed4bc4f",
-                            "compositeType": "P1M",
-                        },
-                        "links": {
-                            "type": "Links",
-                            "data": [
-                                {
-                                    "type": "Link",
-                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
-                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL",
-                                    "mediaType": "application/zip",
-                                    "title": "Product download",
-                                }
-                            ],
-                            "alternates": [
-                                {
-                                    "type": "Link",
-                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
-                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/metadata",
-                                    "mediaType": "application/xml",
-                                    "title": "Metadata",
-                                },
-                                {
-                                    "type": "Link",
-                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
-                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
-                                    + "metadata?format=json",
-                                    "mediaType": "application/json",
-                                    "title": "Metadata in JSON format",
-                                },
-                            ],
-                            "sip-entries": [
-                                {
-                                    "type": "Link",
-                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
-                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
-                                    + "entry?name=EOPMetadata.xml",
-                                    "mediaType": "application/xml",
-                                    "title": "EOPMetadata.xml",
-                                },
-                                {
-                                    "type": "Link",
-                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
-                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
-                                    + "entry?name=manifest.xml",
-                                    "mediaType": "application/xml",
-                                    "title": "manifest.xml",
-                                },
-                                {
-                                    "type": "Link",
-                                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
-                                    + "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
-                                    + "entry?name=PREmm20201201000000120IMPGS01GL.nc",
-                                    "mediaType": "application/x-netcdf",
-                                    "title": "PREmm20201201000000120IMPGS01GL.nc",
-                                },
-                            ],
-                        },
-                    },
-                }
-            ]
-        )
+        with open(
+            self.provider_resp_dir / "eumetsat_ds_search.json", encoding="utf-8"
+        ) as f:
+            raw_features = json.load(f)["features"]
 
         search_plugin = self.get_search_plugin(provider="eumetsat_ds")
-        normalized = search_plugin.normalize_results(raw_result)
+        normalized = search_plugin.normalize_results(RawSearchResult(raw_features))
 
         self.assertTrue(len(normalized) > 0)
+        base_href = (
+            "https://api.eumetsat.int/data/download/1.0.0/collections/"
+            "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
+            "entry?name="
+        )
         self.assertDictEqual(
             dict(normalized[0].assets),
             {
                 "EOPMetadata.xml": {
-                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/EO%3AEUM%3ADAT%3A0921/products/"
-                    + "PREmm20201201000000120IMPGS01GL/entry?name=EOPMetadata.xml",
+                    "href": base_href + "EOPMetadata.xml",
                     "title": "EOPMetadata.xml",
                     "roles": ["metadata"],
                     "eumesat_ds:type": "Link",
                     "type": "application/xml",
                 },
                 "manifest.xml": {
-                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/EO%3AEUM%3ADAT%3A0921/products/"
-                    + "PREmm20201201000000120IMPGS01GL/entry?name=manifest.xml",
+                    "href": base_href + "manifest.xml",
                     "title": "manifest.xml",
                     "roles": ["metadata"],
                     "eumesat_ds:type": "Link",
                     "type": "application/xml",
                 },
                 "nc": {
-                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/EO%3AEUM%3ADAT%3A0921/products/"
-                    + "PREmm20201201000000120IMPGS01GL/entry?name=PREmm20201201000000120IMPGS01GL.nc",
+                    "href": base_href + "PREmm20201201000000120IMPGS01GL.nc",
                     "title": "nc",
                     "roles": ["data"],
                     "eumesat_ds:type": "Link",
