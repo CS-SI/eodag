@@ -2832,277 +2832,57 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
     @responses.activate
     def test_plugins_search_geodes_normalize(self):
+        """normalize_results must shorten asset keys and parse the asset
+        ``description`` field into structured ``geodes:*`` / ``file:*`` properties."""
 
-        # Mock availability
+        # Mock availability (content irrelevant for this test)
         responses.add(
             responses.POST,
             "https://geodes-portal.cnes.fr/fastavailability",
-            body=json.dumps(
-                {
-                    "products": [
-                        {
-                            "id": "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
-                            "files": [
-                                {
-                                    "checksum": "916d25f98b72543b7ed12902c394b7cc",
-                                    "available": True,
-                                }
-                            ],
-                        },
-                        {
-                            "id": "URN:FEATURE:DATA:gdh:0b9a70a6-5ef0-335d-be53-ff747a910657:V1",
-                            "files": [
-                                {
-                                    "checksum": "99bead26e0ac35055c152a6aa29499b0",
-                                    "available": True,
-                                }
-                            ],
-                        },
-                        {
-                            "id": "URN:FEATURE:DATA:gdh:aee10f1b-129f-3028-907a-7453638f8425:V1",
-                            "files": [
-                                {
-                                    "checksum": "33b083863d43d19f198e303d7f6560a7",
-                                    "available": True,
-                                }
-                            ],
-                        },
-                    ]
-                }
-            ).encode("utf-8"),
+            json={"products": []},
             status=200,
-            content_type="application/json",
-            auto_calculate_content_length=True,
         )
 
-        raw_result = RawSearchResult(
-            [
-                {
-                    "stac_version": "1.0.0-beta.2",
-                    "stac_extensions": [
-                        "https://stac-extensions.github.io/product/v0.1.0/schema.json",
-                        "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
-                        "https://stac-extensions.github.io/projection/v2.0.0/schema.json",
-                        "https://stac-extensions.github.io/sat/v1.1.0/schema.json",
-                        "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
-                        "https://stac-extensions.github.io/sar/v1.1.0/schema.json",
-                        "https://stac-extensions.github.io/eo/v2.0.0/schema.json",
-                        "https://stac-extensions.github.io/sentinel-2/v1.0.0/schema.json",
-                        "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-                        "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
-                        "https://stac-extensions.github.io/raster/v2.0.0/schema.json",
-                    ],
-                    "id": "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
-                    "bbox": [87.279694, 37.634079, 90.64061, 39.766262],
-                    "geometry": {
-                        "coordinates": [
-                            [
-                                [90.142838, 37.634079],
-                                [90.64061, 39.368308999999996],
-                                [87.705925, 39.766262],
-                                [87.279694, 38.031849],
-                                [90.142838, 37.634079],
-                            ]
-                        ],
-                        "type": "Polygon",
-                    },
-                    "centroid": {"lon": 88.94447881390059, "lat": 38.70339029703974},
-                    "type": "Feature",
-                    "collection": "PEPS_S1_L1",
-                    "properties": {
-                        "mission_take_id": 461463,
-                        "product:type": "GRD",
-                        "sar:instrument_mode": "IW",
-                        "endpoint_url": "https://s3.datalake.cnes.fr/sentinel1-grd/2025/01/"
-                        + "01/S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6.zip",
-                        "proj:bbox": "90.142838,37.634079,87.705925,39.766262",
-                        "latest": True,
-                        "instrument": "SAR-C SAR",
-                        "references": [
-                            {
-                                "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/"
-                                + "10m-coastline/",
-                                "author": "Natural Earth",
-                                "dataset": "Coastline",
-                                "license": "Free of Charge",
-                            },
-                            {
-                                "url": "http://www.naturalearthdata.com/downloads/10m-cultural-vectors/"
-                                + "10m-admin-0-countries/",
-                                "author": "Natural Earth",
-                                "dataset": "Admin level 0 - Countries",
-                                "license": "Free of Charge",
-                            },
-                            {
-                                "url": "http://www.naturalearthdata.com/downloads/10m-cultural-vectors/"
-                                + "10m-admin-1-states-provinces/",
-                                "author": "Natural Earth",
-                                "dataset": "Admin level 1 - States, Provinces",
-                                "license": "Free of Charge",
-                            },
-                            {
-                                "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/"
-                                + "10m-rivers-lake-centerlines/",
-                                "author": "Natural Earth",
-                                "dataset": "Rivers and lake centerlines",
-                                "license": "Free of charge",
-                            },
-                            {
-                                "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/"
-                                + "10m-physical-labels/",
-                                "author": "Natural Earth",
-                                "dataset": "Marine Regions",
-                                "license": "Free of charge",
-                            },
-                        ],
-                        "sat:orbit_state": "Descending",
-                        "identifier": "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6",
-                        "keywords": ["location:northern", "season:winter"],
-                        "sat:relative_orbit": 121,
-                        "product:timeliness": "Fast24h",
-                        "area": 50134.00727,
-                        "swath": "IW",
-                        "processing:version": "01.00",
-                        "endpoint_description": "Link to product in datalake",
-                        "platform": "S1A",
-                        "sat:absolute_orbit": 57243,
-                        "sar:polarizations": "VV VH",
-                        "dataset": "PEPS_S1_L1",
-                        "version": "00.00",
-                        "continent_code": ["AS"],
-                        "start_datetime": "2025-01-01T00:08:31.992Z",
-                        "datetime": "2025-01-01T04:16:59.581Z",
-                        "processing:level": "L1",
-                        "eo:cloud_cover": 0,
-                        "sci:doi": "[]",
-                        "political": {
-                            "continents": [
-                                {
-                                    "id": "continent:Asia:6255147",
-                                    "name": "Asia",
-                                    "countries": [
-                                        {
-                                            "id": "country:China:1814991",
-                                            "name": "China",
-                                            "gcover": 0.53,
-                                            "pcover": 100,
-                                            "regions": [
-                                                {
-                                                    "id": "region:NorthwestChina:",
-                                                    "name": "Northwest China",
-                                                    "gcover": 1.66,
-                                                    "pcover": 100,
-                                                    "states": [
-                                                        {
-                                                            "id": "state:Xinjiang:1529047",
-                                                            "name": "Xinjiang",
-                                                            "gcover": 3.07,
-                                                            "pcover": 100,
-                                                        }
-                                                    ],
-                                                }
-                                            ],
-                                        }
-                                    ],
-                                }
-                            ]
-                        },
-                        "sat:orbit_cycle": 341,
-                        "end_datetime": "2025-01-01T00:09:01.008Z",
-                    },
-                    "links": [
-                        {
-                            "href": "https://geodes-portal.cnes.fr/api/stac",
-                            "rel": "root",
-                            "type": "application/json",
-                            "title": "STAC gdh root",
-                        },
-                        {
-                            "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S1_L1",
-                            "rel": "collection",
-                            "type": "application/json",
-                            "title": "Item collection",
-                        },
-                        {
-                            "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S1_L1/items/"
-                            + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
-                            "rel": "self",
-                            "type": "application/geo+json",
-                            "title": "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1",
-                        },
-                        {
-                            "href": "https://spdx.org/licenses/Apache-2.0.html",
-                            "rel": "license",
-                            "type": "application/html",
-                            "title": "Apache License 2.0",
-                        },
-                    ],
-                    "assets": {
-                        "2025/01/01/S1A/"
-                        + "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6_quicklook.jpg": {
-                            "href": "https://geodes-portal.cnes.fr/api/quicklook/"
-                            + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/files"
-                            + "/656095fb92081cc95d9c799cac81f903?scope=gdh",
-                            "title": "2025/01/01/S1A/"
-                            + "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6_quicklook.jpg",
-                            "description": "File size: 99059 bytes\n\nIs reference: false\n\nIs online: "
-                            + "true\n\nDatatype: QUICKLOOK_SD\n\nChecksum MD5: 656095fb92081cc95d9c799cac81f903",
-                            "type": "image/jpeg",
-                            "roles": ["overview"],
-                        },
-                        "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6.zip": {
-                            "href": "https://geodes-portal.cnes.fr/api/download/"
-                            + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/"
-                            + "files/916d25f98b72543b7ed12902c394b7cc",
-                            "title": "S1A_IW_GRDH_1SDV_20250101T000831_20250101T000901_057243_070A97_F2F6.zip",
-                            "description": "File size: 1999755054 bytes\n\nIs reference: false\n\nIs "
-                            + "online: false\n\nDatatype: RAWDATA\n\nChecksum MD5: 916d25f98b72543b7ed12902c394b7cc",
-                            "type": "application/zip",
-                            "roles": ["data"],
-                        },
-                    },
-                }
-            ]
-        )
+        with open(self.provider_resp_dir / "geodes_search.json", encoding="utf-8") as f:
+            raw_features = json.load(f)["features"]
+        raw_assets = raw_features[0]["assets"]
+        quicklook_asset = raw_assets[
+            "2025/04/02/S2A/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035_quicklook.jpg"
+        ]
+        zip_asset = raw_assets[
+            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
+        ]
 
         search_plugin = self.get_search_plugin(provider="geodes")
-        normalized = search_plugin.normalize_results(raw_result)
+        normalized = search_plugin.normalize_results(RawSearchResult(raw_features))
 
-        self.assertTrue(len(normalized) > 0)
-
-        # Check for description parsed
+        self.assertEqual(len(normalized), 1)
         self.assertDictEqual(
             dict(normalized[0].assets),
             {
                 "quicklook.jpg": {
-                    "href": "https://geodes-portal.cnes.fr/api/quicklook/"
-                    + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/files/"
-                    + "656095fb92081cc95d9c799cac81f903?scope=gdh",
+                    "href": quicklook_asset["href"],
                     "title": "quicklook.jpg",
-                    "description": "File size: 99059 bytes\n\nIs reference: false\n\nIs online: true"
-                    + "\n\nDatatype: QUICKLOOK_SD\n\nChecksum MD5: 656095fb92081cc95d9c799cac81f903",
+                    "description": quicklook_asset["description"],
                     "type": "image/jpeg",
-                    "roles": ["auxiliary"],
-                    "file:size": 99059,
+                    "roles": ["overview"],
+                    "file:size": 18684,
                     "geodes:reference": False,
                     "geodes:online": True,
                     "geodes:datatype": "QUICKLOOK_SD",
-                    "file:checksum": "656095fb92081cc95d9c799cac81f903",
+                    "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
                 },
                 "zip": {
-                    "href": "https://geodes-portal.cnes.fr/api/download/"
-                    + "URN:FEATURE:DATA:gdh:8da8f68f-dc5f-38d3-8bcf-b2764bf0df5d:V1/"
-                    + "files/916d25f98b72543b7ed12902c394b7cc",
+                    "href": zip_asset["href"],
                     "title": "zip",
-                    "description": "File size: 1999755054 bytes\n\nIs reference: false\n\nIs online: false"
-                    + "\n\nDatatype: RAWDATA\n\nChecksum MD5: 916d25f98b72543b7ed12902c394b7cc",
+                    "description": zip_asset["description"],
                     "type": "application/zip",
                     "roles": ["auxiliary"],
-                    "file:size": 1999755054,
+                    "file:size": 764210185,
                     "geodes:reference": False,
                     "geodes:online": False,
                     "geodes:datatype": "RAWDATA",
-                    "file:checksum": "916d25f98b72543b7ed12902c394b7cc",
+                    "file:checksum": "86f828c4c7e921615d1cd0476604f780",
                 },
             },
         )
