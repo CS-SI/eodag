@@ -3410,6 +3410,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # feature
         feature_values = [
+            "foo",  # not a dict
+            {"foo": "bar"},  # missing 'type'
+            {"type": "points"},  # wrong 'type'
             {"type": "polygon"},  # missing 'shape'
             {"type": "polygon", "shape": "boo"},  # shape is not a list
             {
