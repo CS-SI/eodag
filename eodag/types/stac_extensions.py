@@ -17,7 +17,7 @@
 # limitations under the License.
 """STAC extensions."""
 
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from annotated_types import Ge, Le
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
@@ -298,6 +298,29 @@ class OrderExtension(BaseStacExtension):
 
     schema_href: str = "https://stac-extensions.github.io/order/v1.1.0/schema.json"
     field_name_prefix: Optional[str] = "order"
+
+
+class FileFields(BaseModel):
+    """
+    https://github.com/stac-extensions/file
+    """
+
+    file_byte_order: Annotated[
+        Literal["big-endian", "little-endian"], Field(default=None)
+    ]
+    file_checksum: Annotated[str, Field(default=None, pattern=r"^[a-f0-9]+$")]
+    file_header_size: Annotated[int, Field(default=None)]
+    file_size: Annotated[int, Field(default=None)]
+    file_local_path: Annotated[str, Field(default=None)]
+
+
+class FileExtension(BaseStacExtension):
+    """STAC file extension."""
+
+    FIELDS: type[BaseModel] = FileFields
+
+    schema_href: str = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
+    field_name_prefix: Optional[str] = "file"
 
 
 class GridFields(BaseModel):
@@ -642,6 +665,7 @@ STAC_EXTENSIONS = [
     ProductExtension(),
     StorageExtension(),
     OrderExtension(),
+    FileExtension(),
     GridExtension(),
     MgrsExtension(),
     ProjectionExtension(),
