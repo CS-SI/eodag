@@ -2,9 +2,28 @@
 Release history
 ===============
 
-
 v4.2.0 (2026-04-29)
 ===================
+
+Features
+--------
+
+* **core**: Add new STAC extensions, keep None properties and adapt queryables (`#2079`_,
+  `cc205b1`_)
+
+* **mapping**: Enrich assets STAC metadata (`#2045`_, `30ab7f8`_)
+
+* **mapping**: Normalize bands to STAC 1.1.0 (`#2050`_, `f38dc4b`_)
+
+* **providers**: Add ``cop_dataspace_s3`` as new provider (`#1819`_, `f4614d2`_)
+
+* **providers**: Add ``cop_ghsl`` provider (`#1876`_, `56f1292`_)
+
+* **providers**: Add spacenet collections to dedl (`#1857`_, `638658b`_)
+
+* **providers**: Bypass custom parameters validation for dedt providers (`#2149`_, `ee0d3ad`_)
+
+* **providers**: Geodes order status (`#2154`_, `d58c241`_)
 
 Bug Fixes
 ---------
@@ -18,13 +37,6 @@ Bug Fixes
 * **plugins**: Remove EOIAMAuth lazy login causing silent errors (`#2151`_, `82687ea`_)
 
 * **providers**: Config for DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1 collection (`#1926`_, `07b1a5d`_)
-
-Chores
-------
-
-* Update external product types reference (`#2146`_, `f6a47a6`_)
-
-* Update external product types reference (`#2122`_, `bcfde7c`_)
 
 Continuous Integration
 ----------------------
@@ -41,26 +53,6 @@ Documentation
 * Fixes badges display issues (`#2141`_, `c81ec6a`_)
 
 * Updated readme (`#2138`_, `dc47630`_)
-
-Features
---------
-
-* **core**: Add new STAC extensions, keep None properties and adapt queryables (`#2079`_,
-  `cc205b1`_)
-
-* **mapping**: Enrich assets STAC metadata (`#2045`_, `30ab7f8`_)
-
-* **mapping**: Normalize bands to STAC 1.1.0 (`#2050`_, `f38dc4b`_)
-
-* **providers**: Add cop_dataspace_s3 as new provider (`#1819`_, `f4614d2`_)
-
-* **providers**: Add cop_ghsl provider (`#1876`_, `56f1292`_)
-
-* **providers**: Add spacenet collections to dedl (`#1857`_, `638658b`_)
-
-* **providers**: Bypass custom parameters validation for dedt providers (`#2149`_, `ee0d3ad`_)
-
-* **providers**: Geodes order status (`#2154`_, `d58c241`_)
 
 Refactoring
 -----------
