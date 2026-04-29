@@ -23,7 +23,6 @@ import math
 from calendar import monthrange
 from typing import Annotated, Any, Optional, cast
 
-import dateutil
 import requests
 from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
@@ -42,7 +41,7 @@ from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.cache import instance_cached_method
-from eodag.utils.dates import to_iso_utc_string
+from eodag.utils.dates import parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
@@ -179,8 +178,8 @@ def _replace_datetimes(params: dict[str, Any]):
     if not start_date_str:
         return
 
-    start_date = dateutil.parser.isoparse(start_date_str)
-    end_date = dateutil.parser.isoparse(end_date_str)
+    start_date = parse_to_utc(start_date_str)
+    end_date = parse_to_utc(end_date_str)
     start_year = start_date.year
     end_year = end_date.year
     years = [str(y) for y in range(start_year, end_year + 1)]

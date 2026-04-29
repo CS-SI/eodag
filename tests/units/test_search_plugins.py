@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
-import datetime
+import datetime as dt
 import json
 import os
 import re
@@ -4544,8 +4544,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 contents = [
                     {
                         "Key": f"{prefix}/{asset_filename}",
-                        "LastModified": datetime.datetime(
-                            2020, 1, 15, tzinfo=datetime.timezone.utc
+                        "LastModified": dt.datetime(
+                            2020, 1, 15, tzinfo=dt.timezone.utc
                         ),
                         "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
                         "Size": 666,

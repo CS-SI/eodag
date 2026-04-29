@@ -381,7 +381,9 @@ class CopMarineSearch(StaticStacSearch):
                                 last_modified := headers.get("last-modified")
                             ) is not None:
                                 try:
-                                    asset_properties["updated"] = to_iso_utc_string(last_modified)
+                                    asset_properties["updated"] = to_iso_utc_string(
+                                        last_modified
+                                    )
                                 except Exception:
                                     pass
                     except Exception:
@@ -491,9 +493,9 @@ class CopMarineSearch(StaticStacSearch):
 
                             last_modified_date = obj.get("LastModified")
                             if isinstance(last_modified_date, dt.datetime):
-                                asset_properties[
-                                    "updated"
-                                ] = last_modified_date.strftime("%Y-%m-%dT%H:%I:%SZ")
+                                asset_properties["updated"] = to_iso_utc_string(
+                                    last_modified_date
+                                )
 
                             etag_obj: Any = obj.get("ETag")
                             if isinstance(etag_obj, str) and "-" not in etag_obj:
