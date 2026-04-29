@@ -69,12 +69,10 @@ Refactoring
 .. _#2045: https://github.com/CS-SI/eodag/pull/2045
 .. _#2050: https://github.com/CS-SI/eodag/pull/2050
 .. _#2079: https://github.com/CS-SI/eodag/pull/2079
-.. _#2122: https://github.com/CS-SI/eodag/pull/2122
 .. _#2137: https://github.com/CS-SI/eodag/pull/2137
 .. _#2138: https://github.com/CS-SI/eodag/pull/2138
 .. _#2139: https://github.com/CS-SI/eodag/pull/2139
 .. _#2141: https://github.com/CS-SI/eodag/pull/2141
-.. _#2146: https://github.com/CS-SI/eodag/pull/2146
 .. _#2149: https://github.com/CS-SI/eodag/pull/2149
 .. _#2150: https://github.com/CS-SI/eodag/pull/2150
 .. _#2151: https://github.com/CS-SI/eodag/pull/2151
@@ -93,7 +91,6 @@ Refactoring
 .. _638658b: https://github.com/CS-SI/eodag/commit/638658b9fda4079b6e4c0854b904b38acb3d5c35
 .. _82687ea: https://github.com/CS-SI/eodag/commit/82687eab06068b67f31eeb21a64b638ea54bfd2a
 .. _a1de542: https://github.com/CS-SI/eodag/commit/a1de5422132a56f7160d6ce16af9fe12dd6a0ae6
-.. _bcfde7c: https://github.com/CS-SI/eodag/commit/bcfde7c102b029ccb4d3f0cbfca048fd6ea10dd3
 .. _c63a6a3: https://github.com/CS-SI/eodag/commit/c63a6a36031cbda8db27aae634237bc5d827da22
 .. _c81ec6a: https://github.com/CS-SI/eodag/commit/c81ec6ac80af540c1c182175315de905de4c0796
 .. _cc205b1: https://github.com/CS-SI/eodag/commit/cc205b1279d7719e21f550c02ffe45086dcaaeb9
@@ -104,7 +101,6 @@ Refactoring
 .. _ee0d3ad: https://github.com/CS-SI/eodag/commit/ee0d3adfedf95868f017ea7c777e3cdf18f6423c
 .. _f38dc4b: https://github.com/CS-SI/eodag/commit/f38dc4bb66865fd4ad8738a2ab51563757e87a7e
 .. _f4614d2: https://github.com/CS-SI/eodag/commit/f4614d290d6954475836423190a1cdece0545a08
-.. _f6a47a6: https://github.com/CS-SI/eodag/commit/f6a47a6365b396ae572605bafe909994aac10b4e
 
 
 v4.1.0 (2026-04-08)
