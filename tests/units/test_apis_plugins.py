@@ -18,13 +18,11 @@
 import ast
 import os
 import unittest
-from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from unittest import mock
 
 import geojson
 import responses
-from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
@@ -32,7 +30,6 @@ from eodag.api.provider import ProvidersDict
 from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_MISSION_START_DATE,
     ONLINE_STATUS,
     USER_AGENT,
     USGS_TMPFILE,
@@ -134,16 +131,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             collection=self.collection,
         )
         eoproduct = results.data[0]
-        self.assertIn(
-            eoproduct.properties["start_datetime"],
-            DEFAULT_MISSION_START_DATE,
-        )
-        # less than 10 seconds should have passed since the product was created
-        self.assertLess(
-            datetime.now(timezone.utc) - isoparse(eoproduct.properties["end_datetime"]),
-            timedelta(seconds=10),
-            "stop date should have been created from datetime.now",
-        )
+        self.assertNotIn("start_datetime", eoproduct.properties)
+        self.assertNotIn("end_datetime", eoproduct.properties)
 
         # missing start & stop and plugin.collection_config set (set in core._prepare_search)
         self.api_plugin.config.collection_config = {
@@ -157,14 +146,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             collection=self.collection,
         )
         eoproduct = results[0]
-        self.assertEqual(
-            eoproduct.properties["start_datetime"],
-            "1985-10-26T00:00:00.000Z",
-        )
-        self.assertEqual(
-            eoproduct.properties["end_datetime"],
-            "2015-10-21T00:00:00.000Z",
-        )
+        self.assertNotIn("start_datetime", eoproduct.properties)
+        self.assertNotIn("end_datetime", eoproduct.properties)
 
     def test_plugins_apis_ecmwf_query_without_collection(self):
         """

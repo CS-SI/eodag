@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
+import datetime as dt
 import hashlib
 import os
 import re
@@ -90,6 +90,13 @@ COP_DATASPACE_SEARCH_ARGS = [
     "2019-03-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
+COP_DATASPACE_S3_SEARCH_ARGS = [
+    "cop_dataspace_s3",
+    "S2_MSI_L1C",
+    "2019-03-01",
+    "2019-03-15",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 PLANETARY_COMPUTER_SEARCH_ARGS = [
     "planetary_computer",
     "S2_MSI_L2A",
@@ -106,9 +113,9 @@ HYDROWBEB_NEXT_SEARCH_ARGS = [
 ]
 # As of 2021-01-14 the products previously required in 2020-08 were offline.
 # Trying here to retrieve the most recent products which are more likely to be online.
-today = datetime.date.today()
-week_span = datetime.timedelta(days=7)
-day_span = datetime.timedelta(days=1)
+today = dt.date.today()
+week_span = dt.timedelta(days=7)
+day_span = dt.timedelta(days=1)
 USGS_RECENT_SEARCH_ARGS = [
     "usgs",
     "LANDSAT_C2L1",
@@ -217,6 +224,19 @@ EOCAT_SEARCH_ARGS = [
     "2010-03-18",
     None,
 ]
+
+COP_GHSL_SEARCH_ARGS = [
+    "cop_ghsl",
+    "GHS_BUILT_S",
+    "2020-01-01",
+    "2021-01-01",
+    [-69.3363, -75.9038, -39.3465, -68.2361],
+]
+COP_GHSL_SEARCH_KWARGS = {
+    "proj:code": "4326",
+    "tile_size": "3ss",
+    "classification": "TOTAL",
+}
 
 
 @pytest.mark.enable_socket
@@ -430,6 +450,11 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    def test_end_to_end_search_download_cop_dataspace_s3(self):
+        product = self.execute_search(*COP_DATASPACE_S3_SEARCH_ARGS)
+        expected_filename = product.properties["title"]
+        self.execute_download(product, expected_filename, wait_sec=15)
+
     def test_end_to_end_search_download_planetary_computer(self):
         product = self.execute_search(*PLANETARY_COMPUTER_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
@@ -534,6 +559,13 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_eumetsat_ds(self):
         product = self.execute_search(*EUMETSAT_DS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cop_ghsl(self):
+        product = self.execute_search(
+            *COP_GHSL_SEARCH_ARGS, search_kwargs_dict=COP_GHSL_SEARCH_KWARGS
+        )
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
@@ -733,8 +765,8 @@ class TestEODagEndToEndComplete(EndToEndBase):
         ].download.output_dir = self.tmp_download_path
 
         # Search for products that are online and as small as possible (smallest area first)
-        today = datetime.date.today()
-        month_span = datetime.timedelta(weeks=4)
+        today = dt.date.today()
+        month_span = dt.timedelta(weeks=4)
         search_results = self.eodag.search(
             collection="S2_MSI_L1C",
             start=(today - month_span).isoformat(),

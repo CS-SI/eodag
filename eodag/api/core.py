@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import itertools
 import logging
 import os
@@ -53,10 +53,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import (
-    ALLOWED_KEYWORDS as ECMWF_ALLOWED_KEYWORDS,
-)
-from eodag.plugins.search.build_search_result import ECMWF_PREFIX, MeteoblueSearch
+from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
@@ -603,8 +600,8 @@ class EODataAccessGateway:
                     default_provider.search_config.discover_collections
                 )
 
-                # compare confs
-                if default_discovery_conf["result_type"] == "json" and isinstance(
+                # compare confs (care, some providers do not have result_type property)
+                if default_discovery_conf.get("result_type") == "json" and isinstance(
                     default_discovery_conf["results_entry"], str
                 ):
                     default_discovery_conf_parsed = cast(
@@ -1042,8 +1039,8 @@ class EODataAccessGateway:
 
             # datetime filtering
             if start_date or end_date:
-                min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-                max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+                min_aware = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+                max_aware = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
 
                 col_start_str = col_f.extent.temporal.interval[0][0]
                 if col_start_str and isinstance(col_start_str, str):
@@ -1854,20 +1851,12 @@ class EODataAccessGateway:
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
             queryables_fields = Queryables.from_stac_models().model_fields
-            ecmwf_queryables = [
-                f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
-            ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
                 if param in queryables_fields:
                     param_alias = queryables_fields[param].alias or param
                     search_params[param_alias] = value
-                elif param in ecmwf_queryables:
-                    # alias equivalent for ECMWF queryables
-                    search_params[
-                        re.sub(rf"^{ECMWF_PREFIX[:-1]}_", f"{ECMWF_PREFIX}", param)
-                    ] = value
                 else:
                     # remove `provider:` or `provider_` prefix if any
                     search_params[
@@ -1879,10 +1868,10 @@ class EODataAccessGateway:
 
             search_result = search_plugin.query(prep, **search_params)
 
-            if not isinstance(search_result.data, list):
+            if not isinstance(search_result, SearchResult):
                 raise PluginImplementationError(
-                    "The query function of a Search plugin must return a list of "
-                    "results, got {} instead".format(type(search_result.data))
+                    "The query function of a Search plugin must return a SearchResult "
+                    "results, got {} instead".format(type(search_result))
                 )
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself
@@ -1893,7 +1882,7 @@ class EODataAccessGateway:
             # WARNING: this means an eo_product that has an invalid geometry can still
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
-            for eo_product in search_result.data:
+            for eo_product in search_result:
                 # if collection is not defined, try to guess using properties
                 if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")

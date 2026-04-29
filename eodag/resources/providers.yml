@@ -739,6 +739,9 @@
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
+      type: "$.ContentType"
+      file:size: "$.ContentLength"
+      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
@@ -1892,6 +1895,9 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: '$.properties.services.download.url'
+      type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
+      file:size: '$.properties.services.download.size'
+      file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")}'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
@@ -2383,6 +2389,9 @@
       grid:code:
         - null
         - '{$.Attributes.tileId#replace_str(r"^","MGRS-")}'
+      file:size: '$.ContentLength'
+      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
+      type: '$.ContentType'
       # The geographic extent of the product
       geometry:
         - null
@@ -2814,6 +2823,8 @@
         start_datetime: properties.datetime
         platform: properties.platform
     metadata_mapping:
+      created: '$.properties.created'
+      description: '$.properties.description'
       grid:code:
         - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
         - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
@@ -2823,7 +2834,7 @@
       metadata_mapping:
         processing:level:
           - '{{"query":{{"s1:processing_level":{{"eq":"{processing:level}"}}}}}}'
-          - '$.properties."s1:processing_level"'
+          - '{$.properties."s1:processing_level"#replace_str(r"^(.+)$",r"L\1")}'
     S2_MSI_L2A:
       _collection: sentinel-2-l2a
     LANDSAT_C2L1:
@@ -2996,6 +3007,8 @@
         - '{{"enddate": "{end_datetime}"}}'
         - '$.properties.enddate'
       eodag:download_link: '$.properties.location'
+      file:size: '$.properties.size'
+      file:local_path: '$.properties.localpath'
       eodag:quicklook: '$.properties.thumbnail'
       eodag:thumbnail: '$.properties.thumbnail'
       title: '$.id'
@@ -3444,6 +3457,7 @@
         - dataset_id
         - $.dataset
       eodag:download_link: $.properties.location
+      file:size: '$.properties.size'
       dataset:
         - dataset_id
         - $.dataset
@@ -4424,12 +4438,15 @@
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true
-    dates_required: True
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}_{activity}_{experiment}_{model}.json"
       form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_{dataset}.json"
+    discover_metadata:
+      auto_discovery: true
+      search_param: '{metadata}'
+      metadata_pattern: '^(feature|interpolation|grid)$'
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4550,7 +4567,7 @@
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       discover_queryables:
         form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/form_DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1.json"
-      dataset: climate-dt
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/climate-dt_{activity}_{experiment}_{model}.json"
       class: ng
       generation: "1"
       expver: "0001"
@@ -4622,12 +4639,15 @@
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true
-    dates_required: True
     discover_queryables:
       fetch_url: null
       collection_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/{dataset}_{activity}_{experiment}_{model}.json"
       form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_{dataset}.json"
+    discover_metadata:
+      auto_discovery: true
+      search_param: '{metadata}'
+      metadata_pattern: '^(feature|interpolation|grid)$'
     metadata_mapping:
       geometry:
         - '{{"feature": {geometry#to_geojson_polytope}}}'
@@ -4729,6 +4749,9 @@
       eodag:quicklook: '{eodag:thumbnail}'
       order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       eodag:download_link: '$.assets.downloadLink.href'
+      federation:backends: '$.null'
+      storage:schemes: '$.null'
+      storage:tier: '$.null'
       assets: '$.null'
     discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
@@ -5250,6 +5273,30 @@
       _collection: EO.ISIMIP.DAT.SOCIO-ECONOMIC-FORCING_ISIMIP3b
     GENERIC_COLLECTION:
       _collection: '{collection}'
+    # Spacenet
+    SPACENET_BUILDINGS_DETECTION_V1:
+      _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V1
+      metadata_mapping:
+        label:properties:
+          - '{{"query":{{"label:properties":{{"eq":{label:properties}}}}}}}'
+          - '{$.properties.label:properties#replace_str("Not Available","None")}'
+    SPACENET_BUILDINGS_DETECTION_V2:
+      _collection: EO.SPACENET.DAT.BUILDINGS_DETECTION_V2
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
+    SPACENET_ROADS_NETWORK_DETECTION:
+      _collection: EO.SPACENET.DAT.ROADS_NETWORK_DETECTION
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
+    SPACENET_OFF_NADIR_BUILDING:
+      _collection: EO.SPACENET.DAT.OFF_NADIR_BUILDING
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
+    SPACENET_ROADS_NETWORK_ROUTE_TRAVEL:
+      _collection: EO.SPACENET.DAT.ROADS_NETWORK_ROUTE_TRAVEL
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
+    SPACENET_ALL_WEATHER_MAPPING:
+      _collection: EO.SPACENET.DAT.ALL_WEATHER_MAPPING
+      metadata_mapping_from_product: SPACENET_BUILDINGS_DETECTION_V1
+
+
 ---
 !provider # MARK: eumetsat_ds
   name: eumetsat_ds
@@ -5268,7 +5315,7 @@
       - orbit
       - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
   search: !plugin
-    type: QueryStringSearch
+    type: EumetsatDsSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
     need_auth: false
     ssl_verify: true
@@ -5909,7 +5956,7 @@
   description: French National Space Agency (CNES) Earth Observation portal
   url: https://geodes.cnes.fr
   search: !plugin
-    type: StacSearch
+    type: GeodesSearch
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
     asset_key_from_href: false
@@ -5992,8 +6039,8 @@
       eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+      # order:status set to orderable by default and then updated from plugin
+      order:status: '{$.null#replace_str("Not Available","orderable")}'
   products:
     S1_SAR_OCN:
       product:type: OCN
@@ -6427,3 +6474,763 @@
     type: EOIAMAuth
     matching_url: https://[-\w\.]+.eo.esa.int
     auth_uri: 'https://eoiam-idp.eo.esa.int'
+---
+!provider # MARK: cop_ghsl
+  name: cop_ghsl
+  priority: 0
+  description: Copernicus Global Human Settlement Layer
+  roles:
+    - host
+  url: https://human-settlement.emergency.copernicus.eu/index.php
+  search: !plugin
+    type: CopGhslSearch
+    api_endpoint: https://human-settlement.emergency.copernicus.eu/data/tilesDLD
+    need_auth: false
+    ssl_verify: true
+    metadata_mapping:
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+    pagination:
+      max_items_per_page: 10000
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/cop_ghsl_dev/{collection}.json"
+  products:
+    # product types with tiles
+    GHS_BUILT_S:
+      _collection: BUILT
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
+        dataset: GHS_BUILT_S_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_BUILT_H:
+      _collection: builtH
+      year: '2018'
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("m", "")}'
+        dataset: GHS_BUILT_H_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_H_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_BUILT_V:
+      _collection: builtV
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
+        dataset: GHS_BUILT_V_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_V_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_BUILT_C:
+      _collection: builtC
+      year: '2018'
+      tile_size: 10m
+      proj:code: 'EPSG:54009'
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("m", "")}'
+        dataset: GHS_BUILT_C_{add_filter}_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_C_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_LAND:
+      _collection: land
+      year: '2018'
+      proj:code: 'EPSG:54009'
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
+        dataset: GHS_LAND_E2018_GLOBE_R2022A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_LAND_GLOBE_R2022A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_POP:
+      _collection: POP
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str_tuple((("m", ""), ("k", "000")))}'
+        dataset: GHS_POP_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_POP_GLOBE_R2023A/{dataset}/V1-0/tiles/{dataset}_V1_0_{tile_id}.zip'
+    GHS_SMOD:
+      _collection: SMOD
+      tile_size: 1k
+      proj:code: 'EPSG:54009'
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("k", "000")}'
+        dataset: GHS_SMOD_E{year}_GLOBE_R2023A_{proj_code}_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_SMOD_GLOBE_R2023A/{dataset}/V2-0/tiles/{dataset}_V2_0_{tile_id}.zip'
+    GHS_ESM:
+      _collection: ESM
+      year: '2015'
+      proj:code: 'EPSG:3035'
+      metadata_mapping:
+        tile_size: '{$.tile_size#replace_str("2m", "02")}'
+        dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
+    # produc types with one file
+    GHS_DUC:
+      _collection: DUC
+      metadata_mapping:
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_DUC_GLOBE_R2023A/V2-0/GHS_DUC_MT_GLOBE_R2023A_V2_0.zip'
+    GHS_FUA:
+      _collection: FUA
+      metadata_mapping:
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip'
+    GHS_BUILT_LAUSTAT:
+      _collection: BUILT_LAUSTAT
+      metadata_mapping:
+        eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_BUILT_LAUSTAT_EUROPE_R2023A/V1-0/GHS-BUILT-LAUSTAT_EUROPE_R2023A.zip'
+    # products with several files
+    GHS_ENACT_POP:
+      _collection: ENACT_POP
+      grouped_by: month
+      year: '2011'
+      metadata_mapping:
+        eodag:download_link: https://jeodpp.jrc.ec.europa.eu
+      assets_mapping:
+        day:
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
+          type: "application/zip"
+          title: Daytime grid
+        night:
+          href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_N{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
+          type: "application/zip"
+          title: Nightime grid
+    GHS_UCDB_DOMAIN:
+      _collection: UCDB
+      grouped_by: thematic_domain
+      metadata_mapping:
+        eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_THEME_GLOBE_R2024A/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A/V1-1/GHS_UCDB_THEME_{thematic_domain}_GLOBE_R2024A_V1_1.zip
+    GHS_UCDB_REGION:
+      _collection: UCDB
+      grouped_by: region
+      metadata_mapping:
+        eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A/GHS_UCDB_REGION_{region}_R2024A/V1-1/GHS_UCDB_REGION_{region}_R2024A_V1_1.zip
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
+---
+!provider # MARK: cop_dataspace_s3
+  name: cop_dataspace_s3
+  priority: 0
+  description: Copernicus Data Space Ecosystem through S3 protocol
+  roles:
+    - host
+  url: https://dataspace.copernicus.eu/
+  search: !plugin
+    type: CreodiasS3Search
+    api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
+    need_auth: true
+    timeout: 120
+    ssl_verify: true
+    dont_quote:
+      - '['
+      - ']'
+      - '$'
+      - '='
+      - '&'
+      - ':'
+      - '%'
+    pagination:
+      next_page_url_tpl: '{url}?{search}&$top={limit}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_url_key_path: '$.["@odata.nextLink"]'
+      next_page_token_key: skip
+      parse_url_key: $skip
+      count_tpl: '&$count=True'
+      total_items_nb_key_path: '$."@odata.count"'
+      max_limit: 1_000
+    sort:
+      sort_by_default:
+        - !!python/tuple [start_datetime, ASC]
+      sort_by_tpl: '&$orderby={sort_param} {sort_order}'
+      sort_param_mapping:
+        start_datetime: ContentDate/Start
+        end_datetime: ContentDate/End
+        published: PublicationDate
+        updated: ModificationDate
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+      max_sort_params: 1
+    results_entry: 'value'
+    free_text_search_operations:
+      $filter:
+        union: ' or '
+        wrapper: '{}'
+        operations:
+          and:
+            - "Collection/Name eq '{_collection}'"
+            - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{product:type}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{constellation}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platform#replace_str(\"^S[1-3]\", \"\")}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{gsd}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{providers}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq {sat:absolute_orbit})"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.StringAttribute/Value eq {sat:relative_orbit})"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{sat:orbit_state#to_upper}')"
+            - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {eo:cloud_cover})"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentShortName' and att/OData.CSC.StringAttribute/Value eq '{instruments#csv_list}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{grid:code#replace_str(\"MGRS-\",\"\")}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingLevel' and att/OData.CSC.StringAttribute/Value eq '{processing:level}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingDate' and att/OData.CSC.StringAttribute/Value eq '{processing:datetime}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processingCenter' and att/OData.CSC.StringAttribute/Value eq '{processing:facility}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'processorVersion' and att/OData.CSC.StringAttribute/Value eq '{processing:version}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'swathIdentifier' and att/OData.CSC.StringAttribute/Value eq '{sar:instrument_mode}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datatakeID' and att/OData.CSC.StringAttribute/Value eq '{s1:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'instrumentConfigurationID' and att/OData.CSC.StringAttribute/Value eq '{s1:instrument_configuration_ID}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'sliceNumber' and att/OData.CSC.StringAttribute/Value eq '{s1:slice_number}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'totalSlices' and att/OData.CSC.StringAttribute/Value eq '{s1:total_slices}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'granuleIdentifier' and att/OData.CSC.StringAttribute/Value eq '{s2:tile_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productGroupId' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'Name' and att/OData.CSC.StringAttribute/Value eq '{s2:product_uri}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'datastripId' and att/OData.CSC.StringAttribute/Value eq '{s2:datastrip_id}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{s2:datatake_type}')"
+            - "ModificationDate gt {updated_after#to_iso_utc_datetime}"
+            - "ModificationDate lt {updated_before#to_iso_utc_datetime}"
+            - "PublicationDate gt {published_after#to_iso_utc_datetime}"
+            - "PublicationDate lt {published_before#to_iso_utc_datetime}"
+            - "ContentDate/Start lt {end_datetime#to_iso_utc_datetime}"
+            - "ContentDate/End gt {start_datetime#to_iso_utc_datetime}"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{sar:polarizations#csv_list(%26)}')"
+            - contains(Name,'{id}')
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
+      search_param:
+        free_text_search_operations:
+          $filter:
+            operations:
+              and:
+                -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
+      metadata_path: '$.Attributes.*'
+    per_product_metadata_query: false
+    metadata_pre_mapping:
+      metadata_path: '$.Attributes'
+      metadata_path_id: 'Name'
+      metadata_path_value: 'Value'
+    metadata_mapping:
+      _collection:
+        - null
+        - '$.null'
+      # hide duplicated metadata
+      beginningDateTime: '$.null'
+      endingDateTime: '$.null'
+      platformSerialIdentifier: '$.null'
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      # Queryable parameters are set with null as 1st configuration list value to mark them as queryable,
+      #   but `free_text_search_operations.$filter.operations.and` entries are then used instead.
+      uid: '$.Id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      product:type:
+        - null
+        - '$.Attributes.productType'
+      constellation:
+        - null
+        - '$.Attributes.platformShortName'
+      platform:
+        - null
+        - '$.Attributes.platformSerialIdentifier'
+      instruments:
+        - null
+        - '{$.Attributes.instrumentShortName#split( )}'
+      processing:level:
+        - null
+        - '$.Attributes.processingLevel'
+      processing:datetime:
+        - null
+        - '$.Attributes.processingDate'
+      processing:facility:
+        - null
+        - '$.Attributes.processingCenter'
+      processing:version:
+        - null
+        - '{$.Attributes.processorVersion#to_geojson}'
+      _processor_name:
+        - null
+        - '$.Attributes.processorName'
+      processing:software: '{{"{_processor_name}":"{processing:version}"}}'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '{$.Name#remove_extension}'
+      gsd:
+        - null
+        - '$.Attributes.spatialResolution'
+      _provider: '$.Attributes.origin'
+      providers:
+        - null
+        - '[{{"name":"{_provider}","roles":["producer"]}}]'
+      published_after:
+        - null
+        - '$.null'
+      published_before:
+        - null
+        - '$.null'
+      published: '$.PublicationDate'
+      # OpenSearch Parameters for Product Search (Table 5)
+      sat:absolute_orbit:
+        - null
+        - '$.Attributes.orbitNumber'
+      sat:relative_orbit:
+        - null
+        - '$.Attributes.relativeOrbitNumber'
+      sat:orbit_state:
+        - null
+        - '{$.Attributes.orbitDirection#to_lower}'
+      eo:cloud_cover:
+        - null
+        - '$.Attributes.cloudCover'
+      updated_after:
+        - null
+        - '$.null'
+      updated_before:
+        - null
+        - '$.null'
+      updated:
+        - null
+        - '$.ModificationDate'
+      sat:relative_orbit:
+        - null
+        - '$.Attributes.relativeOrbitNumber'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      start_datetime:
+        - null
+        - '$.ContentDate.Start'
+      end_datetime:
+        - null
+        - '$.ContentDate.End'
+      product:timeliness:
+        - null
+        - '$.Attributes.timeliness'
+      sar:instrument_mode:
+        - null
+        - '$.Attributes.swathIdentifier'
+      sar:polarizations:
+        - null
+        - '{$.Attributes.polarisationChannels#split(&)}'
+      s1:datatake_id:
+        - null
+        - '$.Attributes.datatakeID'
+      s1:instrument_configuration_ID:
+        - null
+        - '$.Attributes.instrumentConfigurationID'
+      s1:slice_number:
+        - null
+        - '$.Attributes.sliceNumber'
+      s1:total_slices:
+        - null
+        - '$.Attributes.totalSlices'
+      s2:tile_id:
+        - null
+        - '$.Attributes.granuleIdentifier'
+      s2:datatake_id:
+        - null
+        - '$.Attributes.productGroupId'
+      s2:product_uri:
+        - null
+        - '$.Attributes.Name'
+      s2:datastrip_id:
+        - null
+        - '$.Attributes.datastripId'
+      s2:datatake_type:
+        - null
+        - '$.Attributes.operationalMode'
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - null
+        - '{$.Name#remove_extension}'
+      grid:code:
+        - null
+        - '{$.Attributes.tileId#replace_str(r"^","MGRS-")}'
+      # The geographic extent of the product
+      geometry:
+        - null
+        - '{$.Footprint#from_ewkt}'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      eodag:download_link: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
+      # order:status: must be one of succeeded, ordered, orderable
+      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      collection:
+        - null
+        - $.null
+      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+  download: !plugin
+    type: AwsDownload
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
+    s3_bucket: 'eodata.dataspace.copernicus.eu'
+    ssl_verify: true
+  auth: !plugin
+    type: AwsAuth
+    auth_error_code: 403
+    s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
+    support_presign_url: False
+    matching_conf:
+      s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
+  products:
+    # S2
+    S2_MSI_L1C:
+      _collection: SENTINEL-2
+      product:type: S2MSI1C
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
+    S2_MSI_L2A:
+      _collection: SENTINEL-2
+      product:type: S2MSI2A
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S2)`'
+    # S1
+    S1_AUX_GNSSRD:
+      product:type: AUX_GNSSRD
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_MOEORB:
+      product:type: AUX_MOEORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_POEORB:
+      product:type: AUX_POEORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_PREORB:
+      product:type: AUX_PREORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_PROQUA:
+      product:type: AUX_PROQUA
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_AUX_RESORB:
+      product:type: AUX_RESORB
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_RAW:
+      product:type: RAW
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_GRD:
+      product:type: GRD
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_GRD_COG:
+      product:type: GRD-COG
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_SLC:
+      product:type: SLC
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_OCN:
+      product:type: OCN
+      _collection: SENTINEL-1
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_L3_IW_MCM:
+      product:type: S1SAR_L3_IW_MCM
+      _collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    S1_SAR_L3_DH_MCM:
+      product:type: S1SAR_L3_DH_MCM
+      _collection: GLOBAL-MOSAICS
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S1)`'
+    # S3 SRAL
+    S3_SRA:
+      product:type: SR_1_SRA___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SRA_A:
+      product:type: SR_1_SRA_A_
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SRA_BS:
+      product:type: SR_1_SRA_BS
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN:
+      product:type: SR_2_LAN___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN_HY:
+      product:type: SR_2_LAN_HY
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN_SI:
+      product:type: SR_2_LAN_SI
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_LAN_LI:
+      product:type: SR_2_LAN_LI
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_WAT:
+      product:type: SR_2_WAT___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        eo:cloud_cover: '{$.Attributes.cloudCover#not_available}'
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    # S3 OLCI
+    S3_EFR:
+      product:type: OL_1_EFR___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_ERR:
+      product:type: OL_1_ERR___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_OLCI_L2LRR:
+      product:type: OL_2_LRR___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_OLCI_L2LFR:
+      product:type: OL_2_LFR___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_OLCI_L2WRR:
+      product:type: OL_2_WRR___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_OLCI_L2WFR:
+      product:type: OL_2_WFR___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    # S3 SLSTR
+    S3_SLSTR_L1RBT:
+      product:type: SL_1_RBT___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SLSTR_L2LST:
+      product:type: SL_2_LST___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SLSTR_L2WST:
+      product:type: SL_2_WST___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SLSTR_L2AOD:
+      product:type: SL_2_AOD___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SLSTR_L2FRP:
+      product:type: SL_2_FRP___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    # S3 SY
+    S3_SY_AOD:
+      product:type: SY_2_AOD___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SY_SYN:
+      product:type: SY_2_SYN___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SY_V10:
+      product:type: SY_2_V10___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SY_VG1:
+      product:type: SY_2_VG1___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    S3_SY_VGP:
+      product:type: SY_2_VGP___
+      _collection: SENTINEL-3
+      metadata_mapping:
+        platform:
+          - null
+          - '$.Attributes.platformSerialIdentifier.`sub(/^/, S3)`'
+    # S5P L1
+    S5P_L1B_IR_SIR:
+      product:type: L1B_IR_SIR
+      _collection: Sentinel-5P
+    S5P_L1B_IR_UVN:
+      product:type: L1B_IR_UVN
+      _collection: Sentinel-5P
+    S5P_L1B_RA_BD1:
+      product:type: L1B_RA_BD1
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD2:
+      product:type: L1B_RA_BD2
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD3:
+      product:type: L1B_RA_BD3
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD4:
+      product:type: L1B_RA_BD4
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD5:
+      product:type: L1B_RA_BD5
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD6:
+      product:type: L1B_RA_BD6
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD7:
+      product:type: L1B_RA_BD7
+      _collection: SENTINEL-5P
+    S5P_L1B_RA_BD8:
+      product:type: L1B_RA_BD8
+      _collection: SENTINEL-5P
+    # S5P L2
+    S5P_L2_NO2:
+      product:type: L2__NO2___
+      _collection: SENTINEL-5P
+    S5P_L2_CLOUD:
+      product:type: L2__CLOUD_
+      _collection: SENTINEL-5P
+    S5P_L2_O3:
+      product:type: L2__O3____
+      _collection: SENTINEL-5P
+    S5P_L2_CO:
+      product:type: L2__CO____
+      _collection: SENTINEL-5P
+    S5P_L2_AER_AI:
+      product:type: L2__AER_AI
+      _collection: SENTINEL-5P
+    S5P_L2_O3_PR:
+      product:type: L2__O3__PR
+      _collection: SENTINEL-5P
+    S5P_L2_O3_TCL:
+      product:type: L2__O3_TCL
+      _collection: Sentinel-5P
+    S5P_L2_AER_LH:
+      product:type: L2__AER_LH
+      _collection: SENTINEL-5P
+    S5P_L2_HCHO:
+      product:type: L2__HCHO__
+      _collection: SENTINEL-5P
+    S5P_L2_CH4:
+      product:type: L2__CH4___
+      _collection: SENTINEL-5P
+    S5P_L2_NP_BD3:
+      product:type: L2__NP_BD3
+      _collection: SENTINEL-5P
+    S5P_L2_NP_BD6:
+      product:type: L2__NP_BD6
+      _collection: SENTINEL-5P
+    S5P_L2_NP_BD7:
+      product:type: L2__NP_BD7
+      _collection: SENTINEL-5P
+    S5P_L2_SO2:
+      product:type: L2__SO2___
+      _collection: SENTINEL-5P
+    GENERIC_COLLECTION:
+      _collection: '{collection}'

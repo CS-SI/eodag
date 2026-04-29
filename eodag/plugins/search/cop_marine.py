@@ -18,17 +18,16 @@
 from __future__ import annotations
 
 import copy
+import datetime as dt
 import logging
 import os
 import re
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 from urllib.parse import urlsplit
 
 import boto3
 import botocore
 import requests
-from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
 
@@ -39,16 +38,16 @@ from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various
+from eodag.utils.dates import parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import RequestError, UnsupportedCollection, ValidationError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
-    from mypy_boto3_s3.type_defs import ListObjectsOutputTypeDef
 
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
+def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[dt.datetime]:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
@@ -56,7 +55,7 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
     else:
         day = "1"
     try:
-        date = datetime(
+        date = dt.datetime(
             int(year),
             int(month),
             int(day),
@@ -144,7 +143,7 @@ class CopMarineSearch(StaticStacSearch):
 
         logger.debug("fetch data for collection %s", collection)
         provider_collection = self.config.products.get(collection, {}).get(
-            "_collection", None
+            "_collection"
         )
         if not provider_collection:
             provider_collection = collection
@@ -178,32 +177,6 @@ class CopMarineSearch(StaticStacSearch):
 
         return collection_data, datasets
 
-    def _get_product_by_id(
-        self,
-        collection_objects: ListObjectsOutputTypeDef,
-        product_id: str,
-        s3_url: str,
-        collection: str,
-        dataset_item: dict[str, Any],
-        collection_dict: dict[str, Any],
-    ):
-        # try to find date(s) in product id
-        item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", product_id)
-        if not item_dates:
-            item_dates = re.findall(r"_(\d{4})(0[1-9]|1[0-2])", product_id)
-        use_dataset_dates = not bool(item_dates)
-        for obj in collection_objects["Contents"]:
-            if product_id in obj["Key"]:
-                return self._create_product(
-                    collection,
-                    obj["Key"],
-                    s3_url,
-                    dataset_item,
-                    collection_dict,
-                    use_dataset_dates,
-                )
-        return None
-
     def _create_product(
         self,
         collection: str,
@@ -213,6 +186,7 @@ class CopMarineSearch(StaticStacSearch):
         collection_dict: dict[str, Any],
         use_dataset_dates: bool = False,
         product_id: Optional[str] = None,
+        asset_properties: dict = {},
     ) -> Optional[EOProduct]:
 
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
@@ -250,10 +224,8 @@ class CopMarineSearch(StaticStacSearch):
                 item_end = _get_date_from_yyyymmdd(item_dates[1], item_key)
             else:  # only date and created_at timestamps
                 item_end = item_start
-            properties["start_datetime"] = item_start.strftime("%Y-%m-%dT%H:%M:%SZ")
-            properties["end_datetime"] = (item_end or item_start).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            properties["start_datetime"] = to_iso_utc_string(item_start)
+            properties["end_datetime"] = to_iso_utc_string(item_end or item_start)
 
         for key, value in collection_dict["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
@@ -262,9 +234,7 @@ class CopMarineSearch(StaticStacSearch):
             if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
                 properties[key] = value
 
-        code_mapping = self.config.products.get(collection, {}).get(
-            "code_mapping", None
-        )
+        code_mapping = self.config.products.get(collection, {}).get("code_mapping")
         if code_mapping:
             id_parts = item_id.split("_")
             if len(id_parts) > code_mapping["index"]:
@@ -283,17 +253,20 @@ class CopMarineSearch(StaticStacSearch):
             properties["eodag:quicklook"] = collection_dict["assets"]["omiFigure"][
                 "href"
             ]
-        assets = {
-            "native": {
-                "title": "native",
-                "href": download_url,
-                "type": "application/x-netcdf",
-            }
+
+        asset_native = {
+            "title": "native",
+            "href": download_url,
+            "type": "application/x-netcdf",
         }
+        asset_native.update(asset_properties)
+        assets = {"native": asset_native}
         additional_assets = self.get_assets_from_mapping(dataset_item)
         assets.update(additional_assets)
+
         product = EOProduct(self.provider, properties, collection=collection)
         product.assets = AssetsDict(product, assets)
+        product._normalize_bands()
         return product
 
     def query(
@@ -342,21 +315,19 @@ class CopMarineSearch(StaticStacSearch):
 
                 # date bounds
                 if "start_datetime" in kwargs:
-                    start_date = isoparse(kwargs["start_datetime"])
+                    start_date = parse_to_utc(kwargs["start_datetime"])
                 elif "start_datetime" in dataset_item["properties"]:
-                    start_date = isoparse(dataset_item["properties"]["start_datetime"])
+                    start_date = parse_to_utc(
+                        dataset_item["properties"]["start_datetime"]
+                    )
                 else:
-                    start_date = isoparse(dataset_item["properties"]["datetime"])
-                if not start_date.tzinfo:
-                    start_date = start_date.replace(tzinfo=tzutc())
+                    start_date = parse_to_utc(dataset_item["properties"]["datetime"])
                 if "end_datetime" in kwargs:
-                    end_date = isoparse(kwargs["end_datetime"])
+                    end_date = parse_to_utc(kwargs["end_datetime"])
                 elif "end_datetime" in dataset_item["properties"]:
-                    end_date = isoparse(dataset_item["properties"]["end_datetime"])
+                    end_date = parse_to_utc(dataset_item["properties"]["end_datetime"])
                 else:
                     end_date = today(tzinfo=tzutc())
-                if not end_date.tzinfo:
-                    end_date = end_date.replace(tzinfo=tzutc())
 
                 # retrieve information about s3 from collection data
                 s3_url = dataset_item["assets"]["native"]["href"]
@@ -375,11 +346,49 @@ class CopMarineSearch(StaticStacSearch):
                 )
                 continue
 
+            s3_client = _get_s3_client(endpoint_url)
+            asset_properties: dict[str, Any] = {}
+
             if ".nc" in collection_path:
                 num_total += 1
                 if num_total < start_index:
                     continue
+
                 if len(products) < limit or limit < 0:
+                    asset_properties = {}
+                    try:
+                        object_metadata = s3_client.head_object(
+                            Bucket=bucket, Key=collection_path
+                        )
+                        if (
+                            object_metadata.get("ResponseMetadata", {}).get(
+                                "HTTPStatusCode"
+                            )
+                            == 200
+                        ):
+                            headers = object_metadata.get("ResponseMetadata", {}).get(
+                                "HTTPHeaders", {}
+                            )
+                            # do not use 'content-type' header, always at value binary/octet-stream
+                            if (
+                                content_length := headers.get("content-length")
+                            ) is not None:
+                                asset_properties["file:size"] = int(content_length)
+                            if (etag := headers.get("etag")) is not None:
+                                if "-" not in etag:
+                                    asset_properties["file:checksum"] = etag.strip('"')
+                            if (
+                                last_modified := headers.get("last-modified")
+                            ) is not None:
+                                try:
+                                    asset_properties["updated"] = to_iso_utc_string(
+                                        last_modified
+                                    )
+                                except Exception:
+                                    pass
+                    except Exception:
+                        pass
+
                     product = self._create_product(
                         collection,
                         collection_path,
@@ -388,6 +397,7 @@ class CopMarineSearch(StaticStacSearch):
                         collection_dict,
                         True,
                         kwargs.get("id"),
+                        asset_properties=asset_properties,
                     )
                     if product:
                         products.append(product)
@@ -395,7 +405,6 @@ class CopMarineSearch(StaticStacSearch):
                         break
                     continue
 
-            s3_client = _get_s3_client(endpoint_url)
             stop_search = False
             current_object = None
             while not stop_search:
@@ -416,24 +425,9 @@ class CopMarineSearch(StaticStacSearch):
                         return result
                     else:
                         break
-
-                if "id" in kwargs:
-                    product = self._get_product_by_id(
-                        s3_objects,
-                        kwargs["id"],
-                        endpoint_url + "/" + bucket,
-                        collection,
-                        dataset_item,
-                        collection_dict,
-                    )
-                    if product:
-                        formated_result = SearchResult(
-                            [product],
-                            1,
-                        )
-                        return formated_result
-                    current_object = s3_objects["Contents"][-1]["Key"]
-                    continue
+                elif len(s3_objects["Contents"]) == 0:
+                    stop_search = True
+                    break
 
                 for obj in s3_objects["Contents"]:
                     item_key = obj["Key"]
@@ -445,6 +439,23 @@ class CopMarineSearch(StaticStacSearch):
                     item_dates = [
                         "".join(row) for row in item_dates
                     ]  # join tuples returned by findall
+
+                    if "id" in kwargs:
+                        if kwargs["id"] in obj["Key"]:
+                            product = self._create_product(
+                                collection,
+                                obj["Key"],
+                                s3_url,
+                                dataset_item,
+                                collection_dict,
+                                not bool(item_dates),
+                            )
+                            if product:
+                                return SearchResult([product], 1)
+                        if len(s3_objects["Contents"]) > 0:
+                            current_object = s3_objects["Contents"][-1]["Key"]
+                            continue
+
                     item_start = None
                     item_end = None
                     use_dataset_dates = False
@@ -457,22 +468,8 @@ class CopMarineSearch(StaticStacSearch):
                         use_dataset_dates = True
                         dates = _get_dates_from_dataset_data(dataset_item)
                         if dates:
-                            item_start_str = dates["start"].replace("Z", "+0000")
-                            item_end_str = dates["end"].replace("Z", "+0000")
-                            try:
-                                item_start = datetime.strptime(
-                                    item_start_str, "%Y-%m-%dT%H:%M:%S.%f%z"
-                                )
-                                item_end = datetime.strptime(
-                                    item_end_str, "%Y-%m-%dT%H:%M:%S.%f%z"
-                                )
-                            except ValueError:
-                                item_start = datetime.strptime(
-                                    item_start_str, "%Y-%m-%dT%H:%M:%S%z"
-                                )
-                                item_end = datetime.strptime(
-                                    item_end_str, "%Y-%m-%dT%H:%M:%S%z"
-                                )
+                            item_start = parse_to_utc(dates["start"])
+                            item_end = parse_to_utc(dates["end"])
                     if not item_start:
                         # no valid datetime in id and dataset data
                         continue
@@ -488,7 +485,36 @@ class CopMarineSearch(StaticStacSearch):
                         num_total += 1
                         if num_total < start_index:
                             continue
+
                         if len(products) < limit or limit < 0:
+
+                            # Asset properties
+                            asset_properties = {}
+
+                            last_modified_date = obj.get("LastModified")
+                            if isinstance(last_modified_date, dt.datetime):
+                                asset_properties["updated"] = to_iso_utc_string(
+                                    last_modified_date
+                                )
+
+                            etag_obj: Any = obj.get("ETag")
+                            if isinstance(etag_obj, str) and "-" not in etag_obj:
+                                asset_properties["file:checksum"] = etag_obj.strip('"')
+
+                            size = obj.get("Size")
+                            if size is not None:
+                                asset_properties["file:size"] = int(size)
+
+                            owner_id = obj.get("Owner", {}).get("ID")
+                            if owner_id is not None:
+                                asset_properties["cop_marine:owner_id"] = owner_id
+
+                            owner_displayname = obj.get("Owner", {}).get("DisplayName")
+                            if owner_displayname is not None:
+                                asset_properties[
+                                    "cop_marine:owner_name"
+                                ] = owner_displayname
+
                             product = self._create_product(
                                 collection,
                                 item_key,
@@ -496,6 +522,7 @@ class CopMarineSearch(StaticStacSearch):
                                 dataset_item,
                                 collection_dict,
                                 use_dataset_dates,
+                                asset_properties=asset_properties,
                             )
                             if product:
                                 products.append(product)

@@ -18,11 +18,11 @@
 from __future__ import annotations
 
 import base64
+import datetime as dt
 import logging
 import os
 import re
 import tempfile
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import geojson
@@ -43,7 +43,7 @@ try:
         AssetsDict,
     )
 except ImportError:
-    from eodag.api.product._assets import AssetsDict
+    from ._assets import AssetsDict
 
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
@@ -52,6 +52,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
     ONLINE_STATUS,
+    normalize_bands,
 )
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -138,7 +139,7 @@ class EOProduct:
     #: Product search keyword arguments, stored during search
     search_kwargs: Any
     #: Datetime for download next try
-    next_try: datetime
+    next_try: dt.datetime
     #: Stream for requests
     _stream: requests.Response
 
@@ -160,7 +161,6 @@ class EOProduct:
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
             and not key.startswith("_")
-            and value is not None
         }
         self.properties.setdefault(
             "datetime",
@@ -242,6 +242,7 @@ class EOProduct:
             },
             "eodag:provider": self.provider,
             "eodag:search_intersection": search_intersection,
+            "federation:backends": [self.provider],
         }
         stac_providers = self.properties.get("providers", [])
         if not any("host" in p.get("roles", []) for p in stac_providers):
@@ -256,13 +257,24 @@ class EOProduct:
 
         # skip invalid properties
         if skip_invalid:
+            props_validated_dict = props_validated.model_dump(
+                by_alias=False, exclude_unset=False
+            )
+            pythonic_fields_properties = {
+                props_model.get_field_from_alias(k): v
+                for k, v in stac_properties.items()
+            }
             invalid_properties = {
                 k
-                for k in stac_properties.keys()
-                if k not in props_validated.model_dump() and props_model.has_field(k)
+                for k, v in pythonic_fields_properties.items()
+                # keep none values
+                if props_model.has_field(k)
+                and props_validated_dict[k] is None
+                and v is not None
             }
             for key in invalid_properties:
-                stac_properties.pop(key, None)
+                stac_key = props_model.model_fields[key].alias or key
+                stac_properties.pop(stac_key, None)
 
         # get conformance classes for assets properties
         assets_dict = {**self.assets.as_dict()}
@@ -412,6 +424,14 @@ class EOProduct:
     # Implementation of geo-interface protocol (See
     # https://gist.github.com/sgillies/2217756)
     __geo_interface__ = property(as_dict)
+
+    def _normalize_bands(self) -> None:
+        """Normalize bands in properties and each asset
+        from STAC 1.0 (``eo:bands`` / ``raster:bands``) to STAC 1.1 (``bands``), in place.
+        """
+        normalize_bands(self.properties)
+        for key in self.assets:
+            normalize_bands(self.assets[key])
 
     def __repr__(self) -> str:
         try:

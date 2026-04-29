@@ -140,6 +140,36 @@ jobs:
         # Github token to use to publish the check
         token: ${{ secrets.EODAG_GH_TOKEN }}
 
+  sonarqube:
+    name: SonarQube scan
+    needs: tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+      with:
+        # Shallow clones should be disabled for a better relevancy of analysis
+        fetch-depth: 0
+    - name: Download Ubuntu coverage artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: unit-test-results-python3.14-ubuntu-latest
+        path: test-reports
+    - name: SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v7.1.0
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.projectKey=cs-si_eodag
+          -Dsonar.organization=cs-si
+          -Dsonar.python.version=3.9,3.10,3.11,3.12,3.13,3.14
+          -Dsonar.python.coverage.reportPaths=test-reports/coverage.xml
+          -Dsonar.sources=eodag/
+          -Dsonar.tests=tests/
+          -Dsonar.verbose=true
+
   build-docs:
     name: Build the docs
     runs-on: ubuntu-latest

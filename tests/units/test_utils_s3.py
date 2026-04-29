@@ -24,6 +24,7 @@ from tests.context import (
     list_files_in_s3_zipped_object,
     open_s3_zipped_object,
     stream_download_from_s3,
+    to_iso_utc_string,
     update_assets_from_s3,
 )
 
@@ -188,21 +189,24 @@ class TestUtilsS3(TestCase):
                 "roles": ["metadata"],
                 "href": "zip+s3://mybucket/path/to/product.zip!MTD_MSIL1C.xml",
                 "type": "application/xml",
+                "file:size": 44319,
             },
             "MTD_TL.xml": {
                 "title": "MTD_TL.xml",
                 "roles": ["metadata"],
                 "href": "zip+s3://mybucket/path/to/product.zip!GRANULE/L1C_T31TDH_A013204_20180101T105435/MTD_TL.xml",
                 "type": "application/xml",
+                "file:size": 370717,
             },
             "T31TDH_20180101T105441_B01.jp2": {
                 "title": "T31TDH_20180101T105441_B01.jp2",
                 "roles": ["data"],
                 "href": (
-                    "zip+s3://mybucket/path/to/product.zip!"
-                    "GRANULE/L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
+                    "zip+s3://mybucket/path/to/product.zip!GRANULE/"
+                    "L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
                 ),
                 "type": "image/jp2",
+                "file:size": 2488555,
             },
         }
         for asset_name, expected in expected_assets.items():
@@ -215,18 +219,32 @@ class TestUtilsS3(TestCase):
             self.prod, self.auth_plugin, content_url="s3://mybucket/path/to/unzipped"
         )
         self.assertEqual(len(self.prod.assets), 3)
+
+        def s3_updated(key):
+            return to_iso_utc_string(
+                self.s3_client.head_object(Bucket="mybucket", Key=key)["LastModified"]
+            )
+
         expected_assets = {
             "MTD_MSIL1C.xml": {
                 "title": "MTD_MSIL1C.xml",
                 "roles": ["metadata"],
                 "href": "s3://mybucket/path/to/unzipped/MTD_MSIL1C.xml",
                 "type": "application/xml",
+                "file:checksum": "744297b8bff63e837cdbb702ade16b5d",
+                "file:size": 44315,
+                "updated": s3_updated("path/to/unzipped/MTD_MSIL1C.xml"),
             },
             "MTD_TL.xml": {
                 "title": "MTD_TL.xml",
                 "roles": ["metadata"],
                 "href": "s3://mybucket/path/to/unzipped/GRANULE/L1C_T31TDH_A013204_20180101T105435/MTD_TL.xml",
                 "type": "application/xml",
+                "file:checksum": "94f60458ab82fa68773cd44d3b7e34c0",
+                "file:size": 370717,
+                "updated": s3_updated(
+                    "path/to/unzipped/GRANULE/L1C_T31TDH_A013204_20180101T105435/MTD_TL.xml"
+                ),
             },
             "T31TDH_20180101T105441_B01.jp2": {
                 "title": "T31TDH_20180101T105441_B01.jp2",
@@ -236,6 +254,12 @@ class TestUtilsS3(TestCase):
                     "L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
                 ),
                 "type": "image/jp2",
+                "file:checksum": "f02ba0d4ac813ebf8394b29ea41a5e8c",
+                "file:size": 2488555,
+                "updated": s3_updated(
+                    "path/to/unzipped/GRANULE/L1C_T31TDH_A013204_20180101T105435/"
+                    "IMG_DATA/T31TDH_20180101T105441_B01.jp2"
+                ),
             },
         }
         for asset_name, expected in expected_assets.items():

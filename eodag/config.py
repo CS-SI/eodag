@@ -396,9 +396,6 @@ class PluginConfig(yaml.YAMLObject):
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
-    #: if date parameters are mandatory in the request
-    dates_required: bool
-    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`

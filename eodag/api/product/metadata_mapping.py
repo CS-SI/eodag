@@ -18,10 +18,10 @@
 from __future__ import annotations
 
 import ast
+import datetime as dt
 import json
 import logging
 import re
-from datetime import datetime, timedelta
 from string import Formatter
 from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
 
@@ -29,16 +29,16 @@ import geojson
 import orjson
 import pyproj
 import shapely
-from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from dateutil.tz import UTC, tzutc
+from dateutil.tz import tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import transform
 
+from eodag.api.product._assets import Asset
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
@@ -54,7 +54,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
-from eodag.utils.dates import get_timestamp
+from eodag.utils.dates import get_timestamp, parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -181,6 +181,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
         - ``to_geojson``: convert to a GeoJSON (via __geo_interface__ if exists)
+        - ``to_geojson_polytope``: convert shapely Point/LineString/Polygon to ECMWF polytope feature dicts
         - ``to_iso_date``: remove the time part of a iso datetime string
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given milliseconds to a utc iso datetime
         - ``to_iso_utc_datetime``: convert a UTC datetime string to ISO UTC datetime string
@@ -242,10 +243,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             """
             if isinstance(key, str):
                 original_key = key.replace("__", ":")
-                key_with_COLON = key.replace("__", "_COLON_")
                 result = kwargs.get(original_key)
                 if result is not None:
                     return result
+                key_with_COLON = key.replace("__", "_COLON_")
                 return kwargs.get(key_with_COLON)
             return super().get_value(key, args, kwargs)
 
@@ -300,10 +301,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             1619029639123 => "2021-04-21T18:27:19.123Z"
             """
             try:
-                return (
-                    datetime.fromtimestamp(timestamp / 1e3, tzutc())
-                    .isoformat(timespec="milliseconds")
-                    .replace("+00:00", "Z")
+                return cast(
+                    str,
+                    to_iso_utc_string(
+                        dt.datetime.fromtimestamp(timestamp / 1e3, tzutc())
+                    ),
                 )
             except TypeError:
                 return timestamp
@@ -322,14 +324,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             'minutes', 'seconds', 'milliseconds' and 'microseconds'.
             """
             try:
-                dt = isoparse(date_time)
-            except ValueError:
+                parsed_dt = parse_to_utc(date_time)
+            except ValidationError:
                 return date_time
-            if not dt.tzinfo:
-                dt = dt.replace(tzinfo=UTC)
-            elif dt.tzinfo is not UTC:
-                dt = dt.astimezone(UTC)
-            return dt.isoformat(timespec=timespec).replace("+00:00", "Z")
+            return parsed_dt.isoformat(timespec=timespec).replace("+00:00", "Z")
 
         @staticmethod
         def convert_to_iso_date(
@@ -341,14 +339,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             "2021-04-21" => "2021-04-21"
             "2021-04-21T00:00:00+06:00" => "2021-04-20" !
             """
-            dt = isoparse(datetime_string)
-            if not dt.tzinfo:
-                dt = dt.replace(tzinfo=UTC)
-            elif dt.tzinfo is not UTC:
-                dt = dt.astimezone(UTC)
+            parsed_dt = parse_to_utc(datetime_string)
             time_delta_args = ast.literal_eval(time_delta_args_str)
-            dt += timedelta(*time_delta_args)
-            return dt.isoformat()[:10]
+            parsed_dt += dt.timedelta(*time_delta_args)
+            return parsed_dt.isoformat()[:10]
 
         @staticmethod
         def convert_to_non_separated_date(datetime_string):
@@ -434,13 +428,24 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_to_geojson_polytope(
             value: BaseGeometry,
         ) -> Union[dict[Any, Any], str]:
+            """Convert a shapely Point/LineString/Polygon to ECMWF polytope feature dicts"""
             # ECMWF Polytope uses non-geojson structure for features
             if isinstance(value, Polygon):
                 return {
                     "type": "polygon",
                     "shape": [[y, x] for x, y in value.exterior.coords],
                 }
-            raise ValidationError("to_geojson_polytope only accepts shapely Polygon")
+            if isinstance(value, Point):
+                return {"type": "position", "points": [[value.y, value.x]]}
+            if isinstance(value, LineString):
+                return {
+                    "type": "trajectory",
+                    "points": [[y, x] for x, y in value.coords],
+                    "inflation": 0,
+                }
+            raise ValidationError(
+                "to_geojson_polytope only accepts shapely Polygon, Point and LineString"
+            )
 
         @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
@@ -856,14 +861,15 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {"collection": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
-            start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
+            start_date = dt.datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - dt.timedelta(
                 seconds=1
             )
-            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + timedelta(
+            # cast to tell the type checker that value won't be None here
+            params["startDate"] = cast(str, to_iso_utc_string(start_date))
+            end_date = dt.datetime.strptime(dates[1], "%Y%m%dT%H%M%S") + dt.timedelta(
                 seconds=1
             )
-            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            params["endDate"] = cast(str, to_iso_utc_string(end_date))
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]
             return params
@@ -879,14 +885,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 dates = re.findall(date_format_2, product_id)
                 date = dates[0]
             if len(date) == 10:
-                date_time = datetime.strptime(dates[0], "%Y%m%d%H")
+                date_time = dt.datetime.strptime(dates[0], "%Y%m%d%H")
             else:
-                date_time = datetime.strptime(dates[0], "%Y%m%d")
+                date_time = dt.datetime.strptime(dates[0], "%Y%m%d")
             return {
-                "min_date": date_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "max_date": (date_time + timedelta(days=1)).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                ),
+                "min_date": to_iso_utc_string(date_time),
+                "max_date": to_iso_utc_string(date_time + dt.timedelta(days=1)),
             }
 
         @staticmethod
@@ -921,7 +925,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             }
             """
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
-            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object = parse_to_utc(utc_date)
             if format == "list":
                 return {
                     "year": [date_object.strftime("%Y")],
@@ -960,10 +964,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             start, end = date.split(separator)
             start_utc_date = MetadataFormatter.convert_to_iso_utc_datetime(start)
             end_utc_date = MetadataFormatter.convert_to_iso_utc_datetime(end)
-            start_date_object = datetime.strptime(
-                start_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
-            end_date_object = datetime.strptime(end_utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            start_date_object = parse_to_utc(start_utc_date)
+            if end_utc_date == "None":
+                end_utc_date = start_utc_date
+            end_date_object = parse_to_utc(end_utc_date)
 
             delta_utc_date = end_date_object - start_date_object
 
@@ -972,7 +976,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             days = set()
 
             for i in range(delta_utc_date.days + 1):
-                date_object = start_date_object + timedelta(days=i)
+                date_object = start_date_object + dt.timedelta(days=i)
                 years.add(date_object.strftime("%Y"))
                 months.add(date_object.strftime("%m"))
                 days.add(date_object.strftime("%d"))
@@ -1008,17 +1012,17 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
             dates_str = match.group()
             dates = dates_str.split(split_param)
-            start_date = datetime.strptime(dates[0], "%Y%m%d")
-            end_date = datetime.strptime(dates[1], "%Y%m%d")
+            start_date = dt.datetime.strptime(dates[0], "%Y%m%d")
+            end_date = dt.datetime.strptime(dates[1], "%Y%m%d")
             return {
-                "startDate": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "startDate": to_iso_utc_string(start_date),
+                "endDate": to_iso_utc_string(end_date),
             }
 
         @staticmethod
         def convert_get_hydrological_year(date: str):
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
-            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object = parse_to_utc(utc_date)
             date_object_second_year = date_object + relativedelta(years=1)
             return [
                 f"{date_object.strftime('%Y')}_{date_object_second_year.strftime('%y')}"
@@ -1810,3 +1814,117 @@ def get_provider_queryable_key(
         return ""
     else:
         return eodag_key
+
+
+def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
+    """Migrate ``eo:bands`` / ``raster:bands`` of ``data`` into a STAC 1.1
+    ``bands`` array, in place. Returns ``data`` for convenience.
+
+    :param data: properties dict or Asset to migrate
+    :returns: the same data with migrated bands
+    """
+    UNPREFIX_BAND_FIELDNAME = [
+        "name",
+        "description",
+        "data_type",
+        "nodata",
+        "unit",
+        "statistics",
+    ]
+    EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME = ["name", "eo:common_name"]
+
+    # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
+    # Migrate band STAC 1.0 to 1.1
+    if isinstance(data, dict) or isinstance(data, Asset):
+
+        # Gather eo:band et raster:bands
+        bands: dict[str, Any] = {"eo:bands": [], "raster:bands": []}
+        hasData = False
+        for fieldname in bands:
+            if fieldname in data:
+                if isinstance(data[fieldname], list):
+                    bands[fieldname] = data[fieldname]
+                else:
+                    bands[fieldname] = [data[fieldname]]
+                hasData = True
+                del data[fieldname]
+
+        if hasData:
+            processed_bands = []
+
+            # migrate eo:bands -> bands
+            if len(bands["eo:bands"]) > 0:
+                for item in bands["eo:bands"]:
+                    band = {}
+                    for key in item:
+                        if key in UNPREFIX_BAND_FIELDNAME:
+                            band[key] = item[key]
+                        else:
+                            band["eo:{}".format(key)] = item[key]
+                    processed_bands.append(band)
+
+            # migrate raster:bands -> bands
+            if len(bands["raster:bands"]) > 0:
+                index = 0
+                for item in bands["raster:bands"]:
+                    band = processed_bands[index]
+                    for key in item:
+                        if key in UNPREFIX_BAND_FIELDNAME:
+                            band[key] = item[key]
+                        else:
+                            band["raster:{}".format(key)] = item[key]
+                    if index < len(processed_bands):
+                        processed_bands[index] = band
+                    else:
+                        processed_bands.append(band)
+                    index += 1
+
+            # When a property has the same value for each band, move it in parent scope
+            if len(processed_bands) > 0:
+                field_values: dict[str, Any] = {}
+
+                # Lists each distinct value for a field of the same name on each band
+                for band in processed_bands:
+                    for key in band:
+                        if key not in field_values:
+                            field_values[key] = []
+                        if band[key] not in field_values[key]:
+                            field_values[key].append(band[key])
+
+                    # Move band fields from asset to parent if all fields shared same value
+                    # (distinct values == 1)
+                    remove_band_fields = []
+                    for key in field_values:
+                        if (
+                            key in EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME
+                            or len(field_values[key]) != 1
+                        ):
+                            continue
+                        # Do not overwrite a value already set on the parent
+                        # (e.g. an Asset's own `description`); keep the
+                        # per-band value on the `bands` array instead.
+                        if key in data and data[key] != field_values[key][0]:
+                            continue
+                        # All bands have same value
+                        data[key] = field_values[key][0]
+                        # Tag field "to remove" from assets
+                        remove_band_fields.append(key)
+                del field_values
+
+            # Remove from assets field moved to parent
+            cleaned_bands = []
+            for band in processed_bands:
+                cleaned_band = {}
+                for key in band:
+                    if key not in remove_band_fields:
+                        cleaned_band[key] = band[key]
+                if len(list(cleaned_band.keys())) > 0:
+                    cleaned_bands.append(cleaned_band)
+            processed_bands = cleaned_bands
+            del cleaned_bands
+
+            # Remap band field if contains at least one value
+            if len(processed_bands) > 0:
+                data["bands"] = processed_bands
+
+    return data

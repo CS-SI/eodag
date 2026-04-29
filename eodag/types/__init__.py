@@ -140,6 +140,32 @@ def python_type_to_json(
         return None
 
 
+def _strip_fieldinfo_default(
+    annotated: Annotated[Any, FieldInfo],
+) -> Annotated[Any, FieldInfo]:
+    """Return a copy of an ``Annotated[T, FieldInfo, ...]`` with the
+    ``FieldInfo`` ``default`` attribute reset to :data:`PydanticUndefined`.
+
+    Pydantic emits ``UnsupportedFieldAttributeWarning`` when a ``FieldInfo``
+    carrying a ``default`` (or other model-only attributes) is used as a
+    standalone annotation (e.g. inside a ``tuple[...]`` element). Stripping
+    the default avoids the warning when these annotations are nested.
+    """
+    if get_origin(annotated) is not Annotated:
+        return annotated
+    args = get_args(annotated)
+    base_type, *metadata = args
+    new_metadata = []
+    for m in metadata:
+        if isinstance(m, FieldInfo):
+            new_fi = copy_deepcopy(m)
+            new_fi.default = PydanticUndefined
+            new_metadata.append(new_fi)
+        else:
+            new_metadata.append(m)
+    return Annotated[tuple([base_type] + new_metadata)]
+
+
 def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
     default_value: Optional[Any] = None,
@@ -188,7 +214,9 @@ def json_field_definition_to_python(
         if isinstance(items, list):
             python_type = tuple[  # type: ignore
                 tuple(
-                    json_field_definition_to_python(item, required=required)
+                    _strip_fieldinfo_default(
+                        json_field_definition_to_python(item, required=required)
+                    )
                     for item in items
                 )
             ]

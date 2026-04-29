@@ -32,12 +32,14 @@ from zipstream import ZipStream
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import (
+    DEFAULT_MIME,
     StreamResponse,
     get_bucket_name_and_prefix,
     guess_file_type,
     parse_le_uint16,
     parse_le_uint32,
 )
+from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import (
     AuthenticationError,
     InvalidDataError,
@@ -45,7 +47,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Iterable, Iterator, Literal, Optional
+    from typing import Any, Iterable, Iterator, Literal, Optional
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
@@ -53,8 +55,6 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct  # type: ignore
 
 logger = logging.getLogger("eodag.utils.s3")
-
-MIME_OCTET_STREAM = "application/octet-stream"
 
 
 def fetch_range(
@@ -91,7 +91,7 @@ class S3FileInfo:
     data_start_offset: int = 0
     #: MIME type of the file, defaulting to application/octet-stream.
     #: It can be updated based on the file extension or content type.
-    data_type: str = MIME_OCTET_STREAM
+    data_type: str = DEFAULT_MIME
     #: Relative path of the file, if applicable (e.g., inside a ZIP archive).
     rel_path: Optional[str] = None
 
@@ -491,9 +491,8 @@ def stream_download_from_s3(
         f_info.file_start_offset = offset
         offset += f_info.size
 
-        if not f_info.data_type or f_info.data_type == MIME_OCTET_STREAM:
-            guessed = guess_file_type(f_info.key)
-            f_info.data_type = guessed or MIME_OCTET_STREAM
+        if not f_info.data_type or f_info.data_type == DEFAULT_MIME:
+            f_info.data_type = guess_file_type(f_info.key)
 
     # Create the files iterator using the original approach
     files_iterator = _chunks_from_s3_objects(
@@ -540,37 +539,58 @@ def update_assets_from_s3(
     try:
 
         logger.debug("Listing assets in %s", prefix)
+
         s3_client = auth.get_s3_client()
 
+        assets_data = {}
         if prefix.endswith(".zip"):
-            # List prefix zip content
-            assets_urls = [
-                f"zip+s3://{bucket}/{prefix}!{f.filename}"
-                for f in list_files_in_s3_zipped_object(bucket, prefix, s3_client)
-            ]
+            for item_file in list_files_in_s3_zipped_object(bucket, prefix, s3_client):
+                url = "zip+s3://{bucket}/{prefix}!{filename}".format(
+                    bucket=bucket, prefix=prefix, filename=item_file.filename
+                )
+                key, roles = product.driver.guess_asset_key_and_roles(
+                    item_file.filename, product
+                )
+                if key is not None:
+                    assets_data[key] = {
+                        "title": key,
+                        "roles": roles,
+                        "href": url,
+                        "type": guess_file_type(item_file.filename),
+                        "file:size": item_file.file_size,
+                    }
         else:
             # List files in prefix
-            assets_urls = [
-                f"s3://{bucket}/{obj['Key']}"
-                for obj in s3_client.list_objects(
-                    Bucket=bucket, Prefix=prefix, MaxKeys=300
-                ).get("Contents", [])
-            ]
-
-        for asset_url in assets_urls:
-            out_of_zip_url = asset_url.split("!")[-1]
-            key, roles = product.driver.guess_asset_key_and_roles(
-                out_of_zip_url, product
+            s3_objects = s3_client.list_objects(
+                Bucket=bucket, Prefix=prefix, MaxKeys=300
             )
+            for item_s3 in s3_objects.get("Contents", []):
 
-            if key and key not in product.assets:
-                product.assets[key] = {
-                    "title": key,  # Normalize title with key
-                    "roles": roles,
-                    "href": asset_url,
-                }
-                if mime_type := guess_file_type(asset_url):
-                    product.assets[key]["type"] = mime_type
+                url = "s3://{bucket}/{key}".format(bucket=bucket, key=item_s3["Key"])
+                key, roles = product.driver.guess_asset_key_and_roles(url, product)
+                if key is not None:
+                    asset_data: dict[str, Any] = {
+                        "title": key,
+                        "roles": roles,
+                        "href": url,
+                        "type": guess_file_type(item_s3["Key"]),
+                    }
+                    etag = item_s3.get("ETag")
+                    # multipart-upload ETags ("<hash>-N") are not MD5 digests
+                    if isinstance(etag, str) and "-" not in etag:
+                        asset_data["file:checksum"] = etag.strip('"')
+                    size = item_s3.get("Size")
+                    if size is not None:
+                        asset_data["file:size"] = size
+
+                    if last_modified := to_iso_utc_string(item_s3.get("LastModified")):
+                        asset_data["updated"] = last_modified
+
+                    assets_data[key] = asset_data
+
+        for key in assets_data:
+            if key not in product.assets:
+                product.assets[key] = assets_data[key]
 
         # sort assets
         product.assets.data = dict(sorted(product.assets.data.items()))

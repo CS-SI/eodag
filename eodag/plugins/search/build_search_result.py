@@ -17,20 +17,17 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta
 from types import MethodType
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
 import orjson
-from dateutil.parser import isoparse
-from dateutil.tz import tzutc
-from dateutil.utils import today
 from pydantic import AliasChoices
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
@@ -51,8 +48,8 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
 from eodag.types.queryables import Queryables, QueryablesDict
+from eodag.types.stac_extensions import EcmwfItemProperties
 from eodag.utils import (
-    DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
@@ -66,12 +63,22 @@ from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import (
     COMPACT_DATE_RANGE_PATTERN,
     DATE_RANGE_PATTERN,
+    compute_date_range_from_params,
     format_date,
     is_range_in_range,
     parse_date,
+    parse_to_utc,
     parse_year_month_day,
+    time_values_to_hhmm,
+    to_iso_utc_string,
+    validate_datetime_param,
 )
-from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
+from eodag.utils.exceptions import (
+    DownloadError,
+    MisconfiguredError,
+    NotAvailableError,
+    ValidationError,
+)
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
@@ -81,137 +88,9 @@ logger = logging.getLogger("eodag.search.build_search_result")
 
 ECMWF_PREFIX = "ecmwf:"
 
-# keywords from ECMWF keyword database + "dataset" (not part of database but exists)
-# database: https://confluence.ecmwf.int/display/UDOC/Keywords+in+MARS+and+Dissemination+requests
-ECMWF_KEYWORDS = {
-    "dataset",
-    "accuracy",
-    "activity",
-    "anoffset",
-    "bitmap",
-    "block",
-    "channel",
-    "class",
-    "database",
-    "date",
-    "diagnostic",
-    "direction",
-    "domain",
-    "duplicates",
-    "expect",
-    "expver",
-    "fcmonth",
-    "fcperiod",
-    "fieldset",
-    "filter",
-    "feature",
-    "format",
-    "frame",
-    "frequency",
-    "generation",
-    "grid",
-    "hdate",
-    "ident",
-    "interpolation",
-    "intgrid",
-    "iteration",
-    "latitude",
-    "levelist",
-    "levtype",
-    "longitude",
-    "lsm",
-    "method",
-    "number",
-    "obsgroup",
-    "obstype",
-    "origin",
-    "packing",
-    "padding",
-    "param",
-    "priority",
-    "product",
-    "range",
-    "realization",
-    "refdate",
-    "reference",
-    "reportype",
-    "repres",
-    "resolution",
-    "rotation",
-    "section",
-    "source",
-    "step",
-    "stream",
-    "system",
-    "target",
-    "time",
-    "truncation",
-    "type",
-    "use",
-}
-
-# additional keywords from copernicus services
-COP_DS_KEYWORDS = {
-    "aerosol_type",
-    "altitude",
-    "area",
-    "band",
-    "cdr_type",
-    "data_format",
-    "dataset_type",
-    "day",
-    "download_format",
-    "ensemble_member",
-    "experiment",
-    "forcing_type",
-    "gcm",
-    "hday",
-    "hmonth",
-    "horizontal_resolution",
-    "hydrological_model",
-    "hydrological_year",
-    "hyear",
-    "input_observations",
-    "leadtime_hour",
-    "leadtime_month",
-    "level",
-    "location",
-    "model",
-    "model_level",
-    "model_levels",
-    "month",
-    "nominal_day",
-    "originating_centre",
-    "period",
-    "pressure_level",
-    "processing_level",
-    "processing_type",
-    "product_type",
-    "product_version",
-    "quantity",
-    "rcm",
-    "region",
-    "release_version",
-    "satellite",
-    "satellite_mission",
-    "sensor",
-    "sensor_and_algorithm",
-    "soil_level",
-    "sky_type",
-    "statistic",
-    "system_version",
-    "temporal_aggregation",
-    "temporal_resolution",
-    "time_aggregation",
-    "time_reference",
-    "time_step",
-    "variable",
-    "variable_type",
-    "version",
-    "year",
-}
-
-ALLOWED_KEYWORDS = ECMWF_KEYWORDS | COP_DS_KEYWORDS
+ALLOWED_KEYWORDS = set(
+    [k.replace("ecmwf_", "") for k in EcmwfItemProperties.model_fields.keys()]
+)
 
 END = "end_datetime"
 
@@ -374,7 +253,7 @@ def ecmwf_temporal_to_eodag(
         start, end = parse_year_month_day(year, month, day, time)
 
     if start and end:
-        return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return to_iso_utc_string(start), to_iso_utc_string(end)
     else:
         return None, None
 
@@ -395,7 +274,6 @@ class ECMWFSearch(PostJsonSearch):
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
-        * :attr:`~eodag.config.PluginConfig.dates_required` (``bool``): if date parameters are mandatory in the request
         * :attr:`~eodag.config.PluginConfig.discover_queryables`
           (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
           provider queryables endpoint; It has the following keys:
@@ -495,7 +373,7 @@ class ECMWFSearch(PostJsonSearch):
         collection = prep.collection
         if not collection:
             collection = kwargs.get("collection")
-        kwargs = self._preprocess_search_params(kwargs, collection)
+        kwargs = self._preprocess_search_params(kwargs)
         result = super().query(prep, **kwargs)
         if prep.count and not result.number_matched:
             result.number_matched = 1
@@ -529,9 +407,7 @@ class ECMWFSearch(PostJsonSearch):
             collection=collection, query_dict=ordered_kwargs
         )
 
-    def _preprocess_search_params(
-        self, params: dict[str, Any], collection: Optional[str]
-    ) -> dict[str, Any]:
+    def _preprocess_search_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
@@ -540,7 +416,6 @@ class ECMWFSearch(PostJsonSearch):
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
-        :param collection: (optional) collection id
         """
 
         _dc_qs = params.get("_dc_qs")
@@ -566,11 +441,6 @@ class ECMWFSearch(PostJsonSearch):
             if v is not None
         }
 
-        # dates
-        # check if default dates have to be added
-        if getattr(self.config, "dates_required", False):
-            self._check_date_params(params, collection)
-
         # read 'start_datetime' and 'end_datetime' from 'date' range
         if "date" in params:
             start_date, end_date = parse_date(params["date"])
@@ -580,21 +450,9 @@ class ECMWFSearch(PostJsonSearch):
         # adapt end date if it is midnight
         if END in params:
             end_date_excluded = getattr(self.config, "end_date_excluded", True)
-            is_datetime = True
-            try:
-                end_date = datetime.strptime(params[END], "%Y-%m-%dT%H:%M:%SZ")
-                end_date = end_date.replace(tzinfo=tzutc())
-            except ValueError:
-                try:
-                    end_date = datetime.strptime(
-                        params[END],
-                        "%Y-%m-%dT%H:%M:%S.%fZ",
-                    )
-                    end_date = end_date.replace(tzinfo=tzutc())
-                except ValueError:
-                    end_date = isoparse(params[END])
-                    is_datetime = False
-            start_date = isoparse(params[START])
+            is_datetime = "T" in str(params[END])
+            end_date = parse_to_utc(params[END])
+            start_date = parse_to_utc(params[START])
             if (
                 not end_date_excluded
                 and is_datetime
@@ -602,72 +460,78 @@ class ECMWFSearch(PostJsonSearch):
                 and end_date
                 == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
             ):
-                end_date += timedelta(days=-1)
-                params[END] = end_date.isoformat()
+                end_date += dt.timedelta(days=-1)
+                params[END] = to_iso_utc_string(end_date)
 
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+
+        # check ecmwf geom format if given
         # ECMWF Polytope uses non-geojson structure for features
         if "feature" in params:
-            params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
-            params.pop("feature")
+            get_geometry_from_ecmwf_feature(params["feature"])
         # bounding box in area format
         if "area" in params:
-            params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
-            params.pop("area")
+            get_geometry_from_ecmwf_area(params["area"])
         # single location
         if "location" in params:
-            params["geometry"] = get_geometry_from_ecmwf_location(params["location"])
-            params.pop("location")
+            get_geometry_from_ecmwf_location(params["location"])
 
         return params
 
-    def _check_date_params(
-        self, keywords: dict[str, Any], collection: Optional[str]
-    ) -> None:
-        """checks if start and end date are present in the keywords and adds them if not"""
+    def _preprocess_indirect_date_parameters(self, params: dict[str, Any]) -> dict:
+        """
+        Compute start_datetime / end_datetime from "date", "time", "year", "month", "day"
+        """
+        indirects: dict[str, Any] = {}
 
-        if START in keywords and END in keywords:
-            return
+        # Validate and collect indirect date parameters
+        time = validate_datetime_param(
+            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"]
+        )
+        year = validate_datetime_param(params.get("year"), "year", ["%Y"])
+        month = validate_datetime_param(params.get("month"), "month", ["%m"])
+        day = validate_datetime_param(params.get("day"), "day", ["%d"])
 
-        collection_conf = getattr(self.config, "metadata_mapping", {})
-        if (
-            collection
-            and collection in self.config.products
-            and "metadata_mapping" in self.config.products[collection]
-        ):
-            collection_conf = self.config.products[collection]["metadata_mapping"]
+        if time is not None:
+            time = time_values_to_hhmm(time)
+            indirects["time"] = time
+        if year is not None:
+            indirects["year"] = year
+        if month is not None:
+            indirects["month"] = [f"{int(m):02d}" for m in month]
+        if day is not None:
+            indirects["day"] = [f"{int(d):02d}" for d in day]
 
-        # start time given, end time missing
-        if START in keywords:
-            keywords[END] = (
-                keywords[START]
-                if END in collection_conf
-                # else self.get_collection_cfg_value(
-                else self.get_collection_cfg_dates(None, today().isoformat())[1]
-            )
-            return
-
-        if END in collection_conf:
-            mapping = collection_conf[START]
-            if not isinstance(mapping, list):
-                mapping = collection_conf[END]
-            if isinstance(mapping, list):
-                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
-                # no default date is required
-                start, end = ecmwf_temporal_to_eodag(keywords)
-                if start is None:
-                    col_start, col_end = self.get_collection_cfg_dates(
-                        DEFAULT_MISSION_START_DATE, today().isoformat()
+        # Compute date range from "date" param (takes precedence)
+        date = params.get("date", None)
+        if date is not None:
+            try:
+                start, end = compute_date_range_from_params(date=date, time=time)
+                indirects["start_datetime"] = start
+                indirects["end_datetime"] = end
+                return indirects
+            except Exception as e:
+                raise ValidationError(
+                    'Malformed parameter "date" (date given "{}", time given: "{}"): {}'.format(
+                        params.get("date"), params.get("time"), str(e)
                     )
-                    keywords[START] = col_start
-                    keywords[END] = (
-                        keywords[START] if END in collection_conf else col_end
-                    )
-                else:
-                    keywords[START] = start
-                    keywords[END] = end
+                )
+
+        # Compute date range from year/month/day/time params
+        start, end = compute_date_range_from_params(
+            year=year,
+            month=indirects.get("month"),
+            day=indirects.get("day"),
+            time=time,
+        )
+        if start is not None:
+            indirects["start_datetime"] = start
+        if end is not None:
+            indirects["end_datetime"] = end
+
+        return indirects
 
     def _get_collection_queryables(
         self, collection: Optional[str], alias: Optional[str], filters: dict[str, Any]
@@ -700,6 +564,20 @@ class ECMWFSearch(PostJsonSearch):
                     return dc["discover_queryables"]
         return {}
 
+    def _is_discoverable_metadata_key(self, key: str) -> bool:
+        """Check if a key can bypass strict queryables validation via discover_metadata."""
+
+        discover_metadata = getattr(self.config, "discover_metadata", None) or {}
+        if not discover_metadata.get("auto_discovery"):
+            return False
+
+        pattern = discover_metadata.get("metadata_pattern") or ""
+        try:
+            return bool(pattern and re.match(pattern, key))
+        except re.error:
+            msg = f"Invalid discover_metadata.metadata_pattern for provider {self.provider}: {pattern}"
+            raise MisconfiguredError(msg)
+
     def discover_queryables(
         self,
         **kwargs: Any,
@@ -728,9 +606,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # extract default datetime and convert geometry
         try:
-            processed_filters = self._preprocess_search_params(
-                deepcopy(filters), collection
-            )
+            processed_filters = self._preprocess_search_params(deepcopy(filters))
         except Exception as e:
             raise ValidationError(e.args[0]) from e
 
@@ -761,7 +637,7 @@ class ECMWFSearch(PostJsonSearch):
                 START,
                 END,
                 "geometry",
-            }:
+            } and not self._is_discoverable_metadata_key(key):
                 raise ValidationError(
                     f"'{key}' is not a queryable parameter for {self.provider}", {key}
                 )
@@ -819,10 +695,9 @@ class ECMWFSearch(PostJsonSearch):
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
-                and keyword.removeprefix(ECMWF_PREFIX).removeprefix(
-                    f"{ECMWF_PREFIX[:-1]}_"
-                )
+                and keyword
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
+                and not self._is_discoverable_metadata_key(keyword)
             ):
                 raise ValidationError("'%s' is not a queryable parameter" % keyword)
 
@@ -1252,6 +1127,12 @@ class ECMWFSearch(PostJsonSearch):
                 **{k: v for k, v in kwargs.items() if v is not None},
             }
 
+            # start_datetime /  computed from "date", "time", "year", "month", "day"
+            indirects = self._preprocess_indirect_date_parameters(result_data)
+            for key in (START, END):
+                if result_data.get(key) is None and indirects.get(key) is not None:
+                    result_data[key] = indirects[key]
+
             properties = properties_from_json(
                 result_data,
                 self.config.metadata_mapping,
@@ -1269,6 +1150,26 @@ class ECMWFSearch(PostJsonSearch):
             # collection alias (required by opentelemetry-instrumentation-eodag)
             if alias := getattr(self.config, "collection_config", {}).get("alias"):
                 kwargs["collection"] = alias
+
+        # Convert ecmwf geometries for properties but keep original in qs
+        # ECMWF Polytope uses non-geojson structure for features
+        if "feature" in sorted_unpaginated_qp:
+            properties["geometry"] = get_geometry_from_ecmwf_feature(
+                sorted_unpaginated_qp["feature"]
+            )
+            properties.pop("feature", None)
+        # bounding box in area format
+        if "area" in sorted_unpaginated_qp:
+            properties["geometry"] = get_geometry_from_ecmwf_area(
+                sorted_unpaginated_qp["area"]
+            )
+            properties.pop("area", None)
+        # single location
+        if "location" in sorted_unpaginated_qp:
+            properties["geometry"] = get_geometry_from_ecmwf_location(
+                sorted_unpaginated_qp["location"]
+            )
+            properties.pop("location", None)
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 

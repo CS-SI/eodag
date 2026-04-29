@@ -224,6 +224,20 @@ class TestQueryables(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_ecmwf_extension_dual_aliases(self):
+        """EcmwfItemProperties fields must expose both stac-prefixed and unprefixed aliases."""
+        from eodag.types.stac_extensions import EcmwfItemProperties
+
+        field = EcmwfItemProperties.model_fields["ecmwf_data_format"]
+        # alias and serialization_alias use the stac-prefixed form
+        self.assertEqual(field.alias, "ecmwf:data_format")
+        self.assertEqual(field.serialization_alias, "ecmwf:data_format")
+        # validation_alias accepts both prefixed and unprefixed forms
+        self.assertIsInstance(field.validation_alias, AliasChoices)
+        self.assertEqual(
+            field.validation_alias.choices, ["ecmwf:data_format", "data_format"]
+        )
+
 
 class TestFieldDefinition(unittest.TestCase):
     def test_json_field_definition_to_python(self):

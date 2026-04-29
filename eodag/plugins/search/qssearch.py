@@ -31,7 +31,7 @@ from typing import (
     cast,
     get_args,
 )
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import (
     parse_qs,
     parse_qsl,
@@ -52,7 +52,7 @@ import requests
 import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
-from pydantic import create_model
+from pydantic import ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
@@ -85,6 +85,7 @@ from eodag.utils import (
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
+    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     copy_deepcopy,
     deepcopy,
@@ -99,6 +100,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     PluginImplementationError,
+    QuotaExceededError,
     RequestError,
     TimeOutError,
     ValidationError,
@@ -1299,6 +1301,7 @@ class QueryStringSearch(Search):
         products: list[EOProduct] = []
         asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         product_kwargs = deepcopy(kwargs)
+
         # collection alias as collection property for product
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
             product_kwargs["collection"] = alias
@@ -1308,29 +1311,32 @@ class QueryStringSearch(Search):
                 self.get_metadata_mapping(kwargs.get("collection")),
                 discovery_config=getattr(self.config, "discover_metadata", {}),
             )
-            product = EOProduct(self.provider, properties, **product_kwargs)
+            # collection alias (required by opentelemetry-instrumentation-eodag)
+            if alias := getattr(self.config, "collection_config", {}).get("alias"):
+                kwargs["collection"] = alias
+            product = EOProduct(self.provider, properties, **kwargs)
 
             additional_assets = self.get_assets_from_mapping(result)
             product.assets.update(additional_assets)
+
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
-                norm_key, norm_roles = product.driver.guess_asset_key_and_roles(
-                    asset.get("href", "") if asset_key_from_href else key,
+                url = asset.get("href", "")
+                norm_key, roles = product.driver.guess_asset_key_and_roles(
+                    url if asset_key_from_href else key,
                     product,
                 )
-                # Keep original key and roles if driver couldn't guess
-                # (e.g., filename without extension)
-                if norm_key is None:
-                    norm_key = key
-                else:
-                    asset["roles"] = norm_roles
+                if norm_key is not None:
                     asset["title"] = norm_key
-                if norm_key:
+                    asset["roles"] = roles
                     product.assets[norm_key] = asset
-                    # Set title if not already set
-                    product.assets[norm_key].setdefault("title", norm_key)
+                else:
+                    asset["title"] = asset.get("title", key)
+                    product.assets[key] = asset
+
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
+            product._normalize_bands()
             products.append(product)
         return products
 
@@ -1414,6 +1420,21 @@ class QueryStringSearch(Search):
         else:
             return tuple(provider_collection)
 
+    def _raise_request_error(
+        self, err_msg: str, exception_message: Optional[str], url: str, e: Exception
+    ):
+        if exception_message:
+            logger.exception("%s %s" % (exception_message, err_msg))
+        else:
+            logger.exception(
+                "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
+                url,
+                self.provider,
+                self.__class__.__name__,
+                err_msg,
+            )
+        raise RequestError.from_error(e, exception_message) from e
+
     def _request(
         self,
         prep: PreparedSearch,
@@ -1495,19 +1516,17 @@ class QueryStringSearch(Search):
         except socket.timeout:
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
-        except (requests.RequestException, URLError) as err:
+        except HTTPError as e:  # raised by urlopen
+            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
+            err_msg = e.msg
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except URLError as e:
+            err_msg = str(e)
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except requests.RequestException as err:
+            QuotaExceededError.raise_if_quota_exceeded(err, self.provider)
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
-            if exception_message:
-                logger.exception("%s %s" % (exception_message, err_msg))
-            else:
-                logger.exception(
-                    "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
-                    url,
-                    self.provider,
-                    self.__class__.__name__,
-                    err_msg,
-                )
-            raise RequestError.from_error(err, exception_message) from err
+            self._raise_request_error(err_msg, exception_message, url, err)
         return response
 
 
@@ -1591,7 +1610,15 @@ class ODataV4Search(QueryStringSearch):
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-                except requests.RequestException:
+                except requests.RequestException as e:
+                    if (
+                        e.response
+                        and e.response.status_code
+                        and e.response.status_code == 429
+                    ):
+                        logger.error(
+                            f"Too many requests on provider {self.provider}, please check your quota!"
+                        )
                     logger.exception(
                         "Skipping error while searching for %s %s instance",
                         self.provider,
@@ -1737,6 +1764,11 @@ class PostJsonSearch(QueryStringSearch):
             )
 
             qp, _ = self.build_query_string(collection, keywords)
+
+        # Force sort qp list parameters
+        for key in qp:
+            if isinstance(qp[key], list):
+                qp[key].sort()
 
         for query_param, query_value in qp.items():
             if (
@@ -2037,6 +2069,10 @@ class PostJsonSearch(QueryStringSearch):
                     f"HTTP Error {response.status_code} returned.",
                     response.text.strip(),
                 )
+            if response.status_code and response.status_code == 429:
+                raise QuotaExceededError(
+                    f"Too many requests on provider {self.provider}, please check your quota!"
+                )
             if exception_message:
                 logger.exception(exception_message)
             else:
@@ -2071,8 +2107,19 @@ class StacSearch(PostJsonSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # backup results_entry overwritten by init
-        results_entry = config.results_entry
+        try:
+            # backup results_entry overwritten by init
+            results_entry = config.results_entry
+        except AttributeError:
+            plugin_name = self.__class__.__name__
+            if plugin_name not in STAC_SEARCH_PLUGINS:
+                raise MisconfiguredError(
+                    "Missing results_entry in %s configuration. If %s is expected to be used as "
+                    "a STAC plugin, it must be referenced in STAC_SEARCH_PLUGINS."
+                    % (provider, plugin_name)
+                )
+            else:
+                raise
 
         super(StacSearch, self).__init__(provider, config)
 
@@ -2203,7 +2250,6 @@ class StacSearch(PostJsonSearch):
                 return None
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
-            eodag_queryables_and_defaults: list[tuple[str, Any]] = []
             StacQueryables = Queryables.from_stac_models()
             for json_param, json_mtd in json_queryables.items():
                 param = get_queryable_from_provider(
@@ -2213,28 +2259,58 @@ class StacSearch(PostJsonSearch):
                 if param == "datetime" or param.startswith("_"):
                     continue
 
-                default = kwargs.get(param, json_mtd.get("default"))
-
-                if param in StacQueryables.model_fields:
-                    # use eodag queryable as default
-                    eodag_queryables_and_defaults += [(param, default)]
-                    continue
-
                 # convert provider json field definition to python
                 default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
                 field_definition = get_args(annotated_def)
+
+                if param in StacQueryables.model_fields:
+                    # update provider queryable using eodag queryable definition
+                    eodag_queryable = StacQueryables.get_with_default(param, default)
+                    eodag_queryable_args = get_args(eodag_queryable)
+                    if len(field_definition) == 2 and len(eodag_queryable_args) == 2:
+                        (
+                            provider_queryable_type,
+                            provider_queryable_fieldinfo,
+                        ) = field_definition
+                        (
+                            eodag_queryable_type,
+                            eodag_queryable_fieldinfo,
+                        ) = eodag_queryable_args
+                        if ".Literal[" not in str(provider_queryable_type):
+                            # use eodag queryable type if provider one has no constraints
+                            field_definition = eodag_queryable_type, field_definition[1]
+
+                        # merge provider and eodag queryables FieldInfo metadata
+                        merged_metadata = (
+                            field_definition[1].metadata
+                            + eodag_queryable_fieldinfo.metadata
+                        )
+                        # build merged attributes: use provider value if set, otherwise fall back to eodag value
+                        merged_attrs = {
+                            attr_k: (
+                                attr_v or getattr(eodag_queryable_fieldinfo, attr_k)
+                            )
+                            for attr_k, attr_v in provider_queryable_fieldinfo.asdict()
+                            .get("attributes", {})
+                            .items()
+                        }
+                        # rebuild using Field()
+                        merged_fieldinfo = Field(**merged_attrs)
+                        merged_fieldinfo.metadata = merged_metadata
+                        field_definition = field_definition[0], merged_fieldinfo
+
                 field_definitions[param] = field_definition
 
-            python_queryables = create_model("m", **field_definitions).model_fields
+            python_queryables = create_model(
+                "m",
+                __config__=ConfigDict(arbitrary_types_allowed=True),
+                **field_definitions,
+            ).model_fields
 
             queryables_dict = model_fields_to_annotated(python_queryables)
-
-            # append eodag queryables
-            for param, default in eodag_queryables_and_defaults:
-                queryables_dict[param] = StacQueryables.get_with_default(param, default)
 
             # append "datetime" as "start" & "end" if needed
             if "datetime" in json_queryables:

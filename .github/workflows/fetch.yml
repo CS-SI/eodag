@@ -2,8 +2,6 @@ name: Fetch collections
 
 on:
   workflow_dispatch:
-  push:
-    branches: [develop]
   schedule:
     - cron: "0 6 * * *"
 

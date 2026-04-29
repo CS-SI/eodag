@@ -37,7 +37,6 @@ class EOIAMAuth(Authentication):
         and set up a requests.Session for SAML login."""
         super().__init__(provider, config)
         self.session = requests.Session()
-        self._logged_in = False
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -186,15 +185,14 @@ class _EOIAMSessionAuth(AuthBase):
         We use the session's get/post to ensure login happens if needed.
         """
         session = self.auth_plugin.session
-
-        # Lazy login
-        if not self.auth_plugin._logged_in:
+        try:
             resp = session.get(request.url, allow_redirects=True)
             if "Earth Observation Identity and Access Management System" in resp.text:
-                self.auth_plugin._login_from_html(resp.text, req_url=request.url)
-            self.auth_plugin._logged_in = True
+                resp = self.auth_plugin._login_from_html(resp.text, request.url)
 
-        # Copy cookies from session to the request
-        request.prepare_cookies(self.auth_plugin.session.cookies)
+            # Copy cookies from session to the request
+            request.prepare_cookies(self.auth_plugin.session.cookies)
 
-        return request
+            return request
+        finally:
+            self.auth_plugin.session = requests.Session()

@@ -15,8 +15,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime as dt
 import re
-from datetime import datetime
 from typing import Annotated, Any, Optional, Union, cast
 
 from annotated_types import MinLen
@@ -58,7 +58,7 @@ class SearchArgs(BaseModel):
     def check_date_format(cls, v: str) -> str:
         """Validate dates"""
         try:
-            datetime.fromisoformat(v)
+            dt.datetime.fromisoformat(v)
         except ValueError as e:
             raise ValueError("start_date and end must follow ISO8601 format") from e
         return v

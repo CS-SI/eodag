@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import copy
+import datetime as dt
 import glob
 import json
 import logging
@@ -24,7 +25,6 @@ import os
 import shutil
 import tempfile
 import unittest
-from datetime import datetime, timezone
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
@@ -187,6 +187,20 @@ class TestCore(TestCoreBase):
         "EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS": ["dedl"],
         "FIRE_HISTORICAL": ["cop_ewds", "dedl", "wekeo_ecmwf"],
         "FIRE_SEASONAL": ["cop_ewds"],
+        "GHS_BUILT_C": ["cop_ghsl"],
+        "GHS_BUILT_H": ["cop_ghsl"],
+        "GHS_BUILT_LAUSTAT": ["cop_ghsl"],
+        "GHS_BUILT_S": ["cop_ghsl"],
+        "GHS_BUILT_V": ["cop_ghsl"],
+        "GHS_DUC": ["cop_ghsl"],
+        "GHS_ENACT_POP": ["cop_ghsl"],
+        "GHS_ESM": ["cop_ghsl"],
+        "GHS_FUA": ["cop_ghsl"],
+        "GHS_LAND": ["cop_ghsl"],
+        "GHS_POP": ["cop_ghsl"],
+        "GHS_SMOD": ["cop_ghsl"],
+        "GHS_UCDB_DOMAIN": ["cop_ghsl"],
+        "GHS_UCDB_REGION": ["cop_ghsl"],
         "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "GLOFAS_FORECAST": ["cop_ewds", "dedl"],
         "GLOFAS_HISTORICAL": ["cop_ewds", "dedl"],
@@ -331,15 +345,46 @@ class TestCore(TestCoreBase):
         "NAIP": ["aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
-        "S1_AUX_GNSSRD": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S1_AUX_MOEORB": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S1_AUX_POEORB": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S1_AUX_PREORB": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S1_AUX_PROQUA": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S1_AUX_RESORB": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S1_AUX_GNSSRD": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S1_AUX_MOEORB": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S1_AUX_POEORB": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S1_AUX_PREORB": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S1_AUX_PROQUA": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S1_AUX_RESORB": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
         "S1_SAR_GRD": [
             "aws_eos",
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -350,11 +395,22 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S1_SAR_GRD_COG": ["cop_dataspace"],
-        "S1_SAR_L3_IW_MCM": ["creodias", "cop_dataspace", "creodias_s3"],
-        "S1_SAR_L3_DH_MCM": ["creodias", "cop_dataspace", "creodias_s3"],
+        "S1_SAR_GRD_COG": ["cop_dataspace", "cop_dataspace_s3"],
+        "S1_SAR_L3_IW_MCM": [
+            "creodias",
+            "cop_dataspace",
+            "creodias_s3",
+            "cop_dataspace_s3",
+        ],
+        "S1_SAR_L3_DH_MCM": [
+            "creodias",
+            "cop_dataspace",
+            "creodias_s3",
+            "cop_dataspace_s3",
+        ],
         "S1_SAR_OCN": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "geodes",
@@ -364,12 +420,14 @@ class TestCore(TestCoreBase):
         ],
         "S1_SAR_RAW": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "wekeo_main",
         ],
         "S1_SAR_SLC": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -381,6 +439,7 @@ class TestCore(TestCoreBase):
         "S2_MSI_L1C": [
             "aws_eos",
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -395,6 +454,7 @@ class TestCore(TestCoreBase):
         "S2_MSI_L2A": [
             "aws_eos",
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -408,6 +468,7 @@ class TestCore(TestCoreBase):
         "S2_MSI_L2B_MAJA_WATER": ["geodes", "geodes_s3"],
         "S3_EFR": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -418,6 +479,7 @@ class TestCore(TestCoreBase):
         "S3_EFR_BC002": ["eumetsat_ds"],
         "S3_ERR": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -428,6 +490,7 @@ class TestCore(TestCoreBase):
         "S3_ERR_BC002": ["eumetsat_ds"],
         "S3_LAN": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -436,6 +499,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_OLCI_L2LFR": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -444,6 +508,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_OLCI_L2LRR": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -452,6 +517,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_OLCI_L2WFR": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -461,6 +527,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_OLCI_L2WRR": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -471,6 +538,7 @@ class TestCore(TestCoreBase):
         "S3_RAC": ["sara"],
         "S3_SLSTR_L1RBT": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -482,6 +550,7 @@ class TestCore(TestCoreBase):
         "S3_SLSTR_L2": ["wekeo_main"],
         "S3_SLSTR_L2AOD": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -490,6 +559,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_SLSTR_L2FRP": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -498,6 +568,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_SLSTR_L2LST": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -505,6 +576,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_SLSTR_L2WST": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -513,6 +585,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_SRA": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -522,6 +595,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_SRA_A": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -531,6 +605,7 @@ class TestCore(TestCoreBase):
         ],
         "S3_SRA_BS": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -538,13 +613,44 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S3_SY_AOD": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
-        "S3_SY_SYN": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
-        "S3_SY_V10": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
-        "S3_SY_VG1": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
-        "S3_SY_VGP": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
+        "S3_SY_AOD": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+            "sara",
+        ],
+        "S3_SY_SYN": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+            "sara",
+        ],
+        "S3_SY_V10": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+            "sara",
+        ],
+        "S3_SY_VG1": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+            "sara",
+        ],
+        "S3_SY_VGP": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+            "sara",
+        ],
         "S3_WAT": [
             "cop_dataspace",
+            "cop_dataspace_s3",
             "creodias",
             "creodias_s3",
             "dedl",
@@ -552,9 +658,27 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S3_LAN_HY": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
-        "S3_LAN_SI": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
-        "S3_LAN_LI": ["wekeo_main", "cop_dataspace", "creodias", "creodias_s3"],
+        "S3_LAN_HY": [
+            "wekeo_main",
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S3_LAN_SI": [
+            "wekeo_main",
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S3_LAN_LI": [
+            "wekeo_main",
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
         "S5P_L1B_IR_ALL": ["dedl", "wekeo_main"],
         "S5P_L2_IR_ALL": ["dedl", "wekeo_main"],
         "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
@@ -570,30 +694,120 @@ class TestCore(TestCoreBase):
         "S3_WAT_BC005": ["eumetsat_ds"],
         "S3_SLSTR_L1RBT_BC004": ["eumetsat_ds"],
         "S3_SLSTR_L2WST_BC003": ["eumetsat_ds"],
-        "S5P_L1B_IR_SIR": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_IR_UVN": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD2": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD3": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD4": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD5": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD6": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD7": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD8": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_AER_AI": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_AER_LH": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_CH4": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_CLOUD": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_CO": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_HCHO": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_NO2": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_NP_BD3": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_NP_BD6": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_NP_BD7": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_O3": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_O3_TCL": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_SO2": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_IR_SIR": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_IR_UVN": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD1": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD2": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD3": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD4": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD5": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD6": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD7": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L1B_RA_BD8": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_AER_AI": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_AER_LH": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_CH4": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
+        "S5P_L2_CLOUD": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_CO": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
+        "S5P_L2_HCHO": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
+        "S5P_L2_NO2": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
+        "S5P_L2_NP_BD3": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_NP_BD6": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_NP_BD7": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_O3": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
+        "S5P_L2_O3_PR": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_O3_TCL": [
+            "cop_dataspace",
+            "cop_dataspace_s3",
+            "creodias",
+            "creodias_s3",
+        ],
+        "S5P_L2_SO2": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo_ecmwf"],
         "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo_ecmwf"],
@@ -611,6 +825,12 @@ class TestCore(TestCoreBase):
         "CMIP6_CLIMATE_PROJECTIONS": ["cop_cds"],
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SPACENET_BUILDINGS_DETECTION_V1": ["dedl"],
+        "SPACENET_ALL_WEATHER_MAPPING": ["dedl"],
+        "SPACENET_BUILDINGS_DETECTION_V2": ["dedl"],
+        "SPACENET_ROADS_NETWORK_DETECTION": ["dedl"],
+        "SPACENET_OFF_NADIR_BUILDING": ["dedl"],
+        "SPACENET_ROADS_NETWORK_ROUTE_TRAVEL": ["dedl"],
         GENERIC_COLLECTION: [
             "usgs",
             "creodias",
@@ -622,6 +842,7 @@ class TestCore(TestCoreBase):
             "cop_cds",
             "meteoblue",
             "cop_dataspace",
+            "cop_dataspace_s3",
             "planetary_computer",
             "hydroweb_next",
             "creodias_s3",
@@ -633,7 +854,9 @@ class TestCore(TestCoreBase):
         "cop_ads",
         "cop_cds",
         "cop_dataspace",
+        "cop_dataspace_s3",
         "cop_ewds",
+        "cop_ghsl",
         "cop_marine",
         "creodias",
         "creodias_s3",
@@ -1947,7 +2170,17 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
+            "cop_dataspace_s3": {
+                "max_sort_params": 1,
+                "sortables": [
+                    "start_datetime",
+                    "end_datetime",
+                    "published",
+                    "updated",
+                ],
+            },
             "cop_ewds": None,
+            "cop_ghsl": None,
             "creodias": {
                 "sortables": [
                     "start_datetime",
@@ -2599,7 +2832,7 @@ class TestCoreSearch(TestCoreBase):
         # with dates
         self.assertEqual(
             self.dag.collections_config["S2_MSI_L1C"].extent.temporal.interval[0][0],
-            datetime(2015, 6, 23, 0, 0, tzinfo=timezone.utc),
+            dt.datetime(2015, 6, 23, 0, 0, tzinfo=dt.timezone.utc),
         )
         self.assertNotIn(
             "S2_MSI_L1C",
@@ -2683,8 +2916,8 @@ class TestCoreSearch(TestCoreBase):
         # with datetime
         base = {"datetime": "2021-01-01T00:00:00Z/2021-01-02T00:00:00Z"}
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["start_datetime"], "2021-01-01T00:00:00")
-        self.assertEqual(prepared_search["end_datetime"], "2021-01-02T00:00:00")
+        self.assertEqual(prepared_search["start_datetime"], "2021-01-01T00:00:00.000Z")
+        self.assertEqual(prepared_search["end_datetime"], "2021-01-02T00:00:00.000Z")
         # with both, start/end overwrites datetime
         base = {
             "start": "2020-01-01",

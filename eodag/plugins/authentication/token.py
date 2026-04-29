@@ -17,8 +17,8 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import logging
-from datetime import datetime, timedelta
 from threading import Lock
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
@@ -104,7 +104,7 @@ class TokenAuth(Authentication):
         super(TokenAuth, self).__init__(provider, config)
         self.token = ""
         self.refresh_token = ""
-        self.token_expiration = datetime.now()
+        self.token_expiration = dt.datetime.now()
         self.auth_lock = Lock()
         self._unformatted_auth_uri: Optional[str] = None
 
@@ -166,7 +166,7 @@ class TokenAuth(Authentication):
 
         # Use a thread lock to avoid several threads requesting the token at the same time
         with self.auth_lock:
-            expiration_margin = timedelta(
+            expiration_margin = dt.timedelta(
                 seconds=getattr(
                     self.config,
                     "token_expiration_margin",
@@ -177,7 +177,7 @@ class TokenAuth(Authentication):
                 self.validate_config_credentials()
             if (
                 self.token
-                and self.token_expiration - datetime.now() > expiration_margin
+                and self.token_expiration - dt.datetime.now() > expiration_margin
             ):
                 logger.debug("using existing access token")
                 return RequestsTokenAuth(
@@ -221,7 +221,7 @@ class TokenAuth(Authentication):
                     self.refresh_token = response.json()[self.config.refresh_token_key]
                 if getattr(self.config, "token_expiration_key", None):
                     expiration_time = response.json()[self.config.token_expiration_key]
-                    self.token_expiration = datetime.now() + timedelta(
+                    self.token_expiration = dt.datetime.now() + dt.timedelta(
                         seconds=expiration_time
                     )
 

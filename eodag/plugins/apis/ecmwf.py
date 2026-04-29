@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Annotated
 
 import geojson
@@ -35,8 +34,6 @@ from eodag.plugins.search.build_search_result import ECMWFSearch, ecmwf_mtd
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_MISSION_START_DATE,
-    get_collection_dates,
     get_geometry_from_various,
     path_to_uri,
     sanitize,
@@ -133,18 +130,6 @@ class EcmwfApi(Api, ECMWFSearch):
                 kwargs.get("ecmwf:dataset", "mars"),
                 kwargs.get("ecmwf:type", ""),
                 kwargs.get("ecmwf:levtype", ""),
-            )
-
-        col_start, col_end = get_collection_dates(
-            getattr(self.config, "collection_config", {})
-        )
-        # start date
-        if "start_datetime" not in kwargs:
-            kwargs["start_datetime"] = col_start or DEFAULT_MISSION_START_DATE
-        # end date
-        if "end_datetime" not in kwargs:
-            kwargs["end_datetime"] = col_end or datetime.now(timezone.utc).isoformat(
-                timespec="seconds"
             )
 
         # geometry
