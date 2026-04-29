@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import logging
 import os
@@ -25,7 +26,6 @@ import tarfile
 import tempfile
 import zipfile
 from abc import abstractmethod
-from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
@@ -498,8 +498,8 @@ class Download(PluginTopic):
         products = products[:]
         paths: list[str] = []
         # initiate retry loop
-        start_time = datetime.now()
-        stop_time = start_time + timedelta(minutes=timeout)
+        start_time = dt.datetime.now()
+        stop_time = start_time + dt.timedelta(minutes=timeout)
         nb_products = len(products)
         retry_count = 0
         # another output for notebooks
@@ -564,8 +564,8 @@ class Download(PluginTopic):
                 futures = {}
 
                 for idx, product in enumerate(products_batch):
-                    if datetime.now() >= product.next_try:
-                        products[idx].next_try += timedelta(minutes=wait)
+                    if dt.datetime.now() >= product.next_try:
+                        products[idx].next_try += dt.timedelta(minutes=wait)
                         future = executor.submit(
                             product.download,
                             progress_callback=product_progress_callback,
@@ -590,7 +590,7 @@ class Download(PluginTopic):
                         bar(1)
 
                         # reset stop time for next product
-                        stop_time = datetime.now() + timedelta(minutes=timeout)
+                        stop_time = dt.datetime.now() + dt.timedelta(minutes=timeout)
 
                     except NotAvailableError as e:
                         logger.info(e)
@@ -616,10 +616,10 @@ class Download(PluginTopic):
 
                 if (
                     len(products) > 0
-                    and datetime.now() < products[0].next_try
-                    and datetime.now() < stop_time
+                    and dt.datetime.now() < products[0].next_try
+                    and dt.datetime.now() < stop_time
                 ):
-                    wait_seconds = (products[0].next_try - datetime.now()).seconds
+                    wait_seconds = (products[0].next_try - dt.datetime.now()).seconds
                     retry_count += 1
                     info_message = (
                         f"[Retry #{retry_count}, {nb_products - len(products)}/{nb_products} D/L] "
@@ -629,7 +629,7 @@ class Download(PluginTopic):
                     logger.info(info_message)
                     nb_info.display_html(info_message)
                     sleep(wait_seconds + 1)
-                elif len(products) > 0 and datetime.now() >= stop_time:
+                elif len(products) > 0 and dt.datetime.now() >= stop_time:
                     logger.warning(
                         f"{len(products)} products could not be downloaded: "
                         + str([prod.properties["title"] for prod in products])
@@ -662,8 +662,8 @@ class Download(PluginTopic):
         def decorator(order_download: Callable[..., T]) -> Callable[..., T]:
             def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
-                start_time = datetime.now()
-                stop_time = start_time + timedelta(minutes=timeout)
+                start_time = dt.datetime.now()
+                stop_time = start_time + dt.timedelta(minutes=timeout)
                 product.next_try = start_time
                 retry_count = 0
                 not_available_info = "The product could not be downloaded"
@@ -671,10 +671,10 @@ class Download(PluginTopic):
                 nb_info = NotebookWidgets()
 
                 while "Loop until products download succeeds or timeout is reached":
-                    datetime_now = datetime.now()
+                    datetime_now = dt.datetime.now()
 
                     if datetime_now >= product.next_try:
-                        product.next_try += timedelta(minutes=wait)
+                        product.next_try += dt.timedelta(minutes=wait)
                         try:
                             download = order_download(*args, **kwargs)
                         except NotAvailableError as e:
@@ -694,7 +694,7 @@ class Download(PluginTopic):
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
                         wait_seconds: Union[float, int] = (
-                            datetime_now - product.next_try + timedelta(minutes=wait)
+                            datetime_now - product.next_try + dt.timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
                         retry_info = (

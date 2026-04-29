@@ -53,6 +53,7 @@ from concurrent.futures import ThreadPoolExecutor
 from eodag.api.collection import CollectionsList
 from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
+from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -352,9 +353,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         locations = None
     criteria["locations"] = locations
     if start_date:
-        criteria["start_datetime"] = start_date.isoformat()
+        criteria["start_datetime"] = to_iso_utc_string(start_date)
     if stop_date:
-        criteria["end_datetime"] = stop_date.isoformat()
+        criteria["end_datetime"] = to_iso_utc_string(stop_date)
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)

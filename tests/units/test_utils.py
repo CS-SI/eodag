@@ -17,13 +17,13 @@
 # limitations under the License.
 
 import copy
+import datetime as dt
 import logging
 import os
 import ssl
 import sys
 import unittest
 from contextlib import closing
-from datetime import datetime, timezone
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -75,8 +75,10 @@ class TestUtils(unittest.TestCase):
         # Date to timestamp to date, this assumes the date is in UTC
         requested_date = "2020-08-08"  # Considered as 2020-08-08T00:00:00Z
         ts_in_secs = get_timestamp(requested_date)
-        expected_dt = dateutil_parser.parse(requested_date).replace(tzinfo=timezone.utc)
-        actual_utc_dt = datetime.fromtimestamp(ts_in_secs, timezone.utc)
+        expected_dt = dateutil_parser.parse(requested_date).replace(
+            tzinfo=dt.timezone.utc
+        )
+        actual_utc_dt = dt.datetime.fromtimestamp(ts_in_secs, dt.timezone.utc)
         self.assertEqual(actual_utc_dt, expected_dt)
 
         # Handle UTC datetime

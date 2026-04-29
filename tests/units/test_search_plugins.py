@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
-import datetime
+import datetime as dt
 import json
 import os
 import re
@@ -3399,34 +3399,34 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ecmwf_temporal_to_eodag(
                 dict(day="15", month="02", year="2022", time="0600")
             ),
-            ("2022-02-15T06:00:00Z", "2022-02-15T06:00:00Z"),
+            ("2022-02-15T06:00:00.000Z", "2022-02-15T06:00:00.000Z"),
         )
         self.assertEqual(
             ecmwf_temporal_to_eodag(dict(hday="15", hmonth="02", hyear="2022")),
-            ("2022-02-15T00:00:00Z", "2022-02-15T00:00:00Z"),
+            ("2022-02-15T00:00:00.000Z", "2022-02-15T00:00:00.000Z"),
         )
         self.assertEqual(
             ecmwf_temporal_to_eodag(dict(date="2022-02-15")),
-            ("2022-02-15T00:00:00Z", "2022-02-15T00:00:00Z"),
+            ("2022-02-15T00:00:00.000Z", "2022-02-15T00:00:00.000Z"),
         )
         self.assertEqual(
             ecmwf_temporal_to_eodag(
                 dict(date="2022-02-15T00:00:00Z/2022-02-16T00:00:00Z")
             ),
-            ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
+            ("2022-02-15T00:00:00.000Z", "2022-02-16T00:00:00.000Z"),
         )
         self.assertEqual(
             ecmwf_temporal_to_eodag(dict(date="20220215/to/20220216")),
-            ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
+            ("2022-02-15T00:00:00.000Z", "2022-02-16T00:00:00.000Z"),
         )
         # List of dates
         self.assertEqual(
             ecmwf_temporal_to_eodag(dict(date=["20220215", "20220216"])),
-            ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
+            ("2022-02-15T00:00:00.000Z", "2022-02-16T00:00:00.000Z"),
         )
         self.assertEqual(
             ecmwf_temporal_to_eodag(dict(date=["20220215"])),
-            ("2022-02-15T00:00:00Z", "2022-02-15T00:00:00Z"),
+            ("2022-02-15T00:00:00.000Z", "2022-02-15T00:00:00.000Z"),
         )
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
@@ -4224,11 +4224,11 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(2, len(products_dataset1))
             self.assertEqual(1, len(products_dataset2))
             self.assertEqual(
-                "2020-01-02T00:00:00Z",
+                "2020-01-02T00:00:00.000Z",
                 products_dataset2[0].properties["start_datetime"],
             )
             self.assertEqual(
-                "2020-01-03T00:00:00Z",
+                "2020-01-03T00:00:00.000Z",
                 products_dataset2[0].properties["end_datetime"],
             )
 
@@ -4544,8 +4544,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 contents = [
                     {
                         "Key": f"{prefix}/{asset_filename}",
-                        "LastModified": datetime.datetime(
-                            2020, 1, 15, tzinfo=datetime.timezone.utc
+                        "LastModified": dt.datetime(
+                            2020, 1, 15, tzinfo=dt.timezone.utc
                         ),
                         "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
                         "Size": 666,
@@ -5219,8 +5219,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(8, count)
         self.assertEqual(5, len(products))
         properties = products[0].properties
-        self.assertEqual("2000-01-01T00:00:00Z", properties["start_datetime"])
-        self.assertEqual("2000-12-31T23:59:59Z", properties["end_datetime"])
+        self.assertEqual("2000-01-01T00:00:00.000Z", properties["start_datetime"])
+        self.assertEqual("2000-12-31T23:59:59.000Z", properties["end_datetime"])
         self.assertEqual("2000", properties["year"])
         self.assertEqual("EPSG:4326", properties["proj:code"])
         self.assertEqual(
@@ -5315,8 +5315,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(1, count)
         self.assertEqual(1, len(products))
         properties = products[0].properties
-        self.assertEqual("2011-02-01T00:00:00Z", properties["start_datetime"])
-        self.assertEqual("2011-02-28T23:59:59Z", properties["end_datetime"])
+        self.assertEqual("2011-02-01T00:00:00.000Z", properties["start_datetime"])
+        self.assertEqual("2011-02-28T23:59:59.000Z", properties["end_datetime"])
         self.assertEqual("2011", properties["year"])
         self.assertEqual("02", properties["month"])
         assets = products[0].assets

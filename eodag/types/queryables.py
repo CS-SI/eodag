@@ -47,6 +47,7 @@ from eodag.utils.dates import (
     is_range_in_range,
     parse_date,
 )
+from eodag.utils.exceptions import ValidationError as EodagValidationError
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
 
 if TYPE_CHECKING:
@@ -171,7 +172,7 @@ class Queryables(CommonQueryables):
             )
         try:
             start, end = parse_date(v)
-        except ValueError as e:
+        except EodagValidationError as e:
             raise ValueError("date must follow 'yyyy-mm-dd' format") from e
         if end < start:
             raise ValueError("date range end must be after start")

@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import itertools
 import logging
 import os
@@ -1039,8 +1039,8 @@ class EODataAccessGateway:
 
             # datetime filtering
             if start_date or end_date:
-                min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-                max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+                min_aware = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+                max_aware = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
 
                 col_start_str = col_f.extent.temporal.interval[0][0]
                 if col_start_str and isinstance(col_start_str, str):

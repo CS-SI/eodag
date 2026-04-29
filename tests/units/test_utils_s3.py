@@ -24,6 +24,7 @@ from tests.context import (
     list_files_in_s3_zipped_object,
     open_s3_zipped_object,
     stream_download_from_s3,
+    to_iso_utc_string,
     update_assets_from_s3,
 )
 
@@ -220,9 +221,9 @@ class TestUtilsS3(TestCase):
         self.assertEqual(len(self.prod.assets), 3)
 
         def s3_updated(key):
-            return self.s3_client.head_object(Bucket="mybucket", Key=key)[
-                "LastModified"
-            ].strftime("%Y-%m-%dT%H:%M:%SZ")
+            return to_iso_utc_string(
+                self.s3_client.head_object(Bucket="mybucket", Key=key)["LastModified"]
+            )
 
         expected_assets = {
             "MTD_MSIL1C.xml": {

@@ -17,13 +17,12 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import logging
 import math
 from calendar import monthrange
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Optional, cast
 
-import dateutil
 import requests
 from pydantic.fields import FieldInfo
 from pyproj import CRS, Transformer
@@ -42,6 +41,7 @@ from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.cache import instance_cached_method
+from eodag.utils.dates import parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
@@ -178,8 +178,8 @@ def _replace_datetimes(params: dict[str, Any]):
     if not start_date_str:
         return
 
-    start_date = dateutil.parser.isoparse(start_date_str)
-    end_date = dateutil.parser.isoparse(end_date_str)
+    start_date = parse_to_utc(start_date_str)
+    end_date = parse_to_utc(end_date_str)
     start_year = start_date.year
     end_year = end_date.year
     years = [str(y) for y in range(start_year, end_year + 1)]
@@ -228,7 +228,7 @@ class CopGhslSearch(Search):
     ) -> dict[str, str]:
         """get the start and end time from year/month in the properties or missionStart/EndDate"""
         if "month" in properties:
-            start_date = datetime.datetime(
+            start_date = dt.datetime(
                 year=int(properties["year"]),
                 month=int(properties["month"]),
                 day=1,
@@ -237,7 +237,7 @@ class CopGhslSearch(Search):
                 second=0,
             )
             end_day = monthrange(int(properties["year"]), int(properties["month"]))[1]
-            end_date = datetime.datetime(
+            end_date = dt.datetime(
                 year=int(properties["year"]),
                 month=int(properties["month"]),
                 day=end_day,
@@ -246,10 +246,10 @@ class CopGhslSearch(Search):
                 second=59,
             )
         elif "year" in properties:
-            start_date = datetime.datetime(
+            start_date = dt.datetime(
                 year=int(properties["year"]), month=1, day=1, hour=0, minute=0, second=0
             )
-            end_date = datetime.datetime(
+            end_date = dt.datetime(
                 year=int(properties["year"]),
                 month=12,
                 day=31,
@@ -263,9 +263,10 @@ class CopGhslSearch(Search):
             end_date_str = interval[0][1]
             return {"start_date": start_date_str, "end_date": end_date_str}
 
-        result = {}
-        result["start_date"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        result["end_date"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        result: dict[str, str] = {}
+        # cast to tell the type checker that value won't be None here
+        result["start_date"] = cast(str, to_iso_utc_string(start_date))
+        result["end_date"] = cast(str, to_iso_utc_string(end_date))
         return result
 
     def _create_products_from_tiles(
@@ -320,12 +321,14 @@ class CopGhslSearch(Search):
         for year in list_years:
             properties = deepcopy(params)
             properties["order:status"] = "succeeded"
-            properties["start_datetime"] = datetime.datetime(
-                year=int(year), month=1, day=1
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
-            properties["end_datetime"] = datetime.datetime(
-                year=int(year), month=12, day=31, hour=23, minute=59, second=59
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+            properties["start_datetime"] = to_iso_utc_string(
+                dt.datetime(year=int(year), month=1, day=1)
+            )
+            properties["end_datetime"] = to_iso_utc_string(
+                dt.datetime(
+                    year=int(year), month=12, day=31, hour=23, minute=59, second=59
+                )
+            )
             properties["year"] = year
 
             # information for id and download path

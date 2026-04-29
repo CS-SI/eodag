@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
 import io
 import logging
 import os
@@ -40,6 +39,7 @@ from eodag.utils import (
     parse_le_uint16,
     parse_le_uint32,
 )
+from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import (
     AuthenticationError,
     InvalidDataError,
@@ -583,14 +583,8 @@ def update_assets_from_s3(
                     if size is not None:
                         asset_data["file:size"] = size
 
-                    last_modified = item_s3.get("LastModified")
-                    if isinstance(last_modified, datetime.datetime):
-                        try:
-                            asset_data["updated"] = last_modified.strftime(
-                                "%Y-%m-%dT%H:%M:%SZ"
-                            )
-                        except Exception:
-                            pass
+                    if last_modified := to_iso_utc_string(item_s3.get("LastModified")):
+                        asset_data["updated"] = last_modified
 
                     assets_data[key] = asset_data
 

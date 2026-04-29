@@ -104,7 +104,7 @@ from eodag.utils import (
     StreamResponse,
     MockResponse,
 )
-from eodag.utils.dates import get_timestamp
+from eodag.utils.dates import get_timestamp, to_iso_utc_string
 from eodag.utils.env import is_env_var_true
 from eodag.utils.requests import fetch_json
 from eodag.utils.s3 import (

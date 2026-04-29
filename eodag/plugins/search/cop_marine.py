@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import copy
-import datetime
+import datetime as dt
 import logging
 import os
 import re
@@ -28,7 +28,6 @@ from urllib.parse import urlsplit
 import boto3
 import botocore
 import requests
-from dateutil.parser import parse as dateutil_parse
 from dateutil.tz import tzutc
 from dateutil.utils import today
 
@@ -39,6 +38,7 @@ from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various
+from eodag.utils.dates import parse_to_utc, to_iso_utc_string
 from eodag.utils.exceptions import RequestError, UnsupportedCollection, ValidationError
 
 if TYPE_CHECKING:
@@ -47,9 +47,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(
-    date_str: str, item_key: str
-) -> Optional[datetime.datetime]:
+def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[dt.datetime]:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
@@ -57,7 +55,7 @@ def _get_date_from_yyyymmdd(
     else:
         day = "1"
     try:
-        date = datetime.datetime(
+        date = dt.datetime(
             int(year),
             int(month),
             int(day),
@@ -226,10 +224,8 @@ class CopMarineSearch(StaticStacSearch):
                 item_end = _get_date_from_yyyymmdd(item_dates[1], item_key)
             else:  # only date and created_at timestamps
                 item_end = item_start
-            properties["start_datetime"] = item_start.strftime("%Y-%m-%dT%H:%M:%SZ")
-            properties["end_datetime"] = (item_end or item_start).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            properties["start_datetime"] = to_iso_utc_string(item_start)
+            properties["end_datetime"] = to_iso_utc_string(item_end or item_start)
 
         for key, value in collection_dict["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
@@ -319,25 +315,19 @@ class CopMarineSearch(StaticStacSearch):
 
                 # date bounds
                 if "start_datetime" in kwargs:
-                    start_date = dateutil_parse(kwargs["start_datetime"])
+                    start_date = parse_to_utc(kwargs["start_datetime"])
                 elif "start_datetime" in dataset_item["properties"]:
-                    start_date = dateutil_parse(
+                    start_date = parse_to_utc(
                         dataset_item["properties"]["start_datetime"]
                     )
                 else:
-                    start_date = dateutil_parse(dataset_item["properties"]["datetime"])
-                if not start_date.tzinfo:
-                    start_date = start_date.replace(tzinfo=tzutc())
+                    start_date = parse_to_utc(dataset_item["properties"]["datetime"])
                 if "end_datetime" in kwargs:
-                    end_date = dateutil_parse(kwargs["end_datetime"])
+                    end_date = parse_to_utc(kwargs["end_datetime"])
                 elif "end_datetime" in dataset_item["properties"]:
-                    end_date = dateutil_parse(
-                        dataset_item["properties"]["end_datetime"]
-                    )
+                    end_date = parse_to_utc(dataset_item["properties"]["end_datetime"])
                 else:
                     end_date = today(tzinfo=tzutc())
-                if not end_date.tzinfo:
-                    end_date = end_date.replace(tzinfo=tzutc())
 
                 # retrieve information about s3 from collection data
                 s3_url = dataset_item["assets"]["native"]["href"]
@@ -391,9 +381,8 @@ class CopMarineSearch(StaticStacSearch):
                                 last_modified := headers.get("last-modified")
                             ) is not None:
                                 try:
-                                    updated = dateutil_parse(last_modified)
-                                    asset_properties["updated"] = updated.strftime(
-                                        "%Y-%m-%dT%H:%I:%SZ"
+                                    asset_properties["updated"] = to_iso_utc_string(
+                                        last_modified
                                     )
                                 except Exception:
                                     pass
@@ -479,22 +468,8 @@ class CopMarineSearch(StaticStacSearch):
                         use_dataset_dates = True
                         dates = _get_dates_from_dataset_data(dataset_item)
                         if dates:
-                            item_start_str = dates["start"].replace("Z", "+0000")
-                            item_end_str = dates["end"].replace("Z", "+0000")
-                            try:
-                                item_start = datetime.datetime.strptime(
-                                    item_start_str, "%Y-%m-%dT%H:%M:%S.%f%z"
-                                )
-                                item_end = datetime.datetime.strptime(
-                                    item_end_str, "%Y-%m-%dT%H:%M:%S.%f%z"
-                                )
-                            except ValueError:
-                                item_start = datetime.datetime.strptime(
-                                    item_start_str, "%Y-%m-%dT%H:%M:%S%z"
-                                )
-                                item_end = datetime.datetime.strptime(
-                                    item_end_str, "%Y-%m-%dT%H:%M:%S%z"
-                                )
+                            item_start = parse_to_utc(dates["start"])
+                            item_end = parse_to_utc(dates["end"])
                     if not item_start:
                         # no valid datetime in id and dataset data
                         continue
@@ -517,10 +492,10 @@ class CopMarineSearch(StaticStacSearch):
                             asset_properties = {}
 
                             last_modified_date = obj.get("LastModified")
-                            if isinstance(last_modified_date, datetime.datetime):
-                                asset_properties[
-                                    "updated"
-                                ] = last_modified_date.strftime("%Y-%m-%dT%H:%I:%SZ")
+                            if isinstance(last_modified_date, dt.datetime):
+                                asset_properties["updated"] = to_iso_utc_string(
+                                    last_modified_date
+                                )
 
                             etag_obj: Any = obj.get("ETag")
                             if isinstance(etag_obj, str) and "-" not in etag_obj:
