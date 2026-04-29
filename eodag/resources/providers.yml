@@ -4716,6 +4716,51 @@
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
 ---
+!provider # MARK: desp_cache
+  name: desp_cache
+  priority: 0
+  roles:
+    - host
+  description: Destination Earth Digital Twin for Climate Change Adaptation through Earth Observation (DESP) - Cache
+  url: https://data.destination-earth.eu
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
+    pagination:
+      max_items_per_page: 1000
+      next_page_token_key: token
+    sort:
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.datetime
+        end_datetime: properties.end_datetime
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
+    no_auth_download: True
+    auth_error_code: 401
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
+    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
+    redirect_uri: https://cacheb.dcms.destine.eu/
+    client_id: edh-public
+    user_consent_needed: false
+    token_exchange_post_data_method: data
+    login_form_xpath: //form[@id='kc-form-login']
+    authentication_uri_source: login-form
+    token_provision: basic
+  products:
+    GENERIC_COLLECTION:
+      _collection: "{collection}"
+    DT_CLIMATE_ADAPTATION_IFS_NEMO:
+      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_IFS-NEMO
+    DT_CLIMATE_ADAPTATION_ICON:
+      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_ICON
+---
 !provider # MARK: dedl
   name: dedl
   priority: 0

@@ -163,6 +163,8 @@ class TestCore(TestCoreBase):
         "DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1": ["dedt_lumi"],
         "DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1": ["dedt_lumi"],
         "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2": ["dedt_lumi"],
+        "DT_CLIMATE_ADAPTATION_IFS_NEMO": ["desp_cache"],
+        "DT_CLIMATE_ADAPTATION_ICON": ["desp_cache"],
         "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
@@ -863,6 +865,7 @@ class TestCore(TestCoreBase):
         "dedl",
         "dedt_lumi",
         "dedt_mn5",
+        "desp_cache",
         "earth_search",
         "earth_search_gcs",
         "ecmwf",
@@ -2213,6 +2216,14 @@ class TestCore(TestCoreBase):
             },
             "dedt_lumi": None,
             "dedt_mn5": None,
+            "desp_cache": {
+                "max_sort_params": None,
+                "sortables": [
+                    "id",
+                    "start_datetime",
+                    "end_datetime",
+                ],
+            },
             "earth_search": {
                 "sortables": [
                     "id",

@@ -58,6 +58,8 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.authentication.header import HeaderAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
+from eodag.plugins.authentication.header import HTTPHeaderAuth
+from eodag.plugins.authentication.qsauth import HttpQueryStringAuth
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName

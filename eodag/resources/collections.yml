@@ -5593,6 +5593,32 @@ DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
   title: nextGEMS - Future Projection - IFS-FESOM
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2021-01-01T00:00:00Z", "2049-12-31T23:59:59Z"]]}}
 
+DT_CLIMATE_ADAPTATION_IFS_NEMO:
+  description: |
+    A selection of datasets derived from the DestinE Climate Change Adaptation Digital Twin according to the output of the IFS-NEMO model coupled with the Shared Socioeconomic Pathway 3-7.0 (experiment: SSP3-7.0) as defined in the Scenario Model Intercomparison Project (activity: ScenarioMIP)
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "Digital-Twin", "Climate Change", "Atmosphere", "Sea Ice", "SCENARIOMIP", "IFS-NEMO","Socioeconomic", "SSP3-7.0"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: DestinE Climate Adaptation DT, activity ScenarioMIP, experiment SSP3-7.0, model IFS-NEMO
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2020-07-01T00:00:00Z", "2040-01-01T00:00:00Z"]]}}
+
+DT_CLIMATE_ADAPTATION_ICON:
+  description: |
+    A selection of datasets derived from the DestinE Climate Change Adaptation Digital Twin according to the output of the ICON model coupled with the Shared Socioeconomic Pathway 3-7.0 (experiment: SSP3-7.0) as defined in the Scenario Model Intercomparison Project (activity: ScenarioMIP)
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
+  keywords: ["DT", "Digital-Twin", "Climate Change", "Atmosphere", "Sea Ice", "SCENARIOMIP", "ICON","Socioeconomic", "SSP3-7.0"]
+  eodag:sensor_type: ATMOSPHERIC
+  license: CC-BY-4.0
+  title: DestinE Climate Adaptation DT, activity ScenarioMIP, experiment SSP3-7.0, model ICON
+  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2021-07-01T00:00:00Z", "2030-12-31T00:00:00Z"]]}}
+
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:
   description: |

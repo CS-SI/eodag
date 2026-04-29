@@ -28,12 +28,16 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 import geojson
 import orjson
 import requests
+from boto3 import Session
+from boto3.resources.base import ServiceResource
 from pystac import Item
-from requests import RequestException
+from requests import PreparedRequest, RequestException
 from requests.auth import AuthBase
+from requests.structures import CaseInsensitiveDict
 from shapely import geometry
 from shapely.errors import ShapelyError
 
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 
@@ -74,7 +78,12 @@ from eodag.utils.deserialize import (
     _import_stac_item_from_known_provider,
     _import_stac_item_from_unknown_provider,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
+from eodag.utils.exceptions import (
+    AddressNotFound,
+    DownloadError,
+    MisconfiguredError,
+    ValidationError,
+)
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
@@ -641,6 +650,65 @@ class EOProduct:
             timeout=timeout,
             **kwargs,
         )
+
+    def get_storage_options(
+        self,
+        asset_key: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """
+        Get fsspec storage_options keyword arguments
+        """
+        auth = self.downloader_auth.authenticate() if self.downloader_auth else None
+        if self.downloader is None:
+            return {}
+
+        # default url and headers
+        try:
+            url = self.assets[asset_key]["href"] if asset_key else self.location
+        except KeyError as e:
+            raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
+        headers = {**USER_AGENT}
+
+        if isinstance(auth, ServiceResource) and isinstance(
+            self.downloader_auth, AwsAuth
+        ):
+            auth_kwargs: dict[str, Any] = dict()
+            # AwsAuth
+            if s3_endpoint := getattr(self.downloader_auth.config, "s3_endpoint", None):
+                auth_kwargs["client_kwargs"] = {"endpoint_url": s3_endpoint}
+            if creds := cast(
+                Session, self.downloader_auth.s3_session
+            ).get_credentials():
+                auth_kwargs["key"] = creds.access_key
+                auth_kwargs["secret"] = creds.secret_key
+                if creds.token:
+                    auth_kwargs["token"] = creds.token
+                if requester_pays := getattr(
+                    self.downloader_auth.config, "requester_pays", False
+                ):
+                    auth_kwargs["requester_pays"] = requester_pays
+            else:
+                auth_kwargs["anon"] = True
+            return {"path": url, **auth_kwargs}
+
+        if isinstance(auth, AuthBase):
+            # update url and headers with auth
+            req = PreparedRequest()
+            req.url = url
+            req.headers = CaseInsensitiveDict(headers)
+            if auth:
+                auth(req)
+            return {"path": req.url, "headers": dict(req.headers)}
+
+        return {"path": url}
+
+    def request_asset(
+        self,
+        url: str,
+    ) -> requests.Response:
+        """Perform a GET request to the given URL using product's authentication headers."""
+        headers = self.get_storage_options().get("headers", {})
+        return requests.get(url, headers=headers, stream=True)
 
     def _init_progress_bar(
         self,
