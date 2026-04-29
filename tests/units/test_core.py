@@ -2449,28 +2449,6 @@ class TestCoreGeometry(TestCoreBase):
             get_geometry_from_various([], geometry=geometry), LineString
         )
 
-    def test_get_geometry_from_various_ecmwf_feature(self):
-        """ECMWF raw feature dictionaries are converted to shapely geometries."""
-        feature = {"type": "position", "points": [[43.5, 1.5]]}
-        geom = get_geometry_from_various([], geometry=feature)
-        self.assertEqual((geom.x, geom.y), (1.5, 43.5))
-
-        nested_feature = {"feature": feature}
-        geom = get_geometry_from_various([], geometry=nested_feature)
-        self.assertEqual((geom.x, geom.y), (1.5, 43.5))
-
-        trajectory = {
-            "type": "trajectory",
-            "points": [[43.0, 1.0], [43.5, 1.5], [44.0, 2.0]],
-            "axes": ["latitude", "longitude"],
-            "inflation": 0,
-        }
-        geom = get_geometry_from_various([], geometry=trajectory)
-        self.assertIsInstance(geom, LineString)
-        self.assertEqual(list(geom.coords), [(1.0, 43.0), (1.5, 43.5), (2.0, 44.0)])
-
-        self.assertIsNone(get_geometry_from_various([], geometry={"feature": None}))
-
     def test_get_geometry_from_various_only_locations(self):
         """The search geometry can be set from a locations config file query"""
         locations_config = self.dag.locations_config

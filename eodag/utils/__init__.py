@@ -1128,19 +1128,6 @@ def get_geometry_from_various(
                     (geom_arg["lonmax"], geom_arg["latmin"]),
                 )
             )
-        elif isinstance(geom_arg, dict) and "feature" in geom_arg:
-            feature = geom_arg["feature"]
-            if isinstance(feature, dict):
-                if feature.get("type") in GEOMETRY_TYPES or "coordinates" in feature:
-                    geom = get_geometry_from_various(geometry=feature)
-                else:
-                    geom = get_geometry_from_ecmwf_feature(feature)
-            elif feature is None:
-                pass
-            else:
-                raise TypeError("Unexpected geometry type: {}".format(type(feature)))
-        elif isinstance(geom_arg, dict) and "type" in geom_arg:
-            geom = get_geometry_from_ecmwf_feature(geom_arg)
         elif isinstance(geom_arg, (list, tuple)) and len(geom_arg) >= 4:
             # bbox list
             geom = Polygon(
