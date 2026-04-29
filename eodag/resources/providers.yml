@@ -1187,8 +1187,6 @@
       next_page_token_key: next
     # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
     metadata_mapping:
-      created: '$.properties.created'
-      updated: '$.properties.updated'
       assets: '{$.assets#from_alternate(s3)}'
   products:
     LANDSAT_C2L1:
