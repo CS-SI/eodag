@@ -2845,6 +2845,10 @@
       _collection: modis-43A4-061
     NAIP:
       _collection: naip
+    GBIF:
+      _collection: gbif
+      metadata_mapping:
+        planetary_computer:token_url: "https://planetarycomputer.microsoft.com/api/sas/v1/token/ai4edataeuwest/gbif"
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin

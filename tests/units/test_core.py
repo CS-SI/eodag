@@ -831,6 +831,7 @@ class TestCore(TestCoreBase):
         "SPACENET_ROADS_NETWORK_DETECTION": ["dedl"],
         "SPACENET_OFF_NADIR_BUILDING": ["dedl"],
         "SPACENET_ROADS_NETWORK_ROUTE_TRAVEL": ["dedl"],
+        "GBIF": ["planetary_computer"],
         GENERIC_COLLECTION: [
             "usgs",
             "creodias",
