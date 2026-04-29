@@ -741,9 +741,7 @@
         - '{$.Footprint#from_ewkt}'
       type: "$.ContentType"
       file:size: "$.ContentLength"
-      file:checksum:
-        - null
-        - '$.Checksum[?Algorithm="MD5"].Value'
+      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
@@ -2393,15 +2391,9 @@
       grid:code:
         - null
         - '{$.Attributes.tileId#replace_str(r"^","MGRS-")}'
-      file:size:
-        - null
-        - '$.ContentLength'
-      file:checksum:
-        - null
-        - '$.Checksum[?Algorithm="MD5"].Value'
-      type:
-        - null
-        - '$.ContentType'
+      file:size: '$.ContentLength'
+      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
+      type: '$.ContentType'
       # The geographic extent of the product
       geometry:
         - null
@@ -3467,9 +3459,7 @@
         - dataset_id
         - $.dataset
       eodag:download_link: $.properties.location
-      file:size:
-      - '$.size'
-      - '$.properties.size'
+      file:size: '$.properties.size'
       dataset:
         - dataset_id
         - $.dataset
