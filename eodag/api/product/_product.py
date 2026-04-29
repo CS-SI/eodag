@@ -28,12 +28,16 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 import geojson
 import orjson
 import requests
+from boto3 import Session
+from boto3.resources.base import ServiceResource
 from pystac import Item
-from requests import RequestException
+from requests import PreparedRequest, RequestException
 from requests.auth import AuthBase
+from requests.structures import CaseInsensitiveDict
 from shapely import geometry
 from shapely.errors import ShapelyError
 
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 
@@ -74,7 +78,12 @@ from eodag.utils.deserialize import (
     _import_stac_item_from_known_provider,
     _import_stac_item_from_unknown_provider,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
+from eodag.utils.exceptions import (
+    AddressNotFound,
+    DownloadError,
+    MisconfiguredError,
+    ValidationError,
+)
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
@@ -642,6 +651,65 @@ class EOProduct:
             **kwargs,
         )
 
+    def get_storage_options(
+        self,
+        asset_key: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """
+        Get fsspec storage_options keyword arguments
+        """
+        auth = self.downloader_auth.authenticate() if self.downloader_auth else None
+        if self.downloader is None:
+            return {}
+
+        # default url and headers
+        try:
+            url = self.assets[asset_key]["href"] if asset_key else self.location
+        except KeyError as e:
+            raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
+        headers = {**USER_AGENT}
+
+        if isinstance(auth, ServiceResource) and isinstance(
+            self.downloader_auth, AwsAuth
+        ):
+            auth_kwargs: dict[str, Any] = dict()
+            # AwsAuth
+            if s3_endpoint := getattr(self.downloader_auth.config, "s3_endpoint", None):
+                auth_kwargs["client_kwargs"] = {"endpoint_url": s3_endpoint}
+            if creds := cast(
+                Session, self.downloader_auth.s3_session
+            ).get_credentials():
+                auth_kwargs["key"] = creds.access_key
+                auth_kwargs["secret"] = creds.secret_key
+                if creds.token:
+                    auth_kwargs["token"] = creds.token
+                if requester_pays := getattr(
+                    self.downloader_auth.config, "requester_pays", False
+                ):
+                    auth_kwargs["requester_pays"] = requester_pays
+            else:
+                auth_kwargs["anon"] = True
+            return {"path": url, **auth_kwargs}
+
+        if isinstance(auth, AuthBase):
+            # update url and headers with auth
+            req = PreparedRequest()
+            req.url = url
+            req.headers = CaseInsensitiveDict(headers)
+            if auth:
+                auth(req)
+            return {"path": req.url, "headers": dict(req.headers)}
+
+        return {"path": url}
+
+    def request_asset(
+        self,
+        url: str,
+    ) -> requests.Response:
+        """Perform a GET request to the given URL using product's authentication headers."""
+        headers = self.get_storage_options().get("headers", {})
+        return requests.get(url, headers=headers, stream=True)
+
     def _init_progress_bar(
         self,
         progress_callback: Optional[ProgressCallback],
@@ -837,7 +905,6 @@ class EOProduct:
     def get_driver(self) -> DatasetDriver:
         """Get the most appropriate driver"""
         for driver_conf in DRIVERS:
-
             # Select a driver if all criterias match
             match = True
             for criteria in driver_conf["criteria"]:
@@ -870,25 +937,35 @@ class EOProduct:
 
                 <tr style='background-color: transparent;'>
                     <td style='text-align: left; vertical-align: top;'>
-                        {dict_to_html_table({
-                         "provider": self.provider,
-                         "collection": self.collection,
-                         "properties[&quot;id&quot;]": self.properties.get('id'),
-                         "properties[&quot;start_datetime&quot;]": self.properties.get(
-                             'start_datetime'
-                         ),
-                         "properties[&quot;end_datetime&quot;]": self.properties.get(
-                             'end_datetime'
-                         ),
-                         }, brackets=False)}
-                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
-                             self.properties)})</summary>{
-                                 dict_to_html_table(self.properties, depth=1)}</details>
-                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
-                                     self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
+                        {
+            dict_to_html_table(
+                {
+                    "provider": self.provider,
+                    "collection": self.collection,
+                    "properties[&quot;id&quot;]": self.properties.get("id"),
+                    "properties[&quot;start_datetime&quot;]": self.properties.get(
+                        "start_datetime"
+                    ),
+                    "properties[&quot;end_datetime&quot;]": self.properties.get(
+                        "end_datetime"
+                    ),
+                },
+                brackets=False,
+            )
+        }
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
+            len(self.properties)
+        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
+            len(self.assets)
+        })</summary>{self.assets._repr_html_(embeded=True)}</details>
                     </td>
-                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
-                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
+                    <td {geom_style} title='geometry'>geometry<br />{
+            self.geometry._repr_svg_()
+        }</td>
+                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{
+            thumbnail_html
+        }</td>
                 </tr>
             </table>"""
 

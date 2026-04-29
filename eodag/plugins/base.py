@@ -31,30 +31,28 @@ class EODAGPluginMount(type):
     def __init__(
         cls, name: str, bases: tuple[type, ...], attrs: dict[str, Any]
     ) -> None:
-        if not hasattr(cls, "plugins"):
+        if not hasattr(cls, "_plugins_registry"):
             # This branch only executes when processing the mount point itself.
             # So, since this is a new plugin type, not an implementation, this
             # class shouldn't be registered as a plugin. Instead, it sets up a
             # list where plugins can be registered later.
-            cls.plugins: list[EODAGPluginMount] = []
+            cls._plugins_registry: dict[str, EODAGPluginMount] = {}
         else:
             # This must be a plugin implementation, which should be registered.
             # Simply appending it to the list is all that's needed to keep
             # track of it later.
-            cls.plugins.append(cls)
+            cls._plugins_registry[cls.__name__] = cls
 
     def get_plugins(cls, *args: Any, **kwargs: Any) -> list[EODAGPluginMount]:
         """Get plugins"""
-        return [plugin(*args, **kwargs) for plugin in cls.plugins]
+        return [plugin(*args, **kwargs) for plugin in cls._plugins_registry.values()]
 
     def get_plugin_by_class_name(cls, name: str) -> EODAGPluginMount:
-        """Get plugin by class_name"""
-        for plugin in cls.plugins:
-            if name == plugin.__name__:
-                return plugin
-        raise PluginNotFoundError(
-            "'{}' not found for {} class of plugins".format(name, cls)
-        )
+        """Get plugin class by its class name (O(1) lookup)."""
+        try:
+            return cls._plugins_registry[name]
+        except KeyError:
+            raise PluginNotFoundError(f"{name!r} not found in {cls.__name__} plugins")
 
 
 class PluginTopic(metaclass=EODAGPluginMount):
@@ -65,13 +63,9 @@ class PluginTopic(metaclass=EODAGPluginMount):
         self.provider = provider
 
     def __repr__(self) -> str:
-        config = getattr(self, "config", None)
-        priority = ""
-        if config is not None and hasattr(config, "priority"):
-            priority = str(config.priority)  # is an int
         return "{}(provider={}, priority={}, topic={})".format(
             self.__class__.__name__,
             getattr(self, "provider", ""),
-            priority,
+            self.config.priority,
             self.__class__.mro()[-3].__name__,
         )

@@ -70,6 +70,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.api.search_result import RawSearchResult, SearchResult
+from eodag.config import parse_discovery_config_jsonpath
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
@@ -338,54 +339,10 @@ class QueryStringSearch(Search):
             )
 
         # parse jsonpath on init: collections discovery
-        if (
-            getattr(self.config, "discover_collections", {}).get("results_entry")
-            and getattr(self.config, "discover_collections", {}).get("result_type")
-            == "json"
-        ):
-            self.config.discover_collections["results_entry"] = string_to_jsonpath(
-                self.config.discover_collections["results_entry"], force=True
+        if hasattr(self.config, "discover_collections"):
+            self.config.discover_collections = parse_discovery_config_jsonpath(
+                self.config.discover_collections
             )
-            self.config.discover_collections[
-                "generic_collection_id"
-            ] = mtd_cfg_as_conversion_and_querypath(
-                {"foo": self.config.discover_collections["generic_collection_id"]}
-            )[
-                "foo"
-            ]
-            self.config.discover_collections[
-                "generic_collection_parsable_properties"
-            ] = mtd_cfg_as_conversion_and_querypath(
-                self.config.discover_collections[
-                    "generic_collection_parsable_properties"
-                ]
-            )
-            self.config.discover_collections[
-                "generic_collection_parsable_metadata"
-            ] = mtd_cfg_as_conversion_and_querypath(
-                self.config.discover_collections["generic_collection_parsable_metadata"]
-            )
-            if (
-                "single_collection_parsable_metadata"
-                in self.config.discover_collections
-            ):
-                self.config.discover_collections[
-                    "single_collection_parsable_metadata"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.discover_collections[
-                        "single_collection_parsable_metadata"
-                    ]
-                )
-            if "metadata_mapping" in self.config.discover_collections.get(
-                "generic_collection_unparsable_properties", {}
-            ):
-                self.config.discover_collections[
-                    "generic_collection_unparsable_properties"
-                ]["metadata_mapping"] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.discover_collections[
-                        "generic_collection_unparsable_properties"
-                    ]["metadata_mapping"]
-                )
 
         # parse jsonpath on init: queryables discovery
         if (
@@ -399,7 +356,6 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: collection specific metadata-mapping
         for collection in self.config.products.keys():
-
             collection_metadata_mapping = {}
             # collection specific metadata-mapping
             if any(
@@ -657,10 +613,7 @@ class QueryStringSearch(Search):
                             collection_data_id = collection_data.pop("id", None)
 
                             # remove collection if it must have be renamed but renaming failed
-                            if (
-                                collection_data_id
-                                and collection_data_id == NOT_AVAILABLE
-                            ):
+                            if collection_data_id == NOT_AVAILABLE:
                                 del conf_update_dict["collections_config"][
                                     generic_collection_id
                                 ]
@@ -1162,7 +1115,6 @@ class QueryStringSearch(Search):
             ):
                 del prep.total_items_nb
             if limit is not None and len(results) == limit:
-
                 raw_search_results = self._build_raw_search_results(
                     results, resp_as_json, kwargs, limit, prep
                 )

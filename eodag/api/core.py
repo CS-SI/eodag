@@ -17,8 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
-import itertools
+import datetime as dt
 import logging
 import os
 import re
@@ -26,16 +25,14 @@ import shutil
 import tempfile
 import warnings
 from collections import deque
-from copy import deepcopy
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import attrgetter, itemgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import geojson
 import yaml
-from pydantic import AliasChoices
+from pydantic import AliasChoices, BaseModel
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.product import EOProduct
@@ -43,14 +40,19 @@ from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypa
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
-    PLUGINS_TOPICS_KEYS,
     PluginConfig,
+    ProviderConfig,
     SimpleYamlProxyConfig,
-    credentials_in_auth,
+    disable_providers,
+    extract_credentials,
     get_ext_collections_conf,
     load_default_config,
+    load_provider_configs,
     load_yml_config,
+    merge_provider_configs,
+    parse_discovery_config_jsonpath,
 )
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -65,30 +67,34 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
+    PLUGINS_TOPIC_KEYS,
+    CredsStoreType,
     _deprecated,
     get_geometry_from_various,
     makedirs,
     sort_dict,
     string_to_jsonpath,
+    update_nested_dict,
     uri_to_path,
 )
-from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
+from eodag.utils.dates import get_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
+    EodagError,
     NoMatchingCollection,
     PluginImplementationError,
     RequestError,
     UnsupportedProvider,
     ValidationError,
 )
-from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.databases.base import Database
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
@@ -107,19 +113,15 @@ class EODataAccessGateway:
     :param locations_conf_path: (optional) Path to the locations configuration file
     """
 
+    db: Database
+    _creds_store: CredsStoreType
+
     def __init__(
         self,
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
+        db: Optional[Database] = None,
     ) -> None:
-        collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
-            res_files("eodag") / "resources" / "collections.yml"
-        )
-        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
-        self.collections_config = self._collections_config_init(collections_config_dict)
-
-        self._providers = ProvidersDict.from_configs(load_default_config())
-
         env_var_cfg_dir = "EODAG_CFG_DIR"
         self.conf_dir = os.getenv(
             env_var_cfg_dir,
@@ -142,8 +144,18 @@ class EODataAccessGateway:
             self.conf_dir = tmp_conf_dir
             makedirs(self.conf_dir)
 
-        self._plugins_manager = PluginManager(self._providers)
-        self._providers = self._plugins_manager.providers
+        self.db = (
+            db
+            if db is not None
+            else SQLiteDatabase(os.path.join(self.conf_dir, "eodag.db"))
+        )
+        collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
+            res_files("eodag") / "resources" / "collections.yml"
+        )
+        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
+
+        collections_dict = CollectionsDict.from_configs(collections_config_dict)
+        self.db.upsert_collections(collections_dict)
 
         # First level override: From a user configuration file
         if user_conf_file_path is None:
@@ -162,62 +174,62 @@ class EODataAccessGateway:
                         source,
                         standard_configuration_path,
                     )
-        self._providers.update_from_config_file(user_conf_file_path)
 
-        # Second level override: From environment variables
-        self._providers.update_from_env()
+        self._plugins_manager = PluginManager(db=self.db)
 
-        # init updated providers conf
-        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
+        # Build providers: default → external plugins → user YAML → env vars
+        configs = load_provider_configs(
+            load_default_config(),
+            *(
+                [self._plugins_manager.external_providers_config]
+                if self._plugins_manager.external_providers_config
+                else []
+            ),
+            user_conf_file=user_conf_file_path,
+        )
+        disable_providers(configs, self._plugins_manager.skipped_plugins)
+        self.db.upsert_fb_configs(list(configs.values()))
 
-        for provider in self._providers.values():
-            provider.sync_collections(self, strict_mode)
-
-        # re-build _plugins_manager using up-to-date providers_config
-        self._plugins_manager.rebuild(self._providers)
-
-        # store pruned providers configs
-        self._pruned_providers_config: dict[str, Any] = {}
-
-        # filter out providers needing auth that have no credentials set
-        self._prune_providers_list()
-
-        # Sort providers taking into account of possible new priority orders
-        self._plugins_manager.sort_providers()
+        # store credentials in core and plugins manager
+        self._creds_store = extract_credentials(configs)
+        self._plugins_manager.creds_store = self._creds_store
 
         self.set_locations_conf(locations_conf_path)
-
-    def _collections_config_init(
-        self, collections_config_dict: dict[str, Any]
-    ) -> CollectionsDict:
-        """Initialize collections configuration.
-
-        :param collections_config_dict: The collections config as a dictionary
-        """
-        # Turn the collections config from a dict into a CollectionsDict() object
-        collections = [
-            Collection.create_with_dag(self, id=col, **col_f)
-            for col, col_f in collections_config_dict.items()
-        ]
-        return CollectionsDict(collections)
 
     @property
     def providers(self) -> ProvidersDict:
         """Providers of eodag configuration sorted by priority in descending order and by name in ascending order."""
-        providers = deepcopy(self._providers)
-        # Sort: priority descending, then name ascending
-        providers.data = {
-            k: v
-            for k, v in sorted(
-                providers.data.items(), key=lambda item: (-item[1].priority, item[0])
-            )
-        }
-
-        return providers
+        return self.get_providers(enabled=True)
 
     def get_version(self) -> str:
         """Get eodag package version"""
         return version("eodag")
+
+    def get_providers(
+        self,
+        collection: Optional[str] = None,
+        enabled: Optional[bool] = None,
+        limit: Optional[int] = None,
+        names: Optional[list[str]] = None,
+    ) -> ProvidersDict:
+        """
+        List providers from the database, with optional filters, in a
+        :class:`~eodag.api.provider.ProvidersDict` instance.
+        """
+        providers = self.db.get_federation_backends(
+            names=set(names) if names else None,
+            enabled=enabled,
+            collection=collection,
+            limit=limit,
+        )
+
+        # TODO: how to see collections for each provider?
+        return ProvidersDict(
+            {
+                name: Provider(name=name, **content)
+                for name, content in providers.items()
+            }
+        )
 
     def set_preferred_provider(self, provider: str) -> None:
         """Set max priority for the given provider.
@@ -225,57 +237,78 @@ class EODataAccessGateway:
         :param provider: The name of the provider that should be considered as the
                          preferred provider to be used for this instance
         """
-        if provider not in self.providers.names:
+        if not self.get_providers(names=[provider]):
             raise UnsupportedProvider(
-                f"This provider is not recognised by eodag: {provider}"
+                f"This provider is not recognized by eodag: {provider}"
             )
+        name, priority = self.get_preferred_provider(enabled_only=False)
+        if name != provider:
+            new_priority = priority + 1
+            self.db.set_priority(provider, new_priority)
 
-        preferred_provider, max_priority = self.get_preferred_provider()
-        if preferred_provider != provider:
-            new_priority = max_priority + 1
-            self._plugins_manager.set_priority(provider, new_priority)
-
-    def get_preferred_provider(self) -> tuple[str, int]:
+    def get_preferred_provider(self, enabled_only: bool = True) -> tuple[str, int]:
         """Get the provider currently set as the preferred one for searching
         products, along with its priority.
 
         :returns: The provider with the maximum priority and its priority
         """
-        return max(self._providers.priorities.items(), key=itemgetter(1))
+        providers = self.get_providers(enabled=enabled_only or None, limit=1)
+        if not providers:
+            raise EodagError("No provider enabled, please enable at least one")
+
+        provider = list(providers.values())[0]
+        return provider.name, provider.priority
 
     def update_providers_config(
         self,
-        yaml_conf: Optional[str] = None,
-        dict_conf: Optional[dict[str, Any]] = None,
+        yaml_conf: str | None = None,
+        dict_conf: dict[str, Any] | None = None,
     ) -> None:
-        """Update providers configuration with given input.
-        Can be used to add a provider to existing configuration or update
-        an existing one.
-
-        :param yaml_conf: YAML formated provider configuration
-        :param dict_conf: provider configuration as dictionary in place of ``yaml_conf``
         """
+        Update provider configurations using patch semantics.
+        """
+
         if dict_conf is not None:
-            conf_update = dict_conf
+            patch_conf = dict_conf
         elif yaml_conf is not None:
-            conf_update = yaml.safe_load(yaml_conf)
+            patch_conf = yaml.safe_load(yaml_conf)
         else:
-            return None
+            return
 
-        # restore the pruned configuration
-        for name in list(self._pruned_providers_config):
-            config = self._pruned_providers_config[name]
-            if name in conf_update:
-                logger.info(
-                    "%s: provider restored from the pruned configurations", name
-                )
-                self._providers[name] = Provider(config)
-                self._pruned_providers_config.pop(name)
+        if not patch_conf:
+            return
 
-        self._providers.update_from_configs(conf_update)
+        provider_configs: dict[str, ProviderConfig] = {}
+        known_providers = self.db.get_federation_backends().keys()
 
-        # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager.build_collection_to_provider_config_map()
+        # get current config of known providers from patch conf
+        for name, patch in patch_conf.items():
+            if name not in known_providers:
+                continue
+
+            # get collections touched by the patch to keep their current
+            # whole config for a given provider in case of partial update
+            patch_dict = patch if isinstance(patch, dict) else patch.__dict__
+            products = set(patch_dict.get("products", {}))
+            dl_products = set(patch_dict.get("download", {}).get("products", {}))
+            touched_collections = products | dl_products
+
+            base_mapping = self.db.get_fb_config(name, collections=touched_collections)
+
+            # restore auth confs with credentials, as they are not stored in DB for security reason
+            # they are required when disable_providers() is called
+            auth_confs_with_creds = {}
+            for auth_key, auth_conf in self._creds_store.get(name, {}).items():
+                auth_confs_with_creds[auth_key] = {"credentials": auth_conf}
+
+            update_nested_dict(base_mapping, auth_confs_with_creds)
+            provider_configs[name] = ProviderConfig.from_mapping(base_mapping)
+
+        merge_provider_configs(provider_configs, patch_conf)
+        update_nested_dict(self._creds_store, extract_credentials(provider_configs))
+        disable_providers(provider_configs, self._plugins_manager.skipped_plugins)
+
+        self.db.upsert_fb_configs(list(provider_configs.values()))
 
     def add_provider(
         self,
@@ -335,7 +368,7 @@ class EODataAccessGateway:
 
         # api plugin usage: remove unneeded search/download/auth plugin conf
         if conf_dict[name].get("api"):
-            for k in PLUGINS_TOPICS_KEYS:
+            for k in PLUGINS_TOPIC_KEYS:
                 if k != "api":
                     conf_dict[name].pop(k, None)
 
@@ -343,88 +376,6 @@ class EODataAccessGateway:
 
         if priority is None:
             self.set_preferred_provider(name)
-
-    def _prune_providers_list(self) -> None:
-        """Removes from config providers needing auth that have no credentials set."""
-        update_needed = False
-
-        # loop over a copy to allow popping items
-        for name, provider in list(self._providers.items()):
-            conf = provider.config
-
-            # remove providers using skipped plugins
-            if [
-                v
-                for v in conf.__dict__.values()
-                if isinstance(v, PluginConfig)
-                and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
-            ]:
-                del self._providers[provider.name]
-                logger.debug(
-                    f"{provider}: provider needing unavailable plugin has been removed"
-                )
-                continue
-
-            # check authentication
-            if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
-                credentials_exist = credentials_in_auth(conf.api)
-                if not credentials_exist:
-                    # credentials needed but not found
-                    self._pruned_providers_config[provider.name] = conf
-                    del self._providers[provider.name]
-
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no credentials could be found",
-                        provider,
-                    )
-
-            elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
-                if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
-                    # credentials needed but no auth plugin was found
-                    self._pruned_providers_config[provider.name] = conf
-                    del self._providers[provider.name]
-
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no auth plugin could be found",
-                        provider,
-                    )
-                    continue
-
-                credentials_exist = (
-                    hasattr(conf, "search_auth")
-                    and credentials_in_auth(conf.search_auth)
-                ) or (
-                    not hasattr(conf, "search_auth")
-                    and hasattr(conf, "auth")
-                    and credentials_in_auth(conf.auth)
-                )
-                if not credentials_exist:
-                    # credentials needed but not found
-                    self._pruned_providers_config[provider.name] = conf
-                    del self._providers[provider.name]
-
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no credentials could be found",
-                        provider,
-                    )
-
-            elif not hasattr(conf, "api") and not hasattr(conf, "search"):
-                # provider should have at least an api or search plugin
-                self._pruned_providers_config[provider.name] = conf
-                del self._providers[provider.name]
-
-                update_needed = True
-                logger.info(
-                    "%s: provider has been pruned because no api or search plugin could be found",
-                    provider,
-                )
-
-        if update_needed:
-            # rebuild _plugins_manager with updated providers list
-            self._plugins_manager.rebuild(self._providers)
 
     def set_locations_conf(self, locations_conf_path: Optional[str]) -> None:
         """Set locations configuration.
@@ -494,46 +445,79 @@ class EODataAccessGateway:
             )
             self.locations_config = []
 
-    def list_collections(
-        self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> CollectionsList:
-        """Lists supported collections.
+    def get_collection(
+        self, id: str, providers: Optional[list[str]] = None
+    ) -> Optional[Collection]:
+        """Get a collection by its id.
 
-        :param provider: (optional) The name of a provider that must support the product
-                         types we are about to list
-        :param fetch_providers: (optional) Whether to fetch providers for new product
-                                types or not
-        :returns: The list of the collections that can be accessed using eodag.
+        :param id: The collection id
+        :param providers: (optional) A list of provider names to filter the collection search.
+            If None, all providers will be considered.
+        :returns: The collection having the given id if it exists, None otherwise
+        """
+        return self.list_collections(ids=[id], providers=providers).get(id)
+
+    def list_collections(
+        self,
+        geometry: Optional[Union[BaseGeometry, dict[str, Any], str]] = None,
+        datetime: Optional[Union[dt.datetime, str]] = None,
+        limit: Optional[int] = None,
+        q: Optional[str] = None,
+        ids: Optional[list[str]] = None,
+        providers: Optional[list[str]] = None,
+        cql2_text: Optional[str] = None,
+        cql2_json: Optional[dict[str, Any]] = None,
+        sortby: Optional[list[dict[str, str]]] = None,
+    ) -> CollectionsList:
+        """Search and list collections matching the given filters.
+
+        :param geometry: (optional) Search area as a Shapely geometry, a bounding-box
+                         dict, or a WKT string
+        :param datetime: (optional) Temporal filter as an RFC 3339 string or interval
+                         (e.g. ``"2021-01-01T00:00:00Z/2022-01-01T00:00:00Z"``,
+                         ``"../2021-06-01T00:00:00Z"``, ``"2022-01-01T00:00:00Z/.."``).
+        :param limit: (optional) Maximum number of collections to return
+        :param q: (optional) Free-text search terms (STAC ``q`` parameter)
+        :param cql2_text: (optional) CQL2 text filter expression
+        :param cql2_json: (optional) CQL2 JSON filter expression
+        :param sortby: (optional) STAC sort extension objects, e.g.
+                       ``[{"field": "datetime", "direction": "desc"}]``
+        :returns: A :class:`~eodag.api.collection.CollectionsList` of matching
+                  collections with a ``number_matched`` attribute.
+        :raises ValueError: If both ``cql2_text`` and ``cql2_json`` are provided,
+                            or if ``sortby`` contains invalid fields/directions.
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        if fetch_providers:
-            # First, update collections list if possible
-            self.fetch_collections_list(provider=provider)
+        if providers:
+            known = set(self.db.get_federation_backends(enabled=True).keys())
+            unknown = set(providers) - known
+            if unknown:
+                raise UnsupportedProvider(
+                    f"This provider is not recognized by eodag: {', '.join(unknown)}"
+                )
 
-        providers_iter, providers_check = itertools.tee(
-            self._providers.filter_by_name_or_group(provider)
-        )
+        if isinstance(datetime, dt.datetime):
+            datetime = datetime.isoformat()
 
-        if provider and not any(providers_check):
-            raise UnsupportedProvider(
-                f"The requested provider is not (yet) supported: {provider}"
+        try:
+            collections, number_matched = self.db.collections_search(
+                geometry=geometry,
+                datetime=datetime,
+                limit=limit,
+                q=q,
+                ids=ids,
+                federation_backends=providers,
+                cql2_text=cql2_text,
+                cql2_json=cql2_json,
+                sortby=sortby,
             )
+        except ValueError as e:
+            raise ValidationError(f"Invalid input for listing collections: {e}")
 
-        # unique collection ids from providers configs
-        collection_ids = {
-            collection_id
-            for p in providers_iter
-            for collection_id in p.collections_config
-            if collection_id != GENERIC_COLLECTION
-        }
-
-        collections = CollectionsList(
-            [self.collections_config[collection_id] for collection_id in collection_ids]
+        return CollectionsList(
+            [Collection.create_with_dag(dag=self, **c) for c in collections],
+            number_matched,
         )
-
-        # Return the collections sorted in lexicographic order of their id
-        collections.sort(key=attrgetter("id"))
-        return collections
 
     def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch collections list and update if needed.
@@ -541,51 +525,65 @@ class EODataAccessGateway:
         If strict mode is enabled (by setting the ``EODAG_STRICT_COLLECTIONS`` environment variable
         to a truthy value), this method will not fetch or update collections and will return immediately.
 
-        :param provider: The name of a provider or provider-group for which collections
+        :param provider: The name of a provider for which collections
                          list should be updated. Defaults to all providers (None value).
         """
+        p_names = set(
+            self.db.get_federation_backends(
+                names={provider} if provider else None
+            ).keys()
+        )
+
+        if not p_names:
+            raise UnsupportedProvider(
+                f"The requested provider is not (yet) supported: {provider}"
+            )
+
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
         if strict_mode:
+            return
+
+        fetchable_p_names = self.db.get_federation_backends(
+            names={provider} if provider else None, enabled=True, fetchable=True
+        ).keys()
+
+        # check if the provider is fetchable when it is given in parameter
+        if provider and not fetchable_p_names:
+            msg = f"The requested provider is not enabled or not fetchable: {provider}"
+            logger.info(msg)
             return
 
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: dict[
             str, PluginConfig.DiscoverCollections
         ] = {}
-        # check if any provider has not already been fetched for collections
-        already_fetched = True
-        for provider_to_fetch in self._providers.filter_by_name_or_group(provider):
-            if provider_to_fetch.fetchable and provider_to_fetch.search_config:
-                providers_discovery_configs_fetchable[
-                    provider_to_fetch.name
-                ] = provider_to_fetch.search_config.discover_collections
-                if not provider_to_fetch.collections_fetched:
-                    already_fetched = False
 
-        if not already_fetched:
-            # get ext_collections conf
-            ext_collections_cfg_file = os.getenv("EODAG_EXT_COLLECTIONS_CFG_FILE")
-            if ext_collections_cfg_file is not None:
-                ext_collections_conf = get_ext_collections_conf(
-                    ext_collections_cfg_file
+        for p_name in fetchable_p_names:
+            p_config = self.db.get_fb_config(p_name)
+            search_config = p_config.get("search", {}) or p_config.get("api", {})
+            providers_discovery_configs_fetchable[p_name] = search_config[
+                "discover_collections"
+            ]
+
+        # get ext_collections conf
+        ext_collections_cfg_file = os.getenv("EODAG_EXT_COLLECTIONS_CFG_FILE")
+        if ext_collections_cfg_file is not None:
+            ext_collections_conf = get_ext_collections_conf(ext_collections_cfg_file)
+        else:
+            ext_collections_conf = get_ext_collections_conf()
+
+            if not ext_collections_conf:
+                # empty ext_collections conf
+                ext_collections_conf = (
+                    self.discover_collections(provider=provider) or {}
                 )
-            else:
-                ext_collections_conf = get_ext_collections_conf()
-
-                if not ext_collections_conf:
-                    # empty ext_collections conf
-                    ext_collections_conf = (
-                        self.discover_collections(provider=provider) or {}
-                    )
-
-            # update eodag collections list with new conf
-            self.update_collections_list(ext_collections_conf)
 
         # Compare current provider with default one to see if it has been modified
         # and collections list would need to be fetched
+        provider_ext_collections_conf: dict[str, Any] = ext_collections_conf
 
         # get ext_collections conf for user modified providers
-        default_providers = ProvidersDict.from_configs(load_default_config())
+        default_providers = load_default_config()
         for (
             provider,
             user_discovery_conf,
@@ -593,11 +591,17 @@ class EODataAccessGateway:
             # default discover_collections conf
             if provider in default_providers:
                 default_provider = default_providers[provider]
-                if not default_provider.search_config:
+                default_search_config = cast(
+                    PluginConfig,
+                    getattr(default_provider, "search", None)
+                    or getattr(default_provider, "api", None),
+                )
+                if not default_search_config:
                     continue
 
-                default_discovery_conf = (
-                    default_provider.search_config.discover_collections
+                default_discovery_conf = default_search_config.discover_collections
+                default_discovery_conf_parsed = parse_discovery_config_jsonpath(
+                    default_discovery_conf
                 )
 
                 # compare confs (care, some providers do not have result_type property)
@@ -638,85 +642,85 @@ class EODataAccessGateway:
                     )
                 else:
                     default_discovery_conf_parsed = default_discovery_conf
+                # compare confs
                 if (
                     user_discovery_conf == default_discovery_conf
                     or user_discovery_conf == default_discovery_conf_parsed
                 ) and (
                     not default_discovery_conf.get("fetch_url")
-                    or "ext_collections_conf" not in locals()
-                    or "ext_collections_conf" in locals()
-                    and (
-                        provider in ext_collections_conf
-                        or len(ext_collections_conf.keys()) == 0
-                    )
+                    or provider in ext_collections_conf
+                    or len(ext_collections_conf.keys()) == 0
                 ):
                     continue
                 # providers not skipped here should be user-modified
                 # or not in ext_collections_conf (if eodag system conf != eodag conf used for ext_collections_conf)
 
-            if not already_fetched:
-                # discover collections for user configured provider
-                provider_ext_collections_conf = (
-                    self.discover_collections(provider=provider) or {}
-                )
-                # update eodag collections list with new conf
-                self.update_collections_list(provider_ext_collections_conf)
+            # discover collections of providers not skipped
+            provider_ext_collections_conf.update(
+                self.discover_collections(provider=provider) or {}
+            )
+
+        # update eodag collections list with new confs
+        self.update_collections_list(provider_ext_collections_conf)
 
     def discover_collections(
         self, provider: Optional[str] = None
     ) -> Optional[dict[str, Any]]:
         """Fetch providers for collections
 
-        :param provider: The name of a provider or provider-group to fetch. Defaults to
+        :param provider: The name of a provider to fetch. Defaults to
                          all providers (None value).
         :returns: external collections configuration
         """
-
-        providers_iter, providers_check = itertools.tee(
-            self.providers.filter_by_name_or_group(provider)
+        p_names = set(
+            self.db.get_federation_backends(
+                names={provider} if provider else None
+            ).keys()
         )
 
-        if provider and not any(providers_check):
+        if not p_names:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
+        fetchable_providers = self.db.get_federation_backends(
+            names=p_names, enabled=True, fetchable=True
+        )
+        if provider and not p_names:
+            msg = f"The requested provider is not enabled or not fetchable: {provider}"
+            logger.info(msg)
+            return {}
+
         ext_collections_conf: dict[str, Any] = {}
-
         kwargs: dict[str, Any] = {}
-        for p in providers_iter:
-            if not p.search_config:
-                return None
 
-            if p.fetchable:
-                search_plugin: Union[Search, Api] = next(
-                    self._plugins_manager.get_search_plugins(provider=p.name)
-                )
+        for p_name in fetchable_providers:
+            search_plugin: Union[Search, Api] = next(
+                self._plugins_manager.get_search_plugins(provider=p_name)
+            )
 
-                # check after plugin init if still fetchable
-                if not getattr(search_plugin.config, "discover_collections", {}).get(
-                    "fetch_url"
+            # check after plugin init if still fetchable
+            if not getattr(search_plugin.config, "discover_collections", {}).get(
+                "fetch_url"
+            ):
+                continue
+
+            # append auth to search plugin if needed
+            if getattr(search_plugin.config, "need_auth", False):
+                if auth := self._plugins_manager.get_auth(
+                    search_plugin.provider,
+                    getattr(search_plugin.config, "api_endpoint", None),
+                    search_plugin.config,
                 ):
+                    kwargs["auth"] = auth
+                else:
+                    logger.debug(
+                        f"Could not authenticate on {p_name} for collections discovery"
+                    )
+                    ext_collections_conf[p_name] = None
                     continue
 
-                # append auth to search plugin if needed
-                if getattr(search_plugin.config, "need_auth", False):
-                    if auth := self._plugins_manager.get_auth(
-                        search_plugin.provider,
-                        getattr(search_plugin.config, "api_endpoint", None),
-                        search_plugin.config,
-                    ):
-                        kwargs["auth"] = auth
-                    else:
-                        logger.debug(
-                            f"Could not authenticate on {p} for collections discovery"
-                        )
-                        ext_collections_conf[p.name] = None
-                        continue
-
-                ext_collections_conf[p.name] = search_plugin.discover_collections(
-                    **kwargs
-                )
+            ext_collections_conf[p_name] = search_plugin.discover_collections(**kwargs)
 
         return sort_dict(ext_collections_conf)
 
@@ -727,26 +731,37 @@ class EODataAccessGateway:
 
         :param ext_collections_conf: external collections configuration
         """
+        all_new_collections: list[Collection] = []
+        fetchable_p_names = self.db.get_federation_backends(
+            enabled=True, fetchable=True
+        ).keys()
+        confs_dict: dict[str, Any] = {}
+
         for provider, new_collections_conf in ext_collections_conf.items():
-            if new_collections_conf and provider in self._providers:
-                try:
-                    fetchable = self._providers[provider].fetchable
-                    if not fetchable:
-                        # conf has been updated and provider collections are no more discoverable
-                        continue
+            if new_collections_conf and provider in fetchable_p_names:
+                collections, _ = self.db.collections_search(
+                    federation_backends=[provider]
+                )
+                collections_id: set[str] = set(c["id"] for c in collections)
+                p_config: dict[str, Any] = self.db.get_fb_config(
+                    provider, collections=collections_id
+                )
+                search_config: dict[str, Any] = p_config.get(
+                    "search", {}
+                ) or p_config.get("api", {})
+                provider_products_config: dict[str, Any] = p_config["products"]
 
-                    provider_products_config = (
-                        self._providers[provider].collections_config or {}
-                    )
-                except UnsupportedProvider:
-                    logger.debug(
-                        "Ignoring external collections for unknown provider %s",
-                        provider,
-                    )
-                    continue
-
-                new_collections: list[str] = []
+                new_provider_products_config: dict[str, Any] = {}
+                new_collections = 0
                 bad_formatted_col_count = 0
+
+                # unparsable_properties from discover_collections conf
+                discover_conf = search_config.get("discover_collections", {})
+                unparsable_keys = set(
+                    discover_conf.get(
+                        "generic_collection_unparsable_properties", {}
+                    ).keys()
+                )
                 for (
                     new_collection,
                     new_collection_conf,
@@ -754,9 +769,6 @@ class EODataAccessGateway:
                     if new_collection not in provider_products_config:
                         for existing_collection in provider_products_config.copy():
                             # compare parsed extracted conf (without metadata_mapping entry)
-                            unparsable_keys = self._providers[
-                                provider
-                            ].unparsable_properties
 
                             new_parsed_collections_conf = {
                                 k: v
@@ -771,16 +783,12 @@ class EODataAccessGateway:
                                 break
                         else:
                             try:
-                                # new_collection_conf does not already exist, append it
-                                # to self.collections_config
-                                new_coll_obj = Collection.create_with_dag(
-                                    self,
+                                new_coll_obj = Collection(
                                     id=new_collection,
                                     **new_collections_conf["collections_config"][
                                         new_collection
                                     ],
                                 )
-                                self.collections_config[new_coll_obj._id] = new_coll_obj
                             except ValidationError:
                                 # skip collection if there is a problem with its id (missing or not a string)
                                 logger.debug(
@@ -792,28 +800,68 @@ class EODataAccessGateway:
                                     provider,
                                 )
                             else:
-                                # to provider_products_config
-                                provider_products_config[
+                                # new_collection_conf does not already exist, append it
+                                # to new collections list to be added to DB
+                                all_new_collections.append(new_coll_obj)
+                                # to provider config for this collection
+                                new_provider_products_config[
                                     new_collection
                                 ] = new_collection_conf
-                                ext_collections_conf[provider] = new_collections_conf
-                                new_collections.append(new_collection)
+
+                                new_collections += 1
+
                                 # increase the increment if the new collection had
                                 # bad formatted attributes in the external config
-                                dumped_collection = self.collections_config[
-                                    new_coll_obj._id
-                                ].model_dump()
-                                dumped_ext_conf_col = {
-                                    **dumped_collection,
-                                    **new_collections_conf["collections_config"][
-                                        new_collection
-                                    ],
-                                }
-                                if dumped_ext_conf_col != dumped_collection:
-                                    bad_formatted_col_count += 1
+                                for field, v in new_collections_conf[
+                                    "collections_config"
+                                ][new_collection].items():
+                                    field_from_alias = (
+                                        Collection.get_collection_field_from_alias(
+                                            field
+                                        )
+                                    )
+
+                                    # a field was bad formatted if it was not part of the model fields
+                                    if field_from_alias not in Collection.model_fields:
+                                        bad_formatted_col_count += 1
+                                        break
+
+                                    default = Collection.model_fields[
+                                        field_from_alias
+                                    ].get_default()
+                                    default_json = (
+                                        default.model_dump(mode="json")
+                                        if isinstance(default, BaseModel)
+                                        else default
+                                    )
+                                    formatted_v = new_coll_obj.__dict__[
+                                        field_from_alias
+                                    ]
+
+                                    # a field was bad formatted also if its value has been reformatted to its
+                                    # default value and it is not a static field or without a null value
+
+                                    # NOTE: this check works while there is no transformation of values in model
+                                    # validators to make them pass for fields where the default value is not null.
+                                    # For instance, for a field "foo" with default value "bar" having "BAR" in input,
+                                    # if a "before" validator uses "lower()" without raising an error, the input would
+                                    # be considered as well formatted while increment would increase as
+                                    # "v != default_json" statement would give True.
+                                    if (
+                                        formatted_v == default
+                                        and v != default_json
+                                        and (
+                                            field_from_alias
+                                            not in Collection.__static_fields__
+                                            or v is not None
+                                        )
+                                    ):
+                                        bad_formatted_col_count += 1
+                                        break
+
                 if new_collections:
                     logger.debug(
-                        "Added %s collections for %s", len(new_collections), provider
+                        "Added %s collections for %s", new_collections, provider
                     )
                     if bad_formatted_col_count > 0:
                         logger.debug(
@@ -822,14 +870,25 @@ class EODataAccessGateway:
                             provider,
                         )
 
-            elif provider not in self._providers:
-                # unknown provider
-                continue
+                    # Append minimalist provider config with its name and the config of its new collections.
+                    # This config will be merged with the current one in update_providers_config() method
+                    # to keep unchanged collections and other entries of this provider config.
+                    confs_dict[provider] = {
+                        "name": provider,
+                        "products": new_provider_products_config,
+                    }
 
-            self._providers[provider].collections_fetched = True
+                # TODO: keep last fetch only for fetchable providers
+                # self.db.set_federation_backend_last_fetch(
+                #     provider, dt.datetime.now(dt.timezone.utc).isoformat()
+                # )
 
-        # re-create _plugins_manager using up-to-date providers_config
-        self._plugins_manager.build_collection_to_provider_config_map()
+        # if there are new collections, update collections and providers config in DB
+        if all_new_collections:
+            # Add new collections to DB first to enable to set their column
+            # "federation_backends" during federation backends config update
+            self.db.upsert_collections(CollectionsDict(all_new_collections))
+            self.update_providers_config(dict_conf=confs_dict)
 
     @_deprecated(
         reason="Please use 'EODataAccessGateway.providers' instead",
@@ -854,14 +913,13 @@ class EODataAccessGateway:
         """
         candidates = []
 
-        # use "providers" property to get sorted providers
-        for key, provider in self.providers.items():
-            if collection and collection not in provider.collections_config:
-                continue
+        # use DB to get providers sorted by priority and name
+        all_fb = self.db.get_federation_backends(enabled=True, collection=collection)
 
-            group = getattr(provider.config, "group", None)
+        for key, fb_data in all_fb.items():
+            group = fb_data["metadata"].get("group")
             name = group if by_group and group else key
-            candidates.append((name, provider.priority))
+            candidates.append((name, fb_data["priority"]))
 
         if by_group:
             # Keep only the highest-priority entry per group
@@ -873,6 +931,10 @@ class EODataAccessGateway:
 
         return [name for name, _ in candidates]
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.get_collection' instead",
+        version="5.0.0",
+    )
     def get_collection_from_alias(self, alias_or_id: str) -> str:
         """Return the id of a collection by either its id or alias
 
@@ -880,9 +942,7 @@ class EODataAccessGateway:
                             method will directly return the given value.
         :returns: Internal name of the collection.
         """
-        collections = [
-            v for k, v in self.collections_config.items() if v.id == alias_or_id
-        ]
+        collections = self.list_collections(ids=[alias_or_id])
 
         if len(collections) > 1:
             raise NoMatchingCollection(
@@ -890,15 +950,16 @@ class EODataAccessGateway:
             )
 
         if len(collections) == 0:
-            if alias_or_id in self.collections_config:
-                return alias_or_id
-            else:
-                raise NoMatchingCollection(
-                    f"Could not find collection from alias or id {alias_or_id}"
-                )
+            raise NoMatchingCollection(
+                f"Could not find collection from alias or id {alias_or_id}"
+            )
 
         return collections[0]._id or collections[0].id
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.get_collection' instead",
+        version="5.0.0",
+    )
     def get_alias_from_collection(self, collection: str) -> str:
         """Return the alias of a collection by its id. If no alias was defined for the
         given collection, its id is returned instead.
@@ -906,13 +967,17 @@ class EODataAccessGateway:
         :param collection: collection id
         :returns: Alias of the collection or its id if no alias has been defined for it.
         """
-        if collection not in self.collections_config:
+        coll_id = self.get_collection(collection)
+
+        if not coll_id:
             raise NoMatchingCollection(collection)
 
-        if alias := self.collections_config[collection].alias:
-            return alias
-        return collection
+        return coll_id.id
 
+    @_deprecated(
+        reason="Please use 'EODataAccessGateway.list_collections' instead.",
+        version="5.0.0",
+    )
     def guess_collection(
         self,
         free_text: Optional[str] = None,
@@ -928,152 +993,79 @@ class EODataAccessGateway:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         **kwargs: Any,
-    ) -> CollectionsList:
-        """
-        Find EODAG collection IDs that best match a set of search parameters.
+    ) -> list[str]:
+        """Find collections best matching a set of search parameters.
 
-        When using several filters, collections that match most of them will be returned at first.
+        .. deprecated:: v5.0.0
+            Use :meth:`list_collections` with ``q`` / ``datetime`` instead.
 
-        :param free_text: Free text search filter used to search accross all the following parameters. Handles logical
-                          operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
-                          ``*`` and ``?`` wildcards.
-        :param intersect: Join results for each parameter using INTERSECT instead of UNION.
-        :param instruments: Instruments parameter.
-        :param platform: Platform parameter.
-        :param constellation: Constellation parameter.
-        :param processing_level: Processing level parameter.
-        :param sensor_type: Sensor type parameter.
-        :param keywords: Keywords parameter.
-        :param description: description parameter.
-        :param title: Title parameter.
-        :param start_date: start date for datetime filtering. Not used by free_text
-        :param end_date: end date for datetime filtering. Not used by free_text
-        :returns: The best match for the given parameters.
+        Delegates to :meth:`list_collections` using ``q`` for free-text /
+        filter values and ``datetime`` for temporal bounds.
+
+        :param free_text: Free text search terms (supports ``AND``/``OR``,
+                          quoted phrases, ``*``/``?`` wildcards).
+        :param intersect: (ignored, kept for backwards compatibility)
+        :param instruments: Instruments value added to ``q``.
+        :param platform: Platform value added to ``q``.
+        :param constellation: Constellation value added to ``q``.
+        :param processing_level: Processing level value added to ``q``.
+        :param sensor_type: Sensor type value added to ``q``.
+        :param keywords: Keywords value added to ``q``.
+        :param description: Description value added to ``q``.
+        :param title: Title value added to ``q``.
+        :param start_date: Start date for datetime filtering (RFC 3339).
+        :param end_date: End date for datetime filtering (RFC 3339).
+        :returns: Matching collections ranked by FTS relevance.
         :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
-        if collection := kwargs.get("collection"):
-            if collection in self.collections_config:
-                return CollectionsList([self.collections_config[collection]])
-            else:
-                try:
-                    collection = self.get_collection_from_alias(collection)
-                    return CollectionsList([self.collections_config[collection]])
-                except NoMatchingCollection:
-                    return CollectionsList(
-                        [Collection.create_with_dag(self, id=collection)]
-                    )
+        # Shortcut: explicit collection id/alias
+        if coll_id := kwargs.get("collection"):
+            coll = self.get_collection(coll_id)
+            return [coll.id if coll else coll_id]
 
-        filters: dict[str, str] = {
-            k: v
-            for k, v in {
-                "instruments": instruments,
-                "constellation": constellation,
-                "platform": platform,
-                "processing:level": processing_level,
-                "eodag:sensor_type": sensor_type,
-                "keywords": keywords,
-                "description": description,
-                "title": title,
-            }.items()
-            if v is not None
-        }
+        q_sep = " AND " if intersect else " OR "
+        q_terms: list[str] = []
+        if free_text:
+            q_terms.append(free_text)
+        for value in (
+            instruments,
+            platform,
+            constellation,
+            processing_level,
+            sensor_type,
+            keywords,
+            description,
+            title,
+        ):
+            if value is not None:
+                # Quote multi-word values as FTS5 phrases
+                if " " in value and not (value.startswith('"') and value.endswith('"')):
+                    value = f'"{value}"'
+                q_terms.append(value)
 
-        only_dates = (
-            True
-            if (not free_text and not filters and (start_date or end_date))
-            else False
+        # Build datetime string from start_date / end_date
+        dt: Optional[str] = None
+        if start_date and end_date:
+            dt = f"{start_date}/{end_date}"
+        elif start_date:
+            dt = f"{start_date}/.."
+        elif end_date:
+            dt = f"../{end_date}"
+
+        if not q_terms and not dt:
+            raise NoMatchingCollection("No search terms provided to guess collection")
+
+        results = self.list_collections(
+            q=q_sep.join(q_terms) if q_terms else None,
+            datetime=dt,
         )
 
-        free_text_evaluator = (
-            compile_free_text_query(free_text) if free_text else lambda _: True
-        )
-
-        guesses_with_score: list[tuple[str, int]] = []
-
-        for col, col_f in self.collections_config.items():
-            if (
-                col == GENERIC_COLLECTION
-                or col not in self._plugins_manager.collection_to_provider_config_map
-            ):
-                continue
-            score = 0  # how many filters matched
-
-            # free text search
-            if free_text:
-                match = free_text_evaluator(col_f.model_dump())
-                if match:
-                    score += 1
-                elif intersect:
-                    continue  # must match all filters
-
-            # individual filters
-            if filters:
-                filters_matching_method = all if intersect else any
-                filters_evaluators = {
-                    filter_name: compile_free_text_query(value)
-                    for filter_name, value in filters.items()
-                    if value is not None
-                }
-
-                filter_matches = [
-                    filters_evaluators[filter_name](
-                        {
-                            filter_name: col_f.__dict__[
-                                Collection.get_collection_mtd_from_alias(filter_name)
-                            ]
-                        }
-                    )
-                    for filter_name, value in filters.items()
-                    if Collection.get_collection_mtd_from_alias(filter_name)
-                    in col_f.__dict__
-                ]
-
-                if filters_matching_method(filter_matches):
-                    # add number of True matches to score
-                    score += sum(filter_matches)
-                elif intersect:
-                    continue  # must match all filters
-
-            if score == 0 and not only_dates:
-                continue
-
-            # datetime filtering
-            if start_date or end_date:
-                min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-                max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
-
-                col_start_str = col_f.extent.temporal.interval[0][0]
-                if col_start_str and isinstance(col_start_str, str):
-                    col_start = rfc3339_str_to_datetime(col_start_str)
-                else:
-                    col_start = col_start_str or min_aware
-                col_end_str = col_f.extent.temporal.interval[0][1]
-                if col_end_str and isinstance(col_end_str, str):
-                    col_end = rfc3339_str_to_datetime(col_end_str)
-                else:
-                    col_end = col_end_str or max_aware
-
-                max_start = max(
-                    rfc3339_str_to_datetime(start_date) if start_date else min_aware,
-                    col_start,
-                )
-                min_end = min(
-                    rfc3339_str_to_datetime(end_date) if end_date else max_aware,
-                    col_end,
-                )
-                if not (max_start <= min_end):
-                    continue
-
-            guesses_with_score.append((col_f._id, score))
-
-        if guesses_with_score:
-            # sort by score descending, then col for stability
-            guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return CollectionsList(
-                [self.collections_config[col] for col, _ in guesses_with_score]
+        if not results:
+            raise NoMatchingCollection(
+                "Could not find any collection matching the given parameters"
             )
 
-        raise NoMatchingCollection()
+        return results.ids
 
     def search(
         self,
@@ -1506,13 +1498,13 @@ class EODataAccessGateway:
         :param kwargs: Search criteria to help finding the right product
         :returns: A search result with one EO product or None at all
         """
-        collection = kwargs.get("collection")
-        if collection is not None:
-            try:
-                collection = self.get_collection_from_alias(collection)
-            except NoMatchingCollection:
-                logger.debug("collection %s not found", collection)
+        collection_id = kwargs.get("collection")
+        coll = self.get_collection(collection_id) if collection_id else None
+        collection = coll._id if coll else collection_id
+        if collection_id and not coll:
+            logger.debug("collection %s not found", collection_id)
         get_search_plugins_kwargs = dict(provider=provider, collection=collection)
+
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
         )
@@ -1527,6 +1519,11 @@ class EODataAccessGateway:
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
             plugin.clear()
+
+            # Add collections_config to plugin config. This dict contains product
+            # type metadata that will also be stored in each product's properties.
+            if collection is not None:
+                self._attach_collection_config(plugin, collection)
 
             # adds maximal pagination to be able to do a search-all + crunch if more
             # than one result are returned
@@ -1568,7 +1565,7 @@ class EODataAccessGateway:
                 if not results[0].collection:
                     # guess collection from properties
                     guesses = self.guess_collection(**results[0].properties)
-                    results[0].collection = guesses[0].id
+                    results[0].collection = guesses[0]
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 results.number_matched = 1
@@ -1580,9 +1577,13 @@ class EODataAccessGateway:
                 )
         return SearchResult([], 0, results.errors)
 
-    def _fetch_external_collection(self, provider: str, collection: str):
+    def _fetch_external_collection(self, provider: str, collection: str) -> None:
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
         plugin = next(plugins)
+
+        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
+        if strict_mode:
+            return
 
         # check after plugin init if still fetchable
         if not getattr(plugin.config, "discover_collections", {}).get("fetch_url"):
@@ -1641,6 +1642,7 @@ class EODataAccessGateway:
                        * other criteria compatible with the provider
         :returns: Search plugins list and the prepared kwargs to make a query.
         """
+        collection_exists = False
         collection: Optional[str] = kwargs.get("collection")
         if collection is None:
             try:
@@ -1659,7 +1661,7 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                collection = guesses[0].id
+                collection = guesses[0]
             except NoMatchingCollection:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
@@ -1670,10 +1672,13 @@ class EODataAccessGateway:
                     return [], kwargs
 
         if collection is not None:
-            try:
-                collection = self.get_collection_from_alias(collection)
-            except NoMatchingCollection:
+            coll = self.get_collection(collection)
+            if coll:
+                collection = coll._id
+                collection_exists = True
+            else:
                 logger.info("unknown collection " + collection)
+
         kwargs["collection"] = collection
 
         if start is not None:
@@ -1714,48 +1719,22 @@ class EODataAccessGateway:
             kwargs.pop(arg, None)
         del kwargs["locations"]
 
-        # fetch collections list if collection is unknown
-        if (
-            collection
-            not in self._plugins_manager.collection_to_provider_config_map.keys()
-        ):
-            if provider and collection:
-                # fetch ref for given provider and collection
-                logger.debug(
-                    f"Fetching external collections sources to find {provider} {collection} collection"
-                )
-                self.fetch_collections_list(provider)
-                if (
-                    collection
-                    not in self._plugins_manager.collection_to_provider_config_map.keys()
-                ):
-                    # Try to get specific collection from external provider
-                    logger.debug(
-                        "Fetching %s to find %s collection", provider, collection
-                    )
-                    self._fetch_external_collection(provider, collection)
-            if not provider:
-                # no provider or still not found -> fetch all external collections
-                logger.debug(
-                    f"Fetching external collections sources to find {collection} collection"
-                )
-                self.fetch_collections_list()
-
         preferred_provider = self.get_preferred_provider()[0]
 
         search_plugins: list[Union[Search, Api]] = []
-        for plugin in self._plugins_manager.get_search_plugins(
-            collection=collection, provider=provider
-        ):
-            # exclude MeteoblueSearch plugins from search fallback for unknown collection
-            if (
-                provider != plugin.provider
-                and preferred_provider != plugin.provider
-                and collection not in self.collections_config
-                and isinstance(plugin, MeteoblueSearch)
+
+        if collection_exists:
+            for plugin in self._plugins_manager.get_search_plugins(
+                collection=collection, provider=provider
             ):
-                continue
-            search_plugins.append(plugin)
+                # exclude MeteoblueSearch plugins from search fallback for unknown collection
+                if (
+                    provider != plugin.provider
+                    and preferred_provider != plugin.provider
+                    and isinstance(plugin, MeteoblueSearch)
+                ):
+                    continue
+                search_plugins.append(plugin)
 
         if not provider:
             provider = preferred_provider
@@ -1772,11 +1751,6 @@ class EODataAccessGateway:
             )[0]
             search_plugins.remove(provider_plugin)
             search_plugins.insert(0, provider_plugin)
-        # Add collections_config to plugin config. This dict contains product
-        # type metadata that will also be stored in each product's properties.
-        for search_plugin in search_plugins:
-            if collection is not None:
-                self._attach_collection_config(search_plugin, collection)
 
         return search_plugins, kwargs
 
@@ -1863,6 +1837,10 @@ class EODataAccessGateway:
                         re.sub(r"^" + search_plugin.provider + r"[_:]", "", param)
                     ] = value
 
+            # Add collections_config to plugin config. This dict contains product
+            # type metadata that will also be stored in each product's properties.
+            self._attach_collection_config(search_plugin, search_params.get("collection"))
+
             if validate:
                 search_plugin.validate(search_params, prep.auth)
 
@@ -1907,7 +1885,7 @@ class EODataAccessGateway:
                     except NoMatchingCollection:
                         pass
                     else:
-                        eo_product.collection = guesses[0].id
+                        eo_product.collection = guesses[0]
 
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
@@ -1940,9 +1918,7 @@ class EODataAccessGateway:
         """
         search_criteria = kwargs.pop("search_criteria", {})
         for cruncher_name, cruncher_args in kwargs.items():
-            cruncher = self._plugins_manager.get_crunch_plugin(
-                cruncher_name, **cruncher_args
-            )
+            cruncher = PluginManager.get_crunch_plugin(cruncher_name, **cruncher_args)
             results = results.crunch(cruncher, **search_criteria)
         return results
 
@@ -2066,13 +2042,20 @@ class EODataAccessGateway:
         if search_result._dag is None:
             return filename
         collections = set(p.collection for p in search_result)
+        existing_collections = search_result._dag.list_collections(
+            ids=list(collections)
+        )
         for collection in collections:
-            collection_obj = search_result._dag.collections_config.get(
-                collection, Collection(id=collection)
+            collection_obj = existing_collections.get(collection) or Collection(
+                id=collection
             )
-            collection_dict = collection_obj.serialize()
+            collection_dict = collection_obj.model_dump(
+                display_extensions=True,
+                mode="json",
+                exclude_none=True,
+                exclude={"alias"},
+            )
             # add links
-            collection_dict.setdefault("links", [])
             collection_dict["links"].append(
                 {
                     "rel": "self",
@@ -2194,47 +2177,31 @@ class EODataAccessGateway:
         """
         plugin_conf = {"name": name}
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
-        return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
+        return PluginManager.get_crunch_plugin(name, **plugin_conf)
 
     def list_queryables(
         self,
         provider: Optional[str] = None,
-        fetch_providers: bool = True,
         **kwargs: Any,
     ) -> QueryablesDict:
         """Fetch the queryable properties for a given collection and/or provider.
 
         :param provider: (optional) The provider.
-        :param fetch_providers: If new collections should be fetched from the providers; default: True
         :param kwargs: additional filters for queryables (`collection` or other search arguments)
         :returns: A :class:`~eodag.api.product.queryables.QueryablesDict` containing the EODAG queryable
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         """
-        # only fetch providers if collection is not found
-        available_collections: list[str] = [
-            col.id
-            for col in self.list_collections(provider=provider, fetch_providers=False)
-        ]
+        available_collections = self.list_collections(
+            providers=[provider] if provider else None
+        ).ids
         collection: Optional[str] = kwargs.get("collection")
         coll_alias: Optional[str] = collection
 
         if collection:
-            if collection not in available_collections:
-                if fetch_providers:
-                    # fetch providers and try again
-                    available_collections = [
-                        col.id
-                        for col in self.list_collections(
-                            provider=provider, fetch_providers=True
-                        )
-                    ]
-            try:
-                kwargs["collection"] = collection = self.get_collection_from_alias(
-                    collection
-                )
-            except NoMatchingCollection:
-                # try fetching queryables for custom collection even if not known
-                pass
+            coll = self.get_collection(
+                collection, providers=[provider] if provider else None
+            )
+            kwargs["collection"] = collection = coll._id if coll else collection
 
         if not provider and not collection:
             return QueryablesDict(
@@ -2341,22 +2308,20 @@ class EODataAccessGateway:
         Attach collections_config to plugin config. This dict contains product
         type metadata that will also be stored in each product's properties.
         """
-        try:
-            plugin.config.collection_config = dict(
-                [
-                    c.model_dump(mode="json", exclude={"id"})
-                    for c in self.list_collections(
-                        plugin.provider, fetch_providers=False
-                    )
-                    if c._id == collection
-                ][0],
-                **{"collection": collection},
-            )
-            # If the product isn't in the catalog, it's a generic collection.
-        except IndexError:
+        coll = self.get_collection(collection, providers=[plugin.provider])
+
+        plugin.provider
+
+        if coll:
+            plugin.config.collection_config = coll.model_dump(
+                mode="json", exclude={"id"}
+            ) | {"collection": coll._id}
+
+        # If the product isn't in the catalog, it's a generic collection.
+        else:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                **self.collections_config[GENERIC_COLLECTION].model_dump(
+                Collection(id=GENERIC_COLLECTION).model_dump(
                     mode="json", exclude={"id"}
                 ),
                 collection=collection,

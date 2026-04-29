@@ -51,13 +51,15 @@ from eodag.config import (
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
 )
-from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
+from eodag.api.provider import ProviderConfig, ProvidersDict, Provider, build_provider_configs
 from eodag.config import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.authentication.header import HeaderAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
+from eodag.plugins.authentication.header import HTTPHeaderAuth
+from eodag.plugins.authentication.qsauth import HttpQueryStringAuth
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
