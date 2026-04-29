@@ -33,7 +33,7 @@ from dateutil import parser as dateutil_parser
 from requests.exceptions import RequestException
 from shapely.geometry import Point, Polygon
 
-from eodag.utils import get_geometry_from_ecmwf_feature
+from eodag.utils import get_geometry_from_ecmwf_area, get_geometry_from_ecmwf_feature
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -446,3 +446,26 @@ class TestUtils(unittest.TestCase):
                 {"type": "circle", "center": [43.5, 1.5], "radius": 1.0}
             )
         )
+
+    def test_get_geometry_from_ecmwf_area_accepts_list_and_string(self):
+        """``get_geometry_from_ecmwf_area`` must accept both list and slash-separated string formats."""
+        # list format: [max_lat, min_lon, min_lat, max_lon]
+        geom_from_list = get_geometry_from_ecmwf_area([44.0, 1.0, 43.0, 2.0])
+        self.assertIsInstance(geom_from_list, Polygon)
+        self.assertEqual(geom_from_list.bounds, (1.0, 43.0, 2.0, 44.0))
+
+        # equivalent string format: "max_lat/min_lon/min_lat/max_lon"
+        geom_from_str = get_geometry_from_ecmwf_area("44.0/1.0/43.0/2.0")
+        self.assertIsInstance(geom_from_str, Polygon)
+        self.assertEqual(geom_from_str.bounds, (1.0, 43.0, 2.0, 44.0))
+
+        # both formats should produce equivalent geometries
+        self.assertTrue(geom_from_list.equals(geom_from_str))
+
+        # invalid string: wrong number of components
+        with self.assertRaises(ValueError):
+            get_geometry_from_ecmwf_area("44.0/1.0/43.0")
+
+        # invalid string: non-numeric content
+        with self.assertRaises(ValueError):
+            get_geometry_from_ecmwf_area("a/b/c/d")

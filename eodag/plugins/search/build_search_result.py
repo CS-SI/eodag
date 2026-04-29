@@ -478,18 +478,17 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+
+        # check ecmwf geom format if given
         # ECMWF Polytope uses non-geojson structure for features
         if "feature" in params:
-            params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
-            params.pop("feature")
+            get_geometry_from_ecmwf_feature(params["feature"])
         # bounding box in area format
         if "area" in params:
-            params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
-            params.pop("area")
+            get_geometry_from_ecmwf_area(params["area"])
         # single location
         if "location" in params:
-            params["geometry"] = get_geometry_from_ecmwf_location(params["location"])
-            params.pop("location")
+            get_geometry_from_ecmwf_location(params["location"])
 
         return params
 
@@ -1163,6 +1162,26 @@ class ECMWFSearch(PostJsonSearch):
             # collection alias (required by opentelemetry-instrumentation-eodag)
             if alias := getattr(self.config, "collection_config", {}).get("alias"):
                 kwargs["collection"] = alias
+
+        # Convert ecmwf geometries for properties but keep original in qs
+        # ECMWF Polytope uses non-geojson structure for features
+        if "feature" in sorted_unpaginated_qp:
+            properties["geometry"] = get_geometry_from_ecmwf_feature(
+                sorted_unpaginated_qp["feature"]
+            )
+            properties.pop("feature", None)
+        # bounding box in area format
+        if "area" in sorted_unpaginated_qp:
+            properties["geometry"] = get_geometry_from_ecmwf_area(
+                sorted_unpaginated_qp["area"]
+            )
+            properties.pop("area", None)
+        # single location
+        if "location" in sorted_unpaginated_qp:
+            properties["geometry"] = get_geometry_from_ecmwf_location(
+                sorted_unpaginated_qp["location"]
+            )
+            properties.pop("location", None)
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
