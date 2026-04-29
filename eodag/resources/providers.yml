@@ -2937,20 +2937,20 @@
     processing:level:
       - '{{"processingLevel": "{processing:level}"}}'
       - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, LEVEL\\4)`'
-    sar:instrument_mode:
-      - '{{"sensorMode": "{sar:instrument_mode}"}}'
-      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, \\2)`'
-    swath:
-      - '{{"swath": "{swath}"}}'
+    platform:
+      - '{{"platformSerialIdentifier": "{platform}"}}'
+      - '$.null'
+    instruments:
+      - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+      - '$.null'
+    online:
+      - '{{"online": "{online}"}}'
       - '$.null'
     polarisation:
-      - '{{"polarisation": "{polarisation}"}}'
+      - '{{"polarisationChannels": "{polarisation}"}}'
       - '$.null'
     sat:relative_orbit:
       - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
-      - '$.null'
-    missionTakeId:
-      - '{{"missionTakeId": "{missionTakeId}"}}'
       - '$.null'
   anchor_orbit_cycle: &orbit_cycle
     sat:relative_orbit:
@@ -2969,7 +2969,7 @@
           "startdate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}",
           "enddate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}"
         }}
-      - '$.id'
+      - '{$.id#remove_extension}'
   search: !plugin
     type: WekeoSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
@@ -2982,6 +2982,14 @@
       next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       max_limit: 200
       next_page_token_key: skip
+    sort:
+      sort_by_tpl: '{{"sortOrder": "{sort_order}"}}'
+      sort_param_mapping:
+        # start_datetime for consistency between providers, but it's unused for the actual sorting
+        start_datetime: unused
+      sort_order_mapping:
+        ascending: ASC
+        descending: DESC
     discover_collections:
       fetch_url: null
     discover_queryables:
@@ -2998,7 +3006,7 @@
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       id:
-        - '{{"productIdentifier": "{id}"}}'
+        - '{{"datasetIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
       start_datetime:
         - '{{"startdate": "{start_datetime}"}}'
@@ -3061,6 +3069,13 @@
       product:type: GRD
       metadata_mapping:
         <<: *s1_sar_params
+        id:
+          - |
+            {{
+              "startdate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])T([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T00%3A00%3A00Z')}",
+              "enddate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])T([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T23%3A59%3A59Z')}"
+            }}
+          - '{$.id#remove_extension}'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SAFE", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_RAW:
       _collection: EO:ESA:DAT:SENTINEL-1
@@ -3082,6 +3097,15 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, S2\\2)`'
+        platform:
+          - '{{"platformSerialIdentifier": "{platform}"}}'
+          - '$.null'
+        instruments:
+          - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+          - '$.null'
+        sat:relative_orbit:
+          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
+          - '$.null'
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
@@ -3096,9 +3120,28 @@
       product:type: SR_2_LAN_HY
       processing:level: 2
       metadata_mapping:
+        id:
+            - |
+              {{
+                "startdate": "{id#replace_str(r'^.*[A-Z]_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])T([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A00%3A00Z')}",
+                "enddate": "{id#replace_str(r'^.*[A-Z]_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])T([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A59%3A59Z')}"
+              }}
+            - '{$.id#remove_extension}'
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
+        platform:
+          - '{{"platformSerialIdentifier": "{platform}"}}'
+          - '$.null'
+        instruments:
+          - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+          - '$.null'
+        sat:relative_orbit:
+          - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
+          - '$.null'
+        eo:cloud_cover:
+          - '{{"cloudCover": "{eo:cloud_cover}"}}'
+          - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
@@ -3189,13 +3232,19 @@
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.SEN3", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
-      processing:level: L1B
+      processing:level: L1b
       metadata_mapping:
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_.*/, \\3)`'
+        instruments:
+          - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+          - '$.null'
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
+          - '$.null'
+        sat:absolute_orbit:
+          - '{{"orbitNumber": "{sat:absolute_orbit}"}}'
           - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}.nc", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     S5P_L2_IR_ALL:
@@ -3217,6 +3266,9 @@
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
       metadata_mapping:
+        gsd:
+          - '{{"spatialResolution": "{gsd}"}}'
+          - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
@@ -3233,17 +3285,26 @@
     CLMS_GLO_NDVI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
-      _product_identifier: ndvi_global_300m_10daily_v1
+      _dataset_identifier: ndvi_global_300m_10daily_v1
       metadata_mapping:
-        _product_identifier:
-        - '{{"productIdentifier": "{_product_identifier}"}}'
-        - '$.null'
+        _dataset_identifier:
+          - '{{"datasetIdentifier": "{_dataset_identifier}"}}'
+          - '$.null'
         id: '$.id'
+        platform:
+          - '{{"platformShortName": "{platform}"}}'
+          - '$.null'
+        instruments:
+          - '{{"instrumentShortName": "{instruments#csv_list}"}}'
+          - '$.null'
+        format:
+          - '{{"fileFormat": "{format}"}}'
+          - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
-      _product_identifier: ndvi-lts_global_1km_10daily_v2
+      _dataset_identifier: ndvi-lts_global_1km_10daily_v2
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_CORINE:
       _collection: EO:EEA:DAT:CORINE
@@ -3264,27 +3325,27 @@
     CLMS_GLO_FCOVER_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      _product_identifier: fcover_global_300m_10daily_v1
+      _dataset_identifier: fcover_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_DMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      _product_identifier: dry-gross_dry_matter_productivity/dmp_global_300m_10daily_v1
+      _dataset_identifier: dmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_GDMP_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: dry-gross_dry_matter_productivity
-      _product_identifier: gdmp_global_300m_10daily_v1
+      _dataset_identifier: gdmp_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_FAPAR_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      _product_identifier: fapar_global_300m_10daily_v1
+      _dataset_identifier: fapar_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_GLO_LAI_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
-      _product_identifier: lai_global_300m_10daily_v1
+      _dataset_identifier: lai_global_300m_10daily_v1
       metadata_mapping_from_product: CLMS_GLO_NDVI_333M
     CLMS_HRVPP_ST:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST

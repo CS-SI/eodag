@@ -2299,7 +2299,12 @@ class TestCore(TestCoreBase):
             "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},
             "wekeo_cmems": None,
             "wekeo_ecmwf": None,
-            "wekeo_main": None,
+            "wekeo_main": {
+                "sortables": [
+                    "start_datetime",
+                ],
+                "max_sort_params": None,
+            },
         }
         sortables = self.dag.available_sortables()
         self.assertListEqual(
