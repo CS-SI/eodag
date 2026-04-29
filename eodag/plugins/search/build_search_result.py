@@ -655,7 +655,7 @@ class ECMWFSearch(PostJsonSearch):
             available_values = self.available_values_from_constraints(
                 constraints,
                 non_empty_formated,
-                form_keywords=[f["name"] for f in form],
+                form,
             )
 
             # Pre-compute the required keywords (present in all constraint dicts)
@@ -738,7 +738,7 @@ class ECMWFSearch(PostJsonSearch):
         self,
         constraints: list[dict[str, Any]],
         input_keywords: dict[str, Any],
-        form_keywords: list[str],
+        form: list[dict[str, Any]],
     ) -> dict[str, list[str]]:
         """
         Filter constraints using input_keywords. Return list of available queryables.
@@ -746,9 +746,13 @@ class ECMWFSearch(PostJsonSearch):
 
         :param constraints: list of constraints received from the provider
         :param input_keywords: dict of input parameters given by the user
-        :param form_keywords: list of keyword names from the provider form endpoint
+        :param form: form received from the provider
         :return: dict with available values for each parameter
         """
+        # get form keywords and form required keywords
+        form_keywords = [f["name"] for f in form]
+        required_by_form = [f["name"] for f in form if f.get("required", False)]
+
         # get ordered constraint keywords
         constraints_keywords = list(
             OrderedDict.fromkeys(k for c in constraints for k in c.keys())
@@ -807,15 +811,9 @@ class ECMWFSearch(PostJsonSearch):
 
             # Filter constraints and check for missing values
             filtered_constraints = []
-            # True if some constraint is defined for this keyword.
-            # In other words: if no constraint defines a list of values
-            # then any value is allowed for this keyword
-            keyword_constrained = False
             for entry in constraints:
                 # Filter based on the presence of any value in filter_v
                 entry_values = entry.get(keyword, [])
-                if entry_values:
-                    keyword_constrained = True
 
                 # date constraint may be intervals. We identify intervals with a "/" in the value.
                 # date constraint can be a mixed list of single values (e.g "2023-06-27")
@@ -843,9 +841,23 @@ class ECMWFSearch(PostJsonSearch):
                 if present_values:
                     filtered_constraints.append(entry)
 
+            any_value_allowed = False
+            if not filtered_constraints or missing_values:
+                allowed_values = list(
+                    {value for c in constraints for value in c.get(keyword, [])}
+                )
+                # if keyword in required_by_form then any_value_allowed = False
+                #   use constraints file to determine if the parameter match the allowed values
+                # if allowed_values then any_value_allowed = False
+                #   use constraints file: the parameter must match the allowed values
+                if keyword not in required_by_form and not allowed_values:
+                    # keyword not required by form and the list of allowed values is empty:
+                    # accept any value for this keyword
+                    any_value_allowed = True
+
             # raise an error as no constraint entry matched the input keywords
             # raise an error if one value from input is not allowed
-            if keyword_constrained and (not filtered_constraints or missing_values):
+            if not any_value_allowed and (not filtered_constraints or missing_values):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
@@ -861,19 +873,26 @@ class ECMWFSearch(PostJsonSearch):
                     ]
                     all_keywords_str = f" with {', '.join(keywords)}"
 
+                if allowed_values:
+                    allowed_values_str = (
+                        f" Allowed values are {', '.join(allowed_values)}."
+                    )
+                else:
+                    allowed_values_str = "No value allowed."
                 raise ValidationError(
                     f"{keyword}={values} is not available"
                     f"{all_keywords_str}."
-                    f" Allowed values are {', '.join(allowed_values)}.",
+                    f" {allowed_values_str}",
                     set(
                         [keyword] + [k for k in parsed_keywords if k in input_keywords]
                     ),
                 )
 
             parsed_keywords.append(keyword)
-            # if the keyword is not constrained then any value is allowed
-            if keyword_constrained:
+            if not any_value_allowed:
+                # the parameter must match the allowed values in the constraints file
                 constraints = filtered_constraints
+            # else any value is allowed
 
         available_values: dict[str, Any] = {k: set() for k in ordered_keywords}
 
