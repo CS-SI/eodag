@@ -739,6 +739,9 @@
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
+      type: "$.ContentType"
+      file:size: "$.ContentLength"
+      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
@@ -1892,6 +1895,9 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       eodag:download_link: '$.properties.services.download.url'
+      type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
+      file:size: '$.properties.services.download.size'
+      file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")}'
       # order:status set to succeeded for consistency between providers
       order:status: '{$.null#replace_str("Not Available","succeeded")}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
@@ -2383,6 +2389,9 @@
       grid:code:
         - null
         - '{$.Attributes.tileId#replace_str(r"^","MGRS-")}'
+      file:size: '$.ContentLength'
+      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
+      type: '$.ContentType'
       # The geographic extent of the product
       geometry:
         - null
@@ -2998,6 +3007,8 @@
         - '{{"enddate": "{end_datetime}"}}'
         - '$.properties.enddate'
       eodag:download_link: '$.properties.location'
+      file:size: '$.properties.size'
+      file:local_path: '$.properties.localpath'
       eodag:quicklook: '$.properties.thumbnail'
       eodag:thumbnail: '$.properties.thumbnail'
       title: '$.id'
@@ -3446,6 +3457,7 @@
         - dataset_id
         - $.dataset
       eodag:download_link: $.properties.location
+      file:size: '$.properties.size'
       dataset:
         - dataset_id
         - $.dataset
@@ -5295,7 +5307,7 @@
       - orbit
       - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
   search: !plugin
-    type: QueryStringSearch
+    type: EumetsatDsSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
     need_auth: false
     ssl_verify: true

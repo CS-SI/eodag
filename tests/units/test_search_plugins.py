@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
+import datetime
 import json
 import os
 import re
@@ -42,6 +43,7 @@ from typing_extensions import get_args
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
     _convert_bbox_to_lonlat_mollweide,
@@ -2828,6 +2830,63 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertEqual(results, [product])
         mock_set_availability.assert_called_once_with(self.search_plugin, [product])
 
+    @responses.activate
+    def test_plugins_search_geodes_normalize(self):
+        """normalize_results must shorten asset keys and parse the asset
+        ``description`` field into structured ``geodes:*`` / ``file:*`` properties."""
+
+        # Mock availability (content irrelevant for this test)
+        responses.add(
+            responses.POST,
+            "https://geodes-portal.cnes.fr/fastavailability",
+            json={"products": []},
+            status=200,
+        )
+
+        with open(self.provider_resp_dir / "geodes_search.json", encoding="utf-8") as f:
+            raw_features = json.load(f)["features"]
+        raw_assets = raw_features[0]["assets"]
+        quicklook_asset = raw_assets[
+            "2025/04/02/S2A/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035_quicklook.jpg"
+        ]
+        zip_asset = raw_assets[
+            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
+        ]
+
+        search_plugin = self.get_search_plugin(provider="geodes")
+        normalized = search_plugin.normalize_results(RawSearchResult(raw_features))
+
+        self.assertEqual(len(normalized), 1)
+        self.assertDictEqual(
+            dict(normalized[0].assets),
+            {
+                "quicklook.jpg": {
+                    "href": quicklook_asset["href"],
+                    "title": "quicklook.jpg",
+                    "description": quicklook_asset["description"],
+                    "type": "image/jpeg",
+                    "roles": ["overview"],
+                    "file:size": 18684,
+                    "geodes:reference": False,
+                    "geodes:online": True,
+                    "geodes:datatype": "QUICKLOOK_SD",
+                    "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
+                },
+                "zip": {
+                    "href": zip_asset["href"],
+                    "title": "zip",
+                    "description": zip_asset["description"],
+                    "type": "application/zip",
+                    "roles": ["auxiliary"],
+                    "file:size": 764210185,
+                    "geodes:reference": False,
+                    "geodes:online": False,
+                    "geodes:datatype": "RAWDATA",
+                    "file:checksum": "86f828c4c7e921615d1cd0476604f780",
+                },
+            },
+        )
+
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
@@ -4024,12 +4083,18 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             stubber.add_response(
                 "list_objects",
                 self.list_objects_response1,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-one",
+                },
             )
             stubber.add_response(
                 "list_objects",
                 self.list_objects_response2,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-two",
+                },
             )
             stubber.activate()
             result = search_plugin.query(
@@ -4363,6 +4428,68 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 collection="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_normalize_results(self, mock_requests_get):
+        """Normalized query results must include asset information fetched from S3"""
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+
+        asset_filename = "20200115_dm-metno-MODEL-topaz5_ecosmo-ARC-b20200115-fv02.0.nc"
+
+        def mock_s3_list_objects(self, operation_name, *args, **kwargs):
+            if operation_name != "ListObjects":
+                raise NotImplementedError()
+            params = {**args[0], **kwargs}
+            prefix = params.get("Prefix", "")
+            if prefix == "native/PRODUCT_A/dataset-number-one" and not params.get(
+                "Marker"
+            ):
+                contents = [
+                    {
+                        "Key": f"{prefix}/{asset_filename}",
+                        "LastModified": datetime.datetime(
+                            2020, 1, 15, tzinfo=datetime.timezone.utc
+                        ),
+                        "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
+                        "Size": 666,
+                        "StorageClass": "STANDARD",
+                        "Owner": {
+                            "DisplayName": "Data Access",
+                            "ID": "data-access",
+                        },
+                    }
+                ]
+            else:
+                contents = []
+            return {"IsTruncated": False, "Contents": contents}
+
+        with mock.patch(
+            "botocore.client.BaseClient._make_api_call", new=mock_s3_list_objects
+        ):
+            result = search_plugin.query(
+                collection="PRODUCT_A",
+                start_datetime="2020-01-01T01:00:00Z",
+                end_datetime="2020-02-01T01:00:00Z",
+            )
+
+        self.assertIn("native", result[0].assets)
+        asset = result[0].assets["native"]
+        self.assertEqual(asset.get("title"), "native")
+        self.assertEqual(
+            asset.get("href"),
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
+            + asset_filename,
+        )
+        self.assertEqual(asset.get("type"), "application/x-netcdf")  # hard configured
+        self.assertEqual(asset.get("file:size"), 666)
+        self.assertEqual(asset.get("file:checksum"), "d41d8cd98f00b204e9800998ecf8427e")
+        self.assertEqual(asset.get("cop_marine:owner_id"), "data-access")
+        self.assertEqual(asset.get("cop_marine:owner_name"), "Data Access")
 
     def test_plugins_search_postjsonsearch_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
@@ -5172,3 +5299,48 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         ]
         for qu in expected_queryables:
             self.assertIn(qu, queryables)
+
+
+class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
+    def test_plugins_search_eumetsatds_normalize(self):
+        """Test the normalization of search results for eumetsat_ds provider"""
+        with open(
+            self.provider_resp_dir / "eumetsat_ds_search.json", encoding="utf-8"
+        ) as f:
+            raw_features = json.load(f)["features"]
+
+        search_plugin = self.get_search_plugin(provider="eumetsat_ds")
+        normalized = search_plugin.normalize_results(RawSearchResult(raw_features))
+
+        self.assertTrue(len(normalized) > 0)
+        base_href = (
+            "https://api.eumetsat.int/data/download/1.0.0/collections/"
+            "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL/"
+            "entry?name="
+        )
+        self.assertDictEqual(
+            dict(normalized[0].assets),
+            {
+                "EOPMetadata.xml": {
+                    "href": base_href + "EOPMetadata.xml",
+                    "title": "EOPMetadata.xml",
+                    "roles": ["metadata"],
+                    "eumesat_ds:type": "Link",
+                    "type": "application/xml",
+                },
+                "manifest.xml": {
+                    "href": base_href + "manifest.xml",
+                    "title": "manifest.xml",
+                    "roles": ["metadata"],
+                    "eumesat_ds:type": "Link",
+                    "type": "application/xml",
+                },
+                "nc": {
+                    "href": base_href + "PREmm20201201000000120IMPGS01GL.nc",
+                    "title": "nc",
+                    "roles": ["data"],
+                    "eumesat_ds:type": "Link",
+                    "type": "application/x-netcdf",
+                },
+            },
+        )
