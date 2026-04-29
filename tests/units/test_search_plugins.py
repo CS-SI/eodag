@@ -3307,7 +3307,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(self.collection)
-        assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
+        # geom converted using to_nwse_bounds
+        assert eoproduct.geometry.bounds == (2.0, 1.0, 4.0, 3.0)
         # check if collection_params is a subset of eoproduct.properties
         assert self.collection_params.items() <= eoproduct.properties.items()
 
@@ -3318,6 +3319,59 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         eoproduct = results.data[0]
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
+
+    def test_plugins_search_ecmwfsearch_with_area_keeps_qs(self):
+        """ECMWFSearch.query with ``area`` must expose geometry in properties and keep ``area`` in qs."""
+        # string format: "max_lat/min_lon/min_lat/max_lon"
+        area_str = "44.0/1.0/43.0/2.0"
+        results = self.search_plugin.query(
+            **self.query_dates, collection=self.collection, area=area_str
+        )
+        eoproduct = results.data[0]
+        # geometry on the EOProduct is the converted polygon
+        self.assertEqual(eoproduct.geometry.bounds, (1.0, 43.0, 2.0, 44.0))
+        # original ``area`` is preserved in qs (used for download/order request)
+        self.assertIn("qs", eoproduct.properties)
+        self.assertEqual(eoproduct.properties["qs"]["area"], area_str)
+        # ``area`` must not leak as a top-level property on the EOProduct
+        for key in ("area", "ecmwf:area", "ecmwf_area"):
+            self.assertNotIn(key, eoproduct.properties)
+
+    def test_plugins_search_ecmwfsearch_with_feature_keeps_qs(self):
+        """ECMWFSearch.query with ``feature`` must expose geometry in properties and keep ``feature`` in qs."""
+        feature = {
+            "shape": [
+                [43.0, 1.0],
+                [44.0, 1.0],
+                [44.0, 2.0],
+                [43.0, 2.0],
+                [43.0, 1.0],
+            ],
+            "type": "polygon",
+        }
+        results = self.search_plugin.query(
+            **self.query_dates, collection=self.collection, feature=feature
+        )
+        eoproduct = results.data[0]
+        self.assertEqual(eoproduct.geometry.bounds, (1.0, 43.0, 2.0, 44.0))
+        self.assertIn("qs", eoproduct.properties)
+        self.assertEqual(eoproduct.properties["qs"]["feature"], feature)
+        for key in ("feature", "ecmwf:feature", "ecmwf_feature"):
+            self.assertNotIn(key, eoproduct.properties)
+
+    def test_plugins_search_ecmwfsearch_with_location_keeps_qs(self):
+        """ECMWFSearch.query with ``location`` must expose geometry in properties and keep ``location`` in qs."""
+        location = {"latitude": 43.5, "longitude": 1.5}
+        results = self.search_plugin.query(
+            **self.query_dates, collection=self.collection, location=location
+        )
+        eoproduct = results.data[0]
+        # single location -> point-like polygon (bbox of a point)
+        self.assertEqual(eoproduct.geometry.bounds, (1.5, 43.5, 1.5, 43.5))
+        self.assertIn("qs", eoproduct.properties)
+        self.assertEqual(eoproduct.properties["qs"]["location"], location)
+        for key in ("location", "ecmwf:location", "ecmwf_location"):
+            self.assertNotIn(key, eoproduct.properties)
 
     def test_plugins_search_ecmwfsearch_with_custom_collection(self):
         """ECMWFSearch.query must build a EOProduct from input parameters with custom collection"""
@@ -3738,7 +3792,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 "collection": "CAMS_EU_AIR_QUALITY_RE",
                 "area": area,
             }
-            with self.assertRaises(ValidationError):
+            with self.assertRaises(ValidationError, msg=area):
                 self.search_plugin.discover_queryables(**params)
 
         # feature
@@ -3758,7 +3812,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 "collection": "CAMS_EU_AIR_QUALITY_RE",
                 "feature": feature,
             }
-            with self.assertRaises(ValidationError):
+            with self.assertRaises(ValidationError, msg=feature):
                 self.search_plugin.discover_queryables(**params)
 
         # location
@@ -3773,7 +3827,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 "collection": "CAMS_EU_AIR_QUALITY_RE",
                 "location": location,
             }
-            with self.assertRaises(ValidationError):
+            with self.assertRaises(ValidationError, msg=location):
                 self.search_plugin.discover_queryables(**params)
 
     @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
@@ -4754,7 +4808,7 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
         )
         eoproduct = results.data[0]
 
-        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+        self.assertDictEqual(_expected_feature, eoproduct.properties["qs"]["feature"])
 
         # Unsupported multi-polygon
         with self.assertRaises(ValidationError):
