@@ -481,7 +481,6 @@ class ECMWFSearch(PostJsonSearch):
         # ECMWF Polytope uses non-geojson structure for features
         if "feature" in params:
             params["geometry"] = get_geometry_from_ecmwf_feature(params["feature"])
-            params.pop("feature")
         # bounding box in area format
         if "area" in params:
             params["geometry"] = get_geometry_from_ecmwf_area(params["area"])
