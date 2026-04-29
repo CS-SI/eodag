@@ -1292,15 +1292,19 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeomet
     )
 
 
-def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
+def get_geometry_from_ecmwf_area(
+    area: Union[str, list[float]]
+) -> Optional[BaseGeometry]:
     """
     Creates a ``shapely.geometry`` from bounding box in area format.
 
-    area format: [max_lat,min_lon,min_lat,max_lon]
+    area format: [max_lat,min_lon,min_lat,max_lon] or "max_lat/min_lon/min_lat/max_lon"
 
     :param area: bounding box in area format.
     :returns: A Shapely polygon.
     """
+    if isinstance(area, str):
+        area = [float(x) for x in area.split("/")]
     if len(area) != 4:
         raise ValueError("The area must be a list of 4 values")
     max_lat, min_lon, min_lat, max_lon = area
