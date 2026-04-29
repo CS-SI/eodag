@@ -31,7 +31,9 @@ from unittest import mock
 
 from dateutil import parser as dateutil_parser
 from requests.exceptions import RequestException
+from shapely.geometry import Point, Polygon
 
+from eodag.utils import get_geometry_from_ecmwf_feature
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -386,3 +388,61 @@ class TestUtils(unittest.TestCase):
             side_effect=RequestException,
         ) as mock_get:
             self.assertRaises(RequestError, fetch_json, file_url)
+
+    def test_get_geometry_from_ecmwf_feature_extended_types(self):
+        """ECMWF feature types are converted to the expected Shapely geometries."""
+        geom = get_geometry_from_ecmwf_feature(
+            {
+                "type": "boundingbox",
+                "points": [[44.0, 1.0, 500], [43.0, 2.0, 1000]],
+                "axes": ["latitude", "longitude", "levelist"],
+            }
+        )
+        self.assertIsInstance(geom, Polygon)
+        self.assertEqual(geom.bounds, (1.0, 43.0, 2.0, 44.0))
+
+        geom = get_geometry_from_ecmwf_feature(
+            {"type": "position", "points": [[43.5, 1.5]]}
+        )
+        self.assertIsInstance(geom, Point)
+        self.assertEqual((geom.x, geom.y), (1.5, 43.5))
+
+        geom = get_geometry_from_ecmwf_feature(
+            {
+                "type": "timeseries",
+                "points": [[43.5, 1.5]],
+                "axes": ["latitude", "longitude"],
+                "time_axis": "step",
+            }
+        )
+        self.assertIsInstance(geom, Point)
+
+        with self.assertRaises(TypeError):
+            get_geometry_from_ecmwf_feature(
+                {
+                    "type": "timeseries",
+                    "points": [[43.5, 1.5]],
+                    "axes": ["latitude", "longitude"],
+                }
+            )
+
+        geom = get_geometry_from_ecmwf_feature(
+            {"type": "verticalprofile", "points": [[43.5, 1.5]], "axes": "levelist"}
+        )
+        self.assertIsInstance(geom, Point)
+
+        geom = get_geometry_from_ecmwf_feature(
+            {
+                "type": "trajectory",
+                "points": [[43.0, 1.0], [43.5, 1.5], [44.0, 2.0]],
+                "axes": ["latitude", "longitude"],
+                "inflation": 1.0,
+            }
+        )
+        self.assertEqual(list(geom.coords), [(1.0, 43.0), (1.5, 43.5), (2.0, 44.0)])
+
+        self.assertIsNone(
+            get_geometry_from_ecmwf_feature(
+                {"type": "circle", "center": [43.5, 1.5], "radius": 1.0}
+            )
+        )

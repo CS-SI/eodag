@@ -73,7 +73,12 @@ from eodag.utils.dates import (
     time_values_to_hhmm,
     validate_datetime_param,
 )
-from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
+from eodag.utils.exceptions import (
+    DownloadError,
+    MisconfiguredError,
+    NotAvailableError,
+    ValidationError,
+)
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
@@ -572,6 +577,20 @@ class ECMWFSearch(PostJsonSearch):
                     return dc["discover_queryables"]
         return {}
 
+    def _is_discoverable_metadata_key(self, key: str) -> bool:
+        """Check if a key can bypass strict queryables validation via discover_metadata."""
+
+        discover_metadata = getattr(self.config, "discover_metadata", None) or {}
+        if not discover_metadata.get("auto_discovery"):
+            return False
+
+        pattern = discover_metadata.get("metadata_pattern") or ""
+        try:
+            return bool(pattern and re.match(pattern, key))
+        except re.error:
+            msg = f"Invalid discover_metadata.metadata_pattern for provider {self.provider}: {pattern}"
+            raise MisconfiguredError(msg)
+
     def discover_queryables(
         self,
         **kwargs: Any,
@@ -631,7 +650,7 @@ class ECMWFSearch(PostJsonSearch):
                 START,
                 END,
                 "geometry",
-            }:
+            } and not self._is_discoverable_metadata_key(key):
                 raise ValidationError(
                     f"'{key}' is not a queryable parameter for {self.provider}", {key}
                 )
@@ -689,10 +708,9 @@ class ECMWFSearch(PostJsonSearch):
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
-                and keyword.removeprefix(ECMWF_PREFIX).removeprefix(
-                    f"{ECMWF_PREFIX[:-1]}_"
-                )
+                and keyword
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
+                and not self._is_discoverable_metadata_key(keyword)
             ):
                 raise ValidationError("'%s' is not a queryable parameter" % keyword)
 

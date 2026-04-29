@@ -3611,6 +3611,44 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_allow_discovered_metadata(
+        self, mock__fetch_data
+    ):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        provider_search_plugin_config = copy_deepcopy(self.search_plugin.config)
+        self.search_plugin.config.discover_metadata = {
+            "auto_discovery": True,
+            "search_param": "{metadata}",
+            "metadata_pattern": "^(feature|interpolation|grid)$",
+        }
+
+        default_values = deepcopy(
+            getattr(self.search_plugin.config, "products", {}).get(
+                "CAMS_EU_AIR_QUALITY_RE", {}
+            )
+        )
+        default_values.pop("metadata_mapping", None)
+        params = deepcopy(default_values)
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["interpolation"] = "nearest"
+
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIsNotNone(queryables)
+
+        # restore the original config
+        self.search_plugin.config = provider_search_plugin_config
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
         return_value={},
     )
     @mock.patch(
