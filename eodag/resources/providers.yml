@@ -5992,12 +5992,8 @@
       sort_order_mapping:
         ascending: asc
         descending: dsc
-    results_entry: features
     metadata_mapping:
       uid: '$.id'
-      _collection:
-      - '{{"collections":["{_collection}"]}}'
-      - '$.collection'
       # OpenSearch Parameters for Collection Search (Table 3)
       product:type:
         - '{{"query":{{"product:type":{{"eq":"{product:type}"}}}}}}'
