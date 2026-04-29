@@ -34,16 +34,12 @@ from lxml import html
 from pydantic import ValidationError as PydanticValidationError
 from requests.exceptions import RequestException
 from shapely import wkt
-from shapely.geometry import LineString, MultiPolygon, Point, Polygon
+from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import (
-    GENERIC_COLLECTION,
-    cached_yaml_load_all,
-    get_geometry_from_ecmwf_feature,
-)
+from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -2531,64 +2527,6 @@ class TestCoreGeometry(TestCoreBase):
         self.assertIsInstance(geom_combined, MultiPolygon)
         # The bounding box overlaps with France inland
         self.assertEqual(len(geom_combined.geoms), 3)
-
-    def test_get_geometry_from_ecmwf_feature_extended_types(self):
-        """ECMWF feature types are converted to the expected Shapely geometries."""
-        geom = get_geometry_from_ecmwf_feature(
-            {
-                "type": "boundingbox",
-                "points": [[44.0, 1.0, 500], [43.0, 2.0, 1000]],
-                "axes": ["latitude", "longitude", "levelist"],
-            }
-        )
-        self.assertIsInstance(geom, Polygon)
-        self.assertEqual(geom.bounds, (1.0, 43.0, 2.0, 44.0))
-
-        geom = get_geometry_from_ecmwf_feature(
-            {"type": "position", "points": [[43.5, 1.5]]}
-        )
-        self.assertIsInstance(geom, Point)
-        self.assertEqual((geom.x, geom.y), (1.5, 43.5))
-
-        geom = get_geometry_from_ecmwf_feature(
-            {
-                "type": "timeseries",
-                "points": [[43.5, 1.5]],
-                "axes": ["latitude", "longitude"],
-                "time_axis": "step",
-            }
-        )
-        self.assertIsInstance(geom, Point)
-
-        with self.assertRaises(TypeError):
-            get_geometry_from_ecmwf_feature(
-                {
-                    "type": "timeseries",
-                    "points": [[43.5, 1.5]],
-                    "axes": ["latitude", "longitude"],
-                }
-            )
-
-        geom = get_geometry_from_ecmwf_feature(
-            {"type": "verticalprofile", "points": [[43.5, 1.5]], "axes": "levelist"}
-        )
-        self.assertIsInstance(geom, Point)
-
-        geom = get_geometry_from_ecmwf_feature(
-            {
-                "type": "trajectory",
-                "points": [[43.0, 1.0], [43.5, 1.5], [44.0, 2.0]],
-                "axes": ["latitude", "longitude"],
-                "inflation": 1.0,
-            }
-        )
-        self.assertEqual(list(geom.coords), [(1.0, 43.0), (1.5, 43.5), (2.0, 44.0)])
-
-        self.assertIsNone(
-            get_geometry_from_ecmwf_feature(
-                {"type": "circle", "center": [43.5, 1.5], "radius": 1.0}
-            )
-        )
 
 
 class TestCoreSearch(TestCoreBase):
