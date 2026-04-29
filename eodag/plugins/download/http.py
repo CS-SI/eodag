@@ -253,9 +253,12 @@ class HTTPDownload(Download):
         on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
             on_response_mm,
         )
+        # ensure that status link is at end of dict
+        status_link = on_response_mm_jsonpath.pop("eodag:status_link", None)
+        if status_link:
+            on_response_mm_jsonpath["eodag:status_link"] = status_link
 
         json_response = response.json()
-
         properties_update = properties_from_json(
             {"json": json_response, "headers": {**response.headers}},
             on_response_mm_jsonpath,

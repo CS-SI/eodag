@@ -1238,6 +1238,10 @@ def _check_id(product: EOProduct) -> EOProduct:
     on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
         on_response_mm,
     )
+    # ensure that status link is at end of dict
+    status_link = on_response_mm_jsonpath.pop("eodag:status_link", None)
+    if status_link:
+        on_response_mm_jsonpath["eodag:status_link"] = status_link
     properties_update = properties_from_json(
         {}, {**on_response_mm_jsonpath, **{"eodag:order_id": (None, product_id)}}
     )
