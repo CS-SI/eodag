@@ -318,7 +318,7 @@ class TestCore(TestCoreBase):
         "MO_MULTIOBS_GLO_PHY_MYNRT_015_003": ["cop_marine", "dedl"],
         "MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013": ["cop_marine", "dedl"],
         "MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012": ["cop_marine", "dedl"],
-        "MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_PHY_UVW_3D_MYNRT_015_007": ["cop_marine", "dedl"],
         "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001": ["cop_marine", "dedl"],
         "MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009": ["cop_marine", "dedl"],
         "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006": ["cop_marine", "dedl"],

@@ -6636,30 +6636,24 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
   title: Multi Observation Global Ocean 3D Temperature Salinity Height Geostrophic Current and MLD
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1993-01-01T00:00:00Z", null]]}}
 
-MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
+MO_MULTIOBS_GLO_PHY_UVW_3D_MYNRT_015_007:
   description: |
     You can find here the OMEGA3D observation-based  quasi-geostrophic vertical and horizontal ocean currents developed by the
     Consiglio Nazionale delle RIcerche. The data are provided weekly over a regular grid at 1/4° horizontal resolution, from
     the surface to 1500 m depth (representative of each Wednesday). The velocities are obtained by solving a diabatic formulation
-    of the Omega equation, starting from ARMOR3D data (MULTIOBS_GLO_PHY_REP_015_002 which corresponds to former version of
-    MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012) and ERA-Interim surface fluxes.
-    \n\nDOI (product): \nhttps://commons.datacite.org/doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007\n\n
-    \nProduct citation: \nPlease refer to our Technical FAQ for citing products.http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169
-    \n\nReferences:\n\n DOI (Product): https://doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007
-    \n Buongiorno Nardelli, B. (2020). CNR global observation-based OMEGA3D quasi-geostrophic vertical and horizontal ocean
-    currents (1993-2018) (Version 1) [Data set]. Copernicus Monitoring Environment Marine Service (CMEMS).
-    https://doi.org/10.25423/CMCC/MULTIOBS_GLO_PHY_W_REP_015_007\n Buongiorno Nardelli, B. A Multi-Year Timeseries of Observation-Based
-    3D Horizontal and Vertical Quasi-Geostrophic Global Ocean Currents. Earth Syst. Sci. Data 2020, No. 12, 1711-1723.
-    https://doi.org/10.5194/essd-12-1711-2020.\n
+    of the Omega equation, starting from ARMOR3D data (MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012 ) and ERA5 surface fluxes.
+    \n\nDOI (product): \nhttps://doi.org/10.48670/moi-00053\n\n
+    \n\nReferences:\n\n Buongiorno Nardelli, B. A Multi-Year Timeseries of Observation-Based 3D Horizontal and Vertical
+    Quasi-Geostrophic Global Ocean Currents. Earth Syst. Sci. Data 2020, No. 12, 1711–1723. https://doi.org/10.5194/essd-12-1711-2020.
   instruments: []
   constellation:
   platform:
   processing:level: L4
-  keywords: ["CMEMS", "Mercator", "ocean", "global", "ARMOR3D", "weekly", "ERA-Interim", "quasi-geostrophic", "currents", "L4", "OMEGA3D"]
+  keywords: ["CMEMS", "Mercator", "ocean", "global", "ARMOR3D", "weekly", "ERA5", "quasi-geostrophic", "currents", "L4", "OMEGA3D"]
   eodag:sensor_type:
   license: other
   title: Global Observed Ocean Physics 3D Quasi-Geostrophic Currents (OMEGA3D)
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1993-01-06T00:00:00Z", "2018-12-26T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-179.87, -82.12, 179.88, 89.88]]}, "temporal": {"interval": [["1993-01-06T00:00:00Z", "2026-04-22T00:00:00Z"]]}}
 
 MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
   description: |
