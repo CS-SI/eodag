@@ -1328,3 +1328,50 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
                 },
             ],
         )
+
+    def test_eoproduct_normalize_assets_bands_raster_only(self):
+        """normalize_bands must not raise when an asset has raster:bands but no eo:bands.
+
+        Regression test for #2169: COP-DEM GLO-30 tiles on earth_search have
+        raster:bands only. The migration loop used to crash with IndexError on
+        the first iteration because processed_bands was still empty.
+        """
+        asset_id = "Copernicus_DSM_COG_10_N43_00_W003_00_DEM"
+        href = (
+            "s3://copernicus-dem-30m/"
+            "Copernicus_DSM_COG_10_N43_00_W003_00_DEM/"
+            "Copernicus_DSM_COG_10_N43_00_W003_00_DEM.tif"
+        )
+
+        product = EOProduct(
+            provider="earth_search",
+            properties={"id": asset_id},
+            collection="COP_DEM_GLO30_DGED",
+        )
+        product.assets.update(
+            {
+                asset_id: {
+                    "href": href,
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                    "title": "Data",
+                    "raster:bands": [
+                        {
+                            "data_type": "float32",
+                            "nodata": 0,
+                            "unit": "meter",
+                            "spatial_resolution": 30,
+                        }
+                    ],
+                },
+            }
+        )
+
+        # Must not raise IndexError
+        product._normalize_bands()
+
+        asset = product.assets[asset_id].as_dict()
+        self.assertNotIn("raster:bands", asset)
+        self.assertIn("bands", asset)
+        self.assertEqual(asset["data_type"], "float32")
+        self.assertEqual(asset["nodata"], 0)
+        self.assertEqual(asset["raster:spatial_resolution"], 30)
