@@ -1370,8 +1370,10 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
         product._normalize_bands()
 
         asset = product.assets[asset_id].as_dict()
+        # raster:bands must have been consumed
         self.assertNotIn("raster:bands", asset)
-        self.assertIn("bands", asset)
+        # With a single band, all fields are promoted to the asset level
+        # (no per-band values differ, so the bands array stays empty/absent)
         self.assertEqual(asset["data_type"], "float32")
         self.assertEqual(asset["nodata"], 0)
         self.assertEqual(asset["raster:spatial_resolution"], 30)
