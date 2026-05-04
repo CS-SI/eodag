@@ -6653,7 +6653,7 @@ MO_MULTIOBS_GLO_PHY_UVW_3D_MYNRT_015_007:
   eodag:sensor_type:
   license: other
   title: Global Observed Ocean Physics 3D Quasi-Geostrophic Currents (OMEGA3D)
-  extent: {"spatial": {"bbox": [[-179.87, -82.12, 179.88, 89.88]]}, "temporal": {"interval": [["1993-01-06T00:00:00Z", "2026-04-22T00:00:00Z"]]}}
+  extent: {"spatial": {"bbox": [[-179.87, -82.12, 179.88, 89.88]]}, "temporal": {"interval": [["1993-01-06T00:00:00Z", null]]}}
 
 MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
   description: |
