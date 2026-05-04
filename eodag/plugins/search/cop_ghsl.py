@@ -318,6 +318,7 @@ class CopGhslSearch(Search):
         else:
             list_years = params["year"]
         current_index = 0
+        alias = getattr(self.config, "collection_config", {}).get("alias", collection)
         for year in list_years:
             properties = deepcopy(params)
             properties["order:status"] = "succeeded"
@@ -368,7 +369,7 @@ class CopGhslSearch(Search):
                 )
                 properties["eodag:download_link"] = download_link
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, collection=collection
+                    provider="cop_ghsl", properties=properties, collection=alias
                 )
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
@@ -408,6 +409,7 @@ class CopGhslSearch(Search):
         start_index = per_page * (page - 1)
         end_index = start_index + per_page - 1
         grouped_by = filters.pop("grouped_by", None)
+        alias = getattr(self.config, "collection_config", {}).get("alias", collection)
         if grouped_by:  # dataset with several files differentiated by one parameter
             format_params = {k: str(v) for k, v in filters.items() if v}
             format_params.pop("metadata_mapping", None)
@@ -432,7 +434,7 @@ class CopGhslSearch(Search):
                 properties["end_datetime"] = datetimes["end_date"]
                 properties[grouped_by] = value
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, collection=collection
+                    provider="cop_ghsl", properties=properties, collection=alias
                 )
                 if assets_mapping:  # item with several assets
                     assets = AssetsDict(product=product)
@@ -460,7 +462,7 @@ class CopGhslSearch(Search):
             properties["end_datetime"] = datetimes["end_date"]
             properties["eodag:download_link"] = download_link
             product = EOProduct(
-                provider="cop_ghsl", properties=properties, collection=collection
+                provider="cop_ghsl", properties=properties, collection=alias
             )
             products.append(product)
             num_products = 1
