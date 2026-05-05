@@ -38,7 +38,7 @@ from eodag.api.search_result import SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
-from eodag.types.queryables import Queryables
+from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import parse_to_utc, to_iso_utc_string
@@ -731,3 +731,39 @@ class CopGhslSearch(Search):
             )
 
         return queryables
+
+    def list_queryables(
+        self,
+        filters: dict[str, Any],
+        available_collections: list[Any],
+        collection_configs: dict[str, dict[str, Any]],
+        collection: Optional[str] = None,
+        alias: Optional[str] = None,
+    ) -> QueryablesDict:
+        """
+        Get queryables
+
+        The Copernicus GHSL implementation accepts both ``ecmwf:year`` and ``ecmwf_year``
+        as parameters for the year filter.
+
+        :param filters: Additional filters for queryables.
+        :param available_collections: list of available collections
+        :param collection_configs: dict containing the collection information for all used collections
+        :param collection: (optional) The collection.
+        :param alias: (optional) alias of the collection
+
+        :return: A dictionary containing the queryable properties, associating parameters to their
+                annotated type.
+        """
+        # accept ecmwf:year parameter
+        if "ecmwf:year" in filters:
+            filters["year"] = filters.pop("ecmwf:year")
+        elif "ecmwf_year" in filters:
+            filters["year"] = filters.pop("ecmwf_year")
+        return super(CopGhslSearch, self).list_queryables(
+            filters,
+            available_collections,
+            collection_configs,
+            collection,
+            alias,
+        )
