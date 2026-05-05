@@ -105,8 +105,8 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
     This function checks if both the start and end dates of the check_range
     are within the start and end dates of the valid_range.
 
-    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
-    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
+    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD/to/YYYY-MM-DD'.
+    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD' or YYYY-MM-DD/to/YYYY-MM-DD.
     :returns: True if check_range is within valid_range, otherwise False.
     :raises ValueError: If date parts cannot be parsed as ISO8601
 
@@ -117,6 +117,10 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
         False
         >>> is_range_in_range("2023-01-01/2023-12-31", "2023-11-01/2024-01-01")
         False
+        >>> is_range_in_range("2023-01-01/to/2023-12-31", "2023-11-01/to/2024-01-01")
+        False
+        >>> is_range_in_range("2023-01-01/to/2023-12-31", "2023-03-01/2023-03-31")
+        True
         >>> is_range_in_range("2023-01-01/2023-12-31", "invalid-range")
         False
         >>> is_range_in_range("invalid-range", "2023-03-01/2023-03-31")
@@ -126,6 +130,10 @@ def is_range_in_range(valid_range: str, check_range: str) -> bool:
         return False
 
     # Split the date ranges into start and end dates
+    if "to" in valid_range:
+        valid_range = valid_range.replace("/to", "")
+    if "to" in check_range:
+        check_range = check_range.replace("/to", "")
     start_valid, end_valid = valid_range.split("/")
     start_check, end_check = check_range.split("/")
 
