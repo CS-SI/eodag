@@ -1196,10 +1196,16 @@ class HTTPDownload(Download):
                         asset_rel_dir, cast(str, asset.filename)
                     )
 
-                    for chunk in stream.iter_content(chunk_size=64 * 1024):
-                        if chunk:
-                            progress_callback(len(chunk))
-                            yield chunk
+                    # Some trouble with iter_content when slow http Transfer: chunked
+                    # send too early StopIteration when internal buffer is empty, even if transfert is not complete
+                    chunk_size = 64 * 1024
+                    for i in range(0, len(stream.content), chunk_size):
+                        if i + chunk_size < len(stream.content):
+                            chunk = stream.content[i : (i + chunk_size)]
+                        else:
+                            chunk = stream.content[i:]
+                        progress_callback(len(chunk))
+                        yield chunk
 
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(
