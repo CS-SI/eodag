@@ -75,7 +75,7 @@ from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import ecmwf_temporal_to_eodag
 from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, Queryables
+from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     DEFAULT_SHAPELY_GEOMETRY,

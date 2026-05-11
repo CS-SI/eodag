@@ -69,6 +69,7 @@ from tests.context import (
     NotAvailableError,
     PluginManager,
     PreparedSearch,
+    QueryablesDict,
     QueryStringSearch,
     RequestError,
     TimeOutError,
@@ -2535,6 +2536,67 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         # non-empty attributes from provider
         self.assertEqual(sp_fi.description, "provider-only param")
         self.assertEqual(sp_fi.title, "Some param")
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_stacsearch_discover_queryables_no_pattern_propagation(
+        self, mock_request
+    ):
+        """discover_queryables must not propagate provider `pattern` or other
+        constraints onto eodag queryables, which are parsed/formatted later.
+        """
+        provider_queryables = {
+            "type": "object",
+            "properties": {
+                # mimics planetary-computer strict ISO UTC pattern
+                "start_datetime": {
+                    "title": "Start datetime",
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "(\\+00:00|Z)$",
+                },
+                "end_datetime": {
+                    "title": "End datetime",
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "(\\+00:00|Z)$",
+                },
+            },
+        }
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.side_effect = [provider_queryables]
+        plugin = self.get_search_plugin(provider="dedl")
+        queryables = plugin.discover_queryables(
+            collection="CAMS_GAC_FORECAST", provider="dedl"
+        )
+
+        # "start" / "end" must be present and carry no `pattern` metadata
+        for key in ("start", "end"):
+            self.assertIn(key, queryables)
+            field_type, field_info = get_args(queryables[key])[:2]
+            self.assertEqual(field_type, str)
+            patterns = [
+                getattr(m, "pattern", None)
+                for m in field_info.metadata
+                if getattr(m, "pattern", None)
+                and getattr(m, "pattern", None) is not PydanticUndefined
+            ]
+            self.assertEqual(
+                patterns,
+                [],
+                f"unexpected pattern metadata propagated to `{key}`: {patterns}",
+            )
+
+        # build the pydantic model from these queryables and validate
+        model = QueryablesDict(**queryables).get_model()
+        model.model_validate(
+            {
+                "collection": "CAMS_GAC_FORECAST",
+                "start_datetime": "2024-01-01",
+                "end_datetime": "2024-01-31",
+            }
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
