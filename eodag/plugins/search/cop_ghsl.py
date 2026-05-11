@@ -38,7 +38,7 @@ from eodag.api.search_result import SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python
-from eodag.types.queryables import Queryables
+from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import DEFAULT_LIMIT, HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.cache import instance_cached_method
 from eodag.utils.dates import parse_to_utc, to_iso_utc_string
@@ -318,6 +318,7 @@ class CopGhslSearch(Search):
         else:
             list_years = params["year"]
         current_index = 0
+        alias = getattr(self.config, "collection_config", {}).get("alias", collection)
         for year in list_years:
             properties = deepcopy(params)
             properties["order:status"] = "succeeded"
@@ -368,7 +369,7 @@ class CopGhslSearch(Search):
                 )
                 properties["eodag:download_link"] = download_link
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, collection=collection
+                    provider="cop_ghsl", properties=properties, collection=alias
                 )
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
@@ -408,6 +409,7 @@ class CopGhslSearch(Search):
         start_index = per_page * (page - 1)
         end_index = start_index + per_page - 1
         grouped_by = filters.pop("grouped_by", None)
+        alias = getattr(self.config, "collection_config", {}).get("alias", collection)
         if grouped_by:  # dataset with several files differentiated by one parameter
             format_params = {k: str(v) for k, v in filters.items() if v}
             format_params.pop("metadata_mapping", None)
@@ -432,7 +434,7 @@ class CopGhslSearch(Search):
                 properties["end_datetime"] = datetimes["end_date"]
                 properties[grouped_by] = value
                 product = EOProduct(
-                    provider="cop_ghsl", properties=properties, collection=collection
+                    provider="cop_ghsl", properties=properties, collection=alias
                 )
                 if assets_mapping:  # item with several assets
                     assets = AssetsDict(product=product)
@@ -460,7 +462,7 @@ class CopGhslSearch(Search):
             properties["end_datetime"] = datetimes["end_date"]
             properties["eodag:download_link"] = download_link
             product = EOProduct(
-                provider="cop_ghsl", properties=properties, collection=collection
+                provider="cop_ghsl", properties=properties, collection=alias
             )
             products.append(product)
             num_products = 1
@@ -729,3 +731,39 @@ class CopGhslSearch(Search):
             )
 
         return queryables
+
+    def list_queryables(
+        self,
+        filters: dict[str, Any],
+        available_collections: list[Any],
+        collection_configs: dict[str, dict[str, Any]],
+        collection: Optional[str] = None,
+        alias: Optional[str] = None,
+    ) -> QueryablesDict:
+        """
+        Get queryables
+
+        The Copernicus GHSL implementation accepts both ``ecmwf:year`` and ``ecmwf_year``
+        as parameters for the year filter.
+
+        :param filters: Additional filters for queryables.
+        :param available_collections: list of available collections
+        :param collection_configs: dict containing the collection information for all used collections
+        :param collection: (optional) The collection.
+        :param alias: (optional) alias of the collection
+
+        :return: A dictionary containing the queryable properties, associating parameters to their
+                annotated type.
+        """
+        # accept ecmwf:year parameter
+        if "ecmwf:year" in filters:
+            filters["year"] = filters.pop("ecmwf:year")
+        elif "ecmwf_year" in filters:
+            filters["year"] = filters.pop("ecmwf_year")
+        return super(CopGhslSearch, self).list_queryables(
+            filters,
+            available_collections,
+            collection_configs,
+            collection,
+            alias,
+        )

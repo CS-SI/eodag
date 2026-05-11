@@ -253,9 +253,12 @@ class HTTPDownload(Download):
         on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
             on_response_mm,
         )
+        # ensure that status link is at end of dict
+        status_link = on_response_mm_jsonpath.pop("eodag:status_link", None)
+        if status_link:
+            on_response_mm_jsonpath["eodag:status_link"] = status_link
 
         json_response = response.json()
-
         properties_update = properties_from_json(
             {"json": json_response, "headers": {**response.headers}},
             on_response_mm_jsonpath,
@@ -1193,10 +1196,16 @@ class HTTPDownload(Download):
                         asset_rel_dir, cast(str, asset.filename)
                     )
 
-                    for chunk in stream.iter_content(chunk_size=64 * 1024):
-                        if chunk:
-                            progress_callback(len(chunk))
-                            yield chunk
+                    # Some trouble with iter_content when slow http Transfer: chunked
+                    # send too early StopIteration when internal buffer is empty, even if transfert is not complete
+                    chunk_size = 64 * 1024
+                    for i in range(0, len(stream.content), chunk_size):
+                        if i + chunk_size < len(stream.content):
+                            chunk = stream.content[i : (i + chunk_size)]
+                        else:
+                            chunk = stream.content[i:]
+                        progress_callback(len(chunk))
+                        yield chunk
 
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(

@@ -192,7 +192,11 @@ class CopMarineSearch(StaticStacSearch):
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
         if product_id and product_id != item_id:
             return None
-        download_url = s3_url + "/" + item_key
+        s3_url_parts = s3_url.split("/")
+        item_key_parts = [
+            part for part in item_key.split("/") if part not in s3_url_parts
+        ]
+        download_url = s3_url + "/" + "/".join(item_key_parts)
         geometry = (
             get_geometry_from_various(**dataset_item)
             or self.config.metadata_mapping["eodag:default_geometry"]
@@ -263,6 +267,9 @@ class CopMarineSearch(StaticStacSearch):
         assets = {"native": asset_native}
         additional_assets = self.get_assets_from_mapping(dataset_item)
         assets.update(additional_assets)
+
+        if alias := getattr(self.config, "collection_config", {}).get("alias"):
+            collection = alias
 
         product = EOProduct(self.provider, properties, collection=collection)
         product.assets = AssetsDict(product, assets)
@@ -449,6 +456,7 @@ class CopMarineSearch(StaticStacSearch):
                                 dataset_item,
                                 collection_dict,
                                 not bool(item_dates),
+                                kwargs["id"],
                             )
                             if product:
                                 return SearchResult([product], 1)

@@ -20,8 +20,8 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests.context import (
-    EODataAccessGateway,
     PluginConfig,
     Provider,
     ProviderConfig,
@@ -29,6 +29,7 @@ from tests.context import (
     UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
+    build_provider_configs,
 )
 
 
@@ -55,10 +56,17 @@ class TestProvider(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
     def tearDown(self):
         super().tearDown()
         # stop Mock and remove tmp config dir
+        self.sqlite_mock.stop()
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
@@ -144,30 +152,6 @@ class TestProvider(unittest.TestCase):
         # Non-existent collection
         with self.assertRaises(UnsupportedCollection):
             provider.delete_collection("NONEXISTENT")
-
-    def test_provider_sync_collections_strict(self):
-        """Test Provider sync_collections in strict mode."""
-        config = self.basic_config.copy()
-        config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
-        provider = Provider(config)
-
-        dag = EODataAccessGateway()
-        with patch.object(provider, "delete_collection") as mock_delete:
-            provider.sync_collections(dag, strict_mode=True)
-            mock_delete.assert_called_once_with("UNKNOWN_TYPE")
-
-    def test_provider_sync_collections_permissive(self):
-        """Test Provider sync_collections in permissive mode."""
-        config = self.basic_config.copy()
-        config["products"]["UNKNOWN_TYPE"] = {"collection": "UNKNOWN_TYPE"}
-        provider = Provider(config)
-
-        dag = EODataAccessGateway()
-
-        with patch.object(provider, "delete_collection") as mock_delete:
-            provider.sync_collections(dag, strict_mode=False)
-            mock_delete.assert_not_called()
-            self.assertIn("UNKNOWN_TYPE", provider.collections_config)
 
 
 class TestProviderConfig(unittest.TestCase):
@@ -255,7 +239,7 @@ class TestProviderConfig(unittest.TestCase):
 
 
 class TestProvidersDict(unittest.TestCase):
-    """Test cases for the ProvidersDict class."""
+    """Test cases for the ProvidersDict class (DB-backed)."""
 
     @classmethod
     def setUpClass(cls):
@@ -278,120 +262,97 @@ class TestProvidersDict(unittest.TestCase):
                 "search": {"type": "StacSearch"},
             },
         }
-        cls.sample_providers = ProvidersDict.from_configs(cls.sample_configs)
+
+    def setUp(self):
+        super().setUp()
+        from eodag.config import (
+            get_collections_providers_config,
+            get_federation_backends_config,
+        )
+
+        self.db = SQLiteDatabase(":memory:")
+        providers = build_provider_configs(self.sample_configs)
+        fb_configs = get_federation_backends_config(
+            [p.config for p in providers.values()]
+        )
+        self.db.upsert_federation_backends(fb_configs)
+        coll_configs = get_collections_providers_config(
+            [p.config for p in providers.values()]
+        )
+        self.db.upsert_collections_federation_backends(coll_configs)
+        self.providers_dict = ProvidersDict(self.db)
 
     def test_providers_dict_creation(self):
         """Test ProvidersDict creation."""
-        providers = ProvidersDict.from_configs(self.sample_configs)
-        self.assertEqual(len(providers), 2)
-        self.assertIn("provider1", providers)
-        self.assertIn("provider2", providers)
+        self.assertEqual(len(self.providers_dict), 2)
+        self.assertIn("provider1", self.providers_dict)
+        self.assertIn("provider2", self.providers_dict)
 
     def test_providers_dict_contains(self):
         """Test ProvidersDict contains operation."""
-        self.assertIn("provider1", self.sample_providers)
-        self.assertNotIn("nonexistent", self.sample_providers)
+        self.assertIn("provider1", self.providers_dict)
+        self.assertNotIn("nonexistent", self.providers_dict)
 
         # Test with Provider object
-        provider = self.sample_providers["provider1"]
-        self.assertIn(provider, self.sample_providers)
+        provider = self.providers_dict["provider1"]
+        self.assertIn(provider, self.providers_dict)
 
     def test_providers_dict_attributes(self):
         """Test ProvidersDict provider attributes."""
-        self.assertEqual(self.sample_providers["provider1"].title, "First provider")
+        self.assertEqual(self.providers_dict["provider1"].title, "First provider")
         self.assertEqual(
-            self.sample_providers["provider1"].url, "https://provider1.example.com"
+            self.providers_dict["provider1"].url, "https://provider1.example.com"
         )
-        self.assertEqual(self.sample_providers["provider2"].title, "Second provider")
-        self.assertIsNone(self.sample_providers["provider2"].url)
+        self.assertEqual(self.providers_dict["provider2"].title, "Second provider")
+        self.assertIsNone(self.providers_dict["provider2"].url)
 
     def test_providers_dict_basic_properties(self):
         """Test ProvidersDict basic properties."""
-        self.assertEqual(len(self.sample_providers), 2)
-        self.assertEqual(self.sample_providers.names, ["provider1", "provider2"])
+        self.assertEqual(len(self.providers_dict), 2)
+        self.assertCountEqual(self.providers_dict.names, ["provider1", "provider2"])
 
-        priorities = self.sample_providers.priorities
+        priorities = self.providers_dict.priorities
         self.assertEqual(priorities["provider1"], 1)
         self.assertEqual(priorities["provider2"], 2)
 
-    def test_providers_dict_duplicate_provider(self):
-        """Test ProvidersDict prevents duplicate providers."""
-        new_provider = Provider({"name": "provider1", "search": {"type": "StacSearch"}})
-        with self.assertRaisesRegex(ValueError, "Provider 'provider1' already exists"):
-            self.sample_providers["provider1"] = new_provider
+    def test_providers_dict_pop(self):
+        """Test ProvidersDict pop disables provider in DB."""
+        provider = self.providers_dict.pop("provider1")
+        self.assertEqual(provider.name, "provider1")
+        # After pop, provider1 should be disabled
+        self.assertNotIn("provider1", self.providers_dict)
+        self.assertEqual(len(self.providers_dict), 1)
 
-    def test_providers_dict_delete_provider(self):
-        """Test ProvidersDict provider deletion."""
-        # Create a fresh copy to avoid mutating shared state
-        providers = ProvidersDict.from_configs(self.sample_configs)
-        del providers["provider1"]
-        self.assertNotIn("provider1", providers)
-        self.assertEqual(len(providers), 1)
+        # Pop non-existent with default
+        result = self.providers_dict.pop("nonexistent", None)
+        self.assertIsNone(result)
 
-        # Test deleting non-existent provider
-        with self.assertRaisesRegex(
-            UnsupportedProvider, "Provider 'nonexistent' not found"
-        ):
-            del providers["nonexistent"]
-
-    def test_providers_dict_filter_no_query(self):
-        """Test ProvidersDict filter with no query."""
-        results = list(self.sample_providers.filter())
-        self.assertEqual(len(results), 2)
-
-    def test_providers_dict_filter_with_query(self):
-        """Test ProvidersDict filter with query."""
-        results = self.sample_providers.filter("First")
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results.names, ["provider1"])
-
-    def test_providers_dict_filter_by_name_or_group(self):
-        """Test ProvidersDict filter_by_name_or_group."""
-        # Filter by name
-        results = list(self.sample_providers.filter_by_name_or_group("provider1"))
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].name, "provider1")
-
-        # Filter by group
-        results = list(self.sample_providers.filter_by_name_or_group("group_a"))
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].name, "provider1")
-
-    def test_providers_dict_delete_collection(self):
-        """Test ProvidersDict delete_collection method."""
-        # Create a fresh copy to avoid mutating shared state
-        providers = ProvidersDict.from_configs(self.sample_configs)
-        # Add a collection first
-        providers["provider1"].config.products = {"TEST": {"collection": "TEST"}}
-
-        providers.delete_collection("provider1", "TEST")
-        self.assertNotIn("TEST", providers["provider1"].collections_config)
-
-        # Test with non-existent provider
+        # Pop non-existent without default
         with self.assertRaises(UnsupportedProvider):
-            providers.delete_collection("nonexistent", "TEST")
+            self.providers_dict.pop("nonexistent")
 
     def test_providers_dict_get_config(self):
         """Test ProvidersDict get_config method."""
-        config = self.sample_providers.get_config("provider1")
+        config = self.providers_dict.get_config("provider1")
         self.assertIsNotNone(config)
         self.assertEqual(config.name, "provider1")
 
-        config = self.sample_providers.get_config("nonexistent")
+        config = self.providers_dict.get_config("nonexistent")
         self.assertIsNone(config)
 
     @patch.dict("os.environ", {"EODAG_PROVIDERS_WHITELIST": "provider1"})
     def test_providers_dict_whitelist(self):
-        """Test ProvidersDict whitelist filtering."""
-        filtered = ProvidersDict._get_whitelisted_configs(self.sample_configs)
+        """Test whitelist filtering via standalone function."""
+        from eodag.api.provider import _get_whitelisted_configs
+
+        filtered = _get_whitelisted_configs(self.sample_configs)
         self.assertEqual(set(filtered.keys()), {"provider1"})
 
     def test_providers_dict_invalid_config_handling(self):
-        """Test ProvidersDict handles invalid configurations."""
-        providers_dict = ProvidersDict()
+        """Test build_provider_configs handles invalid configurations."""
         invalid_configs = {"invalid": {"description": "Missing required fields"}}
 
         with patch("eodag.api.provider.logger") as mock_logger:
-            providers_dict.update_from_configs(invalid_configs)
+            providers = build_provider_configs(invalid_configs)
             mock_logger.warning.assert_called()
-            self.assertEqual(len(providers_dict), 0)
+            self.assertEqual(len(providers), 0)
