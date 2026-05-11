@@ -1867,7 +1867,9 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
             if len(bands["raster:bands"]) > 0:
                 index = 0
                 for item in bands["raster:bands"]:
-                    band = processed_bands[index] if index < len(processed_bands) else {}
+                    band = (
+                        processed_bands[index] if index < len(processed_bands) else {}
+                    )
                     for key in item:
                         if key in UNPREFIX_BAND_FIELDNAME:
                             band[key] = item[key]
