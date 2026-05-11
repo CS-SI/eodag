@@ -3,13 +3,11 @@ Release history
 ===============
 
 
-v4.3.0 (2026-05-11)
+v4.2.1 (2026-05-11)
 ===================
 
 Bug Fixes
 ---------
-
-* No end date (`#2164`_, `12ecaf2`_)
 
 * **collections**: Renamed MULTIOBS_GLO_PHY_W_3D_REP_015_007 cop_marine collection (`#2164`_,
   `12ecaf2`_)
@@ -18,24 +16,11 @@ Bug Fixes
 
 * **queryables**: Do not use provider pattern on known queryable (`#2176`_, `18bcb46`_)
 
-Chores
-------
-
-* Update external product types reference (`#2160`_, `3f02fb8`_)
-
-Features
---------
-
-* Remplace MULTIOBS_GLO_PHY_W_3D_REP_015_007 by MULTIOBS_GLO_PHY_UVW_3D_MYNRT_015_007 (`#2164`_,
-  `12ecaf2`_)
-
-.. _#2160: https://github.com/CS-SI/eodag/pull/2160
 .. _#2164: https://github.com/CS-SI/eodag/pull/2164
 .. _#2171: https://github.com/CS-SI/eodag/pull/2171
 .. _#2176: https://github.com/CS-SI/eodag/pull/2176
 .. _12ecaf2: https://github.com/CS-SI/eodag/commit/12ecaf2f6c8d17a91388da9d48738bdb7bb76e15
 .. _18bcb46: https://github.com/CS-SI/eodag/commit/18bcb4681818a32a5f3c84ce58ffd0b339a97a8a
-.. _3f02fb8: https://github.com/CS-SI/eodag/commit/3f02fb8f50ba1ff94e2bce8e0082be32dd443af6
 .. _a058e6c: https://github.com/CS-SI/eodag/commit/a058e6c2c7fb082c80bc5015e495dade6c87ae1b
 
 
