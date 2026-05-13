@@ -33,6 +33,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/tutos/tuto_cop_dem.ipynb
    notebooks/tutos/tuto_ecmwf.ipynb
    notebooks/tutos/tuto_cds.ipynb
+   notebooks/tutos/tuto_eocat.ipynb
    notebooks/tutos/tuto_wekeo.ipynb
    notebooks/tutos/tuto_meteoblue.ipynb
    notebooks/tutos/tuto_ship_detection.ipynb
@@ -50,7 +51,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :text-align: center
       :shadow: md
 
-      Learn how to search for products using location names or tile identifiers instead of coordinates.
+      Learn how to search for products using location names or tile identifiers (``grid:code``) instead of coordinates.
 
    .. grid-item-card:: Get Copernicus DEM using EODAG
       :link: notebooks/tutos/tuto_cop_dem
@@ -75,6 +76,14 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :shadow: md
 
       Access Copernicus Atmosphere data through the ECMWFSearch plugin using the CDS API.
+
+   .. grid-item-card:: ESA eocat provider in EODAG
+      :link: notebooks/tutos/tuto_eocat
+      :link-type: doc
+      :text-align: center
+      :shadow: md
+
+      Access ESA Heritage and Third Party Missions data through the ``eocat`` provider.
 
    .. grid-item-card:: The wekeo provider in EODAG
       :link: notebooks/tutos/tuto_wekeo
