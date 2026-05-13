@@ -6463,7 +6463,7 @@
     metadata_mapping:
       assets: '{$.assets#dict_with_roles(["data", "thumbnail", "overview"])}'
       eodag:download_link: '$.assets.enclosure.href'
-      instrument: '{$.properties.instruments#csv_list}'
+      title: '{$.properties.title#remove_extension}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'

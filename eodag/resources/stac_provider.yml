@@ -90,6 +90,9 @@ search:
     datetime: '$.properties.datetime'
     created: '$.properties.created'
     updated: '$.properties.updated'
+    published: '$.properties.published'
+    unpublished: '$.properties.unpublished'
+    expires: '$.properties.expires'
     start_datetime: '$.properties.start_datetime'
     end_datetime:
       - '{{"datetime":"{start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}"}}'
