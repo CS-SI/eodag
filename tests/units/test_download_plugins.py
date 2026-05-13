@@ -186,6 +186,38 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                 plugin._prepare_download(self.product, **download_kwargs)
                 self.assertIn("Product already downloaded", str(cm.output))
 
+    def test_plugins_download_base_prepare_download_record_file_collision_dir(self):
+        """Download._prepare_download must detect already-downloaded dir without collision suffix"""
+
+        self.product.properties["title"] = "title to sanitïze"
+        self.product.properties["id"] = "id alsô"
+        self.product.location = self.product.remote_location = "http://foo.bar"
+        self.product.collection = "foo"
+
+        with TemporaryDirectory() as output_dir:
+            download_kwargs = dict(output_dir=output_dir)
+            # directory created without the collision-avoidance suffix
+            # (e.g. extracted archive containing just the sanitized title)
+            product_path_dir = Path(output_dir) / "title_to_sanitize"
+            product_path_dir.mkdir()
+            (product_path_dir / "foo").touch()
+
+            recordfile_dir = Path(output_dir) / ".downloaded"
+            recordfile_dir.mkdir()
+            recordfile_path = (
+                recordfile_dir / hashlib.md5("foo-id alsô".encode("utf-8")).hexdigest()
+            )
+            recordfile_path.touch()
+
+            plugin = self.get_download_plugin(self.product)
+
+            with self.assertLogs(level="INFO") as cm:
+                fs_path, _ = plugin._prepare_download(self.product, **download_kwargs)
+                self.assertIn("Product already downloaded", str(cm.output))
+                self.assertEqual(
+                    fs_path, str(Path(output_dir) / "title_to_sanitize-id_also")
+                )
+
     def test_plugins_download_base_prepare_download_no_url(self):
         """Download._prepare_download must return None when no download url"""
 

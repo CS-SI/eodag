@@ -207,8 +207,6 @@ class Download(PluginTopic):
             self.config, "output_extension", ""
         )
 
-        # Strong asumption made here: all products downloaded will be zip files
-        # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
         prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
         if sanitized_title == product.properties["title"]:
@@ -222,6 +220,16 @@ class Download(PluginTopic):
         fs_dir_path = (
             fs_path.replace(output_extension, "") if output_extension else fs_path
         )
+        # check also path without collision suffix that may be used as path dir
+        fs_path_without_suffix = os.path.join(
+            prefix, f"{sanitize(product.properties['title'])}{output_extension}"
+        )
+        fs_dir_path_without_suffix = (
+            fs_path_without_suffix.replace(output_extension, "")
+            if output_extension
+            else fs_path_without_suffix
+        )
+
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
             os.makedirs(download_records_dir)
@@ -260,7 +268,9 @@ class Download(PluginTopic):
                 ),
                 None,
             )
-        elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
+        elif os.path.isfile(record_filename) and (
+            os.path.isdir(fs_dir_path) or os.path.isdir(fs_dir_path_without_suffix)
+        ):
             logger.info(
                 f"Product already downloaded: {fs_dir_path}",
             )
