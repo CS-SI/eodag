@@ -83,7 +83,7 @@ ecmwf = [
     "ecmwf-api-client",
 ]
 usgs = [
-    "usgs @ git+https://github.com/sbrunato/usgs.git@scene_filter"
+    "usgs >= 0.3.7",
 ]
 notebook = [
     "tqdm[notebook]",
