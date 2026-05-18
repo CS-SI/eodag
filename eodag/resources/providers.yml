@@ -33,13 +33,24 @@
       id:
         - '_ID'
         - '$.displayId'
-      geometry: '$.spatialBounds'
+      geometry:
+        - '{{"scene_filter": {{"spatialFilter": {{"filterType": "geojson", "geoJson": {geometry#to_geojson} }} }} }}'
+        - '$.spatialBounds'
       title: '$.displayId'
       description: '$.summary'
       eo:cloud_cover: '$.cloudCover'
       start_datetime: '{$.temporalCoverage.startDate#to_iso_utc_datetime}'
       end_datetime: '{$.temporalCoverage.endDate#to_iso_utc_datetime}'
       published: '{$.publishDate#to_iso_utc_datetime}'
+      ingest_after:
+        - '{{"scene_filter": {{"ingestFilter":{{"start":"{ingest_after#to_iso_utc_datetime}" }} }} }}'
+        - $.null
+      ingest_before:
+        - '{{"scene_filter": {{"ingestFilter":{{"end":"{ingest_before#to_iso_utc_datetime}" }} }} }}'
+        - $.null
+      scene_filter:
+        - '{{"scene_filter": {scene_filter#to_geojson} }}'
+        - $.null
       eodag:thumbnail: '$.browse[0].thumbnailPath'
       eodag:quicklook: '$.browse[0].browsePath'
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
