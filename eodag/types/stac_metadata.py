@@ -314,14 +314,17 @@ def create_stac_metadata_model(
     models = base_models + extension_models
 
     # check for duplicate field aliases (e.g., start_datetime and start in Queryables)
-    aliases: dict[str, Optional[str]] = dict()
-    duplicates = set()
+    alias_strings: set[str] = set()
+    duplicates: set[str] = set()
     for bm in base_models:
         for key, field in bm.model_fields.items():
-            if key not in aliases.keys() and key in aliases.values():
+            if key in alias_strings:
                 duplicates.add(key)
-            else:
-                aliases[key] = field.alias
+                continue
+            if isinstance(field.alias, AliasChoices):
+                alias_strings.update(str(c) for c in field.alias.choices)
+            elif field.alias:
+                alias_strings.add(field.alias)
 
     model = create_model(
         class_name,
