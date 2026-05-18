@@ -1913,6 +1913,14 @@ class TestCore(TestCoreBase):
         )
         self.assertTrue(item_sara_queryables.additional_properties)
 
+        # `start`/`end` from Queryables (aliased to `start_datetime`/`end_datetime`)
+        # must shadow `start_datetime`/`end_datetime` from CommonStacMetadata so that
+        # only the canonical short names are exposed as queryables.
+        self.assertIn("start", item_sara_queryables)
+        self.assertIn("end", item_sara_queryables)
+        self.assertNotIn("start_datetime", item_sara_queryables)
+        self.assertNotIn("end_datetime", item_sara_queryables)
+
         # additional_properties set to False for EcmwfSearch plugin
         cop_cds_queryables = self.dag.list_queryables(provider="cop_cds")
         self.assertFalse(cop_cds_queryables.additional_properties)
