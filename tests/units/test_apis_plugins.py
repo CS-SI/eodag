@@ -533,10 +533,25 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
-            start_date="2020-02-01",
-            end_date="2020-02-10",
-            ll={"longitude": 10.0, "latitude": 20.0},
-            ur={"longitude": 30.0, "latitude": 40.0},
+            start_date="2020-02-01T00:00:00.000Z",
+            end_date="2020-02-10T00:00:00.000Z",
+            scene_filter={
+                "spatialFilter": {
+                    "filterType": "geojson",
+                    "geoJson": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [10.0, 20.0],
+                                [10.0, 40.0],
+                                [30.0, 40.0],
+                                [30.0, 20.0],
+                                [10.0, 20.0],
+                            ]
+                        ],
+                    },
+                }
+            },
             max_results=5,
             starting_number=6,
         )
@@ -614,14 +629,128 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             where={"filter_id": "bar_id", "value": "SOME_PRODUCT_ID"},
             start_date=None,
             end_date=None,
-            ll=None,
-            ur=None,
+            scene_filter=None,
             max_results=500,
             starting_number=1,
         )
         self.assertEqual(search_results.data[0].provider, "usgs")
         self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
         self.assertEqual(len(search_results.data), 1)
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
+    @mock.patch(
+        "usgs.api.scene_search",
+        autospec=True,
+        return_value=SCENE_SEARCH_RETURN,
+    )
+    @mock.patch(
+        "usgs.api.download_options",
+        autospec=True,
+        return_value=DOWNLOAD_OPTION_RETURN,
+    )
+    def test_plugins_apis_usgs_query_with_custom_scene_filter(
+        self,
+        mock_api_download_options,
+        mock_api_scene_search,
+        mock_api_logout,
+        mock_api_login,
+    ):
+        """UsgsApi.query must forward a user-provided scene_filter to the usgs api"""
+
+        custom_scene_filter = {
+            "cloudCoverFilter": {"min": 0, "max": 20, "includeUnknown": False},
+            "metadataFilter": {
+                "filterType": "value",
+                "filterId": "some_filter_id",
+                "value": "some_value",
+            },
+        }
+
+        search_kwargs = {
+            "collection": "LANDSAT_C2L1",
+            "start_datetime": "2020-02-01",
+            "end_datetime": "2020-02-10",
+            "scene_filter": custom_scene_filter,
+            "prep": PreparedSearch(
+                limit=5,
+            ),
+        }
+        search_kwargs["prep"].next_page_token = "6"
+        search_results = self.api_plugin.query(**search_kwargs)
+        mock_api_scene_search.assert_called_once_with(
+            "landsat_ot_c2_l1",
+            start_date="2020-02-01T00:00:00.000Z",
+            end_date="2020-02-10T00:00:00.000Z",
+            scene_filter=custom_scene_filter,
+            max_results=5,
+            starting_number=6,
+        )
+        self.assertEqual(search_results.data[0].provider, "usgs")
+        self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
+    @mock.patch(
+        "usgs.api.scene_search",
+        autospec=True,
+        return_value=SCENE_SEARCH_RETURN,
+    )
+    @mock.patch(
+        "usgs.api.download_options",
+        autospec=True,
+        return_value=DOWNLOAD_OPTION_RETURN,
+    )
+    def test_plugins_apis_usgs_query_with_custom_scene_filter_and_geometry(
+        self,
+        mock_api_download_options,
+        mock_api_scene_search,
+        mock_api_logout,
+        mock_api_login,
+    ):
+        """UsgsApi.query must merge a user-provided scene_filter with the geometry-based one"""
+
+        custom_scene_filter = {
+            "cloudCoverFilter": {"min": 0, "max": 20, "includeUnknown": False},
+        }
+
+        search_kwargs = {
+            "collection": "LANDSAT_C2L1",
+            "start_datetime": "2020-02-01",
+            "end_datetime": "2020-02-10",
+            "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
+            "scene_filter": custom_scene_filter,
+            "prep": PreparedSearch(
+                limit=5,
+            ),
+        }
+        search_kwargs["prep"].next_page_token = "6"
+        self.api_plugin.query(**search_kwargs)
+        mock_api_scene_search.assert_called_once_with(
+            "landsat_ot_c2_l1",
+            start_date="2020-02-01T00:00:00.000Z",
+            end_date="2020-02-10T00:00:00.000Z",
+            scene_filter={
+                "spatialFilter": {
+                    "filterType": "geojson",
+                    "geoJson": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [10.0, 20.0],
+                                [10.0, 40.0],
+                                [30.0, 40.0],
+                                [30.0, 20.0],
+                                [10.0, 20.0],
+                            ]
+                        ],
+                    },
+                },
+                "cloudCoverFilter": {"min": 0, "max": 20, "includeUnknown": False},
+            },
+            max_results=5,
+            starting_number=6,
+        )
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)
