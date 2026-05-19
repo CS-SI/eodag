@@ -193,6 +193,8 @@ class CopMarineSearch(StaticStacSearch):
         if product_id and product_id != item_id:
             return None
         s3_url_parts = s3_url.split("/")
+        # create download url from s3_url and item_key,
+        # there are situations where the 2 overlap -> remove parts included in s3_url from item_key
         item_key_parts = [
             part for part in item_key.split("/") if part not in s3_url_parts
         ]

@@ -4583,7 +4583,74 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.assertEqual(asset.get("cop_marine:owner_id"), "data-access")
         self.assertEqual(asset.get("cop_marine:owner_name"), "Data Access")
 
-    def test_plugins_search_postjsonsearch_discover_queryables(self):
+    def test_plugins_search_cop_marine_create_product(self):
+        """Test creation of EOProduct from input data"""
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        s3_url = "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one"
+        item_key = "PRODUCT_A/dataset-number-one/item1_20010501"
+        collection_dict = {
+            "id": "PRODUCT_A",
+            "properties": {"a": "a", "b": "b"},
+            "assets": {"thumbnail": {"href": "https://www.abc.com/thumbnailA"}},
+        }
+        dataset_dict = {
+            "id": "dataset-number-one",
+            "properties": {
+                "c": "c",
+                "start_datetime": "2000-01-01T00:00:00Z",
+                "end_datetime": "2010-01-01T00:00:00Z",
+            },
+        }
+        product = search_plugin._create_product(
+            "PRODUCT_A", item_key, s3_url, dataset_dict, collection_dict
+        )
+        self.assertEqual("item1_20010501", product.properties["id"])
+        self.assertEqual("PRODUCT_A", product.collection)
+        self.assertEqual(
+            "2001-05-01T00:00:00.000Z", product.properties["start_datetime"]
+        )
+        self.assertEqual("2001-05-01T00:00:00.000Z", product.properties["end_datetime"])
+        self.assertEqual(
+            "https://www.abc.com/thumbnailA", product.properties["eodag:thumbnail"]
+        )
+        self.assertEqual("dataset-number-one", product.properties["dataset"])
+        self.assertEqual("a", product.properties["a"])
+        self.assertEqual("b", product.properties["b"])
+        self.assertEqual("c", product.properties["c"])
+        self.assertIn("native", product.assets)
+        self.assertEqual(
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item1_20010501",
+            product.assets["native"]["href"],
+        )
+
+        # with use of dataset dates
+        product = search_plugin._create_product(
+            "PRODUCT_A", item_key, s3_url, dataset_dict, collection_dict, True
+        )
+        self.assertEqual("item1_20010501", product.properties["id"])
+        self.assertEqual("PRODUCT_A", product.collection)
+        self.assertEqual("2000-01-01T00:00:00Z", product.properties["start_datetime"])
+        self.assertEqual("2010-01-01T00:00:00Z", product.properties["end_datetime"])
+
+        # with asset properties
+        product = search_plugin._create_product(
+            "PRODUCT_A",
+            item_key,
+            s3_url,
+            dataset_dict,
+            collection_dict,
+            asset_properties={"z": "z"},
+        )
+        self.assertEqual("item1_20010501", product.properties["id"])
+        self.assertIn("native", product.assets)
+        self.assertEqual(
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item1_20010501",
+            product.assets["native"]["href"],
+        )
+        self.assertIn("z", product.assets["native"])
+        self.assertEqual("z", product.assets["native"]["z"])
+
+    def test_plugins_search_cop_marine_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
         kwargs = {"collection": "PRODUCT_A", "provider": self.provider}
