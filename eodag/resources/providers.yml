@@ -2960,11 +2960,11 @@
     instruments:
       - '{{"instrumentShortName": "{instruments#csv_list}"}}'
       - '$.null'
-    online:
-      - '{{"online": "{online}"}}'
+    order:status:
+      - '{{"online": "{order:status#get_group_name((?P<true>succeeded)|(?P<false>orderable))}"}}'
       - '$.null'
-    polarisation:
-      - '{{"polarisationChannels": "{polarisation}"}}'
+    sar:polarizations:
+      - '{{"polarisationChannels": "{sar:polarizations#csv_list(%26)}"}}'
       - '$.null'
     sat:relative_orbit:
       - '{{"relativeOrbitNumber": "{sat:relative_orbit}"}}'
@@ -3314,7 +3314,7 @@
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
           - '$.null'
-        format:
+        wekeo_main:format:
           - '{{"fileFormat": "{format}"}}'
           - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
