@@ -38,9 +38,15 @@
         - '$.spatialBounds'
       title: '$.displayId'
       description: '$.summary'
-      eo:cloud_cover: '$.cloudCover'
-      start_datetime: '{$.temporalCoverage.startDate#to_iso_utc_datetime}'
-      end_datetime: '{$.temporalCoverage.endDate#to_iso_utc_datetime}'
+      eo:cloud_cover:
+        - '{{"scene_filter": {{"cloudCoverFilter":{{"max":{eo:cloud_cover}, "includeUnknown": false }} }} }}'
+        - '$.cloudCover'
+      start_datetime:
+        - '{{"start_date": "{start_datetime#to_iso_utc_datetime}" }}'
+        - '{$.temporalCoverage.startDate#to_iso_utc_datetime}'
+      end_datetime:
+        - '{{"end_date": "{end_datetime#to_iso_utc_datetime}" }}'
+        - '{$.temporalCoverage.endDate#to_iso_utc_datetime}'
       published: '{$.publishDate#to_iso_utc_datetime}'
       ingest_after:
         - '{{"scene_filter": {{"ingestFilter":{{"start":"{ingest_after#to_iso_utc_datetime}" }} }} }}'

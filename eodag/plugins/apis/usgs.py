@@ -49,7 +49,6 @@ from eodag.utils import (
     format_dict_items,
     path_to_uri,
 )
-from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingCollection,
@@ -167,13 +166,11 @@ class UsgsApi(Api):
         usgs_collection = format_dict_items(collection_def_params, **kwargs)[
             "_collection"
         ]
-        if start_date := kwargs.pop("start_datetime", None):
-            start_date = to_iso_utc_string(start_date)
-        if end_date := kwargs.pop("end_datetime", None):
-            end_date = to_iso_utc_string(end_date)
 
         # format query args to get scene_filter
         formatted_kwargs = format_query_params(collection, self.config, kwargs)
+        start_date = formatted_kwargs.get("start_date")
+        end_date = formatted_kwargs.get("end_date")
         scene_filter = formatted_kwargs.get("scene_filter")
 
         final: list[EOProduct] = []

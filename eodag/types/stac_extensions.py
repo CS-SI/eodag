@@ -654,6 +654,22 @@ class EcmwfExtension(BaseStacExtension):
         return self
 
 
+class UsgsFields(BaseModel):
+    """Custom fields for usgs provider."""
+
+    usgs_ingest_after: Annotated[str, Field(None)]
+    usgs_ingest_before: Annotated[str, Field(None)]
+    usgs_scene_filter: Annotated[dict[str, Any], Field(None)]
+
+
+class UsgsExtension(BaseStacExtension):
+    """Custom extension for provider usgs."""
+
+    FIELDS: type[BaseModel] = UsgsFields
+
+    field_name_prefix: Optional[str] = "usgs"
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),
@@ -673,4 +689,5 @@ STAC_EXTENSIONS = [
     LabelExtension(),
     FederationExtension(),
     EcmwfExtension(),
+    UsgsExtension(),
 ]
