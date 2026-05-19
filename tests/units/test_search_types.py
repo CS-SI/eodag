@@ -238,6 +238,19 @@ class TestQueryables(unittest.TestCase):
             field.validation_alias.choices, ["ecmwf:data_format", "data_format"]
         )
 
+    def test_usgs_extension_dual_aliases(self):
+        """UsgsFields must expose both stac-prefixed and unprefixed aliases via
+        the shared ProviderStacExtension base class."""
+        from eodag.types.stac_extensions import UsgsFields
+
+        for unprefixed in ("scene_filter", "ingest_after", "ingest_before"):
+            field = UsgsFields.model_fields[f"usgs_{unprefixed}"]
+            prefixed = f"usgs:{unprefixed}"
+            self.assertEqual(field.alias, prefixed)
+            self.assertEqual(field.serialization_alias, prefixed)
+            self.assertIsInstance(field.validation_alias, AliasChoices)
+            self.assertEqual(field.validation_alias.choices, [prefixed, unprefixed])
+
 
 class TestFieldDefinition(unittest.TestCase):
     def test_json_field_definition_to_python(self):
