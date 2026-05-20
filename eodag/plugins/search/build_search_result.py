@@ -883,7 +883,9 @@ class ECMWFSearch(PostJsonSearch):
                         f" Allowed values are {', '.join(allowed_values)}."
                     )
                 else:
-                    allowed_values_str = "No value allowed."
+                    allowed_values_str = (
+                        f"{keyword} cannot be used with this combination of parameters."
+                    )
                 raise ValidationError(
                     f"{keyword}={values} is not available"
                     f"{all_keywords_str}."
