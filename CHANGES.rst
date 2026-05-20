@@ -3,6 +3,52 @@ Release history
 ===============
 
 
+v4.3.0 (2026-05-20)
+===================
+
+Bug Fixes
+---------
+
+* **mapping**: Timestamps extension and eocat title mapping (`#2189`_, `749c928`_)
+
+* **plugins**: Check already downloaded in sanitized paths (`#2188`_, `87f66b2`_)
+
+* **plugins**: Cop_marine asset urls (`#2173`_, `ca650bd`_)
+
+* **providers**: Add missing usgs queryables (`#2194`_, `b8a39ed`_)
+
+* **queryables**: Check duplicates in queryables AliasChoices (`#2193`_, `ebfad86`_)
+
+Documentation
+-------------
+
+* Eocat tutorial (`#2190`_, `43c0010`_)
+
+Features
+--------
+
+* **plugins**: Usgs advanced search for geom and scene_filter (`#2192`_, `e9e528d`_)
+
+* **providers**: Add dedt Phase 2 DT Climate Adaptation collections (`#2153`_, `dae39d7`_)
+
+.. _#2153: https://github.com/CS-SI/eodag/pull/2153
+.. _#2173: https://github.com/CS-SI/eodag/pull/2173
+.. _#2188: https://github.com/CS-SI/eodag/pull/2188
+.. _#2189: https://github.com/CS-SI/eodag/pull/2189
+.. _#2190: https://github.com/CS-SI/eodag/pull/2190
+.. _#2192: https://github.com/CS-SI/eodag/pull/2192
+.. _#2193: https://github.com/CS-SI/eodag/pull/2193
+.. _#2194: https://github.com/CS-SI/eodag/pull/2194
+.. _43c0010: https://github.com/CS-SI/eodag/commit/43c0010172d2f3563cc0bb7989f86b2d3c5a8ea2
+.. _749c928: https://github.com/CS-SI/eodag/commit/749c928600fee659c6de97db13f5f3281cb80e24
+.. _87f66b2: https://github.com/CS-SI/eodag/commit/87f66b2debba83451708e0f6cf4c20c6c7dc06c1
+.. _b8a39ed: https://github.com/CS-SI/eodag/commit/b8a39ed73951cc82b8322b99827db34e074e2414
+.. _ca650bd: https://github.com/CS-SI/eodag/commit/ca650bde0bb01371c2049551c950b86ccee2bea5
+.. _dae39d7: https://github.com/CS-SI/eodag/commit/dae39d7167b9102f5053794b1aac3501377d6493
+.. _e9e528d: https://github.com/CS-SI/eodag/commit/e9e528d11a3e52849f23c3feaeb7743e45f451e2
+.. _ebfad86: https://github.com/CS-SI/eodag/commit/ebfad863737680a7606e894676b46c6269664e61
+
+
 v4.2.1 (2026-05-11)
 ===================
 
