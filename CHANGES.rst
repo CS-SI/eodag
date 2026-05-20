@@ -6,6 +6,13 @@ Release history
 v4.3.0 (2026-05-20)
 ===================
 
+Features
+--------
+
+* **plugins**: Usgs advanced search for geom and scene_filter (`#2192`_, `e9e528d`_)
+
+* **providers**: Add dedt Phase 2 DT Climate Adaptation collections (`#2153`_, `dae39d7`_)
+
 Bug Fixes
 ---------
 
@@ -23,13 +30,6 @@ Documentation
 -------------
 
 * Eocat tutorial (`#2190`_, `43c0010`_)
-
-Features
---------
-
-* **plugins**: Usgs advanced search for geom and scene_filter (`#2192`_, `e9e528d`_)
-
-* **providers**: Add dedt Phase 2 DT Climate Adaptation collections (`#2153`_, `dae39d7`_)
 
 .. _#2153: https://github.com/CS-SI/eodag/pull/2153
 .. _#2173: https://github.com/CS-SI/eodag/pull/2173
