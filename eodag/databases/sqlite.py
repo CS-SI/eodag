@@ -480,8 +480,10 @@ class SQLiteDatabase(Database):
                 where_parts.append("collections_fts MATCH ?")
                 params.append(fts_expr)
 
-                # Weighted relevance: title > description > keywords
-                select_score = ", bm25(collections_fts, 30.0, 3.0, 1.0) AS rank_score"
+                # Weighted relevance: id > title > keywords > description
+                select_score = (
+                    ", bm25(collections_fts, 50.0, 30.0, 3.0, 1.0) AS rank_score"
+                )
                 order_terms = ["rank_score ASC"]
 
         if sortby:
@@ -879,13 +881,14 @@ def create_collections_table(con: sqlite3.Connection) -> None:
         "CREATE INDEX IF NOT EXISTS idx_collections_end_datetime ON collections (end_datetime);"
     )
 
-    # FTS5 virtual table for full-text search on title, description, keywords
+    # FTS5 virtual table for full-text search on id, title, keywords, description
     cur.execute(
         """
         CREATE VIRTUAL TABLE IF NOT EXISTS collections_fts USING fts5(
+            id,
             title,
-            description,
             keywords,
+            description,
             content='',
             tokenize='unicode61 remove_diacritics 2'
         );
@@ -898,18 +901,19 @@ def create_collections_table(con: sqlite3.Connection) -> None:
         r = f"{ref}{sep}" if ref else ""
         return f"""
                 {r}key,
+                COALESCE(json_extract({r}content, '$.id'), ''),
                 COALESCE(json_extract({r}content, '$.title'), ''),
-                COALESCE(json_extract({r}content, '$.description'), ''),
                 COALESCE((
                     SELECT group_concat(value, ' ')
                     FROM json_each({r}content, '$.keywords')
-                ), '')"""
+                ), ''),
+                COALESCE(json_extract({r}content, '$.description'), '')"""
 
     # Triggers to keep FTS index in sync with collections table
     cur.execute(
         f"""
         CREATE TRIGGER IF NOT EXISTS collections_ai AFTER INSERT ON collections BEGIN
-            INSERT INTO collections_fts(rowid, title, description, keywords)
+            INSERT INTO collections_fts(rowid, id, title, keywords, description)
             VALUES ({_fts_vals("NEW")});
         END;
     """
@@ -917,7 +921,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     cur.execute(
         f"""
         CREATE TRIGGER IF NOT EXISTS collections_ad AFTER DELETE ON collections BEGIN
-            INSERT INTO collections_fts(collections_fts, rowid, title, description, keywords)
+            INSERT INTO collections_fts(collections_fts, rowid, id, title, keywords, description)
             VALUES ('delete', {_fts_vals("OLD")});
         END;
     """
@@ -925,9 +929,9 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     cur.execute(
         f"""
         CREATE TRIGGER IF NOT EXISTS collections_au AFTER UPDATE OF content ON collections BEGIN
-            INSERT INTO collections_fts(collections_fts, rowid, title, description, keywords)
+            INSERT INTO collections_fts(collections_fts, rowid, id, title, keywords, description)
             VALUES ('delete', {_fts_vals("OLD")});
-            INSERT INTO collections_fts(rowid, title, description, keywords)
+            INSERT INTO collections_fts(rowid, id, title, keywords, description)
             VALUES ({_fts_vals("NEW")});
         END;
     """
