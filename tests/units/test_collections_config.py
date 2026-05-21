@@ -15,27 +15,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import unittest
 from pathlib import Path
 
 import yaml
 
 
-def test_collection_processing_levels_use_stac_short_names():
-    """Default collection processing levels should use STAC short names."""
-    collections_path = (
-        Path(__file__).parents[2] / "eodag" / "resources" / "collections.yml"
-    )
+class TestCollectionsConfig(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCollectionsConfig, cls).setUpClass()
+        collections_path = (
+            Path(__file__).parents[2] / "eodag" / "resources" / "collections.yml"
+        )
+        with open(collections_path, encoding="utf-8") as fh:
+            cls.collections = yaml.safe_load(fh)
 
-    with open(collections_path, encoding="utf-8") as fh:
-        collections = yaml.safe_load(fh)
+    def test_collection_processing_levels_use_stac_short_names(self):
+        """Default collection processing levels must use STAC short names"""
+        long_processing_levels = {
+            collection_id: collection["processing:level"]
+            for collection_id, collection in self.collections.items()
+            if isinstance(collection, dict)
+            and isinstance(collection.get("processing:level"), str)
+            and collection["processing:level"].lower().startswith("level")
+        }
 
-    long_processing_levels = {
-        collection_id: collection["processing:level"]
-        for collection_id, collection in collections.items()
-        if isinstance(collection, dict)
-        and isinstance(collection.get("processing:level"), str)
-        and collection["processing:level"].lower().startswith("level")
-    }
+        self.assertEqual(long_processing_levels, {})
 
-    assert long_processing_levels == {}
+    def test_collection_processing_levels_are_not_number_only(self):
+        """Default collection processing levels must not be number-only values"""
+        number_only_processing_levels = {
+            collection_id: collection["processing:level"]
+            for collection_id, collection in self.collections.items()
+            if isinstance(collection, dict)
+            and isinstance(collection.get("processing:level"), str)
+            and collection["processing:level"].strip().isdigit()
+        }
+
+        self.assertEqual(number_only_processing_levels, {})
