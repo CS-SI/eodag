@@ -972,16 +972,15 @@ class ECMWFSearch(PostJsonSearch):
                 default = ",".join(default)
 
             is_required: bool
-            if available_values.get(name):
-                # required by the filtered constraints (available_values[name] is a not empty list)
-                is_required = True
-            elif bool(element.get("required")):
-                if name in available_values and not available_values[name]:
-                    # not required by the filtered constraints (available_values[name] is an empty list)
-                    is_required = False
-                else:
-                    # required only by form
+            if bool(element.get("required", False)):
+                # required by form
+                if available_values.get(name):
                     is_required = True
+                else:
+                    # keyword required and the list of available values is empty:
+                    # don't add this keyword to the list of queryables because
+                    # it cannot be used with this combination of parameters
+                    continue
             else:
                 # not required by form
                 is_required = False
