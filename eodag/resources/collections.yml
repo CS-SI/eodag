@@ -666,7 +666,7 @@ S1_SAR_RAW:
   providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL1
   platform: S1A,S1B,S1C
-  processing:level: L0
+  processing:level: RAW
   keywords: ["SAR", "SENTINEL", "SENTINEL1", "S1", "S1A", "S1B", "S1C", "L0", "RAW", "SAFE"]
   eodag:sensor_type: RADAR
   license: other
