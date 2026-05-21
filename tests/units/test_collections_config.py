@@ -27,7 +27,7 @@ def test_collection_processing_levels_use_stac_short_names():
         Path(__file__).parents[2] / "eodag" / "resources" / "collections.yml"
     )
 
-    with open(collections_path) as fh:
+    with open(collections_path, encoding="utf-8") as fh:
         collections = yaml.safe_load(fh)
 
     long_processing_levels = {
