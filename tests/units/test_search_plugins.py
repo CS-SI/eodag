@@ -3370,7 +3370,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(self.collection)
         # geom converted using to_nwse_bounds
-        assert eoproduct.geometry.bounds == (2.0, 1.0, 4.0, 3.0)
+        assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
         # check if collection_params is a subset of eoproduct.properties
         assert self.collection_params.items() <= eoproduct.properties.items()
 
@@ -3398,6 +3398,22 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # ``area`` must not leak as a top-level property on the EOProduct
         for key in ("area", "ecmwf:area", "ecmwf_area"):
             self.assertNotIn(key, eoproduct.properties)
+
+    def test_plugins_search_ecmwfsearch_with_area_list_not_sorted(self):
+        """ECMWFSearch must not sort area parameter even if it's a list."""
+        # area as list format: [North, West, South, East]
+        # Use values that would be different if sorted
+        area_list = [44.0, 1.0, 43.0, 2.0]
+        results = self.search_plugin.query(
+            **self.query_dates, collection=self.collection, area=area_list
+        )
+        eoproduct = results.data[0]
+        # geometry on the EOProduct is the converted polygon
+        self.assertEqual(eoproduct.geometry.bounds, (1.0, 43.0, 2.0, 44.0))
+        # original ``area`` order is preserved in qs (not sorted)
+        self.assertIn("qs", eoproduct.properties)
+        # area should be preserved as-is (not sorted)
+        self.assertEqual(eoproduct.properties["qs"]["area"], area_list)
 
     def test_plugins_search_ecmwfsearch_with_feature_keeps_qs(self):
         """ECMWFSearch.query with ``feature`` must expose geometry in properties and keep ``feature`` in qs."""
