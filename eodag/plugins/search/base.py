@@ -22,9 +22,9 @@ import re
 from typing import TYPE_CHECKING, Annotated, Callable, get_args
 
 import orjson
-from pydantic import AliasChoices
 from jsonpath_ng import JSONPath
 from jsonpath_ng.jsonpath import Child as JSONChild
+from pydantic import AliasChoices
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
@@ -196,12 +196,8 @@ class Search(PluginTopic):
         default value is returned.
 
         :param key: The configuration option key.
-        :type key: str
         :param default: The default value to be returned if the option is not found (default is None).
-        :type default: Any
-
         :return: The value of the specified configuration option or the default value.
-        :rtype: Any
         """
         collection_cfg = getattr(self.config, "collection_config", {})
         non_none_cfg = {k: v for k, v in collection_cfg.items() if v}
@@ -230,12 +226,13 @@ class Search(PluginTopic):
         self, collection: Optional[str] = None
     ) -> dict[str, Union[str, list[str]]]:
         """Get the plugin metadata mapping configuration (collection specific if exists)
+
         :param collection: the desired collection
-        :returns: The collection metadata assets-mapping
+        :returns: The collection specific metadata-mapping
         """
         metadata_mapping = getattr(self.config, "metadata_mapping", {})
-        if isinstance(collection, str):
-            # Special overfload for collection config
+        if collection is not None:
+            # Special overload for collection config
             # "metadata_mapping_from_product" overloaded by "current"
             collection_metadata_mapping: dict[str, Union[str, list[str]]] = {}
             target_collection: Optional[str] = collection
@@ -244,17 +241,17 @@ class Search(PluginTopic):
                 watchdog -= 1
                 # Check if collection has a specific configuration
                 collection_config = self.config.products.get(target_collection, {})
-                # Overload imported asset mapping configuration by current one
+                # Overload imported metadata mapping configuration by current one
                 buffer = collection_config.get("metadata_mapping", {})
                 buffer.update(collection_metadata_mapping)
                 collection_metadata_mapping = buffer
                 # This collection configuration can refer to another collection configuration
                 target_collection = collection_config.get(
-                    "metadata_mapping_from_product", None
+                    "metadata_mapping_from_product"
                 )
             metadata_mapping.update(collection_metadata_mapping)
             if watchdog == 0:
-                logger.warning("get_assets_mapping watchdog triggered")
+                logger.warning("get_metadata_mapping watchdog triggered")
 
         return metadata_mapping
 
@@ -262,12 +259,13 @@ class Search(PluginTopic):
         self, collection: Optional[str] = None
     ) -> Union[Any, dict[str, dict[str, Any]]]:
         """Get the plugin asset mapping configuration (collection specific if exists)
+
         :param collection: the desired collection
         :returns: The collection specific assets-mapping
         """
         assets_mapping = getattr(self.config, "assets_mapping", {})
-        if isinstance(collection, str):
-            # Special overfload for collection config
+        if collection is not None:
+            # Special overload for collection config
             # "metadata_mapping_from_product" overloaded by "current"
             collection_asset_mapping: dict[str, Union[str, list[str]]] = {}
             target_collection: Optional[str] = collection
