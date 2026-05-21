@@ -1764,7 +1764,7 @@ class PostJsonSearch(QueryStringSearch):
 
         # Force sort qp list parameters
         for key in qp:
-            if isinstance(qp[key], list):
+            if isinstance(qp[key], list) and key != "area":
                 qp[key].sort()
 
         for query_param, query_value in qp.items():
