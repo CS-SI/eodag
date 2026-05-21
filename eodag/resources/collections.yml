@@ -2203,7 +2203,7 @@ S3_SY_V10:
   providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
-  processing:level: LEVEL-2W
+  processing:level: L2W
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "V10"]
   eodag:sensor_type: OPTICAL,RADAR
   license: other
@@ -2220,7 +2220,7 @@ S3_SY_VG1:
   providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
-  processing:level: LEVEL-2
+  processing:level: L2
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "VG1"]
   eodag:sensor_type: OPTICAL,RADAR
   license: other
@@ -2237,7 +2237,7 @@ S3_SY_VGP:
   providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
   constellation: SENTINEL3
   platform: S3A,S3B
-  processing:level: LEVEL-2
+  processing:level: L2
   keywords: ["SYNERGY", "SY", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "VGP"]
   eodag:sensor_type: OPTICAL,RADAR
   license: other
@@ -7172,7 +7172,7 @@ MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 2
+  processing:level: L2
   keywords: ["CMEMS", "Mercator", "ocean", "insitu", "NRT", "currents", "global", "L2"]
   eodag:sensor_type:
   license: other
@@ -7274,7 +7274,7 @@ MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "vertical", "nutrients", "carbon", "carbonate", "L3"]
   eodag:sensor_type:
   license: other
@@ -7473,7 +7473,7 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "surface", "temperature", "L3", "PIR", "PMW", "GIR"]
   eodag:sensor_type:
   license: other
@@ -7569,7 +7569,7 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "L3", "WAVE-TAC", "SAR", "spectral", "mono-mission"]
   eodag:sensor_type:
   license: other
@@ -7595,7 +7595,7 @@ MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "NRT", "wave", "height", "L3", "wind", "speed", "WAVE-TAC", "mono-mission"]
   eodag:sensor_type:
   license: other
@@ -7654,7 +7654,7 @@ MO_WIND_GLO_PHY_L3_NRT_012_002:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "surface", "wind", "daily", "gridded", "NRT", "Scatterometer"]
   eodag:sensor_type:
   license: other
@@ -7675,7 +7675,7 @@ MO_WIND_GLO_PHY_L3_MY_012_005:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "surface", "wind", "daily", "gridded", "reprocessed", "REP", "Scatterometer"]
   eodag:sensor_type:
   license: other
@@ -7733,7 +7733,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "L3", "bio-geo-chemical", "BGC", "chlorophyll", "phytoplankton", "reflectance"]
   eodag:sensor_type: multi
   license: other
@@ -7754,7 +7754,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L3", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "NRT"]
   eodag:sensor_type:
   license: other
@@ -7774,7 +7774,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
   instruments: []
   constellation:
   platform:
-  processing:level: Level 3
+  processing:level: L3
   keywords: ["CMEMS", "Mercator", "ocean", "global", "colour", "L3", "bio-geo-chemical", "BGC", "Copernicus-GlobColour", "MY", "multi-years"]
   eodag:sensor_type:
   license: other
