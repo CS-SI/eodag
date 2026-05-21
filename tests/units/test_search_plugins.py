@@ -3538,6 +3538,111 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertListEqual(["a", "b"], available_values["variable"])
         self.assertIn("date", available_values)
 
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints_with_keyword_required_by_form(
+        self,
+    ):
+        """An input keyword cannot be used if it's required by form and no constraint with the given
+        combination of parameters exists"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": True},
+        ]
+
+        # "variable" is *required* by form and *some* constraints with the given "date" defines values
+        # for "variable": "variable" must be used as input keyword
+        # case 1: the input value "a" is available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        # case 2: the input value "c" is not available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertIn(
+            "ecmwf:variable=c is not available. Allowed values are ",
+            ex.exception.message,
+        )
+
+        # "variable" is *required* by form and *no* constraint with the given "date" defines values
+        # for "variable": "variable" cannot be used as input keyword with this value of "date".
+        input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "a"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertEqual(
+            "ecmwf:variable=a is not available. ecmwf:variable cannot be used with this combination of parameters.",
+            ex.exception.message,
+        )
+
+        # "variable" is *required* by form and *no* constraint with the given "date" defines values
+        # for "variable": "variable" is not used as input keyword and no available value for "variable" is returned
+        input_keywords = {"date": "2024-01-01/2024-01-01"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual([], available_values["variable"])
+        self.assertIn("date", available_values)
+
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints_with_keyword_not_required_by_form(
+        self,
+    ):
+        """Any value is accepted if a keyword is not required by form and its list of allowed values is empty"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": False},
+        ]
+
+        # "variable" is *not* required by form and *no* constraint with the given "date" defines values
+        # for "variable": any value for "variable" can be used as input keyword.
+        input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "c"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual([], available_values["variable"])
+        self.assertIn("date", available_values)
+
+        # "variable" is *not* required by form and *some* constraints with the given "date" defines values
+        # for "variable": "variable" must match the available values.
+        # case 1: the value "a" is available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        # case 2: the value "c" is not available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertIn(
+            "ecmwf:variable=c is not available. Allowed values are ",
+            ex.exception.message,
+        )
+
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,

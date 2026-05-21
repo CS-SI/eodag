@@ -851,10 +851,10 @@ class ECMWFSearch(PostJsonSearch):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
-                # if keyword in required_by_form then any_value_allowed = False
-                #   use constraints file to determine if the parameter match the allowed values
-                # if allowed_values then any_value_allowed = False
-                #   use constraints file: the parameter must match the allowed values
+                # if keyword in required_by_form then any_value_allowed = False:
+                #   use constraints file to determine if the parameter matches the allowed values
+                # if allowed_values is not empty then any_value_allowed = False:
+                #   use constraints file to determine if the parameter matches the allowed values
                 if keyword not in required_by_form and not allowed_values:
                     # keyword not required by form and the list of allowed values is empty:
                     # accept any value for this keyword
@@ -880,7 +880,7 @@ class ECMWFSearch(PostJsonSearch):
 
                 if allowed_values:
                     allowed_values_str = (
-                        f" Allowed values are {', '.join(allowed_values)}."
+                        f"Allowed values are {', '.join(allowed_values)}."
                     )
                 else:
                     allowed_values_str = (
