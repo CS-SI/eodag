@@ -1549,19 +1549,19 @@ class EODataAccessGateway:
                     **kwargs,
                 ):
                     results.data.extend(page_results.data)
+                    # try using crunch to get unique result and stop if found, to avoid unnecessary requests
+                    if (
+                        len(results) > 1
+                        and len(filtered := results.filter_property(id=uid)) == 1
+                    ):
+                        results = filtered
+                        break
             except Exception as e:
                 if kwargs.get("raise_errors"):
                     raise
                 logger.warning(e)
                 results.errors.append((plugin.provider, e))
                 continue
-
-            # try using crunch to get unique result
-            if (
-                len(results) > 1
-                and len(filtered := results.filter_property(id=uid)) == 1
-            ):
-                results = filtered
 
             if len(results) == 1:
                 if not results[0].collection:
