@@ -62,23 +62,21 @@
       usgs:productId: '$.id'
     assets_mapping:
       download_link:
-        href: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{$.entityId}/M2M/'
-        roles:
-        - 'archive'
-        - 'data'
+        _collection: '$.collection'
+        _entity_id: '$.entityId'
+        href: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{_entity_id}/M2M/'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       quicklook:
         href: '$.browse[0].browsePath'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: 'image/jpeg'
       thumbnail:
         href: '$.browse[0].thumbnailPath'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: 'image/jpeg'
     extract: True
     order_enabled: true
@@ -188,22 +186,23 @@
           - '{title}'
       assets_mapping:
         download_link:
-          href: 's3://cbers-pds/{$.downloadUrl}'
-          roles:
-          - 'archive'
-          - 'data'
+          _download_url: '$.downloadUrl'
+          href: 's3://cbers-pds/{_download_url}'
+          roles: '["archive", "data"]'
           order:status: 'succeded'
         quicklook:
-          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L[24]$","")}.jpg'
+          _download_url: '$.downloadUrl'
+          _scene_id: '{$.sceneID#replace_str("_L[24]$","")}'
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{_download_url}/{_scene_id}.jpg'
           title: "quicklook"
-          roles:
-          - 'overwiev'
+          roles: '["overwiev"]'
           type: 'image/jpeg'
         thumbnail:
-          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L[24]$","")}_small.jpeg'
+          _download_url: '$.downloadUrl'
+          _scene_id: '{$.sceneID#replace_str("_L[24]$","")}'
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{_download_url}/{_scene_id}_small.jpeg'
           title: "thumbnail"
-          roles:
-          - 'thumbnail'
+          roles: '["thumbnail"]'
           type: 'image/jpeg'
     CBERS4_PAN10M_L4:
       instruments: PAN10M
@@ -294,21 +293,17 @@
       assets_mapping:
         download_link:
           href: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
-          roles:
-          - 'archive'
-          - 'data'
+          roles: '["archive", "data"]'
           order:status: 'succeded'
         quicklook:
           href: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
           title: "quicklook"
-          roles:
-          - 'overwiev'
+          roles: '["overwiev"]'
           type: 'image/jpeg'
         thumbnail:
           href: '$.thumbnail'
           title: "thumbnail"
-          roles:
-          - 'thumbnail'
+          roles: '["thumbnail"]'
           type: 'image/jpeg'
     MODIS_MCD43A4:
       _collection: modis
@@ -339,23 +334,22 @@
           - '{title}'
       assets_mapping:
         download_link:
-          href: 's3://modis-pds/MCD43A4.006/{$.horizontalTileNumber#round}/{$.verticalTileNumber#round}/{$.sceneID#slice_str(9,16,1)}/'
-          roles:
-          - 'archive'
-          - 'data'
+          _h_tile: '{$.horizontalTileNumber#round}'
+          _v_tile: '{$.verticalTileNumber#round}'
+          _scene_id: '{$.sceneID#slice_str(9,16,1)}'
+          href: 's3://modis-pds/MCD43A4.006/{_h_tile}/{_v_tile}/{_scene_id}/'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeded'
         quicklook:
           href: '$.thumbnail'
           title: "quicklook"
-          roles:
-          - 'overwiev'
+          roles: '["overwiev"]'
           type: 'image/jpeg'
         thumbnail:
           href: '$.thumbnail'
           title: "thumbnail"
-          roles:
-          - 'thumbnail'
+          roles: '["thumbnail"]'
           type: 'image/jpeg'
     NAIP:
       _collection: naip
@@ -382,10 +376,9 @@
           - '{title}'
       assets_mapping:
         download_link:
-          href: 's3://naip-analytic/{$.awsPath}'
-          roles:
-          - 'archive'
-          - 'data'
+          _aws_path: '$.awsPath'
+          href: 's3://naip-analytic/{_aws_path}'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeded'
     S1_SAR_GRD:
@@ -427,23 +420,20 @@
           - '{title}'
       assets_mapping:
         download_link:
-          href: 's3://sentinel-s1-l1c/{$.awsPath}'
-          roles:
-          - 'archive'
-          - 'data'
+          _aws_path: '$.awsPath'
+          href: 's3://sentinel-s1-l1c/{_aws_path}'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeded'
         quicklook:
           href: 'https://render.eosda.com/S1/thumb/{title}.png'
           title: "quicklook"
-          roles:
-          - 'overwiev'
+          roles: '["overwiev"]'
           type: 'image/png'
         thumbnail:
           href: 'https://render.eosda.com/S1/thumb/{title}.png'
           title: "thumbnail"
-          roles:
-          - 'thumbnail'
+          roles: '["thumbnail"]'
           type: 'image/png'
     S2_MSI_L1C:
       _collection: sentinel2
@@ -486,23 +476,20 @@
         _aws_path_l2a: '$.null'
       assets_mapping:
         download_link:
-          href: 's3://sentinel-s2-l1c/{$.awsPath}'
-          roles:
-          - 'archive'
-          - 'data'
+          _aws_path: '$.awsPath'
+          href: 's3://sentinel-s2-l1c/{_aws_path}'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeded'
         quicklook:
           href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
           title: "quicklook"
-          roles:
-          - 'overwiev'
+          roles: '["overwiev"]'
           type: 'image/jpeg'
         thumbnail:
           href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
           title: "thumbnail"
-          roles:
-          - 'thumbnail'
+          roles: '["thumbnail"]'
           type: 'image/jpeg'
     S2_MSI_L2A:
       _collection: sentinel2
@@ -570,10 +557,9 @@
       assets_mapping_from_product: S2_MSI_L1C
       assets_mapping:
         download_link:
-          href: 's3://sentinel-s2-l2a/{$.awsPathL2A}'
-          roles:
-          - 'archive'
-          - 'data'
+          _aws_path_l2a: '$.awsPathL2A'
+          href: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeded'
   download: !plugin
@@ -862,9 +848,7 @@
       download_link:
         title: 'downloadlink'
         href: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: '$.ContentType'
         file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
         file:size: '$.ContentLength'
@@ -873,14 +857,12 @@
       quicklook:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: "image/jpeg"
   download: !plugin
     type: HTTPDownload
@@ -1322,14 +1304,12 @@
       quicklook:
         href: '$.assets.reduced_resolution_browse.alternate.s3.href'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: '$.assets.reduced_resolution_browse.type'
       thumbnail:
         href: '$.assets.thumbnail.alternate.s3.href'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: '$.assets.thumbnail.type'
   products:
     LANDSAT_C2L1:
@@ -1419,9 +1399,7 @@
     download_link:
       title: "downloadlink"
       href: '$.links[?(@.rel="self")].href'
-      roles:
-      - 'archive'
-      - 'data'
+      roles: '["archive", "data"]'
       type: 'aplication/json'
       # order:status set to succeeded for consistency between providers
       order:status: 'succeeded'
@@ -1523,22 +1501,18 @@
       assets_mapping:
         download_link:
           href: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
-          roles:
-          - 'archive'
-          - 'data'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeeded'
         quicklook:
           href: '$.assets.thumbnail.href'
           title: "thumbnail"
-          roles:
-          - 'overwiev'
+          roles: '["overwiev"]'
           type: '$.assets.thumbnail.type'
         thumbnail:
           href: '$.assets.thumbnail.href'
           title: "thumbnail"
-          roles:
-          - 'thumbnail'
+          roles: '["thumbnail"]'
           type: '$.assets.thumbnail.type'
     L8_OLI_TIRS_C1L1:
       _collection: landsat-8-l1-c1
@@ -1549,9 +1523,7 @@
       assets_mapping:
         download_link:
           href: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
-          roles:
-          - 'archive'
-          - 'data'
+          roles: '["archive", "data"]'
           type: 'application/octet-stream'
           order:status: 'succeeded'
     GENERIC_COLLECTION:
@@ -1596,10 +1568,10 @@
       qs: $.qs
     assets_mapping:
       download_link:
-        href: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
-        roles:
-        - 'archive'
-        - 'data'
+        _dataset: '$.dataset'
+        _qs: '$.qs'
+        href: 'https://apps.ecmwf.int/datasets/data/{_dataset}?{_qs#to_geojson}'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         # order:status set to succeeded for consistency between providers
         order:status: 'succeeded'
@@ -1690,9 +1662,7 @@
       download_link:
         title: "downloadlink"
         href: ""
-        roles:
-        - archive
-        - data
+        roles: '["archive", "data"]'
         type: "application/netcdf"
         order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
@@ -1868,9 +1838,7 @@
       download_link:
         title: "downloadlink"
         href: ""
-        roles:
-        - archive
-        - data
+        roles: '["archive", "data"]'
         type: "application/netcdf"
         order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
@@ -2100,9 +2068,7 @@
         # The url to download the product "as is" (literal or as a template to be completed either after the search result
         # is obtained from the provider or during the eodag download phase)
         href: '$.properties.services.download.url'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
         file:size: '$.properties.services.download.size'
         file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")#to_lower'
@@ -2111,14 +2077,12 @@
       quicklook:
         href: '$.properties.quicklook'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: "image/png"
       thumbnail:
         href: '$.properties.thumbnail'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: "image/png"
   products:
     # Sentinel 1
@@ -2326,10 +2290,9 @@
         - '$.timeIntervalsAlignment'
     assets_mapping:
       download_link:
+        qs: '$.qs'
         href: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
         order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
@@ -2628,9 +2591,7 @@
     assets_mapping:
       download_link:
         href: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: '$.ContentType'
         file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
         file:size: '$.ContentLength'
@@ -2639,14 +2600,12 @@
       quicklook:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: "image/jpeg"
   download: !plugin
     type: HTTPDownload
@@ -3075,14 +3034,12 @@
       quicklook:
         href: '$.assets[?(@.rel == "preview")].href'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: '$.assets[?(@.rel == "preview")].type'
       thumbnail:
         href: '$.assets[?(@.rel == "preview")].href'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: '$.assets[?(@.rel == "preview")].type'
   products:
     S1_SAR_GRD:
@@ -3271,23 +3228,19 @@
     assets_mapping:
       download_link:
         href: ''
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
         order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: 'image/jpeg'
       thumbnail:
         href: '$.properties.thumbnail'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: 'image/jpeg'
   products:
     S1_SAR_GRD:
@@ -3725,9 +3678,7 @@
     assets_mapping:
       download_link:
         href: ''
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: '$.ContentType'
         "order_link": 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location#url_decode}","product_id":"{id}", "dataset_id": "{dataset}"}'
         order:status: 'orderable'
@@ -4011,9 +3962,7 @@
     assets_mapping:
       download_link:
         href: '$.properties.location'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
         order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}'
@@ -4295,23 +4244,19 @@
     assets_mapping:
       download_link:
         href: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         # order:status: must be one of succeeded, ordered, orderable
         order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       quicklook:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: "image/jpeg"
   download: !plugin
     type: AwsDownload
@@ -4752,9 +4697,7 @@
       download_link:
         title: "downloadlink"
         href: ''
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{"verb": "retrieve", "request": {qs#to_geojson} }'
         order:status: 'orderable'
@@ -5034,9 +4977,7 @@
       download_link:
         title: "downloadlink"
         href: ''
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
         order:status: 'orderable'
@@ -5364,24 +5305,20 @@
       download_link:
         title: "downloadlink"
         href: '$.assets.downloadLink.href'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: '$.assets.downloadLink.type'
         alternate: '$.assets.downloadLink.alternate'
         order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       quicklook:
         href: '$.assets["ql.jpg"].href'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: '$.assets["ql.jpg"].type'
         alternate: '$.assets["ql.jpg"].alternate'
       thumbnail:
         href: '$.assets["ql.jpg"].href'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: $.assets["ql.jpg"].type
         alternate: '$.assets["ql.jpg"].alternate'
     discover_collections:
@@ -6040,22 +5977,18 @@
       download_link:
         title: 'downloadlink'
         href: '$.properties.links.data[?(@.title="Product download")].href'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: '$.properties.links.data[?(@.title="Product download")].mediaType'
         order:status: 'succeeded'
       quicklook:
         href: '$.properties.links.previews[?(@.title="Quicklook")].href'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.properties.links.previews[?(@.title="Quicklook")].href'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: "image/jpeg"
   products:
     # S3 SRAL
@@ -6685,21 +6618,17 @@
       download_link:
         title: 'downloadlink'
         href: '$.assets[?(@.roles[0] == "data") & (@.type == "application/zip")].href'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         order:status: 'succeeded'
       quicklook:
         href: '$.assets[?(@.roles[0] == "overview")].href'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.assets[?(@.roles[0] == "overview")].href'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: "image/jpeg"
   products:
     S1_SAR_OCN:
@@ -6833,22 +6762,18 @@
     assets_mapping:
       download_link:
         href: '$.properties.endpoint_url'
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'succeeded'
       quicklook:
         href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
         title: "quicklook"
-        roles:
-        - 'overwiev'
+        roles: '["overwiev"]'
         type: 'image/jpeg'
       thumbnail:
         href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
         title: "thumbnail"
-        roles:
-        - 'thumbnail'
+        roles: '["thumbnail"]'
         type: 'image/jpeg'
   products:
     S1_SAR_OCN:
@@ -7014,9 +6939,7 @@
       download_link:
         href: ''
         title: "downloadlink"
-        roles:
-        - 'archive'
-        - 'data'
+        roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:

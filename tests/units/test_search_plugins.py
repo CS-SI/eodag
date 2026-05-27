@@ -109,10 +109,14 @@ class BaseSearchPluginTest(unittest.TestCase):
     def test_get_assets_from_mapping(self):
         search_plugin = self.get_search_plugin(provider="geodes")
         search_plugin.config.assets_mapping = {
-            "one": {"href": "$.properties.href", "roles": ["a_role"], "title": "One"},
+            "one": {
+                "href": "$.properties.href",
+                "roles": '["a_role"]',
+                "title": "One",
+            },
             "two": {
                 "href": "https://a.static_url.com",
-                "roles": ["a_role"],
+                "roles": '["a_role"]',
                 "title": "Two",
             },
         }

@@ -19,21 +19,18 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Annotated, Callable, get_args
+from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
-from jsonpath_ng import JSONPath
-from jsonpath_ng.jsonpath import Child as JSONChild
 from pydantic import AliasChoices
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
     NOT_MAPPED,
-    format_metadata,
     mtd_cfg_as_conversion_and_querypath,
+    properties_from_json,
 )
 from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
@@ -49,7 +46,6 @@ from eodag.utils import (
     format_dict_items,
     format_pydantic_error,
     get_collection_dates,
-    string_to_jsonpath,
     update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
@@ -583,7 +579,7 @@ class Search(PluginTopic):
 
     def get_assets_from_mapping(
         self, provider_item: dict[str, Any], product: Optional[EOProduct] = None
-    ) -> AssetsDict:
+    ) -> Union[AssetsDict, dict[str, Any]]:
         """
         Create assets based on the assets_mapping in the provider's config
         and an item returned by the provider
@@ -592,49 +588,35 @@ class Search(PluginTopic):
         :param product: optional product against which assets are computed
         :returns: dict containing the asset metadata
         """
-
-        # Gather collection and product properties
         collection = getattr(product, "collection", None)
-        properties = getattr(product, "properties", {})
+        properties = getattr(product, "properties", {}) or {}
 
-        # Complete given product properties with configuration by product
-        # (not always yet in product properties when current function called)
-        if isinstance(collection, str):
-            # Replace templated parameters by values from product properties and provider_item
-            collection_properties = MappingInterpretor.metadata_mapping_compute(
-                self.config.products.get(collection, {}),
-                properties=properties,
-                provider_item=provider_item,
-            )
-            # have to redo to consider new parameters just added
-            # (some parameters are filled by other ones just defined)
-            collection_properties = MappingInterpretor.metadata_mapping_compute(
-                collection_properties, properties=collection_properties
-            )
-            # extends base config
-            for field_name in collection_properties:
-                if field_name not in [
-                    "metadata_mapping",
-                    "assets_mapping",
-                    "metadata_mapping_from_product",
-                ]:
-                    properties[field_name] = collection_properties[field_name]
-
-        # Gather asset mapping
         assets_mapping = self.get_assets_mapping(collection)
-        if assets_mapping:
-            # Compute asset mapping
-            assets_mapping = MappingInterpretor.metadata_mapping_compute(
-                assets_mapping, properties=properties, provider_item=provider_item
-            )
 
-        # Specifcs assets (like download_link, thumbnail or quicklook)
         if product is None:
-            # No product: return a plain mapping (used by unit tests / introspection)
-            return dict(assets_mapping) if assets_mapping else {}
+            # Plain mapping container used by unit tests / introspection
+            computed: dict[str, Any] = {}
+            for key, mapping in (assets_mapping or {}).items():
+                try:
+                    asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping)
+                    computed[key] = properties_from_json(
+                        provider_item, asset_querypaths
+                    )
+                except Exception as e:
+                    logger.warning("Could not resolve asset mapping '%s': %s", key, e)
+                    computed[key] = dict(mapping)
+            return computed
 
         assets = AssetsDict(product)
-        assets.update(assets_mapping)
+
+        for key, mapping in (assets_mapping or {}).items():
+            try:
+                asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping)
+                asset = properties_from_json(provider_item, asset_querypaths)
+            except Exception as e:
+                logger.warning("Could not resolve asset mapping '%s': %s", key, e)
+                asset = dict(mapping)
+            assets.update({key: asset})
 
         # Global imported assets
         imported_assets: dict[str, Any] = {}
@@ -660,191 +642,3 @@ class Search(PluginTopic):
         assets.update(imported_assets)
 
         return assets
-
-
-class MappingInterpretor:
-    """Class to process configuration mapping"""
-
-    @staticmethod
-    def metadata_mapping_compute(
-        metadata_mapping_data: Optional[dict] = None,
-        properties: Optional[dict] = None,
-        provider_item: Optional[dict] = None,
-    ):
-        """Mapping from configuration with product properties and provider_item"""
-        # deepcopy to avoid mutating the cached plugin configuration
-        # (replace_interpretable mutates nested dicts/lists in place)
-        metadata_mapping_data = copy_deepcopy(metadata_mapping_data)
-        # patch json_path without {...} to tag it as interpretable
-        metadata_mapping_data = MappingInterpretor.update_json_path_as_interpretable(
-            metadata_mapping_data
-        )
-
-        # all interpretable in {...}
-        return MappingInterpretor.replace_interpretable(
-            metadata_mapping_data,
-            MappingInterpretor.metadata_substitution,
-            properties=properties,
-            provider_item=provider_item,
-        )  # typing: ignore[arg-type]
-
-    @staticmethod
-    def update_json_path_as_interpretable(value: Any):
-        """Transform in crawled structure raw value '$.[...]' into '{$.[...]}'"""
-        if isinstance(value, str) and str != "":
-            if value.startswith("$."):
-                value = "{" + value + "}"
-        elif isinstance(value, dict):
-            for key in value:
-                value[key] = MappingInterpretor.update_json_path_as_interpretable(
-                    value[key]
-                )
-        elif isinstance(value, list):
-            for i in range(0, len(value)):
-                value[i] = MappingInterpretor.update_json_path_as_interpretable(
-                    value[i]
-                )
-        return value
-
-    @staticmethod
-    def metadata_substitution(
-        value: str,
-        properties: Optional[dict[str, Any]] = None,
-        provider_item: Optional[dict[str, Any]] = None,
-    ) -> Any:
-        """Mapping rules
-        replace field {value#filter} by property if possible
-        replace field {$.jsonpath#filter} by provider_item value if possible
-        """
-
-        # Properties substitution "{field}" matching with "properties" key
-        if isinstance(value, str) and properties is not None:
-            # Extract filters
-            filters = value.strip("{}").split("#")
-            # Parameters subtitution
-            field_name = filters.pop(0)
-            if field_name in properties:
-                value = properties[field_name]
-                # apply filters
-                for filter in filters:
-                    scheme = "{fieldname#" + filter + "}"
-                    try:
-                        value = format_metadata(scheme, fieldname=value)
-                    except Exception as e:
-                        logger.warning(
-                            "Error during properties substitution template '{}': {}".format(
-                                value, str(e)
-                            )
-                        )
-
-        # Plain field name fallback to provider_item when not found in properties
-        if (
-            isinstance(value, str)
-            and isinstance(provider_item, dict)
-            and value.startswith("{")
-            and value.endswith("}")
-        ):
-            filters = value.strip("{}").split("#")
-            field_name = filters.pop(0)
-            if not field_name.startswith("$.") and field_name in provider_item:
-                value = provider_item[field_name]
-                for filter in filters:
-                    scheme = "{fieldname#" + filter + "}"
-                    try:
-                        value = format_metadata(scheme, fieldname=value)
-                    except Exception as e:
-                        logger.warning(
-                            "Error during provider_item substitution template '{}': {}".format(
-                                value, str(e)
-                            )
-                        )
-
-        # Provider item substitution "{$.jsonpath}" matching with "provider_item" json path resolve
-        if isinstance(value, str) and provider_item is not None:
-            # Extract filters
-            filters = value.strip("{}").split("#")
-            # Parameters subtitution
-            field_name = filters.pop(0)
-            if field_name.startswith("$."):
-                # Is a josn path ?
-                json_path = string_to_jsonpath(field_name)
-                if isinstance(json_path, JSONPath) or isinstance(json_path, JSONChild):
-                    match = json_path.find(provider_item)
-                    if len(match) == 1:
-                        value = match[0].value
-                    else:
-                        value = NOT_AVAILABLE
-                # Apply filters
-                for filter in filters:
-                    scheme = "{fieldname#" + filter + "}"
-                    try:
-                        value = format_metadata(scheme, fieldname=value)
-                    except Exception as e:
-                        logger.warning(
-                            "Error during provider_item substitution template {}: {}".format(
-                                value, str(e)
-                            )
-                        )
-
-        return value
-
-    @staticmethod
-    def replace_interpretable(value: Any, on_interpretable: Callable, *args, **kwargs):
-        """Helper used to parse mapping parameters
-
-        It extract sub element {...} from value, and call "on_interpretable"
-        to substitute this sub part and replace it in value
-        If value is not a string, ll try crawl by recursion to scan all data structure
-
-        in_interpretable is called chen a sub element {...} is found to substitute it.
-        args and kwargs are pass through on_interpretable function
-        """
-
-        if isinstance(value, str) and len(value) > 0:
-            # Extract level 1 layer {}
-            level = 0
-            start = 0
-            end = 0
-            i = 0
-            while i < len(value):
-                char = value[i]
-                if char == "{":
-                    level += 1
-                    if level == 1:
-                        start = i
-                if char == "}":
-                    level -= 1
-                    if level == 0:
-                        end = i + 1
-                        segment = value[start:end]
-                        if len(segment) >= 2 and segment[1:-1].find("{") >= 0:
-                            # Has sublevels ?
-                            result = (
-                                "{"
-                                + MappingInterpretor.replace_interpretable(
-                                    segment[1:-1], on_interpretable, *args, **kwargs
-                                )
-                                + "}"
-                            )
-                        else:
-                            # Direct interpretable substitution
-                            result = on_interpretable(segment, *args, **kwargs)
-                        if result != segment:
-                            value = value[0:start] + str(result) + value[end:]
-                            # Data moved, cursor is invalid
-                            i = -1
-                i += 1
-        elif isinstance(value, list):
-            # Crawl by recursion
-            for i in range(0, len(value)):
-                value[i] = MappingInterpretor.replace_interpretable(
-                    value[i], on_interpretable, *args, **kwargs
-                )
-        elif isinstance(value, dict):
-            # Crawl by recursion
-            for key in value:
-                value[key] = MappingInterpretor.replace_interpretable(
-                    value[key], on_interpretable, *args, **kwargs
-                )
-
-        return value
