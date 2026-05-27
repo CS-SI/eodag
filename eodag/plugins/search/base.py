@@ -230,7 +230,8 @@ class Search(PluginTopic):
         :param collection: the desired collection
         :returns: The collection specific metadata-mapping
         """
-        metadata_mapping = getattr(self.config, "metadata_mapping", {})
+        # copy to avoid mutating the cached plugin configuration
+        metadata_mapping = dict(getattr(self.config, "metadata_mapping", {}))
         if collection is not None:
             # Special overload for collection config
             # "metadata_mapping_from_product" overloaded by "current"
@@ -268,7 +269,8 @@ class Search(PluginTopic):
         :param collection: the desired collection
         :returns: The collection specific assets-mapping
         """
-        assets_mapping = getattr(self.config, "assets_mapping", {})
+        # copy to avoid mutating the cached plugin configuration
+        assets_mapping = dict(getattr(self.config, "assets_mapping", {}))
         if collection is not None:
             # Special overload for collection config
             # "assets_mapping_from_product" overloaded by "current"
@@ -580,13 +582,14 @@ class Search(PluginTopic):
         return queryables
 
     def get_assets_from_mapping(
-        self, provider_item: dict[str, Any], product: EOProduct
+        self, provider_item: dict[str, Any], product: Optional[EOProduct] = None
     ) -> AssetsDict:
         """
         Create assets based on the assets_mapping in the provider's config
         and an item returned by the provider
 
         :param provider_item: dict of item properties returned by the provider
+        :param product: optional product against which assets are computed
         :returns: dict containing the asset metadata
         """
 
@@ -619,20 +622,22 @@ class Search(PluginTopic):
 
         # Gather asset mapping
         assets_mapping = self.get_assets_mapping(collection)
-        if not assets_mapping:
-            return {}
-        else:
+        if assets_mapping:
             # Compute asset mapping
             assets_mapping = MappingInterpretor.metadata_mapping_compute(
                 assets_mapping, properties=properties, provider_item=provider_item
             )
 
         # Specifcs assets (like download_link, thumbnail or quicklook)
+        if product is None:
+            # No product: return a plain mapping (used by unit tests / introspection)
+            return dict(assets_mapping) if assets_mapping else {}
+
         assets = AssetsDict(product)
         assets.update(assets_mapping)
 
         # Global imported assets
-        imported_assets = {}
+        imported_assets: dict[str, Any] = {}
         if "assets" in properties:
             imported_assets = product.properties.pop("assets", {})
 
@@ -649,10 +654,10 @@ class Search(PluginTopic):
                     product,
                 )
                 asset["title"] = norm_key
-                computed_assets[asset_key] = asset
+                computed_assets[norm_key] = asset
             imported_assets = computed_assets
 
-        assets.update(computed_assets)
+        assets.update(imported_assets)
 
         return assets
 
@@ -667,6 +672,9 @@ class MappingInterpretor:
         provider_item: Optional[dict] = None,
     ):
         """Mapping from configuration with product properties and provider_item"""
+        # deepcopy to avoid mutating the cached plugin configuration
+        # (replace_interpretable mutates nested dicts/lists in place)
+        metadata_mapping_data = copy_deepcopy(metadata_mapping_data)
         # patch json_path without {...} to tag it as interpretable
         metadata_mapping_data = MappingInterpretor.update_json_path_as_interpretable(
             metadata_mapping_data
@@ -725,6 +733,28 @@ class MappingInterpretor:
                     except Exception as e:
                         logger.warning(
                             "Error during properties substitution template '{}': {}".format(
+                                value, str(e)
+                            )
+                        )
+
+        # Plain field name fallback to provider_item when not found in properties
+        if (
+            isinstance(value, str)
+            and isinstance(provider_item, dict)
+            and value.startswith("{")
+            and value.endswith("}")
+        ):
+            filters = value.strip("{}").split("#")
+            field_name = filters.pop(0)
+            if not field_name.startswith("$.") and field_name in provider_item:
+                value = provider_item[field_name]
+                for filter in filters:
+                    scheme = "{fieldname#" + filter + "}"
+                    try:
+                        value = format_metadata(scheme, fieldname=value)
+                    except Exception as e:
+                        logger.warning(
+                            "Error during provider_item substitution template '{}': {}".format(
                                 value, str(e)
                             )
                         )

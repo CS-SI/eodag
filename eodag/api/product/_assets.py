@@ -78,6 +78,7 @@ class AssetsDict(UserDict):
             return
         super().__setitem__(key, Asset(self.product, key, value))
         self.sort()
+        self._sync_to_product()
 
     @override
     def update(self, value: Union[dict[str, Any], AssetsDict]) -> None:  # type: ignore
@@ -88,6 +89,24 @@ class AssetsDict(UserDict):
                 buffer[key] = value[key]
         super().update(buffer)
         self.sort()
+        self._sync_to_product()
+
+    def _sync_to_product(self) -> None:
+        """Backward-compat: propagate ``download_link`` asset to product location.
+
+        ``EOProduct.location`` / ``EOProduct.remote_location`` are still expected to
+        carry the download URL by downstream code (download plugins, server-mode, ...).
+        Technical assets are NOT written back to ``EOProduct.properties``.
+        """
+        dl = self.data.get("download_link")
+        if dl is None:
+            return
+        href = dl.get("href") or ""
+        if href:
+            if not self.product.location:
+                self.product.location = href
+            if not self.product.remote_location:
+                self.product.remote_location = href
 
     def _check(self, asset_key: str, asset_values: dict[str, Any]) -> bool:
 

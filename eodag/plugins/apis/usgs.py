@@ -257,13 +257,13 @@ class UsgsApi(Api):
                     result, self.config.metadata_mapping
                 )
 
-                final.append(
-                    EOProduct(
-                        collection=collection,
-                        provider=self.provider,
-                        properties=product_properties,
-                    )
+                product = EOProduct(
+                    collection=collection,
+                    provider=self.provider,
+                    properties=product_properties,
                 )
+                product.assets.update(self.get_assets_from_mapping(result, product).data)
+                final.append(product)
         except USGSError as e:
             logger.warning(
                 f"Collection {usgs_collection} may not exist on USGS EE catalog"

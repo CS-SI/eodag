@@ -1570,13 +1570,14 @@ def format_query_params(
 
             if len(parts) == 1:
 
-                # If part contains something to interprete
-                if parts[0].strip("{}").find("{") >= 0:
+                # If part contains something to interprete (nested braces or a converter)
+                inner = parts[0].strip("{}")
+                if inner.find("{") >= 0 or "#" in inner:
                     formatted_query_param = format_metadata(
                         provider_search_param, collection, **query_dict
                     )
                 else:
-                    formatted_query_param = "{" + parts[0].strip("{}") + "}"
+                    formatted_query_param = "{" + inner + "}"
 
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_param:

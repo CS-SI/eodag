@@ -530,6 +530,8 @@ def update_assets_from_s3(
     if content_url is None and "download_link" in product.assets:
         content_url = product.assets["download_link"].remote_location
     if content_url is None:
+        # nothing to list, but still refresh driver based on current assets
+        product.driver = product.get_driver()
         return None
 
     bucket, prefix = get_bucket_name_and_prefix(content_url)

@@ -1107,6 +1107,7 @@ class ECMWFSearch(PostJsonSearch):
             start, end = ecmwf_temporal_to_eodag(properties)
             properties["start_datetime"] = start
             properties["end_datetime"] = end
+            result_data = result
 
         else:
             # use all available query_params to parse properties
@@ -1181,7 +1182,7 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # "Technicals" assets as (downloadlink, quicklook, thumbnail)
-        product.assets.update(self.get_assets_from_mapping(result, product))
+        product.assets.update(self.get_assets_from_mapping(result_data, product))
 
         # backup original register_downloader to register_downloader_only
         product.register_downloader_only = product.register_downloader
@@ -1439,6 +1440,9 @@ class MeteoblueSearch(ECMWFSearch):
             collection=collection,
             properties=properties,
         )
+
+        # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+        product.assets.update(self.get_assets_from_mapping(result, product))
 
         return [
             product,
