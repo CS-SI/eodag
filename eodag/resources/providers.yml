@@ -7577,7 +7577,7 @@
     sort_by_default:
       - !!python/tuple [start_datetime, ASC]
     sort_param_mapping:
-      id: identifier
+      id: id
       start_datetime: properties.datetime
       created: properties.created
       updated: properties.updated
