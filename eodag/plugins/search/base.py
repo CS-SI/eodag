@@ -236,22 +236,27 @@ class Search(PluginTopic):
             # "metadata_mapping_from_product" overloaded by "current"
             collection_metadata_mapping: dict[str, Union[str, list[str]]] = {}
             target_collection: Optional[str] = collection
-            watchdog = 10
-            while target_collection is not None and watchdog > 0:
-                watchdog -= 1
+            visited: set[str] = set()
+            while target_collection is not None and target_collection not in visited:
+                visited.add(target_collection)
                 # Check if collection has a specific configuration
                 collection_config = self.config.products.get(target_collection, {})
                 # Overload imported metadata mapping configuration by current one
-                buffer = collection_config.get("metadata_mapping", {})
+                # (copy to avoid mutating the cached collection configuration)
+                buffer = dict(collection_config.get("metadata_mapping", {}))
                 buffer.update(collection_metadata_mapping)
                 collection_metadata_mapping = buffer
                 # This collection configuration can refer to another collection configuration
                 target_collection = collection_config.get(
                     "metadata_mapping_from_product"
                 )
+            if target_collection is not None:
+                logger.warning(
+                    "Could not resolve metadata_mapping_from_product for %s, cycle detected at %s",
+                    collection,
+                    target_collection,
+                )
             metadata_mapping.update(collection_metadata_mapping)
-            if watchdog == 0:
-                logger.warning("get_metadata_mapping watchdog triggered")
 
         return metadata_mapping
 
@@ -266,25 +271,30 @@ class Search(PluginTopic):
         assets_mapping = getattr(self.config, "assets_mapping", {})
         if collection is not None:
             # Special overload for collection config
-            # "metadata_mapping_from_product" overloaded by "current"
+            # "assets_mapping_from_product" overloaded by "current"
             collection_asset_mapping: dict[str, Union[str, list[str]]] = {}
             target_collection: Optional[str] = collection
-            watchdog = 10
-            while target_collection is not None and watchdog > 0:
-                watchdog -= 1
+            visited: set[str] = set()
+            while target_collection is not None and target_collection not in visited:
+                visited.add(target_collection)
                 # Check if collection has a specific configuration
                 collection_config = self.config.products.get(target_collection, {})
                 # Overload imported asset mapping configuration by current one
-                buffer = collection_config.get("assets_mapping", {})
+                # (copy to avoid mutating the cached collection configuration)
+                buffer = dict(collection_config.get("assets_mapping", {}))
                 buffer.update(collection_asset_mapping)
                 collection_asset_mapping = buffer
                 # This collection configuration can refer to another collection configuration
                 target_collection = collection_config.get(
-                    "metadata_mapping_from_product", None
+                    "assets_mapping_from_product", None
+                )
+            if target_collection is not None:
+                logger.warning(
+                    "Could not resolve assets_mapping_from_product for %s, cycle detected at %s",
+                    collection,
+                    target_collection,
                 )
             assets_mapping.update(collection_asset_mapping)
-            if watchdog == 0:
-                logger.warning("get_assets_mapping watchdog triggered")
 
         return assets_mapping
 
