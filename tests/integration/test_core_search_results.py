@@ -594,7 +594,9 @@ class TestCoreSearchResults(EODagTestCase):
 
         mock_query.return_value = (products.data, len(products))
 
-        search_results = self.dag.search(collection="S2_MSI_L1C")
+        search_results = self.dag.search(
+            collection="S2_MSI_L1C", provider="cop_dataspace"
+        )
 
         for search_result in search_results:
             self.assertIsInstance(search_result.downloader, PluginTopic)
