@@ -127,6 +127,129 @@ class BaseSearchPluginTest(unittest.TestCase):
         self.assertEqual("Two", asset_mappings["two"]["title"])
         self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
 
+    def test_get_assets_mapping_from_product_inherits(self):
+        """A product with only ``assets_mapping_from_product`` inherits the parent's mapping fully"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        parent_mapping = {
+            "download_link": {"href": "parent_href", "roles": ["data"]},
+            "quicklook": {"href": "parent_ql", "roles": ["overview"]},
+        }
+        search_plugin.config.products = {
+            "PARENT_COLLECTION": {"assets_mapping": parent_mapping},
+            "CHILD_COLLECTION": {"assets_mapping_from_product": "PARENT_COLLECTION"},
+        }
+        resolved = search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        self.assertEqual(parent_mapping, resolved)
+
+    def test_get_assets_mapping_from_product_per_asset_override(self):
+        """A child product can override one asset and inherit the others from the parent"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        search_plugin.config.products = {
+            "PARENT_COLLECTION": {
+                "assets_mapping": {
+                    "download_link": {"href": "parent_dl", "roles": ["data"]},
+                    "quicklook": {"href": "parent_ql", "roles": ["overview"]},
+                    "thumbnail": {"href": "parent_tn", "roles": ["thumbnail"]},
+                }
+            },
+            "CHILD_COLLECTION": {
+                "assets_mapping_from_product": "PARENT_COLLECTION",
+                "assets_mapping": {
+                    "download_link": {"href": "child_dl", "roles": ["data"]},
+                },
+            },
+        }
+        resolved = search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        # download_link overridden, others inherited
+        self.assertEqual("child_dl", resolved["download_link"]["href"])
+        self.assertEqual("parent_ql", resolved["quicklook"]["href"])
+        self.assertEqual("parent_tn", resolved["thumbnail"]["href"])
+
+    def test_get_assets_mapping_from_product_does_not_mutate_parent(self):
+        """Resolving a child product must not mutate the parent's cached config"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        parent_mapping = {
+            "download_link": {"href": "parent_dl", "roles": ["data"]},
+            "quicklook": {"href": "parent_ql", "roles": ["overview"]},
+        }
+        search_plugin.config.products = {
+            "PARENT_COLLECTION": {"assets_mapping": copy_deepcopy(parent_mapping)},
+            "CHILD_COLLECTION": {
+                "assets_mapping_from_product": "PARENT_COLLECTION",
+                "assets_mapping": {
+                    "download_link": {"href": "child_dl", "roles": ["data"]},
+                },
+            },
+        }
+        # Resolve the child first; this previously polluted the parent's config
+        search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        # PARENT_COLLECTION must still expose its original mapping
+        self.assertEqual(
+            parent_mapping,
+            search_plugin.config.products["PARENT_COLLECTION"]["assets_mapping"],
+        )
+        # And resolving the parent after the child must still return the parent's mapping
+        self.assertEqual(
+            parent_mapping, search_plugin.get_assets_mapping("PARENT_COLLECTION")
+        )
+
+    def test_get_assets_mapping_from_product_chain(self):
+        """Multi-hop ``assets_mapping_from_product`` chain resolves transitively, leaf overrides win"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        search_plugin.config.products = {
+            "GRANDPARENT_COLLECTION": {
+                "assets_mapping": {
+                    "download_link": {"href": "gp_dl"},
+                    "quicklook": {"href": "gp_ql"},
+                    "thumbnail": {"href": "gp_tn"},
+                }
+            },
+            "PARENT_COLLECTION": {
+                "assets_mapping_from_product": "GRANDPARENT_COLLECTION",
+                "assets_mapping": {
+                    "quicklook": {"href": "parent_ql"},
+                },
+            },
+            "CHILD_COLLECTION": {
+                "assets_mapping_from_product": "PARENT_COLLECTION",
+                "assets_mapping": {
+                    "download_link": {"href": "child_dl"},
+                },
+            },
+        }
+        resolved = search_plugin.get_assets_mapping("CHILD_COLLECTION")
+        self.assertEqual("child_dl", resolved["download_link"]["href"])
+        self.assertEqual("parent_ql", resolved["quicklook"]["href"])
+        self.assertEqual("gp_tn", resolved["thumbnail"]["href"])
+
+    def test_get_assets_mapping_from_product_cycle(self):
+        """A cycle in ``assets_mapping_from_product`` is detected, logged and broken"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {}
+        search_plugin.config.products = {
+            "LEFT_COLLECTION": {
+                "assets_mapping_from_product": "RIGHT_COLLECTION",
+                "assets_mapping": {"download_link": {"href": "left_dl"}},
+            },
+            "RIGHT_COLLECTION": {
+                "assets_mapping_from_product": "LEFT_COLLECTION",
+                "assets_mapping": {"quicklook": {"href": "right_ql"}},
+            },
+        }
+        with self.assertLogs("eodag.search.base", level="WARNING") as logs:
+            resolved = search_plugin.get_assets_mapping("LEFT_COLLECTION")
+        self.assertTrue(
+            any("cycle detected" in msg for msg in logs.output),
+            msg=f"expected cycle warning, got: {logs.output}",
+        )
+        # Both assets are merged once; leaf (LEFT_COLLECTION) wins on collisions
+        self.assertEqual("left_dl", resolved["download_link"]["href"])
+        self.assertEqual("right_ql", resolved["quicklook"]["href"])
+
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
