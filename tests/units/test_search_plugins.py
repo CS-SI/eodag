@@ -60,7 +60,6 @@ from eodag.utils.exceptions import (
 from tests.context import (
     DEFAULT_SEARCH_TIMEOUT,
     HTTP_REQ_TIMEOUT,
-    NOT_AVAILABLE,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     AuthenticationError,
@@ -3118,14 +3117,15 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             ],
             "type": "Polygon",
         }
-        # check eodag:download_link
+        # check download_link asset href
+        download_asset = products.data[0].assets["download_link"]
         self.assertEqual(
-            products.data[0].properties["eodag:download_link"],
+            download_asset["href"],
             f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
         )
-        # check eodag:order_link
+        # check download_link asset order_link
         self.assertEqual(
-            products.data[0].properties["eodag:order_link"],
+            download_asset["order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -3201,10 +3201,15 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             }
             product.register_downloader(download_plugin, auth_plugin)
         assets = res.data[0].assets
-        self.assertEqual(3, len(assets))
-        # check if s3 links have been created correctly
-        for asset in assets.values():
+        # 1 download_link asset (from assets_mapping) + 3 s3-listed assets
+        self.assertEqual(4, len(assets))
+        # check if s3 links have been created correctly for s3-listed assets
+        s3_listed_assets = {k: v for k, v in assets.items() if k != "download_link"}
+        self.assertEqual(3, len(s3_listed_assets))
+        for asset in s3_listed_assets.values():
             self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
+        # download_link asset is set from the product's metadata
+        self.assertTrue(assets["download_link"]["href"].startswith("s3://eodata/"))
 
         # no occur should occur and assets should be empty if list_objects does not have content
         # (this situation will occur if the product does not have assets but is a tar file)
@@ -3482,8 +3487,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.properties["eodag:order_link"].startswith("http")
-        assert NOT_AVAILABLE in eoproduct.location
+        assert eoproduct.assets["download_link"]["order_link"].startswith("http")
+        assert eoproduct.location == ""
 
     def test_plugins_search_ecmwfsearch_with_collection(self):
         """ECMWFSearch.query must build a EOProduct from input parameters with predefined collection"""
@@ -4883,13 +4888,17 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
 
         default_config = load_default_config()["wekeo_main"]
-        # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
+        # order_link is defined once at the provider-level assets_mapping
+        # (no per-product eodag:order_link in metadata_mapping anymore)
         self.assertNotIn("eodag:order_link", default_config.search.metadata_mapping)
-        self.assertIn(
+        self.assertNotIn(
             "eodag:order_link",
-            default_config.products["S1_SAR_GRD"]["metadata_mapping"],
+            default_config.products["S1_SAR_GRD"].get("metadata_mapping", {}),
         )
-        self.assertNotIn("metadata_mapping", default_config.products["S1_SAR_SLC"])
+        self.assertIn(
+            "order_link",
+            default_config.search.assets_mapping["download_link"],
+        )
 
         # metadata_mapping_from_product: from S1_SAR_GRD to S1_SAR_SLC
         self.assertEqual(
@@ -4897,7 +4906,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             "S1_SAR_GRD",
         )
 
-        # check initialized plugin configuration
+        # check initialized plugin configuration: S1_SAR_SLC inherits S1_SAR_GRD
         self.assertDictEqual(
             self.wekeomain_search_plugin.config.products["S1_SAR_GRD"][
                 "metadata_mapping"
@@ -4907,27 +4916,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             ],
         )
 
-        # S3_SRA_BS has both metadata_mapping_from_product and metadata_mapping
-        # "metadata_mapping" must override "metadata_mapping_from_product"
-        self.assertIn(
-            "eodag:order_link",
-            default_config.products["S3_SRA_BS"]["metadata_mapping"],
-        )
-        self.assertIn(
-            "eodag:order_link",
-            default_config.products["S3_EFR"]["metadata_mapping"],
-        )
+        # S3_SRA_BS inherits from S3_EFR via metadata_mapping_from_product
         self.assertEqual(
             default_config.products["S3_SRA_BS"]["metadata_mapping_from_product"],
             "S3_EFR",
-        )
-        self.assertNotEqual(
-            self.wekeomain_search_plugin.config.products["S3_SRA_BS"][
-                "metadata_mapping"
-            ]["eodag:order_link"],
-            self.wekeomain_search_plugin.config.products["S3_EFR"]["metadata_mapping"][
-                "eodag:order_link"
-            ],
         )
 
     @mock.patch(
