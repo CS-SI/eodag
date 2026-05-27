@@ -194,13 +194,13 @@
           - 'data'
           order:status: 'succeded'
         quicklook:
-          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L2","")}.jpg'
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L[24]$","")}.jpg'
           title: "quicklook"
           roles:
           - 'overwiev'
           type: 'image/jpeg'
         thumbnail:
-          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L2","")}_small.jpeg'
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L[24]$","")}_small.jpeg'
           title: "thumbnail"
           roles:
           - 'thumbnail'
@@ -210,49 +210,43 @@
       _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
-      assets_mapping:
-        quicklook:
-          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L4","")}.jpg'
-          title: "quicklook"
-          roles:
-          - 'overwiev'
-          type: 'image/jpeg'
-        thumbnail:
-          href: 'https://s3.amazonaws.com/cbers-meta-pds/{$.downloadUrl}/{$.sceneID#replace_str("_L4","")}_small.jpeg'
-          title: "thumbnail"
-          roles:
-          - 'thumbnail'
-          type: 'image/jpeg'
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_PAN5M_L2:
       instruments: PAN5M
       _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_PAN5M_L4:
       instruments: PAN5M
       _collection: cbers4
       processing:level: 4
-      metadata_mapping_from_product: CBERS4_PAN10M_L4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_MUX_L2:
       instruments: MUX
       _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_MUX_L4:
       instruments: MUX
       _collection: cbers4
       processing:level: 4
-      metadata_mapping_from_product: CBERS4_PAN10M_L4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_AWFI_L2:
       instruments: AWFI
       _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_AWFI_L4:
       instruments: AWFI
       _collection: cbers4
       processing:level: 4
-      metadata_mapping_from_product: CBERS4_PAN10M_L4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     L8_OLI_TIRS_C1L1:
       _collection: landsat8
       _on_amazon: true
@@ -573,6 +567,7 @@
           - '{{"search":{{"processedL2A":"{_processed_l2a}" }} }}'
           - '$.processedL2A'
         _aws_path_l2a: '$.awsPathL2A'
+      assets_mapping_from_product: S2_MSI_L1C
       assets_mapping:
         download_link:
           href: 's3://sentinel-s2-l2a/{$.awsPathL2A}'
@@ -581,18 +576,6 @@
           - 'data'
           type: 'application/octet-stream'
           order:status: 'succeded'
-        quicklook:
-          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-          title: "quicklook"
-          roles:
-          - 'overwiev'
-          type: 'image/jpeg'
-        thumbnail:
-          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-          title: "thumbnail"
-          roles:
-          - 'thumbnail'
-          type: 'image/jpeg'
   download: !plugin
     type: AwsDownload
     ssl_verify: true
@@ -1562,6 +1545,7 @@
       metadata_mapping:
         wrsPath: '$.properties."landsat:wrs_path"'
         wrsRow: '$.properties."landsat:wrs_row"'
+      assets_mapping_from_product: S2_MSI_L1C
       assets_mapping:
         download_link:
           href: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
@@ -1570,18 +1554,6 @@
           - 'data'
           type: 'application/octet-stream'
           order:status: 'succeeded'
-        quicklook:
-          href: '$.assets.thumbnail.href'
-          title: "thumbnail"
-          roles:
-          - 'overwiev'
-          type: '$.assets.thumbnail.type'
-        thumbnail:
-          href: '$.assets.thumbnail.href'
-          title: "thumbnail"
-          roles:
-          - 'thumbnail'
-          type: '$.assets.thumbnail.type'
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
@@ -3298,13 +3270,13 @@
         - '$.null'
     assets_mapping:
       download_link:
-        href: '$.properties.location'
+        href: ''
         roles:
         - 'archive'
         - 'data'
-        type: ''
-        file:size: '$.properties.size'
+        type: 'application/octet-stream'
         order:status: 'orderable'
+        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"
@@ -3340,15 +3312,6 @@
         missionTakeId:
           - '{{"missionTakeId": "{missionTakeId}"}}'
           - '$.null'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}'
     S1_SAR_RAW:
       _collection: EO:ESA:DAT:SENTINEL-1
       product:type: RAW
@@ -3372,15 +3335,6 @@
         eo:cloud_cover:
           - '{{"cloudCover": "{eo:cloud_cover}"}}'
           - '$.null'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{__collection}"}'
     S2_MSI_L2A:
       _collection: EO:ESA:DAT:SENTINEL-2
       product:type: S2MSI2A
@@ -3394,15 +3348,6 @@
         processing:level:
           - '{{"processingLevel": "{processing:level}"}}'
           - '2'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}'
     S3_LAN_SI:
       _collection: EO:ESA:DAT:SENTINEL-3
       product:type: SR_2_LAN_SI
@@ -3447,15 +3392,6 @@
         sat:orbit_cycle:
           - '{{"cycle": "{sat:orbit_cycle}"}}'
           - '$.null'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}'
     S3_ERR:
       _collection: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping_from_product: S3_EFR
@@ -3494,30 +3430,12 @@
         sat:orbit_cycle:
           - '{{"cycle": "{sat:orbit_cycle}"}}'
           - '$.null'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     S3_WAT:
       _collection: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
         id:
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startdate": {id#split_id_into_s3_params}["startDate"], "enddate": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     S5P_L1B_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L1B
@@ -3528,15 +3446,6 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     S5P_L2_IR_ALL:
       _collection: EO:ESA:DAT:SENTINEL-5P
       processing:level: L2
@@ -3551,27 +3460,9 @@
           resolution:
               - '{{"resolution": "{resolution}"}}'
               - '{$.id#replace_str(r"^.*_R([0-9]+m)_.*$",r"\1")}'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     COP_DEM_GLO30_DGED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     COP_DEM_GLO30_DTED:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DTE_30
@@ -3592,15 +3483,6 @@
         - '{{"productIdentifier": "ndvi_global_300m_10daily_v1"}'
         - '$.null'
         id: '$.id'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_indices
@@ -3629,15 +3511,6 @@
           - '{{"format": "{format}"}}'
           - '{$.id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}'
         eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_GLO_FCOVER_333M:
       _collection: EO:JRC:DAT:CLMS
       product:type: vegetation_properties
@@ -3684,60 +3557,24 @@
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_HRVPP_ST_LAEA:
       _collection: EO:EEA:DAT:CLMS_HRVPP_ST-LAEA
       metadata_mapping:
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_HRVPP_VPP:
       _collection: EO:EEA:DAT:CLMS_HRVPP_VPP
       metadata_mapping:
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
     CLMS_HRVPP_VPP_LAEA:
       _collection: EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA
       metadata_mapping:
         id:
           - '{{"uid": "{id}"}}'
           - '$.id'
-      assets_mapping:
-        download_link:
-          href: ''
-          roles:
-          - 'archive'
-          - 'data'
-          type: 'application/octet-stream'
-          order:status: 'orderable'
-          order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
