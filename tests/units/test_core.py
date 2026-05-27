@@ -2776,12 +2776,18 @@ class TestCoreSearch(TestCoreBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Mock OIDC auth requests.get to prevent socket calls during auth plugin init
+        # Mocked OIDC discovery response as expected by pyjwt.
         cls.oidc_mock = mock.patch(
             "eodag.plugins.authentication.openid_connect.requests.get",
             autospec=True,
         )
-        cls.oidc_mock.start()
+        oidc_mock_started = cls.oidc_mock.start()
+        oidc_mock_started.return_value.json.return_value = {
+            "jwks_uri": "https://example.com/jwks",
+            "token_endpoint": "https://example.com/token",
+            "authorization_endpoint": "https://example.com/authorize",
+            "id_token_signing_alg_values_supported": ["RS256"],
+        }
         cls.dag = EODataAccessGateway()
         # Get a SearchResult obj with 2 S2_MSI_L1C cop_dataspace products
         search_results_file = os.path.join(
