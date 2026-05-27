@@ -796,7 +796,7 @@ No credentials are needed
    .. grid-item::
       :columns: 10
 
-      Theia, environmental thematic hub for land data access.
+      Data Terra Theia, environmental thematic hub for land data access.
 
    .. grid-item::
       :columns: 2

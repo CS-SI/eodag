@@ -7558,18 +7558,14 @@
 !provider # MARK: theia
   name: theia
   priority: 0
-  description: API STAC du CDS THEIA de la Maison de la Teledetection
+  description: Data Terra Theia, environmental thematic hub for land data access.
   roles:
     - host
   url: https://api.datastore-mtd.theia.data-terra.org/
   search: !plugin
     type: StacSearch
     api_endpoint: 'https://api.datastore-mtd.theia.data-terra.org/search'
-    ssl_verify: false
     timeout: 90
-    discover_queryables:
-      fetch_url: null
-      collection_fetch_url: null
     discover_collections:
       fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections?limit=50'
       result_type: json
@@ -7577,6 +7573,15 @@
       single_collection_fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections/{_collection}'
       single_collection_parsable_metadata:
         platform: '{$.summaries.platform#csv_list}'
+  sort:
+    sort_by_default:
+      - !!python/tuple [start_datetime, ASC]
+    sort_param_mapping:
+      id: identifier
+      start_datetime: properties.datetime
+      created: properties.created
+      updated: properties.updated
+      eo:cloud_cover: properties.eo:cloud_cover
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'

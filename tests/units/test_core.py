@@ -2329,7 +2329,13 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
             "theia": {
-                "sortables": [],
+                "sortables": [
+                    "id",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "eo:cloud_cover",
+                ],
                 "max_sort_params": None,
             },
             "usgs": None,
