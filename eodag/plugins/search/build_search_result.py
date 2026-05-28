@@ -1111,7 +1111,7 @@ class ECMWFSearch(PostJsonSearch):
 
         else:
             # use all available query_params to parse properties
-            result_data: dict[str, Any] = {
+            result_data = {
                 **results.collection_def_params,
                 **sorted_unpaginated_qp,
                 **{"qs": sorted_unpaginated_qp},
@@ -1182,7 +1182,7 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # "Technicals" assets as (downloadlink, quicklook, thumbnail)
-        product.assets.update(self.get_assets_from_mapping(result_data, product))
+        product.assets.update(self.build_assets_from_mapping(result_data, product))
 
         # backup original register_downloader to register_downloader_only
         product.register_downloader_only = product.register_downloader
@@ -1442,7 +1442,7 @@ class MeteoblueSearch(ECMWFSearch):
         )
 
         # "Technicals" assets as (downloadlink, quicklook, thumbnail)
-        product.assets.update(self.get_assets_from_mapping(result, product))
+        product.assets.update(self.build_assets_from_mapping(result, product))
 
         return [
             product,

@@ -75,7 +75,7 @@ class AssetsDict(UserDict):
             return
         super().__setitem__(key, Asset(self.product, key, value))
         self.sort()
-        self._sync_to_product()
+        self._update_product_location()
 
     @override
     def update(self, value: Union[dict[str, Any], AssetsDict]) -> None:  # type: ignore
@@ -86,9 +86,9 @@ class AssetsDict(UserDict):
                 buffer[key] = value[key]
         super().update(buffer)
         self.sort()
-        self._sync_to_product()
+        self._update_product_location()
 
-    def _sync_to_product(self) -> None:
+    def _update_product_location(self) -> None:
         """Backward-compat: propagate ``download_link`` asset to product location.
 
         ``EOProduct.location`` / ``EOProduct.remote_location`` are still expected to
@@ -105,17 +105,26 @@ class AssetsDict(UserDict):
             if not self.product.remote_location:
                 self.product.remote_location = href
 
-    def _check(self, asset_key: str, asset_values: dict[str, Any]) -> bool:
+    def _check(self, asset_key: str, asset_value: dict[str, Any]) -> bool:
+        """Validate an asset before insertion.
 
+        Checks that the asset has a valid ``href`` or ``order_link`` and that its
+        URL is not already used by another (non-technical) asset.  Mutates
+        *asset_value* in place by stripping empty/unavailable href/order_link entries.
+
+        :param asset_key: Key under which the asset will be stored
+        :param asset_value: Mutable asset dictionary (modified in place)
+        :returns: ``True`` if the asset is valid and can be inserted, ``False`` otherwise
+        """
         # Asset must have href or order_link
-        href = asset_values.pop("href", None)
+        href = asset_value.pop("href", None)
         if href not in [None, "", NOT_AVAILABLE]:
-            asset_values["href"] = href
-        order_link = asset_values.pop("order_link", None)
+            asset_value["href"] = href
+        order_link = asset_value.pop("order_link", None)
         if order_link not in [None, "", NOT_AVAILABLE]:
-            asset_values["order_link"] = order_link
+            asset_value["order_link"] = order_link
 
-        if "href" not in asset_values and "order_link" not in asset_values:
+        if "href" not in asset_value and "order_link" not in asset_value:
             logger.warning(
                 "asset '{}' skipped ignored because neither href nor order_link is available".format(
                     asset_key
@@ -141,7 +150,7 @@ class AssetsDict(UserDict):
 
         # Prevent asset key / asset target url replication (out from technical ones)
         # thumbnail and quicklook can share same url
-        url = target_url(asset_values)
+        url = target_url(asset_value)
         if asset_key not in AssetsDict.TECHNICAL_ASSETS and (url in used_urls):
             # Duplicated url
             return False
@@ -286,18 +295,24 @@ class Asset(UserDict):
         self._update()
 
     def _update(self):
+        """Normalize asset fields and sync ``location``/``remote_location`` from ``href``.
 
-        title = self.get("title", None)
+        Fills in default ``title``, ``href``, ``order:status`` and ``type`` entries
+        when missing, and mirrors a non-empty ``href`` into the asset's
+        ``location`` / ``remote_location`` attributes.
+        """
+
+        title = self.get("title")
         if title is None:
             super().__setitem__("title", self.key)
 
         # Order link behaviour require order:status state
-        orderlink = self.get("order_link", None)
-        orderstatus = self.get("order:status", None)
+        orderlink = self.get("order_link")
+        orderstatus = self.get("order:status")
         if orderlink is not None and orderstatus is None:
             super().__setitem__("order:status", OFFLINE_STATUS)
 
-        href = self.get("href", None)
+        href = self.get("href")
         if href is None:
             super().__setitem__("href", "")
             href = ""
@@ -309,7 +324,7 @@ class Asset(UserDict):
             if self.remote_location is None:
                 self.remote_location = href
             # With order behaviour, href can be fill later
-            content_type = self.get("type", None)
+            content_type = self.get("type")
             if content_type is None:
                 super().__setitem__("type", guess_file_type(href))
 

@@ -1310,7 +1310,7 @@ class QueryStringSearch(Search):
             product = EOProduct(self.provider, properties, **product_kwargs)
 
             # "Technicals" assets as (downloadlink, quicklook, thumbnail)
-            product.assets.update(self.get_assets_from_mapping(result, product))
+            product.assets.update(self.build_assets_from_mapping(result, product))
 
             product._normalize_bands()
             products.append(product)

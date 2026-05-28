@@ -262,7 +262,7 @@ class UsgsApi(Api):
                     provider=self.provider,
                     properties=product_properties,
                 )
-                product.assets.update(self.get_assets_from_mapping(result, product).data)
+                product.assets.update(self.build_assets_from_mapping(result, product))
                 final.append(product)
         except USGSError as e:
             logger.warning(

@@ -577,7 +577,7 @@ class Search(PluginTopic):
                 queryables[k] = v
         return queryables
 
-    def get_assets_from_mapping(
+    def build_assets_from_mapping(
         self, provider_item: dict[str, Any], product: Optional[EOProduct] = None
     ) -> Union[AssetsDict, dict[str, Any]]:
         """

@@ -106,7 +106,7 @@ class BaseSearchPluginTest(unittest.TestCase):
     def get_auth_plugin(self, search_plugin):
         return self.plugins_manager.get_auth_plugin(search_plugin)
 
-    def test_get_assets_from_mapping(self):
+    def test_build_assets_from_mapping(self):
         search_plugin = self.get_search_plugin(provider="geodes")
         search_plugin.config.assets_mapping = {
             "one": {
@@ -121,7 +121,7 @@ class BaseSearchPluginTest(unittest.TestCase):
             },
         }
         provider_item = {"id": "ID123456", "properties": {"href": "a.product.com/ONE"}}
-        asset_mappings = search_plugin.get_assets_from_mapping(provider_item)
+        asset_mappings = search_plugin.build_assets_from_mapping(provider_item)
         self.assertEqual(2, len(asset_mappings))
         self.assertEqual("a.product.com/ONE", asset_mappings["one"]["href"])
         self.assertEqual("One", asset_mappings["one"]["title"])
