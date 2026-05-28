@@ -36,6 +36,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.api.product.assets")
 
+TECHNICAL_ASSET_KEYS: tuple[str, ...] = ("download_link", "quicklook", "thumbnail")
+
 
 class AssetsDict(UserDict):
     """A UserDict object which values are :class:`~eodag.api.product._assets.Asset`
@@ -63,8 +65,6 @@ class AssetsDict(UserDict):
     """
 
     product: EOProduct
-
-    TECHNICAL_ASSETS = ["download_link", "quicklook", "thumbnail"]
 
     def __init__(self, product: EOProduct, *args: Any, **kwargs: Any) -> None:
         self.product = product
@@ -151,7 +151,7 @@ class AssetsDict(UserDict):
         # Prevent asset key / asset target url replication (out from technical ones)
         # thumbnail and quicklook can share same url
         url = target_url(asset_value)
-        if asset_key not in AssetsDict.TECHNICAL_ASSETS and (url in used_urls):
+        if asset_key not in TECHNICAL_ASSET_KEYS and (url in used_urls):
             # Duplicated url
             return False
 
@@ -161,7 +161,7 @@ class AssetsDict(UserDict):
         """Used to self sort"""
         sorted_assets = {}
         # Keep technical assets first
-        for key in AssetsDict.TECHNICAL_ASSETS:
+        for key in TECHNICAL_ASSET_KEYS:
             if key in self.data:
                 sorted_assets[key] = self.data.pop(key)
         # Sort and add others
