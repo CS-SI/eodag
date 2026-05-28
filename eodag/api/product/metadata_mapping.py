@@ -39,7 +39,6 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import transform
 
-from eodag.api.product._assets import Asset
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
@@ -63,6 +62,7 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.api.product._assets import Asset
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
@@ -1865,6 +1865,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
         "statistics",
     ]
     EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME = ["name", "eo:common_name"]
+    from eodag.api.product._assets import Asset
 
     # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
     # Migrate band STAC 1.0 to 1.1

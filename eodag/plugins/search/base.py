@@ -630,10 +630,18 @@ class Search(PluginTopic):
             computed_assets = {}
             for asset_key, asset in imported_assets.items():
                 # Local transformation from driver
-                norm_key, asset["roles"] = driver.guess_asset_key_and_roles(
+                norm_key, norm_roles = driver.guess_asset_key_and_roles(
                     asset.get("href", "") if asset_key_from_href else asset_key,
                     product,
                 )
+                # If the driver could not normalize the key/roles
+                # (e.g. no extension in href), keep the original key/roles.
+                if norm_key is None:
+                    computed_assets[asset_key] = asset
+                    if "title" not in asset:
+                        asset["title"] = asset_key
+                    continue
+                asset["roles"] = norm_roles
                 asset["title"] = norm_key
                 computed_assets[norm_key] = asset
             imported_assets = computed_assets

@@ -59,7 +59,7 @@ class AssetsDict(UserDict):
     True
     >>> product.assets.update({"foo": {"href": "http://somewhere/something"}})
     >>> product.assets
-    {'foo': {'href': 'http://somewhere/something', 'title': 'foo', 'type': None}}
+    {'foo': {'href': 'http://somewhere/something', 'title': 'foo', 'type': 'application/octet-stream'}}
     """
 
     product: EOProduct
@@ -69,10 +69,6 @@ class AssetsDict(UserDict):
     def __init__(self, product: EOProduct, *args: Any, **kwargs: Any) -> None:
         self.product = product
         super(AssetsDict, self).__init__(*args, **kwargs)
-
-    def update(self, data: dict[str, Any]) -> None:  # type: ignore
-        """Update assets"""
-        super().update(data)
 
     def __setitem__(self, key: str, value: dict[str, Any]) -> None:
         if not self._check(key, value):
@@ -139,8 +135,8 @@ class AssetsDict(UserDict):
         used_urls = []
         for key in assets:
             if key == asset_key:
-                # Duplicated key
-                return False
+                # Same key: this is an update, skip url collision check
+                continue
             used_urls.append(target_url(assets[key]))
 
         # Prevent asset key / asset target url replication (out from technical ones)
@@ -155,16 +151,14 @@ class AssetsDict(UserDict):
     def sort(self):
         """Used to self sort"""
         sorted_assets = {}
-        data = self.as_dict()
         # Keep technical assets first
         for key in AssetsDict.TECHNICAL_ASSETS:
-            if key in data:
-                sorted_assets[key] = data.pop(key)
+            if key in self.data:
+                sorted_assets[key] = self.data.pop(key)
         # Sort and add others
-        data = dict(sorted(data.items()))
-        for key in data:
-            sorted_assets[key] = data[key]
-        super().update(sorted_assets)
+        for key in sorted(self.data):
+            sorted_assets[key] = self.data[key]
+        self.data = sorted_assets
 
     def as_dict(self) -> dict[str, Any]:
         """Builds a representation of AssetsDict to enable its serialization
@@ -265,7 +259,7 @@ class Asset(UserDict):
     >>> isinstance(product.assets["foo"], Asset)
     True
     >>> product.assets["foo"]
-    {'href': 'http://somewhere/something', 'title': 'foo', 'type': None}
+    {'href': 'http://somewhere/something', 'title': 'foo', 'type': 'application/octet-stream'}
     """
 
     product: EOProduct

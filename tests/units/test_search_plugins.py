@@ -3033,13 +3033,6 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         with open(self.provider_resp_dir / "geodes_search.json", encoding="utf-8") as f:
             raw_features = json.load(f)["features"]
-        raw_assets = raw_features[0]["assets"]
-        quicklook_asset = raw_assets[
-            "2025/04/02/S2A/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035_quicklook.jpg"
-        ]
-        zip_asset = raw_assets[
-            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
-        ]
 
         search_plugin = self.get_search_plugin(provider="geodes")
         normalized = search_plugin.normalize_results(RawSearchResult(raw_features))
@@ -3048,29 +3041,36 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertDictEqual(
             dict(normalized[0].assets),
             {
-                "quicklook.jpg": {
-                    "href": quicklook_asset["href"],
-                    "title": "quicklook.jpg",
-                    "description": quicklook_asset["description"],
-                    "type": "image/jpeg",
-                    "roles": ["overview"],
-                    "file:size": 18684,
-                    "geodes:reference": False,
-                    "geodes:online": True,
-                    "geodes:datatype": "QUICKLOOK_SD",
-                    "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
+                "download_link": {
+                    "href": (
+                        "https://geodes-portal.cnes.fr/api/download/"
+                        "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                        "/files/86f828c4c7e921615d1cd0476604f780"
+                    ),
+                    "order:status": "succeeded",
+                    "roles": ["archive", "data"],
+                    "title": "downloadlink",
+                    "type": "application/octet-stream",
                 },
-                "zip": {
-                    "href": zip_asset["href"],
-                    "title": "zip",
-                    "description": zip_asset["description"],
-                    "type": "application/zip",
-                    "roles": ["auxiliary"],
-                    "file:size": 764210185,
-                    "geodes:reference": False,
-                    "geodes:online": False,
-                    "geodes:datatype": "RAWDATA",
-                    "file:checksum": "86f828c4c7e921615d1cd0476604f780",
+                "quicklook": {
+                    "href": (
+                        "https://geodes-portal.cnes.fr/api/quicklook/"
+                        "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                        "/files/1003ae6b1edf05adf7c46cb759ffeaec?scope=gdh"
+                    ),
+                    "roles": ["overwiev"],
+                    "title": "quicklook",
+                    "type": "image/jpeg",
+                },
+                "thumbnail": {
+                    "href": (
+                        "https://geodes-portal.cnes.fr/api/quicklook/"
+                        "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                        "/files/1003ae6b1edf05adf7c46cb759ffeaec?scope=gdh"
+                    ),
+                    "roles": ["thumbnail"],
+                    "title": "thumbnail",
+                    "type": "image/jpeg",
                 },
             },
         )
@@ -4779,9 +4779,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 end_datetime="2020-02-01T01:00:00Z",
             )
 
-        self.assertIn("native", result[0].assets)
-        asset = result[0].assets["native"]
-        self.assertEqual(asset.get("title"), "native")
+        self.assertIn("download_link", result[0].assets)
+        asset = result[0].assets["download_link"]
+        self.assertEqual(asset.get("title"), "downloadlink")
         self.assertEqual(
             asset.get("href"),
             "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
@@ -4821,16 +4821,16 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         )
         self.assertEqual("2001-05-01T00:00:00.000Z", product.properties["end_datetime"])
         self.assertEqual(
-            "https://www.abc.com/thumbnailA", product.properties["eodag:thumbnail"]
+            "https://www.abc.com/thumbnailA", product.assets["thumbnail"]["href"]
         )
         self.assertEqual("dataset-number-one", product.properties["dataset"])
         self.assertEqual("a", product.properties["a"])
         self.assertEqual("b", product.properties["b"])
         self.assertEqual("c", product.properties["c"])
-        self.assertIn("native", product.assets)
+        self.assertIn("download_link", product.assets)
         self.assertEqual(
             "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item1_20010501",
-            product.assets["native"]["href"],
+            product.assets["download_link"]["href"],
         )
 
         # with use of dataset dates
@@ -4852,13 +4852,11 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             asset_properties={"z": "z"},
         )
         self.assertEqual("item1_20010501", product.properties["id"])
-        self.assertIn("native", product.assets)
+        self.assertIn("download_link", product.assets)
         self.assertEqual(
             "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/item1_20010501",
-            product.assets["native"]["href"],
+            product.assets["download_link"]["href"],
         )
-        self.assertIn("z", product.assets["native"])
-        self.assertEqual("z", product.assets["native"]["z"])
 
     def test_plugins_search_cop_marine_discover_queryables(self):
         """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
@@ -5677,6 +5675,15 @@ class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
         self.assertDictEqual(
             dict(normalized[0].assets),
             {
+                "download_link": {
+                    "href": "https://api.eumetsat.int/data/download/1.0.0/collections/"
+                    "EO%3AEUM%3ADAT%3A0921/products/PREmm20201201000000120IMPGS01GL",
+                    "title": "downloadlink",
+                    "roles": ["archive", "data"],
+                    "eumesat_ds:type": "application/zip",
+                    "type": "application/octet-stream",
+                    "order:status": "succeeded",
+                },
                 "EOPMetadata.xml": {
                     "href": base_href + "EOPMetadata.xml",
                     "title": "EOPMetadata.xml",

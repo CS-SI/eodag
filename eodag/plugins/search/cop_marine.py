@@ -216,6 +216,7 @@ class CopMarineSearch(StaticStacSearch):
                 "href": download_url,
                 "roles": ["archive", "data"],
                 "type": "application/x-netcdf",
+                **asset_properties,
             }
         }
 
