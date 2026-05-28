@@ -3051,6 +3051,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                     "roles": ["archive", "data"],
                     "title": "downloadlink",
                     "type": "application/octet-stream",
+                    "file:size": 764210185,
+                    "geodes:reference": False,
+                    "geodes:online": False,
+                    "geodes:datatype": "RAWDATA",
+                    "file:checksum": "86f828c4c7e921615d1cd0476604f780",
                 },
                 "quicklook": {
                     "href": (
@@ -3061,6 +3066,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                     "roles": ["overwiev"],
                     "title": "quicklook",
                     "type": "image/jpeg",
+                    "file:size": 18684,
+                    "geodes:reference": False,
+                    "geodes:online": True,
+                    "geodes:datatype": "QUICKLOOK_SD",
+                    "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
                 },
                 "thumbnail": {
                     "href": (
@@ -3071,6 +3081,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                     "roles": ["thumbnail"],
                     "title": "thumbnail",
                     "type": "image/jpeg",
+                    "file:size": 18684,
+                    "geodes:reference": False,
+                    "geodes:online": True,
+                    "geodes:datatype": "QUICKLOOK_SD",
+                    "file:checksum": "1003ae6b1edf05adf7c46cb759ffeaec",
                 },
             },
         )
