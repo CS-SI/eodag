@@ -598,7 +598,7 @@ class Search(PluginTopic):
             computed: dict[str, Any] = {}
             for key, mapping in (assets_mapping or {}).items():
                 try:
-                    asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping)
+                    asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
                     computed[key] = properties_from_json(
                         provider_item, asset_querypaths
                     )
@@ -611,7 +611,7 @@ class Search(PluginTopic):
 
         for key, mapping in (assets_mapping or {}).items():
             try:
-                asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping)
+                asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
                 asset = properties_from_json(provider_item, asset_querypaths)
             except Exception as e:
                 logger.warning("Could not resolve asset mapping '%s': %s", key, e)
@@ -620,7 +620,7 @@ class Search(PluginTopic):
 
         # Global imported assets
         imported_assets: dict[str, Any] = {}
-        if "assets" in properties:
+        if isinstance(properties.get("assets"), dict):
             imported_assets = product.properties.pop("assets", {})
 
         # Process local assets through product driver
@@ -628,9 +628,8 @@ class Search(PluginTopic):
         if driver is not None:
             asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
             computed_assets = {}
-            for asset_key in imported_assets:
+            for asset_key, asset in imported_assets.items():
                 # Local transformation from driver
-                asset = imported_assets[asset_key]
                 norm_key, asset["roles"] = driver.guess_asset_key_and_roles(
                     asset.get("href", "") if asset_key_from_href else asset_key,
                     product,

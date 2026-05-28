@@ -54,11 +54,12 @@ class AssetsDict(UserDict):
     ...     provider="foo",
     ...     properties={"id": "bar", "geometry": "POINT (0 0)"}
     ... )
-    >>> type(product.assets)
-    <class 'eodag.api.product._assets.AssetsDict'>
+    >>> from eodag.api.product._assets import AssetsDict
+    >>> isinstance(product.assets, AssetsDict)
+    True
     >>> product.assets.update({"foo": {"href": "http://somewhere/something"}})
     >>> product.assets
-    {'foo': {'href': 'http://somewhere/something'}}
+    {'foo': {'href': 'http://somewhere/something', 'title': 'foo', 'type': None}}
     """
 
     product: EOProduct
@@ -260,10 +261,11 @@ class Asset(UserDict):
     ...     properties={"id": "bar", "geometry": "POINT (0 0)"}
     ... )
     >>> product.assets.update({"foo": {"href": "http://somewhere/something"}})
-    >>> type(product.assets["foo"])
-    <class 'eodag.api.product._assets.Asset'>
+    >>> from eodag.api.product._assets import Asset
+    >>> isinstance(product.assets["foo"], Asset)
+    True
     >>> product.assets["foo"]
-    {'href': 'http://somewhere/something'}
+    {'href': 'http://somewhere/something', 'title': 'foo', 'type': None}
     """
 
     product: EOProduct
