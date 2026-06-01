@@ -7573,15 +7573,15 @@
       single_collection_fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections/{_collection}'
       single_collection_parsable_metadata:
         platform: '{$.summaries.platform#csv_list}'
-  sort:
-    sort_by_default:
-      - !!python/tuple [start_datetime, ASC]
-    sort_param_mapping:
-      id: id
-      start_datetime: properties.datetime
-      created: properties.created
-      updated: properties.updated
-      eo:cloud_cover: properties.eo:cloud_cover
+    sort:
+      sort_by_default:
+        - !!python/tuple [start_datetime, ASC]
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.datetime
+        created: properties.created
+        updated: properties.updated
+        eo:cloud_cover: properties.eo:cloud_cover
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
