@@ -72,4 +72,8 @@ that can be run locally:
 
       jupyter notebook
 
-4. Browse to either ``docs/notebooks/api_user_guide`` or ``docs/notebooks/tutos`` and launch a notebook.
+4. Browse to one of the following locations and launch a notebook:
+
+   * ``docs/getting_started_guide/features_overview.ipynb``
+   * ``docs/notebooks/api_user_guide`` (folder containing several notebooks)
+   * ``docs/notebooks/tutos`` (folder containing several notebooks)
