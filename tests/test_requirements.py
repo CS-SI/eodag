@@ -25,6 +25,7 @@ from typing import Any, Iterator
 
 import importlib_metadata
 from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from stdlib_list import stdlib_list
 
 try:
@@ -78,7 +79,10 @@ def get_setup_requires(pyproject_path: str):
     """Get requirements from the given pyproject.toml file path"""
     with open(pyproject_path, "rb") as f:
         pyproject = tomllib.load(f)
-    return set([Requirement(r).name for r in pyproject["project"]["dependencies"]])
+    return {
+        canonicalize_name(Requirement(r).name)
+        for r in pyproject["project"]["dependencies"]
+    }
 
 
 def get_optional_dependencies(pyproject_path: str, extra: str) -> set[str]:
@@ -91,7 +95,7 @@ def get_optional_dependencies(pyproject_path: str, extra: str) -> set[str]:
             for found_extra in re.findall(r"([\w-]+)[,\]]", req):
                 deps.update(get_optional_dependencies(pyproject_path, found_extra))
         else:
-            deps.add(Requirement(req).name)
+            deps.add(canonicalize_name(Requirement(req).name))
 
     return deps
 
@@ -144,9 +148,16 @@ class TestRequirements(unittest.TestCase):
 
         missing_imports = []
         for project_import in project_imports:
-            required = import_required_dict.get(project_import, [project_import])
+            # Keep the import name as a fallback because some environments
+            # map a module to plugin/extension distributions only.
+            required = {canonicalize_name(project_import)} | {
+                canonicalize_name(dist_name)
+                for dist_name in import_required_dict.get(
+                    project_import, [project_import]
+                )
+            }
             if (
-                not set(required).intersection(setup_requires)
+                not required.intersection(setup_requires)
                 and project_import not in default_libs + allowed_missing_imports
             ):
                 missing_imports.append(project_import)
