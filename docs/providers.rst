@@ -814,7 +814,7 @@ No credentials are needed
   :class-container: dropdown-fade-in slim-dropdown
 
   Go to `https://gate.stac.teledetection.fr/ <https://gate.stac.teledetection.fr/>`_, then sign in or create an account by
-  clicking on ``Data-Terra`` in the bottom, then ``Register``. Once logged-in, create an API key.
+  clicking on ``ORCID`` in the bottom, then ``Register now``. Once logged-in, create an API key.
   You will then see ``access-key`` and ``secret-key`` that you can use in EODAG provider auth credentials.
 
 ----
