@@ -669,6 +669,7 @@ class EOProduct:
     def _download_quicklook(
         self,
         quicklook_file: str,
+        quicklook_url: str,
         progress_callback: ProgressCallback,
         ssl_verify: Optional[bool] = None,
         auth: Optional[AuthBase] = None,
@@ -680,6 +681,7 @@ class EOProduct:
         authentication, and can display a download progress if a callback is provided.
 
         :param quicklook_file: The full path (including filename) where the quicklook will be saved.
+        :param quicklook_url: The quicklook URL to fetch.
         :param progress_callback: A callable that accepts the current and total download sizes
                                 to display or log the download progress. It must support `reset(total)`
                                 and be callable with downloaded chunk sizes.
@@ -689,7 +691,7 @@ class EOProduct:
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
         with requests.get(
-            self.properties["eodag:quicklook"],
+            quicklook_url,
             stream=True,
             auth=auth,
             headers=USER_AGENT,
@@ -730,29 +732,33 @@ class EOProduct:
         :returns: The absolute path of the downloaded quicklook
         """
 
-        def format_quicklook_address() -> None:
+        quicklook_asset = self.assets.get("quicklook")
+        quicklook_url = quicklook_asset.get("href") if quicklook_asset else None
+
+        def format_quicklook_address(url: str) -> str:
             """If the quicklook address is a Python format string, resolve the
             formatting with the properties of the product."""
-            fstrmatch = re.match(r".*{.+}*.*", self.properties["eodag:quicklook"])
+            fstrmatch = re.match(r".*{.+}*.*", url)
             if fstrmatch:
-                self.properties["eodag:quicklook"] = format_string(
+                return format_string(
                     None,
-                    self.properties["eodag:quicklook"],
+                    url,
                     **{
                         prop_key: prop_val
                         for prop_key, prop_val in self.properties.items()
                         if prop_key != "eodag:quicklook"
                     },
                 )
+            return url
 
-        if self.properties.get("eodag:quicklook") is None:
+        if quicklook_url is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
             )
             return ""
 
-        format_quicklook_address()
+        quicklook_url = format_quicklook_address(quicklook_url)
 
         if output_dir is not None:
             quicklooks_output_dir = os.path.abspath(os.path.realpath(output_dir))
@@ -787,11 +793,10 @@ class EOProduct:
             # it is a HTTP URL. If not, we assume it is a base64 string, in which case
             # we just decode the content, write it into the quicklook_file and return it.
             if not (
-                self.properties["eodag:quicklook"].startswith("http")
-                or self.properties["eodag:quicklook"].startswith("https")
+                quicklook_url.startswith("http") or quicklook_url.startswith("https")
             ):
                 with open(quicklook_file, "wb") as fd:
-                    img = self.properties["eodag:quicklook"].encode("ascii")
+                    img = quicklook_url.encode("ascii")
                     fd.write(base64.b64decode(img))
                 return quicklook_file
 
@@ -811,7 +816,7 @@ class EOProduct:
             )
             try:
                 self._download_quicklook(
-                    quicklook_file, progress_callback, ssl_verify, auth
+                    quicklook_file, quicklook_url, progress_callback, ssl_verify, auth
                 )
             except RequestException as e:
                 logger.debug(
@@ -819,7 +824,11 @@ class EOProduct:
                 )
                 try:
                     self._download_quicklook(
-                        quicklook_file, progress_callback, ssl_verify, None
+                        quicklook_file,
+                        quicklook_url,
+                        progress_callback,
+                        ssl_verify,
+                        None,
                     )
                 except RequestException as e_no_auth:
                     logger.error(

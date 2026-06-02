@@ -175,7 +175,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_get_quicklook_no_quicklook_url(self):
-        """EOProduct.get_quicklook must return an empty string if no quicklook property"""  # noqa
+        """EOProduct.get_quicklook must return an empty string if no quicklook asset"""
         responses.add(
             responses.GET,
             "https://fake.url.to/quicklook",
@@ -184,7 +184,7 @@ class TestEOProduct(EODagTestBase):
             auto_calculate_content_length=True,
         )
         product = self._dummy_product()
-        product.properties["eodag:quicklook"] = None
+        self.assertNotIn("quicklook", product.assets)
 
         quicklook_file_path = product.get_quicklook()
         self.assertEqual(quicklook_file_path, "")
@@ -192,15 +192,9 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_get_quicklook_http_error(self):
-        """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""  # noqa
-        product = self._dummy_product(
-            properties=dict(
-                self.eoproduct_props,
-                **{
-                    "eodag:quicklook": "https://fake.url.to/quicklook",
-                },
-            )
-        )
+        """EOProduct.get_quicklook must return an empty string if there was an error during retrieval"""
+        product = self._dummy_product()
+        product.assets.update({"quicklook": {"href": "https://fake.url.to/quicklook"}})
         product.register_downloader(self.get_mock_downloader(), None)
         responses.add(
             responses.GET,
@@ -215,7 +209,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_get_quicklook_ok_without_auth(self):
-        """EOProduct.get_quicklook must retrieve the quicklook without authentication."""  # noqa
+        """EOProduct.get_quicklook must retrieve the quicklook without authentication."""
         product = self._dummy_product()
         responses.add(
             responses.GET,
@@ -223,7 +217,7 @@ class TestEOProduct(EODagTestBase):
             body=b"Quicklook content",
             status=200,
         )
-        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
+        product.assets.update({"quicklook": {"href": "https://fake.url.to/quicklook"}})
         product.register_downloader(self.get_mock_downloader(), None)
 
         with tempfile.TemporaryDirectory() as output_dir:
@@ -237,7 +231,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_get_quicklook_ok(self):
-        """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""  # noqa
+        """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""
         product = self._dummy_product()
 
         responses.add(
@@ -246,7 +240,7 @@ class TestEOProduct(EODagTestBase):
             body=b"Quicklook content",
             status=200,
         )
-        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
+        product.assets.update({"quicklook": {"href": "https://fake.url.to/quicklook"}})
         product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
@@ -276,7 +270,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_get_quicklook_ok_existing(self):
-        """EOProduct.get_quicklook must return the path to an already downloaded quicklook"""  # noqa
+        """EOProduct.get_quicklook must return the path to an already downloaded quicklook"""
 
         # Tmp dir
         quicklook_dir = os.path.join(self.output_dir, "quicklooks")
@@ -290,7 +284,7 @@ class TestEOProduct(EODagTestBase):
             fh.write(b"content")
 
         product = self._dummy_product()
-        product.properties["eodag:quicklook"] = "https://fake.url.to/quicklook"
+        product.assets.update({"quicklook": {"href": "https://fake.url.to/quicklook"}})
         product.register_downloader(self.get_mock_downloader(), None)
         responses.add(
             responses.GET,
@@ -307,7 +301,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_download_http_default(self):
-        """eoproduct.download must save the product at output_dir and create a .downloaded dir"""  # noqa
+        """EOProduct.download must save the product at output_dir and create a .downloaded dir"""
 
         product = self._dummy_downloadable_product(extract=True)
 
@@ -371,7 +365,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_download_http_delete_archive(self):
-        """eoproduct.download must delete the downloaded archive"""  # noqa
+        """EOProduct.download must delete the downloaded archive"""
 
         product = self._dummy_downloadable_product(
             product=self._dummy_product(
@@ -417,7 +411,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_download_http_extract(self):
-        """eoproduct.download over must be able to extract a product"""
+        """EOProduct.download over must be able to extract a product"""
         # Setup
         product = self._dummy_downloadable_product(extract=True)
         product_dir_path = product.download()
@@ -441,7 +435,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_stream_download(self):
-        """eoproduct.stream_download return a product file as StreamResponse"""  # noqa
+        """EOProduct.stream_download return a product file as StreamResponse"""
 
         # Setup
         product = self._dummy_downloadable_product(
@@ -478,7 +472,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_asset_stream_download(self):
-        """eoproduct.assets[x].stream_download return a asset file as StreamResponse"""  # noqa
+        """EOProduct.assets[x].stream_download return a asset file as StreamResponse"""
         # Setup
         product = self._dummy_downloadable_product(
             assets={
@@ -513,7 +507,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_download_http_dynamic_options(self):
-        """eoproduct.download must accept the download options to be set automatically"""
+        """EOProduct.download must accept the download options to be set automatically"""
 
         product = self._dummy_downloadable_product(
             product=self._dummy_product(
@@ -550,7 +544,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_download_progress_bar(self):
-        """eoproduct.download must show a progress bar"""
+        """EOProduct.download must show a progress bar"""
         product = self._dummy_downloadable_product(
             product=self._dummy_product(
                 properties=dict(
@@ -588,7 +582,7 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(progress_callback.pos, 1)
 
     def test_eoproduct_register_downloader(self):
-        """eoproduct.register_donwloader must set download and auth plugins"""
+        """EOProduct.register_downloader must set download and auth plugins"""
         product = self._dummy_product()
 
         self.assertIsNone(product.downloader)
@@ -604,7 +598,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_register_downloader_resolve_ok(self):
-        """eoproduct.register_donwloader must resolve locations and properties"""
+        """EOProduct.register_downloader must resolve locations and properties"""
         downloadable_product = self._dummy_downloadable_product(
             product=self._dummy_product(
                 properties=dict(
@@ -636,7 +630,7 @@ class TestEOProduct(EODagTestBase):
 
     @responses.activate
     def test_eoproduct_register_downloader_resolve_ignored(self):
-        """eoproduct.register_donwloader must ignore unresolvable locations and properties"""
+        """EOProduct.register_downloader must ignore unresolvable locations and properties"""
 
         logger = logging.getLogger("eodag.product")
         with mock.patch.object(logger, "debug") as mock_debug:
@@ -676,7 +670,7 @@ class TestEOProduct(EODagTestBase):
                 self.assertIn(needed_log, str(mock_debug.call_args_list))
 
     def test_eoproduct_repr_html(self):
-        """eoproduct html repr must be correctly formatted"""
+        """EOProduct html repr must be correctly formatted"""
         product = self._dummy_product()
         product_repr = html.fromstring(product._repr_html_())
         self.assertIn("EOProduct", product_repr.xpath("//thead/tr/td")[0].text)
@@ -691,7 +685,7 @@ class TestEOProduct(EODagTestBase):
         self.assertIn("Asset", asset_repr.xpath("//thead/tr/td")[0].text)
 
     def test_eoproduct_assets_get_values(self):
-        """eoproduct.assets.get_values must return the expected values"""
+        """EOProduct.assets.get_values must return the expected values"""
         product = self._dummy_product()
         product.assets.update(
             {
@@ -708,7 +702,7 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")
 
     def test_eoproduct_sorted_properties(self):
-        """eoproduct.properties must be sorted"""
+        """EOProduct.properties must be sorted"""
         product = self._dummy_product(
             properties={
                 "geometry": "POINT (0 0)",
@@ -734,7 +728,7 @@ class TestEOProduct(EODagTestBase):
         )
 
     def test_eoproduct_none_properties(self):
-        """eoproduct none properties must be kept"""
+        """EOProduct none properties must be kept"""
         product = self._dummy_product(
             properties={
                 "geometry": "POINT (0 0)",
@@ -752,7 +746,7 @@ class TestEOProduct(EODagTestBase):
         )
 
     def test_eoproduct_serialize(self):
-        """eoproduct.as_dict must include the required STAC extensions"""
+        """EOProduct.as_dict must include the required STAC extensions"""
         product = self._dummy_product()
         product.properties["grid:code"] = "MGRS-31TCJ"
         product.properties["eo:cloud_cover"] = "bad-formatted"
@@ -788,7 +782,7 @@ class TestEOProduct(EODagTestBase):
         )
 
     def test_eoproduct_as_pystac_object(self):
-        """eoproduct.as_pystac_object must return a pystac.Item"""
+        """EOProduct.as_pystac_object must return a pystac.Item"""
         product = self._dummy_product(
             properties={"id": "dummy_id", "datetime": "2021-01-01T00:00:00Z"}
         )
@@ -797,7 +791,7 @@ class TestEOProduct(EODagTestBase):
         pystac_item.validate()
 
     def test_eoproduct_from_pystac(self):
-        """eoproduct.from_pystac must return an EOProduct instance from a pystac.Item"""
+        """EOProduct.from_pystac must return an EOProduct instance from a pystac.Item"""
         product = self._dummy_product(
             properties={"id": "dummy_id", "datetime": "2021-01-01T00:00:00Z"}
         )
