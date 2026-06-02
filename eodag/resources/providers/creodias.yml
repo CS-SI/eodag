@@ -229,19 +229,30 @@ creodias:
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
-      type: "$.ContentType"
-      file:size: "$.ContentLength"
-      file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
-      # order:status: must be one of succeeded, ordered, orderable
-      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      assets: '$.Assets'
+    assets_mapping:
+      download_link:
+        title: 'downloadlink'
+        href: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
+        roles: '["archive", "data"]'
+        type: '$.ContentType'
+        file:checksum: '$.Checksum[?Algorithm="MD5"].Value'
+        file:size: '$.ContentLength'
+        # order:status: must be one of succeeded, ordered, orderable
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: "image/jpeg"
   download:
     type: HTTPDownload
     extract: true

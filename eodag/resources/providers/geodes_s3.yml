@@ -86,11 +86,22 @@ geodes_s3:
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
       sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
-      eodag:download_link: '$.properties.endpoint_url'
-      eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+    assets_mapping:
+      download_link:
+        href: '$.properties.endpoint_url'
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: 'image/jpeg'
+      thumbnail:
+        href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: 'image/jpeg'
   products:
     S1_SAR_OCN:
       product:type: OCN

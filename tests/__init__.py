@@ -355,9 +355,12 @@ class EODagTestCase(EODagTestBase):
         super().setUp()
         self.requests_http_get_patcher = mock.patch("requests.get", autospec=True)
         self.requests_http_get = self.requests_http_get_patcher.start()
+        self.requests_request_patcher = mock.patch("requests.request", autospec=True)
+        self.requests_request = self.requests_request_patcher.start()
 
     def tearDown(self):
         self.requests_http_get_patcher.stop()
+        self.requests_request_patcher.stop()
         super().tearDown()
 
     def assertHttpGetCalledOnceWith(self, expected_url, expected_params=None):
