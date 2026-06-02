@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product import EOProduct
+    from eodag.api.product._product import EOProduct
     from eodag.api.provider import ProviderConfig
     from eodag.config import PluginConfig
     from eodag.plugins.base import PluginTopic
