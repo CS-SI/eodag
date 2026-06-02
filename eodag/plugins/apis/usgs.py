@@ -135,6 +135,8 @@ class UsgsApi(Api):
                     os.remove(api.TMPFILE)
                     continue
                 raise AuthenticationError("Please check your USGS credentials.") from e
+            except Exception as e:
+                raise AuthenticationError("Authentication failure") from e
 
     def query(
         self,
@@ -255,13 +257,13 @@ class UsgsApi(Api):
                     result, self.config.metadata_mapping
                 )
 
-                final.append(
-                    EOProduct(
-                        collection=collection,
-                        provider=self.provider,
-                        properties=product_properties,
-                    )
+                product = EOProduct(
+                    collection=collection,
+                    provider=self.provider,
+                    properties=product_properties,
                 )
+                product.assets.update(self.build_assets_from_mapping(result, product))
+                final.append(product)
         except USGSError as e:
             logger.warning(
                 f"Collection {usgs_collection} may not exist on USGS EE catalog"

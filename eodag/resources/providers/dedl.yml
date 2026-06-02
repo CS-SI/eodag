@@ -19,13 +19,30 @@ dedl:
     asset_key_from_href: false
     metadata_mapping:
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      eodag:quicklook: '{eodag:thumbnail}'
-      order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
-      eodag:download_link: '$.assets.downloadLink.href'
       federation:backends: '$.null'
       storage:schemes: '$.null'
       storage:tier: '$.null'
-      assets: '$.null'
+      assets: '$.assets'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: '$.assets.downloadLink.href'
+        roles: '["archive", "data"]'
+        type: '$.assets.downloadLink.type'
+        alternate: '$.assets.downloadLink.alternate'
+        order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
+      quicklook:
+        href: '$.assets["ql.jpg"].href'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: '$.assets["ql.jpg"].type'
+        alternate: '$.assets["ql.jpg"].alternate'
+      thumbnail:
+        href: '$.assets["ql.jpg"].href'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: $.assets["ql.jpg"].type
+        alternate: '$.assets["ql.jpg"].alternate'
     discover_collections:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/v2/collections'
       result_type: json

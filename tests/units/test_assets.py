@@ -73,18 +73,18 @@ class TestAssetsDict(unittest.TestCase):
 
         assets.update(
             {
-                "z": {"href": "z", "_internal": "remove"},
-                "a": {"href": "a", "_internal": "remove"},
+                "z": {"href": "z", "type": "application/zip", "_internal": "remove"},
+                "a": {"href": "a", "type": "application/json", "_internal": "remove"},
             }
         )
-        assets["m"] = {"href": "m", "_internal": "remove"}
+        assets["m"] = {"href": "m", "type": "application/zip", "_internal": "remove"}
 
         self.assertEqual(list(assets), ["a", "m", "z"])
         self.assertDictEqual(
             {key: dict(asset) for key, asset in assets.items()},
             {
-                "a": {"href": "a"},
-                "m": {"href": "m"},
-                "z": {"href": "z"},
+                "a": {"href": "a", "title": "a", "type": "application/json"},
+                "m": {"href": "m", "title": "m", "type": "application/zip"},
+                "z": {"href": "z", "title": "z", "type": "application/zip"},
             },
         )

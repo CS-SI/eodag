@@ -47,6 +47,7 @@ hydroweb_next:
       spatial:scene_id:
         - '{{"query":{{"spatial:scene_id":{{"eq":{spatial:scene_id}}}}}}}'
         - '$.properties.spatial:scene_id'
+      assets: '$.assets'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
