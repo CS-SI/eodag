@@ -515,8 +515,8 @@ def update_assets_from_s3(
     s3_endpoint: Optional[str] = None,
     content_url: Optional[str] = None,
 ) -> None:
-    """Update ``EOProduct.assets`` using content listed in its ``remote_location`` or given
-    ``content_url``.
+    """Update ``EOProduct.assets`` using content listed in its ``product.assets["downloadlink"].remote_location``
+    or given ``content_url``.
 
     If url points to a zipped archive, its content will also be be listed.
 
@@ -524,11 +524,15 @@ def update_assets_from_s3(
     :param auth: Authentication plugin
     :param s3_endpoint: s3 endpoint if not hosted on AWS
     :param content_url: s3 URL pointing to the content that must be listed (defaults to
-                        ``product.remote_location`` if empty)
+                        ``product.assets['downloadlink'].remote_location`` if empty)
     """
 
+    if content_url is None and "download_link" in product.assets:
+        content_url = product.assets["download_link"].remote_location
     if content_url is None:
-        content_url = product.remote_location
+        # nothing to list, but still refresh driver based on current assets
+        product.driver = product.get_driver()
+        return None
 
     bucket, prefix = get_bucket_name_and_prefix(content_url)
 

@@ -423,9 +423,6 @@ class QueryStringSearch(Search):
                     other_collection_mtd_mapping = mtd_cfg_as_conversion_and_querypath(
                         other_collection_def_params.get("metadata_mapping", {})
                     )
-                else:
-                    msg = f"Cannot reuse empty metadata_mapping from {other_product_for_mapping} for {collection}"
-                    raise MisconfiguredError(msg)
                 # update mapping
                 for metadata, mapping in other_collection_mtd_mapping.items():
                     collection_metadata_mapping.pop(metadata, None)
@@ -1299,7 +1296,6 @@ class QueryStringSearch(Search):
             % normalize_remaining_count
         )
         products: list[EOProduct] = []
-        asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         product_kwargs = deepcopy(kwargs)
 
         # collection alias as collection property for product
@@ -1313,28 +1309,12 @@ class QueryStringSearch(Search):
             )
             product = EOProduct(self.provider, properties, **product_kwargs)
 
-            additional_assets = self.get_assets_from_mapping(result)
-            product.assets.update(additional_assets)
+            # "Technicals" assets as (downloadlink, quicklook, thumbnail)
+            product.assets.update(self.build_assets_from_mapping(result, product))
 
-            # move assets from properties to product's attr, normalize keys & roles
-            for key, asset in product.properties.pop("assets", {}).items():
-                url = asset.get("href", "")
-                norm_key, roles = product.driver.guess_asset_key_and_roles(
-                    url if asset_key_from_href else key,
-                    product,
-                )
-                if norm_key is not None:
-                    asset["title"] = norm_key
-                    asset["roles"] = roles
-                    product.assets[norm_key] = asset
-                else:
-                    asset["title"] = asset.get("title", key)
-                    product.assets[key] = asset
-
-            # sort assets
-            product.assets.data = dict(sorted(product.assets.data.items()))
             product._normalize_bands()
             products.append(product)
+
         return products
 
     def count_hits(self, count_url: str, result_type: Optional[str] = "json") -> int:
