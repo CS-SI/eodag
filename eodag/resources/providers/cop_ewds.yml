@@ -119,7 +119,13 @@ cop_ewds:
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    assets_mapping:
+      download_link:
+        href: ''
+        title: "downloadlink"
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical
