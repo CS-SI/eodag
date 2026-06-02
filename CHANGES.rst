@@ -3,6 +3,58 @@ Release history
 ===============
 
 
+v4.3.1 (2026-06-01)
+===================
+
+Bug Fixes
+---------
+
+* **collections**: Normalize internal collections STAC processing levels (`#2199`_, `d4bd034`_)
+
+* **plugins**: Do not sort EcmwfSearch area parameter (`#2200`_, `5f13374`_)
+
+Build System
+------------
+
+* Update pydantic minimal required version (`#2211`_, `b8d02fe`_)
+
+Continuous Integration
+----------------------
+
+* Adapt github actions to permissions (`#2206`_, `3e4174d`_)
+
+Documentation
+-------------
+
+* Add features_overview to notebooks list (`#2209`_, `7c547d9`_)
+
+Testing
+-------
+
+* Fixed tests and stac-validator warnings (`#2205`_, `0c890c5`_)
+
+* Fixes requirements tests for extension packages (`#2210`_, `2b3828f`_)
+
+* Update OIDC discovery response as expected by pyjwt (`#2204`_, `b56000e`_)
+
+.. _#2199: https://github.com/CS-SI/eodag/pull/2199
+.. _#2200: https://github.com/CS-SI/eodag/pull/2200
+.. _#2204: https://github.com/CS-SI/eodag/pull/2204
+.. _#2205: https://github.com/CS-SI/eodag/pull/2205
+.. _#2206: https://github.com/CS-SI/eodag/pull/2206
+.. _#2209: https://github.com/CS-SI/eodag/pull/2209
+.. _#2210: https://github.com/CS-SI/eodag/pull/2210
+.. _#2211: https://github.com/CS-SI/eodag/pull/2211
+.. _0c890c5: https://github.com/CS-SI/eodag/commit/0c890c5608d6a4bb4255f1e7d57fefcc90955ae1
+.. _2b3828f: https://github.com/CS-SI/eodag/commit/2b3828f537135dfbedad715d49960a0c55addd87
+.. _3e4174d: https://github.com/CS-SI/eodag/commit/3e4174dde094031c715c2cb8ed0c470fb24c2409
+.. _5f13374: https://github.com/CS-SI/eodag/commit/5f13374ae3634efd8c821912860004c1500dcbcc
+.. _7c547d9: https://github.com/CS-SI/eodag/commit/7c547d9b9da3d921410add1e5927358fdfaae960
+.. _b56000e: https://github.com/CS-SI/eodag/commit/b56000e8d8413083ca4156adb1bb40723bcc2277
+.. _b8d02fe: https://github.com/CS-SI/eodag/commit/b8d02fea2d91f8def962f37b3020508db3b4eabd
+.. _d4bd034: https://github.com/CS-SI/eodag/commit/d4bd034b4abd7875c3b7fbd47258cb4ce5b7d5fd
+
+
 v4.3.0 (2026-05-20)
 ===================
 
