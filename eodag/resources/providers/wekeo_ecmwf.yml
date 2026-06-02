@@ -100,12 +100,18 @@ wekeo_ecmwf:
       product:type:
         - dataset_id
         - $.dataset
-      eodag:download_link: $.properties.location
-      file:size: '$.properties.size'
       dataset:
         - dataset_id
         - $.dataset
+      eodag:download_link: $.properties.location
       eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
+    assets_mapping:
+      download_link:
+        href: ''
+        roles: '["archive", "data"]'
+        type: '$.ContentType'
+        "order_link": 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location#url_decode}","product_id":"{id}", "dataset_id": "{dataset}"}'
+        order:status: 'orderable'
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
