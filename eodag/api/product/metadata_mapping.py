@@ -24,6 +24,7 @@ import logging
 import re
 from string import Formatter
 from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
+from urllib.parse import unquote
 
 import geojson
 import orjson
@@ -39,7 +40,6 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import transform
 
-from eodag.api.product._assets import Asset
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
@@ -63,6 +63,7 @@ if TYPE_CHECKING:
 
     from shapely.geometry.base import BaseGeometry
 
+    from eodag.api.product._assets import Asset
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.product.metadata_mapping")
@@ -211,6 +212,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_rounded_wkt``: simplify the WKT of a geometry
         - ``to_title``: Convert a string to title case
         - ``to_upper``: Convert a string to uppercase
+        - ``url_decode``: Convert a string url_encoded to decoded ones
+        - ``round``: Convert a string number to another one without decimal part
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -831,6 +834,28 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_to_upper(string: str) -> str:
             """Convert a string to uppercase."""
             return string.upper()
+
+        @staticmethod
+        def convert_url_decode(string: str):
+            return unquote(string)
+
+        @staticmethod
+        def convert_round(string: Any) -> str:
+            """Convert a number string to integer string"""
+            if isinstance(string, float):
+                return str(int(string))
+            elif isinstance(string, int):
+                return str(string)
+            elif isinstance(string, str):
+                formatted = ""
+                for i in range(0, len(string)):
+                    char = string[i]
+                    if char == ".":
+                        break
+                    if "0123456789".find(char) >= 0:
+                        formatted += char
+                return formatted
+            return string
 
         @staticmethod
         def convert_to_title(string: str) -> str:
@@ -1607,10 +1632,18 @@ def format_query_params(
 
         if COMPLEX_QS_REGEX.match(provider_search_param):
             parts = provider_search_param.split("=")
+
             if len(parts) == 1:
-                formatted_query_param = format_metadata(
-                    provider_search_param, collection, **query_dict
-                )
+
+                # If part contains something to interprete (nested braces or a converter)
+                inner = parts[0].strip("{}")
+                if inner.find("{") >= 0 or "#" in inner:
+                    formatted_query_param = format_metadata(
+                        provider_search_param, collection, **query_dict
+                    )
+                else:
+                    formatted_query_param = "{" + inner + "}"
+
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_param:
                     # retrieve values from hashes where keys are given in the param
@@ -2049,6 +2082,7 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
         "statistics",
     ]
     EXCLUDE_MOVE_TO_PARENT_BAND_FIELDNAME = ["name", "eo:common_name"]
+    from eodag.api.product._assets import Asset
 
     # https://github.com/radiantearth/stac-spec/blob/v1.1.0/best-practices.md#bands
     # Migrate band STAC 1.0 to 1.1

@@ -60,8 +60,24 @@ STAC_SCHEMA_MAP = _build_stac_schema_map()
 
 
 class TestCoreSearchResults(EODagTestCase):
+    def assert_stac_messages_valid(self, messages):
+        for msg in messages:
+            self.assertTrue(
+                msg.get("valid_stac"),
+                messages,
+            )
+
     def setUp(self):
         super(TestCoreSearchResults, self).setUp()
+        # Give deterministic, JSON-serializable payloads to globally mocked requests
+        # used by stac_validator while avoiding network access in tests.
+        self.requests_http_get.return_value.raise_for_status.return_value = None
+        self.requests_http_get.return_value.status_code = 200
+        self.requests_http_get.return_value.json.return_value = {}
+
+        self.requests_request.return_value.raise_for_status.return_value = None
+        self.requests_request.return_value.status_code = 200
+        self.requests_request.return_value.json.return_value = {}
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = tempfile.TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -165,8 +181,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
             with open(path, "r") as f:
                 self.make_assertions(f)
 
@@ -195,8 +210,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.run()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
             with open(collection_path) as f:
                 collection_dict = json.load(f)
             self.assertEqual(len(collection_dict["links"]), 1)
@@ -228,8 +242,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.validate_item_collection()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
 
             # check associated serialized collection
             collection1_path = tmpdir_path / f"{self.search_result[0].collection}.json"
@@ -251,8 +264,7 @@ class TestCoreSearchResults(EODagTestCase):
                 schema_map=STAC_SCHEMA_MAP,
             )
             stac.run()
-            for msg in stac.message:
-                self.assertTrue(msg["valid_stac"], stac.message)
+            self.assert_stac_messages_valid(stac.message)
 
     def test_core_serialize_search_results_without_filename(self):
         """The core api must serialize a search results to STAC feature collection without filename"""
@@ -754,7 +766,7 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
         self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
-        self.assertEqual(results[0].location, NOT_AVAILABLE)
+        self.assertEqual(results[0].location, "")
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")

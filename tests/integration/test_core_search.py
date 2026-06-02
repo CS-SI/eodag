@@ -858,6 +858,8 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(product.properties["grid:code"], "MGRS-14ULD")
         self.assertIsNotNone(product.geometry)
         # download link from assets
-        self.assertIn("api/download", product.properties.get("eodag:download_link", ""))
+        self.assertIn("api/download", product.assets["download_link"]["href"])
         # quicklook from assets
-        self.assertIn("api/quicklook", product.properties.get("eodag:quicklook", ""))
+        self.assertIn(
+            "api/quicklook", product.assets.get("quicklook", {}).get("href", "")
+        )

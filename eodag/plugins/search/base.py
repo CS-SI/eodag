@@ -26,10 +26,11 @@ from pydantic import AliasChoices
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
+from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
+    properties_from_json,
 )
 from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
@@ -44,7 +45,6 @@ from eodag.utils import (
     format_dict_items,
     format_pydantic_error,
     get_collection_dates,
-    string_to_jsonpath,
     update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
+    from eodag import EOProduct
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.base")
@@ -190,12 +191,8 @@ class Search(PluginTopic):
         default value is returned.
 
         :param key: The configuration option key.
-        :type key: str
         :param default: The default value to be returned if the option is not found (default is None).
-        :type default: Any
-
         :return: The value of the specified configuration option or the default value.
-        :rtype: Any
         """
         collection_cfg = getattr(self.config, "collection_config", {})
         non_none_cfg = {k: v for k, v in collection_cfg.items() if v}
@@ -228,11 +225,75 @@ class Search(PluginTopic):
         :param collection: the desired collection
         :returns: The collection specific metadata-mapping
         """
-        if collection:
-            return self.config.products.get(collection, {}).get(
-                "metadata_mapping", self.config.metadata_mapping
-            )
-        return self.config.metadata_mapping
+        # copy to avoid mutating the cached plugin configuration
+        metadata_mapping = dict(getattr(self.config, "metadata_mapping", {}))
+        if collection is not None:
+            # Special overload for collection config
+            # "metadata_mapping_from_product" overloaded by "current"
+            collection_metadata_mapping: dict[str, Union[str, list[str]]] = {}
+            target_collection: Optional[str] = collection
+            visited: set[str] = set()
+            while target_collection is not None and target_collection not in visited:
+                visited.add(target_collection)
+                # Check if collection has a specific configuration
+                collection_config = self.config.products.get(target_collection, {})
+                # Overload imported metadata mapping configuration by current one
+                # (copy to avoid mutating the cached collection configuration)
+                buffer = dict(collection_config.get("metadata_mapping", {}))
+                buffer.update(collection_metadata_mapping)
+                collection_metadata_mapping = buffer
+                # This collection configuration can refer to another collection configuration
+                target_collection = collection_config.get(
+                    "metadata_mapping_from_product"
+                )
+            if target_collection is not None:
+                logger.warning(
+                    "Could not resolve metadata_mapping_from_product for %s, cycle detected at %s",
+                    collection,
+                    target_collection,
+                )
+            metadata_mapping.update(collection_metadata_mapping)
+
+        return metadata_mapping
+
+    def get_assets_mapping(
+        self, collection: Optional[str] = None
+    ) -> Union[Any, dict[str, dict[str, Any]]]:
+        """Get the plugin asset mapping configuration (collection specific if exists)
+
+        :param collection: the desired collection
+        :returns: The collection specific assets-mapping
+        """
+        # copy to avoid mutating the cached plugin configuration
+        assets_mapping = dict(getattr(self.config, "assets_mapping", {}))
+        if collection is not None:
+            # Special overload for collection config
+            # "assets_mapping_from_product" overloaded by "current"
+            collection_asset_mapping: dict[str, Union[str, list[str]]] = {}
+            target_collection: Optional[str] = collection
+            visited: set[str] = set()
+            while target_collection is not None and target_collection not in visited:
+                visited.add(target_collection)
+                # Check if collection has a specific configuration
+                collection_config = self.config.products.get(target_collection, {})
+                # Overload imported asset mapping configuration by current one
+                # (copy to avoid mutating the cached collection configuration)
+                buffer = dict(collection_config.get("assets_mapping", {}))
+                buffer.update(collection_asset_mapping)
+                collection_asset_mapping = buffer
+                # This collection configuration can refer to another collection configuration
+                target_collection = collection_config.get(
+                    "assets_mapping_from_product", None
+                )
+            if target_collection is not None:
+                logger.warning(
+                    "Could not resolve assets_mapping_from_product for %s, cycle detected at %s",
+                    collection,
+                    target_collection,
+                )
+            assets_mapping.update(collection_asset_mapping)
+
+        return assets_mapping
 
     def get_sort_by_arg(self, kwargs: dict[str, Any]) -> Optional[SortByList]:
         """Extract the ``sort_by`` argument from the kwargs or the provider default sort configuration
@@ -510,34 +571,72 @@ class Search(PluginTopic):
                 queryables[k] = v
         return queryables
 
-    def get_assets_from_mapping(self, provider_item: dict[str, Any]) -> dict[str, Any]:
+    def build_assets_from_mapping(
+        self, provider_item: dict[str, Any], product: Optional[EOProduct] = None
+    ) -> Union[AssetsDict, dict[str, Any]]:
         """
         Create assets based on the assets_mapping in the provider's config
         and an item returned by the provider
 
         :param provider_item: dict of item properties returned by the provider
+        :param product: optional product against which assets are computed
         :returns: dict containing the asset metadata
         """
-        assets_mapping = getattr(self.config, "assets_mapping", None)
-        if not assets_mapping:
-            return {}
-        assets = {}
-        for key, values in assets_mapping.items():
-            asset_href = values.get("href")
-            if not asset_href:
-                logger.warning(
-                    "asset mapping %s skipped because no href is available", key
+        collection = getattr(product, "collection", None)
+        properties = getattr(product, "properties", {}) or {}
+
+        assets_mapping = self.get_assets_mapping(collection)
+
+        def resolve_asset_from_mapping(
+            key: str, mapping: dict[str, Any]
+        ) -> dict[str, Any]:
+            try:
+                asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
+                return properties_from_json(provider_item, asset_querypaths)
+            except Exception as e:
+                logger.warning("Could not resolve asset mapping '%s': %s", key, e)
+                return dict(mapping)
+
+        if product is None:
+            # Plain mapping container used by unit tests / introspection
+            computed: dict[str, Any] = {}
+            for key, mapping in (assets_mapping or {}).items():
+                computed[key] = resolve_asset_from_mapping(key, mapping)
+            return computed
+
+        assets = AssetsDict(product)
+
+        for key, mapping in (assets_mapping or {}).items():
+            assets.update({key: resolve_asset_from_mapping(key, mapping)})
+
+        # Global imported assets
+        imported_assets: dict[str, Any] = {}
+        if isinstance(properties.get("assets"), dict):
+            imported_assets = product.properties.pop("assets", {})
+
+        # Process local assets through product driver
+        driver = getattr(product, "driver", None)
+        if driver is not None:
+            asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
+            computed_assets = {}
+            for asset_key, asset in imported_assets.items():
+                # Local transformation from driver
+                norm_key, norm_roles = driver.guess_asset_key_and_roles(
+                    asset.get("href", "") if asset_key_from_href else asset_key,
+                    product,
                 )
-                continue
-            json_url_path = string_to_jsonpath(asset_href)
-            if isinstance(json_url_path, str):
-                url_path = json_url_path
-            else:
-                url_match = json_url_path.find(provider_item)
-                if len(url_match) == 1:
-                    url_path = url_match[0].value
-                else:
-                    url_path = NOT_AVAILABLE
-            assets[key] = deepcopy(values)
-            assets[key]["href"] = url_path
+                # If the driver could not normalize the key/roles
+                # (e.g. no extension in href), keep the original key/roles.
+                if norm_key is None:
+                    computed_assets[asset_key] = asset
+                    if "title" not in asset:
+                        asset["title"] = asset_key
+                    continue
+                asset["roles"] = norm_roles
+                asset["title"] = norm_key
+                computed_assets[norm_key] = asset
+            imported_assets = computed_assets
+
+        assets.update(imported_assets)
+
         return assets
