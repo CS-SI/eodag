@@ -18,15 +18,10 @@ Build System
 
 * Update pydantic minimal required version (`#2211`_, `b8d02fe`_)
 
-Chores
-------
-
-* Update external product types reference (`#2178`_, `dab58d4`_)
-
 Continuous Integration
 ----------------------
 
-* Adapt gh actions to permissions (`#2206`_, `3e4174d`_)
+* Adapt github actions to permissions (`#2206`_, `3e4174d`_)
 
 Documentation
 -------------
@@ -42,7 +37,6 @@ Testing
 
 * Update OIDC discovery response as expected by pyjwt (`#2204`_, `b56000e`_)
 
-.. _#2178: https://github.com/CS-SI/eodag/pull/2178
 .. _#2199: https://github.com/CS-SI/eodag/pull/2199
 .. _#2200: https://github.com/CS-SI/eodag/pull/2200
 .. _#2204: https://github.com/CS-SI/eodag/pull/2204
@@ -59,7 +53,6 @@ Testing
 .. _b56000e: https://github.com/CS-SI/eodag/commit/b56000e8d8413083ca4156adb1bb40723bcc2277
 .. _b8d02fe: https://github.com/CS-SI/eodag/commit/b8d02fea2d91f8def962f37b3020508db3b4eabd
 .. _d4bd034: https://github.com/CS-SI/eodag/commit/d4bd034b4abd7875c3b7fbd47258cb4ce5b7d5fd
-.. _dab58d4: https://github.com/CS-SI/eodag/commit/dab58d44e7e398eba537401e607b469df0946793
 
 
 v4.3.0 (2026-05-20)
