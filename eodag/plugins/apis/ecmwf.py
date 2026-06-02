@@ -242,7 +242,7 @@ class EcmwfApi(Api, ECMWFSearch):
             raise DownloadError(e)
 
         with open(record_filename, "w") as fh:
-            fh.write(product.properties["eodag:download_link"])
+            fh.write(product.remote_location)
         logger.debug("Download recorded in %s", record_filename)
 
         # do not try to extract a directory

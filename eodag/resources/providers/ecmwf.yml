@@ -18,10 +18,16 @@ ecmwf:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       qs: $.qs
-      eodag:download_link: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
+    assets_mapping:
+      download_link:
+        _dataset: '$.dataset'
+        _qs: '$.qs'
+        href: 'https://apps.ecmwf.int/datasets/data/{_dataset}?{_qs#to_geojson}'
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        # order:status set to succeeded for consistency between providers
+        order:status: 'succeeded'
   products:
     # See Archive Catalog in https://apps.ecmwf.int/archive-catalogue/
     # See available Public Datasets in https://apps.ecmwf.int/datasets/
