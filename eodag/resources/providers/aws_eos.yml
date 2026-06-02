@@ -32,8 +32,9 @@ aws_eos:
       geometry:
         - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
         - '$.dataGeometry'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+    assets_mapping:
+      download_link:
+        order:status: 'succeeded'
   products:
     CBERS4_PAN10M_L2:
       instruments: PAN10M
@@ -70,69 +71,72 @@ aws_eos:
           - '$.sunElevation'
         # Custom parameters (not defined in the base document referenced above)
         _aws_path: '$.downloadUrl'
-        eodag:download_link: 's3://cbers-pds/{_aws_path}'
         eodag:mtd_download_link: 's3://cbers-meta-pds/{_aws_path}'
-        _preview_basename: '{$.sceneID#replace_str("_L2","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          _download_url: '$.downloadUrl'
+          href: 's3://cbers-pds/{_download_url}'
+          roles: '["archive", "data"]'
+          order:status: 'succeded'
+        quicklook:
+          _download_url: '$.downloadUrl'
+          _scene_id: '{$.sceneID#replace_str("_L[24]$","")}'
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{_download_url}/{_scene_id}.jpg'
+          title: "quicklook"
+          roles: '["overwiev"]'
+          type: 'image/jpeg'
+        thumbnail:
+          _download_url: '$.downloadUrl'
+          _scene_id: '{$.sceneID#replace_str("_L[24]$","")}'
+          href: 'https://s3.amazonaws.com/cbers-meta-pds/{_download_url}/{_scene_id}_small.jpeg'
+          title: "thumbnail"
+          roles: '["thumbnail"]'
+          type: 'image/jpeg'
     CBERS4_PAN10M_L4:
       instruments: PAN10M
       _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_PAN5M_L2:
       instruments: PAN5M
       _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_PAN5M_L4:
       instruments: PAN5M
       _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_MUX_L2:
       instruments: MUX
       _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_MUX_L4:
       instruments: MUX
       _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_AWFI_L2:
       instruments: AWFI
       _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     CBERS4_AWFI_L4:
       instruments: AWFI
       _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
-      metadata_mapping:
-        # Custom parameters (not defined in the base document referenced above)
-        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
-        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
-        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+      assets_mapping_from_product:   CBERS4_PAN10M_L2
     L8_OLI_TIRS_C1L1:
       _collection: landsat8
       _on_amazon: true
@@ -177,6 +181,21 @@ aws_eos:
         id:
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          href: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
+          roles: '["archive", "data"]'
+          order:status: 'succeded'
+        quicklook:
+          href: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
+          title: "quicklook"
+          roles: '["overwiev"]'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '$.thumbnail'
+          title: "thumbnail"
+          roles: '["thumbnail"]'
+          type: 'image/jpeg'
     MODIS_MCD43A4:
       _collection: modis
       metadata_mapping:
@@ -201,15 +220,28 @@ aws_eos:
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.EndingDateTime'
         # Custom parameters (not defined in the base document referenced above)
-        _vertical_tile_nb: '$.verticalTileNumber'
-        _horizontal_tile_nb: '$.horizontalTileNumber'
-        _doy_date: '{$.sceneID#slice_str(9,16,1)}'
-        eodag:download_link: 's3://modis-pds/MCD43A4.006/{_horizontal_tile_nb:02.0f}/{_vertical_tile_nb:02.0f}/{_doy_date}/'
-        eodag:thumbnail: '$.thumbnail'
-        eodag:quicklook: '$.thumbnail'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          _h_tile: '{$.horizontalTileNumber#round}'
+          _v_tile: '{$.verticalTileNumber#round}'
+          _scene_id: '{$.sceneID#slice_str(9,16,1)}'
+          href: 's3://modis-pds/MCD43A4.006/{_h_tile}/{_v_tile}/{_scene_id}/'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+        quicklook:
+          href: '$.thumbnail'
+          title: "quicklook"
+          roles: '["overwiev"]'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '$.thumbnail'
+          title: "thumbnail"
+          roles: '["thumbnail"]'
+          type: 'image/jpeg'
     NAIP:
       _collection: naip
       metadata_mapping:
@@ -230,11 +262,16 @@ aws_eos:
           - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
           - '$.date'
         # Custom parameters (not defined in the base document referenced above)
-        _aws_path: '$.awsPath'
-        eodag:download_link: 's3://naip-analytic/{_aws_path}'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          _aws_path: '$.awsPath'
+          href: 's3://naip-analytic/{_aws_path}'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
     S1_SAR_GRD:
       product:type: GRD
       _collection: sentinel1
@@ -269,13 +306,26 @@ aws_eos:
           - '{{"search":{{"polarization":"{sar:polarizations#replace_tuple(((["HH"],"SH"),(["VV"],"SV"),(["HH","HV"], "DH"),(["VV","VH"],"DV")))}" }} }}'
           - '{$.polarization#replace_tuple((("SH",["HH"]),("SV",["VV"]),("DH",["HH","HV"]),("DV",["VV","VH"])))}'
         # Custom parameters (not defined in the base document referenced above)
-        _aws_path: '$.awsPath'
-        eodag:download_link: 's3://sentinel-s1-l1c/{_aws_path}'
-        eodag:thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
-        eodag:quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
         id:
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
+      assets_mapping:
+        download_link:
+          _aws_path: '$.awsPath'
+          href: 's3://sentinel-s1-l1c/{_aws_path}'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+        quicklook:
+          href: 'https://render.eosda.com/S1/thumb/{title}.png'
+          title: "quicklook"
+          roles: '["overwiev"]'
+          type: 'image/png'
+        thumbnail:
+          href: 'https://render.eosda.com/S1/thumb/{title}.png'
+          title: "thumbnail"
+          roles: '["thumbnail"]'
+          type: 'image/png'
     S2_MSI_L1C:
       _collection: sentinel2
       metadata_mapping:
@@ -315,6 +365,23 @@ aws_eos:
           - '{title}'
         _processed_l2a: '$.null'
         _aws_path_l2a: '$.null'
+      assets_mapping:
+        download_link:
+          _aws_path: '$.awsPath'
+          href: 's3://sentinel-s2-l1c/{_aws_path}'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
+        quicklook:
+          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+          title: "quicklook"
+          roles: '["overwiev"]'
+          type: 'image/jpeg'
+        thumbnail:
+          href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+          title: "thumbnail"
+          roles: '["thumbnail"]'
+          type: 'image/jpeg'
     S2_MSI_L2A:
       _collection: sentinel2
       _processed_l2a: true
@@ -369,10 +436,6 @@ aws_eos:
           - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
-        eodag:quicklook: '{eodag:thumbnail}'
-        eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
-        _aws_path: '$.null'
         eodag:product_path: '$.null'
         eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
         id:
@@ -382,7 +445,14 @@ aws_eos:
           - '{{"search":{{"processedL2A":"{_processed_l2a}" }} }}'
           - '$.processedL2A'
         _aws_path_l2a: '$.awsPathL2A'
-
+      assets_mapping_from_product: S2_MSI_L1C
+      assets_mapping:
+        download_link:
+          _aws_path_l2a: '$.awsPathL2A'
+          href: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
+          order:status: 'succeded'
   download:
     type: AwsDownload
     ssl_verify: true

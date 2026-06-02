@@ -112,9 +112,11 @@ class GeodesSearch(StacSearch):
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
 
-        # Preprocess parsable description
+        # Parse description fields and build a href -> extra_props mapping
+        href_extra_props: dict[str, dict[str, Any]] = {}
         for result in results:
             for asset in result.get("assets", {}).values():
+                extra_props: dict[str, Any] = {}
                 for segment in asset.get("description", "").split("\n"):
                     key, sep, value = segment.strip("\r\t").partition(":")
                     if not sep:
@@ -126,17 +128,27 @@ class GeodesSearch(StacSearch):
                             value.removesuffix("bytes").removesuffix("byte").strip()
                         )
                         if filesize.isnumeric():
-                            asset["file:size"] = int(filesize)
+                            extra_props["file:size"] = int(filesize)
                     elif key == "Is reference":
-                        asset["geodes:reference"] = value.lower() == "true"
+                        extra_props["geodes:reference"] = value.lower() == "true"
                     elif key == "Is online":
-                        asset["geodes:online"] = value.lower() == "true"
+                        extra_props["geodes:online"] = value.lower() == "true"
                     elif key == "Datatype":
-                        asset["geodes:datatype"] = value
+                        extra_props["geodes:datatype"] = value
                     elif key == "Checksum MD5":
-                        asset["file:checksum"] = value.lower()
+                        extra_props["file:checksum"] = value.lower()
+
+                if extra_props and asset.get("href"):
+                    href_extra_props[asset["href"]] = extra_props
 
         products = super(GeodesSearch, self).normalize_results(results, **kwargs)
+
+        # Apply parsed properties to normalized assets by matching on href
+        for product in products:
+            for asset in product.assets.values():
+                href = asset.get("href", "")
+                if href in href_extra_props:
+                    asset.update(href_extra_props[href])
 
         self._set_availability(products)
 

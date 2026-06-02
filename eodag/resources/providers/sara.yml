@@ -109,18 +109,30 @@ sara:
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
         - '$.geometry'
-      # The url of the quicklook
-      eodag:quicklook: '$.properties.quicklook'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.properties.services.download.url'
-      type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
-      file:size: '$.properties.services.download.size'
-      file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")}'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      eodag:thumbnail: '$.properties.thumbnail'
+      # Unset field from product
+      sara:quicklook: '$.null'
+      sara:thumbnail: '$.null'
+    assets_mapping:
+      download_link:
+        # The url to download the product "as is" (literal or as a template to be completed either after the search result
+        # is obtained from the provider or during the eodag download phase)
+        href: '$.properties.services.download.url'
+        roles: '["archive", "data"]'
+        type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
+        file:size: '$.properties.services.download.size'
+        file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")#to_lower'
+        # order:status set to succeeded for consistency between providers
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.properties.quicklook'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: "image/png"
+      thumbnail:
+        href: '$.properties.thumbnail'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: "image/png"
   products:
     # Sentinel 1
     S1_SAR_OCN:
