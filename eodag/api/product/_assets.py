@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
@@ -78,13 +78,14 @@ class AssetsDict(UserDict):
         self._update_product_location()
 
     @override
-    def update(self, value: Union[dict[str, Any], AssetsDict]) -> None:  # type: ignore
-        """Used to self update with exernal value"""
-        buffer: dict = {}
-        for key in value:
-            if self._check(key, value[key]):
-                buffer[key] = value[key]
-        super().update(buffer)
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """Used to self update with external value"""
+        incoming = {k: v for k, v in dict(*args, **kwargs).items() if self._check(k, v)}
+
+        if not incoming:
+            return
+
+        super().update(incoming)
         self.sort()
         self._update_product_location()
 
