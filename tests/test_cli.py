@@ -1061,6 +1061,13 @@ class TestEodagCli(unittest.TestCase):
     )
     def test_eodag_download_missingcredentials(self, oidc_request):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
+        # mocked OIDC discovery response as expected by pyjwt
+        oidc_request.return_value.json.return_value = {
+            "jwks_uri": "https://example.com/jwks",
+            "token_endpoint": "https://example.com/token",
+            "authorization_endpoint": "https://example.com/authorize",
+            "id_token_signing_alg_values_supported": ["RS256"],
+        }
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
@@ -1088,6 +1095,8 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag download with wrong credentials must raise AuthenticationError"""
         oidc_endpoints = defaultdict(mock.Mock())
         oidc_endpoints["token_endpoint"] = "http://fake_token_endpoint"
+        # mocked OIDC discovery response as expected by pyjwt
+        oidc_endpoints["jwks_uri"] = "https://example.com/jwks"
         mock_req_oidc_endpoints.return_value = oidc_endpoints
         responses.add(
             responses.POST,
@@ -1116,6 +1125,13 @@ class TestEodagCli(unittest.TestCase):
     @mock.patch("eodag.api.product._product.EOProduct.get_quicklook", autospec=True)
     def test_eodag_download_quicklooks(self, mock_get_quicklook, mock_oidc_get):
         """Calling eodag download with --quicklooks argument"""
+        # mocked OIDC discovery response as expected by pyjwt
+        mock_oidc_get.return_value.json.return_value = {
+            "jwks_uri": "https://example.com/jwks",
+            "token_endpoint": "https://example.com/token",
+            "authorization_endpoint": "https://example.com/authorize",
+            "id_token_signing_alg_values_supported": ["RS256"],
+        }
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )

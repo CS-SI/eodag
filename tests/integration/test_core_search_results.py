@@ -67,6 +67,19 @@ class TestCoreSearchResults(EODagTestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Mocked OIDC discovery response as expected by pyjwt.
+        self.oidc_endpoints_mock = mock.patch(
+            "eodag.plugins.authentication.openid_connect."
+            "OIDCRefreshTokenBase._get_oidc_endpoints",
+            autospec=True,
+            return_value={
+                "jwks_uri": "https://example.com/jwks",
+                "token_endpoint": "https://example.com/token",
+                "authorization_endpoint": "https://example.com/authorize",
+                "id_token_signing_alg_values_supported": ["RS256"],
+            },
+        )
+        self.oidc_endpoints_mock.start()
         self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
@@ -129,6 +142,7 @@ class TestCoreSearchResults(EODagTestCase):
     def tearDown(self):
         super(TestCoreSearchResults, self).tearDown()
         # stop Mock and remove tmp config dir
+        self.oidc_endpoints_mock.stop()
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
@@ -580,7 +594,9 @@ class TestCoreSearchResults(EODagTestCase):
 
         mock_query.return_value = (products.data, len(products))
 
-        search_results = self.dag.search(collection="S2_MSI_L1C")
+        search_results = self.dag.search(
+            collection="S2_MSI_L1C", provider="cop_dataspace"
+        )
 
         for search_result in search_results:
             self.assertIsInstance(search_result.downloader, PluginTopic)

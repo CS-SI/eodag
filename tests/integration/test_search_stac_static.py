@@ -157,6 +157,11 @@ class TestSearchStacStatic(unittest.TestCase):
         self, mock_fetch_collections_list, mock_auth_session_request
     ):
         """Use StaticStacSearch plugin to search by cloud cover"""
-        search_result = self.dag.search(cloudCover=10, count=True, validate=False)
+        search_result = self.dag.search(
+            provider=self.static_stac_provider,
+            count=True,
+            validate=False,
+            **{"eo:cloud_cover": 10},
+        )
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)

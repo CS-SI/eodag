@@ -37,6 +37,14 @@ from tests.context import (
     mock,
 )
 
+# Mocked OIDC discovery response as expected by pyjwt.
+_OIDC_CONFIG = {
+    "jwks_uri": "https://example.com/jwks",
+    "token_endpoint": "https://example.com/token",
+    "authorization_endpoint": "https://example.com/authorize",
+    "id_token_signing_alg_values_supported": ["RS256"],
+}
+
 
 class TestCoreSearch(unittest.TestCase):
     def setUp(self):
@@ -277,6 +285,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_get, mock_post, mock_request, mock_auth_token, mock_auth_oidc
     ):
         """Core search must loop over providers until finding a non empty result"""
+        mock_auth_oidc.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
@@ -395,6 +404,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_request, mock_urlopen, mock_httpadapter, mock_get, mock_auth_get
     ):
         """Core search must loop over providers until finding a non empty result"""
+        mock_auth_get.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
@@ -773,6 +783,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_request, mock_auth, mock_auth_config_request
     ):
         """search by id should return properties based on status response"""
+        mock_auth_config_request.return_value.json.return_value = _OIDC_CONFIG
         product_id = "123-456"
         auth = CodeAuthorizedAuth(token="123", where="header")
         mock_auth.return_value = auth

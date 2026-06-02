@@ -63,6 +63,12 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      # Needed by insightsengineering/coverage-action to push badge/report
+      # SVGs to the diff-storage branch and to comment on pull requests.
+      contents: write
+      pull-requests: write
+      checks: write
 
     steps:
     - name: Download Artifacts
@@ -77,7 +83,10 @@ jobs:
         files: artifacts/*/junit-report.xml
 
     - name: Produce the coverage report for Ubuntu
+      # Skipped on PRs from forks: GITHUB_TOKEN is read-only there.
+      if: ${{ !github.event.pull_request.head.repo.fork }}
       uses: insightsengineering/coverage-action@v2
+      continue-on-error: true
       with:
         # Path to the Cobertura XML report.
         path: artifacts/unit-test-results-python3.14-ubuntu-latest/coverage.xml
@@ -106,10 +115,13 @@ jobs:
         # Make the code coverage report togglable
         togglable-report: true
         # Github token to use to publish the check
-        token: ${{ secrets.EODAG_GH_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Produce the coverage report for Windows
+      # Skipped on PRs from forks: GITHUB_TOKEN is read-only there.
+      if: ${{ !github.event.pull_request.head.repo.fork }}
       uses: insightsengineering/coverage-action@v2
+      continue-on-error: true
       with:
         # Path to the Cobertura XML report.
         path: artifacts/unit-test-results-python3.14-windows-latest/coverage.xml
@@ -138,13 +150,14 @@ jobs:
         # Make the code coverage report togglable
         togglable-report: true
         # Github token to use to publish the check
-        token: ${{ secrets.EODAG_GH_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
   sonarqube:
     name: SonarQube scan
     needs: tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    # SONAR_TOKEN is not available to PRs from forks, so skip the scan there.
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v4

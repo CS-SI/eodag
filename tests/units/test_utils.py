@@ -385,7 +385,7 @@ class TestUtils(unittest.TestCase):
 
         # distant error
         with unittest.mock.patch(
-            "eodag.utils.requests.requests.get",
+            "eodag.utils.requests.requests.sessions.Session.get",
             autospec=True,
             side_effect=RequestException,
         ) as mock_get:
