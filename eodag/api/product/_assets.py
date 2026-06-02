@@ -133,21 +133,13 @@ class AssetsDict(UserDict):
             )
             return False
 
-        def target_url(asset: dict) -> Optional[str]:
-            target_url = None
-            if "href" in asset:
-                target_url = asset["href"]
-            elif "order_link" in asset:
-                target_url = asset["order_link"]
-            return target_url
+        def target_url(asset: dict[str, Any]) -> Optional[str]:
+            return asset.get("href") or asset.get("order_link")
 
         assets = self.as_dict()
-        used_urls = []
-        for key in assets:
-            if key == asset_key:
-                # Same key: this is an update, skip url collision check
-                continue
-            used_urls.append(target_url(assets[key]))
+        used_urls = [
+            target_url(asset) for key, asset in assets.items() if key != asset_key
+        ]
 
         # Prevent asset key / asset target url replication (out from technical ones)
         # thumbnail and quicklook can share same url
@@ -186,28 +178,30 @@ class AssetsDict(UserDict):
         :param regex: Uses regex to match the asset key or simply compare strings
         :return: list of assets
         """
-        if asset_filter:
-            if regex:
-                filter_regex = re.compile(asset_filter)
-                assets_keys = list(self.keys())
-                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-            else:
-                assets_keys = [a for a in self.keys() if a == asset_filter]
-            filtered_assets = {}
-            if len(assets_keys) > 0:
-                filtered_assets = {a_key: self.get(a_key) for a_key in assets_keys}
-            assets_values = [a for a in filtered_assets.values() if a and "href" in a]
-            if not assets_values and regex:
-                # retry without regex
-                return self.get_values(asset_filter, regex=False)
-            elif not assets_values:
-                raise NotAvailableError(
-                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {self.product}"
-                )
-            else:
-                return assets_values
-        else:
+        if not asset_filter:
             return [a for a in self.values() if "href" in a]
+
+        if regex:
+            filter_regex = re.compile(asset_filter)
+            assets_keys = [k for k in self.keys() if filter_regex.fullmatch(k)]
+        else:
+            assets_keys = [k for k in self.keys() if k == asset_filter]
+
+        assets_values = [
+            a
+            for k in assets_keys
+            for a in [self.get(k)]
+            if isinstance(a, Asset) and "href" in a
+        ]
+
+        if assets_values:
+            return assets_values
+        if regex:
+            # retry without regex
+            return self.get_values(asset_filter, regex=False)
+        raise NotAvailableError(
+            rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {self.product}"
+        )
 
     def _repr_html_(self, embeded=False):
         thead = (

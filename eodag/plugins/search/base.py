@@ -593,30 +593,27 @@ class Search(PluginTopic):
 
         assets_mapping = self.get_assets_mapping(collection)
 
+        def resolve_asset_from_mapping(
+            key: str, mapping: dict[str, Any]
+        ) -> dict[str, Any]:
+            try:
+                asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
+                return properties_from_json(provider_item, asset_querypaths)
+            except Exception as e:
+                logger.warning("Could not resolve asset mapping '%s': %s", key, e)
+                return dict(mapping)
+
         if product is None:
             # Plain mapping container used by unit tests / introspection
             computed: dict[str, Any] = {}
             for key, mapping in (assets_mapping or {}).items():
-                try:
-                    asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
-                    computed[key] = properties_from_json(
-                        provider_item, asset_querypaths
-                    )
-                except Exception as e:
-                    logger.warning("Could not resolve asset mapping '%s': %s", key, e)
-                    computed[key] = dict(mapping)
+                computed[key] = resolve_asset_from_mapping(key, mapping)
             return computed
 
         assets = AssetsDict(product)
 
         for key, mapping in (assets_mapping or {}).items():
-            try:
-                asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
-                asset = properties_from_json(provider_item, asset_querypaths)
-            except Exception as e:
-                logger.warning("Could not resolve asset mapping '%s': %s", key, e)
-                asset = dict(mapping)
-            assets.update({key: asset})
+            assets.update({key: resolve_asset_from_mapping(key, mapping)})
 
         # Global imported assets
         imported_assets: dict[str, Any] = {}
