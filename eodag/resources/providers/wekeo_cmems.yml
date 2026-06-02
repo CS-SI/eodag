@@ -62,10 +62,14 @@ wekeo_cmems:
       variables:
         - '{{"variables": "{variables}"}}'
         - '{$.properties.location#get_variables_from_path}'
-      eodag:download_link: '$.properties.location'
       title: '$.id'
-      order:status: 'orderable'
-      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "{_collection}"}}'
+    assets_mapping:
+      download_link:
+        href: '$.properties.location'
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        order:status: 'orderable'
+        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "cacheable": "true", "dataset_id": "{_collection}"}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'

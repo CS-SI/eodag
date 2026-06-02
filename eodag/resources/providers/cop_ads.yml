@@ -72,7 +72,13 @@ cop_ads:
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       qs: $.qs
-      eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    assets_mapping:
+      download_link:
+        title: "downloadlink"
+        href: ""
+        roles: '["archive", "data"]'
+        type: "application/netcdf"
+        order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:

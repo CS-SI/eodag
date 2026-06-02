@@ -231,16 +231,26 @@ creodias_s3:
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
-      # order:status: must be one of succeeded, ordered, orderable
-      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
-      eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-      eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+    assets_mapping:
+      download_link:
+        href: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        # order:status: must be one of succeeded, ordered, orderable
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: "image/jpeg"
   download:
     type: AwsDownload
     s3_endpoint: 'https://eodata.cloudferro.com'
