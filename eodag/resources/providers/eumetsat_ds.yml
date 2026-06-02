@@ -100,13 +100,6 @@ eumetsat_ds:
         - 'geo={geometry#to_rounded_wkt}'
         - '$.geometry'
       eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # The url of the quicklook
-      eodag:quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.properties.links.data[?(@.title="Product download")].href'
-      # order:status set to succeeded for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       size: '$.properties.productInformation.size'
@@ -115,6 +108,23 @@ eumetsat_ds:
       acquisitionInformation: '$.null'
       productInformation: '$.null'
       extraInformation: '$.null'
+    assets_mapping:
+      download_link:
+        title: 'downloadlink'
+        href: '$.properties.links.data[?(@.title="Product download")].href'
+        roles: '["archive", "data"]'
+        type: '$.properties.links.data[?(@.title="Product download")].mediaType'
+        order:status: 'succeeded'
+      quicklook:
+        href: '$.properties.links.previews[?(@.title="Quicklook")].href'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: "image/jpeg"
+      thumbnail:
+        href: '$.properties.links.previews[?(@.title="Quicklook")].href'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: "image/jpeg"
   products:
     # S3 SRAL
     S3_SRA:

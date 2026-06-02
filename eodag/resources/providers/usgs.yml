@@ -38,13 +38,27 @@ usgs:
       scene_filter:
         - '{{"scene_filter": {scene_filter#to_geojson} }}'
         - $.null
-      eodag:thumbnail: '$.browse[0].thumbnailPath'
-      eodag:quicklook: '$.browse[0].browsePath'
-      order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
-      eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
       # metadata needed for download
       usgs:entityId: '$.entityId'
       usgs:productId: '$.id'
+    assets_mapping:
+      download_link:
+        _collection: '$.collection'
+        _entity_id: '$.entityId'
+        href: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{_entity_id}/M2M/'
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      quicklook:
+        href: '$.browse[0].browsePath'
+        title: "quicklook"
+        roles: '["overwiev"]'
+        type: 'image/jpeg'
+      thumbnail:
+        href: '$.browse[0].thumbnailPath'
+        title: "thumbnail"
+        roles: '["thumbnail"]'
+        type: 'image/jpeg'
     extract: True
     order_enabled: true
     max_workers: 2
