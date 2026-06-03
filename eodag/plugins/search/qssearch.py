@@ -28,6 +28,7 @@ from typing import (
     Callable,
     Optional,
     Sequence,
+    Union,
     cast,
     get_args,
 )
@@ -52,7 +53,7 @@ import requests
 import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
-from pydantic import ConfigDict, Field, create_model
+from pydantic import AliasChoices, ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
@@ -2258,9 +2259,9 @@ class StacSearch(PostJsonSearch):
             field_definitions: dict[str, Any] = dict()
             StacQueryables = Queryables.from_stac_models()
             for json_param, json_mtd in json_queryables.items():
-                param = get_queryable_from_provider(
+                param = self._get_provider_specific_queryable(
                     json_param, self.get_metadata_mapping(collection)
-                ) or StacQueryables.get_queryable_from_alias(json_param)
+                )
                 # do not expose internal parameters, neither datetime
                 if param == "datetime" or param.startswith("_"):
                     continue
@@ -2337,6 +2338,62 @@ class StacSearch(PostJsonSearch):
                 queryables_dict.setdefault("end", eodag_queryables["end"])
 
             return queryables_dict
+
+    def _get_provider_specific_queryable(
+        self,
+        provider_queryable: str,
+        metadata_mapping: dict[str, Union[str, list[str]]],
+    ) -> str:
+        """Get EODAG configured queryable parameter, possibly with provider's prefix,
+        from provider queryable parameter
+
+        See :func:`~eodag.plugins.search.base.Search.queryables_from_metadata_mapping`
+
+        :param provider_queryable: provider queryable parameter
+        :param metadata_mapping: metadata-mapping configuration
+        :returns: EODAG configured queryable parameter
+        """
+        StacQueryables = Queryables.from_stac_models()
+
+        # step 1: get the param name as defined in the metadata mapping
+        eodag_queryable: str = get_queryable_from_provider(
+            provider_queryable, metadata_mapping
+        ) or StacQueryables.get_queryable_from_alias(provider_queryable)
+
+        # step 2: check if metadata_param is defined in a Provider STAC Extension
+
+        # provider prefix regex
+        prefix_re = re.compile(r"^" + re.escape(self.provider) + r"[_:]")
+
+        for k, v in model_fields_to_annotated(StacQueryables.model_fields).items():
+            stac_queryable_field_info = get_args(v)[1] if len(get_args(v)) > 1 else None
+            if not isinstance(stac_queryable_field_info, FieldInfo):
+                continue
+            queryable_alias: Optional[str] = stac_queryable_field_info.alias
+            # Collect every alias under which the queryable could appear in the
+            # metadata_mapping (model field name + declared alias(es)).
+            candidates: list[str] = (
+                [str(a[0]) for a in queryable_alias.convert_to_aliases()]
+                if isinstance(queryable_alias, AliasChoices)
+                else [queryable_alias]
+                if queryable_alias is not None
+                else []
+            )
+            candidates.append(k)
+            # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
+            # from user-supplied keys before sending them to the plugin, so the
+            # metadata_mapping may store the queryable under its unprefixed name.
+            matches: list[str] = [
+                c for c in candidates if prefix_re.sub("", c) == eodag_queryable
+            ]
+            if k in matches:
+                # prefer the alias with underscore separator over the one with colon
+                # (e.g. wekeo_main_format vs wekeo_main:format)
+                return k
+            elif matches:
+                return matches[0]
+
+        return eodag_queryable
 
 
 class WekeoSearch(StacSearch, PostJsonSearch):

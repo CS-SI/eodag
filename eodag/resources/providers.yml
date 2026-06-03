@@ -3257,8 +3257,8 @@
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
           - '$.null'
-        processingMode:
-          - '{{"processingMode": "{processingMode}"}}'
+        processing_mode:
+          - '{{"processingMode": "{processing_mode}"}}'
           - '$.null'
         sat:absolute_orbit:
           - '{{"orbitNumber": "{sat:absolute_orbit}"}}'
@@ -3314,7 +3314,7 @@
         instruments:
           - '{{"instrumentShortName": "{instruments#csv_list}"}}'
           - '$.null'
-        wekeo_main:format:
+        format:
           - '{{"fileFormat": "{format}"}}'
           - '$.null'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:JRC:DAT:CLMS"}}'
