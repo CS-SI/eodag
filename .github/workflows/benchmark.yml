@@ -1,0 +1,65 @@
+name: Run benchmark
+
+on:
+  pull_request:
+    branches: [develop, v5_download_link_asset]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Performance regression check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+      with:
+        # Get history and tags for SCM versioning to work
+        fetch-depth: 0
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
+    - name: Run benchmark on develop and current ref, then compare
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        CURRENT_SHA="$(git rev-parse HEAD)"
+
+        echo "Running benchmark on develop"
+        git checkout --detach origin/develop
+        uvx --python 3.14 --with tox-uv tox -e benchmark -- --benchmark-json baseline.json
+
+        echo "Running benchmark on current ref"
+        git checkout --detach "${CURRENT_SHA}"
+        uvx --python 3.14 --with tox-uv tox -e benchmark -- --benchmark-json candidate.json
+
+        echo "Comparing benchmark results"
+        uvx --python 3.14 \
+          --with "pytest-benchmark @ git+https://github.com/ionelmc/pytest-benchmark.git@master" \
+          pytest-benchmark compare --between=min \
+          baseline.json candidate.json \
+          | tee benchmark-compare.txt
+
+        {
+          echo "## Benchmark comparison"
+          echo
+          echo "Compared baseline: \`origin/develop\`"
+          echo "Compared candidate: ${CURRENT_SHA}"
+          echo
+          echo '```text'
+          cat benchmark-compare.txt
+          echo '```'
+        } > benchmark-comment.md
+
+    - name: Publish benchmark comparison comment
+      if: github.event.pull_request.head.repo.full_name == github.repository
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: benchmark-comparison
+        path: benchmark-comment.md
