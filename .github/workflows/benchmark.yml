@@ -42,7 +42,7 @@ jobs:
         echo "Comparing benchmark results"
         uvx --python 3.14 \
           --with "pytest-benchmark @ git+https://github.com/ionelmc/pytest-benchmark.git@master" \
-          pytest-benchmark compare --between=min \
+          pytest-benchmark compare --between=median \
           baseline.json candidate.json \
           | tee benchmark-compare.txt
 
