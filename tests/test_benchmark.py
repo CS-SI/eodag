@@ -16,8 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+
 from tests import test_cli
 from tests.integration import test_core_search_results
+from tests.utils import write_eodag_conf_with_fake_credentials
 
 
 def _run_unittest_method(test_case_cls, method_name):
@@ -30,10 +36,44 @@ def _run_unittest_method(test_case_cls, method_name):
         test_case.tearDown()
 
 
+def _run_cli_subprocess_without_args(env):
+    """Run the CLI in a subprocess to include Python and entrypoint startup cost."""
+    result = subprocess.run(
+        [sys.executable, "-m", "eodag.cli"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    # Click >= 8.2 returns 2 for no-args-is-help
+    assert result.returncode in (0, 2)
+    cli_output = f"{result.stdout}{result.stderr}"
+    assert "Earth Observation Data Access Gateway" in cli_output
+
+
 def test_benchmark_cli_without_args(benchmark):
     benchmark(
         lambda: _run_unittest_method(test_cli.TestEodagCli, "test_eodag_without_args")
     )
+
+
+def test_benchmark_cli_without_args_subprocess(benchmark):
+    with TemporaryDirectory() as tmp_home_dir:
+        eodag_conf_dir = os.path.join(tmp_home_dir, ".config", "eodag")
+        os.makedirs(eodag_conf_dir, exist_ok=False)
+        write_eodag_conf_with_fake_credentials(
+            os.path.join(eodag_conf_dir, "eodag.yml")
+        )
+
+        env = os.environ.copy()
+        env["HOME"] = tmp_home_dir
+
+        benchmark.pedantic(
+            _run_cli_subprocess_without_args,
+            kwargs={"env": env},
+            rounds=10,
+            iterations=1,
+        )
 
 
 def test_benchmark_cli_list_collections(benchmark):
