@@ -18,15 +18,15 @@
 #
 """EODAG product package"""
 
-from eodag.utils.deserialize import unregistered_product_from_item
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
+
+from eodag.utils.deserialize import unregistered_product_from_item
 
 if TYPE_CHECKING:
     from eodag.api.product._assets import Asset, AssetsDict
     from eodag.api.product._product import EOProduct
-    from eodag.plugins.manager import PluginManager
 
 # exportable content
 __all__ = ["Asset", "AssetsDict", "EOProduct", "unregistered_product_from_item"]

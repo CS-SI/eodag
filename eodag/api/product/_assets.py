@@ -201,7 +201,8 @@ class Asset(UserDict):
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
         :returns: StreamResponse stream representation of the asset file
         """
-        return self.product.stream_download(asset=self.key, **kwargs)
+        kwargs["asset"] = self.key
+        return self.product.stream_download(**kwargs)
 
     def _repr_html_(self):
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>

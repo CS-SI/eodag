@@ -1206,7 +1206,7 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeomet
     if "type" not in geom:
         raise TypeError("Geometry type must be specified")
 
-    from shapely.geometry import Point, Polygon, LineString, box
+    from shapely.geometry import LineString, Point, Polygon, box
 
     geom_type = geom["type"].lower()
     axes = geom.get("axes")

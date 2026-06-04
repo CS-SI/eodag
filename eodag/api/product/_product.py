@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
 
 import geojson
 import orjson
+
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -965,6 +966,9 @@ class EOProduct:
                 "Key %s not found in geojson, make sure it comes from a serialized SearchResult or EOProduct"
                 % e.args[0]
             ) from e
+
+        from shapely import geometry
+
         obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(search_intersection)
         obj.assets.update(feature.get("assets", {}))
