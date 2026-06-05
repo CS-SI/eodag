@@ -109,14 +109,20 @@ class PluginManager:
                         "Check that the plugin module (%s) is importable",
                         entry_point.name,
                     )
-                plugin_config_paths = self._get_external_provider_config_paths(
-                    entry_point
-                )
-                if plugin_config_paths:
-                    plugin_configs: dict[str, ProviderConfig] = {}
-                    for path in plugin_config_paths:
-                        plugin_configs.update(load_config(path.as_posix()))
-                    self.providers.update_from_configs(plugin_configs)
+                if entry_point.dist and entry_point.dist.name != "eodag":
+                    # use plugin providers if any
+                    name = entry_point.dist.name
+                    dist = entry_point.dist
+                    plugin_providers_dir_config_path = dist.locate_file(name).joinpath(
+                        "providers"
+                    )
+                    if plugin_providers_dir_config_path:
+                        plugin_configs: dict[str, ProviderConfig] = {}
+                        for path in pathlib.Path(
+                            plugin_providers_dir_config_path
+                        ).iterdir():
+                            plugin_configs.update(load_config(path.as_posix()))
+                        self.providers.update_from_configs(plugin_configs)
         self.rebuild()
 
     def _get_external_provider_config_paths(
