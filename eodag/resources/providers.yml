@@ -6768,13 +6768,28 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://geoservice.dlr.de/eoc/ogc/stac/v1/search
-    need_auth: true
   products:
-    GENERIC_PRODUCT_TYPE:
-      productType: '{productType}'
+    S2_MSI_L2A_MAJA:
+      _collection: S2_L2A_MAJA
+      metadata_mapping:
+        eodag:download_link: '$.assets.data.href'
+    SUPERSITES:
+      _collection: SUPERSITES
+      metadata_mapping:
+        eodag:download_link: '$.assets.data.href'
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
-  auth:
+    auth_error_code:
+      - 401
+      - 403
+    products:
+      S2_MSI_L2A_MAJA:
+        ignore_assets: true
+      SUPERSITES:
+        ignore_assets: true
+  auth: !plugin
     type: GenericAuth
     matching_url: https://download.geoservice.dlr.de
 ---

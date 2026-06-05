@@ -616,6 +616,82 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         del plugin.config.ssl_verify
 
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._download_assets", autospec=True
+    )
+    @mock.patch("eodag.api.product._product.EOProduct._stream", create=True)
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
+    )
+    def test_plugins_download_http_ignore_assets_product_config_true(
+        self, mock_stream_download, mock_stream, mock_download_assets
+    ):
+        """HTTPDownload.download() must support product-level ignore_assets=True"""
+
+        product = self._dummy_downloadable_product(
+            "dummy_provider",
+            {
+                "geometry": "POINT (0 0)",
+                "title": "dummy_product",
+                "id": "someproduct",
+            },
+            "foo_collection",
+        )
+        plugin = product.downloader
+        product.collection = "foo_collection"
+        product.location = (
+            product.remote_location
+        ) = "http://somewhere/download_from_location"
+        product.assets.clear()
+        product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        mock_stream_download.return_value = [b"a"]
+        product.filename = "dummy_product.nc"
+
+        plugin.config.ignore_assets = False
+        plugin.config.products = {"foo_collection": {"ignore_assets": True}}
+
+        plugin.download(product, output_dir=self.output_dir)
+        mock_download_assets.assert_not_called()
+        mock_stream_download.assert_called_once()
+
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._download_assets", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download", autospec=True
+    )
+    def test_plugins_download_http_ignore_assets_product_config_false(
+        self, mock_stream_download, mock_download_assets
+    ):
+        """HTTPDownload.download() must support product-level ignore_assets=False"""
+
+        product = self._dummy_downloadable_product(
+            "dummy_provider",
+            {
+                "geometry": "POINT (0 0)",
+                "title": "dummy_product",
+                "id": "someproduct",
+            },
+            "foo_collection",
+        )
+        plugin = product.downloader
+        product.collection = "foo_collection"
+        product.location = (
+            product.remote_location
+        ) = "http://somewhere/download_from_location"
+        product.assets.clear()
+        product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        mock_download_assets.return_value = os.path.join(
+            self.output_dir, "dummy_product"
+        )
+
+        plugin.config.ignore_assets = True
+        plugin.config.products = {"foo_collection": {"ignore_assets": False}}
+
+        plugin.download(product, output_dir=self.output_dir)
+        mock_download_assets.assert_called_once()
+        mock_stream_download.assert_not_called()
+
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_href(
