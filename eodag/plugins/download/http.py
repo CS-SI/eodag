@@ -142,6 +142,13 @@ class HTTPDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(HTTPDownload, self).__init__(provider, config)
 
+    def _should_ignore_assets(self, product: EOProduct) -> bool:
+        """Get ignore_assets value with product-level override support."""
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
+        return product_conf.get(
+            "ignore_assets", getattr(self.config, "ignore_assets", False)
+        )
+
     def _order(
         self,
         product: EOProduct,
@@ -631,8 +638,7 @@ class HTTPDownload(Download):
 
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset") is not None
+            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
         ):
             try:
                 fs_path = self._download_assets(
@@ -796,8 +802,7 @@ class HTTPDownload(Download):
 
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset") is not None
+            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
         ):
             executor = ThreadPoolExecutor(
                 max_workers=getattr(self.config, "max_workers", None)
