@@ -258,7 +258,9 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_from_yaml_requires_plugin_tag(self):
         """ProviderConfig.from_yaml must reject untagged plugin topics."""
-        with self.assertRaisesRegex(MisconfiguredError, "plugin topic 'search'"):
+        with self.assertRaisesRegex(
+            MisconfiguredError, "plugin topic 'search' must be tagged with '!plugin'"
+        ):
             yaml.load(
                 """
 !provider
