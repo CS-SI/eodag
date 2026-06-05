@@ -6768,6 +6768,15 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://geoservice.dlr.de/eoc/ogc/stac/v1/search
+    sort:
+      sort_by_default:
+        - !!python/tuple [start_datetime, ASC]
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.datetime
+        created: properties.created
+        updated: properties.updated
+        eo:cloud_cover: properties.eo:cloud_cover
   products:
     S2_MSI_L2A_MAJA:
       _collection: S2_L2A_MAJA
