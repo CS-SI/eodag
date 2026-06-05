@@ -24,7 +24,7 @@ remotely sensed images while offering a unified API for data access regardless o
    :class: seealso
 
    EODAG comes already configured with many providers from AWS / GCS EO catalogs, Copernicus, CNES, Destination Earth,
-   ECMWF, ESA, EUMETSAT, Meteoblue, Planetary Computer, USGS / Landsat, ...
+   DLR, ECMWF, ESA, EUMETSAT, Meteoblue, Planetary Computer, USGS / Landsat, ...
 
 EODAG has the following primary features:
 
