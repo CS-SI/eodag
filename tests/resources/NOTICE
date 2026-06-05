@@ -1,4 +1,4 @@
-eodag_search_result.geojson is derived from results from https://peps.cnes.fr/ catalog.
+eodag_search_result.geojson is derived from results from https://dataspace.copernicus.eu/ catalog.
 
 awseos_search.json, s2l2a_productInfo.json and s2l2a_tileInfo.json are results obtained from AWS EOS catalog and eodag_search_result_awseos.geojson is derived from this catalog.
 
@@ -10,7 +10,7 @@ mundi_search.xml are results obtained from https://mundiwebservices.com/ catalog
 
 onda_count.json and onda_search.json are results obtained from https://www.onda-dias.eu/cms/ catalog and eodag_search_result_onda.geojson is derived from results from this catalog.
 
-peps_search.json are results obtained from https://peps.cnes.fr/ catalog and eodag_search_result_peps.geojson is derived from results from this catalog.
+cop_dataspace_search.json are results obtained from https://dataspace.copernicus.eu/ catalog and eodag_search_result_cop_dataspace.geojson is derived from results from this catalog.
 
 
 The product S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911 found under products and under products/as_archive

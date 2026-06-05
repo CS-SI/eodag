@@ -42,8 +42,12 @@ class FilterLatestByName(Crunch):
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(self, config: Optional[dict[str, Any]] = None) -> None:
+        if config is None:
+            config = {}
         super(FilterLatestByName, self).__init__(config)
+        if "name_pattern" not in config:
+            raise ValidationError('Required parameter "name_pattern" in config')
         name_pattern = config.pop("name_pattern")
         if not self.NAME_PATTERN_CONSTRAINT.search(name_pattern):
             raise ValidationError(

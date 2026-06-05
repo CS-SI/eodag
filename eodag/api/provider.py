@@ -52,6 +52,7 @@ from eodag.utils import (
     update_nested_dict,
 )
 from eodag.utils.exceptions import (
+    MisconfiguredError,
     UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
@@ -123,7 +124,13 @@ class ProviderConfig(yaml.YAMLObject):
         for node_key, node_value in node.value:
             if node_key.value == "name":
                 node_value.value = slugify(node_value.value).replace("-", "_")
-                break
+            elif node_key.value in PLUGINS_TOPICS_KEYS:
+                if node_value.tag != PluginConfig.yaml_tag:
+                    msg = "Provider plugin topic '%s' must be tagged with '%s'" % (
+                        node_key.value,
+                        PluginConfig.yaml_tag,
+                    )
+                    raise MisconfiguredError(msg)
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
@@ -887,8 +894,14 @@ class ProvidersDict(UserDict[str, Provider]):
                 self.data[name].collections_fetched = False
 
             except Exception:
-                operation = "updating" if name in self.data else "creating"
-                logger.warning("%s: skipped %s due to invalid config", name, operation)
+                if name in self.data:
+                    logger.warning(
+                        "%s: skipped updating provider due to invalid config", name
+                    )
+                else:
+                    logger.warning(
+                        "%s: could not create provider from scratch using config", name
+                    )
                 logger.debug("Traceback:\n%s", traceback.format_exc())
 
         self._share_credentials()

@@ -29,6 +29,7 @@ from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
 
+from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 from eodag.utils import STAC_VERSION
@@ -61,7 +62,7 @@ class Collection(BaseModel):
 
     id: str = Field()
     title: Optional[str] = Field(default=None)
-    description: Optional[str] = Field(default=None)
+    description: str = Field(default=NOT_AVAILABLE)
     extent: Extent = Field(
         default=Extent(
             spatial=SpatialExtent(bbox=[[-180.0, -90.0, 180.0, 90.0]]),  # type: ignore
@@ -75,7 +76,7 @@ class Collection(BaseModel):
         ),
     )
     keywords: Optional[list[str]] = Field(default=None)
-    license: Optional[str] = Field(default=None)
+    license: str = Field(default="other")
     links: Optional[Links] = Field(default=None)
     providers: Optional[list[Provider]] = Field(default=None)
 

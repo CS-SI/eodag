@@ -31,7 +31,7 @@ from typing import (
     cast,
     get_args,
 )
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import (
     parse_qs,
     parse_qsl,
@@ -52,7 +52,7 @@ import requests
 import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
-from pydantic import create_model
+from pydantic import ConfigDict, Field, create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
@@ -76,7 +76,7 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
     DEFAULT_PAGE,
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_COLLECTION,
@@ -85,6 +85,7 @@ from eodag.utils import (
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
+    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     copy_deepcopy,
     deepcopy,
@@ -99,6 +100,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
     PluginImplementationError,
+    QuotaExceededError,
     RequestError,
     TimeOutError,
     ValidationError,
@@ -153,7 +155,7 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` (``str``) (**mandatory**): The template for
             pagination requests. This is a simple Python format string which will be resolved using the following
             keywords: ``url`` (the base url of the search endpoint), ``search`` (the query string corresponding
-            to the search request), ``items_per_page`` (the number of items to return per page),
+            to the search request), ``limit`` (the number of items to return per page),
             ``skip`` (the number of items to skip).
           * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
             leading to the total number of results satisfying a request. This is used for providers which provides the
@@ -166,7 +168,7 @@ class QueryStringSearch(Search):
             should be added to the search request
           * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_key_path` (``str``): A JsonPath expression used
             to retrieve the URL of the next page in the response of the current page.
-          * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items per
+          * :attr:`~eodag.config.PluginConfig.Pagination.max_limit` (``int``): The maximum number of items per
             page that the provider can handle; default: ``50``
           * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the first page; default: ``1``
 
@@ -373,6 +375,16 @@ class QueryStringSearch(Search):
                     self.config.discover_collections[
                         "single_collection_parsable_metadata"
                     ]
+                )
+            if "metadata_mapping" in self.config.discover_collections.get(
+                "generic_collection_unparsable_properties", {}
+            ):
+                self.config.discover_collections[
+                    "generic_collection_unparsable_properties"
+                ]["metadata_mapping"] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_collections[
+                        "generic_collection_unparsable_properties"
+                    ]["metadata_mapping"]
                 )
 
         # parse jsonpath on init: queryables discovery
@@ -597,13 +609,29 @@ class QueryStringSearch(Search):
                         generic_collection_id = extracted_mapping.pop(
                             "generic_collection_id"
                         )
+                        unparsable_properties = deepcopy(
+                            self.config.discover_collections.get(
+                                "generic_collection_unparsable_properties", {}
+                            )
+                        )
+                        if "metadata_mapping" in unparsable_properties:
+                            # merge with default metadata mapping
+                            merged_metadata_mapping = deepcopy(
+                                self.config.metadata_mapping
+                            )
+                            for metadata, mapping in unparsable_properties[
+                                "metadata_mapping"
+                            ].items():
+                                merged_metadata_mapping.pop(metadata, None)
+                                merged_metadata_mapping[metadata] = mapping
+                            unparsable_properties[
+                                "metadata_mapping"
+                            ] = merged_metadata_mapping
                         conf_update_dict["providers_config"][
                             generic_collection_id
                         ] = dict(
                             extracted_mapping,
-                            **self.config.discover_collections.get(
-                                "generic_collection_unparsable_properties", {}
-                            ),
+                            **unparsable_properties,
                         )
                         # collections_config extraction
                         collection_properties = properties_from_json(
@@ -884,12 +912,12 @@ class QueryStringSearch(Search):
 
     def collect_search_urls(
         self,
-        prep: PreparedSearch = PreparedSearch(page=None, items_per_page=None),
+        prep: PreparedSearch = PreparedSearch(page=None, limit=None),
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
         token = getattr(prep, "next_page_token", None)
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         count = prep.count
         next_page_token_key = str(
             self.config.pagination.get("next_page_token_key", "page")
@@ -923,7 +951,7 @@ class QueryStringSearch(Search):
             # numeric page token
             if (
                 next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and items_per_page is not None:
+            ) and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = 0
@@ -959,7 +987,7 @@ class QueryStringSearch(Search):
                 next_page_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=qs_with_sort,
-                    items_per_page=items_per_page,
+                    limit=limit,
                     next_page_token=token,
                     skip=token,
                 )
@@ -971,7 +999,7 @@ class QueryStringSearch(Search):
         return list(dict.fromkeys(urls)), total_results
 
     def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(limit=None), **kwargs: Any
     ) -> RawSearchResult:
         """Perform the actual search request.
 
@@ -980,7 +1008,7 @@ class QueryStringSearch(Search):
 
         :param prep: Object collecting needed information for search.
         """
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         total_items_nb = 0
         if getattr(prep, "need_count", False):
             # extract total_items_nb from search results
@@ -1133,15 +1161,15 @@ class QueryStringSearch(Search):
                 and len(results) > 0
             ):
                 del prep.total_items_nb
-            if items_per_page is not None and len(results) == items_per_page:
+            if limit is not None and len(results) == limit:
 
                 raw_search_results = self._build_raw_search_results(
-                    results, resp_as_json, kwargs, items_per_page, prep
+                    results, resp_as_json, kwargs, limit, prep
                 )
                 return raw_search_results
 
         raw_search_results = self._build_raw_search_results(
-            results, resp_as_json, kwargs, items_per_page, prep
+            results, resp_as_json, kwargs, limit, prep
         )
         return raw_search_results
 
@@ -1150,7 +1178,7 @@ class QueryStringSearch(Search):
         results: list[dict[str, Any]],
         resp_as_json: dict[str, Any],
         search_kwargs: dict[str, Any],
-        items_per_page: Optional[int],
+        limit: Optional[int],
         prep: PreparedSearch,
     ):
         """
@@ -1163,15 +1191,13 @@ class QueryStringSearch(Search):
         :param results: Raw results returned by the search.
         :param resp_as_json: The search response parsed as JSON.
         :param search_kwargs: Search parameters used for the query.
-        :param items_per_page: Number of items per page.
+        :param limit: Number of items per page.
         :param prep: Request preparation object containing query parameters.
         :returns: An object containing the raw results, search parameters, and the next page token if available.
         """
         # Create the RawSearchResult object and populate basic fields
         raw_search_results = RawSearchResult(results)
-        raw_search_results.search_params = search_kwargs | {
-            "items_per_page": items_per_page
-        }
+        raw_search_results.search_params = search_kwargs | {"limit": limit}
         raw_search_results.query_params = prep.query_params
         raw_search_results.collection_def_params = prep.collection_def_params
         raw_search_results.next_page_token_key = prep.next_page_token_key
@@ -1256,8 +1282,7 @@ class QueryStringSearch(Search):
             # skip as next_page_token_key
             elif next_page_token is not None and next_page_token_key == "skip":
                 raw_search_results.next_page_token = str(
-                    int(next_page_token)
-                    + int(prep.items_per_page or DEFAULT_ITEMS_PER_PAGE)
+                    int(next_page_token) + int(prep.limit or DEFAULT_LIMIT)
                 )
             else:
                 raw_search_results.next_page_token = None
@@ -1276,6 +1301,7 @@ class QueryStringSearch(Search):
         products: list[EOProduct] = []
         asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         product_kwargs = deepcopy(kwargs)
+
         # collection alias as collection property for product
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
             product_kwargs["collection"] = alias
@@ -1289,18 +1315,25 @@ class QueryStringSearch(Search):
 
             additional_assets = self.get_assets_from_mapping(result)
             product.assets.update(additional_assets)
+
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
-                norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
-                    asset.get("href", "") if asset_key_from_href else key,
+                url = asset.get("href", "")
+                norm_key, roles = product.driver.guess_asset_key_and_roles(
+                    url if asset_key_from_href else key,
                     product,
                 )
-                if norm_key:
+                if norm_key is not None:
+                    asset["title"] = norm_key
+                    asset["roles"] = roles
                     product.assets[norm_key] = asset
-                    # Normalize title with key
-                    product.assets[norm_key]["title"] = norm_key
+                else:
+                    asset["title"] = asset.get("title", key)
+                    product.assets[key] = asset
+
             # sort assets
             product.assets.data = dict(sorted(product.assets.data.items()))
+            product._normalize_bands()
             products.append(product)
         return products
 
@@ -1384,6 +1417,21 @@ class QueryStringSearch(Search):
         else:
             return tuple(provider_collection)
 
+    def _raise_request_error(
+        self, err_msg: str, exception_message: Optional[str], url: str, e: Exception
+    ):
+        if exception_message:
+            logger.exception("%s %s" % (exception_message, err_msg))
+        else:
+            logger.exception(
+                "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
+                url,
+                self.provider,
+                self.__class__.__name__,
+                err_msg,
+            )
+        raise RequestError.from_error(e, exception_message) from e
+
     def _request(
         self,
         prep: PreparedSearch,
@@ -1465,19 +1513,17 @@ class QueryStringSearch(Search):
         except socket.timeout:
             err = requests.exceptions.Timeout(request=requests.Request(url=url))
             raise TimeOutError(err, timeout=timeout)
-        except (requests.RequestException, URLError) as err:
+        except HTTPError as e:  # raised by urlopen
+            QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
+            err_msg = e.msg
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except URLError as e:
+            err_msg = str(e)
+            self._raise_request_error(err_msg, exception_message, url, e)
+        except requests.RequestException as err:
+            QuotaExceededError.raise_if_quota_exceeded(err, self.provider)
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
-            if exception_message:
-                logger.exception("%s %s" % (exception_message, err_msg))
-            else:
-                logger.exception(
-                    "Skipping error while requesting: %s (provider:%s, plugin:%s): %s",
-                    url,
-                    self.provider,
-                    self.__class__.__name__,
-                    err_msg,
-                )
-            raise RequestError.from_error(err, exception_message) from err
+            self._raise_request_error(err_msg, exception_message, url, err)
         return response
 
 
@@ -1561,7 +1607,15 @@ class ODataV4Search(QueryStringSearch):
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-                except requests.RequestException:
+                except requests.RequestException as e:
+                    if (
+                        e.response
+                        and e.response.status_code
+                        and e.response.status_code == 429
+                    ):
+                        logger.error(
+                            f"Too many requests on provider {self.provider}, please check your quota!"
+                        )
                     logger.exception(
                         "Skipping error while searching for %s %s instance",
                         self.provider,
@@ -1645,7 +1699,7 @@ class PostJsonSearch(QueryStringSearch):
           which provides the total results metadata along with the result of the query and don't
           have an endpoint for querying the number of items satisfying a request, or for providers
           for which the count endpoint returns a json or xml document
-        * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items
+        * :attr:`~eodag.config.PluginConfig.Pagination.max_limit` (``int``): The maximum number of items
           per page that the provider can handle; default: ``50``
 
     """
@@ -1707,6 +1761,11 @@ class PostJsonSearch(QueryStringSearch):
             )
 
             qp, _ = self.build_query_string(collection, keywords)
+
+        # Force sort qp list parameters
+        for key in qp:
+            if isinstance(qp[key], list) and key != "area":
+                qp[key].sort()
 
         for query_param, query_value in qp.items():
             if (
@@ -1835,7 +1894,7 @@ class PostJsonSearch(QueryStringSearch):
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
         token = getattr(prep, "next_page_token", None)
-        items_per_page = prep.items_per_page
+        limit = prep.limit
         count = prep.count
         urls: list[str] = []
         total_results = 0 if count else None
@@ -1866,7 +1925,7 @@ class PostJsonSearch(QueryStringSearch):
             # numeric page token
             if (
                 next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and items_per_page is not None:
+            ) and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = max(
@@ -1898,7 +1957,7 @@ class PostJsonSearch(QueryStringSearch):
             if "next_page_url_tpl" in self.config.pagination:
                 search_endpoint = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
-                    items_per_page=items_per_page,
+                    limit=limit,
                     next_page_token=token,
                 )
 
@@ -1926,7 +1985,7 @@ class PostJsonSearch(QueryStringSearch):
                 # next_page_query_obj needs to be parsed
                 next_page_query_obj_str = self.config.pagination[
                     "next_page_query_obj"
-                ].format(items_per_page=items_per_page, **next_page_token_kwargs)
+                ].format(limit=limit, **next_page_token_kwargs)
                 next_page_query_obj = orjson.loads(next_page_query_obj_str)
                 # remove NOT_AVAILABLE entries
                 next_page_query_obj.pop(NOT_AVAILABLE, None)
@@ -2007,6 +2066,10 @@ class PostJsonSearch(QueryStringSearch):
                     f"HTTP Error {response.status_code} returned.",
                     response.text.strip(),
                 )
+            if response.status_code and response.status_code == 429:
+                raise QuotaExceededError(
+                    f"Too many requests on provider {self.provider}, please check your quota!"
+                )
             if exception_message:
                 logger.exception(exception_message)
             else:
@@ -2041,8 +2104,19 @@ class StacSearch(PostJsonSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # backup results_entry overwritten by init
-        results_entry = config.results_entry
+        try:
+            # backup results_entry overwritten by init
+            results_entry = config.results_entry
+        except AttributeError:
+            plugin_name = self.__class__.__name__
+            if plugin_name not in STAC_SEARCH_PLUGINS:
+                raise MisconfiguredError(
+                    "Missing results_entry in %s configuration. If %s is expected to be used as "
+                    "a STAC plugin, it must be referenced in STAC_SEARCH_PLUGINS."
+                    % (provider, plugin_name)
+                )
+            else:
+                raise
 
         super(StacSearch, self).__init__(provider, config)
 
@@ -2173,7 +2247,6 @@ class StacSearch(PostJsonSearch):
                 return None
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
-            eodag_queryables_and_defaults: list[tuple[str, Any]] = []
             StacQueryables = Queryables.from_stac_models()
             for json_param, json_mtd in json_queryables.items():
                 param = get_queryable_from_provider(
@@ -2183,28 +2256,68 @@ class StacSearch(PostJsonSearch):
                 if param == "datetime" or param.startswith("_"):
                     continue
 
-                default = kwargs.get(param, json_mtd.get("default"))
-
-                if param in StacQueryables.model_fields:
-                    # use eodag queryable as default
-                    eodag_queryables_and_defaults += [(param, default)]
-                    continue
-
                 # convert provider json field definition to python
                 default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
                 field_definition = get_args(annotated_def)
+
+                if param in StacQueryables.model_fields:
+                    # update provider queryable using eodag queryable definition
+                    eodag_queryable = StacQueryables.get_with_default(param, default)
+                    eodag_queryable_args = get_args(eodag_queryable)
+                    if len(field_definition) == 2 and len(eodag_queryable_args) == 2:
+                        (
+                            provider_queryable_type,
+                            provider_queryable_fieldinfo,
+                        ) = field_definition
+                        (
+                            eodag_queryable_type,
+                            eodag_queryable_fieldinfo,
+                        ) = eodag_queryable_args
+                        provider_has_literal_type = ".Literal[" in str(
+                            provider_queryable_type
+                        )
+                        if not provider_has_literal_type:
+                            # use eodag queryable type if provider one has no constraints
+                            field_definition = eodag_queryable_type, field_definition[1]
+
+                        # merge provider and eodag queryables FieldInfo metadata.
+                        # When the provider type has no Literal constraints we keep only eodag's metadata,
+                        # to avoid propagating provider-side constraints that target a different shape than
+                        # the eodag queryable type (patterns do not apply on parameters that
+                        # are parsed/formatted later).
+                        if provider_has_literal_type:
+                            merged_metadata = (
+                                field_definition[1].metadata
+                                + eodag_queryable_fieldinfo.metadata
+                            )
+                        else:
+                            merged_metadata = list(eodag_queryable_fieldinfo.metadata)
+                        # build merged attributes: use provider value if set, otherwise fall back to eodag value
+                        merged_attrs = {
+                            attr_k: (
+                                attr_v or getattr(eodag_queryable_fieldinfo, attr_k)
+                            )
+                            for attr_k, attr_v in provider_queryable_fieldinfo.asdict()
+                            .get("attributes", {})
+                            .items()
+                        }
+                        # rebuild using Field()
+                        merged_fieldinfo = Field(**merged_attrs)
+                        merged_fieldinfo.metadata = merged_metadata
+                        field_definition = field_definition[0], merged_fieldinfo
+
                 field_definitions[param] = field_definition
 
-            python_queryables = create_model("m", **field_definitions).model_fields
+            python_queryables = create_model(
+                "m",
+                __config__=ConfigDict(arbitrary_types_allowed=True),
+                **field_definitions,
+            ).model_fields
 
             queryables_dict = model_fields_to_annotated(python_queryables)
-
-            # append eodag queryables
-            for param, default in eodag_queryables_and_defaults:
-                queryables_dict[param] = StacQueryables.get_with_default(param, default)
 
             # append "datetime" as "start" & "end" if needed
             if "datetime" in json_queryables:

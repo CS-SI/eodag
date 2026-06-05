@@ -21,6 +21,7 @@ from collections import UserList
 
 import geojson
 from lxml import html
+from pystac import ItemCollection
 from shapely.geometry.collection import GeometryCollection
 
 from tests.context import EOProduct, SearchResult
@@ -58,8 +59,8 @@ class TestSearchResult(unittest.TestCase):
         self.assertEqual(geo_interface["type"], "FeatureCollection")
         self.assertEqual(geo_interface["features"], [])
 
-    def test_search_result_as_geojson_object(self):
-        geojson_object = self.search_result.as_geojson_object()
+    def test_search_result_as_dict(self):
+        geojson_object = self.search_result.as_dict()
         self.assertIsInstance(geojson_object, dict)
         self.assertTrue("type" in geojson_object)
         self.assertTrue("features" in geojson_object)
@@ -73,14 +74,25 @@ class TestSearchResult(unittest.TestCase):
         self.assertIsInstance(wkt_object, str)
         self.assertTrue(wkt_object.startswith("GEOMETRYCOLLECTION"))
 
+    def test_search_result_as_pystac_object(self):
+        pystac_object = self.search_result.as_pystac_object()
+        self.assertIsInstance(pystac_object, ItemCollection)
+
     def test_search_result_is_list_like(self):
         """SearchResult must provide a list interface"""
         self.assertIsInstance(self.search_result, UserList)
 
     def test_search_result_from_feature_collection(self):
         """SearchResult instances must be build-able from feature collection geojson"""
-        same_search_result = SearchResult.from_geojson(
+        same_search_result = SearchResult.from_dict(
             geojson.loads(geojson.dumps(self.search_result))
+        )
+        self.assertEqual(len(same_search_result), len(self.search_result))
+
+    def test_search_result_from_pystac(self):
+        """SearchResult instances must be build-able from feature collection geojson"""
+        same_search_result = SearchResult.from_pystac(
+            ItemCollection.from_dict(self.search_result.as_dict())
         )
         self.assertEqual(len(same_search_result), len(self.search_result))
 

@@ -25,6 +25,14 @@ from unittest import mock
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, MisconfiguredError
 
+# Mocked OIDC discovery response as expected by pyjwt.
+_OIDC_CONFIG = {
+    "jwks_uri": "https://example.com/jwks",
+    "token_endpoint": "https://example.com/token",
+    "authorization_endpoint": "https://example.com/authorize",
+    "id_token_signing_alg_values_supported": ["RS256"],
+}
+
 
 class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
     """MisconfiguredError must be raised when downloading one or several products
@@ -60,9 +68,14 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
 
-    def test_eodag_download_missing_credentials_peps(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+    )
+    def test_eodag_download_missing_credentials_cop_dataspace(self, mock_requests):
+        # mocked OIDC discovery response as expected by pyjwt
+        mock_requests.return_value.json.return_value = _OIDC_CONFIG
         search_resuls = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+            TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):
@@ -74,6 +87,8 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
     )
     def test_eodag_download_missing_credentials_creodias(self, mock_requests):
+        # mocked OIDC discovery response as expected by pyjwt
+        mock_requests.return_value.json.return_value = _OIDC_CONFIG
         search_resuls = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_creodias.geojson"
         )

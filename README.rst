@@ -3,7 +3,7 @@
 
 |
 
-.. |pypi-badge| image:: https://badge.fury.io/py/eodag.svg
+.. |pypi-badge| image:: https://badge.fury.io/py/eodag.svg?
     :target: https://badge.fury.io/py/eodag
 
 .. |conda-badge| image:: https://img.shields.io/conda/vn/conda-forge/eodag
@@ -12,27 +12,30 @@
 .. |rtd-badge| image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
 
-.. |gha-badge| image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
+.. |gha-badge| image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg?
     :target: https://github.com/CS-SI/eodag/actions
 
-.. |ghi-badge| image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
+.. |ghi-badge| image:: https://img.shields.io/github/issues/CS-SI/eodag.svg?
     :target: https://github.com/CS-SI/eodag/issues
 
-.. |binder-badge| image:: https://mybinder.org/badge_logo.svg
+.. |binder-badge| image:: https://mybinder.org/badge_logo.svg?
     :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb
 
 |pypi-badge| |conda-badge| |rtd-badge| |gha-badge| |ghi-badge| |binder-badge|
 
-.. |license-badge| image:: https://img.shields.io/pypi/l/eodag.svg
+.. |pypi-dl-badge| image:: https://badgen.net/pypi/dm/eodag
     :target: https://pypi.org/project/eodag/
 
-.. |versions-badge| image:: https://img.shields.io/pypi/pyversions/eodag.svg
+.. |license-badge| image:: https://img.shields.io/pypi/l/eodag.svg?
     :target: https://pypi.org/project/eodag/
 
-.. |zenodo-badge| image:: https://zenodo.org/badge/203819248.svg
-  :target: https://doi.org/10.5281/zenodo.18552649
+.. |versions-badge| image:: https://img.shields.io/pypi/pyversions/eodag.svg?
+    :target: https://pypi.org/project/eodag/
 
-|license-badge| |versions-badge| |zenodo-badge|
+.. |zenodo-badge| image:: https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fzenodo.org%2Fapi%2Frecords%2F18552649%2Fversions%2Flatest&query=doi&label=DOI&color=blue
+   :target: https://doi.org/10.5281/zenodo.18552649
+
+|pypi-dl-badge| |license-badge| |versions-badge| |zenodo-badge|
 
 |
 
@@ -64,7 +67,7 @@ integrate new data providers. Three types of plugins compose the tool:
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
-.. image:: https://raw.githubusercontent.com/CS-SI/eodag/develop/docs/_static/eodag_overview.png
+.. image:: https://cs-si.github.io/eodag/docs/_static/eodag_overview.png
    :alt: EODAG overview
    :class: no-scaled-link
 
@@ -75,7 +78,7 @@ EODAG is available on `PyPI <https://pypi.org/project/eodag/>`_:
 
 .. code-block:: bash
 
-   python -m pip install eodag
+   pip install eodag
 
 And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-forge/eodag>`_:
 
@@ -85,9 +88,8 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
 ..
 
-  [!IMPORTANT]
+  [!NOTE]
 
-  `Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ **in v3.0.0**:
   Please note that EODAG
   comes with a minimal set of dependencies. If you want more features, please install using one of the
   `available extras <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_.
@@ -124,15 +126,6 @@ This will search for Sentinel 2 level-1C products on the default provider and re
 an estimated total number of products matching the search criteria. And then it will download these products. Please
 check the `Python API User Guide <https://eodag.readthedocs.io/en/latest/api_user_guide.html>`_ for more details.
 
-..
-
-  [!IMPORTANT]
-
-  `Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ **in v3.0.0**:
-  `search() <https://eodag.readthedocs.io/en/latest/api_reference/core.html#eodag.api.core.EODataAccessGateway.search>`_ method now returns
-  only a single ``SearchResult`` instead of a 2 values tuple.
-
-
 Command line interface
 ----------------------
 
@@ -144,7 +137,7 @@ Start playing with the CLI:
 
   The request above searches for ``S2_MSI_L1C`` collections in a given bounding box, in March 2021. It saves the results in a GeoJSON file (``search_results.geojson`` by default).
 
-  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloudCover 20``. For more information on available options::
+  Results are paginated, you may want to get all pages at once with ``--all``, or search products having 20% of maximum coud cover with ``--cloud-cover 20``. For more information on available options::
 
      eodag search --help
 
@@ -181,7 +174,7 @@ Don't hesitate and open an issue or submit a pull request, contributions are mos
 For guidance on setting up a development environment and how to make a
 contribution to eodag, see the `contributing guidelines`_.
 
-.. _contributing guidelines: https://github.com/CS-SI/eodag/blob/develop/CONTRIBUTING.rst
+.. _contributing guidelines: https://eodag.readthedocs.io/en/latest/contribute.html
 
 
 License

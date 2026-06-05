@@ -18,9 +18,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
+from pydantic import AliasChoices
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
@@ -354,6 +356,7 @@ class Search(PluginTopic):
             getattr(self.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
+        default_values.pop("assets_mapping", None)
         try:
             filters["collection"] = collection
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
@@ -483,15 +486,33 @@ class Search(PluginTopic):
                 str, Field(default=collection_or_alias)
             ]
 
+        # provider prefix regex
+        prefix_re = re.compile(r"^" + re.escape(self.provider) + r"[_:]")
+
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None
             )
             if not isinstance(eodag_queryable_field_info, FieldInfo):
                 continue
-            if eodag_queryable_field_info.is_required() or (
-                (eodag_queryable_field_info.alias or k) in metadata_mapping
-            ):
+            queryable_alias = eodag_queryable_field_info.alias
+            # Collect every alias under which the queryable could appear in the
+            # metadata_mapping (model field name + declared alias(es)).
+            candidates = (
+                [a[0] for a in queryable_alias.convert_to_aliases()]
+                if isinstance(queryable_alias, AliasChoices)
+                else [queryable_alias]
+            )
+            candidates.append(k)
+            # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
+            # from user-supplied keys before sending them to the plugin, so the
+            # metadata_mapping may store the queryable under its unprefixed name.
+            in_metadata = any(
+                c in metadata_mapping or prefix_re.sub("", c) in metadata_mapping
+                for c in candidates
+                if c
+            )
+            if eodag_queryable_field_info.is_required() or in_metadata:
                 queryables[k] = v
         return queryables
 

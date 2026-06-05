@@ -118,3 +118,12 @@ def get_logging_verbose() -> Optional[int]:
         pass
 
     return None
+
+
+def get_disable_tqdm() -> bool:
+    """Get tqdm status"""
+    global disable_tqdm
+    return disable_tqdm
+
+
+__all__ = ["get_disable_tqdm", "setup_logging", "get_logging_verbose"]

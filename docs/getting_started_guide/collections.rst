@@ -46,8 +46,8 @@ The catalog is used in different ways by ``eodag``:
 
   .. code-block:: console
 
-     eodag search --conf peps_conf.yml -p S2_MSI_L2A
-     eodag search --conf creodias_conf.yml -p S2_MSI_L2A
+     eodag search --provider cop_dataspace --collection S2_MSI_L2A
+     eodag search --provider planetary_computer --collection S2_MSI_L2A
 
 * Some of the metadata mapped can be used to search for products without specifying any identifier.
   In other terms, this catalog can be queried.

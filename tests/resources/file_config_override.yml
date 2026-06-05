@@ -17,7 +17,7 @@ aws_eos:
       aws_access_key_id: access-key-id
       aws_secret_access_key: secret-access-key
 
-peps:
+cop_dataspace:
   download:
     output_dir: /data
 

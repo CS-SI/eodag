@@ -17,10 +17,10 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import re
 import string
-from datetime import datetime, timedelta, timezone
 from random import SystemRandom
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlparse
@@ -66,24 +66,31 @@ class OIDCRefreshTokenBase(Authentication):
     jwks_client: jwt.PyJWKClient
 
     access_token: str
-    access_token_expiration: datetime
+    access_token_expiration: dt.datetime
 
     refresh_token: str
-    refresh_token_expiration: datetime
+    refresh_token_expiration: dt.datetime
 
     token_endpoint: str
     authorization_endpoint: str
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
-        self.session = requests.Session()
 
         self.access_token = ""
-        self.access_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
-
+        self.access_token_expiration = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
         self.refresh_token = ""
-        self.refresh_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
+        self.refresh_token_expiration = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+        self.session = requests.Session()
 
+        auth_config = self._get_oidc_endpoints()
+
+        self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
+        self.token_endpoint = auth_config["token_endpoint"]
+        self.authorization_endpoint = auth_config["authorization_endpoint"]
+        self.algorithms = auth_config["id_token_signing_alg_values_supported"]
+
+    def _get_oidc_endpoints(self):
         try:
             response = requests.get(self.config.oidc_config_url)
             response.raise_for_status()
@@ -93,11 +100,7 @@ class OIDCRefreshTokenBase(Authentication):
                 f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}"
                 f"Request returned {e.response.text}."
             )
-
-        self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
-        self.token_endpoint = auth_config["token_endpoint"]
-        self.authorization_endpoint = auth_config["authorization_endpoint"]
-        self.algorithms = auth_config["id_token_signing_alg_values_supported"]
+        return auth_config
 
     def decode_jwt_token(self, token: str) -> dict[str, Any]:
         """Decode JWT token."""
@@ -122,8 +125,8 @@ class OIDCRefreshTokenBase(Authentication):
             raise AuthenticationError(e)
 
     def _get_access_token(self) -> str:
-        now = datetime.now(timezone.utc)
-        expiration_margin = timedelta(
+        now = dt.datetime.now(dt.timezone.utc)
+        expiration_margin = dt.timedelta(
             seconds=getattr(
                 self.config, "token_expiration_margin", DEFAULT_TOKEN_EXPIRATION_MARGIN
             )
@@ -148,19 +151,19 @@ class OIDCRefreshTokenBase(Authentication):
             response = self._request_new_token()
 
         self.access_token = response[getattr(self.config, "token_key", "access_token")]
-        self.access_token_expiration = datetime.fromtimestamp(
-            self.decode_jwt_token(self.access_token)["exp"], timezone.utc
+        self.access_token_expiration = dt.datetime.fromtimestamp(
+            self.decode_jwt_token(self.access_token)["exp"], dt.timezone.utc
         )
         self.refresh_token = response.get(
             getattr(self.config, "refresh_token_key", "refresh_token"), ""
         )
         if self.refresh_token and response.get("refresh_expires_in", "0"):
-            self.refresh_token_expiration = now + timedelta(
+            self.refresh_token_expiration = now + dt.timedelta(
                 seconds=int(response["refresh_expires_in"])
             )
         else:
             # refresh token does not expire but will be changed at each request
-            self.refresh_token_expiration = now + timedelta(days=1000)
+            self.refresh_token_expiration = now + dt.timedelta(days=1000)
 
         return self.access_token
 

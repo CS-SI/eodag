@@ -16,3 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG plugins.crunch package"""
+from .filter_date import Crunch, FilterDate
+from .filter_latest_intersect import FilterLatestIntersect
+from .filter_latest_tpl_name import FilterLatestByName
+from .filter_overlap import FilterOverlap
+from .filter_property import FilterProperty
+
+__all__ = [
+    "Crunch",
+    "FilterDate",
+    "FilterLatestIntersect",
+    "FilterLatestByName",
+    "FilterOverlap",
+    "FilterProperty",
+]

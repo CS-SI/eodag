@@ -9,7 +9,8 @@ readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [
     {name = "CS GROUP - France", email = "eodag@csgroup.space"}
 ]
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -39,10 +40,11 @@ dependencies = [
     "click",
     "geojson",
     "importlib_metadata >= 5.0",
-    "jsonpath-ng",
+    # temporarily pinned, see https://github.com/h2non/jsonpath-ng/issues/216
+    "jsonpath-ng < 1.8.0",
     "lxml",
     "orjson",
-    "pydantic >= 2.1.0, != 2.10.0",
+    "pydantic >= 2.12.3",
     "pydantic_core",
     "PyJWT[crypto] >= 2.5.0",
     "pyproj >= 2.1.0",
@@ -81,7 +83,7 @@ ecmwf = [
     "ecmwf-api-client",
 ]
 usgs = [
-    "usgs >= 0.3.6",
+    "usgs >= 0.3.7",
 ]
 notebook = [
     "tqdm[notebook]",
@@ -115,7 +117,7 @@ dev = [
     "pytest-xdist",
     "pytest",
     "responses != 0.24.0",
-    "stac-validator",
+    "stac-valid",
     "stdlib-list",
     "tomli; python_version < '3.11'",
     "tox-uv",
@@ -159,6 +161,7 @@ EcmwfApi = "eodag.plugins.apis.ecmwf:EcmwfApi [ecmwf]"
 
 [project.entry-points."eodag.plugins.auth"]
 GenericAuth = "eodag.plugins.authentication.generic:GenericAuth"
+EOIAMAuth = "eodag.plugins.authentication.eoiam:EOIAMAuth"
 HTTPHeaderAuth = "eodag.plugins.authentication.header:HTTPHeaderAuth"
 AwsAuth = "eodag.plugins.authentication.aws_auth:AwsAuth"
 TokenAuth = "eodag.plugins.authentication.token:TokenAuth"
@@ -192,19 +195,22 @@ MeteoblueSearch = "eodag.plugins.search.build_search_result:MeteoblueSearch"
 WekeoECMWFSearch = "eodag.plugins.search.build_search_result:WekeoECMWFSearch"
 CreodiasS3Search = "eodag.plugins.search.creodias_s3:CreodiasS3Search"
 CopMarineSearch = "eodag.plugins.search.cop_marine:CopMarineSearch"
+EumetsatDsSearch = "eodag.plugins.search.eumetsat_ds:EumetsatDsSearch"
 StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
+CopGhslSearch = "eodag.plugins.search.cop_ghsl:CopGhslSearch"
+GeodesSearch = "eodag.plugins.search.geodes:GeodesSearch"
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages.find]
-exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+include = ["eodag*"]
 
 [tool.setuptools.package-data]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.0.0.dev0"
+fallback_version = "4.3.2.dev0"
 
 [tool.isort]
 multi_line_output = 3

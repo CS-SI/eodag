@@ -19,9 +19,9 @@
 #
 from __future__ import annotations
 
+import datetime as dt
 import os
 import re
-from datetime import datetime
 from importlib.metadata import metadata
 from typing import Any
 
@@ -108,7 +108,7 @@ try:
     )
 except (KeyError, IndexError):
     author = "CS GROUP - France"
-copyright = f"2018-{datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
+copyright = f"2018-{dt.datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -271,15 +271,16 @@ extlinks = {
 # configuration for intersphinx
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
-    "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
     "click": ("https://click.palletsprojects.com/en/stable/", None),
-    "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
-    "xarray": ("https://docs.xarray.dev/en/stable/", None),
-    "rasterio": ("https://rasterio.readthedocs.io/en/stable/", None),
-    "rioxarray": ("https://corteva.github.io/rioxarray/stable/", None),
     "fsspec": ("https://filesystem-spec.readthedocs.io/en/stable/", None),
     "pydantic": ("https://docs.pydantic.dev/latest", None),
+    "pystac": ("https://pystac.readthedocs.io/en/stable/", None),
+    "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
+    "rasterio": ("https://rasterio.readthedocs.io/en/stable/", None),
+    "rioxarray": ("https://corteva.github.io/rioxarray/stable/", None),
+    "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
+    "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
 }
 
 suppress_warnings = ["misc.copy_overwrite"]

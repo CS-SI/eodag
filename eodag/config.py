@@ -105,7 +105,7 @@ class PluginConfig(yaml.YAMLObject):
         """Search pagination configuration"""
 
         #: The maximum number of items per page that the provider can handle
-        max_items_per_page: int
+        max_limit: int
         #: Key path for the number of total items in the provider result
         total_items_nb_key_path: Union[str, JSONPath]
         #: Key path for the next page URL
@@ -191,7 +191,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Mapping for collection properties which can be parsed from the result and are not collection metadata
         generic_collection_parsable_properties: dict[str, str]
         #: Mapping for collection properties which cannot be parsed from the result and are not collection metadata
-        generic_collection_unparsable_properties: dict[str, str]
+        generic_collection_unparsable_properties: dict[str, Any]
         #: URL to fetch data for a single collection
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
@@ -396,9 +396,6 @@ class PluginConfig(yaml.YAMLObject):
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
-    #: if date parameters are mandatory in the request
-    dates_required: bool
-    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
@@ -542,8 +539,15 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.sas_auth.SASAuth` Key to get the signed url
     signed_url_key: str
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: If expected, list of keys to be sent as a tuple through the 'auth' parameter of the request
+    auth_tuple: list[str]
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: Credentials json structure if they should be sent as POST data
     req_data: dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: Whether to send credentials as POST data. If ``True``, always sent; if ``False``, never sent;
+    #: if not set, sent only when credentials are not embedded in ``auth_uri``
+    post_credentials: bool
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: URL used to fetch the access token with a refresh token
     refresh_uri: str

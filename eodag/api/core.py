@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import itertools
 import logging
 import os
@@ -35,8 +35,10 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import geojson
 import yaml
+from pydantic import AliasChoices
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
@@ -51,18 +53,15 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import (
-    ALLOWED_KEYWORDS as ECMWF_ALLOWED_KEYWORDS,
-)
-from eodag.plugins.search.build_search_result import ECMWF_PREFIX, MeteoblueSearch
+from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_MAX_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
+    DEFAULT_MAX_LIMIT,
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     GENERIC_STAC_PROVIDER,
@@ -73,7 +72,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
-from eodag.utils.dates import rfc3339_str_to_datetime
+from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -90,7 +89,6 @@ if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
     from shapely.geometry.base import BaseGeometry
 
-    from eodag.api.product import EOProduct
     from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
@@ -602,8 +600,8 @@ class EODataAccessGateway:
                     default_provider.search_config.discover_collections
                 )
 
-                # compare confs
-                if default_discovery_conf["result_type"] == "json" and isinstance(
+                # compare confs (care, some providers do not have result_type property)
+                if default_discovery_conf.get("result_type") == "json" and isinstance(
                     default_discovery_conf["results_entry"], str
                 ):
                     default_discovery_conf_parsed = cast(
@@ -1041,8 +1039,8 @@ class EODataAccessGateway:
 
             # datetime filtering
             if start_date or end_date:
-                min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-                max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+                min_aware = dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+                max_aware = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
 
                 col_start_str = col_f.extent.temporal.interval[0][0]
                 if col_start_str and isinstance(col_start_str, str):
@@ -1080,7 +1078,8 @@ class EODataAccessGateway:
     def search(
         self,
         page: int = DEFAULT_PAGE,
-        items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE,
+        limit: Optional[int] = DEFAULT_LIMIT,
+        items_per_page: Optional[int] = DEFAULT_LIMIT,
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1102,8 +1101,11 @@ class EODataAccessGateway:
 
         :param page: (optional) The page number to return (**deprecated**, use
                      :meth:`eodag.api.search_result.SearchResult.next_page` instead)
+        :param limit: (optional) The number of results that must appear in one single
+                               page. If ``None``, the maximum number possible will be used.
         :param items_per_page: (optional) The number of results that must appear in one single
                                page. If ``None``, the maximum number possible will be used.
+                               (**deprecated**, use ``limit`` instead)
         :param raise_errors:  (optional) When an error occurs when searching, if this is set to
                               True, the error is raised
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
@@ -1181,12 +1183,23 @@ class EODataAccessGateway:
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
 
-            # add appropriate items_per_page value
-            search_kwargs["items_per_page"] = (
-                items_per_page
-                if items_per_page is not None
+            # add appropriate limit value, use deprecated items_per_page if no limit given
+            if (not limit or limit == DEFAULT_LIMIT) and (
+                items_per_page and items_per_page != DEFAULT_LIMIT
+            ):
+                limit = items_per_page
+                warnings.warn(
+                    "Usage of deprecated search parameter 'items_per_page' "
+                    "(Please use 'limit' instead)"
+                    " -- Deprecated since v4.0.0",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+            search_kwargs["limit"] = (
+                limit
+                if limit is not None
                 else getattr(search_plugin.config, "pagination", {}).get(
-                    "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+                    "max_limit", DEFAULT_MAX_LIMIT
                 )
             )
 
@@ -1223,7 +1236,8 @@ class EODataAccessGateway:
     )
     def search_iter_page(
         self,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        limit: int = DEFAULT_LIMIT,
+        items_per_page: Optional[int] = DEFAULT_LIMIT,
         start: Optional[str] = None,
         end: Optional[str] = None,
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
@@ -1235,7 +1249,9 @@ class EODataAccessGateway:
         .. deprecated:: v4.0.0
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
+        :param limit: (optional) The number of results requested per page
         :param items_per_page: (optional) The number of results requested per page
+                               (**deprecated**, use ``limit`` instead)
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
@@ -1264,10 +1280,22 @@ class EODataAccessGateway:
         search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
+        # use deprecated items_per_page if limit is not given
+        if (not limit or limit == DEFAULT_LIMIT) and (
+            items_per_page and items_per_page != DEFAULT_LIMIT
+        ):
+            limit = items_per_page
+            warnings.warn(
+                "Usage of deprecated search parameter 'items_per_page' "
+                "(Please use 'limit' instead)"
+                " -- Deprecated since v4.0.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         for i, search_plugin in enumerate(search_plugins):
             try:
                 return self.search_iter_page_plugin(
-                    items_per_page=items_per_page,
+                    limit=limit,
                     search_plugin=search_plugin,
                     **search_kwargs,
                 )
@@ -1292,7 +1320,8 @@ class EODataAccessGateway:
     def search_iter_page_plugin(
         self,
         search_plugin: Union[Search, Api],
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        limit: int = DEFAULT_LIMIT,
+        items_per_page: Optional[int] = DEFAULT_LIMIT,
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search using a given search plugin.
@@ -1300,16 +1329,30 @@ class EODataAccessGateway:
         .. deprecated:: v4.0.0
             Please use :meth:`eodag.api.search_result.SearchResult.next_page` instead.
 
+        :param limit: (optional) The number of results requested per page
         :param items_per_page: (optional) The number of results requested per page
+                               (**deprecated**, use ``limit`` instead)
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatibles with the provider
         :param search_plugin: search plugin to be used
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
+        # use deprecated items_per_page if limit is not given
+        if (not limit or limit == DEFAULT_LIMIT) and (
+            items_per_page and items_per_page != DEFAULT_LIMIT
+        ):
+            limit = items_per_page
+            warnings.warn(
+                "Usage of deprecated search parameter 'items_per_page' "
+                "(Please use 'limit' instead)"
+                " -- Deprecated since v4.0.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         kwargs.update(
             page=1,
-            items_per_page=items_per_page,
+            limit=limit,
         )
         try:
             # remove unwanted kwargs for _do_search
@@ -1344,6 +1387,7 @@ class EODataAccessGateway:
 
     def search_all(
         self,
+        limit: Optional[int] = None,
         items_per_page: Optional[int] = None,
         start: Optional[str] = None,
         end: Optional[str] = None,
@@ -1358,16 +1402,18 @@ class EODataAccessGateway:
 
         Requests are attempted to all providers of the product ordered by descending piority.
 
-        :param items_per_page: (optional) The number of results requested internally per
+        :param limit: (optional) The number of results requested internally per
                                page. The maximum number of items than can be requested
                                at once to a provider has been configured in EODAG for
-                               some of them. If items_per_page is None and this number
+                               some of them. If limit is None and this number
                                is available for the searched provider, it is used to
                                limit the number of requests made. This should also
                                reduce the time required to collect all the products
                                matching the search criteria. If this number is not
                                available, a default value of 50 is used instead.
-                               items_per_page can also be set to any arbitrary value.
+                               limit can also be set to any arbitrary value.
+        :param items_per_page: (optional) The number of results requested internally per page
+                               (**deprecated**, use ``limit`` instead)
         :param start: (optional) Start sensing time in ISO 8601 format (e.g. "1990-11-26",
                       "1990-11-26T14:30:10.153Z", "1990-11-26T14:30:10+02:00", ...).
                       If no time offset is given, the time is assumed to be given in UTC.
@@ -1395,10 +1441,19 @@ class EODataAccessGateway:
         """
         # remove unwanted count
         kwargs.pop("count", None)
-
+        # use deprecated items_per_page if limit is not given
+        if not limit and items_per_page:
+            limit = items_per_page
+            warnings.warn(
+                "Usage of deprecated search parameter 'items_per_page' "
+                "(Please use 'limit' instead)"
+                " -- Deprecated since v4.0.0",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         # First search
         search_results = self.search(
-            items_per_page=items_per_page,
+            limit=limit,
             start=start,
             end=end,
             geom=geom,
@@ -1475,18 +1530,16 @@ class EODataAccessGateway:
 
             # adds maximal pagination to be able to do a search-all + crunch if more
             # than one result are returned
-            items_per_page = plugin.config.pagination.get(
-                "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
-            )
-            kwargs.update(items_per_page=items_per_page)
+            limit = plugin.config.pagination.get("max_limit", DEFAULT_MAX_LIMIT)
+            kwargs.update(limit=limit)
             if isinstance(plugin, PostJsonSearch):
                 kwargs.update(
-                    items_per_page=items_per_page,
+                    limit=limit,
                     _dc_qs=_dc_qs,
                 )
             else:
                 kwargs.update(
-                    items_per_page=items_per_page,
+                    limit=limit,
                 )
 
             try:
@@ -1624,16 +1677,30 @@ class EODataAccessGateway:
         kwargs["collection"] = collection
 
         if start is not None:
+            if kwargs.pop("datetime", None):
+                logger.warning("datetime filter is overwritten by start")
             kwargs["start_datetime"] = start
         if end is not None:
+            if kwargs.pop("datetime", None):
+                logger.warning("datetime filter is overwritten by end")
             kwargs["end_datetime"] = end
-        if "box" in kwargs or "bbox" in kwargs:
-            logger.warning(
-                "'box' or 'bbox' parameters are only supported for backwards "
-                " compatibility reasons. Usage of 'geom' is recommended."
-            )
+        if not start and not end and "datetime" in kwargs:
+            datetimes = get_datetime(kwargs)
+            kwargs["start_datetime"] = datetimes[0]
+            kwargs["end_datetime"] = datetimes[1]
+        if "sort_by" in kwargs:
+            new_sort_by = []
+            for param_tuple in kwargs["sort_by"]:
+                if param_tuple[0] == "datetime":
+                    new_sort_by.append(("start_datetime", param_tuple[1]))
+                else:
+                    new_sort_by.append(param_tuple)
+            kwargs["sort_by"] = new_sort_by
+
         if geom is not None:
             kwargs["geometry"] = geom
+        elif "intersects" in kwargs:
+            kwargs["geometry"] = kwargs.pop("intersects")
         box = kwargs.pop("box", None)
         box = kwargs.pop("bbox", box)
         if geom is None and box is not None:
@@ -1733,21 +1800,18 @@ class EODataAccessGateway:
         :returns: A collection of EO products matching the criteria
         """
         logger.info("Searching on provider %s", search_plugin.provider)
-        max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
-            "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+        max_limit = getattr(search_plugin.config, "pagination", {}).get(
+            "max_limit", DEFAULT_MAX_LIMIT
         )
-        if (
-            kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE) > max_items_per_page
-            and max_items_per_page > 0
-        ):
+        if kwargs.get("limit", DEFAULT_LIMIT) > max_limit and max_limit > 0:
             logger.warning(
                 "EODAG believes that you might have asked for more products/items "
                 "than the maximum allowed by '%s': %s > %s. Try to lower "
-                "the value of 'items_per_page' and get the next page (e.g. 'page=2'), "
+                "the value of 'limit' and get the next page (e.g. 'page=2'), "
                 "or directly use the 'search_all' method.",
                 search_plugin.provider,
-                kwargs["items_per_page"],
-                max_items_per_page,
+                kwargs["limit"],
+                max_limit,
             )
 
         errors: list[tuple[str, Exception]] = []
@@ -1765,7 +1829,7 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
-            prep.items_per_page = kwargs.pop("items_per_page", None)
+            prep.limit = kwargs.pop("limit", None)
             prep.next_page_token = kwargs.pop("next_page_token", None)
             prep.next_page_token_key = kwargs.pop(
                 "next_page_token_key", None
@@ -1774,7 +1838,7 @@ class EODataAccessGateway:
 
             if (
                 prep.next_page_token_key == "page"
-                and prep.items_per_page is not None
+                and prep.limit is not None
                 and prep.next_page_token is None
                 and prep.page is not None
             ):
@@ -1787,20 +1851,12 @@ class EODataAccessGateway:
             # remove None values and convert param names to their pydantic alias if any
             search_params = {}
             queryables_fields = Queryables.from_stac_models().model_fields
-            ecmwf_queryables = [
-                f"{ECMWF_PREFIX[:-1]}_{k}" for k in ECMWF_ALLOWED_KEYWORDS
-            ]
             for param, value in kwargs.items():
                 if value is None:
                     continue
                 if param in queryables_fields:
                     param_alias = queryables_fields[param].alias or param
                     search_params[param_alias] = value
-                elif param in ecmwf_queryables:
-                    # alias equivalent for ECMWF queryables
-                    search_params[
-                        re.sub(rf"^{ECMWF_PREFIX[:-1]}_", f"{ECMWF_PREFIX}", param)
-                    ] = value
                 else:
                     # remove `provider:` or `provider_` prefix if any
                     search_params[
@@ -1812,10 +1868,10 @@ class EODataAccessGateway:
 
             search_result = search_plugin.query(prep, **search_params)
 
-            if not isinstance(search_result.data, list):
+            if not isinstance(search_result, SearchResult):
                 raise PluginImplementationError(
-                    "The query function of a Search plugin must return a list of "
-                    "results, got {} instead".format(type(search_result.data))
+                    "The query function of a Search plugin must return a SearchResult "
+                    "results, got {} instead".format(type(search_result))
                 )
             # Filter and attach to each eoproduct in the result the plugin capable of
             # downloading it (this is done to enable the eo_product to download itself
@@ -1826,7 +1882,7 @@ class EODataAccessGateway:
             # WARNING: this means an eo_product that has an invalid geometry can still
             # be returned as a search result if there was no search extent (because we
             # will not try to do an intersection)
-            for eo_product in search_result.data:
+            for eo_product in search_result:
                 # if collection is not defined, try to guess using properties
                 if eo_product.collection is None:
                     pattern = re.compile(r"[^\w,]+")
@@ -1857,7 +1913,7 @@ class EODataAccessGateway:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
 
             # Make next_page not available if the current one returned less than the maximum number of items asked for.
-            if not prep.items_per_page or len(search_result) < prep.items_per_page:
+            if not prep.limit or len(search_result) < prep.limit:
                 search_result.next_page_token = None
 
             search_result._dag = self
@@ -1978,7 +2034,9 @@ class EODataAccessGateway:
 
     @staticmethod
     def serialize(
-        search_result: SearchResult, filename: str = "search_results.geojson"
+        search_result: SearchResult,
+        filename: str = "search_results.geojson",
+        skip_invalid: bool = True,
     ) -> str:
         """Registers results of a search into a geojson file.
         The output is a FeatureCollection containing the EO products as features,
@@ -1987,9 +2045,10 @@ class EODataAccessGateway:
 
         :param search_result: A set of EO products resulting from a search
         :param filename: (optional) The name of the file to generate
+        :param skip_invalid: Whether to skip properties whose values are not valid according to the STAC specification.
         :returns: The name of the created file
         """
-        search_result_dict = search_result.as_geojson_object()
+        search_result_dict = search_result.as_dict(skip_invalid=skip_invalid)
         # add self link
         search_result_dict.setdefault("links", [])
         search_result_dict["links"].append(
@@ -2034,8 +2093,7 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`
         """
-        with open(filename, "r") as fh:
-            return SearchResult.from_geojson(geojson.load(fh))
+        return SearchResult.from_file(filename)
 
     def deserialize_and_register(self, filename: str) -> SearchResult:
         """Loads results of a search from a geojson file and register
@@ -2047,17 +2105,7 @@ class EODataAccessGateway:
         :param filename: A filename containing a search result encoded as a geojson
         :returns: The search results encoded in `filename`, ready for download and pagination
         """
-        products = self.deserialize(filename)
-        products._dag = self
-        for i, product in enumerate(products):
-            if product.downloader is None:
-                downloader = self._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
-                products[i].register_downloader(downloader, auth)
-
-        return products
+        return SearchResult.from_file(filename, self)
 
     def download(
         self,
@@ -2226,7 +2274,12 @@ class EODataAccessGateway:
             queryables_fields = Queryables.from_stac_models().model_fields
             for search_param, field_info in queryables_fields.items():
                 if search_param in kwargs and field_info.alias:
-                    kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
+                    if isinstance(field_info.alias, AliasChoices):
+                        kwargs_alias[
+                            str(field_info.alias.choices[0])
+                        ] = kwargs_alias.pop(search_param)
+                    else:
+                        kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
 
             plugin_queryables = plugin.list_queryables(
                 kwargs_alias,
@@ -2309,7 +2362,9 @@ class EODataAccessGateway:
                 collection=collection,
             )
 
-    def import_stac_items(self, items_urls: list[str]) -> SearchResult:
+    def import_stac_items(
+        self, items_urls: list[str], provider: Optional[str] = None
+    ) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
 
         - Origin provider and download links will be set if item comes from an EODAG
@@ -2319,6 +2374,7 @@ class EODataAccessGateway:
         - If item comes from an unknown provider, a generic STAC provider will be used.
 
         :param items_urls: A list of STAC items URLs to import
+        :param provider: (optional) The EODAG provider to which the STAC items belong, if known.
         :returns: A SearchResult containing the imported STAC items
         """
         json_items = []
@@ -2330,9 +2386,9 @@ class EODataAccessGateway:
 
         results = SearchResult([])
         for json_item in json_items:
-            if search_result := SearchResult._from_stac_item(
-                json_item, self._plugins_manager
+            if product := EOProduct._from_stac_item(
+                json_item, self._plugins_manager, provider
             ):
-                results.extend(search_result)
+                results.append(product)
 
         return results

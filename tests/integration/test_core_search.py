@@ -37,6 +37,14 @@ from tests.context import (
     mock,
 )
 
+# Mocked OIDC discovery response as expected by pyjwt.
+_OIDC_CONFIG = {
+    "jwks_uri": "https://example.com/jwks",
+    "token_endpoint": "https://example.com/token",
+    "authorization_endpoint": "https://example.com/authorize",
+    "id_token_signing_alg_values_supported": ["RS256"],
+}
+
 
 class TestCoreSearch(unittest.TestCase):
     def setUp(self):
@@ -72,8 +80,8 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_qssearch(
         self, mock_authenticate, mock_fetch_collections_list, mock_get
     ):
-        # QueryStringSearch / peps
-        self.dag.set_preferred_provider("peps")
+        # QueryStringSearch / sara
+        self.dag.set_preferred_provider("sara")
         self.assertRaises(
             RequestError, self.dag.search, collection="foo", raise_errors=True
         )
@@ -277,12 +285,12 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_get, mock_post, mock_request, mock_auth_token, mock_auth_oidc
     ):
         """Core search must loop over providers until finding a non empty result"""
+        mock_auth_oidc.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
-                "peps",  # requests.get
                 "cop_dataspace",  # requests.Request
                 "creodias",  # requests.Request
                 "dedl",  # requests.get
@@ -318,7 +326,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -338,22 +345,16 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Request",
-        autospec=True,
-        side_effect=RequestException,
-    )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_first(self, mock_get, mock_request):
+    def test_core_search_fallback_find_on_first(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -362,30 +363,31 @@ class TestCoreSearch(unittest.TestCase):
                 "wekeo_main",
             ],
         )
-
-        # peps comes 1st by priority
-        peps_resp_search_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses", "peps_search.json"
+        mock_query.return_value = SearchResult(
+            [EOProduct("cop_dataspace", dict(geometry="POINT (0 0)", id="a"))],
+            number_matched=1,
         )
-        with open(peps_resp_search_file, encoding="utf-8") as f:
-            peps_resp_search_file_content = json.load(f)
-        peps_resp_search_results_count = len(peps_resp_search_file_content["features"])
-
-        mock_get.return_value.json.return_value = peps_resp_search_file_content
 
         search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
-        self.assertEqual(len(search_result), peps_resp_search_results_count)
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
-            mock_get.call_count + mock_request.call_count,
+            mock_query.call_count,
             1,
-            "only 1 provider out of 7 must have been requested",
+            f"only 1 provider out of {len(available_providers)} must have been requested",
         )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get",
         autospec=True,
     )
-    # creodias uses requests.Request then urllib with HTTPAdapter.build_response
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.Session.get",
+        autospec=True,
+        # fail on providers without dont_quote
+        side_effect=RequestException,
+    )
+    # cop_dataspace and creodias use dont_quote: requests.Request then urllib with HTTPAdapter.build_response
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.adapters.HTTPAdapter.build_response",
         autospec=True,
@@ -398,22 +400,16 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.requests.Session.get",
-        autospec=True,
-        # fail on other providers
-        side_effect=RequestException,
-    )
     def test_core_search_fallback_find_on_second(
-        self, mock_get, mock_request, mock_urlopen, mock_httpadapter, mock_auth_get
+        self, mock_request, mock_urlopen, mock_httpadapter, mock_get, mock_auth_get
     ):
         """Core search must loop over providers until finding a non empty result"""
+        mock_auth_get.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -433,15 +429,17 @@ class TestCoreSearch(unittest.TestCase):
             creodias_resp_search_file_content["value"]
         )
 
-        # results content
+        # cop_dataspace returns empty, creodias returns results
+        cop_dataspace_empty_resp = {"@odata.context": "", "value": []}
         mock_httpadapter.return_value.json.side_effect = [
+            cop_dataspace_empty_resp,
             creodias_resp_search_file_content,
         ]
 
         search_result = self.dag.search(collection="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), creodias_resp_search_results_count)
         self.assertEqual(
-            mock_get.call_count + mock_request.call_count,
+            mock_request.call_count,
             2,
             "there must have been 2 requests",
         )
@@ -457,7 +455,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -494,7 +491,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
-                "peps",
                 "cop_dataspace",
                 "creodias",
                 "dedl",
@@ -787,6 +783,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_request, mock_auth, mock_auth_config_request
     ):
         """search by id should return properties based on status response"""
+        mock_auth_config_request.return_value.json.return_value = _OIDC_CONFIG
         product_id = "123-456"
         auth = CodeAuthorizedAuth(token="123", where="header")
         mock_auth.return_value = auth
@@ -812,3 +809,55 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(1, len(result))
         self.assertEqual("123-456", result[0].properties["id"])
         self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.post",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
+    )
+    def test_core_search_geodes(
+        self,
+        mock_fetch_collections_list,
+        mock_post,
+    ):
+        """Search geodes with mocked response"""
+        geodes_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "geodes_search.json"
+        )
+        with open(geodes_resp_search_file, encoding="utf-8") as f:
+            geodes_resp_search_file_content = json.load(f)
+
+        mock_post.return_value = MockResponse(geodes_resp_search_file_content)
+
+        search_result = self.dag.search(
+            collection="S2_MSI_L1C", provider="geodes", count=True
+        )
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 37273723)
+
+        product = search_result[0]
+        self.assertEqual(product.provider, "geodes")
+        self.assertEqual(
+            product.properties["id"],
+            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035",
+        )
+        self.assertEqual(
+            product.properties["title"],
+            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035",
+        )
+        self.assertAlmostEqual(product.properties["eo:cloud_cover"], 67.55, places=2)
+        self.assertEqual(
+            product.properties["start_datetime"], "2025-04-02T17:57:41.024Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2025-04-02T17:57:41.024Z")
+        self.assertEqual(product.properties["sat:relative_orbit"], 141)
+        self.assertEqual(product.properties["sat:absolute_orbit"], 51075)
+        self.assertEqual(product.properties["sat:orbit_state"], "descending")
+        self.assertEqual(product.properties["grid:code"], "MGRS-14ULD")
+        self.assertIsNotNone(product.geometry)
+        # download link from assets
+        self.assertIn("api/download", product.properties.get("eodag:download_link", ""))
+        # quicklook from assets
+        self.assertIn("api/quicklook", product.properties.get("eodag:quicklook", ""))

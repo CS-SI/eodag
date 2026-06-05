@@ -83,7 +83,7 @@ class StaticStacSearch(StacSearch):
         self.config.__dict__["pagination"].setdefault(
             "total_items_nb_key_path", "$.null"
         )
-        self.config.__dict__["pagination"].setdefault("max_items_per_page", -1)
+        self.config.__dict__["pagination"].setdefault("max_limit", -1)
         # disable collections discovery by default (if endpoints equals to STAC API default)
         if (
             getattr(self.config, "discover_collections", {}).get("fetch_url")
@@ -162,12 +162,7 @@ class StaticStacSearch(StacSearch):
         """Perform a search on a static STAC Catalog"""
 
         # only return 1 page if pagination is disabled
-        if (
-            prep.page
-            and prep.page > 1
-            and prep.items_per_page is not None
-            and prep.items_per_page <= 0
-        ):
+        if prep.page and prep.page > 1 and prep.limit is not None and prep.limit <= 0:
             result = SearchResult([])
             if prep.count:
                 result.number_matched = 0
@@ -206,7 +201,7 @@ class StaticStacSearch(StacSearch):
             return_value=MockResponse(feature_collection, 200),
         ):
             search_result = super(StaticStacSearch, self).query(
-                PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
+                PreparedSearch(limit=nb_features, page=1, count=True), **kwargs
             )
         # Filter by date
         if "start_datetime" in kwargs:

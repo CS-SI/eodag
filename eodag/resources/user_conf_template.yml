@@ -56,6 +56,15 @@ cop_dataspace:
         credentials:
             username:
             password:
+cop_dataspace_s3:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        output_dir:
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
 cop_ewds:
     priority: # Lower value means lower priority (Default: 0)
     download:
@@ -63,6 +72,12 @@ cop_ewds:
     auth:
         credentials:
             apikey:
+cop_ghsl:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
 cop_marine:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration
@@ -142,6 +157,12 @@ ecmwf:
         credentials:
             username:
             password:
+eocat:
+    priority: # Lower value means lower priority (Default: 0)
+    auth:
+        credentials:
+            username:
+            password:
 eumetsat_ds:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration
@@ -194,18 +215,6 @@ meteoblue:
             apikey:
     download:
         output_dir:
-peps:
-    priority: # Lower value means lower priority (Default: 1)
-    search: # Search parameters configuration
-    download:
-        extract: # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
-        output_dir: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
-        dl_url_params: # additional parameters to pass over to the download url as an url parameter
-        delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
-    auth:
-        credentials:
-            username:
-            password:
 planetary_computer:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration
@@ -225,6 +234,13 @@ sara:
         credentials:
             username:
             password:
+theia:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            access_key:
+            secret_key:
 usgs:
     priority: # Lower value means lower priority (Default: 0)
     api:

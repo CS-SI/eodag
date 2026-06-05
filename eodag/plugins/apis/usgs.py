@@ -31,6 +31,7 @@ from usgs import USGSAuthExpiredError, USGSError, api
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    format_query_params,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
@@ -40,7 +41,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
     DEFAULT_PAGE,
     GENERIC_COLLECTION,
     USER_AGENT,
@@ -146,12 +147,8 @@ class UsgsApi(Api):
             if prep.next_page_token is not None
             else DEFAULT_PAGE
         )
-        items_per_page = (
-            prep.items_per_page
-            or kwargs.pop("max_results", None)
-            or DEFAULT_ITEMS_PER_PAGE
-        )
-        search_params = {"items_per_page": items_per_page} | kwargs
+        limit = prep.limit or kwargs.pop("max_results", None) or DEFAULT_LIMIT
+        search_params = {"limit": limit} | kwargs
         collection = kwargs.get("collection")
         if collection is None:
             raise NoMatchingCollection(
@@ -169,40 +166,22 @@ class UsgsApi(Api):
         usgs_collection = format_dict_items(collection_def_params, **kwargs)[
             "_collection"
         ]
-        start_date = kwargs.pop("start_datetime", None)
-        end_date = kwargs.pop("end_datetime", None)
-        geom = kwargs.pop("geometry", None)
-        footprint: dict[str, str] = {}
-        if hasattr(geom, "bounds"):
-            (
-                footprint["lonmin"],
-                footprint["latmin"],
-                footprint["lonmax"],
-                footprint["latmax"],
-            ) = geom.bounds
-        else:
-            footprint = geom
+
+        # format query args to get scene_filter
+        formatted_kwargs = format_query_params(collection, self.config, kwargs)
+        start_date = formatted_kwargs.get("start_date")
+        end_date = formatted_kwargs.get("end_date")
+        scene_filter = formatted_kwargs.get("scene_filter")
 
         final: list[EOProduct] = []
-        if footprint and len(footprint.keys()) == 4:  # a rectangle (or bbox)
-            lower_left = {
-                "longitude": footprint["lonmin"],
-                "latitude": footprint["latmin"],
-            }
-            upper_right = {
-                "longitude": footprint["lonmax"],
-                "latitude": footprint["latmax"],
-            }
-        else:
-            lower_left, upper_right = None, None
+
         try:
             api_search_kwargs = dict(
                 start_date=start_date,
                 end_date=end_date,
-                ll=lower_left,
-                ur=upper_right,
-                max_results=items_per_page,
+                max_results=limit,
                 starting_number=token,
+                scene_filter=scene_filter,
             )
 
             # search by id
@@ -281,7 +260,6 @@ class UsgsApi(Api):
                         collection=collection,
                         provider=self.provider,
                         properties=product_properties,
-                        geometry=footprint,
                     )
                 )
         except USGSError as e:
@@ -421,7 +399,7 @@ class UsgsApi(Api):
                         raise NotAvailableError(error_message)
                     else:
                         stream_size = (
-                            int(stream.headers.get("content-length", 0)) or None
+                            int(stream.headers.get("Content-Length", 0)) or None
                         )
                         progress_callback.reset(total=stream_size)
                         with open(fs_path, "wb") as fhandle:

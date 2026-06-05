@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
@@ -38,7 +38,7 @@ class PreparedSearch:
 
     collection: Optional[str] = None
     page: Optional[int] = DEFAULT_PAGE
-    items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
+    limit: Optional[int] = DEFAULT_LIMIT
     auth: Optional[Union[AuthBase, S3ServiceResource]] = None
     auth_plugin: Optional[Authentication] = None
     count: bool = True

@@ -18,13 +18,11 @@
 import ast
 import os
 import unittest
-from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from unittest import mock
 
 import geojson
 import responses
-from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
@@ -32,7 +30,6 @@ from eodag.api.provider import ProvidersDict
 from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_MISSION_START_DATE,
     ONLINE_STATUS,
     USER_AGENT,
     USGS_TMPFILE,
@@ -134,16 +131,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             collection=self.collection,
         )
         eoproduct = results.data[0]
-        self.assertIn(
-            eoproduct.properties["start_datetime"],
-            DEFAULT_MISSION_START_DATE,
-        )
-        # less than 10 seconds should have passed since the product was created
-        self.assertLess(
-            datetime.now(timezone.utc) - isoparse(eoproduct.properties["end_datetime"]),
-            timedelta(seconds=10),
-            "stop date should have been created from datetime.now",
-        )
+        self.assertNotIn("start_datetime", eoproduct.properties)
+        self.assertNotIn("end_datetime", eoproduct.properties)
 
         # missing start & stop and plugin.collection_config set (set in core._prepare_search)
         self.api_plugin.config.collection_config = {
@@ -157,14 +146,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             collection=self.collection,
         )
         eoproduct = results[0]
-        self.assertEqual(
-            eoproduct.properties["start_datetime"],
-            "1985-10-26T00:00:00.000Z",
-        )
-        self.assertEqual(
-            eoproduct.properties["end_datetime"],
-            "2015-10-21T00:00:00.000Z",
-        )
+        self.assertNotIn("start_datetime", eoproduct.properties)
+        self.assertNotIn("end_datetime", eoproduct.properties)
 
     def test_plugins_apis_ecmwf_query_without_collection(self):
         """
@@ -543,17 +526,32 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "end_datetime": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
             "prep": PreparedSearch(
-                items_per_page=5,
+                limit=5,
             ),
         }
         search_kwargs["prep"].next_page_token = "6"
         search_results = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(
             "landsat_ot_c2_l1",
-            start_date="2020-02-01",
-            end_date="2020-02-10",
-            ll={"longitude": 10.0, "latitude": 20.0},
-            ur={"longitude": 30.0, "latitude": 40.0},
+            start_date="2020-02-01T00:00:00.000Z",
+            end_date="2020-02-10T00:00:00.000Z",
+            scene_filter={
+                "spatialFilter": {
+                    "filterType": "geojson",
+                    "geoJson": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [10.0, 20.0],
+                                [10.0, 40.0],
+                                [30.0, 40.0],
+                                [30.0, 20.0],
+                                [10.0, 20.0],
+                            ]
+                        ],
+                    },
+                }
+            },
             max_results=5,
             starting_number=6,
         )
@@ -621,7 +619,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "collection": "LANDSAT_C2L1",
             "id": "SOME_PRODUCT_ID",
             "prep": PreparedSearch(
-                items_per_page=500,
+                limit=500,
             ),
         }
         search_kwargs["prep"].next_page_token = "1"
@@ -631,14 +629,167 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             where={"filter_id": "bar_id", "value": "SOME_PRODUCT_ID"},
             start_date=None,
             end_date=None,
-            ll=None,
-            ur=None,
+            scene_filter=None,
             max_results=500,
             starting_number=1,
         )
         self.assertEqual(search_results.data[0].provider, "usgs")
         self.assertEqual(search_results.data[0].collection, "LANDSAT_C2L1")
         self.assertEqual(len(search_results.data), 1)
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
+    @mock.patch(
+        "usgs.api.scene_search",
+        autospec=True,
+        return_value=SCENE_SEARCH_RETURN,
+    )
+    @mock.patch(
+        "usgs.api.download_options",
+        autospec=True,
+        return_value=DOWNLOAD_OPTION_RETURN,
+    )
+    def test_plugins_apis_usgs_query_with_filters(
+        self,
+        mock_api_download_options,
+        mock_api_scene_search,
+        mock_api_logout,
+        mock_api_login,
+    ):
+        """UsgsApi.query must translate filter kwargs into the proper scene_filter"""
+
+        custom_scene_filter = {
+            "cloudCoverFilter": {"min": 0, "max": 20, "includeUnknown": False},
+            "metadataFilter": {
+                "filterType": "value",
+                "filterId": "some_filter_id",
+                "value": "some_value",
+            },
+        }
+        geometry_scene_filter = {
+            "spatialFilter": {
+                "filterType": "geojson",
+                "geoJson": {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [10.0, 20.0],
+                            [10.0, 40.0],
+                            [30.0, 40.0],
+                            [30.0, 20.0],
+                            [10.0, 20.0],
+                        ]
+                    ],
+                },
+            },
+        }
+
+        cases = [
+            {
+                "description": "user-provided scene_filter is forwarded as-is",
+                "kwargs": {
+                    "start_datetime": "2020-02-01",
+                    "end_datetime": "2020-02-10",
+                    "scene_filter": custom_scene_filter,
+                },
+                "expected_kwargs": {
+                    "start_date": "2020-02-01T00:00:00.000Z",
+                    "end_date": "2020-02-10T00:00:00.000Z",
+                    "scene_filter": custom_scene_filter,
+                },
+            },
+            {
+                "description": "user-provided scene_filter is merged with geometry",
+                "kwargs": {
+                    "start_datetime": "2020-02-01",
+                    "end_datetime": "2020-02-10",
+                    "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
+                    "scene_filter": {
+                        "cloudCoverFilter": {
+                            "min": 0,
+                            "max": 20,
+                            "includeUnknown": False,
+                        },
+                    },
+                },
+                "expected_kwargs": {
+                    "start_date": "2020-02-01T00:00:00.000Z",
+                    "end_date": "2020-02-10T00:00:00.000Z",
+                    "scene_filter": {
+                        **geometry_scene_filter,
+                        "cloudCoverFilter": {
+                            "min": 0,
+                            "max": 20,
+                            "includeUnknown": False,
+                        },
+                    },
+                },
+            },
+            {
+                "description": "eo:cloud_cover is translated into cloudCoverFilter",
+                "kwargs": {
+                    "start_datetime": "2020-02-01",
+                    "end_datetime": "2020-02-10",
+                    "eo:cloud_cover": 20,
+                },
+                "expected_kwargs": {
+                    "start_date": "2020-02-01T00:00:00.000Z",
+                    "end_date": "2020-02-10T00:00:00.000Z",
+                    "scene_filter": {
+                        "cloudCoverFilter": {"max": 20, "includeUnknown": False}
+                    },
+                },
+            },
+            {
+                "description": "ingest_after/ingest_before are translated into ingestFilter",
+                "kwargs": {
+                    "ingest_after": "2020-02-01",
+                    "ingest_before": "2020-02-10",
+                },
+                "expected_kwargs": {
+                    "start_date": None,
+                    "end_date": None,
+                    "scene_filter": {
+                        "ingestFilter": {
+                            "start": "2020-02-01T00:00:00.000Z",
+                            "end": "2020-02-10T00:00:00.000Z",
+                        },
+                    },
+                },
+            },
+        ]
+
+        for case in cases:
+            with self.subTest(case["description"]):
+                mock_api_scene_search.reset_mock()
+                search_kwargs = {
+                    "collection": "LANDSAT_C2L1",
+                    "prep": PreparedSearch(limit=5),
+                    **case["kwargs"],
+                }
+                search_kwargs["prep"].next_page_token = "1"
+                self.api_plugin.query(**search_kwargs)
+                mock_api_scene_search.assert_called_once_with(
+                    "landsat_ot_c2_l1",
+                    max_results=5,
+                    starting_number=1,
+                    **case["expected_kwargs"],
+                )
+
+    def test_plugins_apis_usgs_queryables_from_metadata_mapping(self):
+        """USGS plugin must expose usgs-prefixed STAC extension fields as queryables"""
+        queryables = self.api_plugin.queryables_from_metadata_mapping(
+            collection="LANDSAT_C2L1"
+        )
+        # Custom UsgsExtension fields (prefixed) must be present despite the
+        # metadata_mapping storing them under their unprefixed names.
+        self.assertIn("usgs_scene_filter", queryables)
+        self.assertIn("usgs_ingest_after", queryables)
+        self.assertIn("usgs_ingest_before", queryables)
+        # Standard STAC fields backed by metadata_mapping entries must remain.
+        self.assertIn("eo_cloud_cover", queryables)
+        self.assertIn("start", queryables)
+        self.assertIn("end", queryables)
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)
@@ -654,7 +805,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         @responses.activate
         def run():
             product = EOProduct(
-                "peps",
+                "cop_dataspace",
                 dict(
                     geometry="POINT (0 0)",
                     title="dummy_product",

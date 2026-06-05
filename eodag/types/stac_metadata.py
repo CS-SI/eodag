@@ -17,9 +17,9 @@
 # limitations under the License.
 """property fields."""
 
+import datetime as dt
 import logging
 from collections.abc import Callable
-from datetime import datetime as dt
 from typing import Annotated, Any, ClassVar, Optional, Type, TypeVar, Union, cast
 
 from pydantic import (
@@ -39,6 +39,7 @@ from stac_pydantic.shared import Provider
 from typing_extensions import Self
 
 from eodag.types.stac_extensions import STAC_EXTENSIONS, BaseStacExtension
+from eodag.utils.dates import to_iso_utc_string
 
 logger = logging.getLogger("eodag.types.stac_metadata")
 
@@ -51,11 +52,13 @@ class CommonStacMetadata(ItemProperties):
     # TODO: replace dt by stac_pydantic.shared.UtcDatetime.
     # Requires timezone to be set in EODAG datetime properties
     # Tested with EFAS FORECAST
-    datetime: Annotated[dt, Field(None, validation_alias="start_datetime")]
-    start_datetime: Annotated[dt, Field(None)]  # TODO do not set if start = end
-    end_datetime: Annotated[dt, Field(None)]  # TODO do not set if start = end
-    created: Annotated[dt, Field(None)]
-    updated: Annotated[dt, Field(None)]
+    datetime: Annotated[dt.datetime, Field(None, validation_alias="start_datetime")]
+    start_datetime: Annotated[
+        dt.datetime, Field(None)
+    ]  # TODO do not set if start = end
+    end_datetime: Annotated[dt.datetime, Field(None)]  # TODO do not set if start = end
+    created: Annotated[dt.datetime, Field(None)]
+    updated: Annotated[dt.datetime, Field(None)]
     platform: Annotated[str, Field(None)]
     instruments: Annotated[list[str], Field(None)]
     constellation: Annotated[str, Field(None)]
@@ -65,6 +68,7 @@ class CommonStacMetadata(ItemProperties):
     title: Annotated[str, Field(None)]
     description: Annotated[str, Field(None)]
     license: Annotated[str, Field(None)]
+    keywords: Annotated[list[str], Field(None)]
 
     _conformance_classes: ClassVar[dict[str, str]]
     get_conformance_classes: ClassVar[Callable[[Any], list[str]]]
@@ -72,9 +76,11 @@ class CommonStacMetadata(ItemProperties):
     @field_serializer(
         "datetime", "start_datetime", "end_datetime", "created", "updated"
     )
-    def format_datetime(self, value: dt):
+    def format_datetime(self, value: dt.datetime):
         """format datetime properties"""
-        return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if not value:
+            return None
+        return to_iso_utc_string(value)
 
     @model_validator(mode="before")
     @classmethod
@@ -168,6 +174,25 @@ class CommonStacMetadata(ItemProperties):
         return False
 
     @classmethod
+    def get_field_from_alias(cls, value: str) -> str:
+        """Get field name from alias
+
+        >>> CommonStacMetadata.get_field_from_alias('collection')
+        'collection'
+        """
+        for name, field_info in cls.model_fields.items():
+            if field_info.alias:
+                if isinstance(field_info.alias, AliasChoices):
+                    aliases = field_info.alias.choices
+                    if value in aliases:
+                        return name
+                else:
+                    if value == field_info.alias:
+                        return name
+
+        return value
+
+    @classmethod
     def from_stac(cls, field_name: str) -> str:
         """Convert a STAC parameter to its matching python-style name.
 
@@ -210,27 +235,60 @@ class CommonStacMetadata(ItemProperties):
     def safe_validate(
         cls: Type[T],
         data: dict,
+        skip_invalid: bool = True,
     ) -> T:
         """Validate only fields with correct types, drop others with a warning.
 
         :param data: data to validate
+        :param skip_invalid: whether to skip invalid fields
         :returns: validated model"""
         valid = {}
 
         for name, field in cls.model_fields.items():
-            value = data.get(name, data.get(field.validation_alias))
+            # loop on validation_alias to find the first matching key in data
+            field_alias = field.validation_alias
+            value = None
+            matched_key: Any = name
+            if isinstance(field_alias, AliasChoices):
+                for alias in field_alias.choices:
+                    if isinstance(alias, str) and data.get(alias) is not None:
+                        value = data[alias]
+                        matched_key = alias
+                        break
+            elif isinstance(field_alias, AliasPath):
+                first = field_alias.path[0] if field_alias.path else None
+                if isinstance(first, str) and data.get(first) is not None:
+                    value = data[first]
+                    matched_key = first
+            elif isinstance(field_alias, str):
+                if data.get(field_alias) is not None:
+                    value = data[field_alias]
+                    matched_key = field_alias
+                elif data.get(name) is not None:
+                    value = data[name]
+                    matched_key = name
+            else:
+                if data.get(name) is not None:
+                    value = data[name]
+                    matched_key = name
             if value is None:
                 continue
             try:
-                TypeAdapter(field.annotation).validate_python(value)
-                valid[name] = value
-            except ValidationError as e:
-                logger.warning(
-                    "Dropped property %s: %s, %s",
-                    name,
-                    value,
-                    e.errors()[0]["msg"],
+                annotated_type = (
+                    Annotated[tuple([field.annotation] + field.metadata)]
+                    if field.metadata
+                    else field.annotation
                 )
+                TypeAdapter(annotated_type).validate_python(value)
+                valid[matched_key] = value
+            except ValidationError as e:
+                if skip_invalid:
+                    logger.warning(
+                        "Skipped property %s: %s, %s",
+                        name,
+                        value,
+                        e.errors()[0]["msg"],
+                    )
         return cls.model_validate(valid)
 
 
@@ -256,21 +314,24 @@ def create_stac_metadata_model(
     models = base_models + extension_models
 
     # check for duplicate field aliases (e.g., start_datetime and start in Queryables)
-    aliases: dict[str, Optional[str]] = dict()
-    duplicates = set()
+    alias_strings: set[str] = set()
+    duplicates: set[str] = set()
     for bm in base_models:
         for key, field in bm.model_fields.items():
-            if key not in aliases.keys() and key in aliases.values():
+            if key in alias_strings:
                 duplicates.add(key)
-            else:
-                aliases[key] = field.alias
+                continue
+            if isinstance(field.alias, AliasChoices):
+                alias_strings.update(str(c) for c in field.alias.choices)
+            elif field.alias:
+                alias_strings.add(field.alias)
 
     model = create_model(
         class_name,
         __base__=tuple(models),
         _conformance_classes=(
             ClassVar[dict[str, str]],
-            {e.__class__.__name__: e.schema_href for e in extensions},
+            {e.__class__.__name__: getattr(e, "schema_href", "") for e in extensions},
         ),
         get_conformance_classes=(
             ClassVar[Callable[[Any], list[str]]],

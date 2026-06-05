@@ -27,7 +27,7 @@ from eodag.utils.repr import dict_to_html_table
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import Unpack
+    from eodag.utils import StreamResponse, Unpack
 
 
 class AssetsDict(UserDict):
@@ -59,6 +59,10 @@ class AssetsDict(UserDict):
     def __init__(self, product: EOProduct, *args: Any, **kwargs: Any) -> None:
         self.product = product
         super(AssetsDict, self).__init__(*args, **kwargs)
+
+    def update(self, data: dict[str, Any]) -> None:  # type: ignore
+        """Update assets"""
+        super().update(data)
 
     def __setitem__(self, key: str, value: dict[str, Any]) -> None:
         super().__setitem__(key, Asset(self.product, key, value))
@@ -189,6 +193,14 @@ class Asset(UserDict):
         :returns: The absolute path to the downloaded product on the local filesystem
         """
         return self.product.download(asset=self.key, **kwargs)
+
+    def stream_download(self, **kwargs: Unpack[DownloadConf]) -> StreamResponse:
+        """Downloads a single asset as StreamResponse
+
+        :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
+        :returns: StreamResponse stream representation of the asset file
+        """
+        return self.product.stream_download(asset=self.key, **kwargs)
 
     def _repr_html_(self):
         thead = f"""<thead><tr><td style='text-align: left; color: grey;'>

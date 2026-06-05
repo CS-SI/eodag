@@ -1,0 +1,240 @@
+{
+    "stac_version": "1.0.0-beta.1",
+    "stac_extensions": [],
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "stac_version": "1.0.0-beta.2",
+            "stac_extensions": [
+                "https://stac-extensions.github.io/product/v0.1.0/schema.json",
+                "https://stac-extensions.github.io/processing/v1.2.0/schema.json",
+                "https://stac-extensions.github.io/projection/v2.0.0/schema.json",
+                "https://stac-extensions.github.io/sat/v1.1.0/schema.json",
+                "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+                "https://stac-extensions.github.io/sar/v1.1.0/schema.json",
+                "https://stac-extensions.github.io/eo/v2.0.0/schema.json",
+                "https://stac-extensions.github.io/sentinel-2/v1.0.0/schema.json",
+                "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+                "https://stac-extensions.github.io/grid/v1.1.0/schema.json",
+                "https://stac-extensions.github.io/raster/v2.0.0/schema.json"
+            ],
+            "id": "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1",
+            "bbox": [
+                -101.99523907493,
+                52.226210870436,
+                -100.32145593499,
+                53.241963547644
+            ],
+            "geometry": {
+                "coordinates": [
+                    [
+                        [
+                            -101.99523907493,
+                            53.211977826627
+                        ],
+                        [
+                            -101.92840488367,
+                            52.226210870436
+                        ],
+                        [
+                            -100.32145593499,
+                            52.255150748781
+                        ],
+                        [
+                            -100.35165848551,
+                            53.241963547644
+                        ],
+                        [
+                            -101.99523907493,
+                            53.211977826627
+                        ]
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "centroid": {
+                "lon": -101.14922839013187,
+                "lat": 52.73568013560234
+            },
+            "type": "Feature",
+            "collection": "PEPS_S2_L1C",
+            "properties": {
+                "grid:code": "T14ULD",
+                "product:type": "S2MSI1C",
+                "sar:instrument_mode": "INS-NOBS",
+                "endpoint_url": "https://s3.datalake.cnes.fr/sentinel2-l1c/14/U/LD/2025/04/02/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip",
+                "proj:bbox": "-101.99523907493,53.211977826627,-100.32145593499,52.255150748781",
+                "latest": true,
+                "instrument": "MSI",
+                "references": [
+                    {
+                        "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/",
+                        "author": "Natural Earth",
+                        "dataset": "Coastline",
+                        "license": "Free of Charge"
+                    },
+                    {
+                        "url": "http://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-countries/",
+                        "author": "Natural Earth",
+                        "dataset": "Admin level 0 - Countries",
+                        "license": "Free of Charge"
+                    },
+                    {
+                        "url": "http://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-1-states-provinces/",
+                        "author": "Natural Earth",
+                        "dataset": "Admin level 1 - States, Provinces",
+                        "license": "Free of Charge"
+                    },
+                    {
+                        "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-rivers-lake-centerlines/",
+                        "author": "Natural Earth",
+                        "dataset": "Rivers and lake centerlines",
+                        "license": "Free of charge"
+                    },
+                    {
+                        "url": "http://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-physical-labels/",
+                        "author": "Natural Earth",
+                        "dataset": "Marine Regions",
+                        "license": "Free of charge"
+                    }
+                ],
+                "sat:orbit_state": "Descending",
+                "identifier": "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035",
+                "keywords": [
+                    "location:northern",
+                    "season:spring"
+                ],
+                "sat:relative_orbit": 141,
+                "product:timeliness": "Nominal",
+                "area": 11989.5004,
+                "s2:datatake_id": "GS2A_20250402T175741_051075_N05.11",
+                "processing:version": "05.11",
+                "endpoint_description": "Link to product in datalake",
+                "platform": "S2A",
+                "sat:absolute_orbit": 51075,
+                "dataset": "PEPS_S2_L1C",
+                "version": "00.00",
+                "continent_code": [
+                    "NA"
+                ],
+                "start_datetime": "2025-04-02T17:57:41.024Z",
+                "datetime": "2025-04-03T09:00:26.809Z",
+                "processing:level": "L1C",
+                "eo:cloud_cover": 67.54958344531,
+                "sci:doi": "[]",
+                "political": {
+                    "continents": [
+                        {
+                            "id": "continent:NorthAmerica:6255149",
+                            "name": "North America",
+                            "countries": [
+                                {
+                                    "id": "country:Canada:3996063",
+                                    "name": "Canada",
+                                    "gcover": 0.12,
+                                    "pcover": 100,
+                                    "regions": [
+                                        {
+                                            "id": "region:WesternCanada:5953214",
+                                            "name": "Western Canada",
+                                            "gcover": 0.37,
+                                            "pcover": 100,
+                                            "states": [
+                                                {
+                                                    "id": "state:Manitoba:2355211",
+                                                    "name": "Manitoba",
+                                                    "gcover": 1.53,
+                                                    "pcover": 83.17
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "id": "region:WesternCanada:5953214",
+                                            "name": "Western Canada",
+                                            "gcover": 0.37,
+                                            "pcover": 100,
+                                            "states": [
+                                                {
+                                                    "id": "state:Saskatchewan:2597264",
+                                                    "name": "Saskatchewan",
+                                                    "gcover": 0.31,
+                                                    "pcover": 16.84
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "end_datetime": "2025-04-02T17:57:41.024Z"
+            },
+            "links": [
+                {
+                    "href": "https://geodes-portal.cnes.fr/api/stac",
+                    "rel": "root",
+                    "type": "application/json",
+                    "title": "STAC gdh root"
+                },
+                {
+                    "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S2_L1C",
+                    "rel": "collection",
+                    "type": "application/json",
+                    "title": "Item collection"
+                },
+                {
+                    "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S2_L1C/items/URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1",
+                    "rel": "self",
+                    "type": "application/geo+json",
+                    "title": "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
+                },
+                {
+                    "href": "https://spdx.org/licenses/Apache-2.0.html",
+                    "rel": "license",
+                    "type": "application/html",
+                    "title": "Apache License 2.0"
+                }
+            ],
+            "assets": {
+                "2025/04/02/S2A/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035_quicklook.jpg": {
+                    "href": "https://geodes-portal.cnes.fr/api/quicklook/URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1/files/1003ae6b1edf05adf7c46cb759ffeaec?scope=gdh",
+                    "title": "2025/04/02/S2A/S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035_quicklook.jpg",
+                    "description": "File size: 18684 bytes\n\nIs reference: false\n\nIs online: true\n\nDatatype: QUICKLOOK_SD\n\nChecksum MD5: 1003ae6b1edf05adf7c46cb759ffeaec",
+                    "type": "image/jpeg",
+                    "roles": [
+                        "overview"
+                    ]
+                },
+                "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip": {
+                    "href": "https://geodes-portal.cnes.fr/api/download/URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1/files/86f828c4c7e921615d1cd0476604f780",
+                    "title": "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip",
+                    "description": "File size: 764210185 bytes\n\nIs reference: false\n\nIs online: false\n\nDatatype: RAWDATA\n\nChecksum MD5: 86f828c4c7e921615d1cd0476604f780",
+                    "type": "application/zip",
+                    "roles": [
+                        "data"
+                    ]
+                }
+            }
+        }
+    ],
+    "links": [
+        {
+            "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S2_L1C/items?limit=1&page=1",
+            "rel": "self",
+            "type": "application/json",
+            "title": "this search page"
+        },
+        {
+            "href": "https://geodes-portal.cnes.fr/api/stac/collections/PEPS_S2_L1C/items?limit=2&page=2",
+            "rel": "next",
+            "type": "application/json",
+            "title": "next search page"
+        }
+    ],
+    "context": {
+        "returned": 1,
+        "limit": 1,
+        "matched": 37273723
+    }
+}

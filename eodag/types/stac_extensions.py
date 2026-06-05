@@ -17,12 +17,10 @@
 # limitations under the License.
 """STAC extensions."""
 
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from annotated_types import Ge, Le
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-from eodag.utils import ONLINE_STATUS
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 Percentage = Annotated[float, Ge(0), Le(100)]
 
@@ -46,9 +44,9 @@ class CubeDimension(BaseModel):
     type: Optional[str] = Field(None)
     axis: Optional[str] = Field(None)
     description: Optional[str] = Field(None)
-    extent: Optional[list[float]] = Field(None)
-    values: Optional[list[float]] = Field(None)
-    step: Optional[float] = Field(None)
+    extent: Optional[list[Union[float, str]]] = Field(None)
+    values: Optional[list[Union[float, str]]] = Field(None)
+    step: Optional[Union[float, str]] = Field(None)
     unit: Optional[str] = Field(None)
     reference_system: Optional[Union[str, int, dict[str, Any]]] = Field(None)
 
@@ -100,20 +98,20 @@ class SarFields(BaseModel):
     https://github.com/stac-extensions/sar
     """
 
-    sar_instrument_mode: Optional[str] = Field(None)
-    sar_frequency_band: Optional[str] = Field(None)
-    sar_center_frequency: Optional[float] = Field(None)
-    sar_polarizations: Optional[list[str]] = Field(None)
-    sar_resolution_range: Optional[float] = Field(None)
-    sar_resolution_azimuth: Optional[float] = Field(None)
-    sar_pixel_spacing_range: Optional[float] = Field(None)
-    sar_pixel_spacing_azimuth: Optional[float] = Field(None)
-    sar_looks_range: Optional[int] = Field(None)
-    sar_looks_azimuth: Optional[int] = Field(None)
-    sar_looks_equivalent_number: Optional[float] = Field(None)
-    sar_observation_direction: Optional[str] = Field(None)
-    sar_relative_burst: Optional[int] = Field(None)
-    sar_beam_ids: Optional[list[str]] = Field(None)
+    sar_instrument_mode: Annotated[str, Field(None)]
+    sar_frequency_band: Annotated[str, Field(None)]
+    sar_center_frequency: Annotated[float, Field(None)]
+    sar_polarizations: Annotated[list[str], Field(None)]
+    sar_resolution_range: Annotated[float, Field(None)]
+    sar_resolution_azimuth: Annotated[float, Field(None)]
+    sar_pixel_spacing_range: Annotated[float, Field(None)]
+    sar_pixel_spacing_azimuth: Annotated[float, Field(None)]
+    sar_looks_range: Annotated[int, Field(None)]
+    sar_looks_azimuth: Annotated[int, Field(None)]
+    sar_looks_equivalent_number: Annotated[float, Field(None)]
+    sar_observation_direction: Annotated[str, Field(None)]
+    sar_relative_burst: Annotated[int, Field(None)]
+    sar_beam_ids: Annotated[list[str], Field(None)]
 
 
 class SarExtension(BaseStacExtension):
@@ -130,12 +128,12 @@ class SatelliteFields(BaseModel):
     https://github.com/stac-extensions/sat
     """
 
-    sat_platform_international_designator: Optional[str] = Field(None)
-    sat_orbit_cycle: Optional[int] = Field(None)
-    sat_orbit_state: Optional[str] = Field(None)
-    sat_absolute_orbit: Optional[int] = Field(None)
-    sat_relative_orbit: Optional[int] = Field(None)
-    sat_anx_datetime: Optional[str] = Field(None)
+    sat_platform_international_designator: Annotated[str, Field(None)]
+    sat_orbit_cycle: Annotated[int, Field(None)]
+    sat_orbit_state: Annotated[str, Field(None)]
+    sat_absolute_orbit: Annotated[int, Field(None)]
+    sat_relative_orbit: Annotated[int, Field(None)]
+    sat_anx_datetime: Annotated[str, Field(None)]
 
 
 class SatelliteExtension(BaseStacExtension):
@@ -152,9 +150,9 @@ class TimestampFields(BaseModel):
     https://github.com/stac-extensions/timestamps
     """
 
-    published: Optional[str] = Field(None)
-    unpublished: Optional[str] = Field(None)
-    expires: Optional[str] = Field(None)
+    published: Annotated[str, Field(None)]
+    unpublished: Annotated[str, Field(None)]
+    expires: Annotated[str, Field(None)]
 
 
 class TimestampExtension(BaseStacExtension):
@@ -170,11 +168,11 @@ class ProcessingFields(BaseModel):
     https://github.com/stac-extensions/processing
     """
 
-    processing_expression: Optional[dict[str, Any]] = Field(None)
-    processing_lineage: Optional[str] = Field(None)
-    processing_level: Optional[str] = Field(None)
-    processing_facility: Optional[str] = Field(None)
-    processing_software: Optional[dict[str, str]] = Field(None)
+    processing_expression: Annotated[dict[str, Any], Field(None)]
+    processing_lineage: Annotated[str, Field(None)]
+    processing_level: Annotated[str, Field(None)]
+    processing_facility: Annotated[str, Field(None)]
+    processing_software: Annotated[dict[str, str], Field(None)]
 
 
 class ProcessingExtension(BaseStacExtension):
@@ -191,11 +189,11 @@ class ViewGeometryFields(BaseModel):
     https://github.com/stac-extensions/view
     """
 
-    view_off_nadir: Optional[float] = Field(None)
-    view_incidence_angle: Optional[float] = Field(None)
-    view_azimuth: Optional[float] = Field(None)
-    view_sun_azimuth: Optional[float] = Field(None)
-    view_sun_elevation: Optional[float] = Field(None)
+    view_off_nadir: Annotated[float, Field(None)]
+    view_incidence_angle: Annotated[float, Field(None)]
+    view_azimuth: Annotated[float, Field(None)]
+    view_sun_azimuth: Annotated[float, Field(None)]
+    view_sun_elevation: Annotated[float, Field(None)]
 
 
 class ViewGeometryExtension(BaseStacExtension):
@@ -212,9 +210,9 @@ class ElectroOpticalFields(BaseModel):
     https://github.com/stac-extensions/eo
     """
 
-    eo_cloud_cover: Optional[Percentage] = Field(None)
-    eo_snow_cover: Optional[Percentage] = Field(None)
-    eo_bands: Optional[list[dict[str, Union[str, int]]]] = Field(None)
+    eo_cloud_cover: Annotated[Percentage, Field(None)]
+    eo_snow_cover: Annotated[Percentage, Field(None)]
+    eo_bands: Annotated[list[dict[str, Union[str, int]]], Field(None)]
 
 
 class ElectroOpticalExtension(BaseStacExtension):
@@ -231,9 +229,9 @@ class ScientificCitationFields(BaseModel):
     https://github.com/stac-extensions/scientific
     """
 
-    sci_doi: Optional[str] = Field(None)
-    sci_citation: Optional[str] = Field(None)
-    sci_publications: Optional[list[dict[str, str]]] = Field(None)
+    sci_doi: Annotated[str, Field(None)]
+    sci_citation: Annotated[str, Field(None)]
+    sci_publications: Annotated[list[dict[str, str]], Field(None)]
 
 
 class ScientificCitationExtension(BaseStacExtension):
@@ -250,10 +248,10 @@ class ProductFields(BaseModel):
     https://github.com/stac-extensions/product
     """
 
-    product_type: Optional[str] = Field(None)
-    product_timeliness: Optional[str] = Field(None)
-    product_timeliness_category: Optional[str] = Field(None)
-    product_acquisition_type: Optional[str] = Field(None)
+    product_type: Annotated[str, Field(None)]
+    product_timeliness: Annotated[str, Field(None)]
+    product_timeliness_category: Annotated[str, Field(None)]
+    product_acquisition_type: Annotated[str, Field(None)]
 
 
 class ProductExtension(BaseStacExtension):
@@ -270,16 +268,8 @@ class StorageFields(BaseModel):
     https://github.com/stac-extensions/storage
     """
 
-    storage_platform: Optional[str] = Field(default=None)
-    storage_region: Optional[str] = Field(default=None)
-    storage_requester_pays: Optional[bool] = Field(default=None)
-    storage_tier: Optional[str] = Field(default=None, validation_alias="storage:tier")
-
-    @field_validator("storage_tier")
-    @classmethod
-    def tier_to_stac(cls, v: Optional[str]) -> str:
-        """Convert tier from EODAG naming to STAC"""
-        return "online" if v == ONLINE_STATUS else "offline"
+    storage_schemes: Annotated[dict[str, Any], Field(None)]
+    storage_refs: Annotated[list[str], Field(None)]
 
 
 class StorageExtension(BaseStacExtension):
@@ -296,9 +286,9 @@ class OrderFields(BaseModel):
     https://github.com/stac-extensions/order
     """
 
-    order_status: Optional[str] = Field(default=None)
-    order_id: Optional[str] = Field(default=None, validation_alias="eodag:order_id")
-    order_date: Optional[bool] = Field(default=None)
+    order_status: Annotated[str, Field(None)]
+    order_id: Annotated[str, Field(None)]
+    order_date: Annotated[str, Field(None)]
 
 
 class OrderExtension(BaseStacExtension):
@@ -310,14 +300,37 @@ class OrderExtension(BaseStacExtension):
     field_name_prefix: Optional[str] = "order"
 
 
+class FileFields(BaseModel):
+    """
+    https://github.com/stac-extensions/file
+    """
+
+    file_byte_order: Annotated[
+        Literal["big-endian", "little-endian"], Field(default=None)
+    ]
+    file_checksum: Annotated[str, Field(default=None, pattern=r"^[a-f0-9]+$")]
+    file_header_size: Annotated[int, Field(default=None)]
+    file_size: Annotated[int, Field(default=None)]
+    file_local_path: Annotated[str, Field(default=None)]
+
+
+class FileExtension(BaseStacExtension):
+    """STAC file extension."""
+
+    FIELDS: type[BaseModel] = FileFields
+
+    schema_href: str = "https://stac-extensions.github.io/file/v2.1.0/schema.json"
+    field_name_prefix: Optional[str] = "file"
+
+
 class GridFields(BaseModel):
     """
     https://github.com/stac-extensions/grid
     """
 
-    grid_code: Optional[str] = Field(
-        default=None, pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$"
-    )
+    grid_code: Annotated[
+        str, Field(default=None, pattern=r"^[A-Z0-9]+-[-_.A-Za-z0-9]+$")
+    ]
 
 
 class GridExtension(BaseStacExtension):
@@ -334,9 +347,9 @@ class MgrsFields(BaseModel):
     https://github.com/stac-extensions/mgrs
     """
 
-    mgrs_grid_square: Optional[str] = Field(default=None)
-    mgrs_latitude_band: Optional[str] = Field(default=None)
-    mgrs_utm_zone: Optional[int] = Field(default=None)
+    mgrs_grid_square: Annotated[str, Field(None)]
+    mgrs_latitude_band: Annotated[str, Field(None)]
+    mgrs_utm_zone: Annotated[int, Field(None)]
 
 
 class MgrsExtension(BaseStacExtension):
@@ -353,14 +366,14 @@ class ProjectionFields(BaseModel):
     https://github.com/stac-extensions/projection
     """
 
-    proj_code: Optional[str] = Field(default=None)
-    proj_wkt2: Optional[str] = Field(default=None)
-    proj_projjson: Optional[dict[str, Any]] = Field(default=None)
-    proj_geometry: Optional[dict[str, Any]] = Field(default=None)
-    proj_bbox: Optional[list[float]] = Field(default=None)
-    proj_centroid: Optional[Centroid] = Field(default=None)
-    proj_shape: Optional[list[int]] = Field(default=None)
-    proj_transform: Optional[list[float]] = Field(default=None)
+    proj_code: Annotated[str, Field(None)]
+    proj_wkt2: Annotated[str, Field(None)]
+    proj_projjson: Annotated[dict[str, Any], Field(None)]
+    proj_geometry: Annotated[dict[str, Any], Field(None)]
+    proj_bbox: Annotated[list[float], Field(None)]
+    proj_centroid: Annotated[Centroid, Field(None)]
+    proj_shape: Annotated[list[int], Field(None)]
+    proj_transform: Annotated[list[float], Field(None)]
 
 
 class ProjectionExtension(BaseStacExtension):
@@ -377,8 +390,8 @@ class DatacubeFields(BaseModel):
     https://github.com/stac-extensions/datacube
     """
 
-    cube_dimensions: Optional[dict[str, CubeDimension]] = Field(default=None)
-    cube_variables: Optional[dict[str, CubeVariable]] = Field(default=None)
+    cube_dimensions: Annotated[dict[str, CubeDimension], Field(None)]
+    cube_variables: Annotated[dict[str, CubeVariable], Field(None)]
 
 
 class DatacubeExtension(BaseStacExtension):
@@ -388,6 +401,279 @@ class DatacubeExtension(BaseStacExtension):
 
     schema_href: str = "https://stac-extensions.github.io/datacube/v2.3.0/schema.json"
     field_name_prefix: Optional[str] = "cube"
+
+
+class LabelCountObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]
+    count: Annotated[int, Field(None)]
+
+
+class LabelStatsObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]
+    value: Annotated[float, Field(None)]
+
+
+class LabelClassObject(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    name: Annotated[str, Field(None)]  # required but may be null
+    classes: Annotated[list[Union[str, int]], Field(None)]
+
+
+class LabelOverview(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    property_key: Annotated[str, Field(None)]
+    counts: Annotated[list[LabelCountObject], Field(None)]
+    statistics: Annotated[list[LabelStatsObject], Field(None)]
+
+
+class LabelFields(BaseModel):
+    """
+    https://github.com/stac-extensions/label
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_methods(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """
+        Convert methods ``str`` to ``list``.
+        """
+        if methods := values.get("methods"):
+            values["methods"] = (
+                ",".join(methods.split()).split(",")
+                if isinstance(methods, str)
+                else methods
+            )
+            if None in values["methods"]:
+                values["methods"].remove(None)
+        return values
+
+    label_properties: Annotated[Optional[list[str]], Field(None)]
+    label_classes: Annotated[list[LabelClassObject], Field(None)]
+    label_description: Annotated[str, Field("")]
+    label_type: Annotated[str, Field("")]
+    label_tasks: Annotated[list[str], Field(None)]
+    label_methods: Annotated[list[str], Field(None)]
+    label_overviews: Annotated[list[LabelOverview], Field(None)]
+
+
+class LabelExtension(BaseStacExtension):
+    """STAC label extension."""
+
+    FIELDS: type[BaseModel] = LabelFields
+
+    schema_href: str = "https://stac-extensions.github.io/label/v1.0.1/schema.json"
+    field_name_prefix: Optional[str] = "label"
+
+
+class FederationFields(BaseModel):
+    """
+    https://github.com/Open-EO/openeo-api/tree/master/extensions/federation
+    """
+
+    federation_backends: Annotated[list[str], Field(None)]
+
+
+class FederationExtension(BaseStacExtension):
+    """STAC federation extension."""
+
+    FIELDS: type[BaseModel] = FederationFields
+
+    field_name_prefix: Optional[str] = "federation"
+
+
+class EcmwfItemProperties(BaseModel):
+    """
+    STAC extension from ECMWF MARS keywords.
+
+    https://confluence.ecmwf.int/display/UDOC/Keywords+in+MARS+and+Dissemination+requests
+    """
+
+    # ECMWF DEDT properties
+    ecmwf_accuracy: Annotated[str, Field(None)]
+    ecmwf_activity: Annotated[str, Field(None)]
+    ecmwf_anoffset: Annotated[str, Field(None)]
+    ecmwf_area: Annotated[Union[str, list[float]], Field(None)]
+    ecmwf_block: Annotated[str, Field(None)]
+    ecmwf_channel: Annotated[str, Field(None)]
+    ecmwf_class: Optional[str] = Field(default=None)
+    ecmwf_dataset: Annotated[str, Field(None)]
+    ecmwf_date: Annotated[str, Field(None)]
+    ecmwf_diagnostic: Annotated[str, Field(None)]
+    ecmwf_direction: Annotated[str, Field(None)]
+    ecmwf_domain: Annotated[str, Field(None)]
+    ecmwf_duplicates: Annotated[str, Field(None)]
+    ecmwf_expect: Annotated[str, Field(None)]
+    ecmwf_expver: Annotated[str, Field(None)]
+    ecmwf_fcmonth: Annotated[list[str], Field(None)]
+    ecmwf_fcperiod: Annotated[str, Field(None)]
+    ecmwf_feature: Annotated[dict[str, Any], Field(None)]
+    ecmwf_fieldset: Annotated[str, Field(None)]
+    ecmwf_filter: Annotated[str, Field(None)]
+    ecmwf_format: Annotated[str, Field(None)]
+    ecmwf_frame: Annotated[str, Field(None)]
+    ecmwf_frequency: Annotated[str, Field(None)]
+    ecmwf_generation: Annotated[str, Field(None)]
+    ecmwf_grid: Annotated[str, Field(None)]
+    ecmwf_hdate: Annotated[str, Field(None)]
+    ecmwf_ident: Annotated[str, Field(None)]
+    ecmwf_interpolation: Annotated[str, Field(None)]
+    ecmwf_intgrid: Annotated[str, Field(None)]
+    ecmwf_iteration: Annotated[str, Field(None)]
+    ecmwf_latitude: Annotated[str, Field(None)]
+    ecmwf_levelist: Annotated[list[str], Field(None)]
+    ecmwf_levtype: Annotated[str, Field(None)]
+    ecmwf_longitude: Annotated[str, Field(None)]
+    ecmwf_lsm: Annotated[str, Field(None)]
+    ecmwf_method: Annotated[str, Field(None)]
+    ecmwf_number: Annotated[str, Field(None)]
+    ecmwf_obsgroup: Annotated[str, Field(None)]
+    ecmwf_obstype: Annotated[str, Field(None)]
+    ecmwf_origin: Annotated[str, Field(None)]
+    ecmwf_packing: Annotated[str, Field(None)]
+    ecmwf_padding: Annotated[str, Field(None)]
+    ecmwf_param: Annotated[list[str], Field(None)]
+    ecmwf_priority: Annotated[str, Field(None)]
+    ecmwf_product: Annotated[str, Field(None)]
+    ecmwf_range: Annotated[str, Field(None)]
+    ecmwf_realization: Annotated[str, Field(None)]
+    ecmwf_refdate: Annotated[str, Field(None)]
+    ecmwf_reference: Annotated[str, Field(None)]
+    ecmwf_reportype: Annotated[str, Field(None)]
+    ecmwf_repres: Annotated[str, Field(None)]
+    ecmwf_resolution: Annotated[str, Field(None)]
+    ecmwf_rotation: Annotated[str, Field(None)]
+    ecmwf_section: Annotated[str, Field(None)]
+    ecmwf_source: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_step: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_stream: Annotated[str, Field(None)]
+    ecmwf_system: Annotated[str, Field(None)]
+    ecmwf_target: Annotated[str, Field(None)]
+    ecmwf_time: Annotated[list[str], Field(None)]
+    ecmwf_truncation: Annotated[str, Field(None)]
+    ecmwf_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_use: Annotated[str, Field(None)]
+
+    # additional properties from Copernicus Datastore
+    ecmwf_system_version: Annotated[list[str], Field(None)]
+    ecmwf_variable: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_model_levels: Annotated[str, Field(None)]
+    ecmwf_soil_level: Annotated[list[str], Field(None)]
+    ecmwf_hyear: Annotated[list[str], Field(None)]
+    ecmwf_hmonth: Annotated[list[str], Field(None)]
+    ecmwf_hday: Annotated[list[str], Field(None)]
+    ecmwf_data_format: Annotated[str, Field(None)]
+    ecmwf_download_format: Annotated[str, Field(None)]
+    ecmwf_originating_centre: Annotated[str, Field(None)]
+    ecmwf_product_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_year: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_month: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_day: Annotated[list[str], Field(None)]
+    ecmwf_leadtime_hour: Annotated[list[str], Field(None)]
+    ecmwf_hydrological_model: Annotated[list[str], Field(None)]
+    ecmwf_dataset_type: Annotated[str, Field(None)]
+    ecmwf_release_version: Annotated[str, Field(None)]
+    ecmwf_pressure_level: Annotated[list[str], Field(None)]
+    ecmwf_model_level: Annotated[list[str], Field(None)]
+    ecmwf_model: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_level: Annotated[list[str], Field(None)]
+    ecmwf_forcing_type: Annotated[str, Field(None)]
+    ecmwf_band: Annotated[list[str], Field(None)]
+    ecmwf_sky_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_version: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_aerosol_type: Annotated[list[str], Field(None)]
+    ecmwf_time_step: Annotated[str, Field(None)]
+    ecmwf_time_reference: Annotated[str, Field(None)]
+    ecmwf_quantity: Annotated[str, Field(None)]
+    ecmwf_input_observations: Annotated[str, Field(None)]
+    ecmwf_time_aggregation: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_statistic: Annotated[list[str], Field(None)]
+    ecmwf_hydrological_year: Annotated[list[str], Field(None)]
+    ecmwf_product_version: Annotated[str, Field(None)]
+    ecmwf_processing_level: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_sensor_and_algorithm: Annotated[list[str], Field(None)]
+    ecmwf_sensor: Annotated[str, Field(None)]
+    ecmwf_region: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_nominal_day: Annotated[list[str], Field(None)]
+    ecmwf_cdr_type: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_satellite_mission: Annotated[list[str], Field(None)]
+    ecmwf_temporal_resolution: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_temporal_aggregation: Annotated[str, Field(None)]
+    ecmwf_leadtime_month: Annotated[list[str], Field(None)]
+    ecmwf_processing_type: Annotated[str, Field(None)]
+    ecmwf_variable_type: Annotated[str, Field(None)]
+    ecmwf_horizontal_resolution: Annotated[str, Field(None)]
+    ecmwf_experiment: Annotated[Union[str, list[str]], Field(None)]
+    ecmwf_rcm: Annotated[str, Field(None)]
+    ecmwf_gcm: Annotated[str, Field(None)]
+    ecmwf_ensemble_member: Annotated[list[str], Field(None)]
+    ecmwf_period: Annotated[list[str], Field(None)]
+    ecmwf_altitude: Annotated[int, Field(None)]
+    ecmwf_location: Annotated[dict[str, int], Field(None)]
+
+
+class ProviderStacExtension(BaseStacExtension):
+    """Base class for provider-specific STAC extensions.
+
+    Sets up field aliases so each field accepts both the stac-prefixed
+    (e.g. ``usgs:scene_filter``) and the no-prefix (e.g. ``scene_filter``)
+    forms as input, while serializing as the stac-prefixed form.
+    """
+
+    @model_validator(mode="after")
+    def setup_field_aliases(self) -> "ProviderStacExtension":
+        """Set up dual (prefixed/unprefixed) aliases on extension fields."""
+        if self.field_name_prefix is None:
+            return self
+
+        fields: dict[str, Any] = getattr(self.FIELDS, "model_fields", {})
+        for k, v in fields.items():
+            prefixed = k.replace(
+                f"{self.field_name_prefix}_", f"{self.field_name_prefix}:"
+            )
+            unprefixed = k.replace(f"{self.field_name_prefix}_", "")
+            v.alias = prefixed
+            v.validation_alias = AliasChoices(prefixed, unprefixed)
+            v.serialization_alias = prefixed
+            v.metadata.insert(0, {"extension": self.__class__.__name__})
+        return self
+
+
+class EcmwfExtension(ProviderStacExtension):
+    """STAC ECMWF extension."""
+
+    FIELDS: type[BaseModel] = EcmwfItemProperties
+
+    field_name_prefix: Optional[str] = "ecmwf"
+
+
+class UsgsFields(BaseModel):
+    """Custom fields for usgs provider."""
+
+    usgs_ingest_after: Annotated[str, Field(None)]
+    usgs_ingest_before: Annotated[str, Field(None)]
+    usgs_scene_filter: Annotated[dict[str, Any], Field(None)]
+
+
+class UsgsExtension(ProviderStacExtension):
+    """Custom extension for provider usgs."""
+
+    FIELDS: type[BaseModel] = UsgsFields
+
+    field_name_prefix: Optional[str] = "usgs"
 
 
 STAC_EXTENSIONS = [
@@ -401,8 +687,13 @@ STAC_EXTENSIONS = [
     ProductExtension(),
     StorageExtension(),
     OrderExtension(),
+    FileExtension(),
     GridExtension(),
     MgrsExtension(),
     ProjectionExtension(),
     DatacubeExtension(),
+    LabelExtension(),
+    FederationExtension(),
+    EcmwfExtension(),
+    UsgsExtension(),
 ]

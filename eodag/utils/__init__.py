@@ -42,24 +42,13 @@ import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
-from dataclasses import dataclass, field
 from email.message import Message
 from glob import glob
 from importlib.metadata import metadata
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
@@ -79,12 +68,14 @@ from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError, Response
-from shapely.geometry import Polygon, box, shape
+from shapely.geometry import LineString, Point, Polygon, box, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
-from eodag.utils import logging as eodag_logging
-from eodag.utils.exceptions import MisconfiguredError
+from .exceptions import MisconfiguredError
+from .logging import get_disable_tqdm
+from .logging import logging as eodag_logging
+from .streamresponse import StreamResponse
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
@@ -106,6 +97,7 @@ GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
 #: List of known STAC search plugins. Required to complete plugin configuration with STAC plugins specific features.
 STAC_SEARCH_PLUGINS = [
+    "GeodesSearch",
     "StacSearch",
     "StacListAssets",
     "StaticStacSearch",
@@ -150,11 +142,11 @@ DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
 #: pagination default starting page number
 DEFAULT_PAGE = 1
 #: default number of items per page requested by :meth:`~eodag.api.core.EODataAccessGateway.search`
-DEFAULT_ITEMS_PER_PAGE = 20
+DEFAULT_LIMIT = 20
 #: Default maximum number of items per page requested by :meth:`~eodag.api.core.EODataAccessGateway.search_all`.
-#: 50 instead of 20 (:const:`~eodag.utils.DEFAULT_ITEMS_PER_PAGE`) to increase it to the known and current minimum
+#: 50 instead of 20 (:const:`~eodag.utils.DEFAULT_LIMIT`) to increase it to the known and current minimum
 #: value (mundi provider)
-DEFAULT_MAX_ITEMS_PER_PAGE = 50
+DEFAULT_MAX_LIMIT = 50
 #: known next page token keys used to guess key in STAC providers next link responses
 KNOWN_NEXT_PAGE_TOKEN_KEYS = ["token", "next", "page", "skip"]
 
@@ -181,6 +173,7 @@ WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$
 #: regex to detect if a string is a JSONPath array field, used in :func:`eodag.utils.string_to_jsonpath`
 ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
+DEFAULT_MIME = "application/octet-stream"
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
 mimetypes.add_type("application/x-grib", ".grib")
@@ -490,7 +483,7 @@ class ProgressCallback(tqdm):
         if "position" not in kwargs:
             kwargs["position"] = 0
         if "disable" not in kwargs:
-            kwargs["disable"] = eodag_logging.disable_tqdm
+            kwargs["disable"] = get_disable_tqdm()
         if "dynamic_ncols" not in kwargs:
             kwargs["dynamic_ncols"] = True
 
@@ -932,12 +925,15 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     Child(Child(Root(), Fields('foo')), Fields('bar'))
     >>> string_to_jsonpath("$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
-    >>> string_to_jsonpath('$.foo[0][*]')
-    Child(Child(Child(Root(), Fields('foo')), Index(index=0)), Slice(start=None,end=None,step=None))
     >>> string_to_jsonpath("foo")
     'foo'
     >>> string_to_jsonpath("foo", force=True)
     Fields('foo')
+    >>> string_to_jsonpath('$.foo[0][*]') == Child(
+    ...     Child(Child(Root(), Fields('foo')), Index(0)),
+    ...     Slice(start=None, end=None, step=None),
+    ... )
+    True
 
     :param args: Last arg as input string value, to be converted
     :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
@@ -983,7 +979,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
                             # integer index
                             parsed_path = Child(
                                 parsed_path,
-                                Index(index=index),
+                                Index(index),
                             )
                     elif "[" in path_split:
                         # unsupported array field
@@ -1192,36 +1188,123 @@ def get_geometry_from_various(
     return geom
 
 
-def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> BaseGeometry:
-    """
-    Creates a ``shapely.geometry`` from ECMWF Polytope shape.
+def _ecmwf_point_to_lonlat(
+    point: list[Any], axes: Optional[Union[list[str], str]] = None
+) -> tuple[float, float]:
+    if not isinstance(point, (list, tuple)) or len(point) < 2:
+        raise TypeError("ECMWF feature point must be a list of at least 2 values")
 
-    :param geom: ECMWF Polytope shape.
-    :returns: A Shapely polygon.
+    if axes is None:
+        lat, lon = point[0], point[1]
+    else:
+        axis_list = [axes] if isinstance(axes, str) else list(axes)
+        axis_list_lower = [str(axis).lower() for axis in axis_list]
+        lat_index = None
+        lon_index = None
+        for name in ("latitude", "lat"):
+            if name in axis_list_lower:
+                lat_index = axis_list_lower.index(name)
+                break
+        for name in ("longitude", "lon"):
+            if name in axis_list_lower:
+                lon_index = axis_list_lower.index(name)
+                break
+        if lat_index is None or lon_index is None:
+            lat, lon = point[0], point[1]
+        else:
+            lat = point[lat_index]
+            lon = point[lon_index]
+
+    return float(lon), float(lat)
+
+
+def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeometry]:
+    """
+    Creates a ``shapely.geometry`` from an ECMWF Polytope feature.
+
+    Supported ECMWF feature types:
+      - ``polygon``: returns a :class:`~shapely.geometry.Polygon`
+      - ``boundingbox``: returns a :class:`~shapely.geometry.Polygon` via :func:`~shapely.geometry.box`
+      - ``position``, ``timeseries``, ``verticalprofile``: return a :class:`~shapely.geometry.Point`
+      - ``trajectory``: returns a :class:`~shapely.geometry.LineString`
+      - ``circle``: no direct Shapely equivalent, returns ``None`` and lets default geometry take over
+
+    :param geom: ECMWF Polytope feature.
+    :returns: A Shapely geometry or ``None`` for circle features.
     """
     if not isinstance(geom, dict):
         raise TypeError("Geometry must be a dictionary")
-    if "type" not in geom or geom["type"] != "polygon":
-        raise TypeError("Geometry type must be 'polygon'")
-    if "shape" not in geom:
-        raise TypeError("Missing shape in the geometry")
-    if not isinstance(geom["shape"], list):
-        raise TypeError("Geometry shape must be a list")
+    if "type" not in geom:
+        raise TypeError("Geometry type must be specified")
 
-    shape: list = geom["shape"]
-    polygon_args = [(p[1], p[0]) for p in shape]
-    return Polygon(polygon_args)
+    geom_type = geom["type"].lower()
+    axes = geom.get("axes")
+
+    if geom_type == "polygon":
+        if "shape" not in geom:
+            raise TypeError("Missing shape in the geometry")
+        if not isinstance(geom["shape"], list):
+            raise TypeError("Geometry shape must be a list")
+        polygon_shape: list[Any] = geom["shape"]
+        polygon_args = [_ecmwf_point_to_lonlat(point, axes) for point in polygon_shape]
+        return Polygon(polygon_args)
+
+    if geom_type == "boundingbox":
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if not isinstance(geom["points"], list):
+            raise TypeError("Geometry points must be a list")
+        bbox_points = [_ecmwf_point_to_lonlat(point, axes) for point in geom["points"]]
+        lon_values = [lon for lon, _ in bbox_points]
+        lat_values = [lat for _, lat in bbox_points]
+        return box(min(lon_values), min(lat_values), max(lon_values), max(lat_values))
+
+    if geom_type in ("position", "timeseries", "verticalprofile"):
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if geom_type == "timeseries" and geom.get("time_axis") in (None, ""):
+            raise TypeError("Missing time_axis in the geometry")
+        if not isinstance(geom["points"], list) or not geom["points"]:
+            raise TypeError("Geometry points must be a non-empty list")
+        lon, lat = _ecmwf_point_to_lonlat(geom["points"][0], axes)
+        return Point(lon, lat)
+
+    if geom_type == "trajectory":
+        if "points" not in geom:
+            raise TypeError("Missing points in the geometry")
+        if geom.get("inflation") in (None, ""):
+            raise TypeError("Missing inflation in the geometry")
+        if not isinstance(geom["points"], list) or len(geom["points"]) < 2:
+            raise TypeError("Trajectory points must be a list of at least 2 positions")
+        line_coords = [_ecmwf_point_to_lonlat(point, axes) for point in geom["points"]]
+        return LineString(line_coords)
+
+    if geom_type == "circle":
+        if "center" not in geom:
+            raise TypeError("Missing center in the geometry")
+        if geom.get("radius") in (None, ""):
+            raise TypeError("Missing radius in the geometry")
+        return None
+
+    raise TypeError(
+        "Unsupported ECMWF geometry type. "
+        "Supported types are: polygon, boundingbox, position, timeseries, verticalprofile, trajectory, circle."
+    )
 
 
-def get_geometry_from_ecmwf_area(area: list[float]) -> Optional[BaseGeometry]:
+def get_geometry_from_ecmwf_area(
+    area: Union[str, list[float]]
+) -> Optional[BaseGeometry]:
     """
     Creates a ``shapely.geometry`` from bounding box in area format.
 
-    area format: [max_lat,min_lon,min_lat,max_lon]
+    area format: [max_lat,min_lon,min_lat,max_lon] or "max_lat/min_lon/min_lat/max_lon"
 
     :param area: bounding box in area format.
     :returns: A Shapely polygon.
     """
+    if isinstance(area, str):
+        area = [float(x) for x in area.split("/")]
     if len(area) != 4:
         raise ValueError("The area must be a list of 4 values")
     max_lat, min_lon, min_lat, max_lon = area
@@ -1513,84 +1596,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
     return new_type(value)
 
 
-@dataclass
-class StreamResponse:
-    """Represents a streaming response"""
-
-    content: Iterable[bytes]
-    _filename: Optional[str] = field(default=None, repr=False, init=False)
-    _size: Optional[int] = field(default=None, repr=False, init=False)
-    headers: dict[str, str] = field(default_factory=dict)
-    media_type: Optional[str] = None
-    status_code: Optional[int] = None
-    arcname: Optional[str] = None
-
-    def __init__(
-        self,
-        content: Iterable[bytes],
-        filename: Optional[str] = None,
-        size: Optional[int] = None,
-        headers: Optional[Mapping[str, str]] = None,
-        media_type: Optional[str] = None,
-        status_code: Optional[int] = None,
-        arcname: Optional[str] = None,
-    ):
-        self.content = content
-        self.headers = dict(headers) if headers else {}
-        self.media_type = media_type
-        self.status_code = status_code
-        self.arcname = arcname
-        # use property setters to update headers
-        self.filename = filename
-        self.size = size
-
-    # filename handling
-    @property
-    def filename(self) -> Optional[str]:
-        """Get the filename for the streaming response.
-
-        :returns: The filename, or None if not set
-        """
-        return self._filename
-
-    @filename.setter
-    def filename(self, value: Optional[str]) -> None:
-        """Set the filename and update the content-disposition header accordingly.
-
-        :param value: The filename to set, or None to clear it
-        """
-        self._filename = value
-        if value:
-            outputs_filename = os.path.basename(value)
-            self.headers[
-                "content-disposition"
-            ] = f'attachment; filename="{outputs_filename}"'
-        elif "content-disposition" in self.headers:
-            del self.headers["content-disposition"]
-
-    # size handling
-    @property
-    def size(self) -> Optional[int]:
-        """Get the content size for the streaming response.
-
-        :returns: The content size in bytes, or None if not set
-        """
-        return self._size
-
-    @size.setter
-    def size(self, value: Optional[int]) -> None:
-        """Set the content size and update the content-length header accordingly.
-
-        :param value: The content size in bytes, or None to clear it
-        """
-        self._size = value
-        if value is not None:
-            self.headers["content-length"] = str(value)
-        elif "content-length" in self.headers:
-            del self.headers["content-length"]
-
-
-def guess_file_type(file: str) -> Optional[str]:
+def guess_file_type(file: str) -> str:
     """Guess the mime type of a file or URL based on its extension,
     using eodag extended mimetypes definition
 
@@ -1603,7 +1609,9 @@ def guess_file_type(file: str) -> Optional[str]:
     :returns: guessed mime type
     """
     mime_type, _ = mimetypes.guess_type(file, False)
-    if mime_type == "text/xml":
+    if mime_type is None:
+        mime_type = DEFAULT_MIME
+    elif mime_type == "text/xml":
         return "application/xml"
     return mime_type
 
@@ -1791,3 +1799,89 @@ def get_collection_dates(
     )
 
     return mission_start, mission_end
+
+
+__all__ = [
+    "GENERIC_COLLECTION",
+    "GENERIC_STAC_PROVIDER",
+    "STAC_SEARCH_PLUGINS",
+    "STAC_VERSION",
+    "USER_AGENT",
+    "HTTP_REQ_TIMEOUT",
+    "DEFAULT_SEARCH_TIMEOUT",
+    "DEFAULT_STREAM_REQUESTS_TIMEOUT",
+    "REQ_RETRY_TOTAL",
+    "REQ_RETRY_BACKOFF_FACTOR",
+    "REQ_RETRY_STATUS_FORCELIST",
+    "DEFAULT_DOWNLOAD_WAIT",
+    "DEFAULT_DOWNLOAD_TIMEOUT",
+    "DEFAULT_TOKEN_EXPIRATION_MARGIN",
+    "DEFAULT_PAGE",
+    "DEFAULT_LIMIT",
+    "DEFAULT_MAX_LIMIT",
+    "KNOWN_NEXT_PAGE_TOKEN_KEYS",
+    "DEFAULT_PROJ",
+    "DEFAULT_MISSION_START_DATE",
+    "DEFAULT_SHAPELY_GEOMETRY",
+    "ONLINE_STATUS",
+    "JSONPATH_MATCH",
+    "WORKABLE_JSONPATH_MATCH",
+    "ARRAY_FIELD_MATCH",
+    "FloatRange",
+    "StreamResponse",
+    "DownloadedCallback",
+    "ProgressCallback",
+    "MockResponse",
+    "Unpack",
+    "_deprecated",
+    "slugify",
+    "sanitize",
+    "strip_accents",
+    "uri_to_path",
+    "path_to_uri",
+    "mutate_dict_in_place",
+    "merge_mappings",
+    "maybe_generator",
+    "repeatfunc",
+    "makedirs",
+    "rename_subfolder",
+    "rename_with_version",
+    "format_dict_items",
+    "jsonpath_parse_dict_items",
+    "update_nested_dict",
+    "items_recursive_apply",
+    "dict_items_recursive_apply",
+    "list_items_recursive_apply",
+    "items_recursive_sort",
+    "dict_items_recursive_sort",
+    "list_items_recursive_sort",
+    "string_to_jsonpath",
+    "format_string",
+    "parse_jsonpath",
+    "nested_pairs2dict",
+    "get_geometry_from_various",
+    "get_geometry_from_ecmwf_feature",
+    "get_geometry_from_ecmwf_area",
+    "get_geometry_from_ecmwf_location",
+    "md5sum",
+    "obj_md5sum",
+    "cached_parse",
+    "cached_yaml_load",
+    "cached_yaml_load_all",
+    "get_bucket_name_and_prefix",
+    "flatten_top_directories",
+    "deepcopy",
+    "parse_header",
+    "cast_scalar_value",
+    "guess_file_type",
+    "guess_extension",
+    "get_ssl_context",
+    "sort_dict",
+    "dict_md5sum",
+    "remove_str_array_quotes",
+    "parse_le_uint32",
+    "parse_le_uint16",
+    "format_pydantic_error",
+    "get_collection_dates",
+    "eodag_logging",
+]

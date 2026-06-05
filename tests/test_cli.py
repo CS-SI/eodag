@@ -15,17 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime as dt
 import logging
 import os
 import re
 import unittest
+from collections import defaultdict
 from contextlib import contextmanager
-from datetime import datetime
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 from typing import Optional, Tuple
 
 import click
+import responses
 import shapely
 from click.testing import CliRunner
 from faker import Faker
@@ -34,10 +36,11 @@ from packaging import version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_COLLECTION
+from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import UnsupportedProvider
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
-    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_LIMIT,
     AuthenticationError,
     MisconfiguredError,
     NoMatchingCollection,
@@ -240,7 +243,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                limit=DEFAULT_LIMIT,
                 page=1,
                 start_datetime=None,
                 end_datetime=None,
@@ -292,7 +295,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
                 provider=None,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                limit=DEFAULT_LIMIT,
                 page=1,
                 start_datetime=None,
                 end_datetime=None,
@@ -400,7 +403,7 @@ class TestEodagCli(unittest.TestCase):
                 user_conf_file_path=conf_file, locations_conf_path=None
             )
             api_obj.search.assert_called_once_with(
-                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+                count=False, limit=DEFAULT_LIMIT, page=1, **criteria
             )
             api_obj.crunch.assert_called_once_with(
                 search_results, search_criteria=criteria, **{cruncher: {}}
@@ -473,7 +476,7 @@ class TestEodagCli(unittest.TestCase):
             self.assertEqual(dag.call_count, 2)
             dag.assert_any_call(user_conf_file_path=conf_file, locations_conf_path=None)
             api_obj.search.assert_called_once_with(
-                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+                count=False, limit=DEFAULT_LIMIT, page=1, **criteria
             )
             api_obj.download_all.assert_called_once_with(
                 search_results, output_dir=None, executor=mock.ANY
@@ -503,7 +506,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search_all.assert_called_once_with(
                 provider=None,
-                items_per_page=None,
+                limit=None,
                 start_datetime=None,
                 end_datetime=None,
                 geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
@@ -544,7 +547,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=None,
@@ -588,7 +591,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=None,
@@ -612,9 +615,9 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             collection = "whatever"
             start_date_str = "2022-01-01"
-            start_date_datetime = datetime.strptime(
-                start_date_str, "%Y-%m-%d"
-            ).isoformat()
+            start_date_datetime = to_iso_utc_string(
+                dt.datetime.strptime(start_date_str, "%Y-%m-%d")
+            )
             exit_code, output, error = self.eodag_command(
                 [
                     "search",
@@ -634,7 +637,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=start_date_datetime,
                 end_datetime=None,
@@ -658,9 +661,9 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             collection = "whatever"
             stop_date_str = "2022-01-01"
-            stop_date_datetime = datetime.strptime(
-                stop_date_str, "%Y-%m-%d"
-            ).isoformat()
+            stop_date_datetime = to_iso_utc_string(
+                dt.datetime.strptime(stop_date_str, "%Y-%m-%d")
+            )
             exit_code, output, error = self.eodag_command(
                 [
                     "search",
@@ -681,7 +684,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 provider=None,
                 page=1,
-                items_per_page=20,
+                limit=20,
                 geometry=None,
                 start_datetime=None,
                 end_datetime=stop_date_datetime,
@@ -792,12 +795,14 @@ class TestEodagCli(unittest.TestCase):
 
         mock_fetch_collections_list.assert_called_once_with(mock.ANY, provider=None)
 
-        exit_code, output, error = self.eodag_command(["list", "-p", "peps"])
+        exit_code, output, error = self.eodag_command(["list", "-p", "cop_dataspace"])
         self.assertEqual(exit_code, 0)
         self.assertIn("Listing available collections:", output)
         self.assertIsNone(error)
 
-        mock_fetch_collections_list.assert_called_with(mock.ANY, provider="peps")
+        mock_fetch_collections_list.assert_called_with(
+            mock.ANY, provider="cop_dataspace"
+        )
         self.assertEqual(mock_fetch_collections_list.call_count, 2)
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -806,7 +811,7 @@ class TestEodagCli(unittest.TestCase):
         all supported collections with this (these) feature(s) among the ones of its provider
         and with or without fetching provider according to the command.
         """
-        provider = "peps"
+        provider = "cop_dataspace"
 
         dag.return_value.guess_collection.return_value = CollectionsList(
             [
@@ -879,12 +884,16 @@ class TestEodagCli(unittest.TestCase):
             self.assertTrue(os.path.isfile(default_output_path))
 
             # call with provider
-            exit_code, output, error = self.eodag_command(["discover", "-p", "peps"])
+            exit_code, output, error = self.eodag_command(
+                ["discover", "-p", "cop_dataspace"]
+            )
             self.assertEqual(exit_code, 0)
             self.assertIsNone(error)
             self.assertIn("Results stored at", output)
 
-            mock_discover_collections.assert_called_with(mock.ANY, provider="peps")
+            mock_discover_collections.assert_called_with(
+                mock.ANY, provider="cop_dataspace"
+            )
             self.assertEqual(mock_discover_collections.call_count, 2)
             os.remove(default_output_path)
 
@@ -1046,8 +1055,19 @@ class TestEodagCli(unittest.TestCase):
                 fake_result, output_dir=None, executor=mock.ANY
             )
 
-    def test_eodag_download_missingcredentials(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test_eodag_download_missingcredentials(self, oidc_request):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
+        # mocked OIDC discovery response as expected by pyjwt
+        oidc_request.return_value.json.return_value = {
+            "jwks_uri": "https://example.com/jwks",
+            "token_endpoint": "https://example.com/token",
+            "authorization_endpoint": "https://example.com/authorize",
+            "id_token_signing_alg_values_supported": ["RS256"],
+        }
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
@@ -1066,13 +1086,24 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, MisconfiguredError)
 
-    @mock.patch("eodag.plugins.download.http.HTTPDownload.download", autospec=True)
-    def test_eodag_download_wrongcredentials(self, download):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase._get_oidc_endpoints",
+        autospec=True,
+    )
+    @responses.activate
+    def test_eodag_download_wrongcredentials(self, mock_req_oidc_endpoints):
         """Calling eodag download with wrong credentials must raise AuthenticationError"""
-        # This is not an end-to-end test so we have to manually raise the error down
-        # to HTTPDownload.download. This is indeed the download plugin of PEPS which
-        # is used here since the GeoJSON results were obtained from this provider.
-        download.side_effect = AuthenticationError
+        oidc_endpoints = defaultdict(mock.Mock())
+        oidc_endpoints["token_endpoint"] = "http://fake_token_endpoint"
+        # mocked OIDC discovery response as expected by pyjwt
+        oidc_endpoints["jwks_uri"] = "https://example.com/jwks"
+        mock_req_oidc_endpoints.return_value = oidc_endpoints
+        responses.add(
+            responses.POST,
+            "http://fake_token_endpoint",
+            status=401,
+        )
+
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
@@ -1081,19 +1112,28 @@ class TestEodagCli(unittest.TestCase):
             # We override the default (empty) credentials with dummy values not
             # to raise a MisconfiguredError.
             env={
-                "EODAG__PEPS__AUTH__CREDENTIALS__USERNAME": "dummy",
-                "EODAG__PEPS__AUTH__CREDENTIALS__PASSWORD": "dummy",
+                "EODAG__COP_DATASPACE__AUTH__CREDENTIALS__USERNAME": "dummy",
+                "EODAG__COP_DATASPACE__AUTH__CREDENTIALS__PASSWORD": "dummy",
             },
         )
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, AuthenticationError)
-        self.assertEqual(download.call_count, 1)
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+    )
     @mock.patch("eodag.api.product._product.EOProduct.get_quicklook", autospec=True)
-    def test_eodag_download_quicklooks(self, mock_get_quicklook):
+    def test_eodag_download_quicklooks(self, mock_get_quicklook, mock_oidc_get):
         """Calling eodag download with --quicklooks argument"""
+        # mocked OIDC discovery response as expected by pyjwt
+        mock_oidc_get.return_value.json.return_value = {
+            "jwks_uri": "https://example.com/jwks",
+            "token_endpoint": "https://example.com/token",
+            "authorization_endpoint": "https://example.com/authorize",
+            "id_token_signing_alg_values_supported": ["RS256"],
+        }
         search_results_path = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+            TEST_RESOURCES_PATH, "eodag_search_result_cop_dataspace.geojson"
         )
         config_path = os.path.join(TEST_RESOURCES_PATH, "file_config_override.yml")
         mock_get_quicklook.return_value = "/fake_path"

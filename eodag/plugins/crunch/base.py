@@ -17,6 +17,7 @@
 # limitations under the License
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Optional
 
 from eodag.config import PluginConfig
@@ -32,10 +33,11 @@ class Crunch(PluginTopic):
     :param config: Crunch configuration
     """
 
-    def __init__(self, config: Optional[dict[str, Any]]) -> None:
+    def __init__(self, config: Optional[dict[str, Any]] = None) -> None:
         self.config = PluginConfig()
         self.config.__dict__ = config if config is not None else {}
 
+    @abstractmethod
     def proceed(
         self, products: list[EOProduct], **search_params: Any
     ) -> list[EOProduct]:

@@ -33,12 +33,14 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/tutos/tuto_cop_dem.ipynb
    notebooks/tutos/tuto_ecmwf.ipynb
    notebooks/tutos/tuto_cds.ipynb
+   notebooks/tutos/tuto_eocat.ipynb
    notebooks/tutos/tuto_wekeo.ipynb
    notebooks/tutos/tuto_meteoblue.ipynb
    notebooks/tutos/tuto_ship_detection.ipynb
    notebooks/tutos/tuto_burnt_areas_snappy.ipynb
    notebooks/tutos/tuto_dedt_lumi_roi.ipynb
    notebooks/tutos/tuto_fedeo_ceda.ipynb
+   notebooks/tutos/tuto_stream_download_to_s3.ipynb
 
 .. grid:: 1 2 2 3
    :gutter: 4
@@ -49,7 +51,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :text-align: center
       :shadow: md
 
-      Learn how to search for products using location names or tile identifiers instead of coordinates.
+      Learn how to search for products using location names or tile identifiers (``grid:code``) instead of coordinates.
 
    .. grid-item-card:: Get Copernicus DEM using EODAG
       :link: notebooks/tutos/tuto_cop_dem
@@ -74,6 +76,14 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :shadow: md
 
       Access Copernicus Atmosphere data through the ECMWFSearch plugin using the CDS API.
+
+   .. grid-item-card:: ESA eocat provider in EODAG
+      :link: notebooks/tutos/tuto_eocat
+      :link-type: doc
+      :text-align: center
+      :shadow: md
+
+      Access ESA Heritage and Third Party Missions data through the ``eocat`` provider.
 
    .. grid-item-card:: The wekeo provider in EODAG
       :link: notebooks/tutos/tuto_wekeo
@@ -124,3 +134,11 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :shadow: md
 
       Access Fedeo data through the CEDA API using the dedicated EODAG plugin.
+
+   .. grid-item-card:: Download product as stream to S3
+      :link: notebooks/tutos/tuto_stream_download_to_s3
+      :link-type: doc
+      :text-align: center
+      :shadow: md
+
+      Download a product data as a stream and upload it on a S3 bucket without storing it locally.

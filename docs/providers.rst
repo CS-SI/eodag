@@ -288,6 +288,41 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
 
 ----
 
+**cop_dataspace_s3**
+^^^^^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Data Space Ecosystem data through S3 protocol.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://dataspace.copernicus.eu/
+        :color: primary
+        :outline:
+        :tooltip: Data Space Ecosystem website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account on `cop_dataspace <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&response_type=code&scope=openid&redirect_uri=https%3A//dataspace.copernicus.eu/account/confirmed/1>`__, then go to
+  `keymanager <https://eodata-s3keysmanager.dataspace.copernicus.eu/panel/s3-credentials>`__ and click `Add credential` to generate the s3 access key and
+  secret key. Add those credentials to the user configuration file (variables `aws_access_key_id` and
+  `aws_secret_access_key`).
+
+
+----
+
 **cop_ewds**
 ^^^^^^^^^^^^
 .. grid:: 2
@@ -330,6 +365,33 @@ If credentials are needed, check the :doc:`registration guide <providers>` for d
   * Open the dataset details and go to the download tab.
   * Scroll down and accept the licence in the section `Terms of use`.
   * You can check which licences you have accepted in your user profile.
+
+----
+
+**cop_ghsl**
+^^^^^^^^^^^^^^^^
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Copernicus Global Human Settlement Layer.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://human-settlement.emergency.copernicus.eu/
+        :color: primary
+        :outline:
+        :tooltip: Copernicus Global Human Settlement Layer website
+
+        :fas:`external-link-alt`
+
+No credentials are needed
 
 ----
 
@@ -724,9 +786,8 @@ No credentials are needed
 
 ----
 
-
-**peps**
---------
+**theia**
+-----------------
 
 .. grid:: 2
    :gutter: 2
@@ -735,16 +796,16 @@ No credentials are needed
    .. grid-item::
       :columns: 10
 
-      French National Space Agency (CNES) catalog for Sentinel products.
+      Data Terra Theia, environmental thematic hub for land data access.
 
    .. grid-item::
       :columns: 2
       :class: sd-text-right
 
-      .. button-link:: https://peps.cnes.fr/rocket/#/home
+      .. button-link:: https://www.theia-land.fr/
         :color: primary
         :outline:
-        :tooltip: PEPS website
+        :tooltip: Theia website
 
         :fas:`external-link-alt`
 
@@ -752,8 +813,9 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag
-  credentials.
+  Go to `https://gate.stac.teledetection.fr/ <https://gate.stac.teledetection.fr/>`_, then sign in or create an account by
+  clicking on ``ORCID`` in the bottom, then ``Register now``. Once logged-in, create an API key.
+  You will then see ``access-key`` and ``secret-key`` that you can use in EODAG provider auth credentials.
 
 ----
 
@@ -936,6 +998,43 @@ No credentials are needed
         :fas:`external-link-alt`
 
 No credentials are needed
+
+**eocat**
+----------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      EOCAT (ESA Catalog) providing access to ESA Earth observation missions data, including Heritage and Third Party
+      missions.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://eocat.esa.int/eo-catalogue?httpAccept=text/html
+        :color: primary
+        :outline:
+        :tooltip: EOCAT / ESA Catalog website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account `here <https://eoiam-idp.eo.esa.int>`__.
+
+  Then use *email* as ``username`` and ``password`` in eodag credentials.
+
+  .. note:: **Additional consent**
+
+     Some collections will require additional consent for download. If so, a form URL will be will be provided in the
+     authentication error message. You will need to open the URL, fill in the form and try again.
 
 ----
 

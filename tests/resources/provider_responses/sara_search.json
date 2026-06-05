@@ -27,25 +27,25 @@
         "rel": "self",
         "type": "application/json",
         "title": "self",
-        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=1"
+        "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=1"
       },
       {
         "rel": "search",
         "type": "application/opensearchdescription+xml",
         "title": "OpenSearch Description Document",
-        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/describe.xml"
+        "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/describe.xml"
       },
       {
         "rel": "next",
         "type": "application/json",
         "title": "next",
-        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=2"
+        "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=2"
       },
       {
         "rel": "last",
         "type": "application/json",
         "title": "last",
-        "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=24"
+        "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&startDate=2020-08-08&completionDate=2020-08-16&geometry=POLYGON%20%28%28137.7729%2013.1342%2C%20137.7729%2023.8860%2C%20153.7491%2023.8860%2C%20153.7491%2013.1342%2C%20137.7729%2013.1342%29%29&productType=S2MSI1C&maxRecords=2&page=24"
       }
     ]
   },
@@ -127,7 +127,7 @@
         "resolution": null,
         "sensorMode": "INS-NOBS",
         "orbitNumber": 26883,
-        "quicklook": "https://peps.cnes.fr/quicklook/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440_quicklook.jpg",
+        "quicklook": "https://copernicus.nci.org.au/quicklook/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440_quicklook.jpg",
         "thumbnail": null,
         "resourceSize": 781865648,
         "resourceChecksum": "64FFCA4B9CD13D094ED05554E010DB5A",
@@ -139,66 +139,66 @@
           "6278eea013ff0d3": {
             "name": "Summer",
             "type": "season",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Summer"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=Summer"
           },
           "45038f3c2322ea3": {
             "name": "S2ST",
             "type": "collection",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2ST"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=S2ST"
           },
           "6219554ecf5905c": {
             "name": "S2MSI1C",
             "type": "productType",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2MSI1C"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=S2MSI1C"
           },
           "44b15c0a6e62129": {
             "name": "LEVEL1C",
             "type": "processingLevel",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=LEVEL1C"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=LEVEL1C"
           },
           "afe9ad14455c260": {
             "name": "s2A",
             "type": "platform",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=s2A"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=s2A"
           },
           "503f8f6199f3e44": {
             "name": "msi",
             "type": "instrument",
             "parentHash": "afe9ad14455c260",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=msi"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=msi"
           },
           "3f85bb5d775e1fc": {
             "name": "INS-NOBS",
             "type": "sensorMode",
             "parentHash": "503f8f6199f3e44",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=INS-NOBS"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=INS-NOBS"
           },
           "e8f96b7c46c0d54": {
             "name": "Descending",
             "type": "orbitDirection",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Descending"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=Descending"
           },
           "a56dfb1210d361d": {
             "name": "Nominal",
             "type": "realtime",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Nominal"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=Nominal"
           },
           "6414a4147122d1b": {
             "name": "2020",
             "type": "year",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=2020"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=2020"
           },
           "a12bb6d777c8553": {
             "name": "August",
             "type": "month",
             "parentHash": "6414a4147122d1b",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=August"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=August"
           },
           "51a4136a792e6e4": {
             "name": "15",
             "type": "day",
             "parentHash": "a12bb6d777c8553",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=15"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=15"
           }
         },
         "visible": 1,
@@ -225,12 +225,12 @@
             "title": "Display full resolution product on map",
             "layer": {
               "type": "WMS",
-              "url": "https://peps.cnes.fr/cgi-bin/mapserver?map=WMS_S2ST&data=2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440",
+              "url": "https://copernicus.nci.org.au/cgi-bin/mapserver?map=WMS_S2ST&data=2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PDR_20200815T023440",
               "layers": ""
             }
           },
           "download": {
-            "url": "https://peps.cnes.fr/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c/download",
+            "url": "https://copernicus.nci.org.au/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c/download",
             "mimeType": "application/zip",
             "size": 781865648,
             "checksum": "64FFCA4B9CD13D094ED05554E010DB5A"
@@ -241,13 +241,13 @@
             "rel": "alternate",
             "type": "application/json",
             "title": "GeoJSON link for 01f888ef-3368-59ff-a639-52242d159d7c",
-            "href": "https://peps.cnes.fr/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c.json?&lang=en"
+            "href": "https://copernicus.nci.org.au/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c.json?&lang=en"
           },
           {
             "rel": "alternate",
             "type": "application/atom+xml",
             "title": "ATOM link for 01f888ef-3368-59ff-a639-52242d159d7c",
-            "href": "https://peps.cnes.fr/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c.atom?&lang=en"
+            "href": "https://copernicus.nci.org.au/resto/collections/S2ST/01f888ef-3368-59ff-a639-52242d159d7c.atom?&lang=en"
           }
         ],
         "storage": {
@@ -332,7 +332,7 @@
         "resolution": null,
         "sensorMode": "INS-NOBS",
         "orbitNumber": 26883,
-        "quicklook": "https://peps.cnes.fr/quicklook/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440_quicklook.jpg",
+        "quicklook": "https://copernicus.nci.org.au/quicklook/2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440_quicklook.jpg",
         "thumbnail": null,
         "resourceSize": 659478453,
         "resourceChecksum": "9FC37A160E4E23823679FCF21DEF1596",
@@ -344,66 +344,66 @@
           "6278eea013ff0d3": {
             "name": "Summer",
             "type": "season",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Summer"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=Summer"
           },
           "45038f3c2322ea3": {
             "name": "S2ST",
             "type": "collection",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2ST"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=S2ST"
           },
           "6219554ecf5905c": {
             "name": "S2MSI1C",
             "type": "productType",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=S2MSI1C"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=S2MSI1C"
           },
           "44b15c0a6e62129": {
             "name": "LEVEL1C",
             "type": "processingLevel",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=LEVEL1C"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=LEVEL1C"
           },
           "afe9ad14455c260": {
             "name": "s2A",
             "type": "platform",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=s2A"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=s2A"
           },
           "503f8f6199f3e44": {
             "name": "msi",
             "type": "instrument",
             "parentHash": "afe9ad14455c260",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=msi"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=msi"
           },
           "3f85bb5d775e1fc": {
             "name": "INS-NOBS",
             "type": "sensorMode",
             "parentHash": "503f8f6199f3e44",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=INS-NOBS"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=INS-NOBS"
           },
           "e8f96b7c46c0d54": {
             "name": "Descending",
             "type": "orbitDirection",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Descending"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=Descending"
           },
           "a56dfb1210d361d": {
             "name": "Nominal",
             "type": "realtime",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=Nominal"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=Nominal"
           },
           "6414a4147122d1b": {
             "name": "2020",
             "type": "year",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=2020"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=2020"
           },
           "a12bb6d777c8553": {
             "name": "August",
             "type": "month",
             "parentHash": "6414a4147122d1b",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=August"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=August"
           },
           "51a4136a792e6e4": {
             "name": "15",
             "type": "day",
             "parentHash": "a12bb6d777c8553",
-            "href": "https://peps.cnes.fr/resto/api/collections/S2ST/search.json?&lang=en&q=15"
+            "href": "https://copernicus.nci.org.au/sara.server/1.0/api/collections/S2/search.json?&lang=en&q=15"
           }
         },
         "visible": 1,
@@ -430,12 +430,12 @@
             "title": "Display full resolution product on map",
             "layer": {
               "type": "WMS",
-              "url": "https://peps.cnes.fr/cgi-bin/mapserver?map=WMS_S2ST&data=2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440",
+              "url": "https://copernicus.nci.org.au/cgi-bin/mapserver?map=WMS_S2ST&data=2020/08/15/S2A/S2A_MSIL1C_20200815T005251_N0209_R002_T55PCR_20200815T023440",
               "layers": ""
             }
           },
           "download": {
-            "url": "https://peps.cnes.fr/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31/download",
+            "url": "https://copernicus.nci.org.au/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31/download",
             "mimeType": "application/zip",
             "size": 659478453,
             "checksum": "9FC37A160E4E23823679FCF21DEF1596"
@@ -446,13 +446,13 @@
             "rel": "alternate",
             "type": "application/json",
             "title": "GeoJSON link for 0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31",
-            "href": "https://peps.cnes.fr/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31.json?&lang=en"
+            "href": "https://copernicus.nci.org.au/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31.json?&lang=en"
           },
           {
             "rel": "alternate",
             "type": "application/atom+xml",
             "title": "ATOM link for 0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31",
-            "href": "https://peps.cnes.fr/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31.atom?&lang=en"
+            "href": "https://copernicus.nci.org.au/resto/collections/S2ST/0cc0ca6e-52a0-559e-a987-a3dc7f0b9f31.atom?&lang=en"
           }
         ],
         "storage": {

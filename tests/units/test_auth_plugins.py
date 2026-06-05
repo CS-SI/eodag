@@ -16,12 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime as dt
 import pickle
 import unittest
-from datetime import datetime, timedelta
 from unittest import mock
 
 import boto3
+import requests
 import responses
 from mypy_boto3_s3.service_resource import BucketObjectsCollection
 from pystac.utils import now_in_utc
@@ -31,6 +32,7 @@ from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
+from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
 from eodag.utils.exceptions import RequestError
@@ -157,6 +159,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
                         "request_method": "GET",
+                        "auth_tuple": ["username", "password1", "password2"],
                     },
                 },
                 "provider_text_token_auth_error_code": {
@@ -165,6 +168,22 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
                         "auth_error_code": 401,
+                    },
+                },
+                "provider_text_token_post_credentials_true": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar?username={username}",
+                        "post_credentials": True,
+                    },
+                },
+                "provider_text_token_post_credentials_false": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "post_credentials": False,
                     },
                 },
             }
@@ -207,6 +226,20 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
+    def test_plugins_auth_tokenauth_authenticate_format_url_ok(self, mock_request):
+        """TokenAuth.authenticate must be ok if it can format url"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_format_url")
+
+        auth_plugin.config.credentials = {"foo": "bar", "username": "jo{hn"}
+        auth_plugin.authenticate()
+
+        # validate_config_credentials should have been called a 2nd time in authenticate
+        # to format already parsed auth_uri (would fail as credentials contain a non-escaped '{' character)
+        auth_plugin.authenticate()
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
     def test_plugins_auth_tokenauth_text_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using text token"""
         auth_plugin = self.get_auth_plugin("provider_text_token_header")
@@ -221,11 +254,14 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         auth = auth_plugin.authenticate()
         self.assertTrue(isinstance(auth, AuthBase))
 
+        # token was set in the plugin
+        self.assertEqual(auth_plugin.token, "this_is_test_token")
+
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertDictEqual(kwargs["data"], {"foo": "bar", "baz": "qux"})
-        self.assertIsNone(kwargs["auth"])
+        self.assertNotIn("auth", kwargs)
         self.assertDictEqual(
             kwargs["headers"], dict(auth_plugin.config.headers, **USER_AGENT)
         )
@@ -265,7 +301,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertDictEqual(
             kwargs["data"], {"foo": "bar", "baz": "qux", "auth_for_token": "a_token"}
         )
-        self.assertIsNone(kwargs["auth"])
+        self.assertNotIn("auth", kwargs)
         self.assertDictEqual(
             kwargs["headers"], dict(auth_plugin.config.retrieve_headers, **USER_AGENT)
         )
@@ -309,7 +345,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self, mock_requests_post
     ):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token
-        If there is an existing, valid token this token msut be used
+        If there is an existing, valid token this token must be used
         """
         auth_plugin = self.get_auth_plugin("provider_json_token_with_expiration")
         auth_plugin.__init__(
@@ -339,7 +375,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
             verify=True,
-            auth=None,
         )
         mock_requests_post.reset_mock()
         # second call should use existing token
@@ -347,7 +382,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertTrue(isinstance(auth, AuthBase))
         mock_requests_post.assert_not_called()
         # reset expiration -> token should be fetched again
-        auth_plugin.token_expiration = datetime.now()
+        auth_plugin.token_expiration = dt.datetime.now()
         mock_requests_post.return_value.json.return_value = {
             "not_token": "this_is_not_test_token",
             "token_is_here": "this_is_a_new_token",
@@ -364,7 +399,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
             verify=True,
-            auth=None,
         )
 
     @mock.patch(
@@ -411,7 +445,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             data=auth_plugin.config.credentials,
             verify=True,
-            auth=None,
         )
 
         # Serialize then deserialize the auth plugin, check that it still works the same
@@ -425,7 +458,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # reset expiration -> token should be fetched again
         # The refresh token mechanism will be used.
-        auth_plugin.token_expiration = datetime.now()
+        auth_plugin.token_expiration = dt.datetime.now()
         mock_requests_post.return_value.json.return_value = {
             "not_token": "this_is_not_test_token",
             "token_is_here": "this_is_a_refreshed_token",
@@ -481,7 +514,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             kwargs["data"],
             {"grant_type": "client_credentials", "foo": "bar", "baz": "qux"},
         )
-        self.assertIsNone(kwargs["auth"])
+        self.assertNotIn("auth", kwargs)
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
 
         # check if token is integrated to the request
@@ -492,13 +525,15 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
-    def test_plugins_auth_tokenauth_get_method_request_authenticate(
-        self, mock_requests_get
-    ):
-        """TokenAuth.authenticate must return a RequestsTokenAuth object with 'GET' method request"""
+    def test_plugins_auth_tokenauth_get_method_auth_tuple(self, mock_requests_get):
+        """TokenAuth.authenticate must return a RequestsTokenAuth object with 'GET' method request and auth tuple"""
         auth_plugin = self.get_auth_plugin("provider_text_token_get_method")
 
-        auth_plugin.config.credentials = {"username": "bar", "password": "qux"}
+        auth_plugin.config.credentials = {
+            "username": "bar",
+            "password1": "qux",
+            "password2": "quux",
+        }
 
         # mock token get request response
         mock_requests_get.return_value = mock.Mock()
@@ -512,13 +547,96 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         args, kwargs = mock_requests_get.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertNotIn("data", kwargs)
-        self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
+        self.assertTupleEqual(kwargs["auth"], ("bar", "qux", "quux"))
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
         self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_get_method_auth_tuple_incomplete(
+        self, mock_requests_get
+    ):
+        """TokenAuth.authenticate must fail with 'GET' method request and incomplete auth tuple"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_get_method")
+
+        auth_plugin.config.credentials = {"username": "bar", "password1": "qux"}
+
+        # mock token get request response
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.text = "this_is_test_token"
+
+        # check if returned auth object is an instance of requests.AuthBase
+        with self.assertRaisesRegex(
+            MisconfiguredError,
+            r"Missing credentials inputs for provider provider_text_token_get_method: \['password2'\]",
+        ):
+            auth_plugin.authenticate()
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_post_credentials_true(self, mock_requests_post):
+        """TokenAuth.authenticate must post credentials when post_credentials is True even if creds are in URI"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_post_credentials_true")
+
+        auth_plugin.config.credentials = {"username": "bar", "baz": "qux"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # credentials must be in data even though they are embedded in auth_uri
+        args, kwargs = mock_requests_post.call_args
+        self.assertDictEqual(kwargs["data"], {"username": "bar", "baz": "qux"})
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_post_credentials_false(self, mock_requests_post):
+        """TokenAuth.authenticate must not post credentials when post_credentials is False"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_post_credentials_false")
+
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # credentials must NOT be in data even though they are not in auth_uri
+        args, kwargs = mock_requests_post.call_args
+        self.assertDictEqual(kwargs["data"], {})
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_post_credentials_default(self, mock_requests_post):
+        """TokenAuth.authenticate must not post credentials by default when they are already in auth_uri"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_format_url")
+
+        # use a single credential whose value will appear in the formatted auth_uri
+        auth_plugin.config.credentials = {"username": "bar"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # credentials must NOT be in data because all values are in auth_uri
+        args, kwargs = mock_requests_post.call_args
+        self.assertDictEqual(kwargs["data"], {})
 
     def test_plugins_auth_tokenauth_request_error(self):
         """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""
@@ -762,6 +880,610 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         self.assertIn("https://s3.abc.test.com/b1/a1/a1.json", url)
         self.assertIn("AWSAccessKeyId=my_access_key", url)
         self.assertIn("Expires", url)
+
+
+class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        providers = ProvidersDict.from_configs(
+            {
+                "foo_provider": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "EOIAMAuth",
+                        "auth_uri": "http://foo.bar",
+                    },
+                },
+            }
+        )
+        cls.plugins_manager = PluginManager(providers)
+
+    def test_plugins_auth_eoiam_validate_credentials_empty(self):
+        """EOIAMAuth.validate_config_credentials must raise an error on empty credentials"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+
+    def test_plugins_auth_eoiam_validate_credentials_missing_password(self):
+        """EOIAMAuth.validate_config_credentials must raise an error when password is missing"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {"username": "test_user"}
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+
+    def test_plugins_auth_eoiam_validate_credentials_missing_username(self):
+        """EOIAMAuth.validate_config_credentials must raise an error when username is missing"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {"password": "test_pass"}
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+
+    def test_plugins_auth_eoiam_validate_credentials_ok(self):
+        """EOIAMAuth.validate_config_credentials must be ok with valid credentials"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+        auth_plugin.validate_config_credentials()
+
+    def test_plugins_auth_eoiam_authenticate_returns_authbase(self):
+        """EOIAMAuth.authenticate must return a requests.AuthBase object"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+        auth = auth_plugin.authenticate()
+        self.assertIsInstance(auth, AuthBase)
+
+    @responses.activate
+    def test_plugins_auth_eoiam_authenticate_no_login_required(self):
+        """EOIAMAuth should not login if not an EOIAM page"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        # Response without EOIAM login page
+        responses.add(
+            responses.GET,
+            "http://test.url",
+            body="<html><body>Some content</body></html>",
+        )
+
+        auth = auth_plugin.authenticate()
+        req = mock.Mock(headers={})
+        req.url = "http://test.url"
+        with mock.patch.object(auth_plugin, "_login_from_html") as mock_login_from_html:
+            auth(req)
+            mock_login_from_html.assert_not_called()
+
+    @responses.activate
+    def test_plugins_auth_eoiam_login_from_html_success(self):
+        """EOIAMAuth._login_from_html should perform SAML login successfully"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        # HTML with login form
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                    <input name="username" />
+                    <input name="password" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # SAML response HTML
+        saml_html = """
+        <html>
+            <body>
+                <form action="http://service.provider/acs" method="post">
+                    <input name="SAMLResponse" value="base64_saml_response" />
+                    <input name="RelayState" value="relay_state_value" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST credentials -> SAML HTML response
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": "http://final.url"},
+        )
+        # GET final URL -> JSON
+        responses.add(
+            responses.GET,
+            "http://final.url",
+            body="{}",
+            headers={"Content-Type": "application/json"},
+        )
+
+        result = auth_plugin._login_from_html(login_html, req_url="http://test.url")
+        self.assertEqual(result.text, "{}")
+
+    def test_plugins_auth_eoiam_extract_input_value_missing(self):
+        """EOIAMAuth._extract_input_value should raise MisconfiguredError if input not found"""
+        from lxml import html
+
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        tree = html.fromstring("<html><body><form></form></body></html>")
+        with self.assertRaisesRegex(
+            MisconfiguredError, "sessionDataKey input not found"
+        ):
+            auth_plugin._extract_input_value(tree, "sessionDataKey")
+
+    def test_plugins_auth_eoiam_extract_input_value_no_value(self):
+        """EOIAMAuth._extract_input_value should raise MisconfiguredError if input has no value"""
+        from lxml import html
+
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        tree = html.fromstring(
+            '<html><body><input name="sessionDataKey" /></body></html>'
+        )
+        with self.assertRaisesRegex(MisconfiguredError, "sessionDataKey has no value"):
+            auth_plugin._extract_input_value(tree, "sessionDataKey")
+
+    def test_plugins_auth_eoiam_extract_first_form_missing(self):
+        """EOIAMAuth._extract_first_form should raise MisconfiguredError if no form found"""
+        from lxml import html
+
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        tree = html.fromstring("<html><body><div>No form here</div></body></html>")
+        with self.assertRaisesRegex(MisconfiguredError, "Form not found"):
+            auth_plugin._extract_first_form(tree)
+
+    def test_plugins_auth_eoiam_resolve_action_missing(self):
+        """EOIAMAuth._resolve_action should raise MisconfiguredError if action not found"""
+        from lxml import html
+
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        tree = html.fromstring("<html><body><form></form></body></html>")
+        form = tree.xpath("//form")[0]
+        with self.assertRaisesRegex(MisconfiguredError, "Form action not found"):
+            auth_plugin._resolve_action(form, "http://foo.bar")
+
+    def test_plugins_auth_eoiam_resolve_action_relative(self):
+        """EOIAMAuth._resolve_action should resolve relative action URLs"""
+        from lxml import html
+
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        tree = html.fromstring(
+            '<html><body><form action="/login"></form></body></html>'
+        )
+        form = tree.xpath("//form")[0]
+        result = auth_plugin._resolve_action(form, "http://foo.bar")
+        self.assertEqual(result, "http://foo.bar/login")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_login_consent_required(self):
+        """EOIAMAuth._login_from_html should raise AuthenticationError if consent is required"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST redirects to consent page
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            status=302,
+            headers={"Location": "http://foo.bar/consent.do?sp=TestService"},
+        )
+        responses.add(
+            responses.GET,
+            "http://foo.bar/consent.do?sp=TestService",
+            body="",
+        )
+
+        with self.assertRaisesRegex(
+            AuthenticationError, "Consent required for service"
+        ):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_login_failed_wrong_credentials(self):
+        """EOIAMAuth._login_from_html should raise MisconfiguredError on wrong credentials"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "wrong_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST redirects to login page (wrong credentials)
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            status=302,
+            headers={"Location": "http://foo.bar/login.do"},
+        )
+        responses.add(
+            responses.GET,
+            "http://foo.bar/login.do",
+            body="",
+        )
+
+        with self.assertRaisesRegex(
+            MisconfiguredError, "Login failed: please check your credentials"
+        ):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_login_failed_eoiam_page(self):
+        """EOIAMAuth._login_from_html should raise MisconfiguredError if still on EOIAM page"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST stays on EOIAM page
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body="Earth Observation Identity and Access Management System",
+        )
+
+        with self.assertRaisesRegex(MisconfiguredError, "Login failed"):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_saml_no_redirect(self):
+        """EOIAMAuth._login_from_html should raise AuthenticationError if SAML response is not a redirect"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        saml_html = """
+        <html>
+            <body>
+                <form action="http://service.provider/acs" method="post">
+                    <input name="SAMLResponse" value="base64_saml_response" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> not a redirect (200)
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=200,
+        )
+
+        with self.assertRaisesRegex(
+            AuthenticationError, "Unexpected response after SAML login"
+        ):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_final_redirect_missing(self):
+        """EOIAMAuth._login_from_html should raise AuthenticationError if final redirect URL is missing"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        saml_html = """
+        <html>
+            <body>
+                <form action="http://service.provider/acs" method="post">
+                    <input name="SAMLResponse" value="base64_saml_response" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect with empty Location
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": ""},
+        )
+
+        with self.assertRaisesRegex(
+            AuthenticationError, "Final redirect URL not found"
+        ):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_consent_required_after_redirect(self):
+        """EOIAMAuth._login_from_html should raise AuthenticationError if consent required after redirect"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        saml_html = """
+        <html>
+            <body>
+                <form action="http://service.provider/acs" method="post">
+                    <input name="SAMLResponse" value="base64_saml_response" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": "http://final.url"},
+        )
+        # GET final URL -> consent page
+        final_url = "http://final.url"
+        responses.add(
+            responses.GET,
+            final_url,
+            body="wants to access your account",
+            headers={"Content-Type": "text/html"},
+        )
+
+        with self.assertRaisesRegex(
+            AuthenticationError, f"Consent required: .* {final_url}"
+        ):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    @responses.activate
+    def test_plugins_auth_eoiam_data_access_required(self):
+        """EOIAMAuth._login_from_html should raise AuthenticationError if data access is required"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        login_html = """
+        <html>
+            <body>
+                <form action="/commonauth" method="post">
+                    <input name="sessionDataKey" value="test_session_key" />
+                </form>
+            </body>
+        </html>
+        """
+
+        saml_html = """
+        <html>
+            <body>
+                <form action="http://service.provider/acs" method="post">
+                    <input name="SAMLResponse" value="base64_saml_response" />
+                </form>
+            </body>
+        </html>
+        """
+
+        # POST credentials -> SAML HTML
+        responses.add(
+            responses.POST,
+            "http://foo.bar/commonauth",
+            body=saml_html,
+        )
+        # POST SAML -> redirect
+        responses.add(
+            responses.POST,
+            "http://service.provider/acs",
+            status=302,
+            headers={"Location": "http://final.url"},
+        )
+        # GET final URL -> data access required page
+        final_url = "http://final.url"
+        responses.add(
+            responses.GET,
+            final_url,
+            body="not yet performed the necessary steps in order to access this data.",
+            headers={"Content-Type": "text/html"},
+        )
+
+        with self.assertRaisesRegex(
+            AuthenticationError, f"Data access request required: .* {final_url}"
+        ):
+            auth_plugin._login_from_html(login_html, req_url="http://test.url")
+
+    def test_eoiam_session_auth_call_triggers_login_and_prepares_cookies(self):
+        """_EOIAMSessionAuth.__call__ should trigger login when landing on EOIAM page"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        # prepare a requests PreparedRequest
+        req = Request("GET", "http://service.test/resource").prepare()
+
+        # initial session.get returns EOIAM page
+        initial_resp = requests.Response()
+        initial_resp._content = (
+            b"Earth Observation Identity and Access Management System"
+        )
+        initial_resp.url = "http://login"
+
+        # login result is a normal response
+        login_result = requests.Response()
+        login_result._content = b"{}"
+
+        old_session = auth_plugin.session
+
+        with mock.patch.object(auth_plugin.session, "get", return_value=initial_resp):
+            with mock.patch.object(
+                auth_plugin, "_login_from_html", return_value=login_result
+            ) as mock_login:
+                # ensure there is a cookie jar so prepare_cookies can operate
+                jar = requests.cookies.RequestsCookieJar()
+                jar.set("sid", "1234", domain="service.test", path="/")
+                auth_plugin.session.cookies = jar
+
+                auth = _EOIAMSessionAuth(auth_plugin)
+                returned = auth(req)
+
+                mock_login.assert_called_once_with(initial_resp.text, req.url)
+                self.assertIs(returned, req)
+
+        self.assertIsInstance(auth_plugin.session, requests.Session)
+        self.assertIsNot(auth_plugin.session, old_session)
+
+    def test_eoiam_session_auth_call_resets_session_on_login_error(self):
+        """_EOIAMSessionAuth.__call__ should reset session even when login fails"""
+        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin.config.credentials = {
+            "username": "test_user",
+            "password": "test_pass",
+        }
+
+        req = Request("GET", "http://service.test/resource").prepare()
+        initial_resp = requests.Response()
+        initial_resp._content = (
+            b"Earth Observation Identity and Access Management System"
+        )
+        initial_resp.url = "http://login"
+
+        old_session = auth_plugin.session
+
+        with mock.patch.object(auth_plugin.session, "get", return_value=initial_resp):
+            with mock.patch.object(
+                auth_plugin,
+                "_login_from_html",
+                side_effect=AuthenticationError("boom"),
+            ):
+                auth = _EOIAMSessionAuth(auth_plugin)
+                with self.assertRaises(AuthenticationError):
+                    auth(req)
+
+        self.assertIsInstance(auth_plugin.session, requests.Session)
+        self.assertIsNot(auth_plugin.session, old_session)
 
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
@@ -1130,7 +1852,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -1176,7 +1898,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -1213,7 +1935,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         # backup token_provision and change it to header mode
@@ -1535,7 +2257,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         }
         mock_request_new_token.return_value = json_response
         mock_get_token_with_refresh_token.return_value = json_response
-        expiration = current_time + timedelta(
+        expiration = current_time + dt.timedelta(
             seconds=float(json_response["expires_in"])
         )
         mock_decode.return_value = {"exp": expiration.timestamp()}
@@ -1575,9 +2297,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         # Refresh token available but expired and access token expired-> new auth
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time - timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time - dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -1587,9 +2309,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Refresh token available but expires in a minute (60s) and access token expired-> new auth
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(seconds=60)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -1599,7 +2321,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Refresh token *not* available and access token expired - new auth
         auth_plugin.access_token = "old-access-token"
         auth_plugin.refresh_token = ""
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
 
         _authenticate(
             mock_request_new_token,
@@ -1611,7 +2333,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.access_token = "old-access-token"
         auth_plugin.refresh_token = ""
-        auth_plugin.access_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(seconds=60)
 
         _authenticate(
             mock_request_new_token,
@@ -1621,9 +2343,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         # Refresh token available and access token expired -> refresh
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+        auth_plugin.access_token_expiration = current_time - dt.timedelta(hours=4)
         _authenticate(
             mock_get_token_with_refresh_token,
             mock_request_new_token,
@@ -1633,9 +2355,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Refresh token available and access token expires in a minute (60s)-> refresh
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(seconds=60)
         _authenticate(
             mock_get_token_with_refresh_token,
             mock_request_new_token,
@@ -1645,9 +2367,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # Both Refresh token and access token expire in a minute (60s)-> new auth
         # 60s = the default time for the config parameter "token_expiration_margin"
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(seconds=60)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time + timedelta(seconds=60)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(seconds=60)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -1656,9 +2378,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         # Access token not expired -> use already retrieved token
         auth_plugin.refresh_token = "old-refresh-token"
-        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.refresh_token_expiration = current_time + dt.timedelta(hours=3)
         auth_plugin.access_token = "old-access-token"
-        auth_plugin.access_token_expiration = current_time + timedelta(hours=2)
+        auth_plugin.access_token_expiration = current_time + dt.timedelta(hours=2)
         auth = auth_plugin.authenticate()
         mock_request_new_token.assert_not_called()
         mock_get_token_with_refresh_token.assert_not_called()
@@ -1702,7 +2424,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_compute_state.return_value = state
         mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
         mock_decode.return_value = {
-            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+            "exp": (now_in_utc() + dt.timedelta(seconds=3600)).timestamp()
         }
 
         auth = auth_plugin.authenticate()

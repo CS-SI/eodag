@@ -63,7 +63,13 @@ class FilterOverlap(Crunch):
                 "geometry not found in cruncher arguments, filtering disabled."
             )
             return products
-        minimum_overlap = float(self.config.__dict__.get("minimum_overlap", "0"))
+        try:
+            minimum_overlap = max(
+                float(self.config.__dict__.get("minimum_overlap", "0")), 0
+            )
+        except ValueError:
+            minimum_overlap = 0
+
         contains = self.config.__dict__.get("contains", False)
         intersects = self.config.__dict__.get("intersects", False)
         within = self.config.__dict__.get("within", False)
@@ -85,7 +91,7 @@ class FilterOverlap(Crunch):
             logger.debug("Minimum overlap is: {} %".format(minimum_overlap))
 
         logger.debug("Initial requested extent area: %s", search_geom.area)
-        if search_geom.area == 0:
+        if search_geom.area == 0.0:
             logger.debug(
                 "No product can overlap a requested extent that is not a polygon (i.e with area=0)"
             )

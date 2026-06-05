@@ -81,8 +81,17 @@ class DatasetDriver(metaclass=type):
 
         :param href: The asset href
         :param eo_product: The product to which the asset belongs
-        :returns: The asset key and roles
+        :returns: The asset key and roles, or ``(None, None)`` if the filename
+                  extracted from ``href`` has no extension
         """
+        # If filename extracted from href has no extension, return None
+        # so that the caller can keep the original asset key and roles
+        filename = (
+            href.split("?")[0].split("!")[-1].replace("\\", "/").rsplit("/", 1)[-1]
+        )
+        if filename and "." not in filename:
+            return None, None
+
         for pattern_dict in self.ASSET_KEYS_PATTERNS_ROLES:
             if matched := pattern_dict["pattern"].match(href):
                 extracted_key, roles = (

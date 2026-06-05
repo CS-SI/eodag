@@ -20,8 +20,11 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+import yaml
+
 from tests.context import (
     EODataAccessGateway,
+    MisconfiguredError,
     PluginConfig,
     Provider,
     ProviderConfig,
@@ -252,6 +255,21 @@ class TestProviderConfig(unittest.TestCase):
         # Verify they are separate objects (deep copy)
         self.assertIsNot(new_config, original_config)
         self.assertIsNot(new_config.search, original_config.search)
+
+    def test_provider_config_from_yaml_requires_plugin_tag(self):
+        """ProviderConfig.from_yaml must reject untagged plugin topics."""
+        with self.assertRaisesRegex(
+            MisconfiguredError, "plugin topic 'search' must be tagged with '!plugin'"
+        ):
+            yaml.load(
+                """
+!provider
+name: test-provider
+search:
+  type: StacSearch
+""",
+                Loader=yaml.Loader,
+            )
 
 
 class TestProvidersDict(unittest.TestCase):

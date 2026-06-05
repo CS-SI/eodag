@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import logging
 import os
@@ -24,7 +25,7 @@ import shutil
 import tarfile
 import tempfile
 import zipfile
-from datetime import datetime, timedelta
+from abc import abstractmethod
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
@@ -52,7 +53,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product import EOProduct
+    from eodag.api.product._product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
@@ -102,6 +103,7 @@ class Download(PluginTopic):
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
 
+    @abstractmethod
     def download(
         self,
         product: EOProduct,
@@ -134,7 +136,8 @@ class Download(PluginTopic):
             "A Download plugin must implement a method named download"
         )
 
-    def _stream_download_dict(
+    @abstractmethod
+    def stream_download(
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3ServiceResource]] = None,
@@ -145,7 +148,7 @@ class Download(PluginTopic):
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
-        Base _stream_download_dict method. Not available, it must be defined for each plugin.
+        Base stream_download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :param auth: (optional) authenticated object
@@ -160,7 +163,7 @@ class Download(PluginTopic):
         :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         raise NotImplementedError(
-            "Download streaming must be implemented using a method named _stream_download_dict"
+            "Download streaming must be implemented using a method named stream_download"
         )
 
     def _prepare_download(
@@ -204,8 +207,6 @@ class Download(PluginTopic):
             self.config, "output_extension", ""
         )
 
-        # Strong asumption made here: all products downloaded will be zip files
-        # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
         prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
         if sanitized_title == product.properties["title"]:
@@ -219,6 +220,16 @@ class Download(PluginTopic):
         fs_dir_path = (
             fs_path.replace(output_extension, "") if output_extension else fs_path
         )
+        # check also path without collision suffix that may be used as path dir
+        fs_path_without_suffix = os.path.join(
+            prefix, f"{sanitize(product.properties['title'])}{output_extension}"
+        )
+        fs_dir_path_without_suffix = (
+            fs_path_without_suffix.replace(output_extension, "")
+            if output_extension
+            else fs_path_without_suffix
+        )
+
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
             os.makedirs(download_records_dir)
@@ -257,7 +268,9 @@ class Download(PluginTopic):
                 ),
                 None,
             )
-        elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
+        elif os.path.isfile(record_filename) and (
+            os.path.isdir(fs_dir_path) or os.path.isdir(fs_dir_path_without_suffix)
+        ):
             logger.info(
                 f"Product already downloaded: {fs_dir_path}",
             )
@@ -390,7 +403,9 @@ class Download(PluginTopic):
             tmp_dir = tempfile.TemporaryDirectory()
             extraction_dir = os.path.join(tmp_dir.name, os.path.basename(product_dir))
 
-            if fs_path.endswith(".zip"):
+            extract_complete = False
+            fs_path_lower = fs_path.lower()
+            if fs_path_lower.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
                     fileinfos = zfile.infolist()
 
@@ -410,8 +425,12 @@ class Download(PluginTopic):
                 ):
                     os.makedirs(product_dir)
                 shutil.move(product_extraction_path, product_dir)
-
-            elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
+                extract_complete = True
+            elif (
+                fs_path_lower.endswith(".tar")
+                or fs_path_lower.endswith(".tar.gz")
+                or fs_path_lower.endswith(".tgz")
+            ):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
@@ -424,12 +443,13 @@ class Download(PluginTopic):
                 ):
                     os.makedirs(product_dir)
                 shutil.move(product_extraction_path, product_dir)
+                extract_complete = True
             else:
                 progress_callback(1, total=1)
 
             tmp_dir.cleanup()
 
-            if delete_archive and os.path.isfile(fs_path):
+            if delete_archive and os.path.isfile(fs_path) and extract_complete:
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
             elif os.path.isfile(fs_path):
@@ -488,8 +508,8 @@ class Download(PluginTopic):
         products = products[:]
         paths: list[str] = []
         # initiate retry loop
-        start_time = datetime.now()
-        stop_time = start_time + timedelta(minutes=timeout)
+        start_time = dt.datetime.now()
+        stop_time = start_time + dt.timedelta(minutes=timeout)
         nb_products = len(products)
         retry_count = 0
         # another output for notebooks
@@ -554,8 +574,8 @@ class Download(PluginTopic):
                 futures = {}
 
                 for idx, product in enumerate(products_batch):
-                    if datetime.now() >= product.next_try:
-                        products[idx].next_try += timedelta(minutes=wait)
+                    if dt.datetime.now() >= product.next_try:
+                        products[idx].next_try += dt.timedelta(minutes=wait)
                         future = executor.submit(
                             product.download,
                             progress_callback=product_progress_callback,
@@ -580,7 +600,7 @@ class Download(PluginTopic):
                         bar(1)
 
                         # reset stop time for next product
-                        stop_time = datetime.now() + timedelta(minutes=timeout)
+                        stop_time = dt.datetime.now() + dt.timedelta(minutes=timeout)
 
                     except NotAvailableError as e:
                         logger.info(e)
@@ -606,10 +626,10 @@ class Download(PluginTopic):
 
                 if (
                     len(products) > 0
-                    and datetime.now() < products[0].next_try
-                    and datetime.now() < stop_time
+                    and dt.datetime.now() < products[0].next_try
+                    and dt.datetime.now() < stop_time
                 ):
-                    wait_seconds = (products[0].next_try - datetime.now()).seconds
+                    wait_seconds = (products[0].next_try - dt.datetime.now()).seconds
                     retry_count += 1
                     info_message = (
                         f"[Retry #{retry_count}, {nb_products - len(products)}/{nb_products} D/L] "
@@ -619,7 +639,7 @@ class Download(PluginTopic):
                     logger.info(info_message)
                     nb_info.display_html(info_message)
                     sleep(wait_seconds + 1)
-                elif len(products) > 0 and datetime.now() >= stop_time:
+                elif len(products) > 0 and dt.datetime.now() >= stop_time:
                     logger.warning(
                         f"{len(products)} products could not be downloaded: "
                         + str([prod.properties["title"] for prod in products])
@@ -652,8 +672,8 @@ class Download(PluginTopic):
         def decorator(order_download: Callable[..., T]) -> Callable[..., T]:
             def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
-                start_time = datetime.now()
-                stop_time = start_time + timedelta(minutes=timeout)
+                start_time = dt.datetime.now()
+                stop_time = start_time + dt.timedelta(minutes=timeout)
                 product.next_try = start_time
                 retry_count = 0
                 not_available_info = "The product could not be downloaded"
@@ -661,10 +681,10 @@ class Download(PluginTopic):
                 nb_info = NotebookWidgets()
 
                 while "Loop until products download succeeds or timeout is reached":
-                    datetime_now = datetime.now()
+                    datetime_now = dt.datetime.now()
 
                     if datetime_now >= product.next_try:
-                        product.next_try += timedelta(minutes=wait)
+                        product.next_try += dt.timedelta(minutes=wait)
                         try:
                             download = order_download(*args, **kwargs)
                         except NotAvailableError as e:
@@ -684,7 +704,7 @@ class Download(PluginTopic):
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
                         wait_seconds: Union[float, int] = (
-                            datetime_now - product.next_try + timedelta(minutes=wait)
+                            datetime_now - product.next_try + dt.timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
                         retry_info = (
@@ -766,3 +786,6 @@ class Download(PluginTopic):
 
         if thread_name_prefix:
             executor._thread_name_prefix = "eodag-download-all"
+
+
+__all__ = ["Download"]

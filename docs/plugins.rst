@@ -7,6 +7,11 @@ EODAG uses a two-level plugin system. *Plugin topics* are abstract interfaces fo
 like *Search* or *Download*. EODAG providers are implementations of at least one plugin topic. The more plugin topics
 are implemented by a provider, the more functionality of eodag are available for this provider.
 
+.. image:: _static/plugins_architecture.png
+   :width: 800
+   :alt: EODAG plugins architecture
+   :class: no-scaled-link
+
 Plugin Management
 ^^^^^^^^^^^^^^^^^
 
@@ -42,6 +47,10 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_dataspace``      | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_dataspace_s3``   | |CreodiasS3Search|                 | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_ghsl``           | |CopGhslSearch|                    | ``None``                        | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_marine``         | |CopMarineSearch|                  | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``creodias``           | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
@@ -72,8 +81,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``meteoblue``          | |MeteoblueSearch|                  | |HttpQueryStringAuth|           | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``peps``               | |QueryStringSearch|                | |GenericAuth|                   | |HTTPDownload|   |
-+------------------------+------------------------------------+---------------------------------+------------------+
 | ``planetary_computer`` | |StacSearch|                       | |SASAuth|                       | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``usgs``               | |UsgsApi|                          | |UsgsApi|                       | |UsgsApi|        |
@@ -99,6 +106,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |KeycloakOIDCPasswordAuth| replace:: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
 .. |HttpQueryStringAuth| replace:: :class:`~eodag.plugins.authentication.qsauth.HttpQueryStringAuth`
 .. |SASAuth| replace:: :class:`~eodag.plugins.authentication.sas_auth.SASAuth`
+.. |EOIAMAuth| replace:: :class:`~eodag.plugins.authentication.eoiam.EOIAMAuth`
 
 .. |AwsDownload| replace:: :class:`~eodag.plugins.download.aws.AwsDownload`
 .. |HTTPDownload| replace:: :class:`~eodag.plugins.download.http.HTTPDownload`
@@ -112,6 +120,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |MeteoblueSearch| replace:: :class:`~eodag.plugins.search.build_search_result.MeteoblueSearch`
 .. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
+.. |CopGhslSearch| replace:: :class:`~eodag.plugins.search.cop_ghsl.CopGhslSearch`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
 .. |StacListAssets| replace:: :class:`~eodag.plugins.search.stac_list_assets.StacListAssets`
 
@@ -231,8 +240,8 @@ return a list of mocked EOProducts on search requests.
                   },
                **kwargs
             }
-            ) for i in range(0, prep.items_per_page)],
-            prep.items_per_page if prep.count else None
+            ) for i in range(0, prep.limit)],
+            prep.limit if prep.count else None
          )
 
 4. Create a `pyproject.toml` file in the package folder and paste in it the following
