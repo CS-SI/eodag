@@ -29,6 +29,7 @@ from stac_validator import stac_validator
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
     GENERIC_STAC_PROVIDER,
+    NOT_AVAILABLE,
     Download,
     EODataAccessGateway,
     EOProduct,
@@ -753,7 +754,7 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
         self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
-        self.assertEqual(results[0].location, "https://provider-url/origin-link")
+        self.assertEqual(results[0].location, NOT_AVAILABLE)
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")
