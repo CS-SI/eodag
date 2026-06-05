@@ -787,7 +787,7 @@ No credentials are needed
 ----
 
 **theia**
------------------
+---------
 
 .. grid:: 2
    :gutter: 2
@@ -816,6 +816,48 @@ No credentials are needed
   Go to `https://gate.stac.teledetection.fr/ <https://gate.stac.teledetection.fr/>`_, then sign in or create an account by
   clicking on ``ORCID`` in the bottom, then ``Register now``. Once logged-in, create an API key.
   You will then see ``access-key`` and ``secret-key`` that you can use in EODAG provider auth credentials.
+
+----
+
+**DLR**
+========
+
+.. admonition:: **German Aerospace Center**
+   :class: note
+
+   DLR provides access to German satellite missions and specialized thematic data hubs.
+
+**dlr_eoc_geoservice**
+----------------------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      DLR Earth Observation Center (EOC) Geoservice.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://geoservice.dlr.de
+        :color: primary
+        :outline:
+        :tooltip: DLR EOC Geoservice website
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  If you do not already have an account for EOC Geoservice, create one by opening the following url in your browser
+  ``https://sso.eoc.dlr.de/geoservice/selfservice/register``.
+
+  Then use your ``username`` and ``password`` in EODAG as provider auth credentials.
 
 ----
 
