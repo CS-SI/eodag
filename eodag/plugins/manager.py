@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import pathlib
 import re
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
@@ -112,11 +113,15 @@ class PluginManager:
                     # use plugin providers if any
                     name = entry_point.dist.name
                     dist = entry_point.dist
-                    plugin_providers_config_path = [
-                        str(x) for x in dist.locate_file(name).rglob("providers.yml")
-                    ]
-                    if plugin_providers_config_path:
-                        plugin_configs = load_config(plugin_providers_config_path[0])
+                    plugin_providers_dir_config_path = dist.locate_file(name).joinpath(
+                        "providers"
+                    )
+                    if plugin_providers_dir_config_path:
+                        plugin_configs: dict[str, ProviderConfig] = {}
+                        for path in pathlib.Path(
+                            plugin_providers_dir_config_path
+                        ).iterdir():
+                            plugin_configs.update(load_config(path.as_posix()))
                         self.providers.update_from_configs(plugin_configs)
         self.rebuild()
 

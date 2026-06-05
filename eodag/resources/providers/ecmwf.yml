@@ -1,0 +1,32 @@
+!provider # MARK: ecmwf
+  name: ecmwf
+  priority: 0
+  description: ECMWF archive products
+  roles:
+    - host
+  url: https://www.ecmwf.int
+  api: !plugin
+    type: EcmwfApi
+    auth_endpoint: https://api.ecmwf.int/v1
+    metadata_mapping:
+      product:type: $.productType
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
+      end_datetime:
+        - 'date={start_datetime#to_iso_date}/to/{end_datetime#to_iso_date(-1,)}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
+      # The geographic extent of the product
+      geometry:
+        - 'area={geometry#to_nwse_bounds_str(/)}'
+        - '$.geometry'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+      qs: $.qs
+      eodag:download_link: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
+  products:
+    # See Archive Catalog in https://apps.ecmwf.int/archive-catalogue/
+    # See available Public Datasets in https://apps.ecmwf.int/datasets/
+    TIGGE_CF_SFC:
+      dataset: tigge
+    GENERIC_COLLECTION:
+      dataset: '{collection}'

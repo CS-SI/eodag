@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import pathlib
 from importlib.resources import files as res_files
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
@@ -682,16 +683,28 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
 def load_default_config() -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary.
 
-    Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
+    Load from eodag `resources/providers` files or `EODAG_PROVIDERS_CFG_DIR` environment
     variable if exists.
+
+    For backwards compatibility, if `EODAG_PROVIDERS_CFG_FILE` environment variable is set, load from it instead of
+    `EODAG_PROVIDERS_CFG_DIR`.
 
     :returns: The default provider's configuration
     """
-    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
-        res_files("eodag") / "resources" / "providers.yml"
-    )
+    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE")
+    eodag_providers_cfg_dir = os.getenv("EODAG_PROVIDERS_CFG_DIR")
 
-    return load_config(eodag_providers_cfg_file)
+    if eodag_providers_cfg_file:
+        return load_config(eodag_providers_cfg_file)
+
+    config_dir = eodag_providers_cfg_dir or str(
+        res_files("eodag") / "resources" / "providers"
+    )
+    providers: dict[str, ProviderConfig] = {}
+    for f in pathlib.Path(config_dir).glob("*.yml"):
+        if f.is_file():
+            providers.update(load_config(str(f)))
+    return providers
 
 
 def load_config(config_path: str) -> dict[str, ProviderConfig]:

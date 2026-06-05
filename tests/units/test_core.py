@@ -41,7 +41,7 @@ from eodag.api.collection import Collection, CollectionsList
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
-from tests import TEST_RESOURCES_PATH
+from tests import TEST_RESOURCES_PATH, TEST_RESOURCES_PROVIDERS_PATH
 from tests.context import (
     DEFAULT_LIMIT,
     DEFAULT_MAX_LIMIT,
@@ -2511,8 +2511,8 @@ class TestCoreConfWithEnvVar(TestCoreBase):
     def test_core_object_prioritize_providers_file_in_envvar(self):
         """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_FILE env var"""
         try:
-            os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-                TEST_RESOURCES_PATH, "file_providers_override.yml"
+            os.environ["EODAG_PROVIDERS_CFG_DIR"] = os.path.join(
+                TEST_RESOURCES_PATH, "providers"
             )
             self.dag = EODataAccessGateway()
             # only foo_provider in conf
@@ -2522,12 +2522,14 @@ class TestCoreConfWithEnvVar(TestCoreBase):
                 "https://foo.bar/search",
             )
         finally:
-            os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+            os.environ.pop("EODAG_PROVIDERS_CFG_DIR", None)
 
     def test_core_collections_config_envvar(self):
         """collections should be loaded from file defined in env var"""
         # setup providers config
-        config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
+        config_path = os.path.join(
+            TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
+        )
         providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
         providers_config[0].products["TEST_PRODUCT_1"] = {"_collection": "TP1"}
         providers_config[0].products["TEST_PRODUCT_2"] = {"_collection": "TP2"}
@@ -4753,7 +4755,7 @@ class TestCoreStrictMode(TestCoreBase):
             TEST_RESOURCES_PATH, "file_collections_modes.yml"
         )
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_providers_override.yml"
+            TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
         )
 
     def tearDown(self):

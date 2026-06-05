@@ -41,6 +41,7 @@ dirn = os.path.dirname
 
 TEST_RESOURCES_PATH = jp(dirn(__file__), "resources")
 RESOURCES_PATH = jp(dirn(__file__), "..", "eodag", "resources")
+TEST_RESOURCES_PROVIDERS_PATH = jp(TEST_RESOURCES_PATH, "providers")
 
 
 class EODagTestBase(unittest.TestCase):
