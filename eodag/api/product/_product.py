@@ -590,11 +590,12 @@ class EOProduct:
             self.remote_location,
             self.location,
         )
-        logger.info(
-            "Remote location of the product is still available through its "
-            "'remote_location' property: %s",
-            self.remote_location,
-        )
+        if self.remote_location != NOT_AVAILABLE:
+            logger.info(
+                "Remote location of the product is still available through its "
+                "'remote_location' property: %s",
+                self.remote_location,
+            )
 
         return fs_path
 
