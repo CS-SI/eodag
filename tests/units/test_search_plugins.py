@@ -23,6 +23,7 @@ import re
 import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
+from importlib import import_module
 from pathlib import Path
 from typing import Literal, Union, get_origin
 from unittest import mock
@@ -4946,6 +4947,87 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.wekeomain_search_plugin.discover_queryables(collection=self.collection)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
+        autospec=True,
+    )
+    def test_plugins_search_oar_discover_queryables(
+        self,
+        mock_stacsearch_discover_queryables,
+    ):
+        """OGCApiRecordsSearch must reuse StacSearch queryables discovery."""
+        OGCApiRecordsSearch = import_module(
+            "eodag.plugins.search.oar"
+        ).OGCApiRecordsSearch
+
+        search_plugin = OGCApiRecordsSearch.__new__(OGCApiRecordsSearch)
+        mock_stacsearch_discover_queryables.return_value = {
+            "collection": self.collection
+        }
+
+        queryables = search_plugin.discover_queryables(collection=self.collection)
+
+        self.assertEqual(queryables, {"collection": self.collection})
+        mock_stacsearch_discover_queryables.assert_called_once_with(
+            search_plugin, collection=self.collection
+        )
+
+    def test_plugins_search_oar_preconfigured_defaults(self):
+        """OGCApiRecordsSearch must expose OGC API - Records search defaults."""
+        from eodag.config import PluginConfig
+
+        OGCApiRecordsSearch = import_module(
+            "eodag.plugins.search.oar"
+        ).OGCApiRecordsSearch
+
+        config = PluginConfig()
+        config.metadata_mapping = {
+            "q": ["custom_q={q}", "$.properties.title"],
+        }
+        config.pagination = {"total_items_nb_key_path": "$.matched"}
+        config.sort = {
+            "sort_by_tpl": "&custom_sort={sort_param}",
+            "sort_order_mapping": {"ascending": "asc", "descending": "desc"},
+        }
+        config.discover_queryables = {"fetch_url": "https://example.test/queryables"}
+        config.products = {}
+
+        plugin = OGCApiRecordsSearch("dummy", config)
+
+        self.assertIn("q", plugin.config.metadata_mapping)
+        self.assertEqual(plugin.config.metadata_mapping["q"][0], "custom_q={q}")
+        self.assertEqual(
+            plugin.config.metadata_mapping["type"][0], "type={type#csv_list}"
+        )
+        self.assertEqual(plugin.config.metadata_mapping["ids"][0], "ids={ids#csv_list}")
+        self.assertEqual(
+            plugin.config.metadata_mapping["externalIds"][0],
+            "externalIds={externalIds#csv_list}",
+        )
+        self.assertEqual(plugin.config.metadata_mapping["bbox"][0], "bbox={bbox}")
+        self.assertEqual(
+            plugin.config.metadata_mapping["datetime"][0], "datetime={datetime}"
+        )
+        self.assertEqual(plugin.config.metadata_mapping["limit"][0], "limit={limit}")
+
+        self.assertIn(
+            "matched", str(plugin.config.pagination["total_items_nb_key_path"])
+        )
+        self.assertIn("next_page_url_key_path", plugin.config.pagination)
+
+        self.assertEqual(plugin.config.sort["sort_by_tpl"], "&custom_sort={sort_param}")
+        self.assertEqual(plugin.config.sort["sort_order_mapping"]["ascending"], "asc")
+        self.assertEqual(plugin.config.sort["sort_order_mapping"]["descending"], "desc")
+
+        self.assertEqual(
+            plugin.config.discover_queryables["fetch_url"],
+            "https://example.test/queryables",
+        )
+        self.assertEqual(
+            plugin.config.discover_queryables["collection_fetch_url"],
+            "{api_endpoint}/../collections/{provider_collection}/queryables",
+        )
 
 
 class TestSearchPluginDedtLumi(BaseSearchPluginTest):
