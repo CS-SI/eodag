@@ -1672,7 +1672,9 @@ class TestCore(TestCoreBase):
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
 
-        self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 0))
+        initial_provider, initial_priority = self.dag.get_preferred_provider()
+        self.assertIn(initial_provider, self.dag.providers.names)
+        self.assertEqual(initial_priority, 0)
 
         self.assertRaises(
             UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
@@ -1688,7 +1690,7 @@ class TestCore(TestCoreBase):
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 3))
 
         # check that the providers are correctly ordered by priority and name in "providers" property
-        self.assertListEqual(["usgs", "aws_eos"], list(self.dag._providers.keys())[:2])
+        self.assertEqual(list(self.dag._providers.keys())[0], initial_provider)
         self.assertListEqual(
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )

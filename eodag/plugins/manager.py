@@ -109,21 +109,49 @@ class PluginManager:
                         "Check that the plugin module (%s) is importable",
                         entry_point.name,
                     )
-                if entry_point.dist and entry_point.dist.name != "eodag":
-                    # use plugin providers if any
-                    name = entry_point.dist.name
-                    dist = entry_point.dist
-                    plugin_providers_dir_config_path = dist.locate_file(name).joinpath(
-                        "providers"
-                    )
-                    if plugin_providers_dir_config_path:
-                        plugin_configs: dict[str, ProviderConfig] = {}
-                        for path in pathlib.Path(
-                            plugin_providers_dir_config_path
-                        ).iterdir():
-                            plugin_configs.update(load_config(path.as_posix()))
-                        self.providers.update_from_configs(plugin_configs)
+                plugin_config_paths = self._get_external_provider_config_paths(
+                    entry_point
+                )
+                if plugin_config_paths:
+                    plugin_configs: dict[str, ProviderConfig] = {}
+                    for path in plugin_config_paths:
+                        plugin_configs.update(load_config(path.as_posix()))
+                    self.providers.update_from_configs(plugin_configs)
         self.rebuild()
+
+    def _get_external_provider_config_paths(
+        self,
+        entry_point: importlib_metadata.EntryPoint,
+    ) -> list[pathlib.Path]:
+        """Return provider config paths exposed by an external plugin distribution."""
+        config_paths: list[pathlib.Path] = []
+        dist = entry_point.dist
+        dist_name = getattr(dist, "name", None)
+
+        if not dist or not isinstance(dist_name, str) or dist_name == "eodag":
+            return config_paths
+
+        providers_dir = pathlib.Path(
+            str(dist.locate_file(pathlib.Path("eodag/providers")))
+        )
+        if providers_dir.exists() and providers_dir.is_dir():
+            config_paths.extend(
+                path for path in providers_dir.iterdir() if path.is_file()
+            )
+
+        module_name = getattr(entry_point, "module", None)
+        if isinstance(module_name, str) and module_name:
+            providers_yml = pathlib.Path(
+                str(
+                    dist.locate_file(
+                        pathlib.Path(module_name.replace(".", "/")) / "providers.yml"
+                    )
+                )
+            )
+            if providers_yml.exists() and providers_yml.is_file():
+                config_paths.append(providers_yml)
+
+        return config_paths
 
     def rebuild(self, providers: Optional[ProvidersDict] = None) -> None:
         """(Re)Build plugin manager mapping and cache"""
