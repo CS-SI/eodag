@@ -40,7 +40,7 @@
         extent: '$.extent'
     pagination:
       max_limit: 100
-      next_page_token_key: page
+      next_page_token_key: token
     sort:
       sort_param_mapping:
         id: id

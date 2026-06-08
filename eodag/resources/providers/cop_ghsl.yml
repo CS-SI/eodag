@@ -77,8 +77,9 @@
       metadata_mapping:
         tile_size: '{$.tile_size#replace_str("2m", "02")}'
         dataset: ESM_BUILT_VHR2015_EUROPE_R2019_3035_{tile_size}
+        _dataset_modified: '{$.dataset#replace_str("VHR2015_EUROPE_R2019_3035_10m","VHR2015CLASS_EUROPE_R2019_3035_10")}'  # modify dataset if tile_size is 10m
         eodag:download_link: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/{dataset}/V1-0/tiles/{tile_id}.zip'
-    # produc types with one file
+    # collections with one file
     GHS_DUC:
       _collection: DUC
       metadata_mapping:
