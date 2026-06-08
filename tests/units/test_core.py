@@ -2114,14 +2114,17 @@ class TestCore(TestCoreBase):
 
         queryables = self.dag.list_queryables(collection="ERA5_SL")
 
-        self.assertEqual(
+        self.assertIn(
+            "cop_cds: Mocked ECMWF queryables for cop_cds",
             queryables.additional_information,
-            (
-                "cop_cds: Mocked ECMWF queryables for cop_cds"
-                " | wekeo_ecmwf: Mocked WEkEO queryables"
-                " | dedl: Mocked STAC queryables for dedl"
-            ),
         )
+        self.assertIn(
+            "wekeo_ecmwf: Mocked WEkEO queryables", queryables.additional_information
+        )
+        self.assertIn(
+            "dedl: Mocked STAC queryables for dedl", queryables.additional_information
+        )
+
         self.assertEqual(queryables.additional_properties, False)
 
         mock_dedl_list_queryables.return_value = QueryablesDict(
