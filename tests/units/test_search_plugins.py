@@ -276,6 +276,38 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.sara_search_plugin = self.get_search_plugin(self.collection, provider)
         self.sara_auth_plugin = self.get_auth_plugin(self.sara_search_plugin)
 
+    def test_plugins_search_querystringsearch_collect_search_urls_without_numeric_paging(
+        self,
+    ):
+        """collect_search_urls must still build a URL when numeric paging is disabled"""
+        pagination_conf = copy_deepcopy(self.sara_search_plugin.config.pagination)
+        self.sara_search_plugin.config.pagination["next_page_token_key"] = "cursor"
+
+        prep = PreparedSearch(limit=None, count=False)
+        prep.query_string = "startDate=2020-08-08&completionDate=2020-08-16"
+        prep.sort_by_qs = "&sortParam=startDate&sortOrder=asc"
+
+        try:
+            urls, total_results = self.sara_search_plugin.collect_search_urls(
+                prep,
+                collection=self.collection,
+            )
+        finally:
+            self.sara_search_plugin.config.pagination = pagination_conf
+
+        expected_endpoint = self.sara_search_plugin.config.api_endpoint.rstrip(
+            "/"
+        ).format(_collection=self.collection)
+
+        self.assertEqual(
+            [
+                f"{expected_endpoint}?startDate=2020-08-08&completionDate=2020-08-16"
+                "&sortParam=startDate&sortOrder=asc"
+            ],
+            urls,
+        )
+        self.assertIsNone(total_results)
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )

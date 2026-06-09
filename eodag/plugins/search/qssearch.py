@@ -946,6 +946,12 @@ class QueryStringSearch(Search):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 _collection=provider_collection
             )
+
+            # default url
+            next_page_url = search_endpoint
+            if qs_with_sort:
+                next_page_url = f"{search_endpoint}?{qs_with_sort}"
+
             # numeric page token
             if (
                 next_page_token_key == "page" or next_page_token_key == "skip"
