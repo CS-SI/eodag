@@ -25,8 +25,10 @@ class StreamResponseContent(Iterable[bytes]):
                     stream.interrupt()
                 StreamResponseContent.__instances = []
 
-            signal.signal(signal.SIGINT, signal_handler)
-            signal.signal(signal.SIGTERM, signal_handler)
+            import contextlib
+            with contextlib.suppress(ValueError):
+                signal.signal(signal.SIGINT, signal_handler)
+                signal.signal(signal.SIGTERM, signal_handler)
 
     def __init__(self, content: Union[Iterable[bytes], bytes]):
         self.buffer: bytes = b""
