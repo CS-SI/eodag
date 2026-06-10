@@ -1070,17 +1070,17 @@ class HTTPDownload(Download):
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 
-            product.headers = product._stream.headers  # type: ignore[attr-defined]
+            product.headers = product._stream.headers
             filename = self._check_product_filename(product)
-            content_type = product.headers.get("Content-Type")  # type: ignore[attr-defined]
+            content_type = product.headers.get("Content-Type")
             guessed_content_type = (
                 guess_file_type(filename) if filename and not content_type else None
             )
             if guessed_content_type is not None:
-                product.headers["Content-Type"] = guessed_content_type  # type: ignore[attr-defined]
+                product.headers["Content-Type"] = guessed_content_type
 
             progress_callback.reset(total=stream_size)
-            product.size = stream_size  # type: ignore[attr-defined]
+            product.size = stream_size
 
             product.filename = filename
             return product._stream.iter_content(chunk_size=64 * 1024)

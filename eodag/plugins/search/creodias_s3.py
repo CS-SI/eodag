@@ -84,7 +84,7 @@ class CreodiasS3Search(ODataV4Search):
 
         for product in products:
             # backup original register_downloader to register_downloader_only
-            product.register_downloader_only = product.register_downloader  # type: ignore[attr-defined]
+            product.register_downloader_only = product.register_downloader
             # patched register_downloader that will also update assets
             product.register_downloader = MethodType(  # type: ignore[method-assign]
                 patched_register_downloader, product

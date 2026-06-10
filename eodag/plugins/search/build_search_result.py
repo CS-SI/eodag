@@ -1184,7 +1184,7 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # backup original register_downloader to register_downloader_only
-        product.register_downloader_only = product.register_downloader  # type: ignore[attr-defined]
+        product.register_downloader_only = product.register_downloader
         # patched register_downloader that will also update properties
         product.register_downloader = MethodType(patched_register_downloader, product)  # type: ignore[method-assign]
 
