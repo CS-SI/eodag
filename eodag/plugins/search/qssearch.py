@@ -76,6 +76,7 @@ from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
+from eodag.types.stac_extensions import STAC_EXTENSIONS, ProviderStacExtension
 from eodag.utils import (
     DEFAULT_LIMIT,
     DEFAULT_PAGE,
@@ -2192,6 +2193,17 @@ class StacSearch(PostJsonSearch):
                 f"Cannot fetch global queryables for {self.provider}. A collection must be specified"
             )
 
+        # get balcklist of provider's parameter names to exlude from queryables
+        exclude_field_names: list[str] = []
+        for ext in STAC_EXTENSIONS:
+            if not isinstance(ext, ProviderStacExtension):
+                continue
+            if ext.field_name_prefix != self.provider:
+                continue
+            if ext.exclude_field_names:
+                exclude_field_names = ext.exclude_field_names
+                break
+
         try:
             unparsed_fetch_url = (
                 self.config.discover_queryables["collection_fetch_url"]
@@ -2259,6 +2271,9 @@ class StacSearch(PostJsonSearch):
             field_definitions: dict[str, Any] = dict()
             StacQueryables = Queryables.from_stac_models()
             for json_param, json_mtd in json_queryables.items():
+                if json_param in exclude_field_names:
+                    continue
+
                 param = self._get_provider_specific_queryable(
                     json_param, self.get_metadata_mapping(collection)
                 )
