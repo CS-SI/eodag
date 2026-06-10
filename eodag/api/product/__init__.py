@@ -70,7 +70,3 @@ def __getattr__(name: str):
 
 def __dir__():
     return __all__
-
-
-# exportable content
-__all__ = ["Asset", "AssetsDict", "EOProduct", "unregistered_product_from_item"]

@@ -179,6 +179,67 @@ mimetypes.add_type("image/jp2", ".jp2")
 _DEFAULT_SHAPELY_GEOMETRY = None
 
 
+def _build_float_range_cls() -> type:
+    """Build the :class:`FloatRange` class lazily to avoid importing ``click`` at
+    module load time (``click`` is only needed by the CLI)."""
+    import click
+
+    class FloatRange(click.types.FloatParamType):
+        """A parameter that works similar to :data:`click.FLOAT` but restricts the
+        value to fit into a range. Fails if the value doesn't fit into the range.
+        """
+
+        name = "percentage"
+
+        def __init__(
+            self, min: Optional[float] = None, max: Optional[float] = None
+        ) -> None:
+            self.min = min
+            self.max = max
+
+        def convert(
+            self,
+            value: Any,
+            param: Optional["click.core.Parameter"],
+            ctx: Optional["click.core.Context"],
+        ) -> Any:
+            """Convert value"""
+            rv = click.types.FloatParamType.convert(self, value, param, ctx)
+            if (
+                self.min is not None
+                and rv < self.min
+                or self.max is not None
+                and rv > self.max
+            ):
+                if self.min is None:
+                    self.fail(
+                        "%s is bigger than the maximum valid value %s."
+                        % (rv, self.max),
+                        param,
+                        ctx,
+                    )
+                elif self.max is None:
+                    self.fail(
+                        "%s is smaller than the minimum valid value %s."
+                        % (rv, self.min),
+                        param,
+                        ctx,
+                    )
+                else:
+                    self.fail(
+                        "%s is not in the valid range of %s to %s."
+                        % (rv, self.min, self.max),
+                        param,
+                        ctx,
+                    )
+            return rv
+
+        def __repr__(self) -> str:
+            return "FloatRange(%r, %r)" % (self.min, self.max)
+
+    return FloatRange
+
+
 def __getattr__(name: str):
     if name == "DEFAULT_SHAPELY_GEOMETRY":
         global _DEFAULT_SHAPELY_GEOMETRY
@@ -188,6 +249,10 @@ def __getattr__(name: str):
             _DEFAULT_SHAPELY_GEOMETRY = box(-180, -90, 180, 90)
         globals()["DEFAULT_SHAPELY_GEOMETRY"] = _DEFAULT_SHAPELY_GEOMETRY
         return _DEFAULT_SHAPELY_GEOMETRY
+    if name == "FloatRange":
+        cls = _build_float_range_cls()
+        globals()["FloatRange"] = cls
+        return cls
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
