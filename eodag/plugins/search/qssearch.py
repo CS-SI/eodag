@@ -2375,7 +2375,7 @@ class StacSearch(PostJsonSearch):
             provider_queryable, metadata_mapping
         ) or StacQueryables.get_queryable_from_alias(provider_queryable)
 
-        # step 2: check if metadata_param is defined in a Provider STAC Extension
+        # step 2: check if eodag_queryable is defined in a Provider STAC Extension
 
         # provider prefix regex
         prefix_re = re.compile(r"^" + re.escape(self.provider) + r"[_:]")
