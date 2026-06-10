@@ -75,7 +75,7 @@ from tqdm.auto import tqdm
 from .exceptions import MisconfiguredError
 from .logging import get_disable_tqdm
 from .logging import logging as eodag_logging
-from .streamresponse import StreamResponse
+from .streamresponse import StreamResponse, StreamResponseContent
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
@@ -1829,6 +1829,7 @@ __all__ = [
     "ARRAY_FIELD_MATCH",
     "FloatRange",
     "StreamResponse",
+    "StreamResponseContent",
     "DownloadedCallback",
     "ProgressCallback",
     "MockResponse",

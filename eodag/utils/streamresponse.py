@@ -1,5 +1,6 @@
 import os
 import signal
+import threading
 from dataclasses import dataclass, field
 from typing import Iterable, Iterator, Mapping, Optional, Union
 
@@ -14,19 +15,32 @@ class StreamResponseContent(Iterable[bytes]):
     __instances: list["StreamResponseContent"] = []
 
     @staticmethod
-    def init():
-        """Main static initializer"""
-        if not StreamResponseContent.__initialized:
-            StreamResponseContent.__initialized = True
+    def install_signal_handlers() -> bool:
+        """Register SIGINT/SIGTERM handlers that interrupt any live stream.
 
-            # Catch end of main process to internal status
-            def signal_handler(sig, frame):
-                for stream in StreamResponseContent.__instances:
-                    stream.interrupt()
-                StreamResponseContent.__instances = []
+        This must be called explicitly from the main thread (typically during a
+        server's startup) because :func:`signal.signal` only works there. It is
+        a no-op if the handlers are already installed or if it is called outside
+        of the main thread.
 
-            signal.signal(signal.SIGINT, signal_handler)
-            signal.signal(signal.SIGTERM, signal_handler)
+        :returns: ``True`` if the handlers were installed, ``False`` otherwise.
+        """
+        if StreamResponseContent.__initialized:
+            return False
+        if threading.current_thread() is not threading.main_thread():
+            return False
+
+        StreamResponseContent.__initialized = True
+
+        # Catch end of main process to internal status
+        def signal_handler(sig, frame):
+            for stream in StreamResponseContent.__instances:
+                stream.interrupt()
+            StreamResponseContent.__instances = []
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        return True
 
     def __init__(self, content: Union[Iterable[bytes], bytes]):
         self.buffer: bytes = b""
@@ -63,9 +77,6 @@ class StreamResponseContent(Iterable[bytes]):
             result, self.buffer = self.buffer[:size], self.buffer[size:]
 
         return bytes(result)
-
-
-StreamResponseContent.init()
 
 
 @dataclass
