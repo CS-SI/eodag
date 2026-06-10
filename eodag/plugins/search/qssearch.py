@@ -1860,7 +1860,13 @@ class PostJsonSearch(QueryStringSearch):
             if "eodag:download_link" in product.properties:
                 decoded_link = unquote(product.properties["eodag:download_link"])
                 if decoded_link[0] == "{":  # not a url but a dict
-                    collection = product.collection or ""
+                    if product.collection is None:
+                        msg = (
+                            f"Cannot build download query parameters for "
+                            f"{product}: collection is undefined"
+                        )
+                        raise MisconfiguredError(msg)
+                    collection = product.collection
                     default_values = deepcopy(self.config.products.get(collection, {}))
                     default_values.pop("metadata_mapping", None)
                     searched_values = orjson.loads(decoded_link)
@@ -1879,6 +1885,12 @@ class PostJsonSearch(QueryStringSearch):
                 and "collection" in product.properties["eodag:order_link"]
                 and "order" not in product.properties["eodag:order_link"]
             ):
+                if product.collection is None:
+                    msg = (
+                        f"Cannot build order link for "
+                        f"{product}: collection is undefined"
+                    )
+                    raise MisconfiguredError(msg)
                 product.properties["eodag:order_link"] = product.properties[
                     "eodag:order_link"
                 ].replace("collection", product.collection)
