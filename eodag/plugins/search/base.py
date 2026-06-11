@@ -457,6 +457,7 @@ class Search(PluginTopic):
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from collection metadata mapping.
+
         :param collection: collection id (optional)
         :param alias: (optional) alias of the collection
         :returns: dict of annotated queryables
