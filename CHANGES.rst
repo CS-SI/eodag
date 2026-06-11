@@ -3,6 +3,70 @@ Release history
 ===============
 
 
+v4.4.0 (2026-06-11)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Check plugin conf tag in providers.yml (`#2226`_, `160d347`_)
+
+* **mapping**: Remove arbitrary download_link for STAC providers (`#2229`_, `34f65ef`_)
+
+* **providers**: Dedl pagination (`#2212`_, `1053ec6`_)
+
+* **stream**: Make signal handler registration explicit and main-thread only (`#2234`_, `f22efcc`_)
+
+* **typing**: Avoid eodag-cube EOProduct type mismatch in plugins (`#2219`_, `07c2f3f`_)
+
+Continuous Integration
+----------------------
+
+* Benchmark for perf regression check (`#2222`_, `8411444`_)
+
+* Compare median time in benchmarks (`#2225`_, `54ad977`_)
+
+Features
+--------
+
+* **providers**: Add Data Terra THEIA provider (`#2136`_, `c37dddf`_)
+
+* **providers**: Add DLR EOC Geoservice Provider (`#2057`_, `70b2d4b`_)
+
+Performance Improvements
+------------------------
+
+* **cli**: Improve the load time of eodag (`#2097`_, `0b219ce`_)
+
+Testing
+-------
+
+* Add more benchmarks for perf regression checks (`#2223`_, `9da3ebf`_)
+
+.. _#2057: https://github.com/CS-SI/eodag/pull/2057
+.. _#2097: https://github.com/CS-SI/eodag/pull/2097
+.. _#2136: https://github.com/CS-SI/eodag/pull/2136
+.. _#2212: https://github.com/CS-SI/eodag/pull/2212
+.. _#2219: https://github.com/CS-SI/eodag/pull/2219
+.. _#2222: https://github.com/CS-SI/eodag/pull/2222
+.. _#2223: https://github.com/CS-SI/eodag/pull/2223
+.. _#2225: https://github.com/CS-SI/eodag/pull/2225
+.. _#2226: https://github.com/CS-SI/eodag/pull/2226
+.. _#2229: https://github.com/CS-SI/eodag/pull/2229
+.. _#2234: https://github.com/CS-SI/eodag/pull/2234
+.. _07c2f3f: https://github.com/CS-SI/eodag/commit/07c2f3f47d49919c22a9fc5a53269297281a360c
+.. _0b219ce: https://github.com/CS-SI/eodag/commit/0b219ce5dba86f4338192eed38aacbdd0c725dd4
+.. _1053ec6: https://github.com/CS-SI/eodag/commit/1053ec6a8725c22a71feb23e5e9bb17cc1353c18
+.. _160d347: https://github.com/CS-SI/eodag/commit/160d3473358256c0372f2fea3d25aa87f3f35f8c
+.. _34f65ef: https://github.com/CS-SI/eodag/commit/34f65ef5ea398d1c60fab56e716c724627d878e2
+.. _54ad977: https://github.com/CS-SI/eodag/commit/54ad977e2548fe136c7d6433ce497c8bbaa8689c
+.. _70b2d4b: https://github.com/CS-SI/eodag/commit/70b2d4b9fe47402f4ef5da2f9e87bb59841dc62f
+.. _8411444: https://github.com/CS-SI/eodag/commit/841144480606f6a4549807cb88fbdb3690f1411e
+.. _9da3ebf: https://github.com/CS-SI/eodag/commit/9da3ebfead36ff035ce6d372697172c94422b89f
+.. _c37dddf: https://github.com/CS-SI/eodag/commit/c37dddffeb1aa9ac970a14df19bed0031a04fbb3
+.. _f22efcc: https://github.com/CS-SI/eodag/commit/f22efcca4073a086f21c53edaee26631551c97de
+
+
 v4.3.1 (2026-06-01)
 ===================
 
