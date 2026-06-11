@@ -70,6 +70,8 @@ class GeodesSearch(StacSearch):
 
         for product in products:
             download_link = product.properties.get("eodag:download_link")
+            if download_link is None:
+                continue
 
             # find matching product
             product_availability_list = [

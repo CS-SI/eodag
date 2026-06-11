@@ -227,14 +227,13 @@ class CSWSearch(Search):
         else:
             properties["geometry"] = wkt.loads(properties["geometry"])
         return EOProduct(
-            collection,
-            self.provider,
+            provider=self.provider,
             # TODO: EOProduct has no more *args in its __init__ (search_args attribute removed)
             # Not sure why download_url was here in the first place, needs to be updated,
             # possibly by having instead 'eodag:download_link' in the properties
             # download_url,
-            properties,
-            searched_bbox=kwargs.get("footprints"),
+            properties=properties,
+            collection=collection,
         )
 
     def __convert_query_params(

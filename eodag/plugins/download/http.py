@@ -808,7 +808,7 @@ class HTTPDownload(Download):
                 max_workers=getattr(self.config, "max_workers", None)
             )
             try:
-                assets_values = product.assets.get_values(kwargs.get("asset"))
+                assets_values = product.assets.get_values(kwargs.get("asset") or "")
                 with executor:
                     assets_stream_list = self._raw_stream_download_assets(
                         product,
@@ -873,7 +873,7 @@ class HTTPDownload(Download):
 
         return StreamResponse(
             content=chain(iter([first_chunk]), chunk_iterator),
-            headers=product.headers,
+            headers=getattr(product, "headers", {}),
             filename=getattr(product, "filename", None),
             size=getattr(product, "size", None),
         )
@@ -1261,7 +1261,7 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = product.assets.get_values(kwargs.get("asset"))
+        assets_values = product.assets.get_values(kwargs.get("asset") or "")
 
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
