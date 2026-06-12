@@ -5086,7 +5086,7 @@
         extent: '$.extent'
     pagination:
       max_limit: 100
-      next_page_token_key: page
+      next_page_token_key: token
     sort:
       sort_param_mapping:
         id: id
@@ -6758,6 +6758,50 @@
   download: !plugin
     type: HTTPDownload
 ---
+!provider # MARK: DLR EOC Geoservice
+  name: dlr_eoc_geoservice
+  priority: 0
+  description: DLR Earth Observation Center (EOC) Geoservice
+  roles:
+    - host
+  url: https://geoservice.dlr.de
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://geoservice.dlr.de/eoc/ogc/stac/v1/search
+    sort:
+      sort_by_default:
+        - !!python/tuple [start_datetime, ASC]
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.datetime
+        created: properties.created
+        updated: properties.updated
+        eo:cloud_cover: properties.eo:cloud_cover
+  products:
+    S2_MSI_L2A_MAJA:
+      _collection: S2_L2A_MAJA
+      metadata_mapping:
+        eodag:download_link: '$.assets.data.href'
+    SUPERSITES:
+      _collection: SUPERSITES
+      metadata_mapping:
+        eodag:download_link: '$.assets.data.href'
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload
+    auth_error_code:
+      - 401
+      - 403
+    products:
+      S2_MSI_L2A_MAJA:
+        ignore_assets: true
+      SUPERSITES:
+        ignore_assets: true
+  auth: !plugin
+    type: GenericAuth
+    matching_url: https://download.geoservice.dlr.de
+---
 !provider # MARK: eocat
   name: eocat
   priority: 0
@@ -7554,3 +7598,45 @@
       _collection: SENTINEL-5P
     GENERIC_COLLECTION:
       _collection: '{collection}'
+---
+!provider # MARK: theia
+  name: theia
+  priority: 0
+  description: Data Terra Theia, environmental thematic hub for land data access.
+  roles:
+    - host
+  url: https://api.datastore-mtd.theia.data-terra.org/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://api.datastore-mtd.theia.data-terra.org/search'
+    timeout: 90
+    discover_collections:
+      fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections?limit=50'
+      result_type: json
+      results_entry: '$.collections[?(@.links[*].rel=="items")]'
+      single_collection_fetch_url: 'https://api.datastore-mtd.theia.data-terra.org/collections/{_collection}'
+      single_collection_parsable_metadata:
+        platform: '{$.summaries.platform#csv_list}'
+    sort:
+      sort_by_default:
+        - !!python/tuple [start_datetime, ASC]
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.datetime
+        created: properties.created
+        updated: properties.updated
+        eo:cloud_cover: properties.eo:cloud_cover
+  products:
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: SASAuth
+    matching_url: https://s3-data.meso.umontpellier.fr
+    auth_uri: 'https://signing.stac.teledetection.fr/sign?url={url}'
+    signed_url_key: href
+    ssl_verify: true
+    headers:
+      access-key: "{access_key}"
+      secret-key: "{secret_key}"

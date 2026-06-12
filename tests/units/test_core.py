@@ -487,7 +487,7 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S2_MSI_L2A_COG": ["earth_search"],
-        "S2_MSI_L2A_MAJA": ["geodes", "geodes_s3"],
+        "S2_MSI_L2A_MAJA": ["dlr_eoc_geoservice", "geodes", "geodes_s3"],
         "S2_MSI_L2B_MAJA_SNOW": ["geodes", "geodes_s3"],
         "S2_MSI_L2B_MAJA_WATER": ["geodes", "geodes_s3"],
         "S3_EFR": [
@@ -855,6 +855,7 @@ class TestCore(TestCoreBase):
         "SPACENET_ROADS_NETWORK_DETECTION": ["dedl"],
         "SPACENET_OFF_NADIR_BUILDING": ["dedl"],
         "SPACENET_ROADS_NETWORK_ROUTE_TRAVEL": ["dedl"],
+        "SUPERSITES": ["dlr_eoc_geoservice"],
         GENERIC_COLLECTION: [
             "usgs",
             "creodias",
@@ -887,6 +888,7 @@ class TestCore(TestCoreBase):
         "dedl",
         "dedt_lumi",
         "dedt_mn5",
+        "dlr_eoc_geoservice",
         "earth_search",
         "earth_search_gcs",
         "ecmwf",
@@ -899,6 +901,7 @@ class TestCore(TestCoreBase):
         "meteoblue",
         "planetary_computer",
         "sara",
+        "theia",
         "usgs",
         "usgs_satapi_aws",
         "wekeo_cmems",
@@ -2245,6 +2248,16 @@ class TestCore(TestCoreBase):
             },
             "dedt_lumi": None,
             "dedt_mn5": None,
+            "dlr_eoc_geoservice": {
+                "sortables": [
+                    "id",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "eo:cloud_cover",
+                ],
+                "max_sort_params": None,
+            },
             "earth_search": {
                 "sortables": [
                     "id",
@@ -2326,6 +2339,16 @@ class TestCore(TestCoreBase):
                     "sar:instrument_mode",
                 ],
                 "max_sort_params": 1,
+            },
+            "theia": {
+                "sortables": [
+                    "id",
+                    "start_datetime",
+                    "created",
+                    "updated",
+                    "eo:cloud_cover",
+                ],
+                "max_sort_params": None,
             },
             "usgs": None,
             "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},

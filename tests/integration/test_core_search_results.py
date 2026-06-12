@@ -29,6 +29,7 @@ from stac_validator import stac_validator
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
     GENERIC_STAC_PROVIDER,
+    NOT_AVAILABLE,
     Download,
     EODataAccessGateway,
     EOProduct,
@@ -647,7 +648,7 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertIsNotNone(search_results.number_matched)
 
     @mock.patch(
-        "eodag.api.core.fetch_stac_items",
+        "eodag.utils.stac_reader.fetch_stac_items",
         autospec=True,
         side_effect=[
             [
@@ -753,7 +754,7 @@ class TestCoreSearchResults(EODagTestCase):
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
         self.assertEqual(results[0].collection, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
-        self.assertEqual(results[0].location, "https://provider-url/origin-link")
+        self.assertEqual(results[0].location, NOT_AVAILABLE)
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")
@@ -770,7 +771,7 @@ class TestCoreSearchResults(EODagTestCase):
         )
         self.assertIsInstance(results[1].downloader, Download)
 
-    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    @mock.patch("eodag.utils.stac_reader.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_known_provider(
         self,
         mock_fetch_stac_items,
@@ -798,7 +799,7 @@ class TestCoreSearchResults(EODagTestCase):
         )
         self.assertIsInstance(results[0].downloader, Download)
 
-    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    @mock.patch("eodag.utils.stac_reader.fetch_stac_items", autospec=True)
     def test_core_import_stac_items_from_unknown_provider(self, mock_fetch_stac_items):
         """The core api must import STAC items from an unknwown provider"""
         stac_singlefile = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")

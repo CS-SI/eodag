@@ -23,7 +23,16 @@ import logging
 import os
 import re
 import tempfile
-from typing import TYPE_CHECKING, Any, Iterable, Literal, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 
 import geojson
 import orjson
@@ -79,6 +88,7 @@ from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
+    from requests.structures import CaseInsensitiveDict
     from shapely.geometry.base import BaseGeometry
 
     from eodag import EODataAccessGateway
@@ -142,6 +152,13 @@ class EOProduct:
     next_try: dt.datetime
     #: Stream for requests
     _stream: requests.Response
+    #: HTTP response headers, stored during streamed download
+    headers: CaseInsensitiveDict[str]
+    #: Product size in bytes, stored during streamed download
+    size: Optional[int]
+    #: Backup of the original ``register_downloader``, set by search plugins that
+    #: patch ``register_downloader`` on the instance
+    register_downloader_only: Callable[..., None]
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
@@ -590,11 +607,12 @@ class EOProduct:
             self.remote_location,
             self.location,
         )
-        logger.info(
-            "Remote location of the product is still available through its "
-            "'remote_location' property: %s",
-            self.remote_location,
-        )
+        if self.remote_location != NOT_AVAILABLE:
+            logger.info(
+                "Remote location of the product is still available through its "
+                "'remote_location' property: %s",
+                self.remote_location,
+            )
 
         return fs_path
 
