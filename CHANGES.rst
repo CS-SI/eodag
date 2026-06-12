@@ -6,6 +6,18 @@ Release history
 v4.4.0 (2026-06-11)
 ===================
 
+Features
+--------
+
+* **providers**: Add Data Terra THEIA provider (`#2136`_, `c37dddf`_)
+
+* **providers**: Add DLR EOC Geoservice Provider (`#2057`_, `70b2d4b`_)
+
+Performance Improvements
+------------------------
+
+* **cli**: Improve the load time of eodag (`#2097`_, `0b219ce`_)
+
 Bug Fixes
 ---------
 
@@ -25,18 +37,6 @@ Continuous Integration
 * Benchmark for perf regression check (`#2222`_, `8411444`_)
 
 * Compare median time in benchmarks (`#2225`_, `54ad977`_)
-
-Features
---------
-
-* **providers**: Add Data Terra THEIA provider (`#2136`_, `c37dddf`_)
-
-* **providers**: Add DLR EOC Geoservice Provider (`#2057`_, `70b2d4b`_)
-
-Performance Improvements
-------------------------
-
-* **cli**: Improve the load time of eodag (`#2097`_, `0b219ce`_)
 
 Testing
 -------
