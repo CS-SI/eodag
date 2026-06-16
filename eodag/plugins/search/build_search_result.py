@@ -957,7 +957,9 @@ class ECMWFSearch(PostJsonSearch):
             # updates the properties with the values given based on the information from the element
             _update_properties_from_element(prop, element, values)
 
-            default = defaults.get(name)
+            # default value is set with the following priority:
+            # input default values > form details default value > no default value
+            default = defaults.get(name, details.get("default"))
 
             if details:
                 fields = details.get("fields")
@@ -974,10 +976,9 @@ class ECMWFSearch(PostJsonSearch):
             is_required: bool
             if bool(element.get("required", False)):
                 # required by form
-                if available_values.get(name):
-                    is_required = True
-                else:
-                    # keyword required and the list of available values is empty:
+                is_required = True
+                if name in available_values and not available_values[name]:
+                    # keyword required by form, defined in some constraint and the list of available values is empty:
                     # don't add this keyword to the list of queryables because
                     # it cannot be used with this combination of parameters
                     continue
