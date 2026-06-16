@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Annotated, get_args
+from typing import TYPE_CHECKING, Annotated
 
 import orjson
 from pydantic import AliasChoices
@@ -40,7 +40,6 @@ from eodag.types.search_args import SortByList
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils import (
     GENERIC_COLLECTION,
-    copy_deepcopy,
     deepcopy,
     format_dict_items,
     format_pydantic_error,
@@ -477,9 +476,7 @@ class Search(PluginTopic):
         queryables_model = create_stac_metadata_model(
             base_models=[Queryables, CommonStacMetadata]
         )
-        eodag_queryables = copy_deepcopy(
-            model_fields_to_annotated(queryables_model.model_fields)
-        )
+        eodag_queryables = model_fields_to_annotated(queryables_model.model_fields)
         queryables["collection"] = eodag_queryables.pop("collection")
         # add default value for collection
         if collection_or_alias := alias or collection:
@@ -491,12 +488,8 @@ class Search(PluginTopic):
         prefix_re = re.compile(r"^" + re.escape(self.provider) + r"[_:]")
 
         for k, v in eodag_queryables.items():
-            eodag_queryable_field_info = (
-                get_args(v)[1] if len(get_args(v)) > 1 else None
-            )
-            if not isinstance(eodag_queryable_field_info, FieldInfo):
-                continue
-            queryable_alias = eodag_queryable_field_info.alias
+            field_info = queryables_model.model_fields[k]
+            queryable_alias = field_info.alias
             # Collect every alias under which the queryable could appear in the
             # metadata_mapping (model field name + declared alias(es)).
             candidates = (
@@ -513,7 +506,7 @@ class Search(PluginTopic):
                 for c in candidates
                 if c
             )
-            if eodag_queryable_field_info.is_required() or in_metadata:
+            if field_info.is_required() or in_metadata:
                 queryables[k] = v
         return queryables
 

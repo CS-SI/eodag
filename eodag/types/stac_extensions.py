@@ -633,8 +633,6 @@ class ProviderStacExtension(BaseStacExtension):
     forms as input, while serializing as the stac-prefixed form.
     """
 
-    exclude_field_names: Optional[list[str]] = None
-
     @model_validator(mode="after")
     def setup_field_aliases(self) -> "ProviderStacExtension":
         """Set up dual (prefixed/unprefixed) aliases on extension fields."""
@@ -701,11 +699,6 @@ class WekeoExtension(ProviderStacExtension):
     FIELDS: type[BaseModel] = WekeoFields
 
     field_name_prefix: Optional[str] = "wekeo_main"
-    exclude_field_names: Optional[list[str]] = [
-        "itemsPerPage",
-        "startIndex",
-        "sortOrder",
-    ]
 
 
 STAC_EXTENSIONS = [

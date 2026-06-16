@@ -3080,6 +3080,11 @@
       satellite:
         - '{{"satellite": {satellite}}}'
         - '$.null'
+      # parameters returned by the provider queryables endpoint but not queryable
+      # in eodag (declared as simple string values to be excluded from queryables)
+      itemsPerPage: '$.null'
+      startIndex: '$.null'
+      sortOrder: '$.null'
   products:
     S1_SAR_GRD:
       _collection: EO:ESA:DAT:SENTINEL-1
