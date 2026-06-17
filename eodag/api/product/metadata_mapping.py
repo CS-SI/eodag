@@ -34,6 +34,7 @@ from dateutil.tz import tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
+from pydantic import AliasChoices
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import transform
@@ -118,6 +119,16 @@ def get_metadata_path(
                       above. Or the string `$.properties.id`.
     :returns: Either, None and the path to the metadata value, or a list of converter
              and its args, and the path to the metadata value.
+
+    Non-queryable mapping (plain string) — no converter:
+
+    >>> get_metadata_path("$.properties.id")
+    (None, '$.properties.id')
+
+    Queryable mapping (list) with a converter:
+
+    >>> get_metadata_path(["platform", "{$.properties.platform#to_upper}"])
+    (['to_upper', None], '$.properties.platform')
     """
     path = get_metadata_path_value(map_value)
     try:
@@ -132,7 +143,13 @@ def get_metadata_path(
 
 
 def get_metadata_path_value(map_value: Union[str, list[str]]) -> str:
-    """Get raw metadata path without converter"""
+    """Get raw metadata path without converter
+
+    >>> get_metadata_path_value("$.properties.id")
+    '$.properties.id'
+    >>> get_metadata_path_value(["platform", "$.properties.platform"])
+    '$.properties.platform'
+    """
     return map_value[1] if isinstance(map_value, list) else map_value
 
 
@@ -142,6 +159,9 @@ def get_search_param(map_value: list[str]) -> str:
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config
     :returns: The value of the search parameter as defined in the provider config
+
+    >>> get_search_param(["platform", "$.properties.platform"])
+    'platform'
     """
     # Assume that caller will pass in the value as a list
     return map_value[0]
@@ -196,6 +216,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     :param args: (optional) Additional arguments to use in the formatting process
     :param kwargs: (optional) Additional named-arguments to use when formatting
     :returns: The formatted string
+
+    >>> format_metadata("{date#to_iso_utc_datetime}", date="2021-04-21")
+    '2021-04-21T00:00:00.000Z'
+    >>> format_metadata("{values#csv_list}", values=["a", "b", "c"])
+    'a,b,c'
     """
 
     class MetadataFormatter(Formatter):
@@ -1447,6 +1472,21 @@ def mtd_cfg_as_conversion_and_querypath(
     :param src_dict: Input dict containing jsonpath str as values
     :param dest_dict: (optional) Output dict containing jsonpath objects as values
     :returns: dest_dict
+
+    For ``result_type="xml"``, xpath strings are kept as-is inside the tuple.
+    A queryable entry (list form) keeps its provider key in first position and
+    gets its second element replaced; a non-queryable string entry becomes a
+    ``(None, xpath_str)`` tuple:
+
+    >>> src = {
+    ...     "platform": ["platform", "//platform/text()"],
+    ...     "id": "//id/text()",
+    ... }
+    >>> result = mtd_cfg_as_conversion_and_querypath(src, result_type="xml")
+    >>> result["platform"]
+    ['platform', (None, '//platform/text()')]
+    >>> result["id"]
+    (None, '//id/text()')
     """
     # check if the configuration has already been converted
     some_configured_value = (
@@ -1492,7 +1532,32 @@ def format_query_params(
     query_dict: dict[str, Any],
     error_context: str = "",
 ) -> dict[str, Any]:
-    """format the search parameters to query parameters"""
+    """Format the search parameters to query parameters.
+
+    :param collection: collection name
+    :param config: plugin configuration
+    :param query_dict: search parameters to format
+    :param error_context: (optional) context string included in error messages
+    :returns: formatted query parameters dict
+
+    Eodag search keys are translated to provider-specific parameter names
+    according to the ``metadata_mapping`` configuration:
+
+    >>> from eodag.config import PluginConfig
+    >>> config = PluginConfig.from_mapping({
+    ...     "type": "QueryStringSearch",
+    ...     "metadata_mapping": {
+    ...         "start": ["startDate", "$.properties.start_datetime"],
+    ...         "platform": ["platformName", "$.properties.platform"],
+    ...     },
+    ...     "products": {},
+    ... })
+    >>> format_query_params(
+    ...     "S2_MSI_L1C", config,
+    ...     {"start": "2021-01-01", "platform": "SENTINEL-2"},
+    ... )
+    {'startDate': '2021-01-01', 'platformName': 'SENTINEL-2'}
+    """
     if "raise_errors" in query_dict.keys():
         del query_dict["raise_errors"]
     # . not allowed in eodag_search_key, replaced with %2E
@@ -1607,6 +1672,9 @@ def _resolve_hashes(formatted_query_param: str) -> str:
     resolves structures of the format {"a": "abc", "b": "cde"}["a"] given in the formatted_query_param
     the structure is replaced by the value corresponding to the given key in the hash
     (in this case "abc")
+
+    >>> _resolve_hashes('{"greeting": {"foo": "hello", "bar": "world"}["foo"]}')
+    '{"greeting": "hello"}'
     """
     # check if there is still a hash to be resolved
     while '}["' in formatted_query_param:
@@ -1634,7 +1702,31 @@ def _resolve_hashes(formatted_query_param: str) -> str:
 def _format_free_text_search(
     config: PluginConfig, metadata_mapping: dict[str, Any], **kwargs: Any
 ) -> dict[str, Any]:
-    """Build the free text search parameter using the search parameters"""
+    """Build the free text search parameter using the search parameters.
+
+    :param config: plugin configuration
+    :param metadata_mapping: metadata mapping for queryable fields
+    :param kwargs: user search parameters
+    :returns: provider free text query parameter(s)
+
+    >>> from eodag.config import PluginConfig
+    >>> config = PluginConfig.from_mapping({
+    ...     "type": "QueryStringSearch",
+    ...     "free_text_search_operations": {
+    ...         "q": {
+    ...             "union": " AND ",
+    ...             "operations": {"OR": ["{title}", "{id}"]},
+    ...         }
+    ...     }
+    ... })
+    >>> _format_free_text_search(
+    ...     config,
+    ...     {"title": ["title", "$.title"], "id": ["id", "$.id"]},
+    ...     title="foo",
+    ...     id="bar",
+    ... )
+    {'q': 'foo OR bar'}
+    """
     query_params: dict[str, Any] = {}
     if not getattr(config, "free_text_search_operations", None):
         return query_params
@@ -1680,7 +1772,33 @@ def _get_queryables(
     raise_mtd_discovery_error: bool,
     error_context: str,
 ) -> dict[str, Any]:
-    """Retrieve the metadata mappings that are query-able"""
+    """Retrieve the metadata mappings that are query-able.
+
+    :param search_params: search parameters given by user
+    :param config: plugin configuration
+    :param metadata_mapping: metadata mapping for the provider
+    :param raise_mtd_discovery_error: whether non-queryable parameters must raise
+    :param error_context: context string included in errors
+    :returns: mapping from eodag queryables to provider queryables
+
+    >>> from eodag.config import PluginConfig
+    >>> config = PluginConfig.from_mapping({
+    ...     "type": "QueryStringSearch",
+    ...     "discover_metadata": {
+    ...         "auto_discovery": True,
+    ...         "metadata_pattern": r"^x_.*",
+    ...         "search_param": "{metadata}",
+    ...     }
+    ... })
+    >>> _get_queryables(
+    ...     {"cloudCover": 10, "x_custom": "abc", "no_match": "ignored"},
+    ...     config,
+    ...     {"cloudCover": ["cloudCover", "$.properties.cloudCover"]},
+    ...     raise_mtd_discovery_error=False,
+    ...     error_context="",
+    ... )
+    {'cloudCover': 'cloudCover', 'x_custom': 'x_custom'}
+    """
     logger.debug("Retrieving queryable metadata from metadata_mapping")
     queryables: dict[str, Any] = {}
     for eodag_search_key, user_input in search_params.items():
@@ -1744,13 +1862,35 @@ def _get_queryables(
 
 
 def get_queryable_from_provider(
-    provider_queryable: str, metadata_mapping: dict[str, Union[str, list[str]]]
+    provider_queryable: str,
+    metadata_mapping: dict[str, Union[str, list[str]]],
+    provider: Optional[str] = None,
 ) -> Optional[str]:
     """Get EODAG configured queryable parameter from provider queryable parameter
 
     :param provider_queryable: provider queryable parameter
     :param metadata_mapping: metadata-mapping configuration
+    :param provider: (optional) provider name. When given, the returned queryable
+                     may be resolved to its provider-prefixed STAC extension alias
+                     (e.g. ``wekeo_main_format``).
     :returns: EODAG configured queryable parameter or None
+
+    >>> get_queryable_from_provider(
+    ...     "start_datetime",
+    ...     {"start": ["start_datetime", "$.properties.datetime"]}
+    ... )
+    'start'
+    >>> get_queryable_from_provider(
+    ...     "unknown_param",
+    ...     {"start": ["start_datetime", "$.properties.datetime"]}
+    ... ) is None
+    True
+    >>> get_queryable_from_provider(
+    ...     "format",
+    ...     {},
+    ...     provider="wekeo_main"
+    ... )
+    'wekeo_main_format'
     """
     pattern = rf"\"{provider_queryable}\""
     # if 1:1 mapping exists privilege this one instead of other mapping
@@ -1759,19 +1899,62 @@ def get_queryable_from_provider(
         v[0] if isinstance(v, list) else "" for v in metadata_mapping.values()
     ]
     StacQueryables = Queryables.from_stac_models()
+
+    eodag_queryable: Optional[str] = None
     if provider_queryable in mapping_values:
         ind = mapping_values.index(provider_queryable)
-        return StacQueryables.get_queryable_from_alias(
+        eodag_queryable = StacQueryables.get_queryable_from_alias(
             list(metadata_mapping.keys())[ind]
         )
-    for param, param_conf in metadata_mapping.items():
-        if (
-            isinstance(param_conf, list)
-            and param_conf[0]
-            and re.search(pattern, param_conf[0])
-        ):
-            return StacQueryables.get_queryable_from_alias(param)
-    return None
+    else:
+        for param, param_conf in metadata_mapping.items():
+            if (
+                isinstance(param_conf, list)
+                and param_conf[0]
+                and re.search(pattern, param_conf[0])
+            ):
+                eodag_queryable = StacQueryables.get_queryable_from_alias(param)
+                break
+
+    # no provider-specific resolution
+    if provider is None:
+        return eodag_queryable
+
+    # check if eodag_queryable is defined in a Provider STAC Extension, possibly
+    # with the provider's prefix (e.g. wekeo_main_format vs wekeo_main:format)
+    eodag_queryable = eodag_queryable or StacQueryables.get_queryable_from_alias(
+        provider_queryable
+    )
+
+    # provider prefix regex
+    prefix_re = re.compile(r"^" + re.escape(provider) + r"[_:]")
+
+    for k, field_info in StacQueryables.model_fields.items():
+        queryable_alias = field_info.alias
+        # Collect every alias under which the queryable could appear in the
+        # metadata_mapping (model field name + declared alias(es)).
+        candidates: list[str] = (
+            [str(a[0]) for a in queryable_alias.convert_to_aliases()]
+            if isinstance(queryable_alias, AliasChoices)
+            else [queryable_alias]
+            if queryable_alias is not None
+            else []
+        )
+        candidates.append(k)
+        # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
+        # from user-supplied keys before sending them to the plugin, so the
+        # metadata_mapping may store the queryable under its unprefixed name.
+        matches: list[str] = [
+            c for c in candidates if prefix_re.sub("", c) == eodag_queryable
+        ]
+        if k in matches:
+            # prefer the alias with underscore separator over the one with colon
+            # (e.g. wekeo_main_format vs wekeo_main:format)
+            return k
+        elif matches:
+            return matches[0]
+
+    return eodag_queryable
 
 
 def get_provider_queryable_path(
@@ -1782,6 +1965,17 @@ def get_provider_queryable_path(
     :param queryable: eodag queryable parameter
     :param metadata_mapping: metadata-mapping configuration
     :returns: EODAG configured queryable path or None
+
+    >>> get_provider_queryable_path(
+    ...     "start",
+    ...     {"start": ["start_datetime", "$.properties.datetime"]}
+    ... )
+    'start_datetime'
+    >>> get_provider_queryable_path(
+    ...     "start",
+    ...     {"start": "$.properties.datetime"}
+    ... ) is None
+    True
     """
     parameter_conf = metadata_mapping.get(queryable)
     if isinstance(parameter_conf, list):
@@ -1801,6 +1995,19 @@ def get_provider_queryable_key(
     :param provider_queryables: queryables returned from the provider
     :param metadata_mapping: metadata mapping from which the keys are retrieved
     :returns: provider queryable key
+
+    >>> get_provider_queryable_key(
+    ...     "start",
+    ...     {"start_datetime": {}},
+    ...     {"start": ["start_datetime", "$.properties.datetime"]}
+    ... )
+    'start_datetime'
+    >>> get_provider_queryable_key(
+    ...     "unknown",
+    ...     {"start_datetime": {}},
+    ...     {"start": ["start_datetime", "$.properties.datetime"]}
+    ... )
+    ''
     """
     if eodag_key not in metadata_mapping:
         return ""
@@ -1822,6 +2029,16 @@ def normalize_bands(data: Union[dict, Asset]) -> Union[dict, Asset]:
 
     :param data: properties dict or Asset to migrate
     :returns: the same data with migrated bands
+
+    >>> normalize_bands({"eo:bands": [{"name": "B04", "common_name": "red"}]})
+    {'bands': [{'name': 'B04', 'eo:common_name': 'red'}]}
+    >>> normalize_bands({
+    ...     "raster:bands": [
+    ...         {"name": "B04", "description": "surface reflectance"},
+    ...         {"name": "B08", "description": "surface reflectance"},
+    ...     ]
+    ... })
+    {'description': 'surface reflectance', 'bands': [{'name': 'B04'}, {'name': 'B08'}]}
     """
     UNPREFIX_BAND_FIELDNAME = [
         "name",

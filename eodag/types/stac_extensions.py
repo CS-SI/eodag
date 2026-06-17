@@ -676,6 +676,31 @@ class UsgsExtension(ProviderStacExtension):
     field_name_prefix: Optional[str] = "usgs"
 
 
+class WekeoFields(BaseModel):
+    """Custom fields for wekeo provider."""
+
+    wekeo_main_format: Annotated[str, Field(None)]
+    wekeo_main_level: Annotated[str, Field(None)]
+    wekeo_main_model: Annotated[str, Field(None)]
+    wekeo_main_processing_mode: Annotated[str, Field(None)]
+    wekeo_main_region: Annotated[str, Field(None)]
+    wekeo_main_satellite: Annotated[str, Field(None)]
+    wekeo_main_source: Annotated[str, Field(None)]
+    wekeo_main_step: Annotated[str, Field(None)]
+    wekeo_main_system: Annotated[str, Field(None)]
+    wekeo_main_type: Annotated[str, Field(None)]
+    wekeo_main_variable: Annotated[str, Field(None)]
+    wekeo_main_version: Annotated[str, Field(None)]
+
+
+class WekeoExtension(ProviderStacExtension):
+    """Custom extension for provider wekeo."""
+
+    FIELDS: type[BaseModel] = WekeoFields
+
+    field_name_prefix: Optional[str] = "wekeo_main"
+
+
 STAC_EXTENSIONS = [
     SarExtension(),
     SatelliteExtension(),
@@ -696,4 +721,5 @@ STAC_EXTENSIONS = [
     FederationExtension(),
     EcmwfExtension(),
     UsgsExtension(),
+    WekeoExtension(),
 ]

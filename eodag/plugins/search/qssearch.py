@@ -2257,12 +2257,28 @@ class StacSearch(PostJsonSearch):
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
             StacQueryables = Queryables.from_stac_models()
+            metadata_mapping = self.get_metadata_mapping(collection)
             for json_param, json_mtd in json_queryables.items():
                 param = get_queryable_from_provider(
-                    json_param, self.get_metadata_mapping(collection)
-                ) or StacQueryables.get_queryable_from_alias(json_param)
+                    json_param,
+                    metadata_mapping,
+                    provider=self.provider,
+                )
                 # do not expose internal parameters, neither datetime
-                if param == "datetime" or param.startswith("_"):
+                if param is None or param == "datetime" or param.startswith("_"):
+                    continue
+                # do not expose provider-native parameters explicitly marked as
+                # non-queryable in the metadata_mapping: queryable entries are stored
+                # as a [query, path] list, while non-queryable ones are mapped to a
+                # single path value (stored as a tuple after config loading). eodag
+                # queryables (e.g. start/end) may legitimately use a single path
+                # mapping, so they are never excluded by this rule.
+                mtd_entry = metadata_mapping.get(param)
+                if (
+                    mtd_entry is not None
+                    and not isinstance(mtd_entry, list)
+                    and param not in StacQueryables.model_fields
+                ):
                     continue
 
                 # convert provider json field definition to python
