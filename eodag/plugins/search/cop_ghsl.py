@@ -347,6 +347,13 @@ class CopGhslSearch(Search):
             dataset = dataset.replace(
                 "__", "_"
             )  # in case additional filter value is empty
+            # adapt dataset if necessary for specific dataset and parameters
+            if "_dataset_modified" in parsed_metadata_mapping:
+                dataset_modified = properties_from_json(
+                    {"dataset": dataset},
+                    {"_dataset_modified": parsed_metadata_mapping["_dataset_modified"]},
+                )["_dataset_modified"]
+                dataset = dataset_modified
 
             # create items from tiles
             for tile in tiles[year]:
