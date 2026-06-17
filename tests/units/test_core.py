@@ -1672,9 +1672,7 @@ class TestCore(TestCoreBase):
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
 
-        initial_provider, initial_priority = self.dag.get_preferred_provider()
-        self.assertIn(initial_provider, self.dag.providers.names)
-        self.assertEqual(initial_priority, 0)
+        self.assertEqual(self.dag.get_preferred_provider(), ("aws_eos", 0))
 
         self.assertRaises(
             UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
@@ -1690,7 +1688,9 @@ class TestCore(TestCoreBase):
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 3))
 
         # check that the providers are correctly ordered by priority and name in "providers" property
-        self.assertEqual(list(self.dag._providers.keys())[0], initial_provider)
+        self.assertListEqual(
+            ["aws_eos", "cop_ads"], list(self.dag._providers.keys())[:2]
+        )
         self.assertListEqual(
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
@@ -2515,6 +2515,22 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 
     def test_core_object_prioritize_providers_file_in_envvar(self):
         """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_FILE env var"""
+        try:
+            os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+                TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
+            )
+            self.dag = EODataAccessGateway()
+            # only foo_provider in conf
+            self.assertEqual(self.dag.providers.names, ["foo_provider"])
+            self.assertEqual(
+                self.dag._providers["foo_provider"].search_config.api_endpoint,
+                "https://foo.bar/search",
+            )
+        finally:
+            os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+
+    def test_core_object_prioritize_providers_dir_in_envvar(self):
+        """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_DIR env var"""
         try:
             os.environ["EODAG_PROVIDERS_CFG_DIR"] = os.path.join(
                 TEST_RESOURCES_PATH, "providers"

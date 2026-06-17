@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
+import warnings
 from importlib.resources import files as res_files
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
@@ -695,6 +696,13 @@ def load_default_config() -> dict[str, ProviderConfig]:
     eodag_providers_cfg_dir = os.getenv("EODAG_PROVIDERS_CFG_DIR")
 
     if eodag_providers_cfg_file:
+        warnings.warn(
+            "Usage of deprecated environment variable EODAG_PROVIDERS_CFG_FILE. "
+            "(Please use EODAG_PROVIDERS_CFG_DIR instead)"
+            " -- Deprecated since v4.5.0",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return load_config(eodag_providers_cfg_file)
 
     config_dir = eodag_providers_cfg_dir or str(
@@ -704,7 +712,7 @@ def load_default_config() -> dict[str, ProviderConfig]:
     for f in pathlib.Path(config_dir).glob("*.yml"):
         if f.is_file():
             providers.update(load_config(str(f)))
-    return providers
+    return dict(sorted(providers.items()))
 
 
 def load_config(config_path: str) -> dict[str, ProviderConfig]:
