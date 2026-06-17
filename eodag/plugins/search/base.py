@@ -18,7 +18,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Annotated, get_args
+import re
+from typing import TYPE_CHECKING, Annotated
 
 import orjson
 from pydantic import AliasChoices
@@ -38,7 +39,6 @@ from eodag.types.search_args import SortByList
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils import (
     GENERIC_COLLECTION,
-    copy_deepcopy,
     deepcopy,
     format_dict_items,
     format_pydantic_error,
@@ -456,6 +456,7 @@ class Search(PluginTopic):
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from collection metadata mapping.
+
         :param collection: collection id (optional)
         :param alias: (optional) alias of the collection
         :returns: dict of annotated queryables
@@ -475,9 +476,7 @@ class Search(PluginTopic):
         queryables_model = create_stac_metadata_model(
             base_models=[Queryables, CommonStacMetadata]
         )
-        eodag_queryables = copy_deepcopy(
-            model_fields_to_annotated(queryables_model.model_fields)
-        )
+        eodag_queryables = model_fields_to_annotated(queryables_model.model_fields)
         queryables["collection"] = eodag_queryables.pop("collection")
         # add default value for collection
         if collection_or_alias := alias or collection:
@@ -485,26 +484,29 @@ class Search(PluginTopic):
                 str, Field(default=collection_or_alias)
             ]
 
+        # provider prefix regex
+        prefix_re = re.compile(r"^" + re.escape(self.provider) + r"[_:]")
+
         for k, v in eodag_queryables.items():
-            eodag_queryable_field_info = (
-                get_args(v)[1] if len(get_args(v)) > 1 else None
+            field_info = queryables_model.model_fields[k]
+            queryable_alias = field_info.alias
+            # Collect every alias under which the queryable could appear in the
+            # metadata_mapping (model field name + declared alias(es)).
+            candidates = (
+                [a[0] for a in queryable_alias.convert_to_aliases()]
+                if isinstance(queryable_alias, AliasChoices)
+                else [queryable_alias]
             )
-            if not isinstance(eodag_queryable_field_info, FieldInfo):
-                continue
-            queryable_alias = eodag_queryable_field_info.alias
-            if isinstance(queryable_alias, AliasChoices):
-                in_metadata = (
-                    any(
-                        [
-                            a[0] in metadata_mapping
-                            for a in queryable_alias.convert_to_aliases()
-                        ]
-                    )
-                    or k in metadata_mapping
-                )
-            else:
-                in_metadata = (queryable_alias or k) in metadata_mapping
-            if eodag_queryable_field_info.is_required() or in_metadata:
+            candidates.append(k)
+            # Core search strips the ``<provider>:`` / ``<provider>_`` prefix
+            # from user-supplied keys before sending them to the plugin, so the
+            # metadata_mapping may store the queryable under its unprefixed name.
+            in_metadata = any(
+                c in metadata_mapping or prefix_re.sub("", c) in metadata_mapping
+                for c in candidates
+                if c
+            )
+            if field_info.is_required() or in_metadata:
                 queryables[k] = v
         return queryables
 
