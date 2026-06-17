@@ -66,6 +66,7 @@ Each section below gives you a focused entry point with explanations and example
    overview
    features_overview
    install
+   docker
    collections
    product_storage_status
    configure
@@ -93,6 +94,13 @@ Each section below gives you a focused entry point with explanations and example
       :text-align: center
 
       Get ``eodag`` installed and ready to use in minutes.
+
+   .. grid-item-card:: |icon-download| Docker
+      :link: docker
+      :link-type: doc
+      :text-align: center
+
+      Run ``eodag`` with Docker and keep configuration outside the image.
 
    .. grid-item-card:: |icon-layers| Collections
       :link: collections

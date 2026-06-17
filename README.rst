@@ -86,6 +86,17 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
    conda install -c conda-forge eodag
 
+EODAG is also published as a container image on GitHub Container Registry:
+
+.. code-block:: bash
+
+   docker pull ghcr.io/cs-si/eodag:<version>
+   docker run --rm ghcr.io/cs-si/eodag:<version> --help
+
+Replace ``<version>`` with the EODAG release tag you want to run. See the
+`Docker quickstart <https://eodag.readthedocs.io/en/latest/getting_started_guide/docker.html>`_
+for configuration and credentials examples.
+
 ..
 
   [!NOTE]
