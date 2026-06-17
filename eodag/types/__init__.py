@@ -258,7 +258,7 @@ def json_field_definition_to_python(
     ]
 
     if required:
-        metadata.append("json_schema_required")
+        metadata[1].metadata.append("json_schema_required")
 
     return Annotated[tuple(metadata)]
 
