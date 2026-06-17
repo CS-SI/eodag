@@ -5378,6 +5378,59 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         )
         self.assertEqual(geometry, products[0].geometry)
 
+    def test_plugins_search_cop_ghsl_create_products_from_tiles_modified_dataset(self):
+        """test the creation of products based on tiles returned by the provider"""
+        tiles = {
+            "2015": [
+                {
+                    "tileID": "R3_C3",
+                    "BBox": ["-160.008", "69.100", "-150.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C4",
+                    "BBox": ["-150.008", "69.100", "-140.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C5",
+                    "BBox": ["-140.008", "69.100", "-130.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C6",
+                    "BBox": ["-130.008", "69.100", "-120.008", "59.100"],
+                },
+            ],
+        }
+        collection = "GHS_ESM"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                collection=collection, provider="cop_ghsl"
+            )
+        )
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        params = product_type_config
+        params["tile_size"] = "10m"
+        params["per_page"] = 5
+        params["page"] = 1
+        products, count = plugin._create_products_from_tiles(
+            tiles, "lat/lon", collection, params, need_count=True
+        )
+        self.assertEqual(4, count)
+        self.assertEqual(4, len(products))
+        properties = products[0].properties
+        self.assertEqual("2015-01-01T00:00:00.000Z", properties["start_datetime"])
+        self.assertEqual("2015-12-31T23:59:59.000Z", properties["end_datetime"])
+        self.assertEqual("2015", properties["year"])
+        self.assertEqual("EPSG:3035", properties["proj:code"])
+        self.assertEqual(
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/"
+            "ESM_BUILT_VHR2015CLASS_EUROPE_R2019_3035_10/V1-0/tiles/R3_C3.zip",
+            properties["eodag:download_link"],
+        )
+        geometry = get_geometry_from_various(
+            geometry=["-160.008", "69.100", "-150.008", "59.100"]
+        )
+        self.assertEqual(geometry, products[0].geometry)
+
     def test_plugins_search_cop_ghsl_create_products_without_tiles(self):
         """test if products are created correctly for product types without tiles"""
 
