@@ -470,12 +470,15 @@ class EOProduct:
                                 the download and authentication plugins.
         """
         download_plugin = plugins_manager.get_download_plugin(self)
-        if len(self.assets) > 0:
-            matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("order:status") != ONLINE_STATUS:
+        if (
+            self.assets.get("download_link", {}).get("order:status", ONLINE_STATUS)
+            != ONLINE_STATUS
+        ):
             matching_url = self.properties.get(
                 "eodag:order_link"
             ) or self.properties.get("eodag:download_link")
+        elif len(self.assets) > 0:
+            matching_url = next(iter(self.assets.values()))["href"]
         else:
             matching_url = self.properties.get("eodag:download_link")
 

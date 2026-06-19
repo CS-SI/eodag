@@ -1247,7 +1247,8 @@ def _check_id(product: EOProduct) -> EOProduct:
         product.downloader._order_status(product=product, auth=auth)  # type: ignore
     # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
     except NotAvailableError:
-        product.properties["order:status"] = STAGING_STATUS
+        if "download_link" in product.assets:
+            product.assets["download_link"]["order:status"] = STAGING_STATUS
     except Exception as e:
         if (
             isinstance(e, DownloadError) or isinstance(e, ValidationError)

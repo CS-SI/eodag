@@ -2822,7 +2822,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self, identifier, checksum, endpoint_url="https://geodes.example/data"
     ):
         download_link = f"https://geodes.example/data/{identifier}/file_{checksum}.tif"
-        return EOProduct(
+        product = EOProduct(
             self.provider,
             {
                 "id": identifier,
@@ -2831,6 +2831,8 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                 "geodes:endpoint_url": endpoint_url,
             },
         )
+        product.assets.update({"download_link": {"href": download_link}})
+        return product
 
     @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
     def test_plugins_search_geodes_get_availability(self, mock__request):
@@ -2927,7 +2929,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], ONLINE_STATUS)
+        self.assertEqual(product.assets["download_link"]["order:status"], ONLINE_STATUS)
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -2950,7 +2952,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], OFFLINE_STATUS)
+        self.assertEqual(
+            product.assets["download_link"]["order:status"], OFFLINE_STATUS
+        )
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -2961,14 +2965,14 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         """When no matching product/asset is found in the availability response,
         order:status must be left unchanged and a warning must be logged"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         # no matching id in response
         mock_get_availability.return_value = {"products": []}
 
         with self.assertLogs("eodag.search.geodes", level="WARNING") as log_ctx:
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
         self.assertTrue(
             any("Could not update availability" in m for m in log_ctx.output)
         )
@@ -2981,7 +2985,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     ):
         """Products whose checksum matches more than one file must be skipped"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         mock_get_availability.return_value = {
             "products": [
                 {
@@ -2997,7 +3001,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         with self.assertLogs("eodag.search.geodes", level="WARNING"):
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._set_availability", autospec=True

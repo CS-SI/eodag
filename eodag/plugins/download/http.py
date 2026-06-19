@@ -180,7 +180,8 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :returns: the returned json status response
         """
-        product.properties["order:status"] = STAGING_STATUS
+        if "download_link" in product.assets:
+            product.assets["download_link"]["order:status"] = STAGING_STATUS
 
         order_method = getattr(self.config, "order_method", "GET").upper()
         ssl_verify = getattr(self.config, "ssl_verify", True)
@@ -227,7 +228,8 @@ class HTTPDownload(Download):
                     response.raise_for_status()
                     ordered_message = response.text
                     logger.debug(ordered_message)
-                    product.properties["order:status"] = STAGING_STATUS
+                    if "download_link" in product.assets:
+                        product.assets["download_link"]["order:status"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
                     QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
@@ -473,7 +475,8 @@ class HTTPDownload(Download):
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
-        product.properties["order:status"] = STAGING_STATUS
+        if "download_link" in product.assets:
+            product.assets["download_link"]["order:status"] = STAGING_STATUS
 
         success_status: dict[str, Any] = status_config.get("success", {}).get(
             "eodag:order_status"
@@ -486,7 +489,8 @@ class HTTPDownload(Download):
             product.properties.pop("eodag:download_link", None)
             return None
 
-        product.properties["order:status"] = ONLINE_STATUS
+        if "download_link" in product.assets:
+            product.assets["download_link"]["order:status"] = ONLINE_STATUS
 
         if not config_on_success:
             # Nothing left to do
@@ -691,7 +695,8 @@ class HTTPDownload(Download):
                     raise DownloadError(f"product {product.properties['id']} is empty")
                 else:
                     # make sure storage status is online
-                    product.properties["order:status"] = ONLINE_STATUS
+                    if "download_link" in product.assets:
+                        product.assets["download_link"]["order:status"] = ONLINE_STATUS
 
                 return path
             else:
@@ -732,16 +737,15 @@ class HTTPDownload(Download):
 
     def _check_stream_size(self, product: EOProduct) -> int:
         stream_size = int(product._stream.headers.get("content-length", 0))
-        if (
-            stream_size == 0
-            and "order:status" in product.properties
-            and product.properties["order:status"] != ONLINE_STATUS
-        ):
+        order_status = product.assets.get("download_link", {}).get(
+            "order:status", ONLINE_STATUS
+        )
+        if stream_size == 0 and order_status != ONLINE_STATUS:
             raise NotAvailableError(
                 "%s(initially %s) ordered, got: %s"
                 % (
                     product.properties["title"],
-                    product.properties["order:status"],
+                    order_status,
                     product._stream.reason,
                 )
             )
@@ -907,7 +911,10 @@ class HTTPDownload(Download):
             e.response.text.strip() if e is not None and e.response is not None else ""
         )
         # product not available
-        if product.properties.get("order:status", ONLINE_STATUS) != ONLINE_STATUS:
+        order_status = product.assets.get("download_link", {}).get(
+            "order:status", ONLINE_STATUS
+        )
+        if order_status != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not response_text
@@ -918,7 +925,7 @@ class HTTPDownload(Download):
                 "%s(initially %s) requested, returned: %s"
                 % (
                     product.properties["title"],
-                    product.properties["order:status"],
+                    order_status,
                     msg,
                 )
             )
@@ -939,16 +946,19 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[AuthBase],
     ) -> None:
+        order_status = product.assets.get("download_link", {}).get(
+            "order:status", ONLINE_STATUS
+        )
         if (
             "eodag:order_link" in product.properties
-            and product.properties.get("order:status") == OFFLINE_STATUS
+            and order_status == OFFLINE_STATUS
             and not product.properties.get("eodag:order_status")
         ):
             self._order(product=product, auth=auth)
 
         if (
             product.properties.get("eodag:status_link")
-            and product.properties.get("order:status") != ONLINE_STATUS
+            and order_status != ONLINE_STATUS
         ):
             self._order_status(product=product, auth=auth)
 
@@ -1066,7 +1076,8 @@ class HTTPDownload(Download):
             ).get(
                 "http_code"
             ):
-                product.properties["order:status"] = "ORDERED"
+                if "download_link" in product.assets:
+                    product.assets["download_link"]["order:status"] = "ORDERED"
                 self._process_exception(None, product, ordered_message)
             stream_size = self._check_stream_size(product) or None
 

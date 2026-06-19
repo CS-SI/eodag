@@ -31,18 +31,31 @@ class TestSearchResult(unittest.TestCase):
     def setUp(self):
         super(TestSearchResult, self).setUp()
         self.search_result = SearchResult([])
-        self.search_result2 = SearchResult(
-            [
-                EOProduct(
-                    provider=None,
-                    properties={"geometry": "POINT (0 0)", "order:status": "succeeded"},
-                ),
-                EOProduct(
-                    provider=None,
-                    properties={"geometry": "POINT (0 0)", "order:status": "orderable"},
-                ),
-            ]
+        online_product = EOProduct(
+            provider=None,
+            properties={"geometry": "POINT (0 0)"},
         )
+        online_product.assets.update(
+            {
+                "download_link": {
+                    "href": "http://somewhere/online",
+                    "order:status": "succeeded",
+                }
+            }
+        )
+        offline_product = EOProduct(
+            provider=None,
+            properties={"geometry": "POINT (0 0)"},
+        )
+        offline_product.assets.update(
+            {
+                "download_link": {
+                    "href": "http://somewhere/offline",
+                    "order:status": "orderable",
+                }
+            }
+        )
+        self.search_result2 = SearchResult([online_product, offline_product])
 
     def test_search_result_filter_online(self):
         """SearchResult.filter_online must only keep online results"""
@@ -51,7 +64,7 @@ class TestSearchResult(unittest.TestCase):
         filtered_size = len(filtered_products)
         self.assertFalse(origin_size == filtered_size)
         for product in filtered_products:
-            assert product.properties["order:status"] == "succeeded"
+            assert product.assets["download_link"]["order:status"] == "succeeded"
 
     def test_search_result_geo_interface(self):
         """SearchResult must provide a FeatureCollection geo-interface"""

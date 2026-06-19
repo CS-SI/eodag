@@ -94,9 +94,10 @@ class GeodesSearch(StacSearch):
             asset_availability = asset_availability_list[0]
 
             # set status
-            product.properties["order:status"] = (
-                ONLINE_STATUS if asset_availability else OFFLINE_STATUS
-            )
+            if "download_link" in product.assets:
+                product.assets["download_link"]["order:status"] = (
+                    ONLINE_STATUS if asset_availability else OFFLINE_STATUS
+                )
 
             updated += 1
 

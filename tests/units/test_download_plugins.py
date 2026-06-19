@@ -1380,6 +1380,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
+        plugin.config.ignore_assets = True
         auth = self.get_auth_plugin(plugin, self.product)
         auth.config.credentials = {"apikey": "anicekey"}
         self.product.register_downloader(plugin, auth)
@@ -1389,7 +1390,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
         self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
-        self.product.properties["order:status"] = "orderable"
+        self.product.assets.update(
+            {
+                "download_link": {
+                    "order_link": self.product.properties["eodag:order_link"],
+                    "order:status": "orderable",
+                }
+            }
+        )
         self.product.location = self.product.remote_location = (
             NOT_AVAILABLE + '?{"foo": "bar"}'
         )
@@ -1476,7 +1484,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "eodag:download_link"
         ] = "https://copernicus.nci.org.au/dummy"
         self.product.properties["eodag:order_link"] = "http://somewhere/order"
-        self.product.properties["order:status"] = OFFLINE_STATUS
 
         # customized timeout
         timeout_backup = getattr(plugin.config, "timeout", None)
@@ -1574,7 +1581,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties[
             "eodag:download_link"
         ] = "https://copernicus.nci.org.au/dummy"
-        self.product.properties["order:status"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1850,9 +1856,17 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
         super(TestDownloadPluginHttpRetry, self).setUp()
 
         self.plugin = self.get_download_plugin(self.product)
+        self.plugin.config.ignore_assets = True
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.properties["order:status"] = OFFLINE_STATUS
+        self.product.assets.update(
+            {
+                "download_link": {
+                    "href": "http://somewhere",
+                    "order:status": OFFLINE_STATUS,
+                }
+            }
+        )
 
     def test_plugins_download_http_retry_error_timeout(self):
         """HTTPDownload.download() must retry on error until timeout"""
