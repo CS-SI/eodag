@@ -278,7 +278,9 @@ class CopMarineSearch(StaticStacSearch):
 
         # List current asset urls
         product = EOProduct(self.provider, properties, collection=collection)
-        merged_assets = self.build_assets_from_mapping(dataset_item, product)
+        merged_assets = self.build_assets_from_mapping(
+            dataset_item, product, raw_product_properties=properties
+        )
         merged_assets.update(assets)
         product.assets.update(merged_assets)
 

@@ -3176,7 +3176,7 @@
     metadata_mapping:
       _collection:
         - '{{"dataset_id": "{_collection}"}}'
-        - '$.null'
+        - '{_collection}'
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
@@ -3240,11 +3240,11 @@
       sortOrder: '$.null'
     assets_mapping:
       download_link:
-        href: ''
+        href: '$.properties.location'
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
-        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}'
+        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{href}","product_id":"{id}", "dataset_id": "{_collection}"}}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"

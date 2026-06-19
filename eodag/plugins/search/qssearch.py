@@ -1288,6 +1288,7 @@ class QueryStringSearch(Search):
         self, results: RawSearchResult, **kwargs: Any
     ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
+        collection = kwargs.get("collection")
         normalize_remaining_count = len(results)
         logger.debug(
             "Adapting %s plugin results to eodag product representation"
@@ -1299,16 +1300,25 @@ class QueryStringSearch(Search):
         # collection alias as collection property for product
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
             product_kwargs["collection"] = alias
+        # use collection_def_params as existing properties for parsing
+        existing_properties = (
+            self.get_collection_def_params(collection) if collection else {}
+        )
         for result in results:
             properties = QueryStringSearch.extract_properties[self.config.result_type](
                 result,
-                self.get_metadata_mapping(kwargs.get("collection")),
+                self.get_metadata_mapping(collection),
                 discovery_config=getattr(self.config, "discover_metadata", {}),
+                existing_properties=existing_properties,
             )
             product = EOProduct(self.provider, properties, **product_kwargs)
 
             # "Technicals" assets as (downloadlink, quicklook, thumbnail)
-            product.assets.update(self.build_assets_from_mapping(result, product))
+            product.assets.update(
+                self.build_assets_from_mapping(
+                    result, product, raw_product_properties=properties
+                )
+            )
 
             product._normalize_bands()
             products.append(product)

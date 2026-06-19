@@ -1173,6 +1173,7 @@ def properties_from_json(
     json: dict[str, Any],
     mapping: dict[str, Any],
     discovery_config: Optional[dict[str, Any]] = None,
+    existing_properties: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Extract properties from a provider json result.
 
@@ -1184,6 +1185,8 @@ def properties_from_json(
     :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
                              `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
                              `discovery_path` (String representation of jsonpath)
+    :param existing_properties: (optional) already parsed properties made available (in addition to the
+                                properties extracted from ``json``) when resolving templates
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     """
     extracted_value: Any
@@ -1261,14 +1264,20 @@ def properties_from_json(
             pass
 
     # Resolve templates
+    # already parsed properties are made available to resolve templates, without
+    # leaking into the returned properties
+    available_properties: dict[str, Any] = {**(existing_properties or {}), **properties}
     for metadata, template in templates.items():
         try:
-            properties[metadata] = format_string(metadata, template, **properties)
+            properties[metadata] = format_string(
+                metadata, template, **available_properties
+            )
+            available_properties[metadata] = properties[metadata]
         except ValueError:
             logger.warning(
                 f"Could not parse {metadata} ({template}) using product properties"
             )
-            logger.debug(f"available properties: {properties}")
+            logger.debug(f"available properties: {available_properties}")
             properties[metadata] = NOT_AVAILABLE
 
     # adds missing discovered properties
