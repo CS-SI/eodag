@@ -1847,8 +1847,10 @@ class PostJsonSearch(QueryStringSearch):
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)
         for product in normalized:
-            if "eodag:download_link" in product.properties:
-                decoded_link = unquote(product.properties["eodag:download_link"])
+            download_asset = product.assets.get("download_link")
+            download_href = download_asset.get("href") if download_asset else None
+            if download_href:
+                decoded_link = unquote(download_href)
                 if decoded_link[0] == "{":  # not a url but a dict
                     if product.collection is None:
                         msg = (
@@ -1870,20 +1872,19 @@ class PostJsonSearch(QueryStringSearch):
                     product.properties["_dc_qs"] = quote_plus(_dc_qs)
 
             # workaround to add collection to wekeo cmems order links
-            if (
-                "eodag:order_link" in product.properties
-                and "collection" in product.properties["eodag:order_link"]
-                and "order" not in product.properties["eodag:order_link"]
-            ):
+            order_link = (
+                download_asset.get("eodag:order_link") if download_asset else None
+            )
+            if order_link and "collection" in order_link and "order" not in order_link:
                 if product.collection is None:
                     msg = (
                         f"Cannot build order link for "
                         f"{product}: collection is undefined"
                     )
                     raise MisconfiguredError(msg)
-                product.properties["eodag:order_link"] = product.properties[
-                    "eodag:order_link"
-                ].replace("collection", product.collection)
+                download_asset["eodag:order_link"] = order_link.replace(
+                    "collection", product.collection
+                )
         return normalized
 
     def collect_search_urls(

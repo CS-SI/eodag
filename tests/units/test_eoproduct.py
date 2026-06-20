@@ -308,7 +308,7 @@ class TestEOProduct(EODagTestBase):
         with self.assertLogs(level="INFO") as cm:
             # Download
             product_dir_path = product.download()
-            responses.assert_call_count(product.properties["eodag:download_link"], 1)
+            responses.assert_call_count(product.remote_location, 1)
 
             self.addCleanup(self._clean_product, product_dir_path)
             self.assertIn("Download url: %s" % product.remote_location, str(cm.output))
@@ -317,7 +317,7 @@ class TestEOProduct(EODagTestBase):
             )
 
         # Check that the mocked request was properly called.
-        responses.assert_call_count(product.properties["eodag:download_link"], 1)
+        responses.assert_call_count(product.remote_location, 1)
 
         # A .downloaded folder should be created, including a text file that
         download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
@@ -334,9 +334,7 @@ class TestEOProduct(EODagTestBase):
             actual_download_url = ""
             with open(os.path.join(download_records_dir, records_file), "r") as fd:
                 actual_download_url = fd.read()
-            self.assertEqual(
-                actual_download_url, product.properties["eodag:download_link"]
-            )
+            self.assertEqual(actual_download_url, product.remote_location)
 
             # Since extraction is True by default, check that the returned path is the
             # product's directory.
@@ -367,15 +365,11 @@ class TestEOProduct(EODagTestBase):
     def test_eoproduct_download_http_delete_archive(self):
         """EOProduct.download must delete the downloaded archive"""
 
+        product = self._dummy_product()
+        product.assets["download_link"]["href"] = "http://example.com/foobar.zip"
+        product.location = product.remote_location = "http://example.com/foobar.zip"
         product = self._dummy_downloadable_product(
-            product=self._dummy_product(
-                properties=dict(
-                    self.eoproduct_props,
-                    **{
-                        "eodag:download_link": "http://example.com/foobar.zip",
-                    },
-                )
-            ),
+            product=product,
             extract=True,
             delete_archive=True,
         )
@@ -385,7 +379,7 @@ class TestEOProduct(EODagTestBase):
 
             # Download, and check that the mocked request was properly called.
             product_dir_path = product.download()
-            responses.assert_call_count(product.properties["eodag:download_link"], 1)
+            responses.assert_call_count(product.remote_location, 1)
 
             # Check that the product's directory exists.
             self.assertTrue(os.path.isdir(product_dir_path))
@@ -438,19 +432,17 @@ class TestEOProduct(EODagTestBase):
         """EOProduct.stream_download return a product file as StreamResponse"""
 
         # Setup
+        product = self._dummy_product()
+        product.assets["download_link"]["href"] = "http://example.com/foobar.zip"
+        product.location = product.remote_location = "http://example.com/foobar.zip"
         product = self._dummy_downloadable_product(
-            product=self._dummy_product(
-                properties=dict(
-                    self.eoproduct_props,
-                    **{"eodag:download_link": "http://example.com/foobar.zip"},
-                )
-            ),
+            product=product,
             extract=False,
         )
 
         # Download, and check that the mocked request was properly called.
         product_stream = product.stream_download()
-        responses.assert_call_count(product.properties["eodag:download_link"], 1)
+        responses.assert_call_count(product.remote_location, 1)
 
         # Check response headers
         self.assertIn(
@@ -509,13 +501,11 @@ class TestEOProduct(EODagTestBase):
     def test_eoproduct_download_http_dynamic_options(self):
         """EOProduct.download must accept the download options to be set automatically"""
 
+        product = self._dummy_product()
+        product.assets["download_link"]["href"] = "http://example.com/foobar.zip"
+        product.location = product.remote_location = "http://example.com/foobar.zip"
         product = self._dummy_downloadable_product(
-            product=self._dummy_product(
-                properties=dict(
-                    self.eoproduct_props,
-                    **{"eodag:download_link": "http://example.com/foobar.zip"},
-                )
-            ),
+            product=product,
             extract=True,
         )
 
@@ -599,16 +589,13 @@ class TestEOProduct(EODagTestBase):
     @responses.activate
     def test_eoproduct_register_downloader_resolve_ok(self):
         """EOProduct.register_downloader must resolve locations and properties"""
+        props = self.eoproduct_props.copy()
+        props["otherProperty"] = "%(output_dir)s/also/resolved"
+        product = self._dummy_product(properties=props)
+        product.assets["download_link"]["href"] = "%(base_uri)s/is/resolved"
+        product.location = product.remote_location = "%(base_uri)s/is/resolved"
         downloadable_product = self._dummy_downloadable_product(
-            product=self._dummy_product(
-                properties=dict(
-                    self.eoproduct_props,
-                    **{
-                        "eodag:download_link": "%(base_uri)s/is/resolved",
-                        "otherProperty": "%(output_dir)s/also/resolved",
-                    },
-                )
-            ),
+            product=product,
             extract=True,
         )
         self.assertEqual(
@@ -620,7 +607,7 @@ class TestEOProduct(EODagTestBase):
             f"{downloadable_product.downloader.config.base_uri}/is/resolved",
         )
         self.assertEqual(
-            downloadable_product.properties["eodag:download_link"],
+            downloadable_product.assets["download_link"]["href"],
             f"{downloadable_product.downloader.config.base_uri}/is/resolved",
         )
         self.assertEqual(
@@ -634,16 +621,13 @@ class TestEOProduct(EODagTestBase):
 
         logger = logging.getLogger("eodag.product")
         with mock.patch.object(logger, "debug") as mock_debug:
+            props = self.eoproduct_props.copy()
+            props["otherProperty"] = "%(/%s/neither/resolved"
+            product = self._dummy_product(properties=props)
+            product.assets["download_link"]["href"] = "%(257B/cannot/be/resolved"
+            product.location = product.remote_location = "%(257B/cannot/be/resolved"
             downloadable_product = self._dummy_downloadable_product(
-                product=self._dummy_product(
-                    properties=dict(
-                        self.eoproduct_props,
-                        **{
-                            "eodag:download_link": "%(257B/cannot/be/resolved",
-                            "otherProperty": "%(/%s/neither/resolved",
-                        },
-                    )
-                ),
+                product=product,
                 extract=False,
             )
             self.assertEqual(downloadable_product.location, "%(257B/cannot/be/resolved")
@@ -651,7 +635,7 @@ class TestEOProduct(EODagTestBase):
                 downloadable_product.remote_location, "%(257B/cannot/be/resolved"
             )
             self.assertEqual(
-                downloadable_product.properties["eodag:download_link"],
+                downloadable_product.assets["download_link"]["href"],
                 "%(257B/cannot/be/resolved",
             )
             self.assertEqual(
@@ -662,8 +646,8 @@ class TestEOProduct(EODagTestBase):
             needed_logs = [
                 f"Could not resolve product.location ({downloadable_product.location})",
                 f"Could not resolve product.remote_location ({downloadable_product.remote_location})",
-                "Could not resolve eodag:download_link property (%s)"
-                % downloadable_product.properties["eodag:download_link"],
+                "Could not resolve download_link asset href (%s)"
+                % downloadable_product.assets["download_link"]["href"],
                 f"Could not resolve otherProperty property ({downloadable_product.properties['otherProperty']})",
             ]
             for needed_log in needed_logs:

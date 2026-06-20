@@ -372,9 +372,16 @@ class CopGhslSearch(Search):
                 download_link = metadata_mapping.get("eodag:download_link").format(
                     dataset=dataset, tile_id=tile["tileID"]
                 )
-                properties["eodag:download_link"] = download_link
                 product = EOProduct(
                     provider="cop_ghsl", properties=properties, collection=collection
+                )
+                product.assets.update(
+                    {
+                        "download_link": {
+                            "href": download_link,
+                            "order:status": "succeeded",
+                        }
+                    }
                 )
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
@@ -429,9 +436,7 @@ class CopGhslSearch(Search):
                 properties.update(format_params)
                 if "proj:code" in filter_params:
                     properties["proj:code"] = filter_params["proj:code"]
-                properties["eodag:download_link"] = download_link.format(
-                    **format_params
-                )
+                item_download_link = download_link.format(**format_params)
                 datetimes = self._get_start_and_end_from_properties(format_params)
                 properties["start_datetime"] = datetimes["start_date"]
                 properties["end_datetime"] = datetimes["end_date"]
@@ -443,11 +448,11 @@ class CopGhslSearch(Search):
                     assets = AssetsDict(product=product)
                     for key, mapping in assets_mapping.items():
                         filters = {k.replace(":", "_"): v for k, v in filters.items()}
-                        download_link = mapping["href"].format(**filters)
+                        asset_href = mapping["href"].format(**filters)
                         assets.update(
                             {
                                 key: {
-                                    "href": download_link,
+                                    "href": asset_href,
                                     "title": mapping["title"],
                                     "type": mapping["type"],
                                 }
@@ -456,6 +461,15 @@ class CopGhslSearch(Search):
                     product.assets = assets
                     if "download_link" in product.assets:
                         product.assets["download_link"]["order:status"] = "succeeded"
+                else:
+                    product.assets.update(
+                        {
+                            "download_link": {
+                                "href": item_download_link,
+                                "order:status": "succeeded",
+                            }
+                        }
+                    )
                 products.append(product)
                 if i == end_index:
                     break
@@ -465,9 +479,16 @@ class CopGhslSearch(Search):
             datetimes = self._get_start_and_end_from_properties(properties)
             properties["start_datetime"] = datetimes["start_date"]
             properties["end_datetime"] = datetimes["end_date"]
-            properties["eodag:download_link"] = download_link
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, collection=collection
+            )
+            product.assets.update(
+                {
+                    "download_link": {
+                        "href": download_link,
+                        "order:status": "succeeded",
+                    }
+                }
             )
             products.append(product)
             num_products = 1

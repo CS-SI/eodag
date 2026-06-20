@@ -73,6 +73,12 @@ class AssetsDict(UserDict):
     def __setitem__(self, key: str, value: dict[str, Any]) -> None:
         if not self._check(key, value):
             return
+        # Merge with an already existing asset so that values seeded earlier
+        # (e.g. ``href`` / ``eodag:order_link``) are not lost when an incoming
+        # mapping only provides a subset of the keys.
+        existing = self.data.get(key)
+        if existing is not None:
+            value = {**existing.data, **value}
         super().__setitem__(key, Asset(self.product, key, value))
         self.sort()
         self._update_product_location()
@@ -109,32 +115,36 @@ class AssetsDict(UserDict):
     def _check(self, asset_key: str, asset_value: dict[str, Any]) -> bool:
         """Validate an asset before insertion.
 
-        Checks that the asset has a valid ``href`` or ``order_link`` and that its
-        URL is not already used by another (non-technical) asset.  Mutates
-        *asset_value* in place by stripping empty/unavailable href/order_link entries.
+        Checks that the asset has a valid ``href`` or ``eodag:order_link`` and that
+        its URL is not already used by another (non-technical) asset.  Mutates
+        *asset_value* in place by stripping empty/unavailable href/order_link entries
+        and normalizing the legacy ``order_link`` key to ``eodag:order_link``.
 
         :param asset_key: Key under which the asset will be stored
         :param asset_value: Mutable asset dictionary (modified in place)
         :returns: ``True`` if the asset is valid and can be inserted, ``False`` otherwise
         """
-        # Asset must have href or order_link
+        # Asset must have href or eodag:order_link
         href = asset_value.pop("href", None)
         if href not in [None, "", NOT_AVAILABLE]:
             asset_value["href"] = href
-        order_link = asset_value.pop("order_link", None)
+        # accept the legacy ``order_link`` key, normalizing it to ``eodag:order_link``
+        order_link = asset_value.pop("eodag:order_link", None) or asset_value.pop(
+            "order_link", None
+        )
         if order_link not in [None, "", NOT_AVAILABLE]:
-            asset_value["order_link"] = order_link
+            asset_value["eodag:order_link"] = order_link
 
-        if "href" not in asset_value and "order_link" not in asset_value:
+        if "href" not in asset_value and "eodag:order_link" not in asset_value:
             logger.warning(
-                "asset '{}' skipped ignored because neither href nor order_link is available".format(
+                "asset '{}' skipped ignored because neither href nor eodag:order_link is available".format(
                     asset_key
                 ),
             )
             return False
 
         def target_url(asset: dict[str, Any]) -> Optional[str]:
-            return asset.get("href") or asset.get("order_link")
+            return asset.get("href") or asset.get("eodag:order_link")
 
         assets = self.as_dict()
         used_urls = [
@@ -179,7 +189,11 @@ class AssetsDict(UserDict):
         :return: list of assets
         """
         if not asset_filter:
-            return [a for a in self.values() if "href" in a]
+            return [
+                a
+                for k, a in self.items()
+                if k not in TECHNICAL_ASSET_KEYS and "href" in a
+            ]
 
         if regex:
             filter_regex = re.compile(asset_filter)
@@ -302,7 +316,7 @@ class Asset(UserDict):
             super().__setitem__("title", self.key)
 
         # Order link behaviour require order:status state
-        orderlink = self.get("order_link")
+        orderlink = self.get("eodag:order_link") or self.get("order_link")
         orderstatus = self.get("order:status")
         if orderlink is not None and orderstatus is None:
             super().__setitem__("order:status", OFFLINE_STATUS)

@@ -420,7 +420,7 @@ class UsgsApi(Api):
         download_request(product, fs_path, progress_callback, **kwargs)
 
         with open(record_filename, "w") as fh:
-            fh.write(product.properties["eodag:download_link"])
+            fh.write(product.remote_location)
         logger.debug(f"Download recorded in {record_filename}")
 
         api.logout()

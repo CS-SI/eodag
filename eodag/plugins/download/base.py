@@ -548,7 +548,7 @@ class Download(PluginTopic):
             if (
                 product.downloader
                 and product.downloader.config.type == "AwsDownload"
-                or len(product.assets) > 0
+                or len(product.assets.get_values()) > 0
                 and (
                     not getattr(self.config, "ignore_assets", False)
                     or kwargs.get("asset") is not None

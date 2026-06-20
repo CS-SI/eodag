@@ -121,7 +121,10 @@ class EODagTestBase(unittest.TestCase):
             "platform": self.platform,
             "instruments": [self.instrument],
             "title": self.local_filename,
-            "eodag:download_link": self.download_url,
+        }
+
+        self.eoproduct_assets = {
+            "download_link": {"href": self.download_url},
         }
 
     def tearDown(self):
@@ -272,12 +275,14 @@ class EODagTestBase(unittest.TestCase):
         return mock.DEFAULT
 
     def _dummy_product(self, provider=None, properties=None, collection=None, **kwargs):
-        return EOProduct(
+        product = EOProduct(
             self.provider if provider is None else provider,
             self.eoproduct_props if properties is None else properties,
             collection=self.collection if collection is None else collection,
             **kwargs,
         )
+        product.assets.update(self.eoproduct_assets)
+        return product
 
     def _dummy_downloadable_product(
         self,
@@ -295,7 +300,7 @@ class EODagTestBase(unittest.TestCase):
         with open(self.local_product_as_archive_path, "rb") as fh:
             responses.add(
                 responses.GET,
-                product.properties["eodag:download_link"],
+                product.remote_location,
                 body=fh.read(),
                 status=200,
                 content_type="application/zip",

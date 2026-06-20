@@ -284,7 +284,6 @@
           - '$.onAmazon'
         _path: '$.path'
         _row: '$.row'
-        eodag:download_link: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
         eodag:thumbnail: '$.thumbnail'
         eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
         id:
@@ -467,7 +466,6 @@
         # Custom parameters (not defined in the base document referenced above)
         eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         _aws_path: '$.awsPath'
-        eodag:download_link: 's3://sentinel-s2-l1c/{_aws_path}'
         eodag:product_path: '$.productPath'
         id:
           - '{{"search":{{"productName":"{id}" }} }}'
@@ -512,7 +510,6 @@
             - 'title'
             - '{title}'
           _aws_path_l2a: '$.tiles[0].path'
-          eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
           eodag:product_path: '$.path'
           start_datetime: '$.timestamp'
           end_datetime: '$.timestamp'
@@ -1664,7 +1661,7 @@
         href: ""
         roles: '["archive", "data"]'
         type: "application/netcdf"
-        order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
+        eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
@@ -1840,7 +1837,7 @@
         href: ""
         roles: '["archive", "data"]'
         type: "application/netcdf"
-        order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
+        eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
     AG_ERA5:
@@ -2295,7 +2292,7 @@
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
-        order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
+        eodag:order_link: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
   products:
     NEMSGLOBAL_TCDC:
       product:type: NEMSGLOBAL
@@ -3244,7 +3241,7 @@
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
-        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{href}","product_id":"{id}", "dataset_id": "{_collection}"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{href}","product_id":"{id}", "dataset_id": "{_collection}"}}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"
@@ -3722,14 +3719,12 @@
       dataset:
         - dataset_id
         - $.dataset
-      eodag:download_link: $.properties.location
-      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
     assets_mapping:
       download_link:
         href: ''
         roles: '["archive", "data"]'
         type: '$.ContentType'
-        "order_link": 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location#url_decode}","product_id":"{id}", "dataset_id": "{dataset}"}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location#url_decode}","product_id":"{id}", "dataset_id": "{dataset}"}'
         order:status: 'orderable'
   products:
     SATELLITE_CARBON_DIOXIDE:
@@ -4014,7 +4009,7 @@
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
-        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -4748,7 +4743,7 @@
         href: ''
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
-        order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{"verb": "retrieve", "request": {qs#to_geojson} }'
+        eodag:order_link: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{"verb": "retrieve", "request": {qs#to_geojson} }'
         order:status: 'orderable'
   products:
     DT_CLIMATE_ADAPTATION:
@@ -5028,7 +5023,7 @@
         href: ''
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
-        order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+        eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
         order:status: 'orderable'
   products:
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
@@ -5333,11 +5328,13 @@
   url: https://hda.data.destination-earth.eu/stac/v2/
   # anchors to avoid duplications
   anchor_orderable_mm: &orderable_mm
-    _order_href: '$.links[?rel=="retrieve"].href'
-    _order_body: '$.links[?rel=="retrieve"].body'
-    eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
-    eodag:download_link: '$.null'
     assets: '$.null'
+  anchor_orderable_am: &orderable_am
+    download_link:
+      _order_href: '$.links[?rel=="retrieve"].href'
+      _order_body: '$.links[?rel=="retrieve"].body'
+      eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
+      order:status: 'orderable'
   search: !plugin
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
@@ -5494,90 +5491,134 @@
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     ERA5_SL_MONTHLY:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     ERA5_PL:
       _collection: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     ERA5_PL_MONTHLY:
       _collection: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     ERA5_LAND:
       _collection: EO.ECMWF.DAT.ERA5_LAND_HOURLY
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     ERA5_LAND_MONTHLY:
       _collection: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     UERRA_EUROPE_SL:
       _collection: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     GRIDDED_GLACIERS_MASS_CHANGE:
       _collection: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     GLACIERS_DIST_RANDOLPH:
       _collection: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SATELLITE_CARBON_DIOXIDE:
       _collection: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SATELLITE_METHANE:
       _collection: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SEASONAL_POSTPROCESSED_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SATELLITE_SEA_LEVEL_GLOBAL:
       _collection: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SATELLITE_SEA_ICE_EDGE_TYPE:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SATELLITE_SEA_ICE_THICKNESS:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_THICKNESS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SATELLITE_SEA_ICE_CONCENTRATION:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_CONCENTRATION
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SEASONAL_POSTPROCESSED_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SEASONAL_ORIGINAL_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SEASONAL_ORIGINAL_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SEASONAL_MONTHLY_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SEASONAL_MONTHLY_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     SIS_HYDRO_MET_PROJ:
       _collection: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     # ECMWF - CEMS
     FIRE_HISTORICAL:
       _collection: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
@@ -5606,54 +5647,80 @@
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_EU_AIR_QUALITY_FORECAST:
       _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GFE_GFAS:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_SOLAR_RADIATION:
       _collection: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GREENHOUSE_INVERSION:
       _collection: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_EAC4_MONTHLY:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_EU_AIR_QUALITY_RE:
       _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_EAC4:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GRF_AUX:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GRF:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GREENHOUSE_EGG4:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     CAMS_GLOBAL_EMISSIONS:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
       metadata_mapping:
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     # COPERNICUS ADS - Digital Elevation Model
     COP_DEM_GLO30_DGED:
       _collection: EO.DEM.DAT.COP-DEM_GLO-30-DGED
@@ -5771,11 +5838,15 @@
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     DT_CLIMATE_ADAPTATION:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
+      assets_mapping:
+        <<: *orderable_am
     # AERIS
     AERIS_IAGOS:
       _collection: EO.AERIS.DAT.IAGOS
@@ -6990,7 +7061,7 @@
         title: "downloadlink"
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
-        order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
+        eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{"inputs": {qs#to_geojson}}'
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical
@@ -7115,12 +7186,14 @@
   products:
     S2_MSI_L2A_MAJA:
       _collection: S2_L2A_MAJA
-      metadata_mapping:
-        eodag:download_link: '$.assets.data.href'
+      assets_mapping:
+        download_link:
+          href: '$.assets.data.href'
     SUPERSITES:
       _collection: SUPERSITES
-      metadata_mapping:
-        eodag:download_link: '$.assets.data.href'
+      assets_mapping:
+        download_link:
+          href: '$.assets.data.href'
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
@@ -7161,8 +7234,10 @@
         platform: '{$.summaries.platform#csv_list}'
     metadata_mapping:
       assets: '{$.assets#dict_with_roles(["data", "thumbnail", "overview"])}'
-      eodag:download_link: '$.assets.enclosure.href'
       title: '{$.properties.title#remove_extension}'
+    assets_mapping:
+      download_link:
+        href: '$.assets.enclosure.href'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -7537,7 +7612,6 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      eodag:download_link: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
       # order:status: must be one of succeeded, ordered, orderable
       order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
@@ -7545,6 +7619,13 @@
         - $.null
       eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+    assets_mapping:
+      download_link:
+        href: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
+        roles: '["archive", "data"]'
+        type: 'application/octet-stream'
+        # order:status: must be one of succeeded, ordered, orderable
+        order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'

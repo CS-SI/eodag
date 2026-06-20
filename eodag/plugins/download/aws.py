@@ -31,6 +31,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from lxml import etree
 from requests.auth import AuthBase
 
+from eodag.api.product._assets import TECHNICAL_ASSET_KEYS
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
@@ -588,22 +589,22 @@ class AwsDownload(Download):
         :return: tuples of bucket names and prefixes
         """
         # if assets are defined, use them instead of scanning product.location
-        if len(product.assets) > 0 and not ignore_assets:
+        # technical assets (e.g. download_link) are product-level links, not files
+        real_assets = {
+            k: v for k, v in product.assets.items() if k not in TECHNICAL_ASSET_KEYS
+        }
+        if real_assets and not ignore_assets:
             if asset_filter:
                 filter_regex = re.compile(asset_filter)
-                assets_keys = getattr(product, "assets", {}).keys()
-                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-                filtered_assets = {
-                    a_key: getattr(product, "assets", {})[a_key]
-                    for a_key in assets_keys
-                }
+                assets_keys = list(filter(filter_regex.fullmatch, real_assets.keys()))
+                filtered_assets = {a_key: real_assets[a_key] for a_key in assets_keys}
                 assets_values = [a for a in filtered_assets.values() if "href" in a]
                 if not assets_values:
                     raise NotAvailableError(
                         rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                     )
             else:
-                assets_values = list(product.assets.values())
+                assets_values = list(real_assets.values())
 
             bucket_names_and_prefixes = []
             for complementary_url in assets_values:

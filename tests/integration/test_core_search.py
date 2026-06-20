@@ -591,18 +591,16 @@ class TestCoreSearch(unittest.TestCase):
             "provider_matching_download_link",
             "https://foo.bar/baz/search",
         )
+        product_matching_download_link = EOProduct(
+            "provider_matching_download_link",
+            dict(geometry="POINT (0 0)", id="a"),
+        )
+        product_matching_download_link.assets.update(
+            {"download_link": {"href": "https://somewhere/to/download"}}
+        )
         mock_query.side_effect = [
             SearchResult(
-                [
-                    EOProduct(
-                        "provider_matching_download_link",
-                        dict(
-                            geometry="POINT (0 0)",
-                            id="a",
-                            **{"eodag:download_link": "https://somewhere/to/download"},
-                        ),
-                    )
-                ],
+                [product_matching_download_link],
                 1,
             ),
         ]
@@ -620,18 +618,16 @@ class TestCoreSearch(unittest.TestCase):
             "provider_matching_order_link",
             "https://foo.bar/baz/search",
         )
+        product_matching_order_link = EOProduct(
+            "provider_matching_download_link",
+            dict(geometry="POINT (0 0)", id="a"),
+        )
+        product_matching_order_link.assets.update(
+            {"download_link": {"eodag:order_link": "https://somewhere/to/download"}}
+        )
         mock_query.side_effect = [
             SearchResult(
-                [
-                    EOProduct(
-                        "provider_matching_download_link",
-                        dict(
-                            geometry="POINT (0 0)",
-                            id="a",
-                            **{"eodag:order_link": "https://somewhere/to/download"},
-                        ),
-                    )
-                ],
+                [product_matching_order_link],
                 1,
             ),
         ]

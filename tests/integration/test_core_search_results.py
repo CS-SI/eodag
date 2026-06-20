@@ -29,7 +29,6 @@ from stac_validator import stac_validator
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
     GENERIC_STAC_PROVIDER,
-    NOT_AVAILABLE,
     Download,
     EODataAccessGateway,
     EOProduct,
@@ -106,10 +105,6 @@ class TestCoreSearchResults(EODagTestCase):
                         "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "product:type": "OCN",
-                        "eodag:download_link": (
-                            "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
-                            "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
-                        ),
                         "eodag:provider": "cop_dataspace",
                         "platform": "S1A",
                         "eo:cloud_cover": 0,
@@ -144,6 +139,14 @@ class TestCoreSearchResults(EODagTestCase):
                             ]
                         ],
                         "type": "Polygon",
+                    },
+                    "assets": {
+                        "download_link": {
+                            "href": (
+                                "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+                                "(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
+                            ),
+                        },
                     },
                 }
             ],
@@ -473,6 +476,9 @@ class TestCoreSearchResults(EODagTestCase):
             feature["geometry"], self.geojson_repr["features"][0]["geometry"]
         )
         for key, value in self.geojson_repr["features"][0]["properties"].items():
+            if key in ("eodag:download_link", "eodag:order_link"):
+                # migrated to the "download_link" asset, no longer a top-level property
+                continue
             if key not in ("geometry", "id"):
                 if isinstance(value, dict):
                     self.assertDictEqual(value, feature["properties"][key])

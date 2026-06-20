@@ -149,6 +149,16 @@ class HTTPDownload(Download):
             "ignore_assets", getattr(self.config, "ignore_assets", False)
         )
 
+    @staticmethod
+    def _set_download_link_href(product: EOProduct, href: str) -> None:
+        """Update (or create) the product ``download_link`` asset ``href`` and keep
+        ``EOProduct.location`` / ``EOProduct.remote_location`` in sync."""
+        product.remote_location = product.location = href
+        if "download_link" in product.assets:
+            product.assets["download_link"]["href"] = href
+        else:
+            product.assets["download_link"] = {"href": href}
+
     def _order(
         self,
         product: EOProduct,
@@ -158,7 +168,7 @@ class HTTPDownload(Download):
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is orderable
-        and has ``eodag:order_link`` in its properties.
+        and has ``eodag:order_link`` in its ``download_link`` asset.
         Product ordering can be configured using the following download plugin parameters:
 
             - :attr:`~eodag.config.PluginConfig.order_enabled`: Wether order is enabled or not (may not use this method
@@ -171,7 +181,7 @@ class HTTPDownload(Download):
 
               - *metadata_mapping*: edit or add new product propoerties properties
 
-        Product properties used for order:
+        Product ``download_link`` asset key used for order:
 
             - **eodag:order_link**: order request URL
 
@@ -180,6 +190,7 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :returns: the returned json status response
         """
+        order_link = product.assets.get("download_link", {}).get("eodag:order_link")
         if "download_link" in product.assets:
             product.assets["download_link"]["order:status"] = STAGING_STATUS
 
@@ -192,7 +203,7 @@ class HTTPDownload(Download):
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
             # separate url & parameters
-            parts = urlparse(str(product.properties["eodag:order_link"]))
+            parts = urlparse(str(order_link))
             query_dict = {}
             # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
             # the resulting `query_dict` would be erroneous.
@@ -209,7 +220,7 @@ class HTTPDownload(Download):
             if query_dict:
                 order_kwargs["json"] = query_dict
         else:
-            order_url = product.properties["eodag:order_link"]
+            order_url = order_link
             order_kwargs = {}
 
         headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
@@ -269,6 +280,9 @@ class HTTPDownload(Download):
             {"json": json_response, "headers": {**response.headers}},
             on_response_mm_jsonpath,
         )
+        # the freshly ordered download link is moved to the download_link asset and
+        # must never end up in product.properties
+        download_link = properties_update.pop("eodag:download_link", None)
         product.properties.update(
             {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
@@ -282,10 +296,8 @@ class HTTPDownload(Download):
                 + "_"
                 + product.properties["id"]
             )
-        if "eodag:download_link" in product.properties:
-            product.remote_location = product.location = product.properties[
-                "eodag:download_link"
-            ]
+        if download_link not in (None, NOT_AVAILABLE):
+            self._set_download_link_href(product, download_link)
             logger.debug(f"Product location updated to {product.location}")
 
         return json_response
@@ -485,8 +497,8 @@ class HTTPDownload(Download):
         if (
             success_status and success_status != status_dict.get("eodag:order_status")
         ) or (success_code and success_code != response.status_code):
-            # Remove the download link if the order has not been completed or was not successful
-            product.properties.pop("eodag:download_link", None)
+            # Order has not been completed or was not successful: the download_link
+            # asset order:status (set to STAGING above) prevents the download.
             return None
 
         if "download_link" in product.assets:
@@ -596,12 +608,13 @@ class HTTPDownload(Download):
                 f"Could not parse result after order success. Please search and download {product} again"
             ) from e
 
-        # update product
+        # update product; the freshly ordered download link is moved to the
+        # download_link asset and must never end up in product.properties
+        _missing = object()
+        download_link = properties_update.pop("eodag:download_link", _missing)
         product.properties.update(properties_update)
-        if "eodag:download_link" in properties_update:
-            product.location = product.remote_location = product.properties[
-                "eodag:download_link"
-            ]
+        if download_link is not _missing:
+            self._set_download_link_href(product, download_link)
         else:
             self.order_response_process(response, product)
 
@@ -641,8 +654,9 @@ class HTTPDownload(Download):
             return fs_path
 
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
+        if kwargs.get("asset") is not None or (
+            len(product.assets.get_values()) > 0
+            and not self._should_ignore_assets(product)
         ):
             try:
                 fs_path = self._download_assets(
@@ -805,8 +819,9 @@ class HTTPDownload(Download):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not self._should_ignore_assets(product) or kwargs.get("asset") is not None
+        if kwargs.get("asset") is not None or (
+            len(product.assets.get_values()) > 0
+            and not self._should_ignore_assets(product)
         ):
             executor = ThreadPoolExecutor(
                 max_workers=getattr(self.config, "max_workers", None)
@@ -950,7 +965,7 @@ class HTTPDownload(Download):
             "order:status", ONLINE_STATUS
         )
         if (
-            "eodag:order_link" in product.properties
+            product.assets.get("download_link", {}).get("eodag:order_link")
             and order_status == OFFLINE_STATUS
             and not product.properties.get("eodag:order_status")
         ):
