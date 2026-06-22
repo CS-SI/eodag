@@ -1,0 +1,66 @@
+name: Test from conda-forge
+
+on:
+  schedule:
+    # Run every Monday at 7:00 AM UTC
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+jobs:
+  conda-forge-test:
+    name: Test conda-forge package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.14"]
+        os: [ubuntu-latest, windows-latest]
+      fail-fast: false
+    steps:
+      - name: Set up conda environment with mamba
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          mamba-version: "*"
+          channels: conda-forge
+          channel-priority: true
+          auto-activate-base: true
+
+      - name: Install eodag from conda-forge
+        run: |
+          mamba install -y -c conda-forge eodag
+
+      - name: Verify installation - Basic imports
+        # Use conda run to ensure environment is properly activated on all platforms
+        run: |
+          conda run python -c "import eodag; print(f'eodag version: {eodag.__version__}')"
+          conda run python -c "from eodag import EODataAccessGateway; print('Successfully imported EODataAccessGateway')"
+          conda run python -c "from eodag.api.product import EOProduct; print('Successfully imported EOProduct')"
+
+      - name: Verify CLI
+        run: |
+          conda run eodag version
+          conda run eodag --help | head -20
+          conda run eodag list --no-fetch | head -15
+
+      - name: Test basic functionality
+        shell: bash -l {0}
+        working-directory: ${{ runner.temp }}
+        run: |
+          conda run python << 'EOF'
+          from eodag import EODataAccessGateway
+
+          # Initialize the gateway
+          dag = EODataAccessGateway()
+
+          # Check that some providers are available
+          available_providers = dag.providers.names
+          print(f"Available providers: {available_providers[:3]}...")  # Print first 3
+          assert len(available_providers) > 0, "No providers found!"
+
+          # Check that some collections are available
+          collections = dag.list_collections(fetch_providers=False)
+          print(f"Available collections: {collections[:3]}...")  # Print first 3
+          assert len(collections) > 0, "No collections found!"
+
+          print("✓ Basic functionality test passed!")
+          EOF
