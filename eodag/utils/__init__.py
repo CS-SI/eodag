@@ -52,6 +52,8 @@ from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
+import yaml
+
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
@@ -1461,14 +1463,62 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     return parse(str_to_parse)
 
 
+def _get_legacy_aware_yaml_loader() -> type:
+    """Create a YAML loader that supports both legacy tags (!provider, !plugin, !!python/tuple) and safe loading.
+
+    Uses CSafeLoader for performance (C implementation) while adding support for legacy EODAG tags.
+
+    :returns: A YAML Loader class that handles legacy tags while maintaining security.
+    """
+
+    class LegacyAwareLoader(yaml.CSafeLoader):
+        """YAML loader that accepts legacy EODAG tags (!provider, !plugin, !!python/tuple)
+        and converts them to safe Python objects. Uses CSafeLoader for performance."""
+
+        pass
+
+    # Constructor for !provider tag - wrap the content with provider name as key
+    def provider_constructor(loader, node):
+        if isinstance(node, yaml.MappingNode):
+            mapping = loader.construct_mapping(node)
+            # Extract the provider name from the config, wrap it as a key
+            if "name" in mapping:
+                provider_name = mapping["name"]
+                return {provider_name: mapping}
+            # If no name is found, return as-is (will likely cause validation error)
+            return mapping
+        return None
+
+    # Constructor for !plugin tag - just return the dict as-is
+    def plugin_constructor(loader, node):
+        if isinstance(node, yaml.MappingNode):
+            return loader.construct_mapping(node)
+        return None
+
+    # Constructor for !!python/tuple tag - convert to tuple
+    def python_tuple_constructor(loader, node):
+        if isinstance(node, yaml.SequenceNode):
+            return tuple(loader.construct_sequence(node))
+        elif isinstance(node, yaml.ScalarNode):
+            return (loader.construct_scalar(node),)
+        return None
+
+    # Register the constructors for legacy tags
+    LegacyAwareLoader.add_constructor("!provider", provider_constructor)
+    LegacyAwareLoader.add_constructor("!plugin", plugin_constructor)
+    LegacyAwareLoader.add_constructor(
+        "tag:yaml.org,2002:python/tuple", python_tuple_constructor
+    )
+
+    return LegacyAwareLoader
+
+
 @functools.lru_cache()
 def _mutable_cached_yaml_load(config_path: str) -> Any:
-    import yaml
-
     with open(
         os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
     ) as fh:
-        return yaml.load(fh, Loader=yaml.CSafeLoader)
+        return yaml.load(fh, Loader=_get_legacy_aware_yaml_loader())
 
 
 def cached_yaml_load(config_path: str) -> dict[str, Any]:
@@ -1482,10 +1532,8 @@ def cached_yaml_load(config_path: str) -> dict[str, Any]:
 
 @functools.lru_cache()
 def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
-    import yaml
-
     with open(config_path, "r") as fh:
-        return list(yaml.load_all(fh, Loader=yaml.CSafeLoader))
+        return list(yaml.load_all(fh, Loader=_get_legacy_aware_yaml_loader()))
 
 
 def cached_yaml_load_all(config_path: str) -> list[Any]:
