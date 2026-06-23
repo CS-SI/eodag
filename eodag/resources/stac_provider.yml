@@ -56,7 +56,6 @@ search:
       license: '$.license'
       title: '$.title'
       extent: '$.extent'
-    metadata_path: '$.properties.*'
   discover_queryables:
     fetch_url: '{api_endpoint}/../queryables'
     collection_fetch_url: '{api_endpoint}/../collections/{provider_collection}/queryables'

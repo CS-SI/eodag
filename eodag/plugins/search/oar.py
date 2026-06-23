@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import QueryStringSearch, StacSearch
+from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -29,52 +30,105 @@ logger = logging.getLogger("eodag.search.oar")
 
 
 class OARSearch(QueryStringSearch):
-    """OGC API - Records search plugin.
+    """OGC API - Records Core search plugin.
 
     Search requests use the standard query-string GET implementation from
     :class:`~eodag.plugins.search.qssearch.QueryStringSearch`, while queryables
     discovery reuses :class:`~eodag.plugins.search.qssearch.StacSearch`.
+
+    .. seealso::
+        - OGC API - Records Core specification: https://docs.ogc.org/is/20-004r1/20-004r1.html
     """
 
     def __init__(self, provider: str, config: "PluginConfig") -> None:
-        # OGC API - Records defaults (20-004r1, Search): bbox, datetime, limit,
-        # plus Records parameters q, type, ids and externalIds.
+        if not hasattr(config, "api_endpoint"):
+            raise MisconfiguredError(
+                f"Missing required configuration 'api_endpoint' for provider '{provider}'"
+            )
+        if not config.api_endpoint.rstrip("/").endswith("/items"):
+            api_root_endpoint = config.api_endpoint.rstrip("/")
+            config.api_endpoint = api_root_endpoint + "/{_collection}/items"
+        else:
+            try:
+                api_root_endpoint = config.api_endpoint.rstrip("/").rsplit("/", 3)[0]
+            except IndexError:
+                raise MisconfiguredError(
+                    f"Invalid 'api_endpoint' configuration for provider '{provider}'"
+                )
+
+        # Plugin default configuration
         config.__dict__.setdefault("result_type", "json")
         config.__dict__.setdefault("results_entry", "features")
 
+        # Pagination
         config.__dict__.setdefault("pagination", {})
+        config.pagination.setdefault(
+            "next_page_url_tpl", "{url}?{search}&limit={limit}&offset={next_page_token}"
+        )
         config.pagination.setdefault("total_items_nb_key_path", "$.numberMatched")
+        config.pagination.setdefault("start_page", 0)
+        config.pagination.setdefault("next_page_token_key", "offset")
 
-        config.__dict__.setdefault("sort", {})
-        config.sort.setdefault("sort_by_tpl", "&sortby={sort_order}{sort_param}")
-        config.sort.setdefault("sort_order_mapping", {})
-        config.sort["sort_order_mapping"].setdefault("ascending", "+")
-        config.sort["sort_order_mapping"].setdefault("descending", "-")
-
-        config.__dict__.setdefault("discover_queryables", {})
-        config.discover_queryables.setdefault(
-            "fetch_url", "{api_endpoint}/../queryables"
+        # Discover metadata
+        config.__dict__.setdefault("discover_metadata", {})
+        config.discover_metadata.setdefault("auto_discovery", True)
+        config.discover_metadata.setdefault(
+            "metadata_pattern", r"^(?!collection)[a-zA-Z0-9_]+$"
         )
-        config.discover_queryables.setdefault(
-            "collection_fetch_url",
-            "{api_endpoint}/../collections/{provider_collection}/queryables",
-        )
-        config.discover_queryables.setdefault("result_type", "json")
-        config.discover_queryables.setdefault("results_entry", "$.properties[*]")
+        config.discover_metadata.setdefault("search_param", "{metadata}={{{metadata}}}")
+        config.discover_metadata.setdefault("metadata_path", "$.properties.*")
 
+        # Discover collections
+        config.__dict__.setdefault("discover_collections", {})
+        config.discover_collections.setdefault(
+            "fetch_url", api_root_endpoint + "/collections"
+        )
+        config.discover_collections.setdefault("result_type", "json")
+        config.discover_collections.setdefault("results_entry", "$.collections[*]")
+        config.discover_collections.setdefault("generic_collection_id", "$.id")
+        config.discover_collections.setdefault(
+            "generic_collection_parsable_properties", {}
+        )
+        config.discover_collections[
+            "generic_collection_parsable_properties"
+        ].setdefault("_collection", "$.id")
+        config.discover_collections.setdefault(
+            "generic_collection_parsable_metadata", {}
+        )
+        config.discover_collections["generic_collection_parsable_metadata"].setdefault(
+            "description", "$.description"
+        )
+        config.discover_collections["generic_collection_parsable_metadata"].setdefault(
+            "keywords", "$.keywords"
+        )
+        config.discover_collections["generic_collection_parsable_metadata"].setdefault(
+            "title", "$.title"
+        )
+        config.discover_collections["generic_collection_parsable_metadata"].setdefault(
+            "extent", "$.extent"
+        )
+
+        # Metadata mapping
         config.__dict__.setdefault("metadata_mapping", {})
-        config.metadata_mapping.setdefault("q", ["q={q}", "$.properties.title"])
-        config.metadata_mapping.setdefault("type", ["type={type#csv_list}", "$.type"])
-        config.metadata_mapping.setdefault("ids", ["ids={ids#csv_list}", "$.id"])
+        config.metadata_mapping.setdefault("title", "$.properties.title")
+        config.metadata_mapping.setdefault("datetime", "$.properties.datetime")
+        config.metadata_mapping.setdefault("updated", "$.properties.updated")
         config.metadata_mapping.setdefault(
-            "externalIds",
-            ["externalIds={externalIds#csv_list}", "$.properties.externalIds"],
+            "end_datetime",
+            [
+                '{{"datetime":"{start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}"}}',
+                "$.null",
+            ],
         )
-        config.metadata_mapping.setdefault("bbox", ["bbox={bbox}", "$.bbox"])
+        config.metadata_mapping.setdefault("id", ["null", "$.id"])
         config.metadata_mapping.setdefault(
-            "datetime", ["datetime={datetime}", "$.properties.datetime"]
+            "geometry",
+            [
+                '{{"intersects":{geometry#to_geojson}}}',
+                "($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, "
+                "-180 90, -180 -90, 180 -90)))`)|($.geometry[*])",
+            ],
         )
-        config.metadata_mapping.setdefault("limit", ["limit={limit}", "$.null"])
 
         super().__init__(provider, config)
 

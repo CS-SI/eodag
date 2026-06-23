@@ -4988,12 +4988,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self,
         mock_stacsearch_discover_queryables,
     ):
-        """OGCApiRecordsSearch must reuse StacSearch queryables discovery."""
-        OGCApiRecordsSearch = import_module(
-            "eodag.plugins.search.oar"
-        ).OGCApiRecordsSearch
+        """OARSearch must reuse StacSearch queryables discovery."""
+        OARSearch = import_module("eodag.plugins.search.oar").OARSearch
 
-        search_plugin = OGCApiRecordsSearch.__new__(OGCApiRecordsSearch)
+        search_plugin = OARSearch.__new__(OARSearch)
         mock_stacsearch_discover_queryables.return_value = {
             "collection": self.collection
         }
@@ -5006,12 +5004,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         )
 
     def test_plugins_search_oar_preconfigured_defaults(self):
-        """OGCApiRecordsSearch must expose OGC API - Records search defaults."""
+        """OARSearch must expose OGC API - Records search defaults."""
         from eodag.config import PluginConfig
 
-        OGCApiRecordsSearch = import_module(
-            "eodag.plugins.search.oar"
-        ).OGCApiRecordsSearch
+        OARSearch = import_module("eodag.plugins.search.oar").OARSearch
 
         config = PluginConfig()
         config.metadata_mapping = {
@@ -5025,7 +5021,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         config.discover_queryables = {"fetch_url": "https://example.test/queryables"}
         config.products = {}
 
-        plugin = OGCApiRecordsSearch("dummy", config)
+        plugin = OARSearch("dummy", config)
 
         self.assertIn("q", plugin.config.metadata_mapping)
         self.assertEqual(plugin.config.metadata_mapping["q"][0], "custom_q={q}")
