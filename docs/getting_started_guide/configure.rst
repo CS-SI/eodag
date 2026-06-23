@@ -148,11 +148,11 @@ Some EODAG core settings can be overriden using environment variables:
 * ``EODAG_LOCS_CFG_FILE`` for defining the desired path to the
   `locations <../notebooks/api_user_guide/3_search.ipynb#Locations-search>`_
   configuration file in place of `~/.config/eodag/locations.yml`.
-* ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
+* ``EODAG_PROVIDERS_CFG_FILE`` **(deprecated)** for defining the desired path to the providers configuration file in place of
   `<python-site-packages>/eodag/resources/providers.yml`.
 * ``EODAG_PROVIDERS_CFG_DIR`` for defining the desired path to the directory containing providers configuration files in place of
   `<python-site-packages>/eodag/resources/providers/`.
-* ``EODAG_COLLECTIONS_CFG_FILE`` **(deprecated)** for defining the desired path to the collections configuration file in place of
+* ``EODAG_COLLECTIONS_CFG_FILE`` for defining the desired path to the collections configuration file in place of
   `<python-site-packages>/eodag/resources/collections.yml`.
 * ``EODAG_EXT_COLLECTIONS_CFG_FILE`` for defining the desired path to the `external collections configuration file\
   <../notebooks/api_user_guide/1_providers_collections_available.ipynb#Collections-discovery>`_

@@ -701,7 +701,7 @@ def load_default_config() -> dict[str, ProviderConfig]:
             "(Please use EODAG_PROVIDERS_CFG_DIR instead)"
             " -- Deprecated since v4.5.0",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=3,
         )
         return load_config(eodag_providers_cfg_file)
 
