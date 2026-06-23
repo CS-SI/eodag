@@ -1,11 +1,11 @@
-!provider # MARK: creodias_s3
+creodias_s3:
   name: creodias_s3
   priority: 0
   description: CloudFerro DIAS data through S3 protocol
   roles:
     - host
   url: https://creodias.eu/
-  search: !plugin
+  search:
     type: CreodiasS3Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     s3_endpoint: 'https://eodata.cloudferro.com'
@@ -30,7 +30,7 @@
       max_limit: 1_000
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_by_tpl: '&$orderby={sort_param} {sort_order}'
       sort_param_mapping:
         start_datetime: ContentDate/Start
@@ -242,12 +242,12 @@
         - $.null
       eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-  download: !plugin
+  download:
     type: AwsDownload
     s3_endpoint: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: AwsAuth
     auth_error_code: 403
     s3_endpoint: 'https://eodata.cloudferro.com'

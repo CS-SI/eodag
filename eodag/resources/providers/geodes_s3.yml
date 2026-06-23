@@ -1,11 +1,11 @@
-!provider  # MARK: geodes_s3
+geodes_s3:
   name: geodes_s3
   priority: 0
   roles:
     - host
   description: French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
   url: https://geodes.cnes.fr
-  search: !plugin
+  search:
     type: StacListAssets
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     s3_endpoint: https://s3.datalake.cnes.fr
@@ -29,7 +29,7 @@
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: identifier
         start_datetime: start_datetime
@@ -118,11 +118,11 @@
       _collection: THEIA_WATERQUAL_SENTINEL2_L2B
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
     ignore_assets: True
-  auth: !plugin
+  auth:
     type: AwsAuth
     auth_error_code: 403
     s3_endpoint: https://s3.datalake.cnes.fr

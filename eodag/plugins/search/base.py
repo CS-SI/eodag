@@ -265,8 +265,25 @@ class Search(PluginTopic):
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
-        # remove duplicates
-        sort_by_arg = list(dict.fromkeys(sort_by_arg))
+        # tolerate legacy format: ["sort_param", "ASC"]
+        if (
+            isinstance(sort_by_arg, (list, tuple))
+            and len(sort_by_arg) == 2
+            and isinstance(sort_by_arg[0], str)
+            and isinstance(sort_by_arg[1], str)
+        ):
+            sort_by_arg = [(sort_by_arg[0], sort_by_arg[1])]
+
+        # normalize to hashable tuples and remove duplicates
+        sort_by_arg_normalized: list[tuple[str, str]] = []
+        for sort_by_tuple in sort_by_arg:
+            if not isinstance(sort_by_tuple, (list, tuple)) or len(sort_by_tuple) != 2:
+                raise ValidationError(
+                    "sort_by must be a list of tuples like [('start_datetime', 'ASC')]"
+                )
+            sort_by_arg_normalized.append((sort_by_tuple[0], sort_by_tuple[1]))
+
+        sort_by_arg = list(dict.fromkeys(sort_by_arg_normalized))
 
         sort_by_qs: str = ""
         sort_by_qp: dict[str, Any] = {}

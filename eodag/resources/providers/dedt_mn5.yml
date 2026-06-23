@@ -1,11 +1,11 @@
-!provider # MARK: dedt_mn5
+dedt_mn5:
   name: dedt_mn5
   priority: 0
   roles:
     - host
   description: Destination Earth Digital Twin Outputs from marenostrum through Polytope API
   url: https://polytope.mn5.apps.dte.destination-earth.eu/openapi
-  search: !plugin
+  search:
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true
@@ -285,7 +285,7 @@
       experiment: Tplus2.0K
       realization: "5"
       model: IFS-FESOM
-  download: !plugin
+  download:
     type: HTTPDownload
     ssl_verify: true
     auth_error_code: 401
@@ -314,7 +314,7 @@
         metadata_mapping:
           eodag:download_link: $.headers.Location
     no_auth_download: True
-  auth: !plugin
+  auth:
     type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/

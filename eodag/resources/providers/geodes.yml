@@ -1,11 +1,11 @@
-!provider  # MARK: geodes
+geodes:
   name: geodes
   priority: 0
   roles:
     - host
   description: French National Space Agency (CNES) Earth Observation portal
   url: https://geodes.cnes.fr
-  search: !plugin
+  search:
     type: GeodesSearch
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
@@ -28,7 +28,7 @@
     sort:
       sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: identifier
         start_datetime: start_datetime
@@ -117,14 +117,14 @@
       _collection: THEIA_WATERQUAL_SENTINEL2_L2B
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     ignore_assets: true
     archive_depth: 2
     auth_error_code:
       - 401
       - 403
-  auth: !plugin
+  auth:
     type: HTTPHeaderAuth
     matching_url: https://geodes-portal.cnes.fr
     headers:

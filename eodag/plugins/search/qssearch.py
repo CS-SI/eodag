@@ -49,7 +49,6 @@ import concurrent.futures
 import geojson
 import orjson
 import requests
-import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import ConfigDict, Field, create_model
@@ -1768,7 +1767,7 @@ class PostJsonSearch(QueryStringSearch):
                 )["parameters"]
             ):
                 # config backup
-                plugin_config_backup = yaml.dump(self.config)
+                plugin_config_backup = copy_deepcopy(self.config)
 
                 self.config.api_endpoint = query_value
                 self.config.products[collection][
@@ -1800,9 +1799,7 @@ class PostJsonSearch(QueryStringSearch):
                     raise
                 finally:
                     # restore config
-                    self.config = yaml.load(
-                        plugin_config_backup, self.config.yaml_loader
-                    )
+                    self.config = plugin_config_backup
 
                 return eo_products
 

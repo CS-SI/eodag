@@ -1,11 +1,11 @@
-!provider # MARK: meteoblue
+meteoblue:
   name: meteoblue
   priority: 0
   roles:
     - host
   description: Meteoblue
   url: https://www.meteoblue.com
-  search: !plugin
+  search:
     type: MeteoblueSearch
     api_endpoint: 'https://my.meteoblue.com/dataset/query'
     need_auth: true
@@ -65,7 +65,7 @@
     GENERIC_COLLECTION:
       _collection: '{collection}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
-  download: !plugin
+  download:
     type: HTTPDownload
     ssl_verify: true
     method: POST
@@ -89,7 +89,7 @@
           eodag:order_id: '$.json.id'
           eodag:download_link: 'http://queueresults.meteoblue.com/{eodag:order_id}'
           eodag:download_method: '{$.null#replace_str("Not Available","GET")}'
-  auth: !plugin
+  auth:
     type: HttpQueryStringAuth
     matching_url: https?://[a-z]+.meteoblue.com
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'

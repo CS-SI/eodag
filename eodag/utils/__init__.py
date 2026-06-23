@@ -1468,7 +1468,7 @@ def _mutable_cached_yaml_load(config_path: str) -> Any:
     with open(
         os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
     ) as fh:
-        return yaml.load(fh, Loader=yaml.SafeLoader)
+        return yaml.load(fh, Loader=yaml.CSafeLoader)
 
 
 def cached_yaml_load(config_path: str) -> dict[str, Any]:
@@ -1485,7 +1485,7 @@ def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
     import yaml
 
     with open(config_path, "r") as fh:
-        return list(yaml.load_all(fh, Loader=yaml.Loader))
+        return list(yaml.load_all(fh, Loader=yaml.CSafeLoader))
 
 
 def cached_yaml_load_all(config_path: str) -> list[Any]:

@@ -1,11 +1,11 @@
-!provider # MARK: fedeo_ceda
+fedeo_ceda:
   name: fedeo_ceda
   priority: 0
   description: CEDA datasets through FedEO Catalog
   roles:
     - host
   url: https://fedeo.ceos.org/
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
@@ -45,5 +45,5 @@
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload

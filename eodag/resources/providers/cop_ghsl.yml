@@ -1,11 +1,11 @@
-!provider # MARK: cop_ghsl
+cop_ghsl:
   name: cop_ghsl
   priority: 0
   description: Copernicus Global Human Settlement Layer
   roles:
     - host
   url: https://human-settlement.emergency.copernicus.eu/index.php
-  search: !plugin
+  search:
     type: CopGhslSearch
     api_endpoint: https://human-settlement.emergency.copernicus.eu/data/tilesDLD
     need_auth: false
@@ -118,6 +118,6 @@
       grouped_by: region
       metadata_mapping:
         eodag:download_link: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A/GHS_UCDB_REGION_{region}_R2024A/V1-1/GHS_UCDB_REGION_{region}_R2024A_V1_1.zip
-  download: !plugin
+  download:
     type: HTTPDownload
     ssl_verify: true

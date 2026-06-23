@@ -1,8 +1,8 @@
 ---
-!provider
+fakeplugin_provider:
   name: fakeplugin_provider
   priority: 0
-  api: !plugin
+  api:
     type: FakePluginAPI
     endpoint: 'https://fakeplugin-endpoint'
   products:

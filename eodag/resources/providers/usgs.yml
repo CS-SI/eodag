@@ -1,11 +1,11 @@
-!provider # MARK: usgs
+usgs:
   name: usgs
   priority: 0
   description: U.S geological survey catalog for Landsat products
   roles:
     - host
   url: https://earthexplorer.usgs.gov/
-  api: !plugin
+  api:
     type: UsgsApi
     need_auth: true
     pagination:

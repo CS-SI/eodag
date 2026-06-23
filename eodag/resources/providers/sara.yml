@@ -1,11 +1,11 @@
-!provider # MARK: sara
+sara:
   name: sara
   priority: 0
   description: Sentinel Australasia Regional Access
   roles:
     - host
   url: https://www.copernicus.gov.au/
-  search: !plugin
+  search:
     type: QueryStringSearch
     # The endpoint is based off of the collection. There is a generic endpoint,
     # but can be very slow if not enough metdata is provided.
@@ -20,7 +20,7 @@
       max_limit: 500
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_param_mapping:
         start_datetime: startDate
@@ -268,14 +268,14 @@
       processing:level: LEVEL-2
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     extract: true
     archive_depth: 2
     order_enabled: true
     auth_error_code: 403
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: GenericAuth
     matching_url: https://copernicus.nci.org.au
     method: basic

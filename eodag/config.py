@@ -580,10 +580,6 @@ class PluginConfig(yaml.YAMLObject):
     #: which authentication method should be used
     method: str
 
-    yaml_loader = yaml.Loader
-    yaml_dumper = yaml.SafeDumper
-    yaml_tag = "!plugin"
-
     def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
         """Return a new PluginConfig with merged values."""
         new_config = self.__class__.from_mapping(self.__dict__)
@@ -598,12 +594,6 @@ class PluginConfig(yaml.YAMLObject):
     def __contains__(self, item: str) -> bool:
         """Check if a key is in the PluginConfig."""
         return item in self.__dict__
-
-    @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
-        """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
-        cls.validate(tuple(node_key.value for node_key, _ in node.value))
-        return loader.construct_yaml_object(node, cls)
 
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
@@ -727,11 +717,29 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
 
     try:
         # Providers configs are stored in this file as separated yaml documents
-        # Load all of it
-        providers_configs: list[ProviderConfig] = cached_yaml_load_all(config_path)
+        # Load all of it as plain YAML dictionaries
+        providers_configs_dicts: list[dict[str, Any]] = cached_yaml_load_all(
+            config_path
+        )
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e
+
+    # Convert dictionaries to ProviderConfig objects
+    from eodag.api.provider import ProviderConfig as ProviderConfigClass
+
+    providers_configs: list[ProviderConfig] = []
+    for provider_dict in providers_configs_dicts:
+        if provider_dict is not None:
+            # Each provider YAML file has one provider at the top level
+            # The dictionary will have the provider name as key and provider config as value
+            for provider_name, provider_config in provider_dict.items():
+                if isinstance(provider_config, dict):
+                    # Add the name to the config if not already present
+                    if "name" not in provider_config:
+                        provider_config["name"] = provider_name
+                    provider_obj = ProviderConfigClass.from_mapping(provider_config)
+                    providers_configs.append(provider_obj)
 
     return {p.name: p for p in providers_configs if p is not None}
 

@@ -52,7 +52,6 @@ from eodag.utils import (
     update_nested_dict,
 )
 from eodag.utils.exceptions import (
-    MisconfiguredError,
     UnsupportedCollection,
     UnsupportedProvider,
     ValidationError,
@@ -104,10 +103,6 @@ class ProviderConfig(yaml.YAMLObject):
     search_auth: PluginConfig
     download_auth: PluginConfig
 
-    yaml_loader = yaml.Loader
-    yaml_dumper = yaml.SafeDumper
-    yaml_tag = "!provider"
-
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Apply defaults when building from yaml."""
         self.__dict__.update(state)
@@ -118,31 +113,19 @@ class ProviderConfig(yaml.YAMLObject):
         return key in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[Self]:
-        """Build a :class:`~eodag.api.provider.ProviderConfig` from Yaml"""
-        cls.validate(tuple(node_key.value for node_key, _ in node.value))
-        for node_key, node_value in node.value:
-            if node_key.value == "name":
-                node_value.value = slugify(node_value.value).replace("-", "_")
-            elif node_key.value in PLUGINS_TOPICS_KEYS:
-                if node_value.tag != PluginConfig.yaml_tag:
-                    msg = "Provider plugin topic '%s' must be tagged with '%s'" % (
-                        node_key.value,
-                        PluginConfig.yaml_tag,
-                    )
-                    raise MisconfiguredError(msg)
-        return loader.construct_yaml_object(node, cls)
-
-    @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from a mapping"""
         cls.validate(mapping)
         # Create a deep copy to avoid modifying the input dict or its nested structures
         mapping_copy = deepcopy(mapping)
+        # Slugify the provider name (normalize spaces and special characters)
+        if "name" in mapping_copy:
+            mapping_copy["name"] = slugify(mapping_copy["name"]).replace("-", "_")
         for key in PLUGINS_TOPICS_KEYS:
-            if not (_mapping := mapping_copy.get(key)):
+            if key not in mapping_copy or mapping_copy[key] is None:
                 continue
 
+            _mapping = mapping_copy[key]
             if not isinstance(_mapping, dict):
                 _mapping = _mapping.__dict__
 

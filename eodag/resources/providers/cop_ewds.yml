@@ -1,4 +1,4 @@
-!provider # MARK: cop_ewds
+cop_ewds:
   name: cop_ewds
   priority: 0
   description:  CEMS Early Warning Data Store
@@ -59,12 +59,12 @@
           "hmonth": {_date#interval_to_datetime_dict}["month"]
         }}
       - '{$.end_datetime#to_iso_date}'
-  auth: !plugin
+  auth:
     type: HTTPHeaderAuth
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
+  download:
     type: HTTPDownload
     timeout: 30
     ssl_verify: true
@@ -96,7 +96,7 @@
         need_search: true
         metadata_mapping:
           eodag:download_link: $.json.asset.value.href
-  search: !plugin
+  search:
     type: ECMWFSearch
     need_auth: true
     ssl_verify: true

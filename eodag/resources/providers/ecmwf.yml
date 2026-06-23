@@ -1,11 +1,11 @@
-!provider # MARK: ecmwf
+ecmwf:
   name: ecmwf
   priority: 0
   description: ECMWF archive products
   roles:
     - host
   url: https://www.ecmwf.int
-  api: !plugin
+  api:
     type: EcmwfApi
     auth_endpoint: https://api.ecmwf.int/v1
     metadata_mapping:

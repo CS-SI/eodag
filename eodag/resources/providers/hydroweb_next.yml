@@ -1,11 +1,11 @@
-!provider # MARK: hydroweb_next
+hydroweb_next:
   name: hydroweb_next
   priority: 0
   roles:
     - host
   description: hydroweb.next thematic hub for hydrology data access
   url: https://hydroweb.next.theia-land.fr
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
     need_auth: true
@@ -22,7 +22,7 @@
       next_page_token_key: page
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: id
         start_datetime: properties.start_datetime
@@ -51,11 +51,11 @@
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     auth_error_code: 401
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: HTTPHeaderAuth
     matching_url: https://hydroweb.next.theia-land.fr
     headers:

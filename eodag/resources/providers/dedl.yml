@@ -1,4 +1,4 @@
-!provider # MARK: dedl
+dedl:
   name: dedl
   priority: 0
   roles:
@@ -12,7 +12,7 @@
     eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     eodag:download_link: '$.null'
     assets: '$.null'
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
     need_auth: true
@@ -50,7 +50,7 @@
         platform: platform
         gsd: gsd
         eo:cloud_cover: eo:cloud_cover
-  download: !plugin
+  download:
     type: HTTPDownload
     auth_error_code: 403
     timeout: 20
@@ -74,7 +74,7 @@
         metadata_mapping:
           eodag:download_link: '$.json.assets.downloadLink.href'
           order:status: $.json.properties."order:status"
-  auth: !plugin
+  auth:
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
     subject:

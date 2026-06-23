@@ -1,11 +1,11 @@
-!provider # MARK: aws_eos
+aws_eos:
   name: aws_eos
   priority: 0
   description: EOS search for Amazon public datasets
   roles:
     - host
   url: https://developers.eos.com/datasets_description.html
-  search: !plugin
+  search:
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{_collection}'
     need_auth: true
@@ -384,7 +384,7 @@
           - '$.processedL2A'
         _aws_path_l2a: '$.awsPathL2A'
 
-  download: !plugin
+  download:
     type: AwsDownload
     ssl_verify: true
     products:
@@ -421,11 +421,11 @@
             eodag:product_path: '$.path'
         complementary_url_key:
           - eodag:product_path
-  download_auth: !plugin
+  download_auth:
     type: AwsAuth
     matching_url: s3://
     requester_pays: True
-  search_auth: !plugin
+  search_auth:
     type: HttpQueryStringAuth
     matching_url: https://gate.eos.com
     ssl_verify: true

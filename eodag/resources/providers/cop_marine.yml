@@ -1,11 +1,11 @@
-!provider # MARK: cop_marine
+cop_marine:
   name: cop_marine
   priority: 0
   description: Copernicus Marine Data Store
   roles:
     - host
   url: https://marine.copernicus.eu/
-  search: !plugin
+  search:
     type: CopMarineSearch
     api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{_collection}/product.stac.json'
     need_auth: false
@@ -155,11 +155,11 @@
       _collection: OCEANCOLOUR_GLO_BGC_L4_MY_009_108
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: AwsDownload
     s3_endpoint: https://s3.waw3-1.cloudferro.com
     bucket_path_level: 0
-  auth: !plugin
+  auth:
     type: AwsAuth
     matching_url: s3://
     s3_endpoint: https://s3.waw3-1.cloudferro.com

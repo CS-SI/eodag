@@ -1,4 +1,4 @@
-!provider # MARK: earth_search
+earth_search:
   name: earth_search
   priority: 0
   roles:
@@ -18,7 +18,7 @@
     grid:code:
       - '{{"query":{{"mgrs:utm_zone":{{"eq":"{grid:code#slice_str(5,7,1)}"}},"mgrs:latitude_band":{{"eq":"{grid:code#slice_str(7,8,1)}"}},"mgrs:grid_square":{{"eq":"{grid:code#slice_str(8,10,1)}"}}}}}}'
       - 'MGRS-{mgrs:utm_zone}{mgrs:latitude_band}{mgrs:grid_square}'
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
@@ -42,7 +42,7 @@
       max_limit: 500
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: id
         start_datetime: properties.datetime
@@ -87,7 +87,7 @@
       _collection: cop-dem-glo-90
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: AwsDownload
     ssl_verify: true
     products:
@@ -97,7 +97,7 @@
         complementary_url_key:
           - eodag:product_path
           - eodag:tile_path
-  auth: !plugin
+  auth:
     type: AwsAuth
     matching_url: s3://
     requester_pays: True

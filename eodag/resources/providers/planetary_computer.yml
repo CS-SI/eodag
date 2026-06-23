@@ -1,11 +1,11 @@
-!provider # MARK: planetary_computer
+planetary_computer:
   name: planetary_computer
   priority: 0
   roles:
     - host
   description: Microsoft Planetary Computer
   url: https://planetarycomputer.microsoft.com
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
     need_auth: false
@@ -43,11 +43,11 @@
       _collection: naip
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     auth_error_code: 403
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: SASAuth
     matching_url: https://[-\w\.]+.blob.core.windows.net
     auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
