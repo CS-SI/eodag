@@ -32,7 +32,6 @@ from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from typing_extensions import TypedDict
 
-from eodag.api.provider import ProviderConfig as ProviderConfigClass
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -727,6 +726,8 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
         raise e
 
     # Convert dictionaries to ProviderConfig objects
+    from eodag.api.provider import ProviderConfig as ProviderConfigClass
+
     providers_configs: list[ProviderConfig] = []
     for provider_dict in providers_configs_dicts:
         if provider_dict is not None:
