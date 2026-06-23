@@ -80,25 +80,4 @@ class TestExternalPluginConfig(unittest.TestCase):
             self.dag = EODataAccessGateway()
             self.assertEqual(len(self.dag._providers), default_providers_count + 2)
             self.assertIn("fakeplugin_provider", self.dag._providers)
-
-    def test_update_providers_from_ext_plugin_providers_dir(self):
-        """Load fake external plugin and check if providers in the providers/ subdir are loaded"""
-
-        default_providers_count = len(self.dag._providers)
-
-        src = os.path.join(TEST_RESOURCES_PATH, "fake_ext_plugin")
-        fakeplugin_location = os.path.join(self.tmp_home_dir.name, "fake_ext_plugin")
-        shutil.copytree(src, fakeplugin_location)
-        shutil.move(
-            os.path.join(fakeplugin_location, "eodag_fakeplugin.egg-info_"),
-            os.path.join(fakeplugin_location, "eodag_fakeplugin.egg-info"),
-        )
-
-        with MonkeyPatch.context() as monkeypatch:
-            monkeypatch.syspath_prepend(fakeplugin_location)
-
-            # New EODataAccessGateway instance, check if providers from providers/ dir are loaded
-            self.dag = EODataAccessGateway()
-            # Should have +2: fakeplugin_provider (from providers.yml) and fakeplugin_provider2 (from providers/ dir)
-            self.assertEqual(len(self.dag._providers), default_providers_count + 2)
             self.assertIn("fakeplugin_provider2", self.dag._providers)
