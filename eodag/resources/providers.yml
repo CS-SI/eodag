@@ -3181,6 +3181,7 @@
       id:
         - '{{"datasetIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
+      _product_id: '$.id'
       start_datetime:
         - '{{"startdate": "{start_datetime}"}}'
         - '$.properties.startdate'
@@ -3241,7 +3242,7 @@
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
-        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{href}","product_id":"{id}", "dataset_id": "{_collection}"}}'
+        eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{href}","product_id":"{_product_id}", "dataset_id": "{_collection}"}}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"
