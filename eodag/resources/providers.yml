@@ -71,7 +71,7 @@
       quicklook:
         href: '$.browse[0].browsePath'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: 'image/jpeg'
       thumbnail:
         href: '$.browse[0].thumbnailPath'
@@ -195,7 +195,7 @@
           _scene_id: '{$.sceneID#replace_str("_L[24]$","")}'
           href: 'https://s3.amazonaws.com/cbers-meta-pds/{_download_url}/{_scene_id}.jpg'
           title: "quicklook"
-          roles: '["overwiev"]'
+          roles: '["overview"]'
           type: 'image/jpeg'
         thumbnail:
           _download_url: '$.downloadUrl'
@@ -297,7 +297,7 @@
         quicklook:
           href: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
           title: "quicklook"
-          roles: '["overwiev"]'
+          roles: '["overview"]'
           type: 'image/jpeg'
         thumbnail:
           href: '$.thumbnail'
@@ -343,7 +343,7 @@
         quicklook:
           href: '$.thumbnail'
           title: "quicklook"
-          roles: '["overwiev"]'
+          roles: '["overview"]'
           type: 'image/jpeg'
         thumbnail:
           href: '$.thumbnail'
@@ -427,7 +427,7 @@
         quicklook:
           href: 'https://render.eosda.com/S1/thumb/{title}.png'
           title: "quicklook"
-          roles: '["overwiev"]'
+          roles: '["overview"]'
           type: 'image/png'
         thumbnail:
           href: 'https://render.eosda.com/S1/thumb/{title}.png'
@@ -482,7 +482,7 @@
         quicklook:
           href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
           title: "quicklook"
-          roles: '["overwiev"]'
+          roles: '["overview"]'
           type: 'image/jpeg'
         thumbnail:
           href: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
@@ -854,7 +854,7 @@
       quicklook:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
@@ -1301,7 +1301,7 @@
       quicklook:
         href: '$.assets.reduced_resolution_browse.alternate.s3.href'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: '$.assets.reduced_resolution_browse.type'
       thumbnail:
         href: '$.assets.thumbnail.alternate.s3.href'
@@ -1504,7 +1504,7 @@
         quicklook:
           href: '$.assets.thumbnail.href'
           title: "thumbnail"
-          roles: '["overwiev"]'
+          roles: '["overview"]'
           type: '$.assets.thumbnail.type'
         thumbnail:
           href: '$.assets.thumbnail.href'
@@ -2074,7 +2074,7 @@
       quicklook:
         href: '$.properties.quicklook'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: "image/png"
       thumbnail:
         href: '$.properties.thumbnail'
@@ -2597,7 +2597,7 @@
       quicklook:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
@@ -3031,7 +3031,7 @@
       quicklook:
         href: '$.assets[?(@.rel == "preview")].href'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: '$.assets[?(@.rel == "preview")].type'
       thumbnail:
         href: '$.assets[?(@.rel == "preview")].href'
@@ -3246,7 +3246,7 @@
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: 'image/jpeg'
       thumbnail:
         href: '$.properties.thumbnail'
@@ -4296,7 +4296,7 @@
       quicklook:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
@@ -5359,7 +5359,7 @@
       quicklook:
         href: '$.assets["ql.jpg"].href'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: '$.assets["ql.jpg"].type'
         alternate: '$.assets["ql.jpg"].alternate'
       thumbnail:
@@ -6104,7 +6104,7 @@
       quicklook:
         href: '$.properties.links.previews[?(@.title="Quicklook")].href'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.properties.links.previews[?(@.title="Quicklook")].href'
@@ -6744,7 +6744,7 @@
       quicklook:
         href: '$.assets[?(@.roles[0] == "overview")].href'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: "image/jpeg"
       thumbnail:
         href: '$.assets[?(@.roles[0] == "overview")].href'
@@ -6889,7 +6889,7 @@
       quicklook:
         href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
         title: "quicklook"
-        roles: '["overwiev"]'
+        roles: '["overview"]'
         type: 'image/jpeg'
       thumbnail:
         href: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
