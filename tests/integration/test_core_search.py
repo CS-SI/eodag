@@ -310,6 +310,14 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.token.TokenAuth.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
         side_effect=RequestException,
@@ -319,8 +327,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
         side_effect=RequestException,
     )
-    def test_core_search_fallback_raise_errors(self, mock_get, mock_request):
+    def test_core_search_fallback_raise_errors(
+        self, mock_get, mock_request, mock_auth_token, mock_auth_get
+    ):
         """Core search fallback mechanism must halt loop on error if raise_errors is set"""
+        mock_auth_get.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
         available_providers = self.dag.providers.filter(collection).names
         self.assertListEqual(

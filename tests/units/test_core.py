@@ -41,7 +41,7 @@ from eodag.api.collection import Collection, CollectionsList
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
-from tests import TEST_RESOURCES_PATH
+from tests import TEST_RESOURCES_PATH, TEST_RESOURCES_PROVIDERS_PATH
 from tests.context import (
     DEFAULT_LIMIT,
     DEFAULT_MAX_LIMIT,
@@ -1672,7 +1672,7 @@ class TestCore(TestCoreBase):
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
 
-        self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 0))
+        self.assertEqual(self.dag.get_preferred_provider(), ("aws_eos", 0))
 
         self.assertRaises(
             UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
@@ -1688,7 +1688,9 @@ class TestCore(TestCoreBase):
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 3))
 
         # check that the providers are correctly ordered by priority and name in "providers" property
-        self.assertListEqual(["usgs", "aws_eos"], list(self.dag._providers.keys())[:2])
+        self.assertListEqual(
+            ["aws_eos", "cop_ads"], list(self.dag._providers.keys())[:2]
+        )
         self.assertListEqual(
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
@@ -2112,14 +2114,17 @@ class TestCore(TestCoreBase):
 
         queryables = self.dag.list_queryables(collection="ERA5_SL")
 
-        self.assertEqual(
+        self.assertIn(
+            "cop_cds: Mocked ECMWF queryables for cop_cds",
             queryables.additional_information,
-            (
-                "cop_cds: Mocked ECMWF queryables for cop_cds"
-                " | wekeo_ecmwf: Mocked WEkEO queryables"
-                " | dedl: Mocked STAC queryables for dedl"
-            ),
         )
+        self.assertIn(
+            "wekeo_ecmwf: Mocked WEkEO queryables", queryables.additional_information
+        )
+        self.assertIn(
+            "dedl: Mocked STAC queryables for dedl", queryables.additional_information
+        )
+
         self.assertEqual(queryables.additional_properties, False)
 
         mock_dedl_list_queryables.return_value = QueryablesDict(
@@ -2512,7 +2517,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_FILE env var"""
         try:
             os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-                TEST_RESOURCES_PATH, "file_providers_override.yml"
+                TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
             )
             self.dag = EODataAccessGateway()
             # only foo_provider in conf
@@ -2524,10 +2529,28 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
 
+    def test_core_object_prioritize_providers_dir_in_envvar(self):
+        """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_DIR env var"""
+        try:
+            os.environ["EODAG_PROVIDERS_CFG_DIR"] = os.path.join(
+                TEST_RESOURCES_PATH, "providers"
+            )
+            self.dag = EODataAccessGateway()
+            # only foo_provider in conf
+            self.assertEqual(self.dag.providers.names, ["foo_provider"])
+            self.assertEqual(
+                self.dag._providers["foo_provider"].search_config.api_endpoint,
+                "https://foo.bar/search",
+            )
+        finally:
+            os.environ.pop("EODAG_PROVIDERS_CFG_DIR", None)
+
     def test_core_collections_config_envvar(self):
         """collections should be loaded from file defined in env var"""
         # setup providers config
-        config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
+        config_path = os.path.join(
+            TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
+        )
         providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
         providers_config[0].products["TEST_PRODUCT_1"] = {"_collection": "TP1"}
         providers_config[0].products["TEST_PRODUCT_2"] = {"_collection": "TP2"}
@@ -4753,7 +4776,7 @@ class TestCoreStrictMode(TestCoreBase):
             TEST_RESOURCES_PATH, "file_collections_modes.yml"
         )
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_providers_override.yml"
+            TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
         )
 
     def tearDown(self):

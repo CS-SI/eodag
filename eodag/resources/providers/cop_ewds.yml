@@ -1,0 +1,174 @@
+!provider # MARK: cop_ewds
+  name: cop_ewds
+  priority: 0
+  description:  CEMS Early Warning Data Store
+  roles:
+    - host
+  url: https://ewds.climate.copernicus.eu
+  anchor_time_day_month_year: &time_day_month_year
+    end_datetime:
+      - |
+        {{
+          "year": {_date#interval_to_datetime_dict}["year"],
+          "month": {_date#interval_to_datetime_dict}["month"],
+          "day": {_date#interval_to_datetime_dict}["day"],
+          "time": {start_datetime#get_ecmwf_time}
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  anchor_day_month_year: &day_month_year
+    end_datetime:
+      - |
+        {{
+          "year": {_date#interval_to_datetime_dict}["year"],
+          "month": {_date#interval_to_datetime_dict}["month"],
+          "day": {_date#interval_to_datetime_dict}["day"]
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  anchor_month_year: &month_year
+    end_datetime:
+      - |
+        {{
+          "year": {_date#interval_to_datetime_dict}["year"],
+          "month": {_date#interval_to_datetime_dict}["month"]
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  anchor_time_hday_hmonth_hyear: &time_hday_hmonth_hyear
+    end_datetime:
+      - |
+        {{
+          "hyear": {_date#interval_to_datetime_dict}["year"],
+          "hmonth": {_date#interval_to_datetime_dict}["month"],
+          "hday": {_date#interval_to_datetime_dict}["day"],
+          "time": {start_datetime#get_ecmwf_time}
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  anchor_hday_hmonth_hyear: &hday_hmonth_hyear
+    end_datetime:
+      - |
+        {{
+          "hyear": {_date#interval_to_datetime_dict}["year"],
+          "hmonth": {_date#interval_to_datetime_dict}["month"],
+          "hday": {_date#interval_to_datetime_dict}["day"]
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  anchor_hmonth_hyear: &hmonth_hyear
+    end_datetime:
+      - |
+        {{
+          "hyear": {_date#interval_to_datetime_dict}["year"],
+          "hmonth": {_date#interval_to_datetime_dict}["month"]
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  auth: !plugin
+    type: HTTPHeaderAuth
+    ssl_verify: true
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
+  download: !plugin
+    type: HTTPDownload
+    timeout: 30
+    ssl_verify: true
+    extract: false
+    auth_error_code: 401
+    order_enabled: true
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        eodag:order_id: $.json.jobID
+        eodag:status_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
+        eodag:search_link: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        eodag:order_status: $.json.status
+        order:date: $.json.created
+        created: $.json.created
+        published: $.json.finished
+        updated: $.json.updated
+        ecmwf:dataset: $.json.processID
+        eodag:request_params: $.json.metadata.request.ids
+      error:
+        eodag:order_status: failed
+      success:
+        eodag:order_status: successful
+      on_success:
+        need_search: true
+        metadata_mapping:
+          eodag:download_link: $.json.asset.value.href
+  search: !plugin
+    type: ECMWFSearch
+    need_auth: true
+    ssl_verify: true
+    end_date_excluded: false
+    remove_from_query:
+      - dataset
+      - date
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+      constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
+      form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
+    metadata_mapping:
+      product:type: $.productType
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
+      end_datetime:
+        - date={start_datetime#to_iso_date}/{end_datetime#to_iso_date}
+        - '{$.end_datetime#to_iso_utc_datetime}'
+      # The geographic extent of the product
+      geometry:
+        - '{{"area": {geometry#to_nwse_bounds}}}'
+        - $.geometry
+      qs: $.qs
+      eodag:order_link: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+  products:
+    EFAS_HISTORICAL:
+      dataset: efas-historical
+      metadata_mapping:
+        <<: *time_hday_hmonth_hyear
+    EFAS_FORECAST:
+      dataset: efas-forecast
+      metadata_mapping:
+        <<: *time_day_month_year
+    EFAS_SEASONAL:
+      dataset: efas-seasonal
+      metadata_mapping:
+        <<: *month_year
+    EFAS_REFORECAST:
+      dataset: efas-reforecast
+      metadata_mapping:
+        <<: *hday_hmonth_hyear
+    EFAS_SEASONAL_REFORECAST:
+      dataset: efas-seasonal-reforecast
+      metadata_mapping:
+        <<: *hmonth_hyear
+    GLOFAS_HISTORICAL:
+      dataset: cems-glofas-historical
+      metadata_mapping:
+        <<: *hday_hmonth_hyear
+    GLOFAS_FORECAST:
+      dataset: cems-glofas-forecast
+      metadata_mapping:
+        <<: *day_month_year
+    GLOFAS_SEASONAL:
+      dataset: cems-glofas-seasonal
+      metadata_mapping:
+        <<: *month_year
+    GLOFAS_SEASONAL_REFORECAST:
+      dataset: cems-glofas-seasonal-reforecast
+      metadata_mapping:
+        <<: *hmonth_hyear
+    GLOFAS_REFORECAST:
+      dataset: cems-glofas-reforecast
+      metadata_mapping:
+        <<: *hday_hmonth_hyear
+    FIRE_HISTORICAL:
+      dataset: cems-fire-historical-v1
+      metadata_mapping:
+        <<: *day_month_year
+    FIRE_SEASONAL:
+      dataset: cems-fire-seasonal
+      metadata_mapping:
+        <<: *day_month_year
+    GENERIC_COLLECTION:
+      dataset: '{collection}'

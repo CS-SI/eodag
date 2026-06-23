@@ -13,7 +13,7 @@ EODAG maps each provider's specific metadata parameters to a common model using
 `OGC OpenSearch Extension for Earth Observation <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_.
 Extra parameters having no equivalent in this model are mapped as is.
 
-Depending on the provider, some parameters are queryable or not. This is configured in `providers.yml`:
+Depending on the provider, some parameters are queryable or not. This is configured in each configuration file located in the ``eodag/resources/providers/`` directory.
 
 * If a parameter metadata-mapping is a list, the first element will help constructing the query \
   (using `format() <https://docs.python.org/fr/3/library/string.html#string.Formatter.format>`_), and the 2nd will \

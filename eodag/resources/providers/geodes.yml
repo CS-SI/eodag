@@ -1,0 +1,131 @@
+!provider  # MARK: geodes
+  name: geodes
+  priority: 0
+  roles:
+    - host
+  description: French National Space Agency (CNES) Earth Observation portal
+  url: https://geodes.cnes.fr
+  search: !plugin
+    type: GeodesSearch
+    api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
+    need_auth: false
+    asset_key_from_href: false
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+    discover_collections:
+      fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
+      fetch_method: POST
+      fetch_body:
+        limit: 10000
+    pagination:
+      total_items_nb_key_path: '$.context.matched'
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
+      # As of 2025/11/21 the geodes API documentation (https://geodes.cnes.fr/support/api/) states that pagination must be limited to 80.
+      max_limit: 80
+    sort:
+      sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+      sort_by_default:
+        - !!python/tuple [start_datetime, ASC]
+      sort_param_mapping:
+        id: identifier
+        start_datetime: start_datetime
+        end_datetime: end_datetime
+        platform: platform
+        eo:cloud_cover: eo:cloud_cover
+      sort_order_mapping:
+        ascending: asc
+        descending: dsc
+    metadata_mapping:
+      uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      product:type:
+        - '{{"query":{{"product:type":{{"eq":"{product:type}"}}}}}}'
+        - '$.properties.product:type'
+      instruments:
+        - '{{"query":{{"instrument":{{"eq":"{instruments#csv_list( )}"}}}}}}'
+        - '{$.properties.instrument#split( )}'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '$.properties.identifier'
+      keywords: '$.properties.keywords'
+      # OpenSearch Parameters for Product Search (Table 5)
+      sat:absolute_orbit:
+        - '{{"query":{{"sat:absolute_orbit":{{"eq":{sat:absolute_orbit}}}}}}}'
+        - '$.properties."sat:absolute_orbit"'
+      sat:orbit_state:
+        - '{{"query":{{"sat:orbit_state":{{"eq":{sat:orbit_state}}}}}}}'
+        - '{$.properties.sat:orbit_state#to_lower}'
+      sat:relative_orbit:
+        - '{{"query":{{"sat:relative_orbit":{{"eq":{sat:relative_orbit}}}}}}}'
+        - '$.properties."sat:relative_orbit"'
+      eo:cloud_cover:
+      - '{{"query":{{"eo:cloud_cover":{{"lte":{eo:cloud_cover}}}}}}}'
+      - '$.properties."eo:cloud_cover"'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      start_datetime:
+        - '{{"query":{{"end_datetime":{{"gte":"{start_datetime#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      end_datetime:
+        - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
+      sar:polarizations:
+        - '{{"query":{{"sar:polarizations":{{"eq":"{sar:polarizations#csv_list( )}"}}}}}}'
+        - '{$.properties.sar:polarizations#split( )}'
+      sar:instrument_mode: '$.null'
+      sar:beam_ids:
+        - '{{"query":{{"swath":{{"eq":"{sar:beam_ids#csv_list( )}"}}}}}}'
+        - '{$.properties.swath#split( )}'
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
+        - '$.properties.identifier'
+      grid:code:
+        - '{{"query":{{"grid:code":{{"contains":"{grid:code#replace_str("MGRS-","T")}"}}}}}}'
+        - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+      sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
+      published: '$.properties.datetime'
+      eodag:download_link: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
+      eodag:quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      eodag:thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      # order:status set to orderable by default and then updated from plugin
+      order:status: '{$.null#replace_str("Not Available","orderable")}'
+  products:
+    S1_SAR_OCN:
+      product:type: OCN
+      _collection: PEPS_S1_L2
+      metadata_mapping:
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
+    S1_SAR_GRD:
+      product:type: GRD
+      _collection: PEPS_S1_L1
+      metadata_mapping:
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
+    S1_SAR_SLC:
+      product:type: SLC
+      _collection: PEPS_S1_L1
+      metadata_mapping:
+        eo:cloud_cover: '{$.properties."eo:cloud_cover"#not_available}'
+    S2_MSI_L1C:
+      _collection: PEPS_S2_L1C
+    S2_MSI_L2A_MAJA:
+      _collection: THEIA_REFLECTANCE_SENTINEL2_L2A
+    S2_MSI_L2B_MAJA_SNOW:
+      _collection: THEIA_SNOW_SENTINEL2_L2B
+    S2_MSI_L2B_MAJA_WATER:
+      _collection: THEIA_WATERQUAL_SENTINEL2_L2B
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload
+    ignore_assets: true
+    archive_depth: 2
+    auth_error_code:
+      - 401
+      - 403
+  auth: !plugin
+    type: HTTPHeaderAuth
+    matching_url: https://geodes-portal.cnes.fr
+    headers:
+      X-API-Key: "{apikey}"

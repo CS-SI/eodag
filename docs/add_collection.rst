@@ -42,8 +42,8 @@ as ``instruments``, ``processing:level``, ``constellation``, etc.
 Add collection to a provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the file ``eodag/resources/providers.yml``, add the collection to the ``products``
-entry of a provider:
+In the directory ``eodag/resources/providers/``, you will find a YAML file for each provider supported by EODAG.
+To make EODAG aware of the new collection, you need to add the collection to the ``products`` entry of a provider:
 
 .. code-block:: yaml
 

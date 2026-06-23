@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import os
+import pathlib
 import tempfile
 import unittest
 from importlib.resources import files as res_files
@@ -525,12 +526,14 @@ class TestStacProviderConfig(unittest.TestCase):
             "eodag.api.provider.ProviderConfig.__setstate__",
             lambda self, state: self.__dict__.update(state),
         ):
-            with open(
-                str(res_files("eodag") / "resources" / "providers.yml"), "r"
-            ) as fh:
-                providers_configs = {
-                    p.name: p for p in yaml.load_all(fh, Loader=yaml.Loader)
-                }
+            providers_dir = pathlib.Path(
+                str(res_files("eodag") / "resources" / "providers")
+            )
+            providers_configs = {}
+            for provider_conf_file in providers_dir.glob("*.yml"):
+                with open(provider_conf_file, "r") as fh:
+                    provider_conf = yaml.load(fh, Loader=yaml.Loader)
+                    providers_configs[provider_conf.name] = provider_conf
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]

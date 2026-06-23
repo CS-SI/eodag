@@ -1,5 +1,7 @@
 pyproject.toml
 eodag_fakeplugin/__init__.py
+eodag_fakeplugin/providers.yml
+eodag_fakeplugin/providers/fakeplugin_provider2.yml
 eodag_fakeplugin.egg-info/PKG-INFO
 eodag_fakeplugin.egg-info/SOURCES.txt
 eodag_fakeplugin.egg-info/dependency_links.txt

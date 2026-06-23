@@ -1,0 +1,49 @@
+!provider # MARK: fedeo_ceda
+  name: fedeo_ceda
+  priority: 0
+  description: CEDA datasets through FedEO Catalog
+  roles:
+    - host
+  url: https://fedeo.ceos.org/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://fedeo.ceos.org/search'
+    ssl_verify: true
+    timeout: 60
+    pagination:
+      next_page_url_tpl: '{url}?startRecord={next_page_token}'
+      next_page_query_obj: '{{"limit":{limit}}}'
+      next_page_token_key: skip
+      # startRecord is equivalent to skip + 1, so make skip start at page 2
+      start_page: 2
+      next_page_query_obj_key_path: null
+      next_page_url_key_path: null
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+    discover_collections:
+      fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
+      result_type: json
+      results_entry: '$.links[?(@.rel=="child")]'
+      generic_collection_id: '{$.href#replace_str(r".*/", "")}'
+      generic_collection_parsable_properties:
+        _collection: '{$.href#replace_str(r".*/", "")}'
+        title: '$.title'
+      single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
+      single_collection_parsable_metadata:
+        id: '{$.assets.enclosure.href#ceda_collection_name}'
+        description: '{$.description#literalize_unicode}'
+        instruments: '$.summaries.instruments'
+        keywords: '$.keywords'
+        license: '$.license'
+        platform: '{$.summaries.platform#csv_list}'
+        title: '$.title'
+    metadata_mapping:
+      title: '{$.properties.title#remove_extension}'
+      geometry: '$.geometry'
+      assets: '{$.assets#dict_filter($[?(@.href =~ ".*\/thredds\/fileServer\/.*")])}'
+  products:
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download: !plugin
+    type: HTTPDownload

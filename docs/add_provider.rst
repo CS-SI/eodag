@@ -72,15 +72,18 @@ See more details about how to create a new plugin in :ref:`this dedicated sectio
 Providers pre-configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All the providers are pre-configured in ``eodag`` in a YAML file.
+All the providers are pre-configured in ``eodag`` in YAML files located in the ``eodag/resources/providers/`` directory.
+Each file corresponds to a provider and contains the configuration of the plugins used to access this provider.
+
+For example, the file ``aws_eos.yml`` contains the configuration of the provider and associated plugins.
 Click on the link below to display its full content.
 
 .. raw:: html
 
    <details>
-   <summary><a>providers.yml</a></summary>
+   <summary><a>aws_eos.yml</a></summary>
 
-.. include:: ../eodag/resources/providers.yml
+.. include:: ../eodag/resources/providers/aws_eos.yml
    :start-line: 17
    :code: yaml
 
