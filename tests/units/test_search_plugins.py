@@ -5010,6 +5010,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         OARSearch = import_module("eodag.plugins.search.oar").OARSearch
 
         config = PluginConfig()
+        config.api_endpoint = "https://example.test"
         config.metadata_mapping = {
             "q": ["custom_q={q}", "$.properties.title"],
         }
@@ -5025,37 +5026,31 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
 
         self.assertIn("q", plugin.config.metadata_mapping)
         self.assertEqual(plugin.config.metadata_mapping["q"][0], "custom_q={q}")
-        self.assertEqual(
-            plugin.config.metadata_mapping["type"][0], "type={type#csv_list}"
-        )
-        self.assertEqual(plugin.config.metadata_mapping["ids"][0], "ids={ids#csv_list}")
-        self.assertEqual(
-            plugin.config.metadata_mapping["externalIds"][0],
-            "externalIds={externalIds#csv_list}",
-        )
-        self.assertEqual(plugin.config.metadata_mapping["bbox"][0], "bbox={bbox}")
-        self.assertEqual(
-            plugin.config.metadata_mapping["datetime"][0], "datetime={datetime}"
-        )
-        self.assertEqual(plugin.config.metadata_mapping["limit"][0], "limit={limit}")
+        self.assertIn("title", plugin.config.metadata_mapping)
+        self.assertIn("datetime", plugin.config.metadata_mapping)
+        self.assertIn("datetime", str(plugin.config.metadata_mapping["datetime"]))
+        self.assertIn("updated", plugin.config.metadata_mapping)
 
         self.assertIn(
             "matched", str(plugin.config.pagination["total_items_nb_key_path"])
         )
-        self.assertIn("next_page_url_key_path", plugin.config.pagination)
+        self.assertIn("next_page_url_tpl", plugin.config.pagination)
+        self.assertIn("next_page_token_key", plugin.config.pagination)
+        self.assertEqual(plugin.config.pagination["next_page_token_key"], "offset")
 
         self.assertEqual(plugin.config.sort["sort_by_tpl"], "&custom_sort={sort_param}")
         self.assertEqual(plugin.config.sort["sort_order_mapping"]["ascending"], "asc")
         self.assertEqual(plugin.config.sort["sort_order_mapping"]["descending"], "desc")
 
         self.assertEqual(
+            plugin.config.api_endpoint,
+            "https://example.test/{_collection}/items",
+        )
+        self.assertEqual(
             plugin.config.discover_queryables["fetch_url"],
             "https://example.test/queryables",
         )
-        self.assertEqual(
-            plugin.config.discover_queryables["collection_fetch_url"],
-            "{api_endpoint}/../collections/{provider_collection}/queryables",
-        )
+        self.assertNotIn("collection_fetch_url", plugin.config.discover_queryables)
 
 
 class TestSearchPluginDedtLumi(BaseSearchPluginTest):
