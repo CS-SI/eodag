@@ -207,8 +207,6 @@ class CopMarineSearch(StaticStacSearch):
             "title": item_id,
             "geometry": geometry,
             "dataset": dataset_item["id"],
-            # order:status set to succeeded for consistency between providers
-            "order:status": "succeeded",
         }
         assets = {
             "download_link": {
@@ -216,6 +214,8 @@ class CopMarineSearch(StaticStacSearch):
                 "href": download_url,
                 "roles": ["archive", "data"],
                 "type": "application/x-netcdf",
+                # order:status set to succeeded for consistency between providers
+                "order:status": "succeeded",
                 **asset_properties,
             }
         }
@@ -278,7 +278,9 @@ class CopMarineSearch(StaticStacSearch):
 
         # List current asset urls
         product = EOProduct(self.provider, properties, collection=collection)
-        merged_assets = self.build_assets_from_mapping(dataset_item, product)
+        merged_assets = self.build_assets_from_mapping(
+            dataset_item, product, raw_product_properties=properties
+        )
         merged_assets.update(assets)
         product.assets.update(merged_assets)
 

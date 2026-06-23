@@ -470,14 +470,15 @@ class EOProduct:
                                 the download and authentication plugins.
         """
         download_plugin = plugins_manager.get_download_plugin(self)
-        if len(self.assets) > 0:
-            matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("order:status") != ONLINE_STATUS:
-            matching_url = self.properties.get(
-                "eodag:order_link"
-            ) or self.properties.get("eodag:download_link")
+        download_asset = self.assets.get("download_link", {})
+        if download_asset.get("order:status", ONLINE_STATUS) != ONLINE_STATUS:
+            matching_url = download_asset.get("eodag:order_link") or download_asset.get(
+                "href"
+            )
+        elif len(self.assets) > 0:
+            matching_url = next(iter(self.assets.values())).get("href")
         else:
-            matching_url = self.properties.get("eodag:download_link")
+            matching_url = download_asset.get("href")
 
         try:
             auth_plugin = next(
@@ -528,6 +529,19 @@ class EOProduct:
                 except (TypeError, ValueError) as e:
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
+                    )
+
+        # keep the download_link asset href in sync with the resolved location
+        download_asset = self.assets.get("download_link")
+        if download_asset is not None:
+            asset_href = download_asset.get("href")
+            if isinstance(asset_href, str) and "%(" in asset_href:
+                try:
+                    download_asset["href"] = asset_href % vars(self.downloader.config)
+                except (TypeError, ValueError) as e:
+                    logger.debug(
+                        f"Could not resolve download_link asset href ({asset_href})"
+                        f" in register_downloader: {str(e)}"
                     )
 
     def download(

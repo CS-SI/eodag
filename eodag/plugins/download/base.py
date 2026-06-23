@@ -548,7 +548,7 @@ class Download(PluginTopic):
             if (
                 product.downloader
                 and product.downloader.config.type == "AwsDownload"
-                or len(product.assets) > 0
+                or len(product.assets.get_values()) > 0
                 and (
                     not getattr(self.config, "ignore_assets", False)
                     or kwargs.get("asset") is not None
@@ -691,7 +691,9 @@ class Download(PluginTopic):
                             not_available_info = str(e)
                         else:
                             if (
-                                product.properties.get("order:status", ONLINE_STATUS)
+                                product.assets.get("download_link", {}).get(
+                                    "order:status", ONLINE_STATUS
+                                )
                                 == ONLINE_STATUS
                             ) or timeout <= 0:
                                 return download
@@ -747,11 +749,12 @@ class Download(PluginTopic):
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:
-                        if "order:status" not in product.properties:
-                            product.properties["order:status"] = "N/A status"
+                        order_status = product.assets.get("download_link", {}).get(
+                            "order:status", "N/A status"
+                        )
                         logger.info(not_available_info)
                         raise NotAvailableError(
-                            f"{product.properties['title']} is not available ({product.properties['order:status']})"
+                            f"{product.properties['title']} is not available ({order_status})"
                             f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:

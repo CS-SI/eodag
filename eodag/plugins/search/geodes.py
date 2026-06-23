@@ -47,7 +47,7 @@ class GeodesSearch(StacSearch):
         """Get availability information for the products from the provider's 'fastavailability' endpoint."""
         body: dict[str, list] = {"availability": []}
         for product in products:
-            download_link = product.properties.get("eodag:download_link")
+            download_link = product.assets.get("download_link", {}).get("href")
             endpoint_url = product.properties.get("geodes:endpoint_url")
             if download_link and endpoint_url:
                 body["availability"].append(
@@ -69,7 +69,7 @@ class GeodesSearch(StacSearch):
         updated = 0
 
         for product in products:
-            download_link = product.properties.get("eodag:download_link")
+            download_link = product.assets.get("download_link", {}).get("href")
             if download_link is None:
                 continue
 
@@ -94,9 +94,10 @@ class GeodesSearch(StacSearch):
             asset_availability = asset_availability_list[0]
 
             # set status
-            product.properties["order:status"] = (
-                ONLINE_STATUS if asset_availability else OFFLINE_STATUS
-            )
+            if "download_link" in product.assets:
+                product.assets["download_link"]["order:status"] = (
+                    ONLINE_STATUS if asset_availability else OFFLINE_STATUS
+                )
 
             updated += 1
 

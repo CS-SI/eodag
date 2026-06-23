@@ -1142,6 +1142,10 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
 
         # Reduce multibands of eo:bands: only join and move parameters with
         # the same value; per-band fields stay on the bands list.
+        # Reset the asset to a clean state: ``AssetsDict`` merges an incoming
+        # mapping with the existing asset, so reusing ``asset_id`` without
+        # clearing would keep stale fields from the previous scenario.
+        product.assets.clear()
         product.assets.update(
             {
                 asset_id: {
@@ -1201,6 +1205,7 @@ class TestMetadataMappingBandsNormalize(unittest.TestCase):
         )
 
         # Reduce multibands of mixed raster:bands and eo:bands.
+        product.assets.clear()
         product.assets.update(
             {
                 asset_id: {

@@ -2822,15 +2822,16 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self, identifier, checksum, endpoint_url="https://geodes.example/data"
     ):
         download_link = f"https://geodes.example/data/{identifier}/file_{checksum}.tif"
-        return EOProduct(
+        product = EOProduct(
             self.provider,
             {
                 "id": identifier,
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": download_link,
                 "geodes:endpoint_url": endpoint_url,
             },
         )
+        product.assets.update({"download_link": {"href": download_link}})
+        return product
 
     @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
     def test_plugins_search_geodes_get_availability(self, mock__request):
@@ -2860,11 +2861,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "availability": [
                     {
-                        "href": p1.properties["eodag:download_link"],
+                        "href": p1.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                     {
-                        "href": p2.properties["eodag:download_link"],
+                        "href": p2.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                 ]
@@ -2887,8 +2888,10 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "id": "PROD2",
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": "https://geodes.example/data/PROD2/file.tif",
             },
+        )
+        p_no_url.assets.update(
+            {"download_link": {"href": "https://geodes.example/data/PROD2/file.tif"}}
         )
         p_no_link = EOProduct(
             self.provider,
@@ -2905,7 +2908,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertEqual(len(prep.query_params["availability"]), 1)
         self.assertEqual(
             prep.query_params["availability"][0]["href"],
-            p_ok.properties["eodag:download_link"],
+            p_ok.assets["download_link"]["href"],
         )
 
     @mock.patch(
@@ -2927,7 +2930,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], ONLINE_STATUS)
+        self.assertEqual(product.assets["download_link"]["order:status"], ONLINE_STATUS)
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -2950,7 +2953,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], OFFLINE_STATUS)
+        self.assertEqual(
+            product.assets["download_link"]["order:status"], OFFLINE_STATUS
+        )
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -2961,14 +2966,14 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         """When no matching product/asset is found in the availability response,
         order:status must be left unchanged and a warning must be logged"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         # no matching id in response
         mock_get_availability.return_value = {"products": []}
 
         with self.assertLogs("eodag.search.geodes", level="WARNING") as log_ctx:
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
         self.assertTrue(
             any("Could not update availability" in m for m in log_ctx.output)
         )
@@ -2981,7 +2986,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     ):
         """Products whose checksum matches more than one file must be skipped"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         mock_get_availability.return_value = {
             "products": [
                 {
@@ -2997,7 +3002,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         with self.assertLogs("eodag.search.geodes", level="WARNING"):
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._set_availability", autospec=True
@@ -3144,7 +3149,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         )
         # check download_link asset order_link
         self.assertEqual(
-            download_asset["order_link"],
+            download_asset["eodag:order_link"],
             f"{endpoint}?"
             + json.dumps(
                 {
@@ -3506,7 +3511,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
         )
-        assert eoproduct.assets["download_link"]["order_link"].startswith("http")
+        assert eoproduct.assets["download_link"]["eodag:order_link"].startswith("http")
         assert eoproduct.location == ""
 
     def test_plugins_search_ecmwfsearch_with_collection(self):
@@ -4913,7 +4918,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             default_config.products["S1_SAR_GRD"].get("metadata_mapping", {}),
         )
         self.assertIn(
-            "order_link",
+            "eodag:order_link",
             default_config.search.assets_mapping["download_link"],
         )
 
@@ -5503,7 +5508,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
             "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R3_C3.zip",
-            properties["eodag:download_link"],
+            products[0].assets["download_link"]["href"],
         )
         geometry = get_geometry_from_various(
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
@@ -5556,7 +5561,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/"
             "ESM_BUILT_VHR2015CLASS_EUROPE_R2019_3035_10/V1-0/tiles/R3_C3.zip",
-            properties["eodag:download_link"],
+            products[0].assets["download_link"]["href"],
         )
         geometry = get_geometry_from_various(
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
@@ -5591,7 +5596,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL//GHS_FUA_UCDB2015_GLOBE_R2019A"
             "/V1-0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0.zip",
-            properties["eodag:download_link"],
+            products[0].assets["download_link"]["href"],
         )
         # product type with several files
         collection = "GHS_UCDB_REGION"
@@ -5621,7 +5626,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_UCDB_GLOBE_R2024A/GHS_UCDB_REGION_GLOBE_R2024A"
             "/GHS_UCDB_REGION_EUROPE_R2024A/V1-1/GHS_UCDB_REGION_EUROPE_R2024A_V1_1.zip",
-            properties["eodag:download_link"],
+            products[0].assets["download_link"]["href"],
         )
 
         # product type with several files and assets

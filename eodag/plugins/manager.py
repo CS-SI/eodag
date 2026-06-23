@@ -251,11 +251,14 @@ class PluginManager:
         """
         # matching url from product to download
         if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
+            download_asset = product.assets.get("download_link") or next(
+                iter(product.assets.values())
+            )
+            matching_url = download_asset.get("href") or download_asset.get(
+                "eodag:order_link"
+            )
         elif product is not None:
-            matching_url = product.properties.get(
-                "eodag:download_link"
-            ) or product.properties.get("eodag:order_link")
+            matching_url = None
         else:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)

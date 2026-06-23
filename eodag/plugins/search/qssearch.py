@@ -1288,6 +1288,7 @@ class QueryStringSearch(Search):
         self, results: RawSearchResult, **kwargs: Any
     ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
+        collection = kwargs.get("collection")
         normalize_remaining_count = len(results)
         logger.debug(
             "Adapting %s plugin results to eodag product representation"
@@ -1299,16 +1300,25 @@ class QueryStringSearch(Search):
         # collection alias as collection property for product
         if alias := getattr(self.config, "collection_config", {}).get("alias"):
             product_kwargs["collection"] = alias
+        # use collection_def_params as existing properties for parsing
+        existing_properties = (
+            self.get_collection_def_params(collection) if collection else {}
+        )
         for result in results:
             properties = QueryStringSearch.extract_properties[self.config.result_type](
                 result,
-                self.get_metadata_mapping(kwargs.get("collection")),
+                self.get_metadata_mapping(collection),
                 discovery_config=getattr(self.config, "discover_metadata", {}),
+                existing_properties=existing_properties,
             )
             product = EOProduct(self.provider, properties, **product_kwargs)
 
             # "Technicals" assets as (downloadlink, quicklook, thumbnail)
-            product.assets.update(self.build_assets_from_mapping(result, product))
+            product.assets.update(
+                self.build_assets_from_mapping(
+                    result, product, raw_product_properties=properties
+                )
+            )
 
             product._normalize_bands()
             products.append(product)
@@ -1837,8 +1847,10 @@ class PostJsonSearch(QueryStringSearch):
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)
         for product in normalized:
-            if "eodag:download_link" in product.properties:
-                decoded_link = unquote(product.properties["eodag:download_link"])
+            download_asset = product.assets.get("download_link")
+            download_href = download_asset.get("href") if download_asset else None
+            if download_href:
+                decoded_link = unquote(download_href)
                 if decoded_link[0] == "{":  # not a url but a dict
                     if product.collection is None:
                         msg = (
@@ -1860,20 +1872,19 @@ class PostJsonSearch(QueryStringSearch):
                     product.properties["_dc_qs"] = quote_plus(_dc_qs)
 
             # workaround to add collection to wekeo cmems order links
-            if (
-                "eodag:order_link" in product.properties
-                and "collection" in product.properties["eodag:order_link"]
-                and "order" not in product.properties["eodag:order_link"]
-            ):
+            order_link = (
+                download_asset.get("eodag:order_link") if download_asset else None
+            )
+            if order_link and "collection" in order_link and "order" not in order_link:
                 if product.collection is None:
                     msg = (
                         f"Cannot build order link for "
                         f"{product}: collection is undefined"
                     )
                     raise MisconfiguredError(msg)
-                product.properties["eodag:order_link"] = product.properties[
-                    "eodag:order_link"
-                ].replace("collection", product.collection)
+                download_asset["eodag:order_link"] = order_link.replace(
+                    "collection", product.collection
+                )
         return normalized
 
     def collect_search_urls(

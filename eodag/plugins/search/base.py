@@ -572,7 +572,10 @@ class Search(PluginTopic):
         return queryables
 
     def build_assets_from_mapping(
-        self, provider_item: dict[str, Any], product: Optional[EOProduct] = None
+        self,
+        provider_item: dict[str, Any],
+        product: Optional[EOProduct] = None,
+        raw_product_properties: Optional[dict[str, Any]] = None,
     ) -> Union[AssetsDict, dict[str, Any]]:
         """
         Create assets based on the assets_mapping in the provider's config
@@ -580,10 +583,12 @@ class Search(PluginTopic):
 
         :param provider_item: dict of item properties returned by the provider
         :param product: optional product against which assets are computed
+        :param raw_product_properties: optional product properties before EOProduct filtering
         :returns: dict containing the asset metadata
         """
         collection = getattr(product, "collection", None)
         properties = getattr(product, "properties", {}) or {}
+        raw_properties = raw_product_properties or {}
 
         assets_mapping = self.get_assets_mapping(collection)
 
@@ -592,7 +597,15 @@ class Search(PluginTopic):
         ) -> dict[str, Any]:
             try:
                 asset_querypaths = mtd_cfg_as_conversion_and_querypath(mapping, {})
-                return properties_from_json(provider_item, asset_querypaths)
+                existing_properties = {
+                    **properties,
+                    **raw_properties,
+                }
+                return properties_from_json(
+                    provider_item,
+                    asset_querypaths,
+                    existing_properties=existing_properties,
+                )
             except Exception as e:
                 logger.warning("Could not resolve asset mapping '%s': %s", key, e)
                 return dict(mapping)

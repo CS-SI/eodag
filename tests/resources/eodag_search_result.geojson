@@ -43,7 +43,10 @@
         "topicCategory": null,
         "snowCover": null,
         "title": "S1A_WV_OCN__2SSV_20180215T235323_20180216T001213_020624_023501_0FD3",
-        "instruments": ["SAR-C", "SAR"],
+        "instruments": [
+          "SAR-C",
+          "SAR"
+        ],
         "orbitType": null,
         "orbitDirection": null,
         "eodag:search_intersection": {
@@ -77,14 +80,18 @@
         "keyword": {},
         "processing:level": null,
         "eodag:sensor_type": null,
-        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value",
         "product:type": "OCN",
         "orbitNumber": 20624,
         "end_datetime": "2018-02-16T00:12:14.035Z",
         "resolution": null,
         "eodag:quicklook": null
       },
-      "id": "578f1768-e66e-5b86-9363-b19f8931cc7b"
+      "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
+      "assets": {
+        "download_link": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(578f1768-e66e-5b86-9363-b19f8931cc7b)/$value"
+        }
+      }
     }
   ]
 }

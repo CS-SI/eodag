@@ -49,7 +49,12 @@
         15.0890199865838
       ],
       "id": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PBS_20230405T155830",
-      "assets": {},
+      "assets": {
+        "download_link": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(8a84f4dc-86e6-47d6-ae92-e2040873405d)/$value",
+          "order:status": "succeeded"
+        }
+      },
       "properties": {
         "constellation": "SENTINEL-2",
         "datetime": "2020-08-15T00:52:51.024000Z",
@@ -78,7 +83,6 @@
         "uid": "8a84f4dc-86e6-47d6-ae92-e2040873405d",
         "updated": "2024-05-08T15:16:29.710841Z",
         "eo:cloud_cover": 0.0,
-        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(8a84f4dc-86e6-47d6-ae92-e2040873405d)/$value",
         "eodag:quicklook": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
         "eodag:thumbnail": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(682f11b1-64e1-4e43-91ac-2ab9c1cc8eee)/$value",
         "grid:code": "MGRS-55PBS",
@@ -219,7 +223,12 @@
         13.568451278586
       ],
       "id": "S2A_MSIL1C_20200815T005251_N0500_R002_T55PEQ_20230405T155830",
-      "assets": {},
+      "assets": {
+        "download_link": {
+          "href": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(27b9f4f9-a377-4d65-947b-360be6bfa80c)/$value",
+          "order:status": "succeeded"
+        }
+      },
       "properties": {
         "constellation": "SENTINEL-2",
         "datetime": "2020-08-15T00:52:51.024000Z",
@@ -248,7 +257,6 @@
         "uid": "27b9f4f9-a377-4d65-947b-360be6bfa80c",
         "updated": "2024-05-08T15:16:16.326358Z",
         "eo:cloud_cover": 12.6437621427741,
-        "eodag:download_link": "https://catalogue.dataspace.copernicus.eu/odata/v1/Products(27b9f4f9-a377-4d65-947b-360be6bfa80c)/$value",
         "eodag:quicklook": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(cda73c56-3ade-46d8-b841-3d501b57c756)/$value",
         "eodag:thumbnail": "https://catalogue.dataspace.copernicus.eu/odata/v1/Assets(cda73c56-3ade-46d8-b841-3d501b57c756)/$value",
         "grid:code": "MGRS-55PEQ",
