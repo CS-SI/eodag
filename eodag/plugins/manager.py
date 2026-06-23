@@ -141,12 +141,20 @@ class PluginManager:
 
         module_name = getattr(entry_point, "module", None)
         if isinstance(module_name, str) and module_name:
-            providers_yml = pathlib.Path(
-                str(
-                    dist.locate_file(
-                        pathlib.Path(module_name.replace(".", "/")) / "providers.yml"
-                    )
+            module_path = pathlib.Path(module_name.replace(".", "/"))
+
+            # Check providers/ subdirectory within the module
+            module_providers_dir = pathlib.Path(
+                str(dist.locate_file(module_path / "providers"))
+            )
+            if module_providers_dir.exists() and module_providers_dir.is_dir():
+                config_paths.extend(
+                    path for path in module_providers_dir.iterdir() if path.is_file()
                 )
+
+            # Legacy: single providers.yml file at the module root
+            providers_yml = pathlib.Path(
+                str(dist.locate_file(module_path / "providers.yml"))
             )
             if providers_yml.exists() and providers_yml.is_file():
                 config_paths.append(providers_yml)
