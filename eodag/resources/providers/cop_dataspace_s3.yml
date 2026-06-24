@@ -1,5 +1,4 @@
 cop_dataspace_s3:
-  name: cop_dataspace_s3
   priority: 0
   description: Copernicus Data Space Ecosystem through S3 protocol
   roles:

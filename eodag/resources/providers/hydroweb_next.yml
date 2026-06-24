@@ -1,5 +1,4 @@
 hydroweb_next:
-  name: hydroweb_next
   priority: 0
   roles:
     - host

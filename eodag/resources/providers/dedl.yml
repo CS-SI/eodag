@@ -1,5 +1,4 @@
 dedl:
-  name: dedl
   priority: 0
   roles:
     - host

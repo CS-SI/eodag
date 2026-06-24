@@ -1,5 +1,4 @@
 cop_ads:
-  name: cop_ads
   priority: 0
   description: Copernicus Atmosphere Data Store
   roles:

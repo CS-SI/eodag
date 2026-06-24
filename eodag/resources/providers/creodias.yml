@@ -1,5 +1,4 @@
 creodias:
-  name: creodias
   priority: 0
   description: CloudFerro DIAS
   roles:

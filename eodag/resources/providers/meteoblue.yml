@@ -1,5 +1,4 @@
 meteoblue:
-  name: meteoblue
   priority: 0
   roles:
     - host

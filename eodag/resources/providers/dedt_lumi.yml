@@ -1,5 +1,4 @@
 dedt_lumi:
-  name: dedt_lumi
   priority: 0
   roles:
     - host

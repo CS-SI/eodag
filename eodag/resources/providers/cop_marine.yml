@@ -1,5 +1,4 @@
 cop_marine:
-  name: cop_marine
   priority: 0
   description: Copernicus Marine Data Store
   roles:

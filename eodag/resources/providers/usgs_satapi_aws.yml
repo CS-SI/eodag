@@ -1,5 +1,4 @@
 usgs_satapi_aws:
-  name: usgs_satapi_aws
   priority: 0
   roles:
     - host

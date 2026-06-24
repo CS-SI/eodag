@@ -1,5 +1,4 @@
 dedt_mn5:
-  name: dedt_mn5
   priority: 0
   roles:
     - host

@@ -1,5 +1,4 @@
 creodias_s3:
-  name: creodias_s3
   priority: 0
   description: CloudFerro DIAS data through S3 protocol
   roles:

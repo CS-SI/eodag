@@ -1,5 +1,4 @@
 usgs:
-  name: usgs
   priority: 0
   description: U.S geological survey catalog for Landsat products
   roles:

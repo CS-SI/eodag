@@ -103,6 +103,10 @@ class PluginConfig(yaml.YAMLObject):
     This class variables describe available plugins configuration parameters.
     """
 
+    yaml_loader = yaml.Loader
+    yaml_dumper = yaml.SafeDumper
+    yaml_tag = "!plugin"
+
     class Pagination(TypedDict):
         """Search pagination configuration"""
 
@@ -596,18 +600,42 @@ class PluginConfig(yaml.YAMLObject):
         return item in self.__dict__
 
     @classmethod
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+        """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
+        warnings.warn(
+            "Usage of deprecated YAML tag '!plugin' for plugin configuration "
+            "(Please use plain YAML mappings instead)"
+            " -- Deprecated since v4.4.0",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cls.validate(
+            tuple(node_key.value for node_key, _ in node.value), check_type=False
+        )
+        return loader.construct_yaml_object(node, cls)
+
+    @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
-        cls.validate(tuple(mapping.keys()))
+        cls.validate(tuple(mapping.keys()), check_type=True)
         c = cls()
         c.__dict__.update(deepcopy(mapping))
         return c
 
     @staticmethod
-    def validate(config_keys: tuple[Any, ...]) -> None:
-        """Validate a :class:`~eodag.config.PluginConfig`"""
+    def validate(config_keys: tuple[Any, ...], check_type: bool = True) -> None:
+        """Validate a :class:`~eodag.config.PluginConfig`
+
+        :param config_keys: The configuration keys to validate
+        :param check_type: Whether to require 'type' or 'credentials' key (default True).
+        Set to False for legacy YAML tag parsing.
+        """
         # credentials may be set without type when the provider uses search_auth plugin.
-        if "type" not in config_keys and "credentials" not in config_keys:
+        if (
+            check_type
+            and "type" not in config_keys
+            and "credentials" not in config_keys
+        ):
             raise ValidationError(
                 "A Plugin config must specify the type of Plugin it configures"
             )
@@ -729,8 +757,17 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     from eodag.api.provider import ProviderConfig as ProviderConfigClass
 
     providers_configs: list[ProviderConfig] = []
+    default_provider_name = pathlib.Path(config_path).stem
     for provider_dict in providers_configs_dicts:
         if provider_dict is not None:
+            if isinstance(provider_dict, ProviderConfigClass):
+                # Legacy standalone !provider files may omit the `name` key.
+                # In that case, use the file stem (e.g. wekeo_main.yml -> wekeo_main).
+                if not getattr(provider_dict, "name", None):
+                    provider_dict.__dict__["name"] = default_provider_name
+                providers_configs.append(provider_dict)
+                continue
+
             # Each provider YAML file has one provider at the top level
             # The dictionary will have the provider name as key and provider config as value
             for provider_name, provider_config in provider_dict.items():
@@ -740,6 +777,12 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
                         provider_config["name"] = provider_name
                     provider_obj = ProviderConfigClass.from_mapping(provider_config)
                     providers_configs.append(provider_obj)
+                elif isinstance(provider_config, ProviderConfigClass):
+                    # Handle legacy YAML tags where name is outside the tag (e.g., "ecmwf: !provider")
+                    # Add name if missing since it was not part of the tag node
+                    if not getattr(provider_config, "name", None):
+                        provider_config.__dict__["name"] = provider_name
+                    providers_configs.append(provider_config)
 
     return {p.name: p for p in providers_configs if p is not None}
 

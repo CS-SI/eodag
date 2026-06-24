@@ -1,5 +1,4 @@
 cop_cds:
-  name: cop_cds
   priority: 0
   description: Copernicus Climate Data Store
   roles:

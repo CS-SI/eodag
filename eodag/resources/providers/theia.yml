@@ -1,5 +1,4 @@
 theia:
-  name: theia
   priority: 0
   description: Data Terra Theia, environmental thematic hub for land data access.
   roles:

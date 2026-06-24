@@ -1,5 +1,4 @@
 geodes:
-  name: geodes
   priority: 0
   roles:
     - host

@@ -1,5 +1,4 @@
 ecmwf:
-  name: ecmwf
   priority: 0
   description: ECMWF archive products
   roles:

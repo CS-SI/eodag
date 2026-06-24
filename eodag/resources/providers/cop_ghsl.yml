@@ -1,5 +1,4 @@
 cop_ghsl:
-  name: cop_ghsl
   priority: 0
   description: Copernicus Global Human Settlement Layer
   roles:

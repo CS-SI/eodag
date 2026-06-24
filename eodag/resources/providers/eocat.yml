@@ -1,5 +1,4 @@
 eocat:
-  name: eocat
   priority: 0
   description: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
   roles:

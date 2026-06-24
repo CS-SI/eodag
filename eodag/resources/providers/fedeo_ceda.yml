@@ -1,5 +1,4 @@
 fedeo_ceda:
-  name: fedeo_ceda
   priority: 0
   description: CEDA datasets through FedEO Catalog
   roles:

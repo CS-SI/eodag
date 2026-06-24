@@ -1,5 +1,4 @@
 cop_ewds:
-  name: cop_ewds
   priority: 0
   description:  CEMS Early Warning Data Store
   roles:

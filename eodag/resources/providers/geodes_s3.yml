@@ -1,5 +1,4 @@
 geodes_s3:
-  name: geodes_s3
   priority: 0
   roles:
     - host

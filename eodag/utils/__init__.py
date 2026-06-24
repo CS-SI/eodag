@@ -1480,19 +1480,21 @@ def _get_legacy_aware_yaml_loader() -> type:
     # Constructor for !provider tag - wrap the content with provider name as key
     def provider_constructor(loader, node):
         if isinstance(node, yaml.MappingNode):
-            mapping = loader.construct_mapping(node)
-            # Extract the provider name from the config, wrap it as a key
-            if "name" in mapping:
-                provider_name = mapping["name"]
-                return {provider_name: mapping}
-            # If no name is found, return as-is (will likely cause validation error)
-            return mapping
+            # Reuse legacy YAMLObject deserialization logic (and deprecation warning)
+            # from ProviderConfig. Since load_config already handles ProviderConfigClass
+            # objects directly, return the object as-is.
+            from eodag.api.provider import ProviderConfig
+
+            provider_config = ProviderConfig.from_yaml(loader, node)
+            return provider_config
         return None
 
-    # Constructor for !plugin tag - just return the dict as-is
+    # Constructor for !plugin tag - reuse legacy deserialization logic
     def plugin_constructor(loader, node):
         if isinstance(node, yaml.MappingNode):
-            return loader.construct_mapping(node)
+            from eodag.config import PluginConfig
+
+            return PluginConfig.from_yaml(loader, node)
         return None
 
     # Constructor for !!python/tuple tag - convert to tuple

@@ -1,5 +1,4 @@
 cop_dataspace:
-  name: cop_dataspace
   priority: 0
   description: Copernicus Data Space Ecosystem
   roles:

@@ -1,5 +1,4 @@
 eumetsat_ds:
-  name: eumetsat_ds
   priority: 0
   description: EUMETSAT Data Store
   roles:

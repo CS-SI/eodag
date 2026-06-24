@@ -1,5 +1,4 @@
 planetary_computer:
-  name: planetary_computer
   priority: 0
   roles:
     - host

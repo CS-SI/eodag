@@ -1,5 +1,4 @@
 aws_eos:
-  name: aws_eos
   priority: 0
   description: EOS search for Amazon public datasets
   roles:
