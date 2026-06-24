@@ -65,6 +65,7 @@ from eodag.utils.dates import (
     DATE_RANGE_PATTERN,
     compute_date_range_from_params,
     format_date,
+    get_datetime,
     is_range_in_range,
     parse_date,
     parse_to_utc,
@@ -603,9 +604,11 @@ class ECMWFSearch(PostJsonSearch):
         default_values.pop("discover_queryables", None)
         kwargs.pop("discover_queryables", None)
         if "datetime" in kwargs:
-            start = kwargs.pop("datetime").split("T")[0]
-            if start and START not in kwargs:
-                kwargs[START] = start
+            datetimes = get_datetime(kwargs)
+            if START not in kwargs:
+                kwargs[START] = datetimes[0]
+            if END not in kwargs:
+                kwargs[END] = datetimes[1]
         filters = {**default_values, **kwargs}
 
         if "start" in filters:
