@@ -602,6 +602,10 @@ class ECMWFSearch(PostJsonSearch):
         default_values.pop("metadata_mapping_from_product", None)
         default_values.pop("discover_queryables", None)
         kwargs.pop("discover_queryables", None)
+        if "datetime" in kwargs:
+            start = kwargs.pop("datetime").split("T")[0]
+            if start and START not in kwargs:
+                kwargs[START] = start
         filters = {**default_values, **kwargs}
 
         if "start" in filters:
@@ -641,7 +645,6 @@ class ECMWFSearch(PostJsonSearch):
             if key not in ALLOWED_KEYWORDS | {
                 START,
                 END,
-                "datetime",
                 "geometry",
             } and not self._is_discoverable_metadata_key(key):
                 raise ValidationError(
@@ -698,7 +701,6 @@ class ECMWFSearch(PostJsonSearch):
                 | {
                     START,
                     END,
-                    "datetime",
                     "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
