@@ -204,19 +204,32 @@ class EODataAccessGateway:
 
     def get_providers(
         self,
+        names: Optional[list[str]] = None,
         collection: Optional[str] = None,
         enabled: Optional[bool] = None,
+        fetchable: Optional[bool] = None,
         limit: Optional[int] = None,
-        names: Optional[list[str]] = None,
     ) -> ProvidersDict:
         """
         List providers from the database, with optional filters, in a
         :class:`~eodag.api.provider.ProvidersDict` instance.
+
+        :param names: (optional) Only return providers whose name is in this list.
+        :param collection: (optional) Only return providers configured for this collection.
+        :param enabled: (optional) Filter on the enabled state: ``True`` for enabled
+                        providers only, ``False`` for disabled ones only, ``None`` for both.
+        :param fetchable: (optional) Filter on the ability to discover collections:
+                          ``True`` for fetchable providers only, ``False`` for
+                          non-fetchable ones only, ``None`` for both.
+        :param limit: (optional) Maximum number of providers to return.
+        :returns: The matching providers, sorted by priority in descending order and by
+                  name in ascending order.
         """
         providers = self.db.get_federation_backends(
             names=set(names) if names else None,
-            enabled=enabled,
             collection=collection,
+            enabled=enabled,
+            fetchable=fetchable,
             limit=limit,
         )
 
@@ -302,7 +315,6 @@ class EODataAccessGateway:
         # The full config is also needed by disable_providers() below to re-evaluate
         # each provider and disable it again if it stayed unusable.
         for name in known_providers:
-
             # include the generic collection so its config is preserved on rebuild
             p_collections_id: set[str] = set(
                 c["id"]
@@ -913,7 +925,7 @@ class EODataAccessGateway:
         candidates = []
 
         # use DB to get providers sorted by priority and name
-        all_fb = self.db.get_federation_backends(enabled=True, collection=collection)
+        all_fb = self.db.get_federation_backends(collection=collection, enabled=True)
 
         for key, fb_data in all_fb.items():
             group = fb_data["metadata"].get("group")
