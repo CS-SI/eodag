@@ -23,6 +23,7 @@ import unittest
 from requests.exceptions import RequestException
 
 from eodag.api.search_result import SearchResult
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import MockResponse
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -55,14 +56,22 @@ class TestCoreSearch(unittest.TestCase):
             "os.path.expanduser", return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
-        # load fake credentials to prevent providers needing auth for search to be pruned
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
+        # load fake credentials to prevent providers needing auth for search to be disabled
         config_path = os.path.join(TEST_RESOURCES_PATH, "wrong_credentials_conf.yml")
         self.dag = EODataAccessGateway(user_conf_file_path=config_path)
 
     def tearDown(self):
         super(TestCoreSearch, self).tearDown()
+        self.dag.db.close()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
@@ -287,7 +296,9 @@ class TestCoreSearch(unittest.TestCase):
         """Core search must loop over providers until finding a non empty result"""
         mock_auth_oidc.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.providers.filter(collection).names
+        available_providers = self.dag.get_providers(
+            collection=collection, enabled=True
+        ).names
         self.assertListEqual(
             available_providers,
             [
@@ -306,7 +317,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             mock_get.call_count + mock_post.call_count + mock_request.call_count,
             len(available_providers),
-            "all available providers must have been requested",
+            "all available enabled providers must have been requested",
         )
 
     @mock.patch(
@@ -333,7 +344,9 @@ class TestCoreSearch(unittest.TestCase):
         """Core search fallback mechanism must halt loop on error if raise_errors is set"""
         mock_auth_get.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.providers.filter(collection).names
+        available_providers = self.dag.get_providers(
+            collection=collection, enabled=True
+        ).names
         self.assertListEqual(
             available_providers,
             [
@@ -362,7 +375,9 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_find_on_first(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.providers.filter(collection).names
+        available_providers = self.dag.get_providers(
+            collection=collection, enabled=True
+        ).names
         self.assertListEqual(
             available_providers,
             [
@@ -417,7 +432,9 @@ class TestCoreSearch(unittest.TestCase):
         """Core search must loop over providers until finding a non empty result"""
         mock_auth_get.return_value.json.return_value = _OIDC_CONFIG
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.providers.filter(collection).names
+        available_providers = self.dag.get_providers(
+            collection=collection, enabled=True
+        ).names
         self.assertListEqual(
             available_providers,
             [
@@ -462,7 +479,9 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_find_on_second_empty_results(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.providers.filter(collection).names
+        available_providers = self.dag.get_providers(
+            collection=collection, enabled=True
+        ).names
         self.assertListEqual(
             available_providers,
             [
@@ -498,7 +517,9 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_fallback_given_provider(self, mock_query):
         """Core search must not loop over providers if a provider is specified"""
         collection = "S1_SAR_SLC"
-        available_providers = self.dag.providers.filter(collection).names
+        available_providers = self.dag.get_providers(
+            collection=collection, enabled=True
+        ).names
         self.assertListEqual(
             available_providers,
             [
@@ -521,7 +542,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             mock_query.call_count,
             1,
-            "only 1 provider out of 6 must have been requested",
+            f"only 1 provider out of {len(available_providers)} must have been requested",
         )
 
     @mock.patch(

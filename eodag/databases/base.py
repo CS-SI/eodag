@@ -281,6 +281,23 @@ class Database(ABC):
         pass
 
     @abstractmethod
+    def delete_collections_federation_backends(self, collection_ids: list[str]) -> None:
+        """Remove collection entries from the collections_federation_backends table.
+
+        :param collection_ids: Collection IDs to remove.
+        """
+        pass
+
+    @abstractmethod
+    def delete_federation_backends(self, names: list[str]) -> None:
+        """Remove federation backends and their collection configs from the database.
+
+        :param names: Names of the federation backends to remove.
+        :raises: :class:`ValueError` if ``names`` is empty.
+        """
+        pass
+
+    @abstractmethod
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
         pass
@@ -335,6 +352,13 @@ class Database(ABC):
     ) -> dict[str, Any]:
         """
         Get the configuration for a specific federation backend and collection from the database.
+        """
+        pass
+
+    @abstractmethod
+    def restore_fbs(self) -> None:
+        """
+        Restore federation backends which have been disabled.
         """
         pass
 

@@ -206,9 +206,9 @@ class PluginManager:
         gateway initialization.
 
         :param provider: The name of the provider (or group, if ``include_groups``) to check.
-        :raises MisconfiguredError: If the provider was pruned for a configuration reason.
+        :raises MisconfiguredError: If the provider was disabled for a configuration reason.
         :raises UnsupportedProvider: If the provider/group is unknown, or if the provider
-                                     was pruned because a required plugin was skipped.
+                                     was disabled because a required plugin was skipped.
         """
         if provider in self._db.get_federation_backends(enabled=False):
             if reason_dict := self.pruned_providers_reasons.get(provider):
@@ -218,8 +218,8 @@ class PluginManager:
                     raise UnsupportedProvider(msg)
                 msg = f"{provider}: {reason}"
                 raise MisconfiguredError(msg)
-            # Fallback for legacy/manual pruned entries missing an explicit reason.
-            msg = f"{provider}: provider has been pruned and is not available"
+            # Fallback for legacy/manual disabled entries missing an explicit reason.
+            msg = f"{provider}: provider has been disabled and is not available"
             raise UnsupportedProvider(msg)
         known = provider in self._db.get_federation_backends(enabled=True)
         if not known:
@@ -246,18 +246,41 @@ class PluginManager:
         if provider:
             self.check_provider_available(provider)
 
+        generic_collection_used = False
         providers = self._db.get_federation_backends(
-            names={provider} if provider else None, enabled=True, collection=collection
+            enabled=True, collection=collection
         )
-        if not providers:
+        if not providers and collection:
             logger.info("UnsupportedCollection: %s, using generic settings", collection)
-            collection = GENERIC_COLLECTION
             providers = self._db.get_federation_backends(
-                enabled=True, collection=collection
+                enabled=True, collection=GENERIC_COLLECTION
             )
+            generic_collection_used = True
+
+        if provider:
+            prov = providers.get(provider)
+            if prov is None and collection:
+                raise UnsupportedProvider(
+                    f"{provider} is not (yet) supported for {collection}"
+                )
+
+            providers = {provider: prov} if prov else {}
 
         for p_name in providers:
-            p_c = self._db.get_fb_config(p_name, {collection} if collection else None)
+            # get config of one collection if given, otherwise get config of all collections of the provider
+            # to be able to have a mapping for metadata from any of them
+            if collection and generic_collection_used:
+                collections = {GENERIC_COLLECTION}
+            elif collection:
+                collections = {collection}
+            else:
+                p_name_collections, _ = self._db.collections_search(
+                    federation_backends=[p_name]
+                )
+                collections_id: set[str] = set(c["id"] for c in p_name_collections)
+                collections = {GENERIC_COLLECTION} | collections_id
+
+            p_c = self._db.get_fb_config(p_name, collections)
 
             # add configuration for another collection if needed to have a mapping for metadata from it
             other_product_for_mapping: Optional[str] = (

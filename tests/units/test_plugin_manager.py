@@ -79,18 +79,18 @@ class TestPluginManager(unittest.TestCase):
 
         with self.assertRaisesRegex(
             UnsupportedProvider,
-            "low: provider has been pruned and is not available"
+            "low: provider has been disabled and is not available"
         ):
             self.manager.check_provider_available("low")
 
-        # pruned provider: MisconfiguredError takes precedence over UnsupportedProvider
+        # disabled provider: MisconfiguredError takes precedence over UnsupportedProvider
         self.manager.pruned_providers_reasons["low"] = {
-            "reason": "provider needing auth for search was pruned because no credentials could be found",
+            "reason": "provider needing auth for search was disabled because no credentials could be found",
             "reason_type": "missing_credentials",
         }
         with self.assertRaisesRegex(
             MisconfiguredError,
-            "low: provider needing auth for search was pruned "
+            "low: provider needing auth for search was disabled "
             "because no credentials could be found",
         ):
             self.manager.check_provider_available("low")
@@ -105,7 +105,7 @@ class TestPluginManager(unittest.TestCase):
         ):
             self.manager.check_provider_available("low")
 
-        # Clean up the pruned provider reason for "low" to avoid side effects in other tests.
+        # Clean up the disabled provider reason for "low" to avoid side effects in other tests.
         del self.manager.pruned_providers_reasons["low"]
 
     def test_get_search_plugins_uses_collection_and_priority(self):
