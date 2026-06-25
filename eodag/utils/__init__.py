@@ -97,8 +97,8 @@ STAC_SEARCH_PLUGINS = [
 #: actual STAC version in EODAG
 STAC_VERSION = "1.1.0"
 
-# EODAG supported plugin topics
-AUTH_TOPIC_KEYS = {"auth", "search_auth", "download_auth"}
+#: EODAG supported plugin topics
+AUTH_TOPIC_KEYS = {"api", "auth", "search_auth", "download_auth"}
 PLUGINS_TOPIC_KEYS = {"api", "search", "download"} | AUTH_TOPIC_KEYS
 
 # In-memory storage of credentials. Extracted from configurations.

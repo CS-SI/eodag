@@ -27,6 +27,7 @@ from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
 from eodag.config import build_provider_configs
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
@@ -66,12 +67,19 @@ class BaseApisPluginTest(unittest.TestCase):
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
         cls.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
     @classmethod
     def tearDownClass(cls):
         super(BaseApisPluginTest, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
+        cls.sqlite_mock.stop()
         cls.tmp_home_dir.cleanup()
 
     def get_search_plugin(self, collection=None, provider=None):
@@ -85,12 +93,14 @@ class BaseApisPluginTest(unittest.TestCase):
 class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def setUp(self):
         self.provider = "ecmwf"
-        self.api_plugin = self.get_search_plugin(provider=self.provider)
+        self.collection = "TIGGE_CF_SFC"
+        self.api_plugin = self.get_search_plugin(
+            collection=self.collection, provider=self.provider
+        )
         self.query_dates = {
             "start_datetime": "2022-01-01T00:00:00.000Z",
             "end_datetime": "2022-01-02T00:00:00.000Z",
         }
-        self.collection = "TIGGE_CF_SFC"
         self.collection_params = {
             "ecmwf:dataset": "tigge",
         }
@@ -252,7 +262,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_fetch_collections_list,
         mock_auth_session_request,
     ):
-        """EcmwfApi.download must call the appriate ecmwf api service"""
+        """EcmwfApi.download must call the appropriate ecmwf api service"""
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("ecmwf")

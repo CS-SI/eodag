@@ -25,6 +25,7 @@ from tempfile import TemporaryDirectory
 import pytest
 from pytest import MonkeyPatch
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, mock
 
@@ -44,16 +45,23 @@ class TestExternalPluginConfig(unittest.TestCase):
             "os.path.expanduser", return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
         super(TestExternalPluginConfig, self).tearDown()
 
-        self.dag.providers.pop("fakeplugin_provider", None)
-        self.dag.providers.pop("fakeplugin_provider2", None)
+        self.dag.db.delete_federation_backends(names=["fakeplugin_provider"])
+        self.dag.db.delete_federation_backends(names=["fakeplugin_provider2"])
 
         # stop Mock and remove tmp config dir
+        self.sqlite_mock.stop()
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
         # reset sys.path

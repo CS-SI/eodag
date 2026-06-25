@@ -26,6 +26,7 @@ from requests.models import Response
 from shapely import geometry
 from stac_validator import stac_validator
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
     GENERIC_STAC_PROVIDER,
@@ -81,6 +82,13 @@ class TestCoreSearchResults(EODagTestCase):
             },
         )
         self.oidc_endpoints_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
+
         self.dag = EODataAccessGateway()
         self.maxDiff = None
         self.geojson_repr = {
@@ -145,6 +153,7 @@ class TestCoreSearchResults(EODagTestCase):
         # stop Mock and remove tmp config dir
         self.oidc_endpoints_mock.stop()
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
     def test_core_serialize_search_results_with_filename(self):
@@ -632,7 +641,7 @@ class TestCoreSearchResults(EODagTestCase):
         # count disabled by default
         search_results = self.dag.search(collection="S2_MSI_L1C", provider="creodias")
         self.assertNotIn(
-            self.dag.providers["creodias"].search_config.pagination["count_tpl"],
+            self.dag.db.get_fb_config("creodias")["search"]["pagination"]["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
         self.assertIsNone(search_results.number_matched)
@@ -642,7 +651,7 @@ class TestCoreSearchResults(EODagTestCase):
             collection="S2_MSI_L1C", provider="creodias", count=True
         )
         self.assertIn(
-            self.dag.providers["creodias"].search_config.pagination["count_tpl"],
+            self.dag.db.get_fb_config("creodias")["search"]["pagination"]["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
         self.assertIsNotNone(search_results.number_matched)

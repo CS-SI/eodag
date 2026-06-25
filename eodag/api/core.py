@@ -261,8 +261,24 @@ class EODataAccessGateway:
         yaml_conf: str | None = None,
         dict_conf: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Update provider configurations using patch semantics.
+        """Update provider configurations using patch semantics.
+
+        The given configuration is a *patch*: it is merged on top of the current
+        configuration of every known provider rather than replacing it. Existing
+        providers are updated (only the keys present in the patch change) and new
+        providers are created.
+
+        To merge correctly, the full current configuration is first rebuilt from the
+        database (the DB is the source of truth), the patch is applied in memory, the
+        providers that cannot be used are disabled, and the result is finally persisted
+        back to the database.
+
+        Exactly one of ``yaml_conf`` or ``dict_conf`` is expected; if both are given,
+        ``dict_conf`` takes precedence. If neither is given (or the patch is empty), the
+        method returns without doing anything.
+
+        :param yaml_conf: The patch configuration as a YAML string.
+        :param dict_conf: The patch configuration as a mapping ``{provider_name: config}``.
         """
 
         if dict_conf is not None:
@@ -275,22 +291,25 @@ class EODataAccessGateway:
         if not patch_conf:
             return
 
+        # restore disabled providers to be able to access their collections config
+        self.db.restore_fbs()
+
         provider_configs: dict[str, ProviderConfig] = {}
         known_providers = self.db.get_federation_backends().keys()
 
-        # get current config of known providers from patch conf
-        for name, patch in patch_conf.items():
-            if name not in known_providers:
-                continue
+        # Rebuild the full current config of every known provider from the DB so the
+        # patch can be merged on top of complete configs (not just the patched keys).
+        # The full config is also needed by disable_providers() below to re-evaluate
+        # each provider and disable it again if it stayed unusable.
+        for name in known_providers:
 
-            # get collections touched by the patch to keep their current
-            # whole config for a given provider in case of partial update
-            patch_dict = patch if isinstance(patch, dict) else patch.__dict__
-            products = set(patch_dict.get("products", {}))
-            dl_products = set(patch_dict.get("download", {}).get("products", {}))
-            touched_collections = products | dl_products
+            # include the generic collection so its config is preserved on rebuild
+            p_collections_id: set[str] = set(
+                c["id"]
+                for c in self.db.collections_search(federation_backends=[name])[0]
+            ) | {GENERIC_COLLECTION}
 
-            base_mapping = self.db.get_fb_config(name, collections=touched_collections)
+            base_mapping = self.db.get_fb_config(name, collections=p_collections_id)
 
             # restore auth confs with credentials, as they are not stored in DB for security reason
             # they are required when disable_providers() is called
@@ -301,10 +320,14 @@ class EODataAccessGateway:
             update_nested_dict(base_mapping, auth_confs_with_creds)
             provider_configs[name] = ProviderConfig.from_mapping(base_mapping)
 
+        # apply the patch (updates existing providers, creates new ones)
         merge_provider_configs(provider_configs, patch_conf)
+        # keep the in-memory credentials store in sync with the merged configs
         update_nested_dict(self._creds_store, extract_credentials(provider_configs))
+        # disable providers that became unusable (missing plugin/credentials)
         disable_providers(provider_configs, self._plugins_manager.skipped_plugins)
 
+        # persist the updated configs back to the DB (source of truth)
         self.db.upsert_fb_configs(list(provider_configs.values()))
 
     def add_provider(
@@ -637,7 +660,7 @@ class EODataAccessGateway:
             ).keys()
         )
 
-        if not p_names:
+        if not p_names and provider:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
@@ -645,7 +668,7 @@ class EODataAccessGateway:
         fetchable_providers = self.db.get_federation_backends(
             names=p_names, enabled=True, fetchable=True
         )
-        if provider and not p_names:
+        if not fetchable_providers and provider:
             msg = f"The requested provider is not enabled or not fetchable: {provider}"
             logger.info(msg)
             return {}
@@ -686,30 +709,47 @@ class EODataAccessGateway:
     def update_collections_list(
         self, ext_collections_conf: dict[str, Optional[dict[str, dict[str, Any]]]]
     ) -> None:
-        """Update eodag collections list
+        """Register collections discovered on providers into eodag's collections list.
 
-        :param ext_collections_conf: external collections configuration
+        Takes the collections discovered on each provider (see
+        :meth:`discover_collections`) and keeps only the ones that need to be added,
+        i.e. not already configured for that provider and whose config is not a subset
+        of an already configured collection. Those kept collections are then persisted:
+
+        1. the new :class:`~eodag.api.collection.Collection` objects are upserted
+           into the database;
+        2. each concerned provider config is patched (via
+           :meth:`update_providers_config`) with the products config of its new
+           collections, leaving its existing collections untouched.
+
+        Only enabled and fetchable providers are considered.
+
+        :param ext_collections_conf: external collections configuration, as a
+                                     mapping ``{provider_name: discovered_conf}``
         """
+        # New collections to insert in the DB, gathered from the considered providers
         all_new_collections: list[Collection] = []
         fetchable_p_names = self.db.get_federation_backends(
             enabled=True, fetchable=True
         ).keys()
+        # Per-provider config patches
         confs_dict: dict[str, Any] = {}
 
-        for provider, new_collections_conf in ext_collections_conf.items():
-            if new_collections_conf and provider in fetchable_p_names:
-                collections, _ = self.db.collections_search(
-                    federation_backends=[provider]
+        for p_name, new_collections_conf in ext_collections_conf.items():
+            if new_collections_conf and p_name in fetchable_p_names:
+                p_collections_id: set[str] = set(
+                    c["id"]
+                    for c in self.db.collections_search(federation_backends=[p_name])[0]
                 )
-                collections_id: set[str] = set(c["id"] for c in collections)
                 p_config: dict[str, Any] = self.db.get_fb_config(
-                    provider, collections=collections_id
+                    p_name, collections=p_collections_id
                 )
                 search_config: dict[str, Any] = p_config.get(
                     "search", {}
                 ) or p_config.get("api", {})
                 provider_products_config: dict[str, Any] = p_config["products"]
 
+                # products config of the new collections only, to patch this provider
                 new_provider_products_config: dict[str, Any] = {}
                 new_collections = 0
                 bad_formatted_col_count = 0
@@ -721,14 +761,15 @@ class EODataAccessGateway:
                         "generic_collection_unparsable_properties", {}
                     ).keys()
                 )
+                # inspect every collection discovered for this provider
                 for (
                     new_collection,
                     new_collection_conf,
                 ) in new_collections_conf["providers_config"].items():
                     if new_collection not in provider_products_config:
+                        # skip a discovered collection if its parsable conf (without metadata_mapping entry)
+                        # is a subset of an existing conf
                         for existing_collection in provider_products_config.copy():
-                            # compare parsed extracted conf (without metadata_mapping entry)
-
                             new_parsed_collections_conf = {
                                 k: v
                                 for k, v in new_collection_conf.items()
@@ -738,9 +779,10 @@ class EODataAccessGateway:
                                 new_parsed_collections_conf.items()
                                 <= provider_products_config[existing_collection].items()
                             ):
-                                # new_collections_conf is a subset on an existing conf
+                                # subset of an existing conf -> already covered, skip it
                                 break
                         else:
+                            # no existing collection matched -> register it
                             try:
                                 new_coll_obj = Collection(
                                     id=new_collection,
@@ -756,21 +798,21 @@ class EODataAccessGateway:
                                         "because its id was incorrectly parsed for eodag"
                                     ),
                                     new_collection,
-                                    provider,
+                                    p_name,
                                 )
                             else:
-                                # new_collection_conf does not already exist, append it
-                                # to new collections list to be added to DB
+                                # register the new collection:
+                                # in the DB upsert list
                                 all_new_collections.append(new_coll_obj)
-                                # to provider config for this collection
+                                # and in this provider's products config patch
                                 new_provider_products_config[
                                     new_collection
                                 ] = new_collection_conf
 
                                 new_collections += 1
 
-                                # increase the increment if the new collection had
-                                # bad formatted attributes in the external config
+                                # count (for logging) collections whose external config
+                                # held at least one bad formatted attribute
                                 for field, v in new_collections_conf[
                                     "collections_config"
                                 ][new_collection].items():
@@ -819,27 +861,25 @@ class EODataAccessGateway:
                                         break
 
                 if new_collections:
-                    logger.debug(
-                        "Added %s collections for %s", new_collections, provider
-                    )
+                    logger.debug("Added %s collections for %s", new_collections, p_name)
                     if bad_formatted_col_count > 0:
                         logger.debug(
                             "bad formatted attributes skipped for %s collection(s) on %s",
                             bad_formatted_col_count,
-                            provider,
+                            p_name,
                         )
 
                     # Append minimalist provider config with its name and the config of its new collections.
                     # This config will be merged with the current one in update_providers_config() method
                     # to keep unchanged collections and other entries of this provider config.
-                    confs_dict[provider] = {
-                        "name": provider,
+                    confs_dict[p_name] = {
+                        "name": p_name,
                         "products": new_provider_products_config,
                     }
 
                 # TODO: keep last fetch only for fetchable providers
                 # self.db.set_federation_backend_last_fetch(
-                #     provider, dt.datetime.now(dt.timezone.utc).isoformat()
+                #     p_name, dt.datetime.now(dt.timezone.utc).isoformat()
                 # )
 
         # if there are new collections, update collections and providers config in DB
@@ -1601,7 +1641,6 @@ class EODataAccessGateway:
                        * other criteria compatible with the provider
         :returns: Search plugins list and the prepared kwargs to make a query.
         """
-        collection_exists = False
         collection: Optional[str] = kwargs.get("collection")
         if collection is None:
             try:
@@ -1631,10 +1670,8 @@ class EODataAccessGateway:
                     return [], kwargs
 
         if collection is not None:
-            coll = self.get_collection(collection)
-            if coll:
+            if coll := self.get_collection(collection):
                 collection = coll._id
-                collection_exists = True
             else:
                 logger.info("unknown collection " + collection)
 
@@ -1681,19 +1718,17 @@ class EODataAccessGateway:
         preferred_provider = self.get_preferred_provider()[0]
 
         search_plugins: list[Union[Search, Api]] = []
-
-        if collection_exists:
-            for plugin in self._plugins_manager.get_search_plugins(
-                collection=collection, provider=provider
+        for plugin in self._plugins_manager.get_search_plugins(
+            collection=collection, provider=provider
+        ):
+            # exclude MeteoblueSearch plugins from search fallback for unknown collection
+            if (
+                provider != plugin.provider
+                and preferred_provider != plugin.provider
+                and isinstance(plugin, MeteoblueSearch)
             ):
-                # exclude MeteoblueSearch plugins from search fallback for unknown collection
-                if (
-                    provider != plugin.provider
-                    and preferred_provider != plugin.provider
-                    and isinstance(plugin, MeteoblueSearch)
-                ):
-                    continue
-                search_plugins.append(plugin)
+                continue
+            search_plugins.append(plugin)
 
         if not provider:
             provider = preferred_provider
@@ -2271,8 +2306,6 @@ class EODataAccessGateway:
         type metadata that will also be stored in each product's properties.
         """
         coll = self.get_collection(collection, providers=[plugin.provider])
-
-        plugin.provider
 
         if coll:
             plugin.config.collection_config = coll.model_dump(

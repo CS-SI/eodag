@@ -50,6 +50,8 @@ from eodag.config import (
     get_ext_collections_conf,
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
+    PLUGINS_TOPIC_KEYS,
+    PluginConfig,
     ProviderConfig,
     build_provider_configs,
 )

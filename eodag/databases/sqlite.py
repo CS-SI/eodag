@@ -172,6 +172,32 @@ class SQLiteDatabase(Database):
         )
         self._con.commit()
 
+    def delete_federation_backends(self, names: list[str]) -> None:
+        """Remove federation backends and their collection configs from the database.
+
+        :param names: Names of the federation backends to remove.
+        :raises: :class:`ValueError` if ``names`` is empty.
+        """
+        if not names:
+            raise ValueError("names cannot be empty")
+
+        placeholders = ", ".join("?" * len(names))
+        params = tuple(names)
+        with self._con:
+            # Delete from federation_backends first so _refresh_collections_denorm
+            # recomputes affected collections without the removed backends
+            self._execute(
+                f"DELETE FROM federation_backends WHERE name IN ({placeholders})",
+                params,
+            )
+            self._refresh_collections_denorm(names)
+            # Now clean up the collection-backend mapping table
+            self._execute(
+                f"DELETE FROM collections_federation_backends"
+                f" WHERE federation_backend_name IN ({placeholders})",
+                params,
+            )
+
     def upsert_collections(self, collections: CollectionsDict) -> None:
         """Add or update collections in the database"""
 
@@ -255,7 +281,7 @@ class SQLiteDatabase(Database):
         """
         if not changed_fbs:
             return
-        provider_qmarks = ", ".join(["?"] * len(changed_fbs))
+        fb_qmarks = ", ".join(["?"] * len(changed_fbs))
 
         self._execute(
             """
@@ -281,7 +307,7 @@ class SQLiteDatabase(Database):
             INSERT INTO tmp_affected(collection_id)
             SELECT DISTINCT cfb.collection_id
             FROM collections_federation_backends cfb
-            WHERE cfb.federation_backend_name IN ({provider_qmarks});
+            WHERE cfb.federation_backend_name IN ({fb_qmarks});
             """,
             tuple(changed_fbs),
         )
@@ -417,6 +443,22 @@ class SQLiteDatabase(Database):
             self._upsert_collections_federation_backends(coll_fb_configs)
             self._refresh_collections_denorm(sorted(changed_fbs))
 
+    def restore_fbs(self) -> None:
+        """
+        Restore federation backends which have been disabled.
+        """
+        with self._con:
+            restored = [
+                row["name"]
+                for row in self._execute(
+                    "SELECT name FROM federation_backends WHERE enabled = 0"
+                ).fetchall()
+            ]
+            self._execute(
+                "UPDATE federation_backends SET enabled = 1 WHERE enabled = 0",
+            )
+            self._refresh_collections_denorm(restored)
+
     def set_priority(self, name: str, priority: int) -> None:
         """
         Set the priority of a federation backend.
@@ -465,7 +507,11 @@ class SQLiteDatabase(Database):
 
         from_clause = "FROM collections c"
         where_parts = (
-            [where] + ["c.federation_backends IS NOT NULL"]
+            [where]
+            + [
+                "c.federation_backends IS NOT NULL",
+                f"{_JSON_EXTRACT}(c.federation_backends, '$[0]') IS NOT NULL",
+            ]
             if with_fbs_only
             else [where]
         )

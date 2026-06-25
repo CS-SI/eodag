@@ -128,14 +128,14 @@ class Collection(StacCollection):
     keywords: Optional[list[str]] = None
     links: Links = Field(default=Links(root=[]))
 
-    # fields which are not part of the StacCollection model
+    # Fields which are not part of the StacCollection model
     # but which can be used at the root of a STAC collection instance
+    # They must be explicitly added to the class attribute ``__stac_fields__``
+    # to be kept at the root of the collection instance
     federation_backends: Optional[list[str]] = Field(
         default=None, alias="federation:backends"
     )
-    sci_doi: Optional[str] = Field(
-        default=None, alias="sci:doi"
-    )
+    sci_doi: Optional[str] = Field(default=None, alias="sci:doi")
 
     # summaries
     constellation: Optional[list[str]] = Field(default=None, exclude=True, repr=False)
@@ -167,7 +167,8 @@ class Collection(StacCollection):
 
     # only STAC fields
     __stac_fields__: ClassVar[list[str]] = list(StacCollection.model_fields.keys()) + [
-        "federation_backends", "sci_doi"
+        "federation_backends",
+        "sci_doi",
     ]
 
     # mandatory STAC fields which are fixed by their default value

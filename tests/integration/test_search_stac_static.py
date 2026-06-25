@@ -19,6 +19,7 @@ import os
 import unittest
 from tempfile import TemporaryDirectory
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, mock
 
@@ -33,6 +34,12 @@ class TestSearchStacStatic(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         self.dag = EODataAccessGateway()
 
@@ -79,6 +86,7 @@ class TestSearchStacStatic(unittest.TestCase):
         super(TestSearchStacStatic, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
     def test_search_stac_static(self):

@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
+import re
 import warnings
 from importlib.resources import files as res_files
 from inspect import isclass
@@ -641,7 +642,16 @@ class PluginConfig(yaml.YAMLObject):
         :param check_type: Whether to require 'type' or 'credentials' key (default True).
         Set to False for legacy YAML tag parsing.
         """
-        # credentials may be set without type when the provider uses search_auth plugin.
+        # A plugin config must specify either:
+        # - a `type` (the plugin class to instantiate), OR
+        # - `credentials` only, which is valid for credentials-only overrides from user
+        #   conf for any plugin section (api, search, auth, search_auth, download_auth,
+        #   …). Users commonly set only credentials in their config (e.g.
+        #   ``ecmwf.api.credentials``, ``aws_eos.search_auth.credentials``) without
+        #   repeating the `type` that is already defined in the default providers.yml.
+        #   Without this exception any such user config entry would be rejected.
+        # Note: a search config (api/search) with credentials but no type will be caught later by
+        # disable_providers() if no matching plugin with a type exists in the DB.
         if (
             check_type
             and "type" not in config_keys
@@ -739,9 +749,9 @@ class ProviderConfig(yaml.YAMLObject):
     download_auth: PluginConfig
 
     def __setstate__(self, state: dict[str, Any]) -> None:
-        """Apply defaults when building from yaml."""
+        """Finalize the config when building from yaml."""
         self.__dict__.update(state)
-        self._apply_defaults()
+        self._finalize()
 
     def __contains__(self, key):
         """Check if a key is in the ProviderConfig."""
@@ -785,7 +795,7 @@ class ProviderConfig(yaml.YAMLObject):
             mapping_copy[key] = PluginConfig.from_mapping(_mapping)
         c = cls()
         c.__dict__.update(mapping_copy)
-        c._apply_defaults()
+        c._finalize()
         return c
 
     @staticmethod
@@ -844,10 +854,22 @@ class ProviderConfig(yaml.YAMLObject):
                         str(e),
                         ", ".join([k for k in PLUGINS_TOPIC_KEYS if hasattr(self, k)]),
                     )
-        self._apply_defaults()
+        self._finalize()
 
-    def _apply_defaults(self: Self) -> None:
-        """Applies some default values to provider config."""
+    def _finalize(self: Self) -> None:
+        """Finalize the provider config after construction or update.
+
+        Resets the ``enabled`` flag, applies a few default values (``priority``,
+        download ``output_dir``/``delete_archive``, STAC search defaults) and derives
+        the ``fetchable`` attribute from the provider configuration.
+        """
+        # Always reset enabled to True here. disable_providers() is responsible
+        # for setting it to False after the full config is built and persisted to
+        # the DB. Resetting here ensures that a subsequent update() call (e.g. when
+        # merging user conf on top of an already-disabled provider) does not
+        # permanently lock the provider as disabled before disable_providers() runs.
+        self.enabled = True
+
         if getattr(self, "priority", None) is None:
             self.priority = 0
 
@@ -890,6 +912,14 @@ class ProviderConfig(yaml.YAMLObject):
                     plugin_key,
                     getattr(self, "name", None),
                 )
+
+        # fetchable is not a default but a value derived from the provider config:
+        # True when the search/api plugin declares a collections discovery fetch_url.
+        search_conf = getattr(self, "search", None) or getattr(self, "api", None)
+        self.fetchable = bool(
+            search_conf
+            and getattr(search_conf, "discover_collections", {}).get("fetch_url")
+        )
 
 
 def credentials_in_auth(auth_conf: PluginConfig) -> bool:
@@ -1153,9 +1183,6 @@ def merge_provider_configs(
             operation = "updating" if name in configs else "creating"
             logger.warning("%s: skipped %s due to invalid config", name, operation)
             logger.debug("Traceback:\n%s", traceback.format_exc())
-        else:
-            # set attributes which can not be set during the creation or update of the config
-            set_provider_fetchable_attr(configs[name])
 
     _share_credentials(configs)
 
@@ -1307,21 +1334,78 @@ def load_provider_configs(
     return configs
 
 
+def _has_matching_external_auth(
+    name: str,
+    conf: ProviderConfig,
+    configs: dict[str, ProviderConfig],
+) -> bool:
+    """Check whether another provider exposes an auth plugin that can authenticate
+    *conf*'s search/api requests.
+
+    A provider needing authentication for search but having no auth plugin of its own
+    can still be used if another provider declares an auth plugin whose
+    ``matching_url`` matches this provider's search/api ``api_endpoint`` or whose
+    ``matching_conf`` is a subset of this provider's search/api configuration.
+    This mirrors the runtime auth resolution done by
+    :meth:`~eodag.plugins.manager.PluginManager.get_auth_plugin`, which matches an
+    auth plugin against the associated plugin's ``api_endpoint`` and config across
+    all enabled providers, regardless of whether the associated plugin is a Search
+    or an Api plugin.
+
+    :param name: Name of the provider being checked.
+    :param conf: Provider config being checked.
+    :param configs: All known provider configs.
+    :returns: True if a matching external auth plugin with credentials exists.
+    """
+    associated_conf = getattr(conf, "search", None) or getattr(conf, "api", None)
+    if associated_conf is None:
+        return False
+    api_endpoint = getattr(associated_conf, "api_endpoint", None)
+
+    for other_name, other_conf in configs.items():
+        if other_name == name or not getattr(other_conf, "enabled", True):
+            continue
+        for auth_key in AUTH_TOPIC_KEYS:
+            auth_conf = getattr(other_conf, auth_key, None)
+            if auth_conf is None or not credentials_in_auth(auth_conf):
+                continue
+            # match by url against this provider's search/api api_endpoint
+            plugin_matching_url = getattr(auth_conf, "matching_url", None)
+            if (
+                api_endpoint
+                and plugin_matching_url
+                and re.match(rf"{plugin_matching_url}", api_endpoint)
+            ):
+                return True
+            # match by conf: auth matching_conf is a subset of the search/api config
+            plugin_matching_conf = getattr(auth_conf, "matching_conf", None)
+            if (
+                plugin_matching_conf
+                and associated_conf.__dict__.items() >= plugin_matching_conf.items()
+            ):
+                return True
+    return False
+
+
 def disable_providers(
     configs: dict[str, ProviderConfig],
     skipped_plugins: list[str],
-):
-    """Determine which providers should be disabled.
+) -> None:
+    """Disable providers that cannot be used due to missing plugins or credentials.
 
-    Returns a set of provider names that should be marked as disabled
-    because they lack credentials, auth plugins, or use skipped plugins.
+    A provider is disabled when:
+    - it references a plugin class that failed to load (skipped_plugins),
+    - it requires authentication but no credentials or auth plugin are configured,
+    - it has no usable api/search plugin (no ``type`` key on the plugin config).
 
-    :param configs: Provider configs dict.
-    :param skipped_plugins: Plugin class names that failed to load.
-    :returns: Set of provider names to disable.
+    This function mutates the ``enabled`` flag on each :class:`ProviderConfig` in
+    *configs* directly; it does not return anything.
+
+    :param configs: Provider configs dict (mutated in-place).
+    :param skipped_plugins: Plugin class names that failed to load at import time.
     """
     for name, conf in configs.items():
-        # disable providers using skipped plugins
+        # Disable providers that depend on a plugin that could not be imported
         if any(
             isinstance(v, PluginConfig) and getattr(v, "type", None) in skipped_plugins
             for v in conf.__dict__.values()
@@ -1332,17 +1416,31 @@ def disable_providers(
             )
             continue
 
-        # check authentication
+        # Disable providers that need auth but have no usable credentials
+
+        # Api plugin with need_auth: credentials are usually embedded in the api
+        # config itself, but the provider may also rely on an auth plugin exposed by
+        # another provider (matched by url/conf at runtime, see
+        # PluginManager.get_auth_plugin), so check for that before disabling.
         if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
-            if not credentials_in_auth(conf.api):
+            if not credentials_in_auth(conf.api) and not _has_matching_external_auth(
+                name, conf, configs
+            ):
                 conf.enabled = False
                 logger.info(
                     "%s: provider needing auth for search has been disabled because no credentials could be found",
                     name,
                 )
 
+        # Search plugin with need_auth: a separate auth/search_auth plugin with
+        # credentials is required
         elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
             if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
+                # No auth plugin attached to this provider. It may still be usable
+                # if another provider exposes an auth plugin matching this
+                # provider's search endpoint (by url) or search config (by conf).
+                if _has_matching_external_auth(name, conf, configs):
+                    continue
                 conf.enabled = False
                 logger.info(
                     "%s: provider needing auth for search has been disabled because no auth plugin could be found",
@@ -1350,6 +1448,7 @@ def disable_providers(
                 )
                 continue
 
+            # search_auth takes precedence over auth when present
             credentials_exist = (
                 hasattr(conf, "search_auth") and credentials_in_auth(conf.search_auth)
             ) or (
@@ -1364,21 +1463,30 @@ def disable_providers(
                     name,
                 )
 
-        elif not hasattr(conf, "api") and not hasattr(conf, "search"):
+        # Disable providers with no functional search/api plugin ---
+        # This catches two distinct situations:
+        # 1. The provider has neither an `api` nor a `search` key at all.
+        # 2. The provider has an `api`/`search` key but with no `type` — typically a
+        #    credentials-only entry from the user conf (e.g. ecmwf/usgs with only
+        #    `api.credentials`). Such entries pass PluginConfig.validate() because
+        #    credentials are present, but the PluginConfig cannot be instantiated
+        #    without a `type`. We emit a distinct log message for each sub-case so
+        #    users can tell whether they forgot the plugin key entirely or forgot to
+        #    set the plugin type.
+        elif (not hasattr(conf, "api") or getattr(conf.api, "type", None) is None) and (
+            not hasattr(conf, "search") or getattr(conf.search, "type", None) is None
+        ):
             conf.enabled = False
-            logger.info(
-                "%s: provider has been disabled because no api or search plugin could be found",
-                name,
-            )
-
-
-def set_provider_fetchable_attr(config: ProviderConfig) -> None:
-    """Set the ``fetchable`` attribute of the provider config according to its search or api plugin configuration.
-
-    :param config: Provider config object.
-    """
-    search_conf = getattr(config, "search", None) or getattr(config, "api", None)
-    config.fetchable = bool(
-        search_conf
-        and getattr(search_conf, "discover_collections", {}).get("fetch_url")
-    )
+            has_plugin_key = hasattr(conf, "api") or hasattr(conf, "search")
+            if has_plugin_key:
+                # Plugin section exists but no type is set (credentials-only stub)
+                logger.info(
+                    "%s: provider has been disabled because its api or search plugin has no type configured",
+                    name,
+                )
+            else:
+                # No api or search section at all
+                logger.info(
+                    "%s: provider has been disabled because no api or search plugin could be found",
+                    name,
+                )

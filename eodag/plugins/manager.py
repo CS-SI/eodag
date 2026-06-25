@@ -215,18 +215,41 @@ class PluginManager:
                 msg = f"Provider {provider} unknown or not enabled"
                 raise UnsupportedProvider(msg)
 
+        generic_collection_used = False
         providers = self._db.get_federation_backends(
-            names={provider} if provider else None, enabled=True, collection=collection
+            enabled=True, collection=collection
         )
-        if not providers:
+        if not providers and collection:
             logger.info("UnsupportedCollection: %s, using generic settings", collection)
-            collection = GENERIC_COLLECTION
             providers = self._db.get_federation_backends(
-                enabled=True, collection=collection
+                enabled=True, collection=GENERIC_COLLECTION
             )
+            generic_collection_used = True
+
+        if provider:
+            prov = providers.get(provider)
+            if prov is None and collection:
+                raise UnsupportedProvider(
+                    f"{provider} is not (yet) supported for {collection}"
+                )
+
+            providers = {provider: prov} if prov else {}
 
         for p_name in providers:
-            p_c = self._db.get_fb_config(p_name, {collection} if collection else None)
+            # get config of one collection if given, otherwise get config of all collections of the provider
+            # to be able to have a mapping for metadata from any of them
+            if collection and generic_collection_used:
+                collections = {GENERIC_COLLECTION}
+            elif collection:
+                collections = {collection}
+            else:
+                p_name_collections, _ = self._db.collections_search(
+                    federation_backends=[p_name]
+                )
+                collections_id: set[str] = set(c["id"] for c in p_name_collections)
+                collections = {GENERIC_COLLECTION} | collections_id
+
+            p_c = self._db.get_fb_config(p_name, collections)
 
             # add configuration for another collection if needed to have a mapping for metadata from it
             other_product_for_mapping: Optional[str] = (

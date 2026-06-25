@@ -31,12 +31,14 @@ import pytest
 from stac_validator import stac_validator
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     GENERIC_COLLECTION,
     AuthenticationError,
     EODataAccessGateway,
     SearchResult,
+    mock,
     sanitize,
     uri_to_path,
 )
@@ -347,6 +349,13 @@ class TestEODagEndToEnd(EndToEndBase):
     def setUpClass(cls):
         super().setUpClass()
 
+        # Use in-memory SQLite DB for faster tests
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
+
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
         if os.path.isfile(tests_user_conf):
@@ -365,6 +374,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.sqlite_mock.stop()
         cls.tmp_download_dir.cleanup()
 
     def execute_download(
@@ -926,6 +936,12 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         tests_wrong_conf = os.path.join(
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )
+        # Use in-memory SQLite DB for faster tests
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
         cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
         # backup os.environ as it will be modified by tests
         cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
@@ -936,6 +952,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
     @classmethod
     def tearDownClass(cls):
         super(TestEODagEndToEndWrongCredentials, cls).tearDownClass()
+        cls.sqlite_mock.stop()
         # restore os.environ
         for k, v in os.environ.items():
             if cls.eodag_env_pattern.match(k):

@@ -1161,8 +1161,8 @@ class TestCollectionsSearch(unittest.TestCase):
         with_fbs_only=True (default) - only ONE & TWO visible (matched=2).
         with_fbs_only=False           - all four collections visible (matched=4).
         """
+        # each case has a name, limit, with_fbs_only, expected_page_len and expected_matched
         cases = [
-            # (name, limit, with_fbs_only, expected_page_len, expected_matched)
             ("limit=2 with_fbs_only=True", 2, True, 2, 2),
             ("limit=1 with_fbs_only=True", 1, True, 1, 2),
             ("limit=2 with_fbs_only=False", 2, False, 2, 4),
@@ -1330,8 +1330,8 @@ class TestCollectionsSearch(unittest.TestCase):
 
     def test_federation_backends(self):
         """Filter collections by federation_backends."""
+        # each case has a name, fb_filter, extra_kwargs, expected_ids and expected_matched
         cases = [
-            # (name, fb_filter, extra_kwargs, expected_ids, expected_matched)
             (
                 "no filter - with_fbs_only=False returns all",
                 None,
@@ -1401,6 +1401,113 @@ class TestCollectionsSearch(unittest.TestCase):
                 self.assertEqual(self._matched(result), expected_matched)
 
         db.close()
+
+
+class TestDeleteFederationBackends(unittest.TestCase):
+    """Tests for :meth:`SQLiteDatabase.delete_federation_backends`."""
+
+    def setUp(self) -> None:
+        self.db = SQLiteDatabase(":memory:")
+        self.db._con.executemany(
+            "INSERT INTO collections (content) VALUES (jsonb(?))",
+            [(orjson.dumps(c),) for c in COLLECTIONS],
+        )
+        self.db._con.commit()
+        # ONE  -> ["backend_a", "backend_b"]
+        # TWO  -> ["backend_b"]
+        # THREE, FOUR -> no backends
+        _register_fb_and_collections(
+            self.db,
+            [
+                _make_coll_fb("backend_a", "ONE"),
+                _make_coll_fb("backend_b", "ONE"),
+                _make_coll_fb("backend_b", "TWO"),
+            ],
+        )
+
+    def tearDown(self) -> None:
+        self.db.close()
+
+    def test_raises_on_empty_list(self):
+        """delete_federation_backends([]) must raise ValueError."""
+        with self.assertRaises(ValueError):
+            self.db.delete_federation_backends([])
+
+    def test_delete_single_backend(self):
+        """Deleting backend_a removes it from federation_backends and from
+        collections_federation_backends; ONE loses backend_a but keeps backend_b."""
+        self.db.delete_federation_backends(["backend_a"])
+
+        # federation_backends table: backend_a gone
+        fb_names = {
+            row[0]
+            for row in self.db._con.execute(
+                "SELECT name FROM federation_backends"
+            ).fetchall()
+        }
+        self.assertNotIn("backend_a", fb_names)
+        self.assertIn("backend_b", fb_names)
+
+        # collections_federation_backends: no row for backend_a
+        cfb_rows = self.db._con.execute(
+            "SELECT federation_backend_name FROM collections_federation_backends"
+        ).fetchall()
+        cfb_names = {r[0] for r in cfb_rows}
+        self.assertNotIn("backend_a", cfb_names)
+
+        # denormalized column on ONE: only backend_b remains
+        result = self.db.collections_search(federation_backends=["backend_a"])
+        self.assertEqual(result[1], 0)
+
+        result = self.db.collections_search(federation_backends=["backend_b"])
+        self.assertSetEqual({c["id"] for c in result[0]}, {"ONE", "TWO"})
+
+    def test_delete_shared_backend(self):
+        """Deleting backend_b (shared by ONE and TWO) removes both collections
+        from being reachable via backend_b; ONE still has backend_a."""
+        self.db.delete_federation_backends(["backend_b"])
+
+        # TWO no longer has any backend → not returned with with_fbs_only=True
+        result_all = self.db.collections_search(with_fbs_only=True)
+        ids = {c["id"] for c in result_all[0]}
+        self.assertIn("ONE", ids)
+        self.assertNotIn("TWO", ids)
+
+        # ONE is still reachable via backend_a
+        result = self.db.collections_search(federation_backends=["backend_a"])
+        self.assertSetEqual({c["id"] for c in result[0]}, {"ONE"})
+
+    def test_delete_multiple_backends(self):
+        """Deleting all backends leaves no collection with a federation backend."""
+        self.db.delete_federation_backends(["backend_a", "backend_b"])
+
+        # No federation backends left
+        fb_count = self.db._con.execute(
+            "SELECT COUNT(*) FROM federation_backends"
+        ).fetchone()[0]
+        self.assertEqual(fb_count, 0)
+
+        # No collection-backend mappings left
+        cfb_count = self.db._con.execute(
+            "SELECT COUNT(*) FROM collections_federation_backends"
+        ).fetchone()[0]
+        self.assertEqual(cfb_count, 0)
+
+        # collections_search returns nothing (no backend attached to any collection)
+        result = self.db.collections_search()
+        self.assertEqual(result[1], 0)
+
+    def test_delete_nonexistent_backend_is_noop(self):
+        """Deleting a backend that does not exist must not raise and must not
+        affect existing data."""
+        self.db.delete_federation_backends(["nonexistent"])
+
+        # Existing backends and mappings are untouched
+        result = self.db.collections_search(federation_backends=["backend_a"])
+        self.assertEqual(result[1], 1)
+
+        result = self.db.collections_search(federation_backends=["backend_b"])
+        self.assertEqual(result[1], 2)
 
 
 # TODO: add tests on all methods of SQLiteDatabase, not only on collections search.

@@ -35,6 +35,7 @@ from packaging import version
 
 from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import GENERIC_COLLECTION
 from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import UnsupportedProvider
@@ -75,12 +76,18 @@ class TestEodagCli(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         # create eodag conf dir in tmp home dir
         eodag_conf_dir = os.path.join(self.tmp_home_dir.name, ".config", "eodag")
         os.makedirs(eodag_conf_dir, exist_ok=False)
         # use empty config file with fake credentials in order to have full
-        # list for tests and prevent providers to be pruned
+        # list for tests and prevent providers to be disabled
         write_eodag_conf_with_fake_credentials(
             os.path.join(eodag_conf_dir, "eodag.yml")
         )
@@ -89,6 +96,7 @@ class TestEodagCli(unittest.TestCase):
         super(TestEodagCli, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
         # reset logging
         logger = logging.getLogger("eodag")

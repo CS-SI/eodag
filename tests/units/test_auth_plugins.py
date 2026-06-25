@@ -2202,24 +2202,23 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"foo": "bar"}
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
-        self.assertTrue(
-            '"token_provision" must be one of "qs" or "header"'
-            in str(context.exception)
+        self.assertIn(
+            '"token_provision" must be one of "qs" or "header"', str(context.exception)
         )
         # `token_provision=="qs"` but `token_qs_key` is missing
         auth_plugin = self.get_auth_plugin("provider_token_qs_key_missing")
         auth_plugin.config.credentials = {"foo": "bar"}
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
-        self.assertTrue(
-            '"qs" must have "token_qs_key" config parameter as well'
-            in str(context.exception)
+        self.assertIn(
+            '"qs" must have "token_qs_key" config parameter as well',
+            str(context.exception),
         )
         # Missing credentials
         auth_plugin = self.get_auth_plugin("provider_ok")
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
-        self.assertTrue("Missing credentials" in str(context.exception))
+        self.assertIn("Missing credentials", str(context.exception))
 
     def test_plugins_auth_codeflowauth_validate_credentials_ok(self):
         """OIDCAuthorizationCodeFlowAuth.validate_credentials must be ok on non-empty credentials"""
