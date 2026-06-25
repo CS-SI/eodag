@@ -140,6 +140,8 @@ class TestCollection(unittest.TestCase):
                 "keywords",
                 "providers",
                 "summaries",
+                "federation_backends",
+                "sci_doi",
             ],
         )
 
@@ -217,7 +219,6 @@ class TestCollection(unittest.TestCase):
                 "instruments",
                 "platform",
                 "processing_level",
-                "sci_doi",
                 "eodag_sensor_type",
             ],
         )
@@ -650,6 +651,7 @@ class TestCollection(unittest.TestCase):
                 "href": "https://land.copernicus.eu/en/technical-library/hr-vpp-data-access-manual/@@download/file",
                 "type": "application/pdf",
                 "title": "User Manual",
+                "label": None,
             }
 
             # try to create a collection with a wrong link and check that logs have been emitted
@@ -659,7 +661,7 @@ class TestCollection(unittest.TestCase):
                     links=[wrong_link, right_link],
                 )
 
-            self.assertIn("3 validation errors for collection foo", str(cm.output))
+            self.assertIn("2 validation errors for collection foo", str(cm.output))
 
             self.assertIn(
                 "links.0.href\\n  Field required",
@@ -667,7 +669,7 @@ class TestCollection(unittest.TestCase):
             )
 
             self.assertIn(
-                "links.0.type.str\\n  Input should be a valid string",
+                "links.0.type\\n  Input should be a valid string",
                 str(cm.output),
             )
 
