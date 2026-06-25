@@ -606,7 +606,7 @@ class PluginConfig(yaml.YAMLObject):
             "Usage of deprecated YAML tag '!plugin' for plugin configuration "
             "(Please use plain YAML mappings instead)"
             " -- Deprecated since v4.4.0",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         cls.validate(
