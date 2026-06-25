@@ -31,6 +31,7 @@ from unittest import mock
 import responses
 from requests.structures import CaseInsensitiveDict
 
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
@@ -75,12 +76,19 @@ class BaseDownloadPluginTest(unittest.TestCase):
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
         cls.expanduser_mock.start()
+        # Use in-memory SQLite DB for faster tests
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
     @classmethod
     def tearDownClass(cls):
         super(BaseDownloadPluginTest, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
+        cls.sqlite_mock.stop()
         cls.tmp_home_dir.cleanup()
 
     def setUp(self):

@@ -45,6 +45,7 @@ class PrunedProviderReason(TypedDict):
         "missing_credentials",
         "missing_auth_plugin",
         "missing_search_plugin",
+        "missing_search_plugin_type"
     ]
 
 
@@ -70,8 +71,8 @@ class Provider:
     >>> provider = Provider(**content)
     >>> provider.name
     'example_provider'
-    >>> 'S2_MSI_L1C' in provider.collections_config
-    True
+    >>> provider.metadata['url']
+    'https://example.com'
     >>> provider.priority
     1
     """
