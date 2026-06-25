@@ -566,9 +566,9 @@ class SQLiteDatabase(Database):
     def get_federation_backends(
         self,
         names: Optional[set[str]] = None,
+        collection: Optional[str] = None,
         enabled: Optional[bool] = None,
         fetchable: Optional[bool] = None,
-        collection: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> dict[str, dict[str, Any]]:
         """
