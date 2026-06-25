@@ -14,6 +14,10 @@
     sat:absolute_orbit:
       - orbit
       - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
+  anchor_platform: &platform
+    platform:
+      - sat
+      - '$.properties.acquisitionInformation[0].platform.platformShortName'
   search: !plugin
     type: EumetsatDsSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
@@ -126,12 +130,6 @@
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
-    S3_SRA_1A_BC004:
-      product:type: SR_1_SRA_A_
-      _collection: EO:EUM:DAT:0583
-      metadata_mapping:
-        <<: *orbit_zone_tile
-        <<: *sentinel_params
     S3_SRA_1A_BC005:
       product:type: SR_1_SRA_A_
       _collection: EO:EUM:DAT:0836
@@ -174,12 +172,6 @@
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
-    S3_WAT_BC004:
-      product:type: SR_2_WAT___
-      _collection: EO:EUM:DAT:0586
-      metadata_mapping:
-        <<: *orbit_zone_tile
-        <<: *sentinel_params
     S3_WAT_BC005:
       product:type: SR_2_WAT___
       _collection: EO:EUM:DAT:0834
@@ -208,6 +200,18 @@
     S3_ERR_BC002:
       product:type: OL_1_ERR___
       _collection: EO:EUM:DAT:0578
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_EFRBC004:
+      product:type: OL_1_EFR___
+      _collection: EO:EUM:DAT:0885
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_ERRBC004:
+      product:type: OL_1_ERR___
+      _collection: EO:EUM:DAT:0886
       metadata_mapping:
         <<: *orbit_zone_tile
         <<: *sentinel_params
@@ -377,6 +381,50 @@
       _collection: EO:EUM:DAT:MULT:HIRSL1
       metadata_mapping:
         <<: *orbit_zone_tile
+    METOP_AVHRDUAL0100:
+      _collection: EO:EUM:DAT:0151
+      metadata_mapping:
+        <<: *platform
+    METOP_AVHRPWE0200:
+      _collection: EO:EUM:DAT:0152
+      metadata_mapping:
+        <<: *platform
+    METOP_MHSMWHS0200:
+      _collection: EO:EUM:DAT:0344
+      metadata_mapping:
+        <<: *platform
+    METOP_GOMPMA020100:
+      _collection: EO:EUM:DAT:0579
+      metadata_mapping:
+        <<: *platform
+    METOP_IASXXX1C0200:
+      _collection: EO:EUM:DAT:0590
+      metadata_mapping:
+        <<: *platform
+    METOP_IASPCS1C0100:
+      _collection: EO:EUM:DAT:0758
+      metadata_mapping:
+        <<: *platform
+    METOP_O3M_517:
+      _collection: EO:EUM:DAT:0959
+      metadata_mapping:
+        <<: *platform
+    METOP_IASSO22X0100:
+      _collection: EO:EUM:DAT:0960
+      metadata_mapping:
+        <<: *platform
+    METOP_MXI_DR_O3:
+      _collection: EO:EUM:DAT:1027
+      metadata_mapping:
+        <<: *platform
+    METOP_IASI_NCM_L1:
+      _collection: EO:EUM:DAT:1099
+      metadata_mapping:
+        <<: *platform
+    METOP_OAS025:
+      _collection: EO:EUM:DAT:METOP:OAS025
+      metadata_mapping:
+        <<: *platform
     # MSG
     MSG_CLM:
       _collection: EO:EUM:DAT:MSG:CLM
@@ -404,8 +452,6 @@
       _collection: EO:EUM:DAT:0301
     MFG_GSA_63:
       _collection: EO:EUM:DAT:0302
-    MSG_MFG_GSA_0:
-      _collection: EO:EUM:DAT:0300
     MSG_CTH:
       _collection: EO:EUM:DAT:MSG:CTH
     MSG_CTH_IODC:
@@ -416,6 +462,30 @@
       _collection: EO:EUM:DAT:0617
     S6_RADIO_OCCULTATION:
       _collection: EO:EUM:DAT:0853
+    S6_MW_2_AMR_F08:
+      _collection: EO:EUM:DAT:0837
+    S6_P4_1B_HR_F08:
+      _collection: EO:EUM:DAT:0839
+    S6_P4_1B_LR_F08:
+      _collection: EO:EUM:DAT:0840
+    S6_P4_2_HR_F08:
+      _collection: EO:EUM:DAT:0841
+    S6_P4_2_LR_F08:
+      _collection: EO:EUM:DAT:0842
+    S6_P4_3_LR:
+      _collection: EO:EUM:DAT:1015
+    S6_P4_1A_HR:
+      _collection: EO:EUM:DAT:1069
+    S6_P4_1B_HR_G01:
+      _collection: EO:EUM:DAT:1070
+    S6_P4_1B_LR:
+      _collection: EO:EUM:DAT:1071
+    S6_P4_2_HR:
+      _collection: EO:EUM:DAT:1072
+    S6_MW_2_AMR:
+      _collection: EO:EUM:DAT:1073
+    S6_P4_2_LR_G01:
+      _collection: EO:EUM:DAT:1074
     MTG_LI_AF:
       _collection: EO:EUM:DAT:0686
     MTG_LI_LFL:
@@ -456,8 +526,32 @@
       _collection: EO:EUM:DAT:0863
     MTG_FCI_ACTIVE_FIRE_L2_V1:
       _collection: EO:EUM:DAT:0682
+    MFG_MTP15EASY0200_0DEG:
+      _collection: EO:EUM:DAT:0880
+    MFG_MTP15EASY0200_57DEG:
+      _collection: EO:EUM:DAT:0881
+    MFG_MFGAMV570IODC1:
+      _collection: EO:EUM:DAT:0894
+    MFG_MFGAMV630IODC1:
+      _collection: EO:EUM:DAT:0895
     MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
       _collection: EO:EUM:DAT:0921
+    MULT_MHSMWHS0100:
+      _collection: EO:EUM:DAT:0305
+      metadata_mapping:
+        <<: *platform
+    MULT_AVHGAC1C0100:
+      _collection: EO:EUM:DAT:0862
+      metadata_mapping:
+        <<: *platform
+    MULT_OLR_CM_11342_CM_6321:
+      _collection: EO:EUM:DAT:0874
+      metadata_mapping:
+        <<: *platform
+    MULT_UTH_CM_14712:
+      _collection: EO:EUM:DAT:0910
+      metadata_mapping:
+        <<: *platform
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download: !plugin
