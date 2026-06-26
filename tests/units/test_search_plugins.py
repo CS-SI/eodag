@@ -1771,7 +1771,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
         mock_get_ssl_context.assert_called_with(False)
 
-        # # Asserting that get_ssl_context has been called
+        # Asserting that get_ssl_context has been called
         self.assertEqual(mock_get_ssl_context.call_count, 2)
 
         # Asserting that urlopen has been called with the correct arguments

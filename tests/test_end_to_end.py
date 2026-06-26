@@ -349,7 +349,7 @@ class TestEODagEndToEnd(EndToEndBase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Use in-memory SQLite DB for faster tests
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         cls.sqlite_mock = mock.patch(
             "eodag.api.core.SQLiteDatabase",
             side_effect=lambda db_path: SQLiteDatabase(":memory:"),
@@ -936,7 +936,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         tests_wrong_conf = os.path.join(
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )
-        # Use in-memory SQLite DB for faster tests
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         cls.sqlite_mock = mock.patch(
             "eodag.api.core.SQLiteDatabase",
             side_effect=lambda db_path: SQLiteDatabase(":memory:"),

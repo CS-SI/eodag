@@ -76,7 +76,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
         cls.expanduser_mock.start()
-        # Use in-memory SQLite DB for faster tests
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         cls.sqlite_mock = mock.patch(
             "eodag.api.core.SQLiteDatabase",
             side_effect=lambda db_path: SQLiteDatabase(":memory:"),
@@ -2295,7 +2295,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_get_authenticated_objects.return_value.filter.side_effect = (
             lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
         )
-        # # chunk dest path mock
+        # chunk dest path mock
         mock_get_chunk_dest_path.side_effect = lambda *x, **y: x[2].key
 
         # SAFE build
