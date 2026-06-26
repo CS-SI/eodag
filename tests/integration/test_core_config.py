@@ -38,7 +38,7 @@ class TestCoreProvidersConfig(TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
-        # Use in-memory SQLite DB for faster tests
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         self.sqlite_mock = mock.patch(
             "eodag.api.core.SQLiteDatabase",
             side_effect=lambda db_path: SQLiteDatabase(":memory:"),
@@ -433,7 +433,7 @@ class TestCoreCollectionsConfig(TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
-        # Use in-memory SQLite DB for faster tests
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         self.sqlite_mock = mock.patch(
             "eodag.api.core.SQLiteDatabase",
             side_effect=lambda db_path: SQLiteDatabase(":memory:"),

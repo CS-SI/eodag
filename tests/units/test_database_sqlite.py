@@ -226,7 +226,10 @@ class TestCQL2JsonToSql(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         cls.conn = sqlite3.connect(":memory:")
+
+        # Register custom functions and create the collections table
         register_custom_functions(cls.conn)
         create_collections_table(cls.conn)
         cls.conn.executemany(
@@ -805,6 +808,7 @@ FTS_ACCENT_COLLECTIONS = [
 
 def _make_fts_conn(collections: list[dict[str, Any]]) -> sqlite3.Connection:
     """Create an in-memory DB with collections table + FTS triggers, insert collections."""
+    # Use a fresh in-memory SQLite DB (faster and isolated between tests)
     conn = sqlite3.connect(":memory:")
     register_custom_functions(conn)
     create_collections_table(conn)
@@ -1105,6 +1109,7 @@ class TestCollectionsSearch(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         cls.db = SQLiteDatabase(":memory:")
         cls.db._con.executemany(
             "INSERT INTO collections (content) VALUES (jsonb(?))",
@@ -1372,6 +1377,7 @@ class TestCollectionsSearch(unittest.TestCase):
 
     def test_federation_backends_denormalization_update(self):
         """Adding backends incrementally keeps the denormalized column in sync."""
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         db = SQLiteDatabase(":memory:")
         db._con.executemany(
             "INSERT INTO collections (content) VALUES (jsonb(?))",
@@ -1407,6 +1413,7 @@ class TestDeleteFederationBackends(unittest.TestCase):
     """Tests for :meth:`SQLiteDatabase.delete_federation_backends`."""
 
     def setUp(self) -> None:
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
         self.db = SQLiteDatabase(":memory:")
         self.db._con.executemany(
             "INSERT INTO collections (content) VALUES (jsonb(?))",

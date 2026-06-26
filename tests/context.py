@@ -169,6 +169,7 @@ def make_plugins_manager(providers: Optional[dict[str, ProviderConfig]] = None):
     from eodag.config import extract_credentials
     from eodag.databases.sqlite import SQLiteDatabase
 
+    # Use a fresh in-memory SQLite DB (faster and isolated between tests)
     db = SQLiteDatabase(":memory:")
     pm = PluginManager(db)
     if providers:
