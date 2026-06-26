@@ -733,7 +733,6 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_tag = "!provider"
 
     name: str
-    group: str
     priority: int = 0
     enabled: bool = True
     fetchable: bool

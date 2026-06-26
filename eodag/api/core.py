@@ -905,42 +905,25 @@ class EODataAccessGateway:
         reason="Please use 'EODataAccessGateway.providers' instead",
         version="4.0.0",
     )
-    def available_providers(
-        self, collection: Optional[str] = None, by_group: bool = False
-    ) -> list[str]:
-        """Gives the sorted list of the available providers or groups
+    def available_providers(self, collection: Optional[str] = None) -> list[str]:
+        """Gives the sorted list of the available providers
 
         .. deprecated:: v4.0.0
             Please use :attr:`eodag.api.core.EODataAccessGateway.providers` instead.
 
-        The providers or groups are sorted first by their priority level in descending order,
-        and then alphabetically in ascending order for providers or groups with the same
+        The providers are sorted first by their priority level in descending order,
+        and then alphabetically in ascending order for providers with the same
         priority level.
 
         :param collection: (optional) Only list providers configured for this collection
-        :param by_group: (optional) If set to True, list groups when available instead
-                         of providers, mixed with other providers
-        :returns: the sorted list of the available providers or groups
+        :returns: the sorted list of the available providers
         """
-        candidates = []
-
         # use DB to get providers sorted by priority and name
-        all_fb = self.db.get_federation_backends(collection=collection, enabled=True)
+        enabled_fb = self.db.get_federation_backends(
+            collection=collection, enabled=True
+        )
 
-        for key, fb_data in all_fb.items():
-            group = fb_data["metadata"].get("group")
-            name = group if by_group and group else key
-            candidates.append((name, fb_data["priority"]))
-
-        if by_group:
-            # Keep only the highest-priority entry per group
-            grouped: dict[str, int] = {}
-            for name, priority in candidates:
-                if name not in grouped or priority > grouped[name]:
-                    grouped[name] = priority
-            candidates = list(grouped.items())
-
-        return [name for name, _ in candidates]
+        return list(enabled_fb.keys())
 
     @_deprecated(
         reason="Please use 'EODataAccessGateway.get_collection' instead",
