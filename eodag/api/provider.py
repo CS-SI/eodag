@@ -48,7 +48,6 @@ class Provider:
     ...         'roles': ['role1'],
     ...         'url': 'https://example.com',
     ...         'fetchable': True,
-    ...         'group': 'test_group'
     ...     }
     ... }
     >>> provider = Provider(**content)
@@ -97,12 +96,9 @@ class Provider:
 
     def _repr_html_(self, embedded: bool = False) -> str:
         """HTML representation for Jupyter/IPython display."""
-        group_display = (
-            f" ({group})" if (group := self.metadata.get("group", None)) else ""
-        )
         thead = (
             f"""<thead><tr><td style='text-align: left; color: grey;'>
-                {type(self).__name__}("<span style='color: black'>{self.name}{group_display}</span>")</td></tr></thead>
+                {type(self).__name__}("<span style='color: black'>{self.name}</span>")</td></tr></thead>
             """
             if not embedded
             else ""
@@ -115,8 +111,6 @@ class Provider:
             "url": self.metadata.get("url", None),
             "priority": self.priority,
         }
-        if group := self.metadata.get("group", None):
-            summaries["group"] = group
 
         col_html_table = dict_to_html_table(summaries, depth=1, brackets=False)
 
@@ -229,20 +223,6 @@ class ProvidersDict(UserDict[str, Provider]):
         :return: List of provider names.
         """
         return [provider.name for provider in self.data.values()]
-
-    @property
-    def groups(self) -> list[str]:
-        """
-        List of provider groups if exist or names.
-
-        :return: List of provider groups if exist or names.
-        """
-        return list(
-            set(
-                provider.metadata.get("group", None) or provider.name
-                for provider in self.data.values()
-            )
-        )
 
     @property
     def priorities(self) -> dict[str, int]:

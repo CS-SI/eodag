@@ -132,40 +132,19 @@ class TestProvider(unittest.TestCase):
             provider.metadata["description"], "Test provider for unit tests"
         )
         self.assertEqual(provider.metadata["url"], "https://test.example.com")
-        self.assertIsNone(provider.metadata.get("group"))
+        self.assertIsNone(provider.metadata.get("fetchable"))
 
     def test_provider_custom_properties(self):
         """Test Provider properties with custom values."""
         config = {
             **self.basic_config,
             "priority": 5,
-            "metadata": {**self.basic_config["metadata"], "group": "test_group"},
+            "metadata": {**self.basic_config["metadata"], "fetchable": True},
         }
         provider = Provider(**config)
 
         self.assertEqual(provider.priority, 5)
-        self.assertEqual(provider.metadata.get("group"), "test_group")
-
-    def test_provider_fetchable(self):
-        """Test Provider fetchable key from metadata."""
-        provider = Provider(**self.basic_config)
-        self.assertIsNone(provider.metadata.get("fetchable"))  # not set in basic_config
-
-        fetchable = Provider(
-            name="test_provider",
-            priority=0,
-            enabled=True,
-            metadata={"fetchable": True},
-        )
-        self.assertTrue(fetchable.metadata["fetchable"])
-
-        not_fetchable = Provider(
-            name="test_provider",
-            priority=0,
-            enabled=True,
-            metadata={"fetchable": False},
-        )
-        self.assertFalse(not_fetchable.metadata["fetchable"])
+        self.assertTrue(provider.metadata.get("fetchable"))
 
 
 # TODO: move TestProviderConfig to test_config.py.
@@ -249,14 +228,13 @@ class TestProvidersDict(unittest.TestCase):
             metadata={
                 "description": "First provider",
                 "url": "https://provider1.example.com",
-                "group": "group_a",
             },
         )
         self.providers_dict["provider2"] = Provider(
             name="provider2",
             priority=2,
             enabled=True,
-            metadata={"description": "Second provider", "group": "group_b"},
+            metadata={"description": "Second provider"},
         )
 
     def test_providers_dict_creation(self):
@@ -303,10 +281,6 @@ class TestProvidersDict(unittest.TestCase):
         """Test ProvidersDict __delitem__ raises UnsupportedProvider."""
         with self.assertRaises(UnsupportedProvider):
             del self.providers_dict["nonexistent"]
-
-    def test_providers_dict_groups(self):
-        """Test ProvidersDict groups property."""
-        self.assertCountEqual(self.providers_dict.groups, ["group_a", "group_b"])
 
     # TODO: move this test to test_config.py.
     @patch.dict("os.environ", {"EODAG_PROVIDERS_WHITELIST": "provider1"})
