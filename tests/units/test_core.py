@@ -1164,6 +1164,87 @@ class TestCore(TestCoreBase):
             ["interval_end", "interval_start", "interval_start_end"],
         )
 
+    def test_build_collections_filter(self):
+        """_build_collections_filter must turn properties into list_collections kwargs"""
+        # free_text is used as-is
+        self.assertDictEqual(
+            self.dag._build_collections_filter({}, free_text="FOO OR BAR"),
+            {"q": "FOO OR BAR"},
+        )
+        # a single STAC-style param becomes a q term
+        self.assertDictEqual(
+            self.dag._build_collections_filter({"platform": "sentinel-2"}),
+            {"q": "sentinel-2"},
+        )
+        # multi-word values are quoted as FTS5 phrases
+        self.assertDictEqual(
+            self.dag._build_collections_filter({"title": "FOOBAR COLLECTION"}),
+            {"q": '"FOOBAR COLLECTION"'},
+        )
+        # already-quoted values are left untouched
+        self.assertDictEqual(
+            self.dag._build_collections_filter({"title": '"FOOBAR COLLECTION"'}),
+            {"q": '"FOOBAR COLLECTION"'},
+        )
+        # several params are joined with OR by default
+        self.assertDictEqual(
+            self.dag._build_collections_filter(
+                {"platform": "foo", "constellation": "bar"}
+            ),
+            {"q": "foo OR bar"},
+        )
+        # ... and with AND when intersect=True
+        self.assertDictEqual(
+            self.dag._build_collections_filter(
+                {"platform": "foo", "constellation": "bar"}, intersect=True
+            ),
+            {"q": "foo AND bar"},
+        )
+        # free_text and params are combined (free_text first)
+        self.assertDictEqual(
+            self.dag._build_collections_filter({"platform": "foo"}, free_text="bar"),
+            {"q": "bar OR foo"},
+        )
+        # only STAC-style and eodag known keys are supported (snake_case is ignored)
+        self.assertDictEqual(
+            self.dag._build_collections_filter(
+                {
+                    "processing_level": "L1",
+                    "eodag:sensor_type": "foo",
+                    "unsupported": "value",
+                }
+            ),
+            {"q": "foo"},
+        )
+        # start_date and end_date build a closed interval
+        self.assertDictEqual(
+            self.dag._build_collections_filter(
+                {"start_date": "2013-02-01", "end_date": "2013-02-05"}
+            ),
+            {"datetime": "2013-02-01/2013-02-05"},
+        )
+        # open-ended intervals
+        self.assertDictEqual(
+            self.dag._build_collections_filter({"start_date": "2013-02-01"}),
+            {"datetime": "2013-02-01/.."},
+        )
+        self.assertDictEqual(
+            self.dag._build_collections_filter({"end_date": "2013-02-20"}),
+            {"datetime": "../2013-02-20"},
+        )
+        # q and datetime can be returned together
+        self.assertDictEqual(
+            self.dag._build_collections_filter(
+                {"title": "FOO", "start_date": "2013-02-01"}
+            ),
+            {"q": "FOO", "datetime": "2013-02-01/.."},
+        )
+        # neither q terms nor datetime -> NoMatchingCollection
+        with self.assertRaises(NoMatchingCollection):
+            self.dag._build_collections_filter({})
+        with self.assertRaises(NoMatchingCollection):
+            self.dag._build_collections_filter({"unsupported": "value"})
+
     def test_update_collections_list(self):
         """Core api.update_collections_list must update eodag collections list"""
         provider = "earth_search"

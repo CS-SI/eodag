@@ -435,9 +435,6 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
 @click.option(
     "--sensor-type", help="List collections originating from this type of sensor"
 )
-@click.option(
-    "--no-fetch", is_flag=True, help="Do not fetch providers for new collections"
-)
 @click.pass_context
 def list_col(ctx: Context, **kwargs: Any) -> None:
     """Print the list of supported collections"""
@@ -449,47 +446,57 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
     setup_logging(verbose=ctx.obj["verbosity"])
     dag = EODataAccessGateway()
     provider = kwargs.pop("provider")
-    fetch_providers = not kwargs.pop("no_fetch")
     text_wrapper = textwrap.TextWrapper()
-    guessed_collections = CollectionsList([])
+
+    # Map the CLI's snake_case options to the STAC-style keys expected by
+    # _build_collections_filter (processing_level -> processing:level,
+    # sensor_type -> eodag:sensor_type).
+    properties = {
+        "instruments": kwargs.get("instruments"),
+        "platform": kwargs.get("platform"),
+        "constellation": kwargs.get("constellation"),
+        "processing:level": kwargs.get("processing_level"),
+        "eodag:sensor_type": kwargs.get("sensor_type"),
+    }
+    guessed_ids: list[str] = []
     try:
-        guessed_collections = dag.guess_collection(
-            **kwargs,
-        )
+        collections_filter = dag._build_collections_filter(properties)
+        guessed_ids = dag.list_collections(**collections_filter).ids
     except NoMatchingCollection:
-        if any(
-            kwargs[arg]
-            for arg in [
-                "instruments",
-                "constellation",
-                "platform",
-                "processing_level",
-                "sensor_type",
-            ]
-        ):
-            click.echo("No collection match the following criteria you provided:")
-            click.echo(
-                "\n".join(
-                    "-{param}={value}".format(**locals())
-                    for param, value in kwargs.items()
-                    if value is not None
-                )
+        guessed_ids = []
+    if not guessed_ids and any(
+        kwargs[arg]
+        for arg in [
+            "instruments",
+            "constellation",
+            "platform",
+            "processing_level",
+            "sensor_type",
+        ]
+    ):
+        click.echo("No collection match the following criteria you provided:")
+        click.echo(
+            "\n".join(
+                "-{param}={value}".format(**locals())
+                for param, value in kwargs.items()
+                if value is not None
             )
-            sys.exit(1)
+        )
+        sys.exit(1)
     try:
-        if guessed_collections:
+        if guessed_ids:
             collections = CollectionsList(
                 [
                     col
                     for col in dag.list_collections(
-                        provider=provider, fetch_providers=fetch_providers
+                        providers=[provider] if provider else None
                     )
-                    if col.id in [guessed_col.id for guessed_col in guessed_collections]
+                    if col.id in guessed_ids
                 ]
             )
         else:
             collections = dag.list_collections(
-                provider=provider, fetch_providers=fetch_providers
+                providers=[provider] if provider else None
             )
         click.echo("Listing available collections:")
         for collection in collections:

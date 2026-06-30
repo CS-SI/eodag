@@ -1017,42 +1017,25 @@ class EODataAccessGateway:
             coll = self.get_collection(coll_id)
             return [coll.id if coll else coll_id]
 
-        q_sep = " AND " if intersect else " OR "
-        q_terms: list[str] = []
-        if free_text:
-            q_terms.append(free_text)
-        for value in (
-            instruments,
-            platform,
-            constellation,
-            processing_level,
-            sensor_type,
-            keywords,
-            description,
-            title,
-        ):
-            if value is not None:
-                # Quote multi-word values as FTS5 phrases
-                if " " in value and not (value.startswith('"') and value.endswith('"')):
-                    value = f'"{value}"'
-                q_terms.append(value)
-
-        # Build datetime string from start_date / end_date
-        dt: Optional[str] = None
-        if start_date and end_date:
-            dt = f"{start_date}/{end_date}"
-        elif start_date:
-            dt = f"{start_date}/.."
-        elif end_date:
-            dt = f"../{end_date}"
-
-        if not q_terms and not dt:
-            raise NoMatchingCollection("No search terms provided to guess collection")
-
-        results = self.list_collections(
-            q=q_sep.join(q_terms) if q_terms else None,
-            datetime=dt,
+        collections_filter = self._build_collections_filter(
+            {
+                "instruments": instruments,
+                "platform": platform,
+                "constellation": constellation,
+                "processing:level": processing_level,
+                "eodag:sensor_type": sensor_type,
+                "keywords": keywords,
+                "description": description,
+                "title": title,
+                "start_date": start_date,
+                "end_date": end_date,
+                **kwargs,
+            },
+            free_text=free_text,
+            intersect=intersect,
         )
+
+        results = self.list_collections(**collections_filter)
 
         if not results:
             raise NoMatchingCollection(
@@ -1060,6 +1043,77 @@ class EODataAccessGateway:
             )
 
         return results.ids
+
+    def _build_collections_filter(
+        self,
+        properties: dict[str, Any],
+        free_text: Optional[str] = None,
+        intersect: bool = False,
+    ) -> dict[str, Any]:
+        """Build the keyword arguments to pass to :meth:`list_collections` from a
+        mapping of search parameters or product properties.
+
+        The input may be any search-parameters mapping (as built in
+        :meth:`_prepare_search`) or an
+        :class:`~eodag.api.product._product.EOProduct` properties mapping (as in
+        :meth:`_search_by_id` and :meth:`_do_search`). Only STAC-style keys
+        (e.g. ``processing:level``, ``eodag:sensor_type``) are supported properties.
+
+        :param properties: A mapping of search parameters / product properties.
+        :param free_text: (optional) Free-text query terms used as-is in ``q``.
+        :param intersect: Whether the free-text terms should all match (``AND``)
+                          or any of them (``OR``, the default).
+        :returns: A mapping of keyword arguments suitable for
+                  :meth:`list_collections` (e.g. ``q`` and/or ``datetime``).
+        :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection` if neither
+                 free-text terms nor a datetime filter could be derived.
+        """
+        q_terms: list[str] = []
+
+        # free-text query is used as-is
+        if free_text:
+            q_terms.append(str(free_text))
+
+        # values feeding the free-text query (STAC-style keys)
+        for key in (
+            "instruments",
+            "platform",
+            "constellation",
+            "processing:level",
+            "eodag:sensor_type",
+            "keywords",
+            "description",
+            "title",
+        ):
+            value = properties.get(key)
+            if value is None:
+                continue
+            value = str(value)
+            # Quote multi-word values as FTS5 phrases
+            if " " in value and not (value.startswith('"') and value.endswith('"')):
+                value = f'"{value}"'
+            q_terms.append(value)
+
+        # Build datetime string from start_date / end_date
+        datetime: Optional[str] = None
+        start_date = properties.get("start_date")
+        end_date = properties.get("end_date")
+        if start_date and end_date:
+            datetime = f"{start_date}/{end_date}"
+        elif start_date:
+            datetime = f"{start_date}/.."
+        elif end_date:
+            datetime = f"../{end_date}"
+
+        if not q_terms and not datetime:
+            raise NoMatchingCollection("No search terms provided to guess collection")
+
+        collections_filter: dict[str, Any] = {}
+        if q_terms:
+            collections_filter["q"] = (" AND " if intersect else " OR ").join(q_terms)
+        if datetime:
+            collections_filter["datetime"] = datetime
+        return collections_filter
 
     def search(
         self,
@@ -1558,10 +1612,20 @@ class EODataAccessGateway:
             if len(results) == 1:
                 if not results[0].collection:
                     # guess collection from properties
-                    guesses = self.guess_collection(**results[0].properties)
-                    results[0].collection = guesses[0]
-                    # reset driver
-                    results[0].driver = results[0].get_driver()
+                    collections_filter = self._build_collections_filter(
+                        results[0].properties
+                    )
+                    matching_collections = self.list_collections(
+                        **collections_filter
+                    ).ids
+                    if matching_collections:
+                        results[0].collection = matching_collections[0]
+                        # reset driver
+                        results[0].driver = results[0].get_driver()
+                    else:
+                        raise NoMatchingCollection(
+                            "Could not find any collection matching the product properties"
+                        )
                 results.number_matched = 1
                 return results
             elif len(results) > 1:
@@ -1613,7 +1677,7 @@ class EODataAccessGateway:
           * By search params:
             * collection query:
               * By collection (e.g. 'S2_MSI_L1C')
-              * By params (e.g. 'platform'), see guess_collection
+              * By params (e.g. 'platform'), see _build_collections_filter
             * dates: 'start' and/or 'end'
             * geometry: 'geom' or 'bbox' or 'box'
             * search locations
@@ -1639,11 +1703,13 @@ class EODataAccessGateway:
         collection: Optional[str] = kwargs.get("collection")
         if collection is None:
             try:
-                guesses = self.guess_collection(**kwargs)
-
-                # guess_collection raises a NoMatchingCollection error if no product
-                # is found. Here, the supported search params are removed from the
-                # kwargs if present, not to propagate them to the query itself.
+                collections_filter = self._build_collections_filter(kwargs)
+                matching_collections = self.list_collections(**collections_filter).ids
+            except NoMatchingCollection:
+                matching_collections = []
+            if matching_collections:
+                # The supported search params are removed from the kwargs if
+                # present, not to propagate them to the query itself.
                 for param in (
                     "instruments",
                     "constellation",
@@ -1654,8 +1720,8 @@ class EODataAccessGateway:
                     kwargs.pop(param, None)
 
                 # By now, only use the best bet
-                collection = guesses[0]
-            except NoMatchingCollection:
+                collection = matching_collections[0]
+            else:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
                     logger.info(
@@ -1853,29 +1919,17 @@ class EODataAccessGateway:
             for eo_product in search_result:
                 # if collection is not defined, try to guess using properties
                 if eo_product.collection is None:
-                    pattern = re.compile(r"[^\w,]+")
                     try:
-                        guesses = self.guess_collection(
-                            intersect=False,
-                            **{
-                                k: pattern.sub("", str(v).upper())
-                                for k, v in eo_product.properties.items()
-                                if k
-                                in [
-                                    "instruments",
-                                    "constellation",
-                                    "platform",
-                                    "processing:level",
-                                    "eodag:sensor_type",
-                                    "keywords",
-                                ]
-                                and v is not None
-                            },
+                        collections_filter = self._build_collections_filter(
+                            eo_product.properties
                         )
+                        matching_collections = self.list_collections(
+                            **collections_filter
+                        ).ids
                     except NoMatchingCollection:
-                        pass
-                    else:
-                        eo_product.collection = guesses[0]
+                        matching_collections = []
+                    if matching_collections:
+                        eo_product.collection = matching_collections[0]
 
                 if eo_product.search_intersection is not None:
                     eo_product._register_downloader_from_manager(self._plugins_manager)
