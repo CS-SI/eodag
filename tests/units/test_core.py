@@ -4478,37 +4478,6 @@ class TestCoreSearch(TestCoreBase):
         mock_fetch_collections_list.assert_not_called()
         mock__do_search.assert_called_once()
 
-    def test_fetch_external_collection_with_auth(self):
-        """test _fetch_external_collection when the plugin needs authentication"""
-        provider = "cop_dataspace"
-        collection = "S2_MSI_L1C"
-
-        plugin = mock.Mock()
-        plugin.config = mock.Mock()
-        plugin.config.discover_collections = {"fetch_url": "http://fake-fetch-url"}
-        plugin.config.need_auth = True
-        plugin.config.api_endpoint = "http://fake-api"
-        plugin.provider = provider
-
-        plugin.discover_collections = mock.Mock(return_value={"product1": {}})
-
-        dag = EODataAccessGateway()
-        dag._plugins_manager.get_search_plugins = mock.Mock(return_value=iter([plugin]))
-        auth_mock = mock.Mock()
-        dag._plugins_manager.get_auth = mock.Mock(return_value=auth_mock)
-        dag.update_collections_list = mock.Mock()
-        dag._fetch_external_collection(provider, collection)
-
-        dag._plugins_manager.get_auth.assert_called_once_with(
-            plugin.provider, plugin.config.api_endpoint, plugin.config
-        )
-        plugin.discover_collections.assert_called_once_with(
-            collection=collection, auth=auth_mock
-        )
-        dag.update_collections_list.assert_called_once_with(
-            {provider: {"product1": {}}}
-        )
-
     def test_core_crunch(self):
         """Test crunch method with multiple crunchers"""
         results = mock.Mock()

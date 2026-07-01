@@ -1635,32 +1635,6 @@ class EODataAccessGateway:
                 )
         return SearchResult([], 0, results.errors)
 
-    def _fetch_external_collection(self, provider: str, collection: str) -> None:
-        plugins = self._plugins_manager.get_search_plugins(provider=provider)
-        plugin = next(plugins)
-
-        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        if strict_mode:
-            return
-
-        # check after plugin init if still fetchable
-        if not getattr(plugin.config, "discover_collections", {}).get("fetch_url"):
-            return None
-
-        kwargs: dict[str, Any] = {"collection": collection}
-
-        # append auth if needed
-        if getattr(plugin.config, "need_auth", False):
-            if auth := self._plugins_manager.get_auth(
-                plugin.provider,
-                getattr(plugin.config, "api_endpoint", None),
-                plugin.config,
-            ):
-                kwargs["auth"] = auth
-
-        collection_config = plugin.discover_collections(**kwargs)
-        self.update_collections_list({provider: collection_config})
-
     def _prepare_search(
         self,
         start: Optional[str] = None,
