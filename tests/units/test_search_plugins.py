@@ -5036,7 +5036,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         )
         self.assertIn("next_page_url_tpl", plugin.config.pagination)
         self.assertIn("next_page_token_key", plugin.config.pagination)
-        self.assertEqual(plugin.config.pagination["next_page_token_key"], "offset")
+        self.assertEqual(plugin.config.pagination["next_page_token_key"], "skip")
 
         self.assertEqual(plugin.config.sort["sort_by_tpl"], "&custom_sort={sort_param}")
         self.assertEqual(plugin.config.sort["sort_order_mapping"]["ascending"], "asc")

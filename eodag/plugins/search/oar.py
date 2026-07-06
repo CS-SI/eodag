@@ -67,7 +67,7 @@ class OARSearch(QueryStringSearch):
         )
         config.pagination.setdefault("total_items_nb_key_path", "$.numberMatched")
         config.pagination.setdefault("start_page", 0)
-        config.pagination.setdefault("next_page_token_key", "offset")
+        config.pagination.setdefault("next_page_token_key", "skip")
 
         # Discover metadata
         config.__dict__.setdefault("discover_metadata", {})

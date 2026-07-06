@@ -954,9 +954,9 @@ class QueryStringSearch(Search):
                 next_page_url = f"{search_endpoint}?{qs_with_sort}"
 
             # numeric page token
-            if next_page_token_key in ["page", "skip", "offset"] and limit is not None:
-                if token is None and next_page_token_key in ["skip", "offset"]:
-                    # first page & next_page_token_key == skip or offset
+            if next_page_token_key in ["page", "skip"] and limit is not None:
+                if token is None and next_page_token_key == "skip":
+                    # first page & next_page_token_key == skip
                     token = 0
                 elif token is None:
                     # first page & next_page_token_key == page
@@ -1273,10 +1273,7 @@ class QueryStringSearch(Search):
             if next_page_token is not None and next_page_token_key == "page":
                 raw_search_results.next_page_token = str(int(next_page_token) + 1)
             # skip as next_page_token_key
-            elif next_page_token is not None and next_page_token_key in [
-                "skip",
-                "offset",
-            ]:
+            elif next_page_token is not None and next_page_token_key == "skip":
                 raw_search_results.next_page_token = str(
                     int(next_page_token) + int(prep.limit or DEFAULT_LIMIT)
                 )
@@ -1939,11 +1936,9 @@ class PostJsonSearch(QueryStringSearch):
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
             # numeric page token
-            if (
-                next_page_token_key in ["page", "skip", "offset"]
-            ) and limit is not None:
-                if token is None and next_page_token_key in ["skip", "offset"]:
-                    # first page & next_page_token_key == skip or offset
+            if (next_page_token_key in ["page", "skip"]) and limit is not None:
+                if token is None and next_page_token_key == "skip":
+                    # first page & next_page_token_key == skip
                     token = max(
                         0, self.config.pagination.get("start_page", DEFAULT_PAGE) - 1
                     )
