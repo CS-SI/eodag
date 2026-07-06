@@ -21,7 +21,6 @@ import logging
 import os
 import tempfile
 import traceback
-import warnings
 from collections import UserDict
 from inspect import isclass
 from textwrap import shorten
@@ -121,13 +120,6 @@ class ProviderConfig(yaml.YAMLObject):
     @classmethod
     def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from Yaml"""
-        warnings.warn(
-            "Usage of deprecated YAML tag '!provider' for provider configuration "
-            "(Please use plain YAML mappings instead)"
-            " -- Deprecated since v4.5.0",
-            FutureWarning,
-            stacklevel=2,
-        )
         cls.validate(
             tuple(node_key.value for node_key, _ in node.value), check_name=False
         )

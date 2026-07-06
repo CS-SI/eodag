@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import functools
 import os
+import warnings
 from copy import deepcopy as copy_deepcopy
 from typing import Any
 
@@ -37,6 +38,13 @@ def provider_constructor(loader, node):
     if isinstance(node, yaml.MappingNode):
         from eodag.api.provider import ProviderConfig
 
+        warnings.warn(
+            "Usage of deprecated YAML tag '!provider' for provider configuration "
+            "(Please use plain YAML mappings instead)"
+            " -- Deprecated since v4.5.0",
+            FutureWarning,
+            stacklevel=2,
+        )
         return ProviderConfig.from_yaml(loader, node)
     return None
 
@@ -46,6 +54,13 @@ def plugin_constructor(loader, node):
     if isinstance(node, yaml.MappingNode):
         from eodag.config import PluginConfig
 
+        warnings.warn(
+            "Usage of deprecated YAML tag '!plugin' for plugin configuration "
+            "(Please use plain YAML mappings instead)"
+            " -- Deprecated since v4.5.0",
+            FutureWarning,
+            stacklevel=2,
+        )
         return PluginConfig.from_yaml(loader, node)
     return None
 

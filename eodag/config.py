@@ -601,13 +601,6 @@ class PluginConfig(yaml.YAMLObject):
     @classmethod
     def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
-        warnings.warn(
-            "Usage of deprecated YAML tag '!plugin' for plugin configuration "
-            "(Please use plain YAML mappings instead)"
-            " -- Deprecated since v4.5.0",
-            FutureWarning,
-            stacklevel=2,
-        )
         cls.validate(
             tuple(node_key.value for node_key, _ in node.value), check_type=False
         )
