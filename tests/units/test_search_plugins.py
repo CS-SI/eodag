@@ -3258,6 +3258,23 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertNotIn("start_datetime", eoproduct.properties)
         self.assertNotIn("end_datetime", eoproduct.properties)
 
+    def test_plugins_search_ecmwfsearch_dont_sort_params(self):
+        """ECMWFSearch.query must not sort query parameters and keep user order"""
+
+        results = self.search_plugin.query(
+            collection=self.collection,
+            **self.query_dates,
+            **self.custom_query_params,
+            ecmwf_pressure_level=["2", "1", "3", "10"],
+        )
+        eoproduct = results.data[0]
+        self.assertIn("qs", eoproduct.properties)
+        self.assertIn("pressure_level", eoproduct.properties["qs"])
+        self.assertListEqual(
+            eoproduct.properties["qs"]["pressure_level"],
+            ["2", "1", "3", "10"],
+        )
+
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
         results = self.search_plugin.query(
