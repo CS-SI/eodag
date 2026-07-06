@@ -2279,7 +2279,9 @@ class StacSearch(PostJsonSearch):
                 # convert provider json field definition to python
                 default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
-                    json_mtd, default_value=default
+                    json_mtd,
+                    default_value=default,
+                    required=json_param in resp_as_json.get("required", []),
                 )
                 field_definition = get_args(annotated_def)
 

@@ -2436,12 +2436,14 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertEqual(get_origin(base_type), list)
         literal_args = get_args(base_type)
         self.assertEqual(literal_args, (Literal["00:00"],))
+        self.assertIn("json_schema_required", args[1].metadata)
 
         # Check that "start" has type Annotated[str, ...]
         self.assertIn("start", queryables_dedl)
         annotated_type = queryables_dedl["start"]
         args = get_args(annotated_type)
         self.assertEqual(args[0], str)
+        self.assertNotIn("json_schema_required", args[1].metadata)
 
         # Check that "geom" has type Annotated[Union[str, dict[str, float], BaseGeometry], ...]
         self.assertIn("geom", queryables_dedl)
@@ -2459,6 +2461,14 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                 if isinstance(arg, type)
             )
         )
+        self.assertTrue(args[1].is_required())
+
+        # Check that "bbox" has type fieldInfo with "required": "True" and json_schema_required in metadata
+        self.assertIn("bbox", queryables_dedl)
+        annotated_type = queryables_dedl["bbox"]
+        args = get_args(annotated_type)
+        self.assertTrue(args[1].is_required())
+        self.assertIn("json_schema_required", args[1].metadata)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
