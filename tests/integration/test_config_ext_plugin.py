@@ -22,6 +22,7 @@ import sys
 import unittest
 from tempfile import TemporaryDirectory
 
+import pytest
 from pytest import MonkeyPatch
 
 from tests import TEST_RESOURCES_PATH
@@ -77,7 +78,11 @@ class TestExternalPluginConfig(unittest.TestCase):
 
             # New EODataAccessGateway instance, check if new conf has been loaded
             # (+1 from legacy providers.yml, +1 from providers/ dir)
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                (DeprecationWarning, FutureWarning),
+                match=r"Usage of deprecated (YAML tag|environment variable)",
+            ):
+                self.dag = EODataAccessGateway()
             self.assertEqual(len(self.dag._providers), default_providers_count + 2)
             self.assertIn("fakeplugin_provider", self.dag._providers)
             self.assertIn("fakeplugin_provider2", self.dag._providers)

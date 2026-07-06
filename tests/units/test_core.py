@@ -28,6 +28,7 @@ import unittest
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 from concurrent.futures import ThreadPoolExecutor
 from lxml import html
@@ -2519,7 +2520,10 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
             )
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                self.dag = EODataAccessGateway()
             # only foo_provider in conf
             self.assertEqual(self.dag.providers.names, ["foo_provider"])
             self.assertEqual(
@@ -2581,7 +2585,10 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 
         # check collections
         try:
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                self.dag = EODataAccessGateway()
             col = self.dag.list_collections(fetch_providers=False)
             self.assertEqual(2, len(col))
             self.assertEqual("TEST_PRODUCT_1", col[0].id)
@@ -4800,7 +4807,10 @@ class TestCoreStrictMode(TestCoreBase):
         """list_collections must only return collections from the main config in strict mode"""
         try:
             os.environ["EODAG_STRICT_COLLECTIONS"] = "true"
-            dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                dag = EODataAccessGateway()
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
             collections = dag.list_collections(fetch_providers=False)
@@ -4815,7 +4825,8 @@ class TestCoreStrictMode(TestCoreBase):
         if "EODAG_STRICT_COLLECTIONS" in os.environ:
             del os.environ["EODAG_STRICT_COLLECTIONS"]
 
-        dag = EODataAccessGateway()
+        with pytest.warns(DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"):
+            dag = EODataAccessGateway()
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
         collections = dag.list_collections(fetch_providers=False)
