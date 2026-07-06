@@ -21,6 +21,7 @@ import logging
 import re
 import socket
 from copy import copy as copy_copy
+from copy import deepcopy as copy_deepcopy
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -86,7 +87,6 @@ from eodag.utils import (
     REQ_RETRY_TOTAL,
     STAC_SEARCH_PLUGINS,
     USER_AGENT,
-    copy_deepcopy,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,

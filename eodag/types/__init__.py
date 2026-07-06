@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy as copy_deepcopy
 from typing import Annotated, Any, Literal, Optional, Type, Union, get_args, get_origin
 
 from annotated_types import Gt, Lt
@@ -29,7 +30,6 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, PydanticUndefined
 from typing_extensions import TypedDict
 
-from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
 
 # Types mapping from JSON Schema and OpenAPI 3.1.0 specifications to Python

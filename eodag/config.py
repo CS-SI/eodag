@@ -35,8 +35,6 @@ from typing_extensions import TypedDict
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    cached_yaml_load,
-    cached_yaml_load_all,
     deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
@@ -45,6 +43,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.yaml import cached_yaml_load, cached_yaml_load_all
 
 if TYPE_CHECKING:
     from typing import ItemsView, Iterator, ValuesView

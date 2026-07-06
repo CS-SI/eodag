@@ -41,7 +41,6 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
-from copy import deepcopy as copy_deepcopy
 from email.message import Message
 from glob import glob
 from importlib.metadata import metadata
@@ -51,8 +50,6 @@ from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
-
-import yaml
 
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
@@ -66,6 +63,7 @@ from .exceptions import MisconfiguredError
 from .logging import get_disable_tqdm
 from .logging import logging as eodag_logging
 from .streamresponse import StreamResponse, StreamResponseContent
+from .yaml import LegacyAwareLoader, cached_yaml_load, cached_yaml_load_all
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath, jsonpath
@@ -1463,92 +1461,6 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     return parse(str_to_parse)
 
 
-def _get_legacy_aware_yaml_loader() -> type:
-    """Create a YAML loader that supports both legacy tags (!provider, !plugin, !!python/tuple) and safe loading.
-
-    Uses CSafeLoader for performance (C implementation) while adding support for legacy EODAG tags.
-
-    :returns: A YAML Loader class that handles legacy tags while maintaining security.
-    """
-
-    class LegacyAwareLoader(yaml.CSafeLoader):
-        """YAML loader that accepts legacy EODAG tags (!provider, !plugin, !!python/tuple)
-        and converts them to safe Python objects. Uses CSafeLoader for performance."""
-
-        pass
-
-    # Constructor for !provider tag - wrap the content with provider name as key
-    def provider_constructor(loader, node):
-        if isinstance(node, yaml.MappingNode):
-            # Reuse legacy YAMLObject deserialization logic (and deprecation warning)
-            # from ProviderConfig. Since load_config already handles ProviderConfigClass
-            # objects directly, return the object as-is.
-            from eodag.api.provider import ProviderConfig
-
-            provider_config = ProviderConfig.from_yaml(loader, node)
-            return provider_config
-        return None
-
-    # Constructor for !plugin tag - reuse legacy deserialization logic
-    def plugin_constructor(loader, node):
-        if isinstance(node, yaml.MappingNode):
-            from eodag.config import PluginConfig
-
-            return PluginConfig.from_yaml(loader, node)
-        return None
-
-    # Constructor for !!python/tuple tag - convert to tuple
-    def python_tuple_constructor(loader, node):
-        if isinstance(node, yaml.SequenceNode):
-            return tuple(loader.construct_sequence(node))
-        elif isinstance(node, yaml.ScalarNode):
-            return (loader.construct_scalar(node),)
-        return None
-
-    # Register the constructors for legacy tags
-    LegacyAwareLoader.add_constructor("!provider", provider_constructor)
-    LegacyAwareLoader.add_constructor("!plugin", plugin_constructor)
-    LegacyAwareLoader.add_constructor(
-        "tag:yaml.org,2002:python/tuple", python_tuple_constructor
-    )
-
-    return LegacyAwareLoader
-
-
-@functools.lru_cache()
-def _mutable_cached_yaml_load(config_path: str) -> Any:
-    with open(
-        os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
-    ) as fh:
-        return yaml.load(fh, Loader=_get_legacy_aware_yaml_loader())
-
-
-def cached_yaml_load(config_path: str) -> dict[str, Any]:
-    """Cached :func:`yaml.load`
-
-    :param config_path: path to the yaml configuration file
-    :returns: loaded yaml configuration
-    """
-    return copy_deepcopy(_mutable_cached_yaml_load(config_path))
-
-
-@functools.lru_cache()
-def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
-    with open(config_path, "r") as fh:
-        return list(yaml.load_all(fh, Loader=_get_legacy_aware_yaml_loader()))
-
-
-def cached_yaml_load_all(config_path: str) -> list[Any]:
-    """Cached :func:`yaml.load_all`
-
-    Load all configurations stored in the configuration file as separated yaml documents
-
-    :param config_path: path to the yaml configuration file
-    :returns: list of configurations
-    """
-    return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
-
-
 def get_bucket_name_and_prefix(
     url: str, bucket_path_level: Optional[int] = None
 ) -> tuple[Optional[str], Optional[str]]:
@@ -1961,6 +1873,7 @@ __all__ = [
     "md5sum",
     "obj_md5sum",
     "cached_parse",
+    "LegacyAwareLoader",
     "cached_yaml_load",
     "cached_yaml_load_all",
     "get_bucket_name_and_prefix",

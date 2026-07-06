@@ -40,8 +40,9 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 from eodag import __version__ as eodag_version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
+from eodag.utils import GENERIC_COLLECTION
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.yaml import cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH, TEST_RESOURCES_PROVIDERS_PATH
 from tests.context import (
     DEFAULT_LIMIT,

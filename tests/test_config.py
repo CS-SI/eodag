@@ -29,6 +29,7 @@ import yaml
 from eodag.api.provider import ProviderConfig, ProvidersDict
 from eodag.config import PluginConfig
 from eodag.utils import deepcopy
+from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
@@ -44,42 +45,17 @@ from tests.context import (
 
 
 def load_provider_config_from_string(yaml_string: str) -> ProviderConfig:
-    """Load a provider config from a YAML string, converting from dict to ProviderConfig.
-
-    The YAML string should not contain custom tags (!provider, !plugin).
-    """
-    # Remove !provider and !plugin tags if present for backward compatibility with test strings
-    yaml_string = yaml_string.replace("!provider", "").replace("!plugin", "")
-
-    # Load as a plain dict
-    data = yaml.load(StringIO(yaml_string), Loader=yaml.CSafeLoader)
-
-    # If the dict has a top-level provider key, extract it
-    if isinstance(data, dict) and len(data) == 1:
-        provider_name, provider_config = next(iter(data.items()))
-        if isinstance(provider_config, dict) and "name" not in provider_config:
-            provider_config["name"] = provider_name
-            data = provider_config
-        elif isinstance(provider_config, dict):
-            data = provider_config
-
-    # Convert to ProviderConfig object
-    return ProviderConfig.from_mapping(data)
+    """Load a provider config from a YAML string using legacy-aware YAML tags."""
+    data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
+    mapping = data.__dict__ if isinstance(data, ProviderConfig) else data
+    return ProviderConfig.from_mapping(mapping)
 
 
 def load_plugin_config_from_string(yaml_string: str) -> PluginConfig:
-    """Load a plugin config from a YAML string, converting from dict to PluginConfig.
-
-    The YAML string should not contain custom tags (!plugin).
-    """
-    # Remove !plugin tags if present for backward compatibility with test strings
-    yaml_string = yaml_string.replace("!plugin", "")
-
-    # Load as a plain dict
-    data = yaml.load(StringIO(yaml_string), Loader=yaml.CSafeLoader)
-
-    # Convert to PluginConfig object
-    return PluginConfig.from_mapping(data)
+    """Load a plugin config from a YAML string using legacy-aware YAML tags."""
+    data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
+    mapping = data.__dict__ if isinstance(data, PluginConfig) else data
+    return PluginConfig.from_mapping(mapping)
 
 
 class TestProviderConfig(unittest.TestCase):
