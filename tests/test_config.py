@@ -24,6 +24,7 @@ from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 
 from eodag.api.provider import ProviderConfig, ProvidersDict
@@ -46,14 +47,22 @@ from tests.context import (
 
 def load_provider_config_from_string(yaml_string: str) -> ProviderConfig:
     """Load a provider config from a YAML string using legacy-aware YAML tags."""
-    data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
+    with pytest.warns(
+        FutureWarning,
+        match=r".*deprecated YAML tag '!(provider|plugin)'.*",
+    ):
+        data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
     mapping = data.__dict__ if isinstance(data, ProviderConfig) else data
     return ProviderConfig.from_mapping(mapping)
 
 
 def load_plugin_config_from_string(yaml_string: str) -> PluginConfig:
     """Load a plugin config from a YAML string using legacy-aware YAML tags."""
-    data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
+    with pytest.warns(
+        FutureWarning,
+        match=r".*deprecated YAML tag '!plugin'.*",
+    ):
+        data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
     mapping = data.__dict__ if isinstance(data, PluginConfig) else data
     return PluginConfig.from_mapping(mapping)
 
