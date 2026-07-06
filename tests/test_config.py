@@ -17,10 +17,8 @@
 # limitations under the License.
 
 import os
-import pathlib
 import tempfile
 import unittest
-from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
@@ -554,24 +552,12 @@ class TestStacProviderConfig(unittest.TestCase):
 
     def test_existing_stac_provider_conf(self):
         """Existing / pre-configured STAC providers conf should mix providers.yml and  stac_provider.yml infos."""
+        # Load raw provider configs (without stac_provider.yml defaults applied).
         with mock.patch(
             "eodag.api.provider.ProviderConfig._apply_defaults",
             lambda self: None,
         ):
-            providers_dir = pathlib.Path(
-                str(res_files("eodag") / "resources" / "providers")
-            )
-            providers_configs = {}
-            for provider_conf_file in providers_dir.glob("*.yml"):
-                with open(provider_conf_file, "r") as fh:
-                    provider_conf_dict = yaml.load(fh, Loader=yaml.CSafeLoader)
-                    # Handle the new format where provider name is the top-level key
-                    for provider_name, provider_config in provider_conf_dict.items():
-                        if isinstance(provider_config, dict):
-                            if "name" not in provider_config:
-                                provider_config["name"] = provider_name
-                            provider_conf = ProviderConfig.from_mapping(provider_config)
-                            providers_configs[provider_conf.name] = provider_conf
+            providers_configs = config.load_default_config()
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
