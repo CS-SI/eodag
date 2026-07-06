@@ -2555,30 +2555,18 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         config_path = os.path.join(
             TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
         )
-        providers_config_dicts: list[dict] = cached_yaml_load_all(config_path)
-        # Convert the first provider dict to use as base; access nested dict for provider config
-        first_provider_dict = providers_config_dicts[0]
-        if len(providers_config_dicts) == 1 and isinstance(first_provider_dict, dict):
-            # Handle new format where provider name is top-level key
-            for provider_name, provider_config in first_provider_dict.items():
-                if isinstance(provider_config, dict):
-                    provider_config["products"]["TEST_PRODUCT_1"] = {
-                        "_collection": "TP1"
-                    }
-                    provider_config["products"]["TEST_PRODUCT_2"] = {
-                        "_collection": "TP2"
-                    }
-                    with open(
-                        os.path.join(
-                            self.tmp_home_dir.name, "file_providers_override2.yml"
-                        ),
-                        "w",
-                    ) as f:
-                        f.write(yaml.dump({provider_name: provider_config}))
-        # set env variables
-        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+        providers_config_dict = cached_yaml_load_all(config_path)[0]
+        provider_name, provider_config = next(iter(providers_config_dict.items()))
+        provider_config["products"]["TEST_PRODUCT_1"] = {"_collection": "TP1"}
+        provider_config["products"]["TEST_PRODUCT_2"] = {"_collection": "TP2"}
+
+        providers_override_path = os.path.join(
             self.tmp_home_dir.name, "file_providers_override2.yml"
         )
+        with open(providers_override_path, "w") as f:
+            f.write(yaml.dump({provider_name: provider_config}))
+        # set env variables
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = providers_override_path
         os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_collections_override.yml"
         )
