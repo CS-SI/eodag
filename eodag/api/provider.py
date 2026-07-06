@@ -124,7 +124,7 @@ class ProviderConfig(yaml.YAMLObject):
         warnings.warn(
             "Usage of deprecated YAML tag '!provider' for provider configuration "
             "(Please use plain YAML mappings instead)"
-            " -- Deprecated since v4.4.0",
+            " -- Deprecated since v4.5.0",
             FutureWarning,
             stacklevel=2,
         )
