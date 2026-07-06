@@ -810,6 +810,7 @@ class QueryStringSearch(Search):
         """
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
+        number_matched = kwargs.pop("number_matched", None)
         collection = cast(str, kwargs.get("collection", prep.collection))
         if collection == GENERIC_COLLECTION:
             logger.warning(
@@ -875,8 +876,8 @@ class QueryStringSearch(Search):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
-        if not count and "number_matched" in kwargs:
-            total_items = kwargs["number_matched"]
+        if not count and number_matched is not None:
+            total_items = number_matched
 
         eo_products = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
