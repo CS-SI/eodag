@@ -252,15 +252,10 @@ def json_field_definition_to_python(
     else:
         field_default = default_value
 
-    metadata = [
-        python_type,
-        Field(field_default, **field_type_kwargs),
-    ]
-
+    field = Field(field_default, **field_type_kwargs)
     if required:
-        metadata[1].metadata.append("json_schema_required")
-
-    return Annotated[tuple(metadata)]
+        field.metadata.append("json_schema_required")
+    return Annotated[python_type, field]
 
 
 def python_field_definition_to_json(
