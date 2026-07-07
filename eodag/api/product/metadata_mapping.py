@@ -170,7 +170,7 @@ def get_search_param(map_value: list[str]) -> str:
 def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form ``{<field_name>#<conversion_function>}``
 
-        The currently understood converters are:
+    The currently understood converters are:
         - ``assets_list_to_dict``: convert a list of asset objects into a dictionary keyed by asset name
         - ``ceda_collection_name``: generate a CEDA collection name from a string
         - ``wekeo_to_cop_collection``: converts the name of a collection from the WEkEO format to the Copernicus format
