@@ -738,9 +738,9 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it as plain YAML dictionaries
-        providers_configs_dicts: list[dict[str, Any]] = cached_yaml_load_all(
-            config_path
-        )
+        providers_configs_dicts: list[
+            Optional[Union[dict[str, Any], ProviderConfig]]
+        ] = cached_yaml_load_all(config_path)
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e
@@ -755,8 +755,7 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
             if isinstance(provider_dict, ProviderConfigClass):
                 # Legacy standalone !provider files may omit the `name` key.
                 # In that case, use the file stem (e.g. wekeo_main.yml -> wekeo_main).
-                if not getattr(provider_dict, "name", None):
-                    provider_dict.__dict__["name"] = default_provider_name
+                provider_dict.__dict__.setdefault("name", default_provider_name)
                 providers_configs.append(provider_dict)
                 continue
 
@@ -765,15 +764,13 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
             for provider_name, provider_config in provider_dict.items():
                 if isinstance(provider_config, dict):
                     # Add the name to the config if not already present
-                    if "name" not in provider_config:
-                        provider_config["name"] = provider_name
+                    provider_config.setdefault("name", provider_name)
                     provider_obj = ProviderConfigClass.from_mapping(provider_config)
                     providers_configs.append(provider_obj)
                 elif isinstance(provider_config, ProviderConfigClass):
                     # Handle legacy YAML tags where name is outside the tag (e.g., "ecmwf: !provider")
                     # Add name if missing since it was not part of the tag node
-                    if not getattr(provider_config, "name", None):
-                        provider_config.__dict__["name"] = provider_name
+                    provider_config.__dict__.setdefault("name", provider_name)
                     providers_configs.append(provider_config)
 
     return {p.name: p for p in providers_configs if p is not None}
