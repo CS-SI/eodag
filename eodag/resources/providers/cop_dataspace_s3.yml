@@ -1,11 +1,10 @@
-!provider # MARK: cop_dataspace_s3
-  name: cop_dataspace_s3
+cop_dataspace_s3:
   priority: 0
   description: Copernicus Data Space Ecosystem through S3 protocol
   roles:
     - host
   url: https://dataspace.copernicus.eu/
-  search: !plugin
+  search:
     type: CreodiasS3Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
@@ -30,7 +29,7 @@
       max_limit: 1_000
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_by_tpl: '&$orderby={sort_param} {sort_order}'
       sort_param_mapping:
         start_datetime: ContentDate/Start
@@ -178,9 +177,6 @@
       updated:
         - null
         - '$.ModificationDate'
-      sat:relative_orbit:
-        - null
-        - '$.Attributes.relativeOrbitNumber'
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       start_datetime:
         - null
@@ -245,12 +241,12 @@
         - $.null
       eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-  download: !plugin
+  download:
     type: AwsDownload
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
     s3_bucket: 'eodata.dataspace.copernicus.eu'
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: AwsAuth
     auth_error_code: 403
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'

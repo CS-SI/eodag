@@ -1,5 +1,4 @@
-!provider  # MARK: wekeo_main
-  name: wekeo_main # wekeo_main
+wekeo_main:
   group: wekeo
   priority: 0
   roles:
@@ -44,7 +43,7 @@
           "enddate": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}"
         }}
       - '{$.id#remove_extension}'
-  search: !plugin
+  search:
     type: WekeoSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
@@ -454,7 +453,7 @@
           - '{{"uid": "{id}"}}'
           - '$.id'
         eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VPP-LAEA"}}'
-  auth: !plugin
+  auth:
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
@@ -463,7 +462,7 @@
     token_key: access_token
     refresh_token_key: refresh_token
     token_expiration_key: expires_in
-  download: !plugin
+  download:
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
     flatten_top_dirs: true

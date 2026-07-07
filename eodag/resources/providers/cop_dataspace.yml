@@ -1,11 +1,10 @@
-!provider # MARK: cop_dataspace
-  name: cop_dataspace
+cop_dataspace:
   priority: 0
   description: Copernicus Data Space Ecosystem
   roles:
     - host
   url: https://dataspace.copernicus.eu/
-  search: !plugin
+  search:
     type: ODataV4Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
     need_auth: false
@@ -29,7 +28,7 @@
       max_limit: 1_000
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_by_tpl: '&$orderby={sort_param} {sort_order}'
       sort_param_mapping:
         start_datetime: ContentDate/Start
@@ -247,14 +246,14 @@
         - $.null
       eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-  download: !plugin
+  download:
     type: HTTPDownload
     extract: true
     order_enabled: false
     archive_depth: 2
     max_workers: 4
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: KeycloakOIDCPasswordAuth
     matching_url: https://catalogue.dataspace.copernicus.eu
     oidc_config_url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/.well-known/openid-configuration

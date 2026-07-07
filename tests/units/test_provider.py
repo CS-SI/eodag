@@ -20,11 +20,8 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-import yaml
-
 from tests.context import (
     EODataAccessGateway,
-    MisconfiguredError,
     PluginConfig,
     Provider,
     ProviderConfig,
@@ -257,18 +254,20 @@ class TestProviderConfig(unittest.TestCase):
         self.assertIsNot(new_config.search, original_config.search)
 
     def test_provider_config_from_yaml_requires_plugin_tag(self):
-        """ProviderConfig.from_yaml must reject untagged plugin topics."""
+        """ProviderConfig.from_mapping must reject invalid plugin topics."""
+        # Test that invalid plugin config (missing type) raises ValidationError
         with self.assertRaisesRegex(
-            MisconfiguredError, "plugin topic 'search' must be tagged with '!plugin'"
+            ValidationError,
+            "A Plugin config must specify the type of Plugin it configures",
         ):
-            yaml.load(
-                """
-!provider
-name: test-provider
-search:
-  type: StacSearch
-""",
-                Loader=yaml.Loader,
+            ProviderConfig.from_mapping(
+                {
+                    "name": "test-provider",
+                    "search": {
+                        # Missing 'type' field - should fail validation
+                    },
+                    "products": {},
+                }
             )
 
 

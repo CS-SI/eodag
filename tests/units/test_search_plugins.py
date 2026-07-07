@@ -135,9 +135,13 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         provider = "mundi"
 
         # manually add conf as this provider is not supported any more
-        mundi_config = cached_yaml_load_all(
+        mundi_config_dict = cached_yaml_load_all(
             Path(TEST_RESOURCES_PATH) / "mundi_conf.yml"
         )[0]
+        # Provider YAML now uses provider name as top-level key
+        provider_name, mundi_config = next(iter(mundi_config_dict.items()))
+        if "name" not in mundi_config:
+            mundi_config["name"] = provider_name
         self.plugins_manager.providers[provider] = Provider(mundi_config)
         self.plugins_manager.rebuild()
 
@@ -1575,9 +1579,13 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         super(TestSearchPluginODataV4Search, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        onda_config = cached_yaml_load_all(Path(TEST_RESOURCES_PATH) / "onda_conf.yml")[
-            0
-        ]
+        onda_config_dict = cached_yaml_load_all(
+            Path(TEST_RESOURCES_PATH) / "onda_conf.yml"
+        )[0]
+        # Provider YAML now uses provider name as top-level key
+        provider_name, onda_config = next(iter(onda_config_dict.items()))
+        if "name" not in onda_config:
+            onda_config["name"] = provider_name
         self.plugins_manager.providers["onda"] = Provider(onda_config)
         self.plugins_manager.rebuild()
 

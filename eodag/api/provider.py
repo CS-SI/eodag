@@ -90,6 +90,10 @@ class ProviderConfig(yaml.YAMLObject):
     :param kwargs: Additional configuration variables for this provider
     """
 
+    yaml_loader = yaml.Loader
+    yaml_dumper = yaml.SafeDumper
+    yaml_tag = "!provider"
+
     name: str
     group: str
     priority: int = 0
@@ -104,10 +108,6 @@ class ProviderConfig(yaml.YAMLObject):
     search_auth: PluginConfig
     download_auth: PluginConfig
 
-    yaml_loader = yaml.Loader
-    yaml_dumper = yaml.SafeDumper
-    yaml_tag = "!provider"
-
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Apply defaults when building from yaml."""
         self.__dict__.update(state)
@@ -118,9 +118,11 @@ class ProviderConfig(yaml.YAMLObject):
         return key in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[Self]:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from Yaml"""
-        cls.validate(tuple(node_key.value for node_key, _ in node.value))
+        cls.validate(
+            tuple(node_key.value for node_key, _ in node.value), check_name=False
+        )
         for node_key, node_value in node.value:
             if node_key.value == "name":
                 node_value.value = slugify(node_value.value).replace("-", "_")
@@ -136,13 +138,17 @@ class ProviderConfig(yaml.YAMLObject):
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from a mapping"""
-        cls.validate(mapping)
+        cls.validate(mapping, check_name=True)
         # Create a deep copy to avoid modifying the input dict or its nested structures
         mapping_copy = deepcopy(mapping)
+        # Slugify the provider name (normalize spaces and special characters)
+        if "name" in mapping_copy:
+            mapping_copy["name"] = slugify(mapping_copy["name"]).replace("-", "_")
         for key in PLUGINS_TOPICS_KEYS:
-            if not (_mapping := mapping_copy.get(key)):
+            if key not in mapping_copy or mapping_copy[key] is None:
                 continue
 
+            _mapping = mapping_copy[key]
             if not isinstance(_mapping, dict):
                 _mapping = _mapping.__dict__
 
@@ -153,12 +159,15 @@ class ProviderConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys: Union[tuple[str, ...], dict[str, Any]]) -> None:
+    def validate(
+        config_keys: Union[tuple[str, ...], dict[str, Any]], check_name: bool = True
+    ) -> None:
         """Validate a :class:`~eodag.api.provider.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
+        :param check_name: Whether to require 'name' key (default True). Set to False for legacy YAML tag parsing.
         """
-        if "name" not in config_keys:
+        if check_name and "name" not in config_keys:
             raise ValidationError("Provider config must have name key")
         if not any(k in config_keys for k in PLUGINS_TOPICS_KEYS):
             raise ValidationError("A provider must implement at least one plugin")

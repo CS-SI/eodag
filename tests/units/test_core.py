@@ -28,6 +28,7 @@ import unittest
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 from concurrent.futures import ThreadPoolExecutor
 from lxml import html
@@ -39,8 +40,9 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 from eodag import __version__ as eodag_version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
+from eodag.utils import GENERIC_COLLECTION
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.yaml import cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH, TEST_RESOURCES_PROVIDERS_PATH
 from tests.context import (
     DEFAULT_LIMIT,
@@ -2519,7 +2521,10 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
             )
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                self.dag = EODataAccessGateway()
             # only foo_provider in conf
             self.assertEqual(self.dag.providers.names, ["foo_provider"])
             self.assertEqual(
@@ -2551,24 +2556,28 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         config_path = os.path.join(
             TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
         )
-        providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
-        providers_config[0].products["TEST_PRODUCT_1"] = {"_collection": "TP1"}
-        providers_config[0].products["TEST_PRODUCT_2"] = {"_collection": "TP2"}
-        with open(
-            os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
-        ) as f:
-            f.write(yaml.dump(providers_config[0]))
-        # set env variables
-        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+        providers_config_dict = cached_yaml_load_all(config_path)[0]
+        provider_name, provider_config = next(iter(providers_config_dict.items()))
+        provider_config["products"]["TEST_PRODUCT_1"] = {"_collection": "TP1"}
+        provider_config["products"]["TEST_PRODUCT_2"] = {"_collection": "TP2"}
+
+        providers_override_path = os.path.join(
             self.tmp_home_dir.name, "file_providers_override2.yml"
         )
+        with open(providers_override_path, "w") as f:
+            f.write(yaml.dump({provider_name: provider_config}))
+        # set env variables
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = providers_override_path
         os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_collections_override.yml"
         )
 
         # check collections
         try:
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                self.dag = EODataAccessGateway()
             col = self.dag.list_collections(fetch_providers=False)
             self.assertEqual(2, len(col))
             self.assertEqual("TEST_PRODUCT_1", col[0].id)
@@ -4787,7 +4796,10 @@ class TestCoreStrictMode(TestCoreBase):
         """list_collections must only return collections from the main config in strict mode"""
         try:
             os.environ["EODAG_STRICT_COLLECTIONS"] = "true"
-            dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                dag = EODataAccessGateway()
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
             collections = dag.list_collections(fetch_providers=False)
@@ -4802,7 +4814,8 @@ class TestCoreStrictMode(TestCoreBase):
         if "EODAG_STRICT_COLLECTIONS" in os.environ:
             del os.environ["EODAG_STRICT_COLLECTIONS"]
 
-        dag = EODataAccessGateway()
+        with pytest.warns(DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"):
+            dag = EODataAccessGateway()
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
         collections = dag.list_collections(fetch_providers=False)

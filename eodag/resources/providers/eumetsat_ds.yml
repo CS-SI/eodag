@@ -1,5 +1,4 @@
-!provider # MARK: eumetsat_ds
-  name: eumetsat_ds
+eumetsat_ds:
   priority: 0
   description: EUMETSAT Data Store
   roles:
@@ -14,7 +13,7 @@
     sat:absolute_orbit:
       - orbit
       - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
-  search: !plugin
+  search:
     type: EumetsatDsSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
     need_auth: false
@@ -31,7 +30,7 @@
       max_limit: 500
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_by_tpl: '&sort={sort_param},{sort_order}'
       sort_param_mapping:
         start_datetime: start,time
@@ -460,12 +459,12 @@
       _collection: EO:EUM:DAT:0921
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     extract: true
     ignore_assets: True
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: TokenAuth
     matching_url: https://api.eumetsat.int
     auth_uri: 'https://api.eumetsat.int/token'

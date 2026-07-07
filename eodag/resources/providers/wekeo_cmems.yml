@@ -1,12 +1,11 @@
-!provider  # MARK: wekeo_cmems
-  name: wekeo_cmems
+wekeo_cmems:
   group: wekeo
   priority: 0
   roles:
     - host
   description: WEkEO - Copernicus Marine Service
   url: https://www.wekeo.eu/
-  search: !plugin
+  search:
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
     need_auth: true
@@ -70,7 +69,7 @@
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  auth: !plugin
+  auth:
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
@@ -78,7 +77,7 @@
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
-  download: !plugin
+  download:
     type: HTTPDownload
     auth_error_code: 401
     order_enabled: true
