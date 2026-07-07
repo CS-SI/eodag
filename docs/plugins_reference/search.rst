@@ -19,6 +19,7 @@ This table lists all the search plugins currently available:
    qssearch.PostJsonSearch
    qssearch.StacSearch
    qssearch.WekeoSearch
+   oar.OARSearch
    static_stac_search.StaticStacSearch
    stac_list_assets.StacListAssets
    cop_marine.CopMarineSearch
