@@ -261,6 +261,21 @@ class ProviderConfig(yaml.YAMLObject):
         except AttributeError:
             pass
 
+        search_conf = getattr(self, "search", None)
+        search_type = getattr(search_conf, "type", None)
+        if search_conf is not None and search_type:
+            try:
+                from eodag.plugins.search.base import Search
+
+                Search.ensure_plugins_loaded()
+                plugin_cls = Search.get_plugin_by_class_name(search_type)
+                if normalize_config := getattr(plugin_cls, "normalize_config", None):
+                    normalize_config(self.name, search_conf)
+            except Exception:
+                logger.debug(
+                    "Could not normalize search config for provider %s", self.name
+                )
+
 
 class Provider:
     """

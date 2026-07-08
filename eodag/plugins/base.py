@@ -19,6 +19,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import importlib_metadata
+
 from eodag.utils.exceptions import PluginNotFoundError
 
 if TYPE_CHECKING:
@@ -63,6 +65,22 @@ class PluginTopic(metaclass=EODAGPluginMount):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         self.config = config
         self.provider = provider
+
+    @classmethod
+    def ensure_plugins_loaded(cls) -> None:
+        """Load plugin classes for this topic from entry points if needed."""
+        if getattr(cls, "_plugins_loaded", False):
+            return
+
+        for entry_point in importlib_metadata.entry_points(
+            group=f"eodag.plugins.{cls.__name__.lower()}"
+        ):
+            try:
+                entry_point.load()
+            except (ModuleNotFoundError, ImportError):
+                continue
+
+        setattr(cls, "_plugins_loaded", True)
 
     def __repr__(self) -> str:
         config = getattr(self, "config", None)
