@@ -397,7 +397,7 @@ class QueryStringSearch(Search):
             )
 
         # parse jsonpath on init: collection specific metadata-mapping
-        for collection in self.config.products.keys():
+        for collection in getattr(self.config, "products", {}).keys():
             collection_metadata_mapping = {}
             # collection specific metadata-mapping
             if any(

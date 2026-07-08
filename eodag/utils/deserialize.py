@@ -20,7 +20,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from eodag.plugins.search.qssearch import StacSearch
 from eodag.utils import GENERIC_STAC_PROVIDER
 from eodag.utils.exceptions import MisconfiguredError
 
@@ -127,6 +126,9 @@ def _import_stac_item_from_known_provider(
     :param provider: The associated provider from which configuration should be used for mapping.
     :returns: An EOProduct created from the STAC item
     """
+    # Delayed import to avoid import cycle with eodag.api.product.
+    from eodag.plugins.search.qssearch import StacSearch
+
     item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
     item_href = item_hrefs[0]["href"] if len(item_hrefs) > 0 else None
     for search_plugin in plugins_manager.get_search_plugins(provider=provider):

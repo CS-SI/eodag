@@ -2298,7 +2298,7 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
-            "cop_marine": None,
+            "cop_marine": {"max_sort_params": None, "sortables": []},
             "fedeo_ceda": {"max_sort_params": None, "sortables": []},
             "geodes": {
                 "max_sort_params": None,

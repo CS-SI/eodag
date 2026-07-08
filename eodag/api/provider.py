@@ -267,7 +267,7 @@ class ProviderConfig(yaml.YAMLObject):
                 logger.debug(
                     "Could not normalize %s config for provider %s",
                     plugin_key,
-                    self.name,
+                    getattr(self, "name", None),
                 )
 
 
