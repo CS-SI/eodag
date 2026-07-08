@@ -40,7 +40,9 @@ class OARSearch(QueryStringSearch):
         - OGC API - Records Core specification: https://docs.ogc.org/is/20-004r1/20-004r1.html
     """
 
-    def __init__(self, provider: str, config: "PluginConfig") -> None:
+    @classmethod
+    def normalize_config(cls, provider: str, config: "PluginConfig") -> "PluginConfig":
+        """Normalize and validate the plugin configuration for an OGC API Records provider."""
         if not hasattr(config, "api_endpoint"):
             raise MisconfiguredError(
                 f"Missing required configuration 'api_endpoint' for provider '{provider}'"
@@ -129,6 +131,11 @@ class OARSearch(QueryStringSearch):
                 "-180 90, -180 -90, 180 -90)))`)|($.geometry[*])",
             ],
         )
+
+        return config
+
+    def __init__(self, provider: str, config: "PluginConfig") -> None:
+        config = self.normalize_config(provider, config)
 
         super().__init__(provider, config)
 
