@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import os
-import tempfile
 import traceback
 from collections import UserDict
 from inspect import isclass
@@ -231,16 +230,6 @@ class ProviderConfig(yaml.YAMLObject):
 
     def _apply_defaults(self: Self) -> None:
         """Applies some default values to provider config."""
-        # For the provider, set the default output_dir of its download plugin
-        # as tempdir in a portable way
-        for download_topic_key in ("download", "api"):
-            if download_topic_key in vars(self):
-                download_conf = getattr(self, download_topic_key)
-                if not getattr(download_conf, "output_dir", None):
-                    download_conf.output_dir = tempfile.gettempdir()
-                if not getattr(download_conf, "delete_archive", None):
-                    download_conf.delete_archive = True
-
         plugin_topics: tuple[tuple[str, str], ...] = (
             ("search", "eodag.plugins.search.base"),
             ("api", "eodag.plugins.apis.base"),

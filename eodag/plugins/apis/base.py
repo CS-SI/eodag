@@ -17,8 +17,13 @@
 # limitations under the License.
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
+
+if TYPE_CHECKING:
+    from eodag.config import PluginConfig
 
 
 class Api(Search, Download):
@@ -59,3 +64,8 @@ class Api(Search, Download):
     :param config: An EODAG plugin configuration
     :type config: dict[str, Any]
     """
+
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize API plugin config defaults."""
+        return Download.normalize_config(provider, config)

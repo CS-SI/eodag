@@ -110,6 +110,10 @@ class Download(PluginTopic):
         Subclasses can override this method to apply plugin-specific defaults
         before plugin instantiation.
         """
+        if not getattr(config, "output_dir", None):
+            config.output_dir = tempfile.gettempdir()
+        if not getattr(config, "delete_archive", None):
+            setattr(config, "delete_archive", True)
         return config
 
     @abstractmethod
