@@ -18,9 +18,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
-from eodag.utils import GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS
+from eodag.plugins.search.qssearch import StacSearch
+from eodag.utils import GENERIC_STAC_PROVIDER
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
@@ -131,7 +132,7 @@ def _import_stac_item_from_known_provider(
     for search_plugin in plugins_manager.get_search_plugins(provider=provider):
         # only try STAC search plugins
         if (
-            search_plugin.config.type in STAC_SEARCH_PLUGINS
+            isinstance(search_plugin, StacSearch)
             and search_plugin.provider != GENERIC_STAC_PROVIDER
             and hasattr(search_plugin, "normalize_results")
         ):
@@ -140,7 +141,7 @@ def _import_stac_item_from_known_provider(
             )
             # compare the item href with the provider base URL
             if item_href and item_href.startswith(provider_base_url):
-                products = search_plugin.normalize_results([feature])
+                products = search_plugin.normalize_results(cast(Any, [feature]))
                 if len(products) == 0 or len(products[0].assets) == 0:
                     continue
                 logger.debug(

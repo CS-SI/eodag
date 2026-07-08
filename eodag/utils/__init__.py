@@ -85,7 +85,8 @@ GENERIC_COLLECTION = "GENERIC_COLLECTION"
 #: if no existing provider can be used
 GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
-#: List of known STAC search plugins. Required to complete plugin configuration with STAC plugins specific features.
+#: Deprecated: list of known STAC search plugin class names kept for backward
+#: compatibility. This constant is no longer used internally for STAC behavior.
 STAC_SEARCH_PLUGINS = [
     "GeodesSearch",
     "StacSearch",

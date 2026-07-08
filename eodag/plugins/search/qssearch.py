@@ -70,6 +70,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.api.search_result import RawSearchResult, SearchResult
+from eodag.config import load_stac_provider_config
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
@@ -85,7 +86,6 @@ from eodag.utils import (
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
-    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     deepcopy,
     dict_items_recursive_apply,
@@ -2100,24 +2100,29 @@ class StacSearch(PostJsonSearch):
     :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` in the
     :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
 
-    Plugins inheriting from ``StacSearch`` have to be referenced in :const:`~eodag.utils.STAC_SEARCH_PLUGINS`
-    to be correctly initialized with the expected STAC configuration and features.
+    Plugins inheriting from ``StacSearch`` are initialized with STAC defaults
+    through :meth:`normalize_config`.
     """
 
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize plugin config defaults for STAC-based search plugins."""
+        stac_search_default_conf = load_stac_provider_config()
+
+        if stac_search_default_conf is not None:
+            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
+            config.__dict__ = update_nested_dict(
+                per_provider_stac_provider_config["search"],
+                config.__dict__,
+                allow_empty_values=True,
+            )
+
+        return config
+
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        try:
-            # backup results_entry overwritten by init
-            results_entry = config.results_entry
-        except AttributeError:
-            plugin_name = self.__class__.__name__
-            if plugin_name not in STAC_SEARCH_PLUGINS:
-                raise MisconfiguredError(
-                    "Missing results_entry in %s configuration. If %s is expected to be used as "
-                    "a STAC plugin, it must be referenced in STAC_SEARCH_PLUGINS."
-                    % (provider, plugin_name)
-                )
-            else:
-                raise
+        config = self.normalize_config(provider, config)
+        # backup results_entry overwritten by init
+        results_entry = config.results_entry
 
         super(StacSearch, self).__init__(provider, config)
 

@@ -41,15 +41,13 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.config import PluginConfig, credentials_in_auth, load_stac_provider_config
+from eodag.config import PluginConfig, credentials_in_auth
 from eodag.utils import (
     GENERIC_COLLECTION,
-    STAC_SEARCH_PLUGINS,
     cast_scalar_value,
     deepcopy,
     merge_mappings,
     slugify,
-    update_nested_dict,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -233,8 +231,6 @@ class ProviderConfig(yaml.YAMLObject):
 
     def _apply_defaults(self: Self) -> None:
         """Applies some default values to provider config."""
-        stac_search_default_conf = load_stac_provider_config()
-
         # For the provider, set the default output_dir of its download plugin
         # as tempdir in a portable way
         for download_topic_key in ("download", "api"):
@@ -244,22 +240,6 @@ class ProviderConfig(yaml.YAMLObject):
                     download_conf.output_dir = tempfile.gettempdir()
                 if not getattr(download_conf, "delete_archive", None):
                     download_conf.delete_archive = True
-
-        try:
-            if (
-                stac_search_default_conf is not None
-                and self.search
-                and self.search.type in STAC_SEARCH_PLUGINS
-            ):
-                # search config set to stac defaults overriden with provider config
-                per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
-                self.search.__dict__ = update_nested_dict(
-                    per_provider_stac_provider_config["search"],
-                    self.search.__dict__,
-                    allow_empty_values=True,
-                )
-        except AttributeError:
-            pass
 
         plugin_topics: tuple[tuple[str, str], ...] = (
             ("search", "eodag.plugins.search.base"),
