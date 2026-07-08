@@ -261,19 +261,44 @@ class ProviderConfig(yaml.YAMLObject):
         except AttributeError:
             pass
 
-        search_conf = getattr(self, "search", None)
-        search_type = getattr(search_conf, "type", None)
-        if search_conf is not None and search_type:
-            try:
-                from eodag.plugins.search.base import Search
+        plugin_topics: tuple[tuple[str, str], ...] = (
+            ("search", "eodag.plugins.search.base"),
+            ("api", "eodag.plugins.apis.base"),
+            ("download", "eodag.plugins.download.base"),
+            ("auth", "eodag.plugins.authentication.base"),
+            ("search_auth", "eodag.plugins.authentication.base"),
+            ("download_auth", "eodag.plugins.authentication.base"),
+        )
+        topic_class_names = {
+            "search": "Search",
+            "api": "Api",
+            "download": "Download",
+            "auth": "Authentication",
+            "search_auth": "Authentication",
+            "download_auth": "Authentication",
+        }
 
-                Search.ensure_plugins_loaded()
-                plugin_cls = Search.get_plugin_by_class_name(search_type)
+        for plugin_key, topic_module in plugin_topics:
+            plugin_conf = getattr(self, plugin_key, None)
+            plugin_type = getattr(plugin_conf, "type", None)
+            if plugin_conf is None or not plugin_type:
+                continue
+
+            try:
+                topic_class_name = topic_class_names[plugin_key]
+                topic_class = getattr(
+                    __import__(topic_module, fromlist=[topic_class_name]),
+                    topic_class_name,
+                )
+                topic_class.ensure_plugins_loaded()
+                plugin_cls = topic_class.get_plugin_by_class_name(plugin_type)
                 if normalize_config := getattr(plugin_cls, "normalize_config", None):
-                    normalize_config(self.name, search_conf)
+                    normalize_config(self.name, plugin_conf)
             except Exception:
                 logger.debug(
-                    "Could not normalize search config for provider %s", self.name
+                    "Could not normalize %s config for provider %s",
+                    plugin_key,
+                    self.name,
                 )
 
 

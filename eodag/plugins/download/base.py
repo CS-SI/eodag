@@ -103,6 +103,15 @@ class Download(PluginTopic):
         super(Download, self).__init__(provider, config)
         self._authenticate = bool(getattr(self.config, "authenticate", False))
 
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize plugin config defaults.
+
+        Subclasses can override this method to apply plugin-specific defaults
+        before plugin instantiation.
+        """
+        return config
+
     @abstractmethod
     def download(
         self,
