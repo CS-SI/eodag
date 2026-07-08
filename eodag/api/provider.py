@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import os
-import tempfile
 import traceback
 from collections import UserDict
 from inspect import isclass
@@ -41,15 +40,13 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.config import PluginConfig, credentials_in_auth, load_stac_provider_config
+from eodag.config import PluginConfig, credentials_in_auth
 from eodag.utils import (
     GENERIC_COLLECTION,
-    STAC_SEARCH_PLUGINS,
     cast_scalar_value,
     deepcopy,
     merge_mappings,
     slugify,
-    update_nested_dict,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -233,33 +230,45 @@ class ProviderConfig(yaml.YAMLObject):
 
     def _apply_defaults(self: Self) -> None:
         """Applies some default values to provider config."""
-        stac_search_default_conf = load_stac_provider_config()
+        plugin_topics: tuple[tuple[str, str], ...] = (
+            ("search", "eodag.plugins.search.base"),
+            ("api", "eodag.plugins.apis.base"),
+            ("download", "eodag.plugins.download.base"),
+            ("auth", "eodag.plugins.authentication.base"),
+            ("search_auth", "eodag.plugins.authentication.base"),
+            ("download_auth", "eodag.plugins.authentication.base"),
+        )
+        topic_class_names = {
+            "search": "Search",
+            "api": "Api",
+            "download": "Download",
+            "auth": "Authentication",
+            "search_auth": "Authentication",
+            "download_auth": "Authentication",
+        }
 
-        # For the provider, set the default output_dir of its download plugin
-        # as tempdir in a portable way
-        for download_topic_key in ("download", "api"):
-            if download_topic_key in vars(self):
-                download_conf = getattr(self, download_topic_key)
-                if not getattr(download_conf, "output_dir", None):
-                    download_conf.output_dir = tempfile.gettempdir()
-                if not getattr(download_conf, "delete_archive", None):
-                    download_conf.delete_archive = True
+        for plugin_key, topic_module in plugin_topics:
+            plugin_conf = getattr(self, plugin_key, None)
+            plugin_type = getattr(plugin_conf, "type", None)
+            if plugin_conf is None or not plugin_type:
+                continue
 
-        try:
-            if (
-                stac_search_default_conf is not None
-                and self.search
-                and self.search.type in STAC_SEARCH_PLUGINS
-            ):
-                # search config set to stac defaults overriden with provider config
-                per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
-                self.search.__dict__ = update_nested_dict(
-                    per_provider_stac_provider_config["search"],
-                    self.search.__dict__,
-                    allow_empty_values=True,
+            try:
+                topic_class_name = topic_class_names[plugin_key]
+                topic_class = getattr(
+                    __import__(topic_module, fromlist=[topic_class_name]),
+                    topic_class_name,
                 )
-        except AttributeError:
-            pass
+                topic_class.ensure_plugins_loaded()
+                plugin_cls = topic_class.get_plugin_by_class_name(plugin_type)
+                if normalize_config := getattr(plugin_cls, "normalize_config", None):
+                    normalize_config(self.name, plugin_conf)
+            except Exception:
+                logger.debug(
+                    "Could not normalize %s config for provider %s",
+                    plugin_key,
+                    getattr(self, "name", None),
+                )
 
 
 class Provider:

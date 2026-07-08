@@ -2667,35 +2667,17 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         # provider-only param still present
         self.assertIn("some_param", queryables)
 
-    def test_plugins_search_stacsearch_missing_results_entry_misconfigured(self):
-        """StacSearch must raise MisconfiguredError when results_entry is missing
-        for a subclass not referenced in STAC_SEARCH_PLUGINS"""
+    def test_plugins_search_stacsearch_uses_stac_defaults(self):
+        """StacSearch must use STAC defaults from normalize_results."""
         from eodag.config import PluginConfig
         from eodag.plugins.search.qssearch import StacSearch
 
-        class _UnregisteredStacSearch(StacSearch):
+        class _NewStacSearch(StacSearch):
             pass
 
         config = PluginConfig()
-        # do not set results_entry on purpose
-        with self.assertRaises(MisconfiguredError) as ctx:
-            _UnregisteredStacSearch("some_provider", config)
-        self.assertIn("results_entry", str(ctx.exception))
-        self.assertIn("_UnregisteredStacSearch", str(ctx.exception))
-        self.assertIn("STAC_SEARCH_PLUGINS", str(ctx.exception))
-
-    def test_plugins_search_stacsearch_missing_results_entry_reraises_for_known_plugin(
-        self,
-    ):
-        """StacSearch must re-raise AttributeError when results_entry is missing
-        for a subclass referenced in STAC_SEARCH_PLUGINS"""
-        from eodag.config import PluginConfig
-        from eodag.plugins.search.geodes import GeodesSearch
-
-        config = PluginConfig()
-        # GeodesSearch is in STAC_SEARCH_PLUGINS so AttributeError must be re-raised
-        with self.assertRaises(AttributeError):
-            GeodesSearch("geodes", config)
+        plugin = _NewStacSearch("some_provider", config)
+        self.assertEqual(plugin.config.results_entry, "features")
 
 
 class TestSearchPluginGeodesSearch(BaseSearchPluginTest):

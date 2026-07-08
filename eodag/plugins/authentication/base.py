@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
+    from eodag.config import PluginConfig
+
 
 class Authentication(PluginTopic):
     """Plugins authentication Base plugin
@@ -39,6 +41,17 @@ class Authentication(PluginTopic):
         * :attr:`~eodag.config.PluginConfig.matching_conf` (``dict[str, Any]``): Part of the search or download plugin
           configuration that needs authentication and helps identifying it
     """
+
+    entrypoint_group = "auth"
+
+    @classmethod
+    def normalize_config(cls, provider: str, config: "PluginConfig") -> "PluginConfig":
+        """Normalize plugin config defaults.
+
+        Subclasses can override this method to apply authentication-specific
+        defaults before plugin instantiation.
+        """
+        return config
 
     def authenticate(self) -> Union[AuthBase, S3ServiceResource]:
         """Authenticate"""

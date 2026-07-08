@@ -91,6 +91,15 @@ class Search(PluginTopic):
         if hasattr(self.config, "discover_metadata"):
             self.config.discover_metadata.setdefault("metadata_prefix", provider)
 
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize plugin config defaults.
+
+        Subclasses can override this method to apply plugin-specific defaults
+        before plugin instantiation.
+        """
+        return config
+
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
         pass
