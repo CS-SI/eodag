@@ -4,6 +4,8 @@ import threading
 from dataclasses import dataclass, field
 from typing import Iterable, Iterator, Mapping, Optional, Union
 
+from requests.structures import CaseInsensitiveDict
+
 
 class StreamResponseContent(Iterable[bytes]):
     """
@@ -86,7 +88,7 @@ class StreamResponse:
     content: StreamResponseContent
     _filename: Optional[str] = field(default=None, repr=False, init=False)
     _size: Optional[int] = field(default=None, repr=False, init=False)
-    headers: dict[str, str] = field(default_factory=dict)
+    headers: CaseInsensitiveDict = field(default_factory=CaseInsensitiveDict)
     media_type: Optional[str] = None
     status_code: Optional[int] = None
     arcname: Optional[str] = None
@@ -102,7 +104,9 @@ class StreamResponse:
         arcname: Optional[str] = None,
     ):
         self.content = StreamResponseContent(content)
-        self.headers = dict(headers) if headers else {}
+        self.headers = (
+            CaseInsensitiveDict(headers) if headers else CaseInsensitiveDict()
+        )
         self.media_type = media_type
         self.status_code = status_code
         self.arcname = arcname
