@@ -61,11 +61,6 @@ search:
     collection_fetch_url: '{api_endpoint}/../collections/{provider_collection}/queryables'
     result_type: json
     results_entry: '$.properties[*]'
-    queryable_parsable_metadata:
-      description: '$.description'
-      title: '$.title'
-      type: '$.type'
-      pattern: '$.pattern'
   common_metadata_mapping_path: '$'
   metadata_mapping:
     productType: '$.null'

@@ -444,6 +444,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return list(input_geom.bounds[0:4])
 
         @staticmethod
+        def convert_to_bounds_str(input_geom_unformatted: Any) -> str:
+            bounds_list = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
+            return ",".join(str(x) for x in bounds_list)
+
+        @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> list[float]:
             if isinstance(input_geom, str):
                 input_geom = shapely.wkt.loads(input_geom)

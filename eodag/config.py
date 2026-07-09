@@ -369,7 +369,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
-    metadata_mapping: dict[str, Union[str, list[str]]]
+    metadata_mapping: dict[str, Union[str, list[Optional[str]]]]
     #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
     #: collection
     metadata_mapping_from_product: str

@@ -49,7 +49,7 @@ class OARSearch(QueryStringSearch):
             )
         if not config.api_endpoint.rstrip("/").endswith("/items"):
             api_root_endpoint = config.api_endpoint.rstrip("/")
-            config.api_endpoint = api_root_endpoint + "/{_collection}/items"
+            config.api_endpoint = api_root_endpoint + "/collections/{_collection}/items"
         else:
             try:
                 api_root_endpoint = config.api_endpoint.rstrip("/").rsplit("/", 3)[0]
@@ -110,15 +110,34 @@ class OARSearch(QueryStringSearch):
             "extent", "$.extent"
         )
 
+        # Discover queryables
+        config.__dict__.setdefault("discover_queryables", {})
+        config.discover_queryables.setdefault(
+            "fetch_url", api_root_endpoint + "/queryables"
+        )
+        config.discover_queryables.setdefault(
+            "collection_fetch_url",
+            api_root_endpoint + "/collections/{provider_collection}/queryables",
+        )
+        config.discover_queryables.setdefault("result_type", "json")
+        config.discover_queryables.setdefault("results_entry", "$.properties[*]")
+
         # Metadata mapping
         config.__dict__.setdefault("metadata_mapping", {})
         config.metadata_mapping.setdefault("title", "$.properties.title")
         config.metadata_mapping.setdefault("datetime", "$.properties.datetime")
         config.metadata_mapping.setdefault("updated", "$.properties.updated")
         config.metadata_mapping.setdefault(
+            "start_datetime",
+            [
+                None,
+                "$.null",
+            ],
+        )
+        config.metadata_mapping.setdefault(
             "end_datetime",
             [
-                '{{"datetime":"{start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}"}}',
+                "datetime={start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}",
                 "$.null",
             ],
         )
@@ -126,7 +145,7 @@ class OARSearch(QueryStringSearch):
         config.metadata_mapping.setdefault(
             "geometry",
             [
-                '{{"intersects":{geometry#to_geojson}}}',
+                "bbox={geometry#to_bounds_str}",
                 "($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, "
                 "-180 90, -180 -90, 180 -90)))`)|($.geometry[*])",
             ],
