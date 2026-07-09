@@ -21,7 +21,9 @@ directly after the image name:
 
 .. code-block:: bash
 
-   docker run --rm ghcr.io/cs-si/eodag:<version> list
+   docker run --rm ghcr.io/cs-si/eodag:latest list
+
+See :ref:`cli_user_guide` for the full list of available commands and options.
 
 Use a persistent configuration directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -35,7 +37,7 @@ directory to the default EODAG configuration directory:
    mkdir -p "$HOME/.config/eodag"
    docker run --rm \
       -v "$HOME/.config/eodag:/home/eodag/.config/eodag" \
-      ghcr.io/cs-si/eodag:<version> list
+      ghcr.io/cs-si/eodag:latest list
 
 This lets EODAG create or reuse the same ``eodag.yml`` configuration file
 across container runs. See :ref:`configure` for the full configuration
@@ -52,7 +54,7 @@ set ``EODAG_CFG_FILE``:
    docker run --rm \
       -v "$PWD/eodag.yml:/config/eodag.yml:ro" \
       -e EODAG_CFG_FILE=/config/eodag.yml \
-      ghcr.io/cs-si/eodag:<version> list
+      ghcr.io/cs-si/eodag:latest list
 
 Provide credentials safely
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -72,7 +74,7 @@ For example, to pass a provider username and password at runtime:
    docker run --rm \
       -e EODAG__CREODIAS__AUTH__CREDENTIALS__USERNAME="$CREODIAS_USERNAME" \
       -e EODAG__CREODIAS__AUTH__CREDENTIALS__PASSWORD="$CREODIAS_PASSWORD" \
-      ghcr.io/cs-si/eodag:<version> list
+      ghcr.io/cs-si/eodag:latest list
 
 Persist downloaded products
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -88,7 +90,7 @@ download configuration to it:
       -v "$PWD/eodag-downloads:/data" \
       -v "$HOME/.config/eodag:/home/eodag/.config/eodag" \
       -e EODAG__CREODIAS__DOWNLOAD__OUTPUT_DIR=/data \
-      ghcr.io/cs-si/eodag:<version> download \
+      ghcr.io/cs-si/eodag:latest download \
          --search-results /work/search_results.geojson
 
 If ``search_results.geojson`` is in another host directory, mount that
