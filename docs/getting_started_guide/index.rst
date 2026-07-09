@@ -59,6 +59,10 @@ Each section below gives you a focused entry point with explanations and example
       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
    </svg>
 
+.. |icon-docker| raw:: html
+
+   <i class="fa-brands fa-docker" aria-hidden="true" style="vertical-align:middle; margin-right:6px;"></i>
+
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -95,7 +99,7 @@ Each section below gives you a focused entry point with explanations and example
 
       Get ``eodag`` installed and ready to use in minutes.
 
-   .. grid-item-card:: |icon-download| Docker
+   .. grid-item-card:: |icon-docker| Docker
       :link: docker
       :link-type: doc
       :text-align: center
