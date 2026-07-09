@@ -25,7 +25,7 @@ import unittest
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
 from pathlib import Path
-from typing import Literal, Union, get_origin
+from typing import Annotated, Literal, Union, get_args, get_origin
 from unittest import mock
 from unittest.mock import call
 
@@ -36,10 +36,11 @@ import requests
 import responses
 from botocore.stub import Stubber
 from jsonpath_ng import JSONPath, parse
+from pydantic import Field
+from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 from shapely.geometry.base import BaseGeometry
-from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
@@ -4988,17 +4989,23 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self,
         mock_stacsearch_discover_queryables,
     ):
-        """OARSearch must reuse StacSearch queryables discovery."""
+        """OARSearch must reuse StacSearch queryables discovery and add defaults."""
         OARSearch = import_module("eodag.plugins.search.oar").OARSearch
 
         search_plugin = OARSearch.__new__(OARSearch)
         mock_stacsearch_discover_queryables.return_value = {
-            "collection": self.collection
+            "foo": Annotated[str, Field(None, description="Foo param")]
         }
 
-        queryables = search_plugin.discover_queryables(collection=self.collection)
+        queryables_dict = search_plugin.discover_queryables(collection=self.collection)
 
-        self.assertEqual(queryables, {"collection": self.collection})
+        self.assertEqual(
+            set(queryables_dict.keys()), set(["foo", "id", "start", "end", "geom"])
+        )
+        self.assertTrue(
+            all(isinstance(get_args(q)[1], FieldInfo) for q in queryables_dict.values())
+        )
+        self.assertEqual(get_args(queryables_dict["foo"])[1].description, "Foo param")
         mock_stacsearch_discover_queryables.assert_called_once_with(
             search_plugin, collection=self.collection
         )

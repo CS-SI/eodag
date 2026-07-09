@@ -17,10 +17,13 @@
 # limitations under the License.
 
 import logging
+from copy import deepcopy as copy_deepcopy
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import QueryStringSearch, StacSearch
+from eodag.types import model_fields_to_annotated
+from eodag.types.queryables import Queryables
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
@@ -187,4 +190,18 @@ class OARSearch(QueryStringSearch):
     def discover_queryables(self, **kwargs: Any):
         """Delegate queryables discovery to :class:`~eodag.plugins.search.qssearch.StacSearch`."""
 
-        return StacSearch.discover_queryables(cast(Any, self), **kwargs)
+        queryables_dict = StacSearch.discover_queryables(cast(Any, self), **kwargs)
+        if queryables_dict is None:
+            return None
+
+        StacQueryables = Queryables.from_stac_models()
+
+        eodag_queryables = copy_deepcopy(
+            model_fields_to_annotated(StacQueryables.model_fields)
+        )
+        queryables_dict.setdefault("start", eodag_queryables["start"])
+        queryables_dict.setdefault("end", eodag_queryables["end"])
+        queryables_dict.setdefault("geom", eodag_queryables["geom"])
+        queryables_dict.setdefault("id", eodag_queryables["id"])
+
+        return queryables_dict
