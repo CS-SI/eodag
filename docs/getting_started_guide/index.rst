@@ -59,6 +59,10 @@ Each section below gives you a focused entry point with explanations and example
       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
    </svg>
 
+.. |icon-docker| raw:: html
+
+   <i class="fa-brands fa-docker" aria-hidden="true" style="vertical-align:middle; margin-right:6px;"></i>
+
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -66,6 +70,7 @@ Each section below gives you a focused entry point with explanations and example
    overview
    features_overview
    install
+   docker
    collections
    product_storage_status
    configure
@@ -93,6 +98,13 @@ Each section below gives you a focused entry point with explanations and example
       :text-align: center
 
       Get ``eodag`` installed and ready to use in minutes.
+
+   .. grid-item-card:: |icon-docker| Docker
+      :link: docker
+      :link-type: doc
+      :text-align: center
+
+      Run ``eodag`` with Docker and keep configuration outside the image.
 
    .. grid-item-card:: |icon-layers| Collections
       :link: collections
