@@ -95,7 +95,7 @@ EODAG is also published as a container image on GitHub Container Registry:
 
 Replace ``<version>`` with the EODAG release tag you want to run. See the
 `Docker quickstart <https://eodag.readthedocs.io/en/latest/getting_started_guide/docker.html>`_
-for configuration and credentials examples.
+for configuration and examples.
 
 ..
 
