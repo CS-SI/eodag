@@ -5044,13 +5044,16 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
 
         self.assertEqual(
             plugin.config.api_endpoint,
-            "https://example.test/{_collection}/items",
+            "https://example.test/collections/{_collection}/items",
         )
         self.assertEqual(
             plugin.config.discover_queryables["fetch_url"],
             "https://example.test/queryables",
         )
-        self.assertNotIn("collection_fetch_url", plugin.config.discover_queryables)
+        self.assertEqual(
+            plugin.config.discover_queryables["collection_fetch_url"],
+            "https://example.test/collections/{provider_collection}/queryables",
+        )
 
 
 class TestSearchPluginDedtLumi(BaseSearchPluginTest):
