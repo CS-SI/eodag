@@ -83,7 +83,7 @@ DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 
 def get_metadata_path(
-    map_value: Union[str, list[str]],
+    map_value: Union[str, list[Optional[str]]],
 ) -> tuple[Union[list[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
@@ -142,7 +142,7 @@ def get_metadata_path(
     return None, path
 
 
-def get_metadata_path_value(map_value: Union[str, list[str]]) -> str:
+def get_metadata_path_value(map_value: Union[str, list[Optional[str]]]) -> str:
     """Get raw metadata path without converter
 
     >>> get_metadata_path_value("$.properties.id")
@@ -150,7 +150,7 @@ def get_metadata_path_value(map_value: Union[str, list[str]]) -> str:
     >>> get_metadata_path_value(["platform", "$.properties.platform"])
     '$.properties.platform'
     """
-    return map_value[1] if isinstance(map_value, list) else map_value
+    return cast(str, map_value[1]) if isinstance(map_value, list) else map_value
 
 
 def get_search_param(map_value: list[str]) -> str:
@@ -442,6 +442,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return [min_lon, min_lat, max_lon, max_lat]
             else:
                 return list(input_geom.bounds[0:4])
+
+        @staticmethod
+        def convert_to_bounds_str(input_geom_unformatted: Any) -> str:
+            bounds_list = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
+            return ",".join(str(x) for x in bounds_list)
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> list[float]:
@@ -1875,7 +1880,7 @@ def _get_queryables(
 
 def get_queryable_from_provider(
     provider_queryable: str,
-    metadata_mapping: dict[str, Union[str, list[str]]],
+    metadata_mapping: dict[str, Union[str, list[Optional[str]]]],
     provider: Optional[str] = None,
 ) -> Optional[str]:
     """Get EODAG configured queryable parameter from provider queryable parameter

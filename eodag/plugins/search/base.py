@@ -231,7 +231,7 @@ class Search(PluginTopic):
 
     def get_metadata_mapping(
         self, collection: Optional[str] = None
-    ) -> dict[str, Union[str, list[str]]]:
+    ) -> dict[str, Union[str, list[Optional[str]]]]:
         """Get the plugin metadata mapping configuration (collection specific if exists)
 
         :param collection: the desired collection

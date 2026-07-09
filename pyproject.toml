@@ -199,6 +199,7 @@ EumetsatDsSearch = "eodag.plugins.search.eumetsat_ds:EumetsatDsSearch"
 StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
 CopGhslSearch = "eodag.plugins.search.cop_ghsl:CopGhslSearch"
 GeodesSearch = "eodag.plugins.search.geodes:GeodesSearch"
+OARSearch = "eodag.plugins.search.oar:OARSearch"
 
 [tool.setuptools]
 include-package-data = true

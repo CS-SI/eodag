@@ -23,8 +23,9 @@ import re
 import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
+from importlib import import_module
 from pathlib import Path
-from typing import Literal, Union, get_origin
+from typing import Annotated, Literal, Union, get_args, get_origin
 from unittest import mock
 from unittest.mock import call
 
@@ -35,10 +36,11 @@ import requests
 import responses
 from botocore.stub import Stubber
 from jsonpath_ng import JSONPath, parse
+from pydantic import Field
+from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 from shapely.geometry.base import BaseGeometry
-from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
@@ -274,6 +276,38 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         provider = "sara"
         self.sara_search_plugin = self.get_search_plugin(self.collection, provider)
         self.sara_auth_plugin = self.get_auth_plugin(self.sara_search_plugin)
+
+    def test_plugins_search_querystringsearch_collect_search_urls_without_numeric_paging(
+        self,
+    ):
+        """collect_search_urls must still build a URL when numeric paging is disabled"""
+        pagination_conf = copy_deepcopy(self.sara_search_plugin.config.pagination)
+        self.sara_search_plugin.config.pagination["next_page_token_key"] = "cursor"
+
+        prep = PreparedSearch(limit=None, count=False)
+        prep.query_string = "startDate=2020-08-08&completionDate=2020-08-16"
+        prep.sort_by_qs = "&sortParam=startDate&sortOrder=asc"
+
+        try:
+            urls, total_results = self.sara_search_plugin.collect_search_urls(
+                prep,
+                collection=self.collection,
+            )
+        finally:
+            self.sara_search_plugin.config.pagination = pagination_conf
+
+        expected_endpoint = self.sara_search_plugin.config.api_endpoint.rstrip(
+            "/"
+        ).format(_collection=self.collection)
+
+        self.assertEqual(
+            [
+                f"{expected_endpoint}?startDate=2020-08-08&completionDate=2020-08-16"
+                "&sortParam=startDate&sortOrder=asc"
+            ],
+            urls,
+        )
+        self.assertIsNone(total_results)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -4946,6 +4980,87 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         self.wekeomain_search_plugin.discover_queryables(collection=self.collection)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
+        autospec=True,
+    )
+    def test_plugins_search_oar_discover_queryables(
+        self,
+        mock_stacsearch_discover_queryables,
+    ):
+        """OARSearch must reuse StacSearch queryables discovery and add defaults."""
+        OARSearch = import_module("eodag.plugins.search.oar").OARSearch
+
+        search_plugin = OARSearch.__new__(OARSearch)
+        mock_stacsearch_discover_queryables.return_value = {
+            "foo": Annotated[str, Field(None, description="Foo param")]
+        }
+
+        queryables_dict = search_plugin.discover_queryables(collection=self.collection)
+
+        self.assertEqual(
+            set(queryables_dict.keys()), set(["foo", "id", "start", "end", "geom"])
+        )
+        self.assertTrue(
+            all(isinstance(get_args(q)[1], FieldInfo) for q in queryables_dict.values())
+        )
+        self.assertEqual(get_args(queryables_dict["foo"])[1].description, "Foo param")
+        mock_stacsearch_discover_queryables.assert_called_once_with(
+            search_plugin, collection=self.collection
+        )
+
+    def test_plugins_search_oar_preconfigured_defaults(self):
+        """OARSearch must expose OGC API - Records search defaults."""
+        from eodag.config import PluginConfig
+
+        OARSearch = import_module("eodag.plugins.search.oar").OARSearch
+
+        config = PluginConfig()
+        config.api_endpoint = "https://example.test"
+        config.metadata_mapping = {
+            "q": ["custom_q={q}", "$.properties.title"],
+        }
+        config.pagination = {"total_items_nb_key_path": "$.matched"}
+        config.sort = {
+            "sort_by_tpl": "&custom_sort={sort_param}",
+            "sort_order_mapping": {"ascending": "asc", "descending": "desc"},
+        }
+        config.discover_queryables = {"fetch_url": "https://example.test/queryables"}
+        config.products = {}
+
+        plugin = OARSearch("dummy", config)
+
+        self.assertIn("q", plugin.config.metadata_mapping)
+        self.assertEqual(plugin.config.metadata_mapping["q"][0], "custom_q={q}")
+        self.assertIn("title", plugin.config.metadata_mapping)
+        self.assertIn("datetime", plugin.config.metadata_mapping)
+        self.assertIn("datetime", str(plugin.config.metadata_mapping["datetime"]))
+        self.assertIn("updated", plugin.config.metadata_mapping)
+
+        self.assertIn(
+            "matched", str(plugin.config.pagination["total_items_nb_key_path"])
+        )
+        self.assertIn("next_page_url_tpl", plugin.config.pagination)
+        self.assertIn("next_page_token_key", plugin.config.pagination)
+        self.assertEqual(plugin.config.pagination["next_page_token_key"], "skip")
+
+        self.assertEqual(plugin.config.sort["sort_by_tpl"], "&custom_sort={sort_param}")
+        self.assertEqual(plugin.config.sort["sort_order_mapping"]["ascending"], "asc")
+        self.assertEqual(plugin.config.sort["sort_order_mapping"]["descending"], "desc")
+
+        self.assertEqual(
+            plugin.config.api_endpoint,
+            "https://example.test/collections/{_collection}/items",
+        )
+        self.assertEqual(
+            plugin.config.discover_queryables["fetch_url"],
+            "https://example.test/queryables",
+        )
+        self.assertEqual(
+            plugin.config.discover_queryables["collection_fetch_url"],
+            "https://example.test/collections/{provider_collection}/queryables",
+        )
 
 
 class TestSearchPluginDedtLumi(BaseSearchPluginTest):

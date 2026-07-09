@@ -810,6 +810,7 @@ class QueryStringSearch(Search):
         """
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
+        number_matched = kwargs.pop("number_matched", None)
         collection = cast(str, kwargs.get("collection", prep.collection))
         if collection == GENERIC_COLLECTION:
             logger.warning(
@@ -875,8 +876,8 @@ class QueryStringSearch(Search):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
-        if not count and "number_matched" in kwargs:
-            total_items = kwargs["number_matched"]
+        if not count and number_matched is not None:
+            total_items = number_matched
 
         eo_products = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
@@ -946,10 +947,14 @@ class QueryStringSearch(Search):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 _collection=provider_collection
             )
+
+            # default url
+            next_page_url = search_endpoint
+            if qs_with_sort:
+                next_page_url = f"{search_endpoint}?{qs_with_sort}"
+
             # numeric page token
-            if (
-                next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and limit is not None:
+            if next_page_token_key in ["page", "skip"] and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = 0
@@ -1109,16 +1114,7 @@ class QueryStringSearch(Search):
                     else:
                         logger.debug("Next page merge could not be collected")
 
-                results_entry = string_to_jsonpath(
-                    self.config.results_entry, force=True
-                )
-                found_entry_paths = results_entry.find(resp_as_json)
-                if found_entry_paths and not isinstance(found_entry_paths, int):
-                    result = found_entry_paths[0].value
-                else:
-                    result = []
-                if not isinstance(result, list):
-                    result = [result]
+                result = self.extract_results_from_response(resp_as_json, **kwargs)
 
                 if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
@@ -1333,6 +1329,22 @@ class QueryStringSearch(Search):
             product._normalize_bands()
             products.append(product)
         return products
+
+    def extract_results_from_response(
+        self, resp_as_json: dict[str, Any], **kwargs: Any
+    ) -> list[Any]:
+        """Extract results list from a JSON response using the ``results_entry`` configuration"""
+        results_entry = string_to_jsonpath(self.config.results_entry, force=True)
+        if not isinstance(results_entry, JSONPath):
+            return []
+        found_entry_paths = results_entry.find(resp_as_json)
+        if found_entry_paths and not isinstance(found_entry_paths, int):
+            result = found_entry_paths[0].value
+        else:
+            result = []
+        if not isinstance(result, list):
+            result = [result]
+        return result
 
     def count_hits(self, count_url: str, result_type: Optional[str] = "json") -> int:
         """Count the number of results satisfying some criteria"""
@@ -1924,9 +1936,7 @@ class PostJsonSearch(QueryStringSearch):
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
             # numeric page token
-            if (
-                next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and limit is not None:
+            if (next_page_token_key in ["page", "skip"]) and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = max(
