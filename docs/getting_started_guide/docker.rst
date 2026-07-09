@@ -4,7 +4,8 @@ Docker quickstart
 =================
 
 EODAG container images are published on GitHub Container Registry at
-``ghcr.io/cs-si/eodag``. Images are built for EODAG releases.
+`ghcr.io/cs-si/eodag <https://github.com/orgs/CS-SI/packages/container/package/eodag>`_. Images are built for EODAG
+releases.
 
 Pull and run an image
 ^^^^^^^^^^^^^^^^^^^^^

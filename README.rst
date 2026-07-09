@@ -86,7 +86,8 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
    conda install -c conda-forge eodag
 
-EODAG is also published as a container image on GitHub Container Registry:
+EODAG is also published as a container image on
+`GitHub Container Registry <https://github.com/orgs/CS-SI/packages/container/package/eodag>`_:
 
 .. code-block:: bash
 
