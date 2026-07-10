@@ -490,7 +490,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # Validate and collect indirect date parameters
         time = validate_datetime_param(
-            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"]
+            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S", "%H_%M"]
         )
         year = validate_datetime_param(params.get("year"), "year", ["%Y"])
         month = validate_datetime_param(params.get("month"), "month", ["%m"])
