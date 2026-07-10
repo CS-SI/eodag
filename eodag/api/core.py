@@ -309,7 +309,6 @@ class EODataAccessGateway:
         :param yaml_conf: The patch configuration as a YAML string.
         :param dict_conf: The patch configuration as a mapping ``{provider_name: config}``.
         """
-
         if dict_conf is not None:
             patch_conf = dict_conf
         elif yaml_conf is not None:
@@ -384,7 +383,7 @@ class EODataAccessGateway:
         download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
         **kwargs: dict[str, Any],
     ):
-        """Adds a new provider.
+        """Add a new provider.
 
         ``search``, ``products`` & ``download`` already have default values that will be
         updated (not replaced), with user provided ones:
