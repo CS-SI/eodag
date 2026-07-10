@@ -284,6 +284,8 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.form_url` (``str``): url of the form file
+            used to build queryables
 
         * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
           (``list`` [:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
@@ -488,7 +490,7 @@ class ECMWFSearch(PostJsonSearch):
 
         # Validate and collect indirect date parameters
         time = validate_datetime_param(
-            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S"]
+            params.get("time"), "time", ["%H%M", "%H:%M", "%H%M%S", "%H:%M:%S", "%H_%M"]
         )
         year = validate_datetime_param(params.get("year"), "year", ["%Y"])
         month = validate_datetime_param(params.get("month"), "month", ["%m"])
@@ -661,7 +663,7 @@ class ECMWFSearch(PostJsonSearch):
             available_values = self.available_values_from_constraints(
                 constraints,
                 non_empty_formated,
-                form_keywords=[f["name"] for f in form],
+                form,
             )
 
             # Pre-compute the required keywords (present in all constraint dicts)
@@ -743,7 +745,7 @@ class ECMWFSearch(PostJsonSearch):
         self,
         constraints: list[dict[str, Any]],
         input_keywords: dict[str, Any],
-        form_keywords: list[str],
+        form: list[dict[str, Any]],
     ) -> dict[str, list[str]]:
         """
         Filter constraints using input_keywords. Return list of available queryables.
@@ -751,9 +753,13 @@ class ECMWFSearch(PostJsonSearch):
 
         :param constraints: list of constraints received from the provider
         :param input_keywords: dict of input parameters given by the user
-        :param form_keywords: list of keyword names from the provider form endpoint
+        :param form: form received from the provider
         :return: dict with available values for each parameter
         """
+        # get form keywords and form required keywords
+        form_keywords = [f["name"] for f in form]
+        required_by_form = [f["name"] for f in form if f.get("required", False)]
+
         # get ordered constraint keywords
         constraints_keywords = list(
             OrderedDict.fromkeys(k for c in constraints for k in c.keys())
@@ -812,15 +818,9 @@ class ECMWFSearch(PostJsonSearch):
 
             # Filter constraints and check for missing values
             filtered_constraints = []
-            # True if some constraint is defined for this keyword.
-            # In other words: if no constraint defines a list of values
-            # then any value is allowed for this keyword
-            keyword_constrained = False
             for entry in constraints:
                 # Filter based on the presence of any value in filter_v
                 entry_values = entry.get(keyword, [])
-                if entry_values:
-                    keyword_constrained = True
 
                 # date constraint may be intervals. We identify intervals with a "/" in the value.
                 # date constraint can be a mixed list of single values (e.g "2023-06-27")
@@ -848,9 +848,23 @@ class ECMWFSearch(PostJsonSearch):
                 if present_values:
                     filtered_constraints.append(entry)
 
+            any_value_allowed = False
+            if not filtered_constraints or missing_values:
+                allowed_values = list(
+                    {value for c in constraints for value in c.get(keyword, [])}
+                )
+                # if keyword in required_by_form then any_value_allowed = False:
+                #   use constraints file to determine if the parameter matches the allowed values
+                # if allowed_values is not empty then any_value_allowed = False:
+                #   use constraints file to determine if the parameter matches the allowed values
+                if keyword not in required_by_form and not allowed_values:
+                    # keyword not required by form and the list of allowed values is empty:
+                    # accept any value for this keyword
+                    any_value_allowed = True
+
             # raise an error as no constraint entry matched the input keywords
             # raise an error if one value from input is not allowed
-            if keyword_constrained and (not filtered_constraints or missing_values):
+            if not any_value_allowed and (not filtered_constraints or missing_values):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
@@ -866,19 +880,28 @@ class ECMWFSearch(PostJsonSearch):
                     ]
                     all_keywords_str = f" with {', '.join(keywords)}"
 
+                if allowed_values:
+                    allowed_values_str = (
+                        f"Allowed values are {', '.join(allowed_values)}."
+                    )
+                else:
+                    allowed_values_str = (
+                        f"{keyword} cannot be used with this combination of parameters."
+                    )
                 raise ValidationError(
                     f"{keyword}={values} is not available"
                     f"{all_keywords_str}."
-                    f" Allowed values are {', '.join(allowed_values)}.",
+                    f" {allowed_values_str}",
                     set(
                         [keyword] + [k for k in parsed_keywords if k in input_keywords]
                     ),
                 )
 
             parsed_keywords.append(keyword)
-            # if the keyword is not constrained then any value is allowed
-            if keyword_constrained:
+            if not any_value_allowed:
+                # the parameter must match the allowed values in the constraints file
                 constraints = filtered_constraints
+            # else any value is allowed
 
         available_values: dict[str, Any] = {k: set() for k in ordered_keywords}
 
@@ -924,7 +947,7 @@ class ECMWFSearch(PostJsonSearch):
 
             prop = {"title": element.get("label", name)}
 
-            details = element.get("details", {})
+            details = element.get("details", {}) or {}
 
             # add values from form if keyword was not in constraints
             values = (
@@ -934,9 +957,12 @@ class ECMWFSearch(PostJsonSearch):
             )
 
             # updates the properties with the values given based on the information from the element
-            _update_properties_from_element(prop, element, values)
+            if values is not None:
+                _update_properties_from_element(prop, element, values)
 
-            default = defaults.get(name)
+            # default value is set with the following priority:
+            # input default values > form details default value > no default value
+            default = defaults.get(name, details.get("default"))
 
             if details:
                 fields = details.get("fields")
@@ -951,16 +977,14 @@ class ECMWFSearch(PostJsonSearch):
                 default = ",".join(default)
 
             is_required: bool
-            if available_values.get(name):
-                # required by the filtered constraints (available_values[name] is a not empty list)
+            if bool(element.get("required", False)):
+                # required by form
                 is_required = True
-            elif bool(element.get("required")):
                 if name in available_values and not available_values[name]:
-                    # not required by the filtered constraints (available_values[name] is an empty list)
-                    is_required = False
-                else:
-                    # required only by form
-                    is_required = True
+                    # keyword required by form, defined in some constraint and the list of available values is empty:
+                    # don't add this keyword to the list of queryables because
+                    # it cannot be used with this combination of parameters
+                    continue
             else:
                 # not required by form
                 is_required = False

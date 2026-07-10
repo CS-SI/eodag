@@ -1,0 +1,56 @@
+planetary_computer:
+  priority: 0
+  roles:
+    - host
+  description: Microsoft Planetary Computer
+  url: https://planetarycomputer.microsoft.com
+  search:
+    type: StacSearch
+    api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
+    need_auth: false
+    ssl_verify: true
+    pagination:
+      max_limit: 1000
+      next_page_token_key: token
+    sort:
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.datetime
+        platform: properties.platform
+    metadata_mapping:
+      created: '$.properties.created'
+      description: '$.properties.description'
+      grid:code:
+        - '{{"query":{{"s2:mgrs_tile":{{"eq":"{grid:code#replace_str("MGRS-","")}"}}}}}}'
+        - '{$.properties."s2:mgrs_tile"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
+  products:
+    S1_SAR_GRD:
+      _collection: sentinel-1-grd
+      metadata_mapping:
+        processing:level:
+          - '{{"query":{{"s1:processing_level":{{"eq":"{processing:level}"}}}}}}'
+          - '{$.properties."s1:processing_level"#replace_str(r"^(.+)$",r"L\1")}'
+    S2_MSI_L2A:
+      _collection: sentinel-2-l2a
+    LANDSAT_C2L1:
+      _collection: landsat-c2-l1
+    LANDSAT_C2L2:
+      _collection: landsat-c2-l2
+    MODIS_MCD43A4:
+      _collection: modis-43A4-061
+    NAIP:
+      _collection: naip
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download:
+    type: HTTPDownload
+    auth_error_code: 403
+    ssl_verify: true
+  auth:
+    type: SASAuth
+    matching_url: https://[-\w\.]+.blob.core.windows.net
+    auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
+    signed_url_key: href
+    ssl_verify: true
+    headers:
+      Ocp-Apim-Subscription-Key: "{apikey}"

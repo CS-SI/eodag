@@ -28,6 +28,7 @@ import unittest
 from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 from concurrent.futures import ThreadPoolExecutor
 from lxml import html
@@ -39,9 +40,10 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 from eodag import __version__ as eodag_version
 from eodag.api.collection import Collection, CollectionsList
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
+from eodag.utils import GENERIC_COLLECTION
 from eodag.utils.exceptions import ValidationError
-from tests import TEST_RESOURCES_PATH
+from eodag.utils.yaml import cached_yaml_load_all
+from tests import TEST_RESOURCES_PATH, TEST_RESOURCES_PROVIDERS_PATH
 from tests.context import (
     DEFAULT_LIMIT,
     DEFAULT_MAX_LIMIT,
@@ -269,6 +271,7 @@ class TestCore(TestCoreBase):
         "METOP_ASCSZRR02": ["dedl", "eumetsat_ds"],
         "METOP_AVHRRL1": ["dedl", "eumetsat_ds"],
         "METOP_AVHRRGACR02": ["dedl", "eumetsat_ds"],
+        "METOP_AVHRDUAL0100": ["eumetsat_ds"],
         "METOP_GLB_SST_NC": ["dedl", "eumetsat_ds"],
         "METOP_GOMEL1": ["dedl", "eumetsat_ds"],
         "METOP_GOMEL1R03": ["dedl", "eumetsat_ds"],
@@ -283,6 +286,16 @@ class TestCore(TestCoreBase):
         "METOP_OSI_150B": ["dedl", "eumetsat_ds"],
         "METOP_SOMO12": ["dedl", "eumetsat_ds"],
         "METOP_SOMO25": ["dedl", "eumetsat_ds"],
+        "METOP_AVHRPWE0200": ["eumetsat_ds"],
+        "METOP_GOMPMA020100": ["eumetsat_ds"],
+        "METOP_IASI_NCM_L1": ["eumetsat_ds"],
+        "METOP_IASPCS1C0100": ["eumetsat_ds"],
+        "METOP_IASSO22X0100": ["eumetsat_ds"],
+        "METOP_IASXXX1C0200": ["eumetsat_ds"],
+        "METOP_MHSMWHS0200": ["eumetsat_ds"],
+        "METOP_MXI_DR_O3": ["eumetsat_ds"],
+        "METOP_O3M_517": ["eumetsat_ds"],
+        "METOP_OAS025": ["eumetsat_ds"],
         "MSG_CLM": ["dedl", "eumetsat_ds"],
         "MSG_CLM_IODC": ["dedl", "eumetsat_ds"],
         "MSG_GSAL2R02": ["dedl", "eumetsat_ds"],
@@ -298,7 +311,10 @@ class TestCore(TestCoreBase):
         "MSG_CTH_IODC": ["eumetsat_ds"],
         "MFG_GSA_57": ["eumetsat_ds"],
         "MFG_GSA_63": ["eumetsat_ds"],
-        "MSG_MFG_GSA_0": ["eumetsat_ds"],
+        "MFG_MFGAMV570IODC1": ["eumetsat_ds"],
+        "MFG_MFGAMV630IODC1": ["eumetsat_ds"],
+        "MFG_MTP15EASY0200_0DEG": ["eumetsat_ds"],
+        "MFG_MTP15EASY0200_57DEG": ["eumetsat_ds"],
         "HIRS_FDR_1_MULTI": ["eumetsat_ds"],
         "MSG_OCA_CDR": ["eumetsat_ds"],
         "S6_RADIO_OCCULTATION": ["eumetsat_ds"],
@@ -323,6 +339,10 @@ class TestCore(TestCoreBase):
         "MSG_SEVIRI_SARAH_CDR_V003": ["eumetsat_ds"],
         "MTG_FCI_ACTIVE_FIRE_L2_V1": ["eumetsat_ds"],
         "MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001": ["eumetsat_ds"],
+        "MULT_AVHGAC1C0100": ["eumetsat_ds"],
+        "MULT_MHSMWHS0100": ["eumetsat_ds"],
+        "MULT_OLR_CM_11342_CM_6321": ["eumetsat_ds"],
+        "MULT_UTH_CM_14712": ["eumetsat_ds"],
         "MODIS_MCD43A4": ["aws_eos", "planetary_computer"],
         "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024": ["cop_marine", "dedl"],
         "MO_GLOBAL_ANALYSISFORECAST_BGC_001_028": ["cop_marine", "dedl"],
@@ -512,6 +532,8 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S3_ERR_BC002": ["eumetsat_ds"],
+        "S3_EFRBC004": ["eumetsat_ds"],
+        "S3_ERRBC004": ["eumetsat_ds"],
         "S3_LAN": [
             "cop_dataspace",
             "cop_dataspace_s3",
@@ -706,15 +728,12 @@ class TestCore(TestCoreBase):
         "S5P_L1B_IR_ALL": ["dedl", "wekeo_main"],
         "S5P_L2_IR_ALL": ["dedl", "wekeo_main"],
         "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
-        "S3_OL_2_WFRBC003": ["eumetsat_ds"],
         "S3_OLCI_L2WRR_BC003": ["eumetsat_ds"],
-        "S3_SRA_1A_BC004": ["eumetsat_ds"],
         "S3_SRA_1A_BC005": ["eumetsat_ds"],
         "S3_SRA_1B_BC004": ["eumetsat_ds"],
         "S3_SRA_1B_BC005": ["eumetsat_ds"],
         "S3_SRA_BS_BC004": ["eumetsat_ds"],
         "S3_SRA_BS_BC005": ["eumetsat_ds"],
-        "S3_WAT_BC004": ["eumetsat_ds"],
         "S3_WAT_BC005": ["eumetsat_ds"],
         "S3_SLSTR_L1RBT_BC004": ["eumetsat_ds"],
         "S3_SLSTR_L2WST_BC003": ["eumetsat_ds"],
@@ -832,6 +851,18 @@ class TestCore(TestCoreBase):
             "creodias_s3",
         ],
         "S5P_L2_SO2": ["cop_dataspace", "cop_dataspace_s3", "creodias", "creodias_s3"],
+        "S6_MW_2_AMR": ["eumetsat_ds"],
+        "S6_MW_2_AMR_F08": ["eumetsat_ds"],
+        "S6_P4_1A_HR": ["eumetsat_ds"],
+        "S6_P4_1B_HR_F08": ["eumetsat_ds"],
+        "S6_P4_1B_HR_G01": ["eumetsat_ds"],
+        "S6_P4_1B_LR": ["eumetsat_ds"],
+        "S6_P4_1B_LR_F08": ["eumetsat_ds"],
+        "S6_P4_2_HR": ["eumetsat_ds"],
+        "S6_P4_2_HR_F08": ["eumetsat_ds"],
+        "S6_P4_2_LR_F08": ["eumetsat_ds"],
+        "S6_P4_2_LR_G01": ["eumetsat_ds"],
+        "S6_P4_3_LR": ["eumetsat_ds"],
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo_ecmwf"],
         "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo_ecmwf"],
@@ -1672,7 +1703,7 @@ class TestCore(TestCoreBase):
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
 
-        self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 0))
+        self.assertEqual(self.dag.get_preferred_provider(), ("aws_eos", 0))
 
         self.assertRaises(
             UnsupportedProvider, self.dag.set_preferred_provider, "unknown"
@@ -1688,7 +1719,9 @@ class TestCore(TestCoreBase):
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 3))
 
         # check that the providers are correctly ordered by priority and name in "providers" property
-        self.assertListEqual(["usgs", "aws_eos"], list(self.dag._providers.keys())[:2])
+        self.assertListEqual(
+            ["aws_eos", "cop_ads"], list(self.dag._providers.keys())[:2]
+        )
         self.assertListEqual(
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
@@ -2112,14 +2145,17 @@ class TestCore(TestCoreBase):
 
         queryables = self.dag.list_queryables(collection="ERA5_SL")
 
-        self.assertEqual(
+        self.assertIn(
+            "cop_cds: Mocked ECMWF queryables for cop_cds",
             queryables.additional_information,
-            (
-                "cop_cds: Mocked ECMWF queryables for cop_cds"
-                " | wekeo_ecmwf: Mocked WEkEO queryables"
-                " | dedl: Mocked STAC queryables for dedl"
-            ),
         )
+        self.assertIn(
+            "wekeo_ecmwf: Mocked WEkEO queryables", queryables.additional_information
+        )
+        self.assertIn(
+            "dedl: Mocked STAC queryables for dedl", queryables.additional_information
+        )
+
         self.assertEqual(queryables.additional_properties, False)
 
         mock_dedl_list_queryables.return_value = QueryablesDict(
@@ -2291,7 +2327,7 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
-            "cop_marine": None,
+            "cop_marine": {"max_sort_params": None, "sortables": []},
             "fedeo_ceda": {"max_sort_params": None, "sortables": []},
             "geodes": {
                 "max_sort_params": None,
@@ -2354,7 +2390,12 @@ class TestCore(TestCoreBase):
             "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},
             "wekeo_cmems": None,
             "wekeo_ecmwf": None,
-            "wekeo_main": None,
+            "wekeo_main": {
+                "sortables": [
+                    "start_datetime",
+                ],
+                "max_sort_params": None,
+            },
         }
         sortables = self.dag.available_sortables()
         self.assertListEqual(
@@ -2507,9 +2548,12 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_FILE env var"""
         try:
             os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-                TEST_RESOURCES_PATH, "file_providers_override.yml"
+                TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
             )
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                self.dag = EODataAccessGateway()
             # only foo_provider in conf
             self.assertEqual(self.dag.providers.names, ["foo_provider"])
             self.assertEqual(
@@ -2519,28 +2563,50 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
 
+    def test_core_object_prioritize_providers_dir_in_envvar(self):
+        """The core object must use the providers conf file pointed by the EODAG_PROVIDERS_CFG_DIR env var"""
+        try:
+            os.environ["EODAG_PROVIDERS_CFG_DIR"] = os.path.join(
+                TEST_RESOURCES_PATH, "providers"
+            )
+            self.dag = EODataAccessGateway()
+            # only foo_provider in conf
+            self.assertEqual(self.dag.providers.names, ["foo_provider"])
+            self.assertEqual(
+                self.dag._providers["foo_provider"].search_config.api_endpoint,
+                "https://foo.bar/search",
+            )
+        finally:
+            os.environ.pop("EODAG_PROVIDERS_CFG_DIR", None)
+
     def test_core_collections_config_envvar(self):
         """collections should be loaded from file defined in env var"""
         # setup providers config
-        config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
-        providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
-        providers_config[0].products["TEST_PRODUCT_1"] = {"_collection": "TP1"}
-        providers_config[0].products["TEST_PRODUCT_2"] = {"_collection": "TP2"}
-        with open(
-            os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
-        ) as f:
-            f.write(yaml.dump(providers_config[0]))
-        # set env variables
-        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+        config_path = os.path.join(
+            TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
+        )
+        providers_config_dict = cached_yaml_load_all(config_path)[0]
+        provider_name, provider_config = next(iter(providers_config_dict.items()))
+        provider_config["products"]["TEST_PRODUCT_1"] = {"_collection": "TP1"}
+        provider_config["products"]["TEST_PRODUCT_2"] = {"_collection": "TP2"}
+
+        providers_override_path = os.path.join(
             self.tmp_home_dir.name, "file_providers_override2.yml"
         )
+        with open(providers_override_path, "w") as f:
+            f.write(yaml.dump({provider_name: provider_config}))
+        # set env variables
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = providers_override_path
         os.environ["EODAG_COLLECTIONS_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_collections_override.yml"
         )
 
         # check collections
         try:
-            self.dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                self.dag = EODataAccessGateway()
             col = self.dag.list_collections(fetch_providers=False)
             self.assertEqual(2, len(col))
             self.assertEqual("TEST_PRODUCT_1", col[0].id)
@@ -4748,7 +4814,7 @@ class TestCoreStrictMode(TestCoreBase):
             TEST_RESOURCES_PATH, "file_collections_modes.yml"
         )
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_providers_override.yml"
+            TEST_RESOURCES_PROVIDERS_PATH, "file_providers_override.yml"
         )
 
     def tearDown(self):
@@ -4759,7 +4825,10 @@ class TestCoreStrictMode(TestCoreBase):
         """list_collections must only return collections from the main config in strict mode"""
         try:
             os.environ["EODAG_STRICT_COLLECTIONS"] = "true"
-            dag = EODataAccessGateway()
+            with pytest.warns(
+                DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"
+            ):
+                dag = EODataAccessGateway()
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
             collections = dag.list_collections(fetch_providers=False)
@@ -4774,7 +4843,8 @@ class TestCoreStrictMode(TestCoreBase):
         if "EODAG_STRICT_COLLECTIONS" in os.environ:
             del os.environ["EODAG_STRICT_COLLECTIONS"]
 
-        dag = EODataAccessGateway()
+        with pytest.warns(DeprecationWarning, match=r".*EODAG_PROVIDERS_CFG_FILE.*"):
+            dag = EODataAccessGateway()
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
         collections = dag.list_collections(fetch_providers=False)

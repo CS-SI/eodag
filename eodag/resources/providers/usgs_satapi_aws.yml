@@ -1,0 +1,47 @@
+usgs_satapi_aws:
+  priority: 0
+  roles:
+    - host
+  description: USGS Landsatlook SAT API
+  url: https://landsatlook.usgs.gov/stac-server
+  search:
+    type: StacSearch
+    api_endpoint: https://landsatlook.usgs.gov/stac-server/search
+    need_auth: false
+    ssl_verify: true
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+    pagination:
+      # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
+      # but in practive if an Internal Server Error is returned for more than
+      # about 500 products.
+      max_limit: 500
+      next_page_token_key: next
+    # Note: Sorting is intentionally disabled for this provider, as enabling it causes pagination to malfunction.
+    metadata_mapping:
+      assets: '{$.assets#from_alternate(s3)}'
+  products:
+    LANDSAT_C2L1:
+      _collection: landsat-c2l1
+    LANDSAT_C2L2_SR:
+      _collection: landsat-c2l2-sr
+    LANDSAT_C2L2_ST:
+      _collection: landsat-c2l2-st
+    LANDSAT_C2L2ALB_BT:
+      _collection: landsat-c2l2alb-bt
+    LANDSAT_C2L2ALB_SR:
+      _collection: landsat-c2l2alb-sr
+    LANDSAT_C2L2ALB_ST:
+      _collection: landsat-c2l2alb-st
+    LANDSAT_C2L2ALB_TA:
+      _collection: landsat-c2l2alb-ta
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download:
+    type: AwsDownload
+    ssl_verify: true
+  auth:
+    type: AwsAuth
+    matching_url: s3://
+    requester_pays: True

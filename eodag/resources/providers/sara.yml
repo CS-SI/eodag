@@ -1,0 +1,280 @@
+sara:
+  priority: 0
+  description: Sentinel Australasia Regional Access
+  roles:
+    - host
+  url: https://www.copernicus.gov.au/
+  search:
+    type: QueryStringSearch
+    # The endpoint is based off of the collection. There is a generic endpoint,
+    # but can be very slow if not enough metdata is provided.
+    api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{_collection}/search.json'
+    need_auth: false
+    ssl_verify: true
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={limit}&page={next_page_token}'
+      total_items_nb_key_path: '$.properties.totalResults'
+      next_page_token_key: page
+      # 2021/03/19: 500 is the max, no error if greater
+      max_limit: 500
+    sort:
+      sort_by_default:
+        -  [start_datetime, ASC]
+      sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_param_mapping:
+        start_datetime: startDate
+        end_datetime: completionDate
+        sar:instrument_mode: sensorMode
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+      max_sort_params: 1
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
+    metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      product:type:
+        - productType
+        - '$.properties.productType'
+      constellation: '$.properties.collection'
+      platform:
+        - platform
+        - '$.properties.platform'
+      instruments:
+        - 'instrument={instruments#csv_list}'
+        - '{$.properties.instrument#split( )}'
+      processing:level:
+        - processingLevel
+        - '$.properties.processingLevel'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '$.properties.title'
+      keywords: '$.properties.keywords[*].name'
+      description: '$.properties.description'
+      gsd:
+        - 'resolution'
+        - '{$.properties.resolution#replace_tuple(((0,"Not Available"),))}'
+      _provider: '$.properties.organisationName'
+      providers:
+        - 'organisationName'
+        - '[{{"name":"{_provider}","roles":["producer"]}}]'
+      published: '$.properties.published'
+      license: '$.properties.license.licenseId'
+      # OpenSearch Parameters for Product Search (Table 5)
+      product:acquisition_type: '$.properties.acquisitionType'
+      sat:relative_orbit:
+        - 'orbitNumber'
+        - '$.properties.orbitNumber'
+      sat:absolute_orbit:
+        - 'absoluteOrbitNumber'
+        - '$.properties.absoluteOrbitNumber'
+      sat:orbit_state:
+        - 'orbitDirection={sat:orbit_state#to_title}'
+        - '{$.properties.orbitDirection#to_lower}'
+      sar:instrument_mode:
+        - 'swath'
+        - '$.properties.swath'
+      eo:cloud_cover:
+        - 'cloudCover=[0,{eo:cloud_cover}]'
+        - '$.properties.cloudCover'
+      eo:snow_cover:
+        - 'snowCover=[0,{eo:snow_cover}]'
+        - '$.properties.snowCover'
+      version: '$.properties.version'
+      created: '$.properties.dhusIngestDate'
+      updated: '$.properties.updated'
+      sar:instrument_mode:
+        - 'sensorMode'
+        - '$.properties.sensorMode'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      start_datetime:
+        - startDate
+        - '$.properties.startDate'
+      end_datetime:
+        - completionDate
+        - '$.properties.completionDate'
+      sar:polarizations:
+        - 'polarisation={sar:polarizations#csv_list(,)}'
+        - '{$.properties.polarisation#split(,)}'
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - 'productIdentifier={id#remove_extension}'
+        - '$.properties.productIdentifier'
+      # The geographic extent of the product
+      geometry:
+        - 'geometry={geometry#to_rounded_wkt}'
+        - '$.geometry'
+      # The url of the quicklook
+      eodag:quicklook: '$.properties.quicklook'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      eodag:download_link: '$.properties.services.download.url'
+      type: '{$.properties.services.download.mimeType#replace_str("application/unknown","application/octet-stream")}'
+      file:size: '$.properties.services.download.size'
+      file:checksum: '{$.properties.services.download.checksum#replace_str("md5=","")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      eodag:thumbnail: '$.properties.thumbnail'
+  products:
+    # Sentinel 1
+    S1_SAR_OCN:
+      product:type: OCN
+      _collection: S1
+      instruments: C-SAR
+    S1_SAR_GRD:
+      product:type: GRD
+      _collection: S1
+      instruments: C-SAR
+    S1_SAR_SLC:
+      product:type: SLC
+      _collection: S1
+      instruments: C-SAR
+    # Sentinel 2
+    S2_MSI_L1C:
+      _collection: S2
+      product:type: S2MSIL1C
+      instruments: MSI
+      processing:level: L1C
+    S2_MSI_L2A:
+      _collection: S2
+      product:type: S2MSIL2A
+      instruments: MSI
+      processing:level: L2A
+    # OLCI products
+    # L1
+    S3_EFR:
+      product:type: OL_1_EFR___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-1
+    S3_ERR:
+      product:type: OL_1_ERR___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-1
+    # output during radiometric calibration mode
+    S3_RAC:
+      product:type: OL_1_RAC___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-1
+    # L2
+    S3_OLCI_L2LRR:
+      product:type: OL_2_LRR___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-2
+    S3_OLCI_L2LFR:
+      product:type: OL_2_LFR___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-2
+    S3_OLCI_L2WRR:
+      product:type: OL_2_WRR___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-2
+    S3_OLCI_L2WFR:
+      product:type: OL_2_WFR___
+      _collection: S3
+      instruments: OLCI
+      processing:level: LEVEL-2
+    # SLSTR products
+    S3_SLSTR_L1RBT:
+      product:type: SL_1_RBT___
+      _collection: S3
+      instruments: SLSTR
+      processing:level: LEVEL-1
+    S3_SLSTR_L2LST:
+      product:type: SL_2_LST___
+      _collection: S3
+      instruments: SLSTR
+      processing:level: LEVEL-2
+    S3_SLSTR_L2WST:
+      product:type: SL_2_WST___
+      _collection: S3
+      instruments: SLSTR
+      processing:level: LEVEL-2
+    S3_SLSTR_L2AOD:
+      product:type: SL_2_AOD___
+      _collection: S3
+      instruments: SLSTR
+      processing:level: LEVEL-2
+    S3_SLSTR_L2FRP:
+      product:type: SL_2_FRP___
+      _collection: S3
+      instruments: SLSTR
+      processing:level: LEVEL-2
+    # SRAL
+    # L1
+    S3_SRA:
+      product:type: SR_1_SRA___
+      _collection: S3
+      instruments: SRAL
+      processing:level: LEVEL-1
+    S3_SRA_A:
+      product:type: SR_1_SRA_A_
+      _collection: S3
+      instruments: SRAL
+      processing:level: LEVEL-1
+    S3_SRA_BS:
+      product:type: SR_1_SRA_BS
+      _collection: S3
+      instruments: SRAL
+      processing:level: LEVEL-1
+    # L2
+    S3_LAN:
+      product:type: SR_2_LAN___
+      _collection: S3
+      instruments: SRAL
+      processing:level: LEVEL-2
+    S3_WAT:
+      product:type: SR_2_WAT___
+      _collection: S3
+      instruments: SRAL
+      processing:level: LEVEL-2
+    # Synergy products
+    S3_SY_AOD:
+      product:type: SY_2_AOD___
+      _collection: S3
+      instruments: SYNERGY
+      processing:level: LEVEL-2
+    S3_SY_SYN:
+      product:type: SY_2_SYN___
+      _collection: S3
+      instruments: SYNERGY
+      processing:level: LEVEL-2
+    S3_SY_V10:
+      product:type: SY_2_V10___
+      _collection: S3
+      instruments: SYNERGY
+      processing:level: LEVEL-2W
+    S3_SY_VG1:
+      product:type: SY_2_VG1___
+      _collection: S3
+      instruments: SYNERGY
+      processing:level: LEVEL-2
+    S3_SY_VGP:
+      product:type: SY_2_VGP___
+      _collection: S3
+      instruments: SYNERGY
+      processing:level: LEVEL-2
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download:
+    type: HTTPDownload
+    extract: true
+    archive_depth: 2
+    order_enabled: true
+    auth_error_code: 403
+    ssl_verify: true
+  auth:
+    type: GenericAuth
+    matching_url: https://copernicus.nci.org.au
+    method: basic

@@ -41,7 +41,6 @@ import types
 import unicodedata
 import warnings
 from collections import defaultdict
-from copy import deepcopy as copy_deepcopy
 from email.message import Message
 from glob import glob
 from importlib.metadata import metadata
@@ -64,6 +63,7 @@ from .exceptions import MisconfiguredError
 from .logging import get_disable_tqdm
 from .logging import logging as eodag_logging
 from .streamresponse import StreamResponse, StreamResponseContent
+from .yaml import LegacyAwareLoader, cached_yaml_load, cached_yaml_load_all
 
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath, jsonpath
@@ -85,7 +85,8 @@ GENERIC_COLLECTION = "GENERIC_COLLECTION"
 #: if no existing provider can be used
 GENERIC_STAC_PROVIDER = "generic_stac_provider"
 
-#: List of known STAC search plugins. Required to complete plugin configuration with STAC plugins specific features.
+#: Deprecated: list of known STAC search plugin class names kept for backward
+#: compatibility. This constant is no longer used internally for STAC behavior.
 STAC_SEARCH_PLUGINS = [
     "GeodesSearch",
     "StacSearch",
@@ -1461,44 +1462,6 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     return parse(str_to_parse)
 
 
-@functools.lru_cache()
-def _mutable_cached_yaml_load(config_path: str) -> Any:
-    import yaml
-
-    with open(
-        os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
-    ) as fh:
-        return yaml.load(fh, Loader=yaml.SafeLoader)
-
-
-def cached_yaml_load(config_path: str) -> dict[str, Any]:
-    """Cached :func:`yaml.load`
-
-    :param config_path: path to the yaml configuration file
-    :returns: loaded yaml configuration
-    """
-    return copy_deepcopy(_mutable_cached_yaml_load(config_path))
-
-
-@functools.lru_cache()
-def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
-    import yaml
-
-    with open(config_path, "r") as fh:
-        return list(yaml.load_all(fh, Loader=yaml.Loader))
-
-
-def cached_yaml_load_all(config_path: str) -> list[Any]:
-    """Cached :func:`yaml.load_all`
-
-    Load all configurations stored in the configuration file as separated yaml documents
-
-    :param config_path: path to the yaml configuration file
-    :returns: list of configurations
-    """
-    return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
-
-
 def get_bucket_name_and_prefix(
     url: str, bucket_path_level: Optional[int] = None
 ) -> tuple[Optional[str], Optional[str]]:
@@ -1911,6 +1874,7 @@ __all__ = [
     "md5sum",
     "obj_md5sum",
     "cached_parse",
+    "LegacyAwareLoader",
     "cached_yaml_load",
     "cached_yaml_load_all",
     "get_bucket_name_and_prefix",

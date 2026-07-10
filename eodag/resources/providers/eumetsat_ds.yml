@@ -1,0 +1,563 @@
+eumetsat_ds:
+  priority: 0
+  description: EUMETSAT Data Store
+  roles:
+    - host
+  url: https://data.eumetsat.int
+  anchor_sentinel: &sentinel_params
+    sat:orbit_state: '{$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection#to_lower}'
+    sat:relative_orbit: '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
+    product:timeliness: '$.properties.productInformation.timeliness'
+    sat:orbit_cycle: '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'
+  anchor_orbit_zone_tile: &orbit_zone_tile
+    sat:absolute_orbit:
+      - orbit
+      - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
+  anchor_platform: &platform
+    platform:
+      - sat
+      - '$.properties.acquisitionInformation[0].platform.platformShortName'
+  search:
+    type: EumetsatDsSearch
+    api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
+    need_auth: false
+    ssl_verify: true
+    dont_quote:
+      - '='
+      - '&'
+    asset_key_from_href: false
+    pagination:
+      next_page_url_tpl: '{url}?{search}&c={limit}&pw={next_page_token}'
+      start_page: 0
+      total_items_nb_key_path: '$.totalResults'
+      # 2024/02/01: 500 is the max, no error if greater
+      max_limit: 500
+    sort:
+      sort_by_default:
+        -  [start_datetime, ASC]
+      sort_by_tpl: '&sort={sort_param},{sort_order}'
+      sort_param_mapping:
+        start_datetime: start,time
+        published: publicationDate,
+      sort_order_mapping:
+        ascending: '1'
+        descending: '0'
+      max_sort_params: 1
+    literal_search_params:
+      format: json
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
+    discover_collections:
+      fetch_url: https://api.eumetsat.int/data/browse/1.0.0/collections?format=json
+      result_type: json
+      results_entry: '$.links[*]'
+      generic_collection_id: '$.title'
+      generic_collection_parsable_properties:
+        _collection: '$.title'
+      generic_collection_parsable_metadata:
+        description: '$.null'
+        instruments: '$.null'
+        constellation: '$.null'
+        platform: '$.null'
+        processing:level: '$.null'
+        keywords: '$.null'
+        license: '$.null'
+        title: '$.title'
+        extent: '$.null'
+    metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      product:type:
+        - type
+        - '$.properties.productInformation.productType'
+      platform: '$.properties.acquisitionInformation[0].platform.platformShortName'
+      instruments: '{$.properties.acquisitionInformation[0].instrument.instrumentShortName#split( )}'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '{$.properties.title#sanitize}'
+      # OpenSearch Parameters for Product Search (Table 5)
+      _collection:
+        - pi
+        - '$.properties.parentIdentifier'
+      updated: '$.properties.updated'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      start_datetime:
+        - dtstart
+        - '{$.properties.date#replace_str(r"\/.*","")}'
+      end_datetime:
+        - dtend
+        - '{$.properties.date#replace_str(r".*\/","")}'
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - id
+        - $.properties.identifier
+      # The geographic extent of the product
+      geometry:
+        - 'geo={geometry#to_rounded_wkt}'
+        - '$.geometry'
+      eodag:default_geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      # The url of the quicklook
+      eodag:quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      eodag:download_link: '$.properties.links.data[?(@.title="Product download")].href'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+      assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      size: '$.properties.productInformation.size'
+      type: '$.null'
+      # set duplicate metadata due to metadata discovery to null
+      acquisitionInformation: '$.null'
+      productInformation: '$.null'
+      extraInformation: '$.null'
+  products:
+    # S3 SRAL
+    S3_SRA:
+      product:type: SR_1_SRA___
+      _collection: EO:EUM:DAT:0406
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_A:
+      product:type: SR_1_SRA_A_
+      _collection: EO:EUM:DAT:0413
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_1A_BC005:
+      product:type: SR_1_SRA_A_
+      _collection: EO:EUM:DAT:0836
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_1B_BC004:
+      product:type: SR_1_SRA___
+      _collection: EO:EUM:DAT:0584
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_1B_BC005:
+      product:type: SR_1_SRA___
+      _collection: EO:EUM:DAT:0833
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_BS:
+      product:type: SR_1_SRA_BS
+      _collection: EO:EUM:DAT:0414
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_BS_BC004:
+      product:type: SR_1_SRA_BS
+      _collection: EO:EUM:DAT:0585
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SRA_BS_BC005:
+      product:type: SR_1_SRA_BS
+      _collection: EO:EUM:DAT:0835
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_WAT:
+      product:type: SR_2_WAT___
+      _collection: EO:EUM:DAT:0415
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_WAT_BC005:
+      product:type: SR_2_WAT___
+      _collection: EO:EUM:DAT:0834
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    # S3 OLCI
+    S3_EFR:
+      product:type: OL_1_EFR___
+      _collection: EO:EUM:DAT:0409
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_EFR_BC002:
+      product:type: OL_1_EFR___
+      _collection: EO:EUM:DAT:0577
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_ERR:
+      product:type: OL_1_ERR___
+      _collection: EO:EUM:DAT:0410
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_ERR_BC002:
+      product:type: OL_1_ERR___
+      _collection: EO:EUM:DAT:0578
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_EFRBC004:
+      product:type: OL_1_EFR___
+      _collection: EO:EUM:DAT:0885
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_ERRBC004:
+      product:type: OL_1_ERR___
+      _collection: EO:EUM:DAT:0886
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_OLCI_L2WRR:
+      product:type: OL_2_WRR___
+      _collection: EO:EUM:DAT:0408
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_OLCI_L2WRR_BC003:
+      product:type: OL_2_WRR___
+      _collection: EO:EUM:DAT:0557
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_OLCI_L2WFR:
+      product:type: OL_2_WFR___
+      _collection: EO:EUM:DAT:0407
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_OLCI_L2WFR_BC003:
+      product:type: OL_2_WFR___
+      _collection: EO:EUM:DAT:0556
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    # S3 SLSTR
+    S3_SLSTR_L1RBT:
+      product:type: SL_1_RBT___
+      _collection: EO:EUM:DAT:0411
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SLSTR_L1RBT_BC003:
+      product:type: SL_1_RBT___
+      _collection: EO:EUM:DAT:0581
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SLSTR_L1RBT_BC004:
+      product:type: SL_1_RBT___
+      _collection: EO:EUM:DAT:0615
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SLSTR_L2WST:
+      product:type: SL_2_WST___
+      _collection: EO:EUM:DAT:0412
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SLSTR_L2WST_BC003:
+      product:type: SL_2_WST___
+      _collection: EO:EUM:DAT:0582
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SLSTR_L2AOD:
+      product:type: SL_2_AOD___
+      _collection: EO:EUM:DAT:0416
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+    S3_SLSTR_L2FRP:
+      product:type: SL_2_FRP___
+      _collection: EO:EUM:DAT:0417
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+        fire:
+          - fire
+          - '$.properties.extraInformation.fireDetected'
+    # METOP
+    METOP_AMSU_L1:
+      _collection: EO:EUM:DAT:METOP:AMSUL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_OSI_104:
+      _collection: EO:EUM:DAT:METOP:OSI-104
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_OSI_150A:
+      _collection: EO:EUM:DAT:METOP:OSI-150-A
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_OSI_150B:
+      _collection: EO:EUM:DAT:METOP:OSI-150-B
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_ASCSZF1B:
+      _collection: EO:EUM:DAT:METOP:ASCSZF1B
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_ASCSZR1B:
+      _collection: EO:EUM:DAT:METOP:ASCSZR1B
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_ASCSZO1B:
+      _collection: EO:EUM:DAT:METOP:ASCSZO1B
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_ASCSZFR02:
+      _collection: EO:EUM:CM:METOP:ASCSZFR02
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_ASCSZOR02:
+      _collection: EO:EUM:CM:METOP:ASCSZOR02
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_ASCSZRR02:
+      _collection: EO:EUM:CM:METOP:ASCSZRR02
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_AVHRRL1:
+      _collection: EO:EUM:DAT:METOP:AVHRRL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_SOMO12:
+      _collection: EO:EUM:DAT:METOP:SOMO12
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_SOMO25:
+      _collection: EO:EUM:DAT:METOP:SOMO25
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_AVHRRGACR02:
+      _collection: EO:EUM:DAT:0558
+    METOP_LSA_002:
+      _collection: EO:EUM:DAT:METOP:LSA-002
+    METOP_GLB_SST_NC:
+      _collection: EO:EUM:DAT:METOP:GLB-SST-NC
+    METOP_GOMEL1:
+      _collection: EO:EUM:DAT:METOP:GOMEL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_GOMEL1R03:
+      _collection: EO:EUM:DAT:0533
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_IASTHR011:
+      _collection: EO:EUM:DAT:0576
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_IASSND02:
+      _collection: EO:EUM:DAT:METOP:IASSND02
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_IASIL1C_ALL:
+      _collection: EO:EUM:DAT:METOP:IASIL1C-ALL
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_MHSL1:
+      _collection: EO:EUM:DAT:METOP:MHSL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_HIRSL1:
+      _collection: EO:EUM:DAT:MULT:HIRSL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
+    METOP_AVHRDUAL0100:
+      _collection: EO:EUM:DAT:0151
+      metadata_mapping:
+        <<: *platform
+    METOP_AVHRPWE0200:
+      _collection: EO:EUM:DAT:0152
+      metadata_mapping:
+        <<: *platform
+    METOP_MHSMWHS0200:
+      _collection: EO:EUM:DAT:0344
+      metadata_mapping:
+        <<: *platform
+    METOP_GOMPMA020100:
+      _collection: EO:EUM:DAT:0579
+      metadata_mapping:
+        <<: *platform
+    METOP_IASXXX1C0200:
+      _collection: EO:EUM:DAT:0590
+      metadata_mapping:
+        <<: *platform
+    METOP_IASPCS1C0100:
+      _collection: EO:EUM:DAT:0758
+      metadata_mapping:
+        <<: *platform
+    METOP_O3M_517:
+      _collection: EO:EUM:DAT:0959
+      metadata_mapping:
+        <<: *platform
+    METOP_IASSO22X0100:
+      _collection: EO:EUM:DAT:0960
+      metadata_mapping:
+        <<: *platform
+    METOP_MXI_DR_O3:
+      _collection: EO:EUM:DAT:1027
+      metadata_mapping:
+        <<: *platform
+    METOP_IASI_NCM_L1:
+      _collection: EO:EUM:DAT:1099
+      metadata_mapping:
+        <<: *platform
+    METOP_OAS025:
+      _collection: EO:EUM:DAT:METOP:OAS025
+      metadata_mapping:
+        <<: *platform
+    # MSG
+    MSG_CLM:
+      _collection: EO:EUM:DAT:MSG:CLM
+    MSG_CLM_IODC:
+      _collection: EO:EUM:DAT:MSG:CLM-IODC
+    MSG_GSAL2R02:
+      _collection: EO:EUM:DAT:0300
+    MSG_HRSEVIRI:
+      _collection: EO:EUM:DAT:MSG:HRSEVIRI
+    MSG_HRSEVIRI_IODC:
+      _collection: EO:EUM:DAT:MSG:HRSEVIRI-IODC
+    MSG_RSS_CLM:
+      _collection: EO:EUM:DAT:MSG:RSS-CLM
+    MSG_MSG15_RSS:
+      _collection: EO:EUM:DAT:MSG:MSG15-RSS
+    MSG_LSA_FRM:
+      _collection: EO:EUM:DAT:0398
+    MSG_LSA_LST_CDR:
+      _collection: EO:EUM:DAT:0088
+    MSG_LSA_LSTDE:
+      _collection: EO:EUM:DAT:0394
+    MSG_AMVR02:
+      _collection: EO:EUM:DAT:0405
+    MFG_GSA_57:
+      _collection: EO:EUM:DAT:0301
+    MFG_GSA_63:
+      _collection: EO:EUM:DAT:0302
+    MSG_CTH:
+      _collection: EO:EUM:DAT:MSG:CTH
+    MSG_CTH_IODC:
+      _collection: EO:EUM:DAT:MSG:CTH-IODC
+    HIRS_FDR_1_MULTI:
+      _collection: EO:EUM:DAT:0961
+    MSG_OCA_CDR:
+      _collection: EO:EUM:DAT:0617
+    S6_RADIO_OCCULTATION:
+      _collection: EO:EUM:DAT:0853
+    S6_MW_2_AMR_F08:
+      _collection: EO:EUM:DAT:0837
+    S6_P4_1B_HR_F08:
+      _collection: EO:EUM:DAT:0839
+    S6_P4_1B_LR_F08:
+      _collection: EO:EUM:DAT:0840
+    S6_P4_2_HR_F08:
+      _collection: EO:EUM:DAT:0841
+    S6_P4_2_LR_F08:
+      _collection: EO:EUM:DAT:0842
+    S6_P4_3_LR:
+      _collection: EO:EUM:DAT:1015
+    S6_P4_1A_HR:
+      _collection: EO:EUM:DAT:1069
+    S6_P4_1B_HR_G01:
+      _collection: EO:EUM:DAT:1070
+    S6_P4_1B_LR:
+      _collection: EO:EUM:DAT:1071
+    S6_P4_2_HR:
+      _collection: EO:EUM:DAT:1072
+    S6_MW_2_AMR:
+      _collection: EO:EUM:DAT:1073
+    S6_P4_2_LR_G01:
+      _collection: EO:EUM:DAT:1074
+    MTG_LI_AF:
+      _collection: EO:EUM:DAT:0686
+    MTG_LI_LFL:
+      _collection: EO:EUM:DAT:0691
+    MTG_LI_LGR:
+      _collection: EO:EUM:DAT:0782
+    MTG_LI_AFA:
+      _collection: EO:EUM:DAT:0687
+    MTG_LI_AFR:
+      _collection: EO:EUM:DAT:0688
+    MTG_LI_LEF:
+      _collection: EO:EUM:DAT:0690
+    MTG_FCI_FDHSI:
+      _collection: EO:EUM:DAT:0662
+    MTG_FCI_HRFI:
+      _collection: EO:EUM:DAT:0665
+    MTG_FCI_ASR_BUFR:
+      _collection: EO:EUM:DAT:0799
+    MTG_FCI_ASR_NETCDF:
+      _collection: EO:EUM:DAT:0677
+    MTG_FCI_AMV_BUFR:
+      _collection: EO:EUM:DAT:0998
+    MTG_FCI_AMV_NETCDF:
+      _collection: EO:EUM:DAT:0676
+    MTG_FCI_CLM:
+      _collection: EO:EUM:DAT:0678
+    MTG_FCI_GII:
+      _collection: EO:EUM:DAT:0683
+    MTG_FCI_OCA:
+      _collection: EO:EUM:DAT:0684
+    MTG_FCI_OLR:
+      _collection: EO:EUM:DAT:0685
+    MSG_SEVIRI_RSS_AMV_CDR_V1:
+      _collection: EO:EUM:DAT:1083
+    MSG_SEVIRI_RSS_HR_IMG_L1_5_V1:
+      _collection: EO:EUM:DAT:0962
+    MSG_SEVIRI_SARAH_CDR_V003:
+      _collection: EO:EUM:DAT:0863
+    MTG_FCI_ACTIVE_FIRE_L2_V1:
+      _collection: EO:EUM:DAT:0682
+    MFG_MTP15EASY0200_0DEG:
+      _collection: EO:EUM:DAT:0880
+    MFG_MTP15EASY0200_57DEG:
+      _collection: EO:EUM:DAT:0881
+    MFG_MFGAMV570IODC1:
+      _collection: EO:EUM:DAT:0894
+    MFG_MFGAMV630IODC1:
+      _collection: EO:EUM:DAT:0895
+    MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
+      _collection: EO:EUM:DAT:0921
+    MULT_MHSMWHS0100:
+      _collection: EO:EUM:DAT:0305
+      metadata_mapping:
+        <<: *platform
+    MULT_AVHGAC1C0100:
+      _collection: EO:EUM:DAT:0862
+      metadata_mapping:
+        <<: *platform
+    MULT_OLR_CM_11342_CM_6321:
+      _collection: EO:EUM:DAT:0874
+      metadata_mapping:
+        <<: *platform
+    MULT_UTH_CM_14712:
+      _collection: EO:EUM:DAT:0910
+      metadata_mapping:
+        <<: *platform
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download:
+    type: HTTPDownload
+    extract: true
+    ignore_assets: True
+    ssl_verify: true
+  auth:
+    type: TokenAuth
+    matching_url: https://api.eumetsat.int
+    auth_uri: 'https://api.eumetsat.int/token'
+    auth_tuple: [username, password]
+    auth_error_code: 401
+    req_data:
+      grant_type: client_credentials
+    token_type: json
+    token_key: access_token
+    token_expiration_key: expires_in
+    ssl_verify: true

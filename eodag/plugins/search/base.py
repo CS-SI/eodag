@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Annotated, get_args
+from typing import TYPE_CHECKING, Annotated
 
 import orjson
 from pydantic import AliasChoices
@@ -40,7 +40,6 @@ from eodag.types.search_args import SortByList
 from eodag.types.stac_metadata import CommonStacMetadata, create_stac_metadata_model
 from eodag.utils import (
     GENERIC_COLLECTION,
-    copy_deepcopy,
     deepcopy,
     format_dict_items,
     format_pydantic_error,
@@ -91,6 +90,15 @@ class Search(PluginTopic):
         # set default metadata prefix for discover_metadata if not already set
         if hasattr(self.config, "discover_metadata"):
             self.config.discover_metadata.setdefault("metadata_prefix", provider)
+
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize plugin config defaults.
+
+        Subclasses can override this method to apply plugin-specific defaults
+        before plugin instantiation.
+        """
+        return config
 
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
@@ -223,7 +231,7 @@ class Search(PluginTopic):
 
     def get_metadata_mapping(
         self, collection: Optional[str] = None
-    ) -> dict[str, Union[str, list[str]]]:
+    ) -> dict[str, Union[str, list[Optional[str]]]]:
         """Get the plugin metadata mapping configuration (collection specific if exists)
 
         :param collection: the desired collection
@@ -266,8 +274,25 @@ class Search(PluginTopic):
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
-        # remove duplicates
-        sort_by_arg = list(dict.fromkeys(sort_by_arg))
+        # tolerate legacy format: ["sort_param", "ASC"]
+        if (
+            isinstance(sort_by_arg, (list, tuple))
+            and len(sort_by_arg) == 2
+            and isinstance(sort_by_arg[0], str)
+            and isinstance(sort_by_arg[1], str)
+        ):
+            sort_by_arg = [(sort_by_arg[0], sort_by_arg[1])]
+
+        # normalize to hashable tuples and remove duplicates
+        sort_by_arg_normalized: list[tuple[str, str]] = []
+        for sort_by_tuple in sort_by_arg:
+            if not isinstance(sort_by_tuple, (list, tuple)) or len(sort_by_tuple) != 2:
+                raise ValidationError(
+                    "sort_by must be a list of tuples like [('start_datetime', 'ASC')]"
+                )
+            sort_by_arg_normalized.append((sort_by_tuple[0], sort_by_tuple[1]))
+
+        sort_by_arg = list(dict.fromkeys(sort_by_arg_normalized))
 
         sort_by_qs: str = ""
         sort_by_qp: dict[str, Any] = {}
@@ -457,6 +482,7 @@ class Search(PluginTopic):
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from collection metadata mapping.
+
         :param collection: collection id (optional)
         :param alias: (optional) alias of the collection
         :returns: dict of annotated queryables
@@ -476,9 +502,7 @@ class Search(PluginTopic):
         queryables_model = create_stac_metadata_model(
             base_models=[Queryables, CommonStacMetadata]
         )
-        eodag_queryables = copy_deepcopy(
-            model_fields_to_annotated(queryables_model.model_fields)
-        )
+        eodag_queryables = model_fields_to_annotated(queryables_model.model_fields)
         queryables["collection"] = eodag_queryables.pop("collection")
         # add default value for collection
         if collection_or_alias := alias or collection:
@@ -490,12 +514,8 @@ class Search(PluginTopic):
         prefix_re = re.compile(r"^" + re.escape(self.provider) + r"[_:]")
 
         for k, v in eodag_queryables.items():
-            eodag_queryable_field_info = (
-                get_args(v)[1] if len(get_args(v)) > 1 else None
-            )
-            if not isinstance(eodag_queryable_field_info, FieldInfo):
-                continue
-            queryable_alias = eodag_queryable_field_info.alias
+            field_info = queryables_model.model_fields[k]
+            queryable_alias = field_info.alias
             # Collect every alias under which the queryable could appear in the
             # metadata_mapping (model field name + declared alias(es)).
             candidates = (
@@ -512,7 +532,7 @@ class Search(PluginTopic):
                 for c in candidates
                 if c
             )
-            if eodag_queryable_field_info.is_required() or in_metadata:
+            if field_info.is_required() or in_metadata:
                 queryables[k] = v
         return queryables
 

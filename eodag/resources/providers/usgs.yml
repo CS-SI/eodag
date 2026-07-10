@@ -1,0 +1,73 @@
+usgs:
+  priority: 0
+  description: U.S geological survey catalog for Landsat products
+  roles:
+    - host
+  url: https://earthexplorer.usgs.gov/
+  api:
+    type: UsgsApi
+    need_auth: true
+    pagination:
+      max_limit: 5000
+      total_items_nb_key_path: '$.totalHits'
+    metadata_mapping:
+      id:
+        - '_ID'
+        - '$.displayId'
+      geometry:
+        - '{{"scene_filter": {{"spatialFilter": {{"filterType": "geojson", "geoJson": {geometry#to_geojson} }} }} }}'
+        - '$.spatialBounds'
+      title: '$.displayId'
+      description: '$.summary'
+      eo:cloud_cover:
+        - '{{"scene_filter": {{"cloudCoverFilter":{{"max":{eo:cloud_cover}, "includeUnknown": false }} }} }}'
+        - '$.cloudCover'
+      start_datetime:
+        - '{{"start_date": "{start_datetime#to_iso_utc_datetime}" }}'
+        - '{$.temporalCoverage.startDate#to_iso_utc_datetime}'
+      end_datetime:
+        - '{{"end_date": "{end_datetime#to_iso_utc_datetime}" }}'
+        - '{$.temporalCoverage.endDate#to_iso_utc_datetime}'
+      published: '{$.publishDate#to_iso_utc_datetime}'
+      ingest_after:
+        - '{{"scene_filter": {{"ingestFilter":{{"start":"{ingest_after#to_iso_utc_datetime}" }} }} }}'
+        - $.null
+      ingest_before:
+        - '{{"scene_filter": {{"ingestFilter":{{"end":"{ingest_before#to_iso_utc_datetime}" }} }} }}'
+        - $.null
+      scene_filter:
+        - '{{"scene_filter": {scene_filter#to_geojson} }}'
+        - $.null
+      eodag:thumbnail: '$.browse[0].thumbnailPath'
+      eodag:quicklook: '$.browse[0].browsePath'
+      order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
+      eodag:download_link: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
+      # metadata needed for download
+      usgs:entityId: '$.entityId'
+      usgs:productId: '$.id'
+    extract: True
+    order_enabled: true
+    max_workers: 2
+  products:
+    # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt may be outdated
+    # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
+    LANDSAT_C2L1:
+      _collection: landsat_ot_c2_l1
+    LANDSAT_C2L2:
+      _collection: landsat_ot_c2_l2
+    LANDSAT_TM_C1:
+      _collection: landsat_tm_c1
+    LANDSAT_TM_C2L1:
+      _collection: landsat_tm_c2_l1
+    LANDSAT_TM_C2L2:
+      _collection: landsat_tm_c2_l2
+    LANDSAT_ETM_C1:
+      _collection: landsat_etm_c1
+    LANDSAT_ETM_C2L1:
+      _collection: landsat_etm_c2_l1
+    LANDSAT_ETM_C2L2:
+      _collection: landsat_etm_c2_l2
+    S2_MSI_L1C:
+      _collection: SENTINEL_2A
+    GENERIC_COLLECTION:
+      _collection: '{collection}'

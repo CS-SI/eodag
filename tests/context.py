@@ -100,10 +100,10 @@ from eodag.utils import (
     sanitize,
     parse_header,
     get_ssl_context,
-    cached_yaml_load_all,
     StreamResponse,
     MockResponse,
 )
+from eodag.utils.yaml import cached_yaml_load_all
 from eodag.utils.dates import get_timestamp, to_iso_utc_string
 from eodag.utils.env import is_env_var_true
 from eodag.utils.requests import fetch_json

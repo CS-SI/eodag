@@ -44,7 +44,7 @@ dependencies = [
     "jsonpath-ng < 1.8.0",
     "lxml",
     "orjson",
-    "pydantic >= 2.12.3",
+    "pydantic >= 2.13.0",
     "pydantic_core",
     "PyJWT[crypto] >= 2.5.0",
     "pyproj >= 2.1.0",
@@ -199,6 +199,7 @@ EumetsatDsSearch = "eodag.plugins.search.eumetsat_ds:EumetsatDsSearch"
 StacListAssets = "eodag.plugins.search.stac_list_assets:StacListAssets"
 CopGhslSearch = "eodag.plugins.search.cop_ghsl:CopGhslSearch"
 GeodesSearch = "eodag.plugins.search.geodes:GeodesSearch"
+OARSearch = "eodag.plugins.search.oar:OARSearch"
 
 [tool.setuptools]
 include-package-data = true
@@ -210,7 +211,7 @@ include = ["eodag*"]
 "*" = ["LICENSE", "NOTICE", "py.typed"]
 
 [tool.setuptools_scm]
-fallback_version = "4.4.1.dev0"
+fallback_version = "4.5.1.dev0"
 
 [tool.isort]
 multi_line_output = 3

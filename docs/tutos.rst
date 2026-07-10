@@ -34,6 +34,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/tutos/tuto_ecmwf.ipynb
    notebooks/tutos/tuto_cds.ipynb
    notebooks/tutos/tuto_eocat.ipynb
+   notebooks/tutos/tuto_oarsearch.ipynb
    notebooks/tutos/tuto_wekeo.ipynb
    notebooks/tutos/tuto_meteoblue.ipynb
    notebooks/tutos/tuto_ship_detection.ipynb
@@ -68,6 +69,14 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
       :shadow: md
 
       Access ECMWF data through the ECMWF API using the dedicated EODAG plugin.
+
+   .. grid-item-card:: OGC API Records search plugin
+      :link: notebooks/tutos/tuto_oarsearch
+      :link-type: doc
+      :text-align: center
+      :shadow: md
+
+      Search data from providers exposing data through OGC API Records using ``OARSearch`` plugin.
 
    .. grid-item-card:: Copernicus Atmosphere using ECMWFSearch plugin
       :link: notebooks/tutos/tuto_cds

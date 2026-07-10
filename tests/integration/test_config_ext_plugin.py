@@ -22,6 +22,7 @@ import sys
 import unittest
 from tempfile import TemporaryDirectory
 
+import pytest
 from pytest import MonkeyPatch
 
 from tests import TEST_RESOURCES_PATH
@@ -40,7 +41,7 @@ class TestExternalPluginConfig(unittest.TestCase):
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
-            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+            "os.path.expanduser", return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
 
@@ -50,6 +51,7 @@ class TestExternalPluginConfig(unittest.TestCase):
         super(TestExternalPluginConfig, self).tearDown()
 
         self.dag._providers.pop("fakeplugin_provider", None)
+        self.dag._providers.pop("fakeplugin_provider2", None)
 
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
@@ -75,5 +77,12 @@ class TestExternalPluginConfig(unittest.TestCase):
             monkeypatch.syspath_prepend(fakeplugin_location)
 
             # New EODataAccessGateway instance, check if new conf has been loaded
-            self.dag = EODataAccessGateway()
-            self.assertEqual(len(self.dag._providers), default_providers_count + 1)
+            # (+1 from legacy providers.yml, +1 from providers/ dir)
+            with pytest.warns(
+                (DeprecationWarning, FutureWarning),
+                match=r"Usage of deprecated (YAML tag|environment variable)",
+            ):
+                self.dag = EODataAccessGateway()
+            self.assertEqual(len(self.dag._providers), default_providers_count + 2)
+            self.assertIn("fakeplugin_provider", self.dag._providers)
+            self.assertIn("fakeplugin_provider2", self.dag._providers)

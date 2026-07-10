@@ -1,0 +1,129 @@
+cop_ads:
+  priority: 0
+  description: Copernicus Atmosphere Data Store
+  roles:
+    - host
+  url: https://ads.atmosphere.copernicus.eu/
+  anchor_month_year: &month_year
+    end_datetime:
+      - |
+        {{
+          "year": {_date#interval_to_datetime_dict}["year"],
+          "month": {_date#interval_to_datetime_dict}["month"]
+        }}
+      - '{$.end_datetime#to_iso_date}'
+  auth:
+    type: HTTPHeaderAuth
+    ssl_verify: true
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
+  download:
+    type: HTTPDownload
+    timeout: 30
+    ssl_verify: true
+    auth_error_code: 401
+    order_enabled: true
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        eodag:order_id: $.json.jobID
+        eodag:status_link: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}?request=true
+        eodag:search_link: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{eodag:order_id}/results
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        eodag:order_status: $.json.status
+        order:date: $.json.created
+        created: $.json.created
+        published: $.json.finished
+        updated: $.json.updated
+        ecmwf:dataset: $.json.processID
+        eodag:request_params: $.json.metadata.request.ids
+      error:
+        eodag:order_status: failed
+      success:
+        eodag:order_status: successful
+      on_success:
+        need_search: true
+        metadata_mapping:
+          eodag:download_link: $.json.asset.value.href
+  search:
+    type: ECMWFSearch
+    need_auth: true
+    ssl_verify: true
+    timeout: 30
+    end_date_excluded: false
+    remove_from_query:
+      - dataset
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+      constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
+      form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
+    metadata_mapping:
+      product:type: $.productType
+      start_datetime: '{$.start_datetime#to_iso_utc_datetime}'
+      end_datetime:
+        - 'date={start_datetime#to_iso_date}/{end_datetime#to_iso_date}'
+        - '{$.end_datetime#to_iso_utc_datetime}'
+      # The geographic extent of the product
+      geometry:
+        - '{{"area": {geometry#to_nwse_bounds}}}'
+        - $.geometry
+      qs: $.qs
+      eodag:order_link: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+  products:
+    # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
+    CAMS_GAC_FORECAST:
+      dataset: cams-global-atmospheric-composition-forecasts
+    CAMS_GFE_GFAS:
+      dataset: cams-global-fire-emissions-gfas
+    CAMS_EU_AIR_QUALITY_FORECAST:
+      dataset: cams-europe-air-quality-forecasts
+    CAMS_EU_AIR_QUALITY_RE:
+      dataset: cams-europe-air-quality-reanalyses
+      metadata_mapping:
+        <<: *month_year
+    CAMS_GRF:
+      dataset: cams-global-radiative-forcings
+      metadata_mapping:
+        <<: *month_year
+    CAMS_GRF_AUX:
+      dataset: cams-global-radiative-forcing-auxilliary-variables
+      metadata_mapping:
+        <<: *month_year
+    CAMS_SOLAR_RADIATION:
+      dataset: cams-solar-radiation-timeseries
+      altitude: "-999"
+      metadata_mapping:
+        geometry:
+          - '{{"location": {{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}}}'
+          - $.geometry
+    CAMS_GREENHOUSE_EGG4_MONTHLY:
+      dataset: cams-global-ghg-reanalysis-egg4-monthly
+      metadata_mapping:
+        <<: *month_year
+    CAMS_GREENHOUSE_EGG4:
+      dataset: cams-global-ghg-reanalysis-egg4
+    CAMS_GREENHOUSE_INVERSION:
+      dataset: cams-global-greenhouse-gas-inversion
+      metadata_mapping:
+        <<: *month_year
+    CAMS_GLOBAL_EMISSIONS:
+      dataset: cams-global-emission-inventories
+      metadata_mapping:
+        end_datetime:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"]
+            }}
+          - '{$.end_datetime#to_iso_date}'
+    CAMS_EAC4:
+      dataset: cams-global-reanalysis-eac4
+    CAMS_EAC4_MONTHLY:
+      dataset: cams-global-reanalysis-eac4-monthly
+      metadata_mapping:
+        <<: *month_year
+    GENERIC_COLLECTION:
+      dataset: '{collection}'

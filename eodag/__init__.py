@@ -24,6 +24,7 @@
 """EODAG package"""
 
 from importlib.metadata import PackageNotFoundError, version
+from typing import Optional
 
 try:
     __version__ = version(__name__)
@@ -36,14 +37,16 @@ __all__ = [
     "EOProduct",
     "SearchResult",
     "setup_logging",
+    "config",
 ]
 
 # Lazy imports (PEP 562) — avoid loading heavy dependencies on ``import eodag``
-_LAZY_IMPORTS: dict[str, tuple[str, str]] = {
+_LAZY_IMPORTS: dict[str, tuple[str, Optional[str]]] = {
     "EODataAccessGateway": (".api.core", "EODataAccessGateway"),
     "EOProduct": (".api.product", "EOProduct"),
     "SearchResult": (".api.search_result", "SearchResult"),
     "setup_logging": (".utils.logging", "setup_logging"),
+    "config": (".config", None),
 }
 
 
@@ -53,7 +56,10 @@ def __getattr__(name: str):
 
         module_path, attr_name = _LAZY_IMPORTS[name]
         module = import_module(module_path, __name__)
-        value = getattr(module, attr_name)
+        if attr_name is None:
+            value = module
+        else:
+            value = getattr(module, attr_name)
         globals()[name] = value
         return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

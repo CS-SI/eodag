@@ -1,0 +1,430 @@
+aws_eos:
+  priority: 0
+  description: EOS search for Amazon public datasets
+  roles:
+    - host
+  url: https://developers.eos.com/datasets_description.html
+  search:
+    type: PostJsonSearch
+    api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{_collection}'
+    need_auth: true
+    auth_error_code:
+      - 402
+      - 403
+    results_entry: 'results'
+    ssl_verify: true
+    pagination:
+      next_page_query_obj: '{{"limit":{limit},"page":{next_page_token}}}'
+      total_items_nb_key_path: '$.meta.found'
+      # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
+      # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
+      # Let's set it to this value for now
+      max_limit: 500
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      search_param: '{{{{"search":{{{{"{metadata}":"{{{metadata}}}" }}}} }}}}'
+      metadata_path: '$.*'
+    metadata_mapping:
+      _collection:
+        - '{{"collection": "{_collection}"}}'
+        - '$.null'
+      geometry:
+        - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
+        - '$.dataGeometry'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
+  products:
+    CBERS4_PAN10M_L2:
+      instruments: PAN10M
+      _collection: cbers4
+      processing:level: 2
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        product:type: '$.null'
+        platform:
+          - '{{"search":{{"satelliteName":"{platform}" }} }}'
+          - '$.satelliteName'
+        instruments:
+          - '{{"search":{{"sensor":"{instruments#csv_list}" }} }}'
+          - '{$.sensor#split( )}'
+        processing:level:
+          - '{{"search":{{"processingLevel":"{processing:level}" }} }}'
+          - '$.processingLevel'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.date'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.date'
+        view:sun_azimuth:
+          - '{{"search":{{"sunAzimuth":"{view:sun_azimuth}" }} }}'
+          - '$.sunAzimuth'
+        view:sun_elevation:
+          - '{{"search":{{"sunElevation":"{view:sun_elevation}" }} }}'
+          - '$.sunElevation'
+        # Custom parameters (not defined in the base document referenced above)
+        _aws_path: '$.downloadUrl'
+        eodag:download_link: 's3://cbers-pds/{_aws_path}'
+        eodag:mtd_download_link: 's3://cbers-meta-pds/{_aws_path}'
+        _preview_basename: '{$.sceneID#replace_str("_L2","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
+    CBERS4_PAN10M_L4:
+      instruments: PAN10M
+      _collection: cbers4
+      processing:level: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+    CBERS4_PAN5M_L2:
+      instruments: PAN5M
+      _collection: cbers4
+      processing:level: 2
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+    CBERS4_PAN5M_L4:
+      instruments: PAN5M
+      _collection: cbers4
+      processing:level: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+    CBERS4_MUX_L2:
+      instruments: MUX
+      _collection: cbers4
+      processing:level: 2
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+    CBERS4_MUX_L4:
+      instruments: MUX
+      _collection: cbers4
+      processing:level: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+    CBERS4_AWFI_L2:
+      instruments: AWFI
+      _collection: cbers4
+      processing:level: 2
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+    CBERS4_AWFI_L4:
+      instruments: AWFI
+      _collection: cbers4
+      processing:level: 4
+      metadata_mapping_from_product: CBERS4_PAN10M_L2
+      metadata_mapping:
+        # Custom parameters (not defined in the base document referenced above)
+        _preview_basename: '{$.sceneID#replace_str("_L4","")}'
+        eodag:thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}_small.jpeg'
+        eodag:quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{_aws_path}/{_preview_basename}.jpg'
+    L8_OLI_TIRS_C1L1:
+      _collection: landsat8
+      _on_amazon: true
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        product:type: '$.null'
+        constellation:
+          - '{{"search":{{"satelliteName":"{constellation}" }} }}'
+          - '$.satelliteName'
+        instruments:
+          - '{{"search":{{"sensor":"{instruments#csv_list}" }} }}'
+          - '{$.sensor#split( )}'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"productID":"{title}" }} }}'
+          - '$.productID'
+        # OpenSearch Parameters for Product Search (Table 5)
+        eo:cloud_cover:
+          - '{{"search":{{"cloudCoverage":"{eo:cloud_cover}" }} }}'
+          - '$.cloudCoverage'
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.sceneStartTime'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.sceneStopTime'
+        view:sun_azimuth:
+          - '{{"search":{{"sunAzimuth":"{view:sun_azimuth}" }} }}'
+          - '$.sunAzimuth'
+        view:sun_elevation:
+          - '{{"search":{{"sunElevation":"{view:sun_elevation}" }} }}'
+          - '$.sunElevation'
+        # Custom parameters (not defined in the base document referenced above)
+        _on_amazon:
+          - '{{"search":{{"onAmazon":"{_on_amazon}" }} }}'
+          - '$.onAmazon'
+        _path: '$.path'
+        _row: '$.row'
+        eodag:download_link: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
+        eodag:thumbnail: '$.thumbnail'
+        eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
+        id:
+          - '{{"search":{{"productID":"{id}" }} }}'
+          - '{title}'
+    MODIS_MCD43A4:
+      _collection: modis
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        product:type: '$.null'
+        instruments:
+          - '{{"search":{{"satelliteName":"{instruments#csv_list}" }} }}'
+          - '{$.satelliteName#split( )}'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Product Search (Table 5)
+        eo:cloud_cover:
+          - '{{"search":{{"cloudCoverage":"{eo:cloud_cover}" }} }}'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.BeginningDateTime'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.EndingDateTime'
+        # Custom parameters (not defined in the base document referenced above)
+        _vertical_tile_nb: '$.verticalTileNumber'
+        _horizontal_tile_nb: '$.horizontalTileNumber'
+        _doy_date: '{$.sceneID#slice_str(9,16,1)}'
+        eodag:download_link: 's3://modis-pds/MCD43A4.006/{_horizontal_tile_nb:02.0f}/{_vertical_tile_nb:02.0f}/{_doy_date}/'
+        eodag:thumbnail: '$.thumbnail'
+        eodag:quicklook: '$.thumbnail'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
+    NAIP:
+      _collection: naip
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        product:type: '$.null'
+        platform:
+          - '{{"search":{{"satelliteName":"{platform}" }} }}'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.date'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.date'
+        # Custom parameters (not defined in the base document referenced above)
+        _aws_path: '$.awsPath'
+        eodag:download_link: 's3://naip-analytic/{_aws_path}'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
+    S1_SAR_GRD:
+      product:type: GRD
+      _collection: sentinel1
+      metadata_mapping:
+        eo:cloud_cover: '{$.cloudCoverage#not_available}'
+        # OpenSearch Parameters for Collection Search (Table 3)
+        platform:
+          - '{{"search":{{"missionId":"{platform}" }} }}'
+          - '$.missionId'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"sceneID":"{title}" }} }}'
+          - '$.sceneID'
+        # OpenSearch Parameters for Product Search (Table 5)
+        sat:absolute_orbit:
+          - '{{"search":{{"absoluteOrbitNumber":"{sat:absolute_orbit}" }} }}'
+          - '$.absoluteOrbitNumber'
+        sat:orbit_state:
+          - '{{"search":{{"passDirection":"{sat:orbit_state}" }} }}'
+          - '{$.passDirection#to_lower}'
+        sar:instrument_mode:
+          - '{{"search":{{"mode":"{sar:instrument_mode}" }} }}'
+          - '$.mode'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.date'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.date'
+        sar:polarizations:
+          - '{{"search":{{"polarization":"{sar:polarizations#replace_tuple(((["HH"],"SH"),(["VV"],"SV"),(["HH","HV"], "DH"),(["VV","VH"],"DV")))}" }} }}'
+          - '{$.polarization#replace_tuple((("SH",["HH"]),("SV",["VV"]),("DH",["HH","HV"]),("DV",["VV","VH"])))}'
+        # Custom parameters (not defined in the base document referenced above)
+        _aws_path: '$.awsPath'
+        eodag:download_link: 's3://sentinel-s1-l1c/{_aws_path}'
+        eodag:thumbnail: 'https://render.eosda.com/S1/thumb/{title}.png'
+        eodag:quicklook: 'https://render.eosda.com/S1/thumb/{title}.png'
+        id:
+          - '{{"search":{{"sceneID":"{id}" }} }}'
+          - '{title}'
+    S2_MSI_L1C:
+      _collection: sentinel2
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        product:type: '$.null'
+        platform:
+          - '{{"search":{{"satelliteName":"{platform}" }} }}'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title:
+          - '{{"search":{{"productName":"{title}" }} }}'
+          - '$.productName'
+        # OpenSearch Parameters for Product Search (Table 5)
+        eo:cloud_cover:
+          - '{{"search":{{"cloudCoverage":"{eo:cloud_cover}" }} }}'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.timestamp'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.timestamp'
+        view:sun_azimuth:
+          - '{{"search":{{"azimuthAngle":"{view:sun_azimuth}" }} }}'
+          - '$.azimuthAngle'
+        view:incidence_angle:
+          - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
+          - '$.zenithAngle'
+        # Custom parameters (not defined in the base document referenced above)
+        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+        _aws_path: '$.awsPath'
+        eodag:download_link: 's3://sentinel-s2-l1c/{_aws_path}'
+        eodag:product_path: '$.productPath'
+        id:
+          - '{{"search":{{"productName":"{id}" }} }}'
+          - '{title}'
+        _processed_l2a: '$.null'
+        _aws_path_l2a: '$.null'
+    S2_MSI_L2A:
+      _collection: sentinel2
+      _processed_l2a: true
+      # specific QueryStringSearch usage for these parameters (replaces current query)
+      specific_qssearch:
+        parameters:
+          - title
+          - id
+        results_entry: '$'
+        _collection:
+          - tileInfo
+          - productInfo
+        merge_responses: true
+        metadata_mapping:
+          title:
+            - 'title'
+            - '$.name'
+          id:
+            - 'title'
+            - '{title}'
+          _aws_path_l2a: '$.tiles[0].path'
+          eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
+          eodag:product_path: '$.path'
+          start_datetime: '$.timestamp'
+          end_datetime: '$.timestamp'
+          geometry: '$.tileDataGeometry'
+          eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
+          originalSceneID: '$.tiles[0].datastrip.id'
+      metadata_mapping:
+        # OpenSearch Parameters for Collection Search (Table 3)
+        product:type: '$.null'
+        platform:
+          - '{{"search":{{"satelliteName":"{platform}" }} }}'
+          - '$.satelliteName'
+        # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+        title: '{$.productName#fake_l2a_title_from_l1c}'
+        # OpenSearch Parameters for Product Search (Table 5)
+        eo:cloud_cover:
+          - '{{"search":{{"cloudCoverage":"{eo:cloud_cover}" }} }}'
+          - '$.cloudCoverage'
+        # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+        start_datetime:
+          - '{{"search":{{"date":{{"from":"{start_datetime}"}} }} }}'
+          - '$.timestamp'
+        end_datetime:
+          - '{{"search":{{"date":{{"to":"{end_datetime}"}} }} }}'
+          - '$.timestamp'
+        view:sun_azimuth:
+          - '{{"search":{{"azimuthAngle":"{view:sun_azimuth}" }} }}'
+          - '$.azimuthAngle'
+        view:incidence_angle:
+          - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
+          - '$.zenithAngle'
+        # Custom parameters (not defined in the base document referenced above)
+        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
+        eodag:quicklook: '{eodag:thumbnail}'
+        eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
+        _aws_path: '$.null'
+        eodag:product_path: '$.null'
+        eodag:product_info: 'https://roda.sentinel-hub.com/sentinel-s2-l2a/{_aws_path_l2a}/productInfo.json'
+        id:
+          - '{id#s2msil2a_title_to_aws_productinfo}'
+          - '{title}'
+        _processed_l2a:
+          - '{{"search":{{"processedL2A":"{_processed_l2a}" }} }}'
+          - '$.processedL2A'
+        _aws_path_l2a: '$.awsPathL2A'
+
+  download:
+    type: AwsDownload
+    ssl_verify: true
+    products:
+      CBERS4_MUX_L2:
+        default_bucket: 'cbers-pds'
+        complementary_url_key:
+          - eodag:mtd_download_link
+      CBERS4_AWFI_L2:
+        complementary_url_key:
+          - eodag:mtd_download_link
+      CBERS4_PAN5M_L2:
+        complementary_url_key:
+          - eodag:mtd_download_link
+      CBERS4_PAN10M_L2:
+        complementary_url_key:
+          - eodag:mtd_download_link
+      S1_SAR_GRD:
+        default_bucket: 'sentinel-s1-l1c'
+        build_safe: true
+      S2_MSI_L1C:
+        default_bucket: 'sentinel-s2-l1c'
+        build_safe: true
+        complementary_url_key:
+          - eodag:product_path
+      S2_MSI_L2A:
+        default_bucket: 'sentinel-s2-l2a'
+        build_safe: true
+        fetch_metadata:
+          fetch_url: '{eodag:product_info}'
+          fetch_format: json
+          update_metadata:
+            title: '$.name'
+            id: '{title}'
+            eodag:product_path: '$.path'
+        complementary_url_key:
+          - eodag:product_path
+  download_auth:
+    type: AwsAuth
+    matching_url: s3://
+    requester_pays: True
+  search_auth:
+    type: HttpQueryStringAuth
+    matching_url: https://gate.eos.com
+    ssl_verify: true

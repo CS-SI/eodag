@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import logging
 import os
+import pathlib
+import warnings
 from importlib.resources import files as res_files
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
@@ -33,8 +35,6 @@ from typing_extensions import TypedDict
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    cached_yaml_load,
-    cached_yaml_load_all,
     deepcopy,
     dict_items_recursive_apply,
     merge_mappings,
@@ -43,6 +43,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.yaml import cached_yaml_load, cached_yaml_load_all
 
 if TYPE_CHECKING:
     from typing import ItemsView, Iterator, ValuesView
@@ -100,6 +101,10 @@ class PluginConfig(yaml.YAMLObject):
 
     This class variables describe available plugins configuration parameters.
     """
+
+    yaml_loader = yaml.Loader
+    yaml_dumper = yaml.SafeDumper
+    yaml_tag = "!plugin"
 
     class Pagination(TypedDict):
         """Search pagination configuration"""
@@ -211,10 +216,12 @@ class PluginConfig(yaml.YAMLObject):
         result_type: str
         #: JsonPath to retrieve the queryables from the provider result
         results_entry: str
-        #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
-        constraints_url: str
         #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
         constraints_entry: str
+        #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
+        constraints_url: str
+        #: :class:`~eodag.plugins.search.base.Search` URL of the form file used to build queryables
+        form_url: str
 
     class CollectionSelector(TypedDict, total=False):
         """Define the criteria to select a collection in :class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`.
@@ -364,7 +371,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
-    metadata_mapping: dict[str, Union[str, list[str]]]
+    metadata_mapping: dict[str, Union[str, list[Optional[str]]]]
     #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
     #: collection
     metadata_mapping_from_product: str
@@ -578,10 +585,6 @@ class PluginConfig(yaml.YAMLObject):
     #: which authentication method should be used
     method: str
 
-    yaml_loader = yaml.Loader
-    yaml_dumper = yaml.SafeDumper
-    yaml_tag = "!plugin"
-
     def __or__(self, other: Union[Self, dict[str, Any]]) -> Self:
         """Return a new PluginConfig with merged values."""
         new_config = self.__class__.from_mapping(self.__dict__)
@@ -600,22 +603,33 @@ class PluginConfig(yaml.YAMLObject):
     @classmethod
     def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from Yaml"""
-        cls.validate(tuple(node_key.value for node_key, _ in node.value))
+        cls.validate(
+            tuple(node_key.value for node_key, _ in node.value), check_type=False
+        )
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
-        cls.validate(tuple(mapping.keys()))
+        cls.validate(tuple(mapping.keys()), check_type=True)
         c = cls()
         c.__dict__.update(deepcopy(mapping))
         return c
 
     @staticmethod
-    def validate(config_keys: tuple[Any, ...]) -> None:
-        """Validate a :class:`~eodag.config.PluginConfig`"""
+    def validate(config_keys: tuple[Any, ...], check_type: bool = True) -> None:
+        """Validate a :class:`~eodag.config.PluginConfig`
+
+        :param config_keys: The configuration keys to validate
+        :param check_type: Whether to require 'type' or 'credentials' key (default True).
+        Set to False for legacy YAML tag parsing.
+        """
         # credentials may be set without type when the provider uses search_auth plugin.
-        if "type" not in config_keys and "credentials" not in config_keys:
+        if (
+            check_type
+            and "type" not in config_keys
+            and "credentials" not in config_keys
+        ):
             raise ValidationError(
                 "A Plugin config must specify the type of Plugin it configures"
             )
@@ -682,16 +696,35 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
 def load_default_config() -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary.
 
-    Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
+    Load from eodag `resources/providers` files or `EODAG_PROVIDERS_CFG_DIR` environment
     variable if exists.
+
+    For backwards compatibility, if `EODAG_PROVIDERS_CFG_FILE` environment variable is set, load from it instead of
+    `EODAG_PROVIDERS_CFG_DIR`.
 
     :returns: The default provider's configuration
     """
-    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
-        res_files("eodag") / "resources" / "providers.yml"
-    )
+    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE")
+    eodag_providers_cfg_dir = os.getenv("EODAG_PROVIDERS_CFG_DIR")
 
-    return load_config(eodag_providers_cfg_file)
+    if eodag_providers_cfg_file:
+        warnings.warn(
+            "Usage of deprecated environment variable EODAG_PROVIDERS_CFG_FILE. "
+            "(Please use EODAG_PROVIDERS_CFG_DIR instead)"
+            " -- Deprecated since v4.5.0",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return load_config(eodag_providers_cfg_file)
+
+    config_dir = eodag_providers_cfg_dir or str(
+        res_files("eodag") / "resources" / "providers"
+    )
+    providers: dict[str, ProviderConfig] = {}
+    for f in pathlib.Path(config_dir).glob("*.yml"):
+        if f.is_file():
+            providers.update(load_config(str(f)))
+    return dict(sorted(providers.items()))
 
 
 def load_config(config_path: str) -> dict[str, ProviderConfig]:
@@ -706,11 +739,41 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
 
     try:
         # Providers configs are stored in this file as separated yaml documents
-        # Load all of it
-        providers_configs: list[ProviderConfig] = cached_yaml_load_all(config_path)
+        # Load all of it as plain YAML dictionaries
+        providers_configs_dicts: list[
+            Optional[Union[dict[str, Any], ProviderConfig]]
+        ] = cached_yaml_load_all(config_path)
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e
+
+    # Convert dictionaries to ProviderConfig objects
+    from eodag.api.provider import ProviderConfig as ProviderConfigClass
+
+    providers_configs: list[ProviderConfig] = []
+    default_provider_name = pathlib.Path(config_path).stem
+    for provider_dict in providers_configs_dicts:
+        if provider_dict is not None:
+            if isinstance(provider_dict, ProviderConfigClass):
+                # Legacy standalone !provider files may omit the `name` key.
+                # In that case, use the file stem (e.g. wekeo_main.yml -> wekeo_main).
+                provider_dict.__dict__.setdefault("name", default_provider_name)
+                providers_configs.append(provider_dict)
+                continue
+
+            # Each provider YAML file has one provider at the top level
+            # The dictionary will have the provider name as key and provider config as value
+            for provider_name, provider_config in provider_dict.items():
+                if isinstance(provider_config, dict):
+                    # Add the name to the config if not already present
+                    provider_config.setdefault("name", provider_name)
+                    provider_obj = ProviderConfigClass.from_mapping(provider_config)
+                    providers_configs.append(provider_obj)
+                elif isinstance(provider_config, ProviderConfigClass):
+                    # Handle legacy YAML tags where name is outside the tag (e.g., "ecmwf: !provider")
+                    # Add name if missing since it was not part of the tag node
+                    provider_config.__dict__.setdefault("name", provider_name)
+                    providers_configs.append(provider_config)
 
     return {p.name: p for p in providers_configs if p is not None}
 

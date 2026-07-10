@@ -23,8 +23,9 @@ import re
 import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
+from importlib import import_module
 from pathlib import Path
-from typing import Literal, Union, get_origin
+from typing import Annotated, Literal, Union, get_args, get_origin
 from unittest import mock
 from unittest.mock import call
 
@@ -35,10 +36,11 @@ import requests
 import responses
 from botocore.stub import Stubber
 from jsonpath_ng import JSONPath, parse
+from pydantic import Field
+from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 from shapely.geometry.base import BaseGeometry
-from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
@@ -135,9 +137,13 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         provider = "mundi"
 
         # manually add conf as this provider is not supported any more
-        mundi_config = cached_yaml_load_all(
+        mundi_config_dict = cached_yaml_load_all(
             Path(TEST_RESOURCES_PATH) / "mundi_conf.yml"
         )[0]
+        # Provider YAML now uses provider name as top-level key
+        provider_name, mundi_config = next(iter(mundi_config_dict.items()))
+        if "name" not in mundi_config:
+            mundi_config["name"] = provider_name
         self.plugins_manager.providers[provider] = Provider(mundi_config)
         self.plugins_manager.rebuild()
 
@@ -270,6 +276,38 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         provider = "sara"
         self.sara_search_plugin = self.get_search_plugin(self.collection, provider)
         self.sara_auth_plugin = self.get_auth_plugin(self.sara_search_plugin)
+
+    def test_plugins_search_querystringsearch_collect_search_urls_without_numeric_paging(
+        self,
+    ):
+        """collect_search_urls must still build a URL when numeric paging is disabled"""
+        pagination_conf = copy_deepcopy(self.sara_search_plugin.config.pagination)
+        self.sara_search_plugin.config.pagination["next_page_token_key"] = "cursor"
+
+        prep = PreparedSearch(limit=None, count=False)
+        prep.query_string = "startDate=2020-08-08&completionDate=2020-08-16"
+        prep.sort_by_qs = "&sortParam=startDate&sortOrder=asc"
+
+        try:
+            urls, total_results = self.sara_search_plugin.collect_search_urls(
+                prep,
+                collection=self.collection,
+            )
+        finally:
+            self.sara_search_plugin.config.pagination = pagination_conf
+
+        expected_endpoint = self.sara_search_plugin.config.api_endpoint.rstrip(
+            "/"
+        ).format(_collection=self.collection)
+
+        self.assertEqual(
+            [
+                f"{expected_endpoint}?startDate=2020-08-08&completionDate=2020-08-16"
+                "&sortParam=startDate&sortOrder=asc"
+            ],
+            urls,
+        )
+        self.assertIsNone(total_results)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -1575,9 +1613,13 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         super(TestSearchPluginODataV4Search, self).setUp()
 
         # manually add conf as this provider is not supported any more
-        onda_config = cached_yaml_load_all(Path(TEST_RESOURCES_PATH) / "onda_conf.yml")[
-            0
-        ]
+        onda_config_dict = cached_yaml_load_all(
+            Path(TEST_RESOURCES_PATH) / "onda_conf.yml"
+        )[0]
+        # Provider YAML now uses provider name as top-level key
+        provider_name, onda_config = next(iter(onda_config_dict.items()))
+        if "name" not in onda_config:
+            onda_config["name"] = provider_name
         self.plugins_manager.providers["onda"] = Provider(onda_config)
         self.plugins_manager.rebuild()
 
@@ -2436,12 +2478,14 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertEqual(get_origin(base_type), list)
         literal_args = get_args(base_type)
         self.assertEqual(literal_args, (Literal["00:00"],))
+        self.assertIn("json_schema_required", args[1].metadata)
 
         # Check that "start" has type Annotated[str, ...]
         self.assertIn("start", queryables_dedl)
         annotated_type = queryables_dedl["start"]
         args = get_args(annotated_type)
         self.assertEqual(args[0], str)
+        self.assertNotIn("json_schema_required", args[1].metadata)
 
         # Check that "geom" has type Annotated[Union[str, dict[str, float], BaseGeometry], ...]
         self.assertIn("geom", queryables_dedl)
@@ -2459,6 +2503,14 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                 if isinstance(arg, type)
             )
         )
+        self.assertTrue(args[1].is_required())
+
+        # Check that "bbox" has type fieldInfo with "required": "True" and json_schema_required in metadata
+        self.assertIn("bbox", queryables_dedl)
+        annotated_type = queryables_dedl["bbox"]
+        args = get_args(annotated_type)
+        self.assertTrue(args[1].is_required())
+        self.assertIn("json_schema_required", args[1].metadata)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -2649,35 +2701,17 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         # provider-only param still present
         self.assertIn("some_param", queryables)
 
-    def test_plugins_search_stacsearch_missing_results_entry_misconfigured(self):
-        """StacSearch must raise MisconfiguredError when results_entry is missing
-        for a subclass not referenced in STAC_SEARCH_PLUGINS"""
+    def test_plugins_search_stacsearch_uses_stac_defaults(self):
+        """StacSearch must use STAC defaults from normalize_results."""
         from eodag.config import PluginConfig
         from eodag.plugins.search.qssearch import StacSearch
 
-        class _UnregisteredStacSearch(StacSearch):
+        class _NewStacSearch(StacSearch):
             pass
 
         config = PluginConfig()
-        # do not set results_entry on purpose
-        with self.assertRaises(MisconfiguredError) as ctx:
-            _UnregisteredStacSearch("some_provider", config)
-        self.assertIn("results_entry", str(ctx.exception))
-        self.assertIn("_UnregisteredStacSearch", str(ctx.exception))
-        self.assertIn("STAC_SEARCH_PLUGINS", str(ctx.exception))
-
-    def test_plugins_search_stacsearch_missing_results_entry_reraises_for_known_plugin(
-        self,
-    ):
-        """StacSearch must re-raise AttributeError when results_entry is missing
-        for a subclass referenced in STAC_SEARCH_PLUGINS"""
-        from eodag.config import PluginConfig
-        from eodag.plugins.search.geodes import GeodesSearch
-
-        config = PluginConfig()
-        # GeodesSearch is in STAC_SEARCH_PLUGINS so AttributeError must be re-raised
-        with self.assertRaises(AttributeError):
-            GeodesSearch("geodes", config)
+        plugin = _NewStacSearch("some_provider", config)
+        self.assertEqual(plugin.config.results_entry, "features")
 
 
 class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
@@ -3258,6 +3292,23 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertNotIn("start_datetime", eoproduct.properties)
         self.assertNotIn("end_datetime", eoproduct.properties)
 
+    def test_plugins_search_ecmwfsearch_dont_sort_params(self):
+        """ECMWFSearch.query must not sort query parameters and keep user order"""
+
+        results = self.search_plugin.query(
+            collection=self.collection,
+            **self.query_dates,
+            **self.custom_query_params,
+            ecmwf_pressure_level=["2", "1", "3", "10"],
+        )
+        eoproduct = results.data[0]
+        self.assertIn("qs", eoproduct.properties)
+        self.assertIn("pressure_level", eoproduct.properties["qs"])
+        self.assertListEqual(
+            eoproduct.properties["qs"]["pressure_level"],
+            ["2", "1", "3", "10"],
+        )
+
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
         results = self.search_plugin.query(
@@ -3513,12 +3564,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
             {"date": ["2024-01-01/2024-12-01"], "variable": ["a", "b", "c"]},
         ]
-        form_keywords = ["date", "variable"]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": True},
+        ]
 
         # with a date range as a string
         input_keywords = {"date": "2025-01-01/2025-02-01", "variable": "a"}
         available_values = self.search_plugin.available_values_from_constraints(
-            constraints, input_keywords, form_keywords
+            constraints, input_keywords, form
         )
         available_values = {k: sorted(v) for k, v in available_values.items()}
         self.assertIn("variable", available_values)
@@ -3528,12 +3582,117 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # with a date range as the first element of a string list
         input_keywords = {"date": ["2025-01-01/2025-02-01"], "variable": "a"}
         available_values = self.search_plugin.available_values_from_constraints(
-            constraints, input_keywords, form_keywords
+            constraints, input_keywords, form
         )
         available_values = {k: sorted(v) for k, v in available_values.items()}
         self.assertIn("variable", available_values)
         self.assertListEqual(["a", "b"], available_values["variable"])
         self.assertIn("date", available_values)
+
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints_with_keyword_required_by_form(
+        self,
+    ):
+        """An input keyword cannot be used if it's required by form and no constraint with the given
+        combination of parameters exists"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": True},
+        ]
+
+        # "variable" is *required* by form and *some* constraints with the given "date" defines values
+        # for "variable": "variable" must be used as input keyword
+        # case 1: the input value "a" is available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        # case 2: the input value "c" is not available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertIn(
+            "ecmwf:variable=c is not available. Allowed values are ",
+            ex.exception.message,
+        )
+
+        # "variable" is *required* by form and *no* constraint with the given "date" defines values
+        # for "variable": "variable" cannot be used as input keyword with this value of "date".
+        input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "a"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertEqual(
+            "ecmwf:variable=a is not available. ecmwf:variable cannot be used with this combination of parameters.",
+            ex.exception.message,
+        )
+
+        # "variable" is *required* by form and *no* constraint with the given "date" defines values
+        # for "variable": "variable" is not used as input keyword and no available value for "variable" is returned
+        input_keywords = {"date": "2024-01-01/2024-01-01"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual([], available_values["variable"])
+        self.assertIn("date", available_values)
+
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints_with_keyword_not_required_by_form(
+        self,
+    ):
+        """Any value is accepted if a keyword is not required by form and its list of allowed values is empty"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": False},
+        ]
+
+        # "variable" is *not* required by form and after applying the filter there is *no* constraint that defines
+        # any values for "variable": any value for "variable" can be used as input keyword.
+        input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "c"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual([], available_values["variable"])
+        self.assertIn("date", available_values)
+
+        # "variable" is *not* required by form and after applying the filter there are *some* constraints that
+        # define  values for "variable": "variable" must match the available values.
+        # case 1: the value "a" is available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        # case 2: the value "c" is not available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertIn(
+            "ecmwf:variable=c is not available. Allowed values are ",
+            ex.exception.message,
+        )
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
@@ -3777,6 +3936,148 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # restore the original config
         self.search_plugin.config = provider_search_plugin_config
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_default_by_form(
+        self, mock__fetch_data
+    ):
+        """A queryable with a default value must use that default value and being not required."""
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        default_values = deepcopy(
+            getattr(self.search_plugin.config, "products", {}).get(
+                "CAMS_EU_AIR_QUALITY_RE", {}
+            )
+        )
+        default_values.pop("metadata_mapping", None)
+        params = deepcopy(default_values)
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["download_format"] = "zip"  # override default in form file
+
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIsNotNone(queryables)
+        for element in form:
+            if "details" not in element:
+                # skip form elements missing details
+                continue
+            name: str = element["name"]
+            ecmwf_name: str = f"ecmwf_{name}"
+            details = element.get("details", {})
+            default_by_params = params.get(name)
+            default_by_form = details.get("default")
+            if default_by_params is not None:
+                # default value defined in the provider config
+                self.assertIn(ecmwf_name, queryables.keys())
+                self.assertFalse(
+                    get_args(queryables[ecmwf_name])[1].is_required(),
+                    f"Keyword {ecmwf_name} must be not required",
+                )
+                self.assertEqual(
+                    default_by_params, get_args(queryables[ecmwf_name])[1].default
+                )
+            elif default_by_form is not None:
+                # default value defined in the form file and not in the provider config
+                self.assertIn(ecmwf_name, queryables.keys())
+                self.assertFalse(
+                    get_args(queryables[ecmwf_name])[1].is_required(),
+                    f"Keyword {ecmwf_name} must be not required",
+                )
+                # default value defined as list in the form file
+                self.assertEqual(
+                    default_by_form[0], get_args(queryables[ecmwf_name])[1].default
+                )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_form_details_none(
+        self, mock__fetch_data
+    ):
+        """Regression: discover_queryables must handle form elements with details set to None."""
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+
+        for element in form:
+            if element.get("name") == "download_format":
+                element["details"] = None
+                break
+
+        mock__fetch_data.side_effect = [constraints, form]
+
+        default_values = deepcopy(
+            getattr(self.search_plugin.config, "products", {}).get(
+                "CAMS_EU_AIR_QUALITY_RE", {}
+            )
+        )
+        default_values.pop("metadata_mapping", None)
+        params = deepcopy(default_values)
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+
+        queryables = self.search_plugin.discover_queryables(**params)
+
+        self.assertIsNotNone(queryables)
+        self.assertIn("ecmwf_download_format", queryables)
+        self.assertTrue(
+            get_args(queryables["ecmwf_download_format"])[1].is_required(),
+            "Keyword ecmwf_download_format must be required when details are missing",
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_not_allowed_parameters(
+        self, mock__fetch_data
+    ):
+        """A not allowed parameter must not be listed in the queryables.
+
+        A parameter is not allowed if all the following conditions are true:
+
+        - the keyword is required by form;
+        - the keyword is used by some constraint;
+        - the list of available values is empty.
+
+        In this case don't add the keyword to the list of queryables because
+        it cannot be used with the given combination of parameters.
+        """
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "type": "StringListWidget", "required": True},
+            {"name": "variable", "type": "StringListWidget", "required": True},
+        ]
+        mock__fetch_data.side_effect = [constraints, form]
+
+        params = {
+            "collection": "CAMS_EU_AIR_QUALITY_RE",
+            "date": "2024-01-01",
+        }
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIsNotNone(queryables)
+        # ecmwf_date is queryable with a default value -> not required
+        self.assertIn("ecmwf_date", queryables)
+        self.assertFalse(
+            get_args(queryables["ecmwf_date"])[1].is_required(),
+            "Keyword ecmwf_date must be not required",
+        )
+        # ecmwf_variable is not queryable
+        self.assertNotIn("ecmwf_variable", queryables)
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
@@ -4930,6 +5231,87 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
+        autospec=True,
+    )
+    def test_plugins_search_oar_discover_queryables(
+        self,
+        mock_stacsearch_discover_queryables,
+    ):
+        """OARSearch must reuse StacSearch queryables discovery and add defaults."""
+        OARSearch = import_module("eodag.plugins.search.oar").OARSearch
+
+        search_plugin = OARSearch.__new__(OARSearch)
+        mock_stacsearch_discover_queryables.return_value = {
+            "foo": Annotated[str, Field(None, description="Foo param")]
+        }
+
+        queryables_dict = search_plugin.discover_queryables(collection=self.collection)
+
+        self.assertEqual(
+            set(queryables_dict.keys()), set(["foo", "id", "start", "end", "geom"])
+        )
+        self.assertTrue(
+            all(isinstance(get_args(q)[1], FieldInfo) for q in queryables_dict.values())
+        )
+        self.assertEqual(get_args(queryables_dict["foo"])[1].description, "Foo param")
+        mock_stacsearch_discover_queryables.assert_called_once_with(
+            search_plugin, collection=self.collection
+        )
+
+    def test_plugins_search_oar_preconfigured_defaults(self):
+        """OARSearch must expose OGC API - Records search defaults."""
+        from eodag.config import PluginConfig
+
+        OARSearch = import_module("eodag.plugins.search.oar").OARSearch
+
+        config = PluginConfig()
+        config.api_endpoint = "https://example.test"
+        config.metadata_mapping = {
+            "q": ["custom_q={q}", "$.properties.title"],
+        }
+        config.pagination = {"total_items_nb_key_path": "$.matched"}
+        config.sort = {
+            "sort_by_tpl": "&custom_sort={sort_param}",
+            "sort_order_mapping": {"ascending": "asc", "descending": "desc"},
+        }
+        config.discover_queryables = {"fetch_url": "https://example.test/queryables"}
+        config.products = {}
+
+        plugin = OARSearch("dummy", config)
+
+        self.assertIn("q", plugin.config.metadata_mapping)
+        self.assertEqual(plugin.config.metadata_mapping["q"][0], "custom_q={q}")
+        self.assertIn("title", plugin.config.metadata_mapping)
+        self.assertIn("datetime", plugin.config.metadata_mapping)
+        self.assertIn("datetime", str(plugin.config.metadata_mapping["datetime"]))
+        self.assertIn("updated", plugin.config.metadata_mapping)
+
+        self.assertIn(
+            "matched", str(plugin.config.pagination["total_items_nb_key_path"])
+        )
+        self.assertIn("next_page_url_tpl", plugin.config.pagination)
+        self.assertIn("next_page_token_key", plugin.config.pagination)
+        self.assertEqual(plugin.config.pagination["next_page_token_key"], "skip")
+
+        self.assertEqual(plugin.config.sort["sort_by_tpl"], "&custom_sort={sort_param}")
+        self.assertEqual(plugin.config.sort["sort_order_mapping"]["ascending"], "asc")
+        self.assertEqual(plugin.config.sort["sort_order_mapping"]["descending"], "desc")
+
+        self.assertEqual(
+            plugin.config.api_endpoint,
+            "https://example.test/collections/{_collection}/items",
+        )
+        self.assertEqual(
+            plugin.config.discover_queryables["fetch_url"],
+            "https://example.test/queryables",
+        )
+        self.assertEqual(
+            plugin.config.discover_queryables["collection_fetch_url"],
+            "https://example.test/collections/{provider_collection}/queryables",
+        )
+
 
 class TestSearchPluginDedtLumi(BaseSearchPluginTest):
     def setUp(self):
@@ -5371,6 +5753,59 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertEqual(
             "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/GHS_BUILT_S_GLOBE_R2023A/"
             "GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss/V1-0/tiles/GHS_BUILT_S_E2000_GLOBE_R2023A_4326_3ss_V1_0_R3_C3.zip",
+            properties["eodag:download_link"],
+        )
+        geometry = get_geometry_from_various(
+            geometry=["-160.008", "69.100", "-150.008", "59.100"]
+        )
+        self.assertEqual(geometry, products[0].geometry)
+
+    def test_plugins_search_cop_ghsl_create_products_from_tiles_modified_dataset(self):
+        """test the creation of products based on tiles returned by the provider"""
+        tiles = {
+            "2015": [
+                {
+                    "tileID": "R3_C3",
+                    "BBox": ["-160.008", "69.100", "-150.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C4",
+                    "BBox": ["-150.008", "69.100", "-140.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C5",
+                    "BBox": ["-140.008", "69.100", "-130.008", "59.100"],
+                },
+                {
+                    "tileID": "R3_C6",
+                    "BBox": ["-130.008", "69.100", "-120.008", "59.100"],
+                },
+            ],
+        }
+        collection = "GHS_ESM"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                collection=collection, provider="cop_ghsl"
+            )
+        )
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        params = product_type_config
+        params["tile_size"] = "10m"
+        params["per_page"] = 5
+        params["page"] = 1
+        products, count = plugin._create_products_from_tiles(
+            tiles, "lat/lon", collection, params, need_count=True
+        )
+        self.assertEqual(4, count)
+        self.assertEqual(4, len(products))
+        properties = products[0].properties
+        self.assertEqual("2015-01-01T00:00:00.000Z", properties["start_datetime"])
+        self.assertEqual("2015-12-31T23:59:59.000Z", properties["end_datetime"])
+        self.assertEqual("2015", properties["year"])
+        self.assertEqual("EPSG:3035", properties["proj:code"])
+        self.assertEqual(
+            "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/ESM_BUILT_VHR2015_Europe_R2019/"
+            "ESM_BUILT_VHR2015CLASS_EUROPE_R2019_3035_10/V1-0/tiles/R3_C3.zip",
             properties["eodag:download_link"],
         )
         geometry = get_geometry_from_various(

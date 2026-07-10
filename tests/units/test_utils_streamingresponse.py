@@ -22,6 +22,39 @@ class StreamResponseTest(unittest.TestCase):
         if os.path.isdir(StreamResponseTest.TMP_DIR):
             shutil.rmtree(StreamResponseTest.TMP_DIR)
 
+    def test_streamresponse_filename_overwrites_lowercase_content_disposition(self):
+        """When headers contain 'content-disposition' (lowercase) and a filename is
+        also provided, the filename setter must overwrite the existing header instead
+        of creating a duplicate 'Content-Disposition' entry."""
+        stream = StreamResponse(
+            content=b"",
+            headers={"content-disposition": 'attachment; filename="old_name.nc"'},
+            filename="new_name.nc",
+        )
+        # Only one Content-Disposition key must exist (CaseInsensitiveDict merges them)
+        matching = [k for k in stream.headers if k.lower() == "content-disposition"]
+        self.assertEqual(len(matching), 1)
+        self.assertIn("new_name.nc", stream.headers["Content-Disposition"])
+
+    def test_streamresponse_headers_are_case_insensitive(self):
+        """Headers must be accessible regardless of key casing."""
+        stream = StreamResponse(
+            content=b"",
+            headers={"Content-Type": "text/plain", "X-Custom-Header": "value"},
+        )
+        # Access with different casings
+        self.assertEqual(stream.headers["content-type"], "text/plain")
+        self.assertEqual(stream.headers["CONTENT-TYPE"], "text/plain")
+        self.assertEqual(stream.headers["x-custom-header"], "value")
+        self.assertEqual(stream.headers["X-CUSTOM-HEADER"], "value")
+
+    def test_streamresponse_headers_default_case_insensitive(self):
+        """Headers must default to a CaseInsensitiveDict when not provided."""
+        from requests.structures import CaseInsensitiveDict
+
+        stream = StreamResponse(content=b"")
+        self.assertIsInstance(stream.headers, CaseInsensitiveDict)
+
     def test_streamresponse_download_generator(self):
 
         content = b""

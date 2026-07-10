@@ -1,0 +1,61 @@
+hydroweb_next:
+  priority: 0
+  roles:
+    - host
+  description: hydroweb.next thematic hub for hydrology data access
+  url: https://hydroweb.next.theia-land.fr
+  search:
+    type: StacSearch
+    api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
+    need_auth: true
+    auth_error_code: 401
+    ssl_verify: true
+    asset_key_from_href: false
+    discover_queryables:
+      fetch_url: null
+      collection_fetch_url: null
+    pagination:
+      max_limit: 10_000
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      next_page_token_key: page
+    sort:
+      sort_by_default:
+        -  [start_datetime, ASC]
+      sort_param_mapping:
+        id: id
+        start_datetime: properties.start_datetime
+        end_datetime: properties.end_datetime
+        version: properties.version
+        processing:level: processing:level
+    metadata_mapping:
+      start_datetime:
+        - '{{"query":{{"end_datetime":{{"gte":"{start_datetime#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      end_datetime:
+        - '{{"query":{{"start_datetime":{{"lte":"{end_datetime#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
+      processing:software:
+        - '{{"query":{{"processing:software":{{"eq":{processing:software}}}}}}}'
+        - '$.properties.processing:software'
+      spatial:cycle_id:
+        - '{{"query":{{"spatial:cycle_id":{{"eq":{spatial:cycle_id}}}}}}}'
+        - '$.properties.spatial:cycle_id'
+      spatial:pass_id:
+        - '{{"query":{{"spatial:pass_id":{{"eq":{spatial:pass_id}}}}}}}'
+        - '$.properties.spatial:pass_id'
+      spatial:scene_id:
+        - '{{"query":{{"spatial:scene_id":{{"eq":{spatial:scene_id}}}}}}}'
+        - '$.properties.spatial:scene_id'
+  products:
+    GENERIC_COLLECTION:
+      _collection: '{collection}'
+  download:
+    type: HTTPDownload
+    auth_error_code: 401
+    ssl_verify: true
+  auth:
+    type: HTTPHeaderAuth
+    matching_url: https://hydroweb.next.theia-land.fr
+    headers:
+      X-API-Key: "{apikey}"
