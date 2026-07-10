@@ -3,6 +3,102 @@ Release history
 ===============
 
 
+v4.5.0 (2026-07-10)
+===================
+
+Bug Fixes
+---------
+
+* Download_link for GHSL_ESM with 10 tile_size (`#2238`_, `3166496`_)
+
+* **core**: Expose config module through lazy imports (`#2246`_, `a907691`_)
+
+* **core**: StreamResponse.headers as CaseInsensitiveDict (`#2267`_, `79382c6`_)
+
+* **plugins**: Accept HH_MM format for EcmwfSearch time param (`#2255`_, `eb60ee8`_)
+
+* **plugins**: Dedl required queryables (`#2241`_, `719b2ab`_)
+
+* **plugins**: Do no sort query parameters content (`#2259`_, `a88b1e4`_)
+
+* **plugins**: Handle queryables with empty details in form (`#2270`_, `03c3c64`_)
+
+* **providers**: Constraints url for DT_CLIMATE_ADAPTATION and DT_EXTREMES (`#2244`_, `beae94a`_)
+
+* **providers**: Sentinel and CLMS datasets mapping updates for wekeo (`#2116`_, `e0d1058`_)
+
+* **queryables**: Required parameters, defaults and allowed combinations (`#2148`_, `ee7d579`_)
+
+Continuous Integration
+----------------------
+
+* Conda test github action (`#2248`_, `d567547`_)
+
+Documentation
+-------------
+
+* Add Docker quickstart (`#2240`_, `8aa461b`_)
+
+* Remove stale params mapping CSV tables (`#2239`_, `e6cbe8b`_)
+
+Features
+--------
+
+* **conf**: Split providers.yml file (`#2228`_, `2e6ac19`_)
+
+* **config**: Removed yaml tags and faster loader (`#2251`_, `bd74e12`_)
+
+* **plugins**: New OGC API Records search plugin (`#2250`_, `0563530`_)
+
+* **plugins**: Normalize_config method for pre-build conf init (`#2266`_, `2669f17`_)
+
+* **providers**: Eumetsat datastore collections update (`#2256`_, `071c06b`_)
+
+Testing
+-------
+
+* More metadata converters tests (`#2264`_, `87c4c7a`_)
+
+.. _#2116: https://github.com/CS-SI/eodag/pull/2116
+.. _#2148: https://github.com/CS-SI/eodag/pull/2148
+.. _#2228: https://github.com/CS-SI/eodag/pull/2228
+.. _#2238: https://github.com/CS-SI/eodag/pull/2238
+.. _#2239: https://github.com/CS-SI/eodag/pull/2239
+.. _#2240: https://github.com/CS-SI/eodag/pull/2240
+.. _#2241: https://github.com/CS-SI/eodag/pull/2241
+.. _#2244: https://github.com/CS-SI/eodag/pull/2244
+.. _#2246: https://github.com/CS-SI/eodag/pull/2246
+.. _#2248: https://github.com/CS-SI/eodag/pull/2248
+.. _#2250: https://github.com/CS-SI/eodag/pull/2250
+.. _#2251: https://github.com/CS-SI/eodag/pull/2251
+.. _#2255: https://github.com/CS-SI/eodag/pull/2255
+.. _#2256: https://github.com/CS-SI/eodag/pull/2256
+.. _#2259: https://github.com/CS-SI/eodag/pull/2259
+.. _#2264: https://github.com/CS-SI/eodag/pull/2264
+.. _#2266: https://github.com/CS-SI/eodag/pull/2266
+.. _#2267: https://github.com/CS-SI/eodag/pull/2267
+.. _#2270: https://github.com/CS-SI/eodag/pull/2270
+.. _03c3c64: https://github.com/CS-SI/eodag/commit/03c3c6449e9bade01ad902c43849b6853fd02e7f
+.. _0563530: https://github.com/CS-SI/eodag/commit/05635304f03945c31a64887d12d74fef79696a68
+.. _071c06b: https://github.com/CS-SI/eodag/commit/071c06b95356559b174fac7b84d51d43cf58a8c6
+.. _2669f17: https://github.com/CS-SI/eodag/commit/2669f174c041a173af927f82a614112cb942d3b1
+.. _2e6ac19: https://github.com/CS-SI/eodag/commit/2e6ac19d43d7b3d16dd5444cbc6330bc02a89a81
+.. _3166496: https://github.com/CS-SI/eodag/commit/31664960b2fda40aca8112bef4713bfc273f7e6f
+.. _719b2ab: https://github.com/CS-SI/eodag/commit/719b2ab46d34e6e1eb411c7956b3fbc9044ef9d0
+.. _79382c6: https://github.com/CS-SI/eodag/commit/79382c6284ffe55b2f2f7d68274433b02cfd654f
+.. _87c4c7a: https://github.com/CS-SI/eodag/commit/87c4c7ad77525994c96389bf62952c70ff5328e4
+.. _8aa461b: https://github.com/CS-SI/eodag/commit/8aa461b33916e818c95d412606584478bb0aeb36
+.. _a88b1e4: https://github.com/CS-SI/eodag/commit/a88b1e4d17beeaf5694cf05b93cd8f7b4dbaec5d
+.. _a907691: https://github.com/CS-SI/eodag/commit/a907691198e9c17e547238c97c56629eb76e209b
+.. _bd74e12: https://github.com/CS-SI/eodag/commit/bd74e12df87f76340c742bd41df238c337f51c3f
+.. _beae94a: https://github.com/CS-SI/eodag/commit/beae94a958fa6d2c4967a2c73b12b16f67fc72db
+.. _d567547: https://github.com/CS-SI/eodag/commit/d567547b4dd16ffcabe158b902fcbd52270b93ff
+.. _e0d1058: https://github.com/CS-SI/eodag/commit/e0d1058e578288259e9ef0d3dbd09bb3cc46095c
+.. _e6cbe8b: https://github.com/CS-SI/eodag/commit/e6cbe8bc2595fa3e6eca27b50802e7cea600f2d0
+.. _eb60ee8: https://github.com/CS-SI/eodag/commit/eb60ee897fb2d37ef1513c5ba8f6c7cb52ac41ab
+.. _ee7d579: https://github.com/CS-SI/eodag/commit/ee7d579e189a6d8701294c682ecee57fb01029d7
+
+
 v4.4.0 (2026-06-12)
 ===================
 
