@@ -947,7 +947,7 @@ class ECMWFSearch(PostJsonSearch):
 
             prop = {"title": element.get("label", name)}
 
-            details = element.get("details", {})
+            details = element.get("details", {}) or {}
 
             # add values from form if keyword was not in constraints
             values = (
@@ -957,7 +957,8 @@ class ECMWFSearch(PostJsonSearch):
             )
 
             # updates the properties with the values given based on the information from the element
-            _update_properties_from_element(prop, element, values)
+            if values is not None:
+                _update_properties_from_element(prop, element, values)
 
             # default value is set with the following priority:
             # input default values > form details default value > no default value

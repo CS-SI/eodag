@@ -4000,6 +4000,46 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
     )
+    def test_plugins_search_ecmwfsearch_discover_queryables_form_details_none(
+        self, mock__fetch_data
+    ):
+        """Regression: discover_queryables must handle form elements with details set to None."""
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+
+        for element in form:
+            if element.get("name") == "download_format":
+                element["details"] = None
+                break
+
+        mock__fetch_data.side_effect = [constraints, form]
+
+        default_values = deepcopy(
+            getattr(self.search_plugin.config, "products", {}).get(
+                "CAMS_EU_AIR_QUALITY_RE", {}
+            )
+        )
+        default_values.pop("metadata_mapping", None)
+        params = deepcopy(default_values)
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+
+        queryables = self.search_plugin.discover_queryables(**params)
+
+        self.assertIsNotNone(queryables)
+        self.assertIn("ecmwf_download_format", queryables)
+        self.assertTrue(
+            get_args(queryables["ecmwf_download_format"])[1].is_required(),
+            "Keyword ecmwf_download_format must be required when details are missing",
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
     def test_plugins_search_ecmwfsearch_discover_queryables_not_allowed_parameters(
         self, mock__fetch_data
     ):
