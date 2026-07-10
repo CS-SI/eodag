@@ -284,6 +284,8 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.form_url` (``str``): url of the form file
+            used to build queryables
 
         * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
           (``list`` [:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
