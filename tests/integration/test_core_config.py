@@ -53,17 +53,8 @@ class TestCoreProvidersConfig(TestCase):
         self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
-    def test_core_providers_config_update(
-        self, mock__request, mock_fetch_collections_list, mock_auth_session_request
-    ):
+    def test_core_providers_config_update(self, mock__request):
         """Providers config must be updatable"""
         mock__request.return_value = mock.Mock()
         mock__request_side_effect = [
@@ -396,14 +387,9 @@ class TestCoreProvidersConfig(TestCase):
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_core_providers_add_update(
-        self, mock__request, mock_fetch_collections_list
-    ):
+    def test_core_providers_add_update(self, mock__request):
         """add_provider method must add provider using given conf and update if exists"""
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {}

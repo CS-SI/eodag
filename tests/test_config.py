@@ -31,7 +31,6 @@ from eodag.config import (
     ProviderConfig,
     _has_matching_external_auth,
     _parse_env_provider_configs,
-    build_provider_configs,
     disable_providers,
     merge_provider_configs,
 )
@@ -41,10 +40,12 @@ from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
+    PLUGINS_TOPIC_KEYS,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     EODataAccessGateway,
     ValidationError,
+    build_provider_configs,
     config,
     get_ext_collections_conf,
     load_stac_provider_config,
@@ -75,8 +76,42 @@ def load_plugin_config_from_string(yaml_string: str) -> PluginConfig:
 
 
 class TestProviderConfig(unittest.TestCase):
-    def test_provider_config_name(self):
-        """Name config parameter must be slugified"""
+    def test_provider_config_from_yaml_called(self):
+        """yaml.load must invoke the registered !provider YAML constructor,
+        which means ProviderConfig.from_yaml is called."""
+        provider_name = "provider"
+
+        stream = StringIO(
+            """!provider
+            name: {}
+            api: !plugin
+                type: MyPluginClass
+            products:
+                EODAG_COLLECTION: provider_collection
+            """.format(
+                provider_name
+            ),
+        )
+
+        # yaml.Loader caches constructors by tag. Patching ProviderConfig.from_yaml
+        # does not affect the callable already registered for "!provider".
+        self.assertEqual(ProviderConfig.yaml_tag, "!provider")
+        real_constructor = yaml.Loader.yaml_constructors[ProviderConfig.yaml_tag]
+        constructor_spy = mock.Mock(wraps=real_constructor)
+
+        with mock.patch.dict(
+            yaml.Loader.yaml_constructors,
+            {ProviderConfig.yaml_tag: constructor_spy},
+        ):
+            provider_config = load_provider_config_from_string(stream.getvalue())
+
+        constructor_spy.assert_called_once()
+        _, node = constructor_spy.call_args.args
+        self.assertEqual(node.tag, ProviderConfig.yaml_tag)
+        self.assertIsInstance(provider_config, ProviderConfig)
+
+    def test_provider_config_creation_from_yaml(self):
+        """ProviderConfig.from_yaml must create a correct provider config instance"""
         unslugified_provider_name = "some $provider-name. Really ugly"
         slugified_provider_name = "some_provider_name_really_ugly"
 
@@ -89,102 +124,106 @@ class TestProviderConfig(unittest.TestCase):
                 EODAG_COLLECTION: provider_collection
             """.format(
                 unslugified_provider_name
-            )
+            ),
         )
+
+        # yaml.load uses from_yaml internally when it encounters !provider tag
         provider_config = load_provider_config_from_string(stream.getvalue())
+
+        # Verify the object is created correctly
+        self.assertIsInstance(provider_config, ProviderConfig)
+        # name config parameter must be slugified
         self.assertEqual(provider_config.name, slugified_provider_name)
-
-    def test_provider_config_valid(self):
-        """Provider config must be valid"""
-        # Not defining any plugin at all
-        invalid_stream = StringIO("""!provider\nname: my_provider""")
-        self.assertRaises(
-            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
+        self.assertIsInstance(provider_config.api, PluginConfig)
+        self.assertEqual(provider_config.api.type, "MyPluginClass")
+        self.assertIsInstance(provider_config.products, dict)
+        self.assertIn("EODAG_COLLECTION", provider_config.products)
+        self.assertEqual(
+            provider_config.products["EODAG_COLLECTION"], "provider_collection"
         )
 
-        # Not defining a class for a plugin
-        invalid_stream = StringIO(
-            """!provider
-                name: my_provider
-                search: !plugin
-                    param: value
-            """
-        )
-        self.assertRaises(
-            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
+    def test_provider_config_creation_from_mapping(self):
+        """ProviderConfig.from_mapping must create a correct provider config instance"""
+        unslugified_provider_name = "some $provider-name. Really ugly"
+
+        mapping = {
+            "name": unslugified_provider_name,
+            "api": {"type": "MyPluginClass"},
+            "products": {"EODAG_COLLECTION": "provider_collection"},
+        }
+
+        provider_config = ProviderConfig.from_mapping(mapping)
+
+        # Verify the object is created correctly
+        self.assertIsInstance(provider_config, ProviderConfig)
+        # name config parameter is not slugified
+        self.assertEqual(provider_config.name, unslugified_provider_name)
+        self.assertIsInstance(provider_config.api, PluginConfig)
+        self.assertEqual(provider_config.api.type, "MyPluginClass")
+        self.assertIsInstance(provider_config.products, dict)
+        self.assertIn("EODAG_COLLECTION", provider_config.products)
+        self.assertEqual(
+            provider_config.products["EODAG_COLLECTION"], "provider_collection"
         )
 
-        # Not giving a name to the provider
-        invalid_stream = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-            """
-        )
-        self.assertRaises(
-            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
-        )
+    def test_provider_config_validation_missing_name(self):
+        """Test ProviderConfig validation with missing name."""
+        with self.assertRaisesRegex(
+            ValidationError, "Provider config must have name key"
+        ):
+            ProviderConfig.from_mapping({"search": {"type": "StacSearch"}})
 
-        # Specifying an api plugin and a search or download or auth plugin at the same
-        # type
-        invalid_stream1 = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-                search: !plugin
-                    type: MyPluginClass2
-            """
-        )
-        invalid_stream2 = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-                download: !plugin
-                    type: MyPluginClass3
-            """
-        )
-        invalid_stream3 = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-                auth: !plugin
-                    type: MyPluginClass4
-            """
-        )
-        self.assertRaises(
+    def test_provider_config_validation_missing_plugins(self):
+        """Test ProviderConfig validation with missing plugins."""
+        with self.assertRaisesRegex(
+            ValidationError, "A provider must implement at least one plugin"
+        ):
+            ProviderConfig.from_mapping({"name": "test_provider"})
+
+    def test_provider_config_validation_missing_plugins_type(self):
+        """Test ProviderConfig validation with plugins with missing type."""
+        with self.assertRaisesRegex(
             ValidationError,
-            load_provider_config_from_string,
-            invalid_stream1.getvalue(),
-        )
-        self.assertRaises(
-            ValidationError,
-            load_provider_config_from_string,
-            invalid_stream2.getvalue(),
-        )
-        self.assertRaises(
-            ValidationError,
-            load_provider_config_from_string,
-            invalid_stream3.getvalue(),
-        )
+            "A Plugin config must specify the type of Plugin it configures",
+        ):
+            ProviderConfig.from_mapping(
+                {"name": "test_provider", "search": {"param": "value"}}
+            )
+
+    def test_provider_config_validation_api_exclusivity(self):
+        """Test that API plugin cannot coexist with other plugin types."""
+        for plugin_topic in PLUGINS_TOPIC_KEYS:
+            if plugin_topic != "api":
+                config = {
+                    "name": "test_provider",
+                    "api": {"type": "SomeApi"},
+                    plugin_topic: {"type": "SomeOtherPlugin"},
+                }
+                with self.assertRaisesRegex(
+                    ValidationError, "Api plugin must not implement any other type"
+                ):
+                    ProviderConfig.from_mapping(config)
 
     def test_provider_config_update(self):
-        """A provider config must be update-able with a dict"""
-        valid_stream = StringIO(
-            """!provider
-                name: provider
-                provider_param: val
-                api: !plugin
-                    type: MyPluginClass
-                    plugin_param1: value1
-                    pluginParam2: value2
-        """
+        """Test ProviderConfig update operation."""
+        provider_config = ProviderConfig.from_mapping(
+            {
+                "name": "provider",
+                "provider_param": "val",
+                "api": {
+                    "type": "MyPluginClass",
+                    "plugin_param1": "value1",
+                    "pluginParam2": "value2",
+                },
+            }
         )
-        provider_config = load_provider_config_from_string(valid_stream.getvalue())
         overrides = {
             "provider_param": "new val",
             "api": {"pluginparam2": "newVal", "newParam": "val"},
         }
+
         provider_config.update(overrides)
+
         self.assertEqual(provider_config.provider_param, "new val")
         self.assertEqual(provider_config.api.pluginParam2, "newVal")
         self.assertTrue(hasattr(provider_config.api, "newParam"))
@@ -305,6 +344,27 @@ class TestConfigFunctions(unittest.TestCase):
         super(TestConfigFunctions, cls).tearDownClass()
         # stop os.environ
         cls.mock_os_environ.stop()
+
+    @mock.patch.dict("os.environ", {"EODAG_PROVIDERS_WHITELIST": "provider1"})
+    def test_providers_dict_whitelist(self):
+        """Test whitelist filtering via standalone function."""
+        from eodag.config import _get_whitelisted_configs
+
+        sample = {
+            "provider1": {"name": "provider1", "search": {"type": "StacSearch"}},
+            "provider2": {"name": "provider2", "search": {"type": "StacSearch"}},
+        }
+        filtered = _get_whitelisted_configs(sample)
+        self.assertEqual(set(filtered.keys()), {"provider1"})
+
+    def test_providers_dict_invalid_config_handling(self):
+        """Test build_provider_configs handles invalid configurations."""
+        invalid_configs = {"invalid": {"description": "Missing required fields"}}
+
+        with mock.patch("eodag.config.logger") as mock_logger:
+            providers = build_provider_configs(invalid_configs)
+            mock_logger.warning.assert_called()
+            self.assertEqual(len(providers), 0)
 
     def test_load_default_config(self):
         """Default config must be successfully loaded"""

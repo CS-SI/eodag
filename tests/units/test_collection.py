@@ -206,6 +206,17 @@ class TestCollection(unittest.TestCase):
 
         # TODO: when some fields of the model will allow it, add tests of fields whose annotation is "list[str]"
 
+    def test_collection_string_fields_stay_string(self):
+        """Fields with str or Optional[str] annotation must keep their string value
+        and not be converted to a list, unlike fields with list[str] or Optional[list[str]] annotation."""
+        # verify sci_doi is an optional string field in the model
+        self.assertEqual(Collection.model_fields["sci_doi"].annotation, Optional[str])
+
+        # a string value set via alias must remain a plain string, not be split into a list
+        collection = Collection(**{"id": "foo", "sci:doi": "10.1234/test-doi"})
+        self.assertIsInstance(collection.sci_doi, str)
+        self.assertEqual(collection.sci_doi, "10.1234/test-doi")
+
     def test_collection_summaries_fields(self):
         """Check that summaries fields are fields of the model and check the list"""
         for field in Collection.summaries_fields():
@@ -400,7 +411,7 @@ class TestCollection(unittest.TestCase):
         )
 
         # "processing_level" and "eodag_sensor_type" should have been converted to a list
-        # if their field allow list of sets or of integer
+        # if their field allow list of sets or of integers
         # TODO: add a test with a "summaries" field accepting an other type
         # than string when a field will allow to deal with this case
         self.assertDictEqual(

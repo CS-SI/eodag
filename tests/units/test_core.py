@@ -32,7 +32,6 @@ import yaml
 from concurrent.futures import ThreadPoolExecutor
 from lxml import html
 from pydantic import ValidationError as PydanticValidationError
-from requests.exceptions import RequestException
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -1063,14 +1062,27 @@ class TestCore(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
-    def test_list_collections_fetch_providers(self, mock_fetch_collections_list):
-        """Core api must fetch providers for new collections if option is passed to list_collections"""
+    def test_list_collections_not_fetch_providers(self, mock_fetch_collections_list):
+        """Core api must not fetch providers for new collections in list_collections"""
         self.dag.list_collections()
         assert not mock_fetch_collections_list.called
-        self.dag.fetch_collections_list(provider="cop_dataspace")
         self.dag.list_collections(providers=["cop_dataspace"])
-        mock_fetch_collections_list.assert_called_once_with(
-            self.dag, provider="cop_dataspace"
+        assert not mock_fetch_collections_list.called
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.list_collections", autospec=True)
+    def test_get_collection(self, mock_list_collections):
+        """get_collection must delegate to list_collections with the right parameters"""
+        # without providers
+        self.dag.get_collection("S2_MSI_L1C")
+        mock_list_collections.assert_called_once_with(
+            self.dag, ids=["S2_MSI_L1C"], providers=None
+        )
+
+        # with providers
+        mock_list_collections.reset_mock()
+        self.dag.get_collection("S2_MSI_L1C", providers=["cop_dataspace", "creodias"])
+        mock_list_collections.assert_called_once_with(
+            self.dag, ids=["S2_MSI_L1C"], providers=["cop_dataspace", "creodias"]
         )
 
     def test_guess_collection_with_filter(self):
@@ -1281,7 +1293,7 @@ class TestCore(TestCoreBase):
         self.assertIsNotNone(self.dag.get_collection("bar"))
 
     def test_update_collections_list_unknown_provider(self):
-        """Core api.update_collections_list on unkwnown provider must not crash and not update conf"""
+        """Core api.update_collections_list on unknown provider must not crash and not update conf"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
 
@@ -1611,6 +1623,39 @@ class TestCore(TestCoreBase):
         ext_collections_conf = self.dag.discover_collections(provider="earth_search")
         self.assertEqual(ext_collections_conf, {})
 
+    def test_discover_collections_ko(self):
+        """Core api must raise an error while discovering collections
+        if given provider is unknown, not enabled or not fetchable"""
+        # check that an unknown provider raises an error
+        unknown_name = "foo"
+        self.assertNotIn(unknown_name, self.dag.get_providers().keys())
+        with self.assertRaises(UnsupportedProvider) as ctx:
+            self.dag.discover_collections(provider=unknown_name)
+
+        self.assertIn(
+            f"The requested provider is not (yet) supported: {unknown_name}",
+            str(ctx.exception),
+        )
+
+        # disable one provider for the duration of this sub-test
+        disabled_name = list(self.dag.get_providers().keys())[-1]
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(disabled_name))
+        cfg.enabled = False
+        self.dag.db.upsert_fb_configs([cfg])
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        # with a provider that is not enabled or not fetchable, log messages are expected
+        non_fetchable_name = list(self.dag.get_providers(fetchable=False).keys())[0]
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.discover_collections(provider=disabled_name)
+            self.dag.discover_collections(provider=non_fetchable_name)
+
+        for provider in [disabled_name, non_fetchable_name]:
+            self.assertIn(
+                f"The requested provider is not enabled or not fetchable: {provider}",
+                str(cm.output),
+            )
+
     @mock.patch("eodag.api.core.get_ext_collections_conf", autospec=True)
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.discover_collections", autospec=True
@@ -1831,6 +1876,39 @@ class TestCore(TestCoreBase):
         self.dag.fetch_collections_list()
         self.assertEqual(mock_discover_collections.call_count, 2)
 
+    def test_fetch_collections_list_ko(self):
+        """Core api must raise errors while fetching collections list
+        if given provider is unknown, not enabled or not fetchable"""
+        # check that an unknown provider raises an error
+        unknown_name = "foo"
+        self.assertNotIn(unknown_name, self.dag.get_providers().keys())
+        with self.assertRaises(UnsupportedProvider) as ctx:
+            self.dag.fetch_collections_list(provider=unknown_name)
+
+        self.assertIn(
+            f"The requested provider is not (yet) supported: {unknown_name}",
+            str(ctx.exception),
+        )
+
+        # disable one provider for the duration of this sub-test
+        disabled_name = list(self.dag.get_providers().keys())[-1]
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(disabled_name))
+        cfg.enabled = False
+        self.dag.db.upsert_fb_configs([cfg])
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        # with a provider that is not enabled or not fetchable, log messages are expected
+        non_fetchable_name = list(self.dag.get_providers(fetchable=False).keys())[0]
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.fetch_collections_list(provider=disabled_name)
+            self.dag.fetch_collections_list(provider=non_fetchable_name)
+
+        for provider in [disabled_name, non_fetchable_name]:
+            self.assertIn(
+                f"The requested provider is not enabled or not fetchable: {provider}",
+                str(cm.output),
+            )
+
     def test_core_object_set_default_locations_config(self):
         """The core object must set the default locations config on instantiation"""
         default_shpfile = os.path.join(
@@ -1846,6 +1924,127 @@ class TestCore(TestCoreBase):
         """The core object must set the locations to an empty list when the file is not found"""
         dag = EODataAccessGateway(locations_conf_path="no_locations.yml")
         self.assertEqual(dag.locations_config, [])
+
+    def test_providers_attribute_only_returns_enabled(self):
+        """providers property must only return enabled providers;
+        a provider that is disabled must not appear in it"""
+        # pick a provider that is currently enabled
+        provider_name = list(self.dag.providers.keys())[0]
+        self.assertIn(provider_name, self.dag.providers)
+
+        # disable it: from_mapping() always resets enabled=True, so set it after
+        provider_config = ProviderConfig.from_mapping(
+            self.dag.db.get_fb_config(provider_name)
+        )
+        provider_config.enabled = False
+        self.dag.db.upsert_fb_configs([provider_config])
+        # restore the provider at the end of the test, even if assertions fail
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        # the disabled provider must not appear in the providers property (enabled only)
+        self.assertNotIn(provider_name, self.dag.providers)
+
+        # but it is accessible when not filtering on enabled state
+        self.assertIn(provider_name, self.dag.get_providers(enabled=None))
+        self.assertIn(provider_name, self.dag.get_providers(enabled=False))
+
+    def test_get_providers(self):
+        """get_providers must filter providers by name, collection, enabled, fetchable and limit"""
+        all_names = set(self.dag.get_providers().keys())
+        self.assertTrue(all_names)
+
+        # --- names ---
+        # single name
+        result = self.dag.get_providers(names=["peps"])
+        self.assertEqual(list(result.keys()), ["peps"])
+
+        # multiple names
+        result = self.dag.get_providers(names=["peps", "creodias"])
+        self.assertSetEqual(set(result.keys()), {"peps", "creodias"})
+
+        # unknown name returns empty
+        result = self.dag.get_providers(names=["does_not_exist"])
+        self.assertEqual(len(result), 0)
+
+        # --- collection ---
+        # a known collection is served by a subset of providers
+        result_s2 = self.dag.get_providers(collection="S2_MSI_L1C")
+        self.assertIn("peps", result_s2)
+        self.assertLess(len(result_s2), len(all_names))
+        # every returned provider must actually have that collection configured
+        for provider_name in result_s2:
+            provider_cfg = self.dag.db.get_fb_config(
+                provider_name, collections={"S2_MSI_L1C"}
+            )
+            self.assertIn("S2_MSI_L1C", provider_cfg["products"])
+        # providers NOT in the result must not have the collection
+        for provider_name in all_names - set(result_s2.keys()):
+            provider_cfg = self.dag.db.get_fb_config(
+                provider_name, collections={"S2_MSI_L1C"}
+            )
+            self.assertNotIn("S2_MSI_L1C", provider_cfg["products"])
+
+        # an unknown collection returns no provider
+        result_unknown = self.dag.get_providers(collection="UNKNOWN_COLLECTION")
+        self.assertEqual(len(result_unknown), 0)
+
+        # --- enabled ---
+        # disable one provider for the duration of this sub-test
+        disabled_name = list(self.dag.get_providers().keys())[-1]
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(disabled_name))
+        cfg.enabled = False
+        self.dag.db.upsert_fb_configs([cfg])
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        # enabled=None (default): all providers, enabled and disabled
+        result_all = self.dag.get_providers(enabled=None)
+        self.assertIn(disabled_name, result_all)
+        self.assertEqual(len(result_all), len(all_names))
+
+        # enabled=True: only enabled providers
+        result_enabled = self.dag.get_providers(enabled=True)
+        self.assertNotIn(disabled_name, result_enabled)
+        self.assertEqual(len(result_enabled), len(all_names) - 1)
+
+        # enabled=False: only disabled providers
+        result_disabled = self.dag.get_providers(enabled=False)
+        self.assertIn(disabled_name, result_disabled)
+        self.assertEqual(len(result_disabled), 1)
+
+        # --- fetchable ---
+        fetchable = self.dag.get_providers(fetchable=True, enabled=True)
+        non_fetchable = self.dag.get_providers(fetchable=False, enabled=True)
+        # both sets are non-empty and together cover the set of enabled providers
+        self.assertTrue(len(fetchable) > 0)
+        self.assertTrue(len(non_fetchable) > 0)
+        self.assertSetEqual(
+            set(fetchable.keys()) | set(non_fetchable.keys()),
+            set(result_enabled.keys()),
+        )
+        # no provider appears in both
+        self.assertSetEqual(set(fetchable.keys()) & set(non_fetchable.keys()), set())
+
+        # --- limit ---
+        result_limited = self.dag.get_providers(limit=1)
+        self.assertEqual(len(result_limited), 1)
+
+        result_limited_3 = self.dag.get_providers(limit=3)
+        self.assertEqual(len(result_limited_3), 3)
+
+        # --- combinations ---
+        # names + enabled=True: known names, only the enabled one
+        result = self.dag.get_providers(names=["peps", disabled_name], enabled=True)
+        self.assertIn("peps", result)
+        self.assertNotIn(disabled_name, result)
+
+        # collection + limit: at most limit providers for that collection
+        result = self.dag.get_providers(collection="S2_MSI_L1C", limit=2)
+        self.assertLessEqual(len(result), 2)
+
+        # fetchable=True + limit=1: first fetchable provider
+        result = self.dag.get_providers(fetchable=True, limit=1)
+        self.assertEqual(len(result), 1)
+        self.assertIn(list(result.keys())[0], fetchable)
 
     def test_get_version(self):
         """Test if the version we get is the current one"""
@@ -1878,9 +2077,49 @@ class TestCore(TestCoreBase):
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
 
-    def test_update_providers_config(self):
-        """update_providers_config must update providers configuration"""
+    def test_get_preferred_provider(self):
+        """get_preferred_provider must return the highest-priority enabled provider,
+        respect enabled_only, and raise EodagError when no provider is enabled"""
+        from eodag.utils.exceptions import EodagError
 
+        # default (enabled_only=True): highest-priority enabled provider
+        name, priority = self.dag.get_preferred_provider()
+        self.assertEqual(name, "peps")
+        self.assertEqual(priority, 1)
+
+        # disable the top provider to exercise the enabled_only flag
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config("peps"))
+        cfg.enabled = False
+        self.dag.db.upsert_fb_configs([cfg])
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        # enabled_only=True (default): peps is skipped, the next highest-priority
+        # enabled provider is returned
+        name_enabled, _ = self.dag.get_preferred_provider(enabled_only=True)
+        self.assertNotEqual(name_enabled, "peps")
+
+        # enabled_only=False: peps is included despite being disabled and wins
+        # because it still holds the highest priority
+        name_all, priority_all = self.dag.get_preferred_provider(enabled_only=False)
+        self.assertEqual(name_all, "peps")
+        self.assertEqual(priority_all, 1)
+
+        # error case: EodagError is raised when every provider is disabled
+        for p_name in list(self.dag.get_providers(enabled=True).keys()):
+            p_cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(p_name))
+            p_cfg.enabled = False
+            self.dag.db.upsert_fb_configs([p_cfg])
+
+        with self.assertRaises(EodagError) as ctx:
+            self.dag.get_preferred_provider()
+        self.assertIn("No provider enabled", str(ctx.exception))
+
+    def test_update_providers_config(self):
+        """update_providers_config accepts yaml_conf and dict_conf, handles both new and
+        existing providers, updates _creds_store with credentials and re-enables a provider
+        that was disabled when its credentials are provided."""
+
+        # --- yaml_conf: add a new provider ---
         new_config = """
             my_new_provider:
                 search:
@@ -1890,26 +2129,116 @@ class TestCore(TestCoreBase):
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
             """
-        # add new provider
         self.dag.update_providers_config(new_config)
         self.assertIsInstance(self.dag.providers["my_new_provider"], Provider)
-
         self.assertEqual(self.dag.providers["my_new_provider"].priority, 0)
 
         # run a 2nd time: check that it does not raise an error
         self.dag.update_providers_config(new_config)
 
-    @mock.patch(
-        "eodag.utils.requests.requests.sessions.Session.get",
-        autospec=True,
-        side_effect=RequestException,
-    )
+        # --- dict_conf: update an attribute of an existing provider ---
+        original_endpoint = self.dag.db.get_fb_config("peps")["search"]["api_endpoint"]
+        self.dag.update_providers_config(
+            dict_conf={
+                "peps": {"search": {"api_endpoint": "https://new-peps.fr/api/v1"}}
+            }
+        )
+        self.assertEqual(
+            self.dag.db.get_fb_config("peps")["search"]["api_endpoint"],
+            "https://new-peps.fr/api/v1",
+        )
+        # restore original endpoint
+        self.dag.update_providers_config(
+            dict_conf={"peps": {"search": {"api_endpoint": original_endpoint}}}
+        )
+
+        # --- _creds_store: empty before credentials are added, populated after ---
+        auth_provider = "my_auth_provider"
+        self.assertNotIn(auth_provider, self.dag._creds_store)
+
+        # add a provider that requires auth but supply no credentials → disabled by disable_providers
+        self.dag.update_providers_config(
+            dict_conf={
+                auth_provider: {
+                    "search": {
+                        "type": "StacSearch",
+                        "api_endpoint": "https://api.auth_provider/search",
+                        "need_auth": True,
+                    },
+                    "products": {GENERIC_COLLECTION: {"_collection": "{collection}"}},
+                }
+            }
+        )
+        # no credentials → _creds_store still has nothing for this provider
+        self.assertFalse(self.dag._creds_store.get(auth_provider))
+        # the provider is disabled (not in the enabled-only `providers` property)
+        self.assertNotIn(auth_provider, self.dag.providers)
+
+        # --- disabled → enabled: add credentials → provider becomes enabled ---
+        self.dag.update_providers_config(
+            dict_conf={
+                auth_provider: {
+                    "auth": {
+                        "type": "HTTPBasicAuth",
+                        "credentials": {
+                            "username": "testuser",
+                            "password": "testpass",
+                        },
+                    }
+                }
+            }
+        )
+        # credentials are now in _creds_store
+        self.assertIn(auth_provider, self.dag._creds_store)
+        self.assertIn("auth", self.dag._creds_store[auth_provider])
+        self.assertEqual(
+            self.dag._creds_store[auth_provider]["auth"],
+            {"username": "testuser", "password": "testpass"},
+        )
+        # provider is enabled
+        self.assertIn(auth_provider, self.dag.providers)
+
+        # --- a disabled provider stays disabled after update_providers_config ---
+        # update_providers_config calls restore_fbs() internally (which temporarily
+        # re-enables all disabled providers), then disable_providers() re-evaluates.
+        # A provider with need_auth=True and no credentials is disabled again
+        # even when update_providers_config patches it with a benign change.
+        no_creds_provider = "my_no_creds_provider"
+        self.dag.update_providers_config(
+            dict_conf={
+                no_creds_provider: {
+                    "search": {
+                        "type": "StacSearch",
+                        "api_endpoint": "https://api.no_creds/search",
+                        "need_auth": True,
+                    },
+                    "products": {GENERIC_COLLECTION: {"_collection": "{collection}"}},
+                }
+            }
+        )
+        # disabled immediately: need_auth=True but no credentials
+        self.assertNotIn(no_creds_provider, self.dag.providers)
+
+        # calling update_providers_config on it WITHOUT adding credentials keeps it disabled
+        self.dag.update_providers_config(
+            dict_conf={
+                no_creds_provider: {
+                    "search": {"api_endpoint": "https://api.no_creds/v2/search"}
+                }
+            }
+        )
+        # endpoint was updated in the DB...
+        self.assertEqual(
+            self.dag.db.get_fb_config(no_creds_provider)["search"]["api_endpoint"],
+            "https://api.no_creds/v2/search",
+        )
+        # ...but the provider is still disabled
+        self.assertNotIn(no_creds_provider, self.dag.providers)
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     @mock.patch(
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
@@ -1919,7 +2248,6 @@ class TestCore(TestCoreBase):
     def test_list_queryables(
         self,
         mock_stacsearch_discover_queryables: mock.Mock,
-        mock_fetch_collections_list: mock.Mock,
         mock_auth_plugin: mock.Mock,
         mock_requests_get: mock.Mock,
     ) -> None:
@@ -2189,12 +2517,8 @@ class TestCore(TestCoreBase):
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     def test_list_queryables_priority_sorted(
         self,
-        mock_fetch_collections_list: mock.Mock,
         get_auth_plugin: mock.Mock,
         mock_wekeo_list_queryables: mock.Mock,
         mock_ecmwf_list_queryables: mock.Mock,
@@ -2261,12 +2585,8 @@ class TestCore(TestCoreBase):
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     def test_list_queryables_additional(
         self,
-        mock_fetch_collections_list: mock.Mock,
         get_auth_plugin: mock.Mock,
         mock_wekeo_list_queryables: mock.Mock,
         mock_ecmwf_list_queryables: mock.Mock,
@@ -3144,16 +3464,7 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertGreater(len(guesses), 10)
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    def test__prepare_search_no_parameters(
-        self, mock_auth_session_request, mock_fetch_collections_list
-    ):
+    def test__prepare_search_no_parameters(self):
         """_prepare_search must create some kwargs even when no parameter has been provided"""
         _, prepared_search = self.dag._prepare_search()
         expected = {
@@ -3163,16 +3474,7 @@ class TestCoreSearch(TestCoreBase):
         expected = set(["geometry", "collection"])
         self.assertSetEqual(expected, set(prepared_search))
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    def test__prepare_search_dates(
-        self, mock_auth_session_request, mock_fetch_collections_list
-    ):
+    def test__prepare_search_dates(self):
         """_prepare_search must handle start & end dates"""
         # with start and end parameters
         base = {
@@ -3204,16 +3506,7 @@ class TestCoreSearch(TestCoreBase):
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertListEqual([("start_datetime", "DESC")], prepared_search["sort_by"])
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    def test__prepare_search_geom(
-        self, mock_auth_session_request, mock_fetch_collections_list
-    ):
+    def test__prepare_search_geom(self):
         """_prepare_search must handle geom, box and bbox"""
         # The default way to provide a geom is through the 'geom' argument.
         base = {"geom": (0, 50, 2, 52)}
@@ -3249,16 +3542,7 @@ class TestCoreSearch(TestCoreBase):
         self.assertNotIn("intersects", prepared_search)
         self.assertIsInstance(prepared_search["geometry"], Polygon)
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    def test__prepare_search_locations(
-        self, mock_auth_session_request, mock_fetch_collections_list
-    ):
+    def test__prepare_search_locations(self):
         """_prepare_search must handle a location search"""
         # When locations where introduced they could be passed
         # as regular kwargs. The new and recommended way to provide
@@ -3337,12 +3621,7 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test__prepare_search_search_plugin_has_generic_product_properties(
-        self, mock_fetch_collections_list
-    ):
+    def test__prepare_search_search_plugin_has_generic_product_properties(self):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
@@ -3469,7 +3748,10 @@ class TestCoreSearch(TestCoreBase):
             return_value={"id": "foo"}
         )
 
-        found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
+        with self.assertLogs(level="DEBUG") as cm:
+            found = self.dag._search_by_id(uid="foo", collection="bar", provider="baz")
+            self.assertIn("collection bar not found", str(cm.output))
+            self.assertIn("Searching product with id 'foo'", str(cm.output))
 
         from eodag.utils.logging import get_logging_verbose
 
@@ -3809,17 +4091,14 @@ class TestCoreSearch(TestCoreBase):
         self.assertIsInstance(second_result_page, SearchResult)
         self.assertEqual(len(second_result_page.data), self.search_results_size_2)
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
-    def test_search_iter_page_count(self, mock_do_seach, mock_fetch_collections_list):
+    def test_search_iter_page_count(self, mock_do_search):
         """search_iter_page must return an iterator"""
         first_page = copy.copy(self.search_results)
         first_page.next_page_token = "token_for_page_2"
         first_page.next_page_token_key = "next_key"
         second_page = self.search_results_2
-        mock_do_seach.side_effect = [
+        mock_do_search.side_effect = [
             first_page,
             second_page,
         ]
@@ -3827,7 +4106,7 @@ class TestCoreSearch(TestCoreBase):
         # no count by default
         page_iterator = self.dag.search_iter_page(collection="S2_MSI_L1C")
         next(page_iterator)
-        mock_do_seach.assert_called_once_with(
+        mock_do_search.assert_called_once_with(
             mock.ANY,
             mock.ANY,
             collection="S2_MSI_L1C",
@@ -3838,12 +4117,12 @@ class TestCoreSearch(TestCoreBase):
         )
 
         # count only on 1st page if specified
-        mock_do_seach.reset_mock()
+        mock_do_search.reset_mock()
         first_page = copy.copy(self.search_results)
         first_page.next_page_token = "token_for_page_2"
         first_page.next_page_token_key = "next_key"
         second_page = self.search_results_2
-        mock_do_seach.side_effect = [
+        mock_do_search.side_effect = [
             first_page,
             second_page,
         ]
@@ -3851,7 +4130,7 @@ class TestCoreSearch(TestCoreBase):
             collection="S2_MSI_L1C", count=True, limit=2
         )
         next(page_iterator)
-        mock_do_seach.assert_called_once_with(
+        mock_do_search.assert_called_once_with(
             mock.ANY,
             mock.ANY,
             collection="S2_MSI_L1C",
@@ -3863,8 +4142,8 @@ class TestCoreSearch(TestCoreBase):
         )
         # 2nd page: no count
         next(page_iterator)
-        self.assertEqual(mock_do_seach.call_count, 2)
-        mock_do_seach.assert_called_with(
+        self.assertEqual(mock_do_search.call_count, 2)
+        mock_do_search.assert_called_with(
             mock.ANY,
             mock.ANY,
             collection="S2_MSI_L1C",

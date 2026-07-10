@@ -26,7 +26,6 @@ import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
-from eodag.config import build_provider_configs
 from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import deepcopy
 from tests.context import (
@@ -42,6 +41,7 @@ from tests.context import (
     SearchResult,
     USGSAuthExpiredError,
     USGSError,
+    build_provider_configs,
     get_geometry_from_various,
     load_default_config,
     make_plugins_manager,
@@ -244,13 +244,6 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.auth_endpoint
         del self.api_plugin.config.credentials
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
@@ -259,8 +252,6 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
-        mock_fetch_collections_list,
-        mock_auth_session_request,
     ):
         """EcmwfApi.download must call the appropriate ecmwf api service"""
 
@@ -347,21 +338,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
     def test_plugins_apis_ecmwf_download_all(
         self,
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
-        mock_fetch_collections_list,
-        mock_auth_session_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
 

@@ -21,15 +21,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from eodag.databases.sqlite import SQLiteDatabase
-from tests.context import (
-    PluginConfig,
-    Provider,
-    ProviderConfig,
-    ProvidersDict,
-    UnsupportedProvider,
-    ValidationError,
-    build_provider_configs,
-)
+from tests.context import Provider, ProviderConfig, ProvidersDict, UnsupportedProvider
 
 
 class TestProvider(unittest.TestCase):
@@ -147,73 +139,6 @@ class TestProvider(unittest.TestCase):
         self.assertTrue(provider.metadata.get("fetchable"))
 
 
-# TODO: move TestProviderConfig to test_config.py.
-class TestProviderConfig(unittest.TestCase):
-    """Test cases for the ProviderConfig class."""
-
-    def test_provider_config_creation(self):
-        """Test ProviderConfig creation from mapping."""
-        config_dict = {
-            "name": "test_provider",
-            "search": {"type": "StacSearch"},
-        }
-        config = ProviderConfig.from_mapping(config_dict)
-        self.assertEqual(config.name, "test_provider")
-        self.assertIsInstance(config.search, PluginConfig)
-
-    def test_provider_config_validation_missing_name(self):
-        """Test ProviderConfig validation with missing name."""
-        with self.assertRaisesRegex(
-            ValidationError, "Provider config must have name key"
-        ):
-            ProviderConfig.from_mapping({"search": {"type": "StacSearch"}})
-
-    def test_provider_config_validation_missing_plugins(self):
-        """Test ProviderConfig validation with missing plugins."""
-        with self.assertRaisesRegex(
-            ValidationError, "A provider must implement at least one plugin"
-        ):
-            ProviderConfig.from_mapping({"name": "test_provider"})
-
-    def test_provider_config_validation_api_exclusivity(self):
-        """Test that API plugin cannot coexist with other plugin types."""
-        config = {
-            "name": "test_provider",
-            "api": {"type": "SomeApi"},
-            "search": {"type": "StacSearch"},
-        }
-        with self.assertRaisesRegex(
-            ValidationError, "Api plugin must not implement any other type"
-        ):
-            ProviderConfig.from_mapping(config)
-
-    def test_provider_config_update(self):
-        """Test ProviderConfig update operation."""
-        config = ProviderConfig.from_mapping(
-            {"name": "test_provider", "search": {"type": "StacSearch"}}
-        )
-
-        config.update({"description": "Updated description"})
-        self.assertEqual(config.description, "Updated description")
-
-    def test_provider_config_from_mapping_requires_valid_topic(self):
-        """ProviderConfig.from_mapping must reject invalid plugin topics."""
-        # Test that invalid plugin config (missing type) raises ValidationError
-        with self.assertRaisesRegex(
-            ValidationError,
-            "A Plugin config must specify the type of Plugin it configures",
-        ):
-            ProviderConfig.from_mapping(
-                {
-                    "name": "test-provider",
-                    "search": {
-                        # Missing 'type' field - should fail validation
-                    },
-                    "products": {},
-                }
-            )
-
-
 class TestProvidersDict(unittest.TestCase):
     """Test cases for the ProvidersDict class."""
 
@@ -281,26 +206,3 @@ class TestProvidersDict(unittest.TestCase):
         """Test ProvidersDict __delitem__ raises UnsupportedProvider."""
         with self.assertRaises(UnsupportedProvider):
             del self.providers_dict["nonexistent"]
-
-    # TODO: move this test to test_config.py.
-    @patch.dict("os.environ", {"EODAG_PROVIDERS_WHITELIST": "provider1"})
-    def test_providers_dict_whitelist(self):
-        """Test whitelist filtering via standalone function."""
-        from eodag.config import _get_whitelisted_configs
-
-        sample = {
-            "provider1": {"name": "provider1", "search": {"type": "StacSearch"}},
-            "provider2": {"name": "provider2", "search": {"type": "StacSearch"}},
-        }
-        filtered = _get_whitelisted_configs(sample)
-        self.assertEqual(set(filtered.keys()), {"provider1"})
-
-    # TODO: move this test to test_config.py.
-    def test_providers_dict_invalid_config_handling(self):
-        """Test build_provider_configs handles invalid configurations."""
-        invalid_configs = {"invalid": {"description": "Missing required fields"}}
-
-        with patch("eodag.config.logger") as mock_logger:
-            providers = build_provider_configs(invalid_configs)
-            mock_logger.warning.assert_called()
-            self.assertEqual(len(providers), 0)

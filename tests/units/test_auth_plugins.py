@@ -32,7 +32,6 @@ from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
-from eodag.config import build_provider_configs
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
@@ -43,6 +42,7 @@ from tests.context import (
     AuthenticationError,
     HeaderAuth,
     MisconfiguredError,
+    build_provider_configs,
     make_plugins_manager,
 )
 
