@@ -42,7 +42,7 @@ from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
-from eodag.api.provider import Provider, ProvidersDict, build_provider_configs
+from eodag.api.provider import Provider, build_provider_configs
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
@@ -3524,6 +3524,111 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertListEqual(["a", "b"], available_values["variable"])
         self.assertIn("date", available_values)
 
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints_with_keyword_required_by_form(
+        self,
+    ):
+        """An input keyword cannot be used if it's required by form and no constraint with the given
+        combination of parameters exists"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": True},
+        ]
+
+        # "variable" is *required* by form and *some* constraints with the given "date" defines values
+        # for "variable": "variable" must be used as input keyword
+        # case 1: the input value "a" is available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        # case 2: the input value "c" is not available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertIn(
+            "ecmwf:variable=c is not available. Allowed values are ",
+            ex.exception.message,
+        )
+
+        # "variable" is *required* by form and *no* constraint with the given "date" defines values
+        # for "variable": "variable" cannot be used as input keyword with this value of "date".
+        input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "a"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertEqual(
+            "ecmwf:variable=a is not available. ecmwf:variable cannot be used with this combination of parameters.",
+            ex.exception.message,
+        )
+
+        # "variable" is *required* by form and *no* constraint with the given "date" defines values
+        # for "variable": "variable" is not used as input keyword and no available value for "variable" is returned
+        input_keywords = {"date": "2024-01-01/2024-01-01"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual([], available_values["variable"])
+        self.assertIn("date", available_values)
+
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints_with_keyword_not_required_by_form(
+        self,
+    ):
+        """Any value is accepted if a keyword is not required by form and its list of allowed values is empty"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "required": True},
+            {"name": "variable", "required": False},
+        ]
+
+        # "variable" is *not* required by form and after applying the filter there is *no* constraint that defines
+        # any values for "variable": any value for "variable" can be used as input keyword.
+        input_keywords = {"date": "2024-01-01/2024-01-01", "variable": "c"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual([], available_values["variable"])
+        self.assertIn("date", available_values)
+
+        # "variable" is *not* required by form and after applying the filter there are *some* constraints that
+        # define  values for "variable": "variable" must match the available values.
+        # case 1: the value "a" is available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        # case 2: the value "c" is not available
+        input_keywords = {"date": "2025-01-01/2025-01-01", "variable": "c"}
+        with self.assertRaises(ValidationError) as ex:
+            self.search_plugin.available_values_from_constraints(
+                constraints, input_keywords, form
+            )
+        self.assertIn(
+            "ecmwf:variable=c is not available. Allowed values are ",
+            ex.exception.message,
+        )
+
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
@@ -3766,6 +3871,108 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # restore the original config
         self.search_plugin.config = provider_search_plugin_config
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_default_by_form(
+        self, mock__fetch_data
+    ):
+        """A queryable with a default value must use that default value and being not required."""
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        default_values = deepcopy(
+            getattr(self.search_plugin.config, "products", {}).get(
+                "CAMS_EU_AIR_QUALITY_RE", {}
+            )
+        )
+        default_values.pop("metadata_mapping", None)
+        params = deepcopy(default_values)
+        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["download_format"] = "zip"  # override default in form file
+
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIsNotNone(queryables)
+        for element in form:
+            if "details" not in element:
+                # skip form elements missing details
+                continue
+            name: str = element["name"]
+            ecmwf_name: str = f"ecmwf_{name}"
+            details = element.get("details", {})
+            default_by_params = params.get(name)
+            default_by_form = details.get("default")
+            if default_by_params is not None:
+                # default value defined in the provider config
+                self.assertIn(ecmwf_name, queryables.keys())
+                self.assertFalse(
+                    get_args(queryables[ecmwf_name])[1].is_required(),
+                    f"Keyword {ecmwf_name} must be not required",
+                )
+                self.assertEqual(
+                    default_by_params, get_args(queryables[ecmwf_name])[1].default
+                )
+            elif default_by_form is not None:
+                # default value defined in the form file and not in the provider config
+                self.assertIn(ecmwf_name, queryables.keys())
+                self.assertFalse(
+                    get_args(queryables[ecmwf_name])[1].is_required(),
+                    f"Keyword {ecmwf_name} must be not required",
+                )
+                # default value defined as list in the form file
+                self.assertEqual(
+                    default_by_form[0], get_args(queryables[ecmwf_name])[1].default
+                )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_not_allowed_parameters(
+        self, mock__fetch_data
+    ):
+        """A not allowed parameter must not be listed in the queryables.
+
+        A parameter is not allowed if all the following conditions are true:
+
+        - the keyword is required by form;
+        - the keyword is used by some constraint;
+        - the list of available values is empty.
+
+        In this case don't add the keyword to the list of queryables because
+        it cannot be used with the given combination of parameters.
+        """
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"]},
+        ]
+        form = [
+            {"name": "date", "type": "StringListWidget", "required": True},
+            {"name": "variable", "type": "StringListWidget", "required": True},
+        ]
+        mock__fetch_data.side_effect = [constraints, form]
+
+        params = {
+            "collection": "CAMS_EU_AIR_QUALITY_RE",
+            "date": "2024-01-01",
+        }
+        queryables = self.search_plugin.discover_queryables(**params)
+        self.assertIsNotNone(queryables)
+        # ecmwf_date is queryable with a default value -> not required
+        self.assertIn("ecmwf_date", queryables)
+        self.assertFalse(
+            get_args(queryables["ecmwf_date"])[1].is_required(),
+            "Keyword ecmwf_date must be not required",
+        )
+        # ecmwf_variable is not queryable
+        self.assertNotIn("ecmwf_variable", queryables)
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",

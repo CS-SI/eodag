@@ -284,6 +284,8 @@ class ECMWFSearch(PostJsonSearch):
             queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.form_url` (``str``): url of the form file
+            used to build queryables
 
         * :attr:`~eodag.config.PluginConfig.dynamic_discover_queryables`
           (``list`` [:class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`]): list of configurations to fetch
@@ -851,10 +853,10 @@ class ECMWFSearch(PostJsonSearch):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
-                # if keyword in required_by_form then any_value_allowed = False
-                #   use constraints file to determine if the parameter match the allowed values
-                # if allowed_values then any_value_allowed = False
-                #   use constraints file: the parameter must match the allowed values
+                # if keyword in required_by_form then any_value_allowed = False:
+                #   use constraints file to determine if the parameter matches the allowed values
+                # if allowed_values is not empty then any_value_allowed = False:
+                #   use constraints file to determine if the parameter matches the allowed values
                 if keyword not in required_by_form and not allowed_values:
                     # keyword not required by form and the list of allowed values is empty:
                     # accept any value for this keyword
@@ -880,10 +882,12 @@ class ECMWFSearch(PostJsonSearch):
 
                 if allowed_values:
                     allowed_values_str = (
-                        f" Allowed values are {', '.join(allowed_values)}."
+                        f"Allowed values are {', '.join(allowed_values)}."
                     )
                 else:
-                    allowed_values_str = "No value allowed."
+                    allowed_values_str = (
+                        f"{keyword} cannot be used with this combination of parameters."
+                    )
                 raise ValidationError(
                     f"{keyword}={values} is not available"
                     f"{all_keywords_str}."
@@ -955,7 +959,9 @@ class ECMWFSearch(PostJsonSearch):
             # updates the properties with the values given based on the information from the element
             _update_properties_from_element(prop, element, values)
 
-            default = defaults.get(name)
+            # default value is set with the following priority:
+            # input default values > form details default value > no default value
+            default = defaults.get(name, details.get("default"))
 
             if details:
                 fields = details.get("fields")
@@ -970,16 +976,14 @@ class ECMWFSearch(PostJsonSearch):
                 default = ",".join(default)
 
             is_required: bool
-            if available_values.get(name):
-                # required by the filtered constraints (available_values[name] is a not empty list)
+            if bool(element.get("required", False)):
+                # required by form
                 is_required = True
-            elif bool(element.get("required")):
                 if name in available_values and not available_values[name]:
-                    # not required by the filtered constraints (available_values[name] is an empty list)
-                    is_required = False
-                else:
-                    # required only by form
-                    is_required = True
+                    # keyword required by form, defined in some constraint and the list of available values is empty:
+                    # don't add this keyword to the list of queryables because
+                    # it cannot be used with this combination of parameters
+                    continue
             else:
                 # not required by form
                 is_required = False

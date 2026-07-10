@@ -226,10 +226,12 @@ class PluginConfig(yaml.YAMLObject):
         result_type: str
         #: JsonPath to retrieve the queryables from the provider result
         results_entry: str
-        #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
-        constraints_url: str
         #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
         constraints_entry: str
+        #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
+        constraints_url: str
+        #: :class:`~eodag.plugins.search.base.Search` URL of the form file used to build queryables
+        form_url: str
 
     class CollectionSelector(TypedDict, total=False):
         """Define the criteria to select a collection in :class:`~eodag.config.PluginConfig.DynamicDiscoverQueryables`.
