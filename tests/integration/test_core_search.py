@@ -79,16 +79,7 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
         side_effect=RequestException,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
-        autospec=True,
-    )
-    def test_core_search_errors_qssearch(
-        self, mock_authenticate, mock_fetch_collections_list, mock_get
-    ):
+    def test_core_search_errors_qssearch(self, mock_get):
         # QueryStringSearch / sara
         self.dag.set_preferred_provider("sara")
         self.assertRaises(
@@ -100,16 +91,9 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
         side_effect=RequestException,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
@@ -118,9 +102,7 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_stacsearch(
         self,
         mock_query,
-        mock_fetch_collections_list,
         mock_post,
-        mock_auth_session_request,
     ):
         mock_query.return_value = ([], 0)
         # StacSearch / earth_search
@@ -132,16 +114,9 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
         side_effect=RequestException,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
@@ -150,9 +125,7 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_postjson(
         self,
         mock_request,
-        mock_fetch_collections_list,
         mock_post,
-        mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # PostJsonSearch / aws_eos
@@ -164,10 +137,6 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
-        "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.urlopen",
         autospec=True,
         side_effect=RequestException,
@@ -177,12 +146,7 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
         side_effect=RequestException,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_core_search_errors_odata(
-        self, mock_fetch_collections_list, mock_get, mock_urlopen, mock_authenticate
-    ):
+    def test_core_search_errors_odata(self, mock_get, mock_urlopen):
         # ODataV4Search / creodias
         self.dag.set_preferred_provider("creodias")
         self.assertRaises(
@@ -194,22 +158,13 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.apis.usgs.api.scene_search", autospec=True, side_effect=USGSError
     )
     @mock.patch("eodag.plugins.apis.usgs.api.login", autospec=True)
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     def test_core_search_errors_usgs(
         self,
-        mock_fetch_collections_list,
         mock_login,
         mock_scene_search,
-        mock_auth_session_request,
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
@@ -231,10 +186,6 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
         autospec=True,
     )
@@ -247,16 +198,11 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     def test_core_search_errors_buildpost(
         self,
-        mock_fetch_collections_list,
         mock_authenticate,
         mock_post,
         mock_request,
-        mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # MeteoblueSearch / meteoblue
@@ -549,10 +495,7 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.plugins.search.qssearch.StacSearch.query",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_core_search_auths_matching(self, mock_fetch_collections_list, mock_query):
+    def test_core_search_auths_matching(self, mock_query):
         """Core search must set and use appropriate auth plugins"""
 
         self.dag.add_provider(
@@ -846,12 +789,8 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     def test_core_search_geodes(
         self,
-        mock_fetch_collections_list,
         mock_post,
     ):
         """Search geodes with mocked response"""
