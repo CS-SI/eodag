@@ -1,6 +1,6 @@
-!provider
+mundi:
   name: mundi
-  search: !plugin
+  search:
     type: QueryStringSearch
     api_endpoint: 'https://{_collection}.browse.catalog.mundiwebservices.com/opensearch'
     need_auth: false
@@ -62,7 +62,7 @@
         _collection: '{collection}'
         instruments: '{instruments}'
         processing:level: '{processing:level}'
-  auth: !plugin
+  auth:
     type: HTTPHeaderAuth
     headers:
         Cookie: "seeedtoken={apikey}"

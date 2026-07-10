@@ -1,11 +1,10 @@
-!provider # MARK: usgs_satapi_aws
-  name: usgs_satapi_aws
+usgs_satapi_aws:
   priority: 0
   roles:
     - host
   description: USGS Landsatlook SAT API
   url: https://landsatlook.usgs.gov/stac-server
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://landsatlook.usgs.gov/stac-server/search
     need_auth: false
@@ -39,10 +38,10 @@
       _collection: landsat-c2l2alb-ta
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: AwsDownload
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: AwsAuth
     matching_url: s3://
     requester_pays: True

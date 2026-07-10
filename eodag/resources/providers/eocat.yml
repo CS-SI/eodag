@@ -1,11 +1,10 @@
-!provider # MARK: eocat
-  name: eocat
+eocat:
   priority: 0
   description: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
   roles:
     - host
   url: https://eocat.esa.int/eo-catalogue
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: 'https://eocat.esa.int/eo-catalogue/search'
     ssl_verify: false
@@ -27,10 +26,10 @@
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     ignore_assets: true
-  auth: !plugin
+  auth:
     type: EOIAMAuth
     matching_url: https://[-\w\.]+.eo.esa.int
     auth_uri: 'https://eoiam-idp.eo.esa.int'

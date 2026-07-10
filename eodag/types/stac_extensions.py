@@ -484,7 +484,7 @@ class FederationFields(BaseModel):
     https://github.com/Open-EO/openeo-api/tree/master/extensions/federation
     """
 
-    federation_backends: Annotated[list[str], Field(None)]
+    federation_backends: Annotated[Union[list[str], str], Field(None)]
 
 
 class FederationExtension(BaseStacExtension):

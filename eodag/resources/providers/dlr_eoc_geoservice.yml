@@ -1,16 +1,15 @@
-!provider # MARK: DLR EOC Geoservice
-  name: dlr_eoc_geoservice
+dlr_eoc_geoservice:
   priority: 0
   description: DLR Earth Observation Center (EOC) Geoservice
   roles:
     - host
   url: https://geoservice.dlr.de
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://geoservice.dlr.de/eoc/ogc/stac/v1/search
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: id
         start_datetime: properties.datetime
@@ -28,7 +27,7 @@
         eodag:download_link: '$.assets.data.href'
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     auth_error_code:
       - 401
@@ -38,6 +37,6 @@
         ignore_assets: true
       SUPERSITES:
         ignore_assets: true
-  auth: !plugin
+  auth:
     type: GenericAuth
     matching_url: https://download.geoservice.dlr.de

@@ -1,11 +1,10 @@
-!provider # MARK: earth_search_gcs
-  name: earth_search_gcs
+earth_search_gcs:
   priority: 0
   roles:
     - host
   description: Google Cloud Storage through Earth Search
   url: https://www.element84.com/earth-search/
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
@@ -29,7 +28,7 @@
       max_limit: 500
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: id
         start_datetime: properties.datetime
@@ -56,7 +55,7 @@
         eodag:download_link: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: AwsDownload
     s3_endpoint: https://storage.googleapis.com
     ignore_assets: True
@@ -64,7 +63,7 @@
     products:
       S2_MSI_L1C:
         default_bucket: 'gcp-public-data-sentinel-2'
-  auth: !plugin
+  auth:
     type: AwsAuth
     matching_url: s3://
     s3_endpoint: https://storage.googleapis.com

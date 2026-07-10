@@ -91,6 +91,15 @@ class Search(PluginTopic):
         if hasattr(self.config, "discover_metadata"):
             self.config.discover_metadata.setdefault("metadata_prefix", provider)
 
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize plugin config defaults.
+
+        Subclasses can override this method to apply plugin-specific defaults
+        before plugin instantiation.
+        """
+        return config
+
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
         pass
@@ -222,7 +231,7 @@ class Search(PluginTopic):
 
     def get_metadata_mapping(
         self, collection: Optional[str] = None
-    ) -> dict[str, Union[str, list[str]]]:
+    ) -> dict[str, Union[str, list[Optional[str]]]]:
         """Get the plugin metadata mapping configuration (collection specific if exists)
 
         :param collection: the desired collection
@@ -265,8 +274,25 @@ class Search(PluginTopic):
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
-        # remove duplicates
-        sort_by_arg = list(dict.fromkeys(sort_by_arg))
+        # tolerate legacy format: ["sort_param", "ASC"]
+        if (
+            isinstance(sort_by_arg, (list, tuple))
+            and len(sort_by_arg) == 2
+            and isinstance(sort_by_arg[0], str)
+            and isinstance(sort_by_arg[1], str)
+        ):
+            sort_by_arg = [(sort_by_arg[0], sort_by_arg[1])]
+
+        # normalize to hashable tuples and remove duplicates
+        sort_by_arg_normalized: list[tuple[str, str]] = []
+        for sort_by_tuple in sort_by_arg:
+            if not isinstance(sort_by_tuple, (list, tuple)) or len(sort_by_tuple) != 2:
+                raise ValidationError(
+                    "sort_by must be a list of tuples like [('start_datetime', 'ASC')]"
+                )
+            sort_by_arg_normalized.append((sort_by_tuple[0], sort_by_tuple[1]))
+
+        sort_by_arg = list(dict.fromkeys(sort_by_arg_normalized))
 
         sort_by_qs: str = ""
         sort_by_qp: dict[str, Any] = {}

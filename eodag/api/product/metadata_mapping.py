@@ -83,7 +83,7 @@ DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 
 def get_metadata_path(
-    map_value: Union[str, list[str]],
+    map_value: Union[str, list[Optional[str]]],
 ) -> tuple[Union[list[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
@@ -142,7 +142,7 @@ def get_metadata_path(
     return None, path
 
 
-def get_metadata_path_value(map_value: Union[str, list[str]]) -> str:
+def get_metadata_path_value(map_value: Union[str, list[Optional[str]]]) -> str:
     """Get raw metadata path without converter
 
     >>> get_metadata_path_value("$.properties.id")
@@ -150,7 +150,7 @@ def get_metadata_path_value(map_value: Union[str, list[str]]) -> str:
     >>> get_metadata_path_value(["platform", "$.properties.platform"])
     '$.properties.platform'
     """
-    return map_value[1] if isinstance(map_value, list) else map_value
+    return cast(str, map_value[1]) if isinstance(map_value, list) else map_value
 
 
 def get_search_param(map_value: list[str]) -> str:
@@ -171,18 +171,26 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form ``{<field_name>#<conversion_function>}``
 
     The currently understood converters are:
+        - ``assets_list_to_dict``: convert a list of asset objects into a dictionary keyed by asset name
         - ``ceda_collection_name``: generate a CEDA collection name from a string
         - ``wekeo_to_cop_collection``: converts the name of a collection from the WEkEO format to the Copernicus format
         - ``csv_list``: convert to a comma separated list
+        - ``dates_from_cmems_id``: extract min/max UTC datetimes from a CMEMS product identifier
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in milliseconds
+        - ``dict_filter``: filter dict items using a jsonpath predicate
         - ``dict_filter_and_sub``: filter dict items using jsonpath and then apply recursive_sub_str
+        - ``dict_update``: add/update nested dictionary items from a list of key/value pairs
         - ``dict_with_roles``: keep only dict items with given roles in their "roles" list
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``from_alternate``: update assets using given alternate
         - ``from_ewkt``: convert EWKT to shapely geometry / WKT in DEFAULT_PROJ
         - ``from_georss``: convert GeoRSS to shapely geometry / WKT in DEFAULT_PROJ
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
+        - ``get_dates_from_string``: extract start/end UTC datetimes from a date range embedded in text
         - ``get_group_name``: get the matching regex group name
+        - ``get_hydrological_year``: build hydrological year string(s) from an input date
+        - ``get_variables_from_path``: extract variables listed in the query part of a path
+        - ``interval_to_datetime_dict``: convert a date interval string to a dictionary of year/month/day lists
         - ``literalize_unicode``: convert a string to its raw Unicode literal form
         - ``not_available``: replace value with "Not Available"
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict) values matching a regex
@@ -197,6 +205,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``split``: split a string using given separator
         - ``split_cop_dem_id``: get the bbox by splitting the product id
         - ``split_corine_id``: get the collection by splitting the product id
+        - ``split_id_into_s3_params``: parse a Sentinel-3 product id into S3 query parameter values
+        - ``to_bounds``: convert an input geometry to [min_lon, min_lat, max_lon, max_lat]
         - ``to_bounds_lists``: convert to list(s) of bounds
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``to_ewkt``: convert to EWKT (Extended Well-Known text)
@@ -205,7 +215,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_iso_date``: remove the time part of a iso datetime string
         - ``to_iso_utc_datetime_from_milliseconds``: convert a utc timestamp in given milliseconds to a utc iso datetime
         - ``to_iso_utc_datetime``: convert a UTC datetime string to ISO UTC datetime string
+        - ``to_longitude_latitude``: compute geometry center as a ``{"lon": ..., "lat": ...}`` dictionary
         - ``to_lower``: Convert a string to lowercase
+        - ``to_non_separated_date``: convert an ISO datetime/date string to ``YYYYMMDD``
         - ``to_nwse_bounds_str``: convert to North,West,South,East bounds string with given separator
         - ``to_nwse_bounds``: convert to North,West,South,East bounds
         - ``to_rounded_wkt``: simplify the WKT of a geometry
@@ -430,6 +442,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return [min_lon, min_lat, max_lon, max_lat]
             else:
                 return list(input_geom.bounds[0:4])
+
+        @staticmethod
+        def convert_to_bounds_str(input_geom_unformatted: Any) -> str:
+            bounds_list = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
+            return ",".join(str(x) for x in bounds_list)
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> list[float]:
@@ -1863,7 +1880,7 @@ def _get_queryables(
 
 def get_queryable_from_provider(
     provider_queryable: str,
-    metadata_mapping: dict[str, Union[str, list[str]]],
+    metadata_mapping: dict[str, Union[str, list[Optional[str]]]],
     provider: Optional[str] = None,
 ) -> Optional[str]:
     """Get EODAG configured queryable parameter from provider queryable parameter

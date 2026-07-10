@@ -1,5 +1,4 @@
-!provider  # MARK: wekeo_ecmwf
-  name: wekeo_ecmwf
+wekeo_ecmwf:
   group: wekeo
   priority: 0
   roles:
@@ -37,7 +36,7 @@
         }}
       - $.properties.startdate
     end_datetime: $.properties.enddate
-  search: !plugin
+  search:
     type: WekeoECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     need_auth: true
@@ -276,7 +275,7 @@
           # longitude/latitude to order from wekeo_ecmwf, location to validate against cop_ads constraints
           - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"], "location": {{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}}}'
           - '$.null'
-  auth: !plugin
+  auth:
     type: TokenAuth
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
     refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
@@ -284,7 +283,7 @@
     token_key: access_token
     refresh_token_key: refresh_token
     token_expiration_key: expires_in
-  download: !plugin
+  download:
     type: HTTPDownload
     auth_error_code: 401
     order_enabled: true

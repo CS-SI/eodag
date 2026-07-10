@@ -108,6 +108,13 @@ class TestMetadataFormatter(unittest.TestCase):
             "2021-04-20",
         )
 
+    def test_convert_to_non_separated_date(self):
+        to_format = "{fieldname#to_non_separated_date}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="2021-04-21T18:27:19.123Z"),
+            "20210421",
+        )
+
     def test_convert_to_rounded_wkt(self):
         to_format = "{fieldname#to_rounded_wkt}"
         geom = get_geometry_from_various(geometry="POINT (0.11111 1.22222222)")
@@ -183,6 +190,22 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, fieldname=geom),
             "[0.1111, 1.2222, 0.1111, 1.2222]",
+        )
+
+    def test_convert_to_nwse_bounds(self):
+        to_format = "{fieldname#to_nwse_bounds}"
+        geom = get_geometry_from_various(geometry="POLYGON ((1 2, 1 4, 3 4, 3 2, 1 2))")
+        self.assertEqual(
+            format_metadata(to_format, fieldname=geom),
+            "[4.0, 1.0, 2.0, 3.0]",
+        )
+
+    def test_convert_to_nwse_bounds_str(self):
+        to_format = "{fieldname#to_nwse_bounds_str(;)}"
+        geom = get_geometry_from_various(geometry="POLYGON ((1 2, 1 4, 3 4, 3 2, 1 2))")
+        self.assertEqual(
+            format_metadata(to_format, fieldname=geom),
+            "4.0;1.0;2.0;3.0",
         )
 
     def test_convert_to_geojson(self):
@@ -409,6 +432,20 @@ class TestMetadataFormatter(unittest.TestCase):
             NOT_AVAILABLE,
         )
 
+    def test_convert_split(self):
+        to_format = "{fieldname#split(/)}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="s3://bucket/path/to/file"),
+            "['s3:', '', 'bucket', 'path', 'to', 'file']",
+        )
+
+    def test_convert_split_not_available(self):
+        to_format = "{fieldname#split(/)}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname=NOT_AVAILABLE),
+            "['Not Available']",
+        )
+
     def test_convert_literalize_unicode(self):
         to_format = r"{fieldname#literalize_unicode}"
 
@@ -450,6 +487,69 @@ class TestMetadataFormatter(unittest.TestCase):
                 fieldname={"a": {"href": "https://foo"}, "b": {"href": "s3://bar"}},
             ),
             "{'b': {'href': 's3://bar'}}",
+        )
+
+    def test_convert_dict_filter_multiple_matches(self):
+        to_format = '{fieldname#dict_filter($[?(href=~"^s3.*")])}'
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname={
+                    "a": {"href": "https://foo"},
+                    "b": {"href": "s3://bar"},
+                    "c": {"href": "s3://baz"},
+                },
+            ),
+            "{'b': {'href': 's3://bar'}, 'c': {'href': 's3://baz'}}",
+        )
+
+    def test_convert_dict_filter_no_match(self):
+        to_format = '{fieldname#dict_filter($[?(href=~"^s3.*")])}'
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname={
+                    "a": {"href": "https://foo"},
+                    "b": {"href": "https://bar"},
+                },
+            ),
+            "{}",
+        )
+
+    def test_convert_dict_filter_with_non_dict_input(self):
+        to_format = '{fieldname#dict_filter($[?(href=~"^s3.*")])}'
+        self.assertEqual(
+            format_metadata(to_format, fieldname=["not", "a", "dict"]),
+            "{}",
+        )
+
+    def test_convert_dict_filter_and_sub(self):
+        to_format = "{fieldname#dict_filter_and_sub(('$[?(href=~\"^s3.*\")]', 'bucket', 'archive'))}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname={
+                    "a": {"href": "https://foo", "title": "asset-a"},
+                    "b": {
+                        "href": "s3://bucket/bar.tif",
+                        "links": ["s3://bucket/quicklook.jpg"],
+                    },
+                },
+            ),
+            "{'b': {'href': 's3://archive/bar.tif', 'links': ['s3://archive/quicklook.jpg']}}",
+        )
+
+    def test_convert_dict_filter_and_sub_no_match(self):
+        to_format = "{fieldname#dict_filter_and_sub(('$[?(href=~\"^s3.*\")]', 'bucket', 'archive'))}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname={
+                    "a": {"href": "https://foo", "title": "asset-a"},
+                    "b": {"href": "https://bar", "title": "asset-b"},
+                },
+            ),
+            "{}",
         )
 
     def test_convert_dict_with_roles(self):

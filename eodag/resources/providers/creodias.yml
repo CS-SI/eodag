@@ -1,11 +1,10 @@
-!provider # MARK: creodias
-  name: creodias
+creodias:
   priority: 0
   description: CloudFerro DIAS
   roles:
     - host
   url: https://creodias.eu/
-  search: !plugin
+  search:
     type: ODataV4Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     need_auth: false
@@ -29,7 +28,7 @@
       max_limit: 1_000
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_by_tpl: '&$orderby={sort_param} {sort_order}'
       sort_param_mapping:
         start_datetime: ContentDate/Start
@@ -243,13 +242,13 @@
         - $.null
       eodag:quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       eodag:thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-  download: !plugin
+  download:
     type: HTTPDownload
     extract: true
     order_enabled: false
     archive_depth: 2
     ssl_verify: true
-  auth: !plugin
+  auth:
     type: KeycloakOIDCPasswordAuth
     matching_url: https://[-\w]+.creodias.eu
     oidc_config_url: https://identity.cloudferro.com/auth/realms/Creodias-new/.well-known/openid-configuration

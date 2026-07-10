@@ -21,6 +21,7 @@ import logging
 import re
 import socket
 from copy import copy as copy_copy
+from copy import deepcopy as copy_deepcopy
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -49,7 +50,6 @@ import concurrent.futures
 import geojson
 import orjson
 import requests
-import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import ConfigDict, Field, create_model
@@ -70,6 +70,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.api.search_result import RawSearchResult, SearchResult
+from eodag.config import load_stac_provider_config
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
@@ -85,9 +86,7 @@ from eodag.utils import (
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
-    STAC_SEARCH_PLUGINS,
     USER_AGENT,
-    copy_deepcopy,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -398,7 +397,7 @@ class QueryStringSearch(Search):
             )
 
         # parse jsonpath on init: collection specific metadata-mapping
-        for collection in self.config.products.keys():
+        for collection in getattr(self.config, "products", {}).keys():
             collection_metadata_mapping = {}
             # collection specific metadata-mapping
             if any(
@@ -811,6 +810,7 @@ class QueryStringSearch(Search):
         """
         count = prep.count
         raise_errors = getattr(prep, "raise_errors", False)
+        number_matched = kwargs.pop("number_matched", None)
         collection = cast(str, kwargs.get("collection", prep.collection))
         if collection == GENERIC_COLLECTION:
             logger.warning(
@@ -876,8 +876,8 @@ class QueryStringSearch(Search):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
-        if not count and "number_matched" in kwargs:
-            total_items = kwargs["number_matched"]
+        if not count and number_matched is not None:
+            total_items = number_matched
 
         eo_products = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
@@ -947,10 +947,14 @@ class QueryStringSearch(Search):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 _collection=provider_collection
             )
+
+            # default url
+            next_page_url = search_endpoint
+            if qs_with_sort:
+                next_page_url = f"{search_endpoint}?{qs_with_sort}"
+
             # numeric page token
-            if (
-                next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and limit is not None:
+            if next_page_token_key in ["page", "skip"] and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = 0
@@ -1110,16 +1114,7 @@ class QueryStringSearch(Search):
                     else:
                         logger.debug("Next page merge could not be collected")
 
-                results_entry = string_to_jsonpath(
-                    self.config.results_entry, force=True
-                )
-                found_entry_paths = results_entry.find(resp_as_json)
-                if found_entry_paths and not isinstance(found_entry_paths, int):
-                    result = found_entry_paths[0].value
-                else:
-                    result = []
-                if not isinstance(result, list):
-                    result = [result]
+                result = self.extract_results_from_response(resp_as_json, **kwargs)
 
                 if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
@@ -1334,6 +1329,22 @@ class QueryStringSearch(Search):
             product._normalize_bands()
             products.append(product)
         return products
+
+    def extract_results_from_response(
+        self, resp_as_json: dict[str, Any], **kwargs: Any
+    ) -> list[Any]:
+        """Extract results list from a JSON response using the ``results_entry`` configuration"""
+        results_entry = string_to_jsonpath(self.config.results_entry, force=True)
+        if not isinstance(results_entry, JSONPath):
+            return []
+        found_entry_paths = results_entry.find(resp_as_json)
+        if found_entry_paths and not isinstance(found_entry_paths, int):
+            result = found_entry_paths[0].value
+        else:
+            result = []
+        if not isinstance(result, list):
+            result = [result]
+        return result
 
     def count_hits(self, count_url: str, result_type: Optional[str] = "json") -> int:
         """Count the number of results satisfying some criteria"""
@@ -1760,11 +1771,6 @@ class PostJsonSearch(QueryStringSearch):
 
             qp, _ = self.build_query_string(collection, keywords)
 
-        # Force sort qp list parameters
-        for key in qp:
-            if isinstance(qp[key], list) and key != "area":
-                qp[key].sort()
-
         for query_param, query_value in qp.items():
             if (
                 query_param
@@ -1773,7 +1779,7 @@ class PostJsonSearch(QueryStringSearch):
                 )["parameters"]
             ):
                 # config backup
-                plugin_config_backup = yaml.dump(self.config)
+                plugin_config_backup = copy_deepcopy(self.config)
 
                 self.config.api_endpoint = query_value
                 self.config.products[collection][
@@ -1805,9 +1811,7 @@ class PostJsonSearch(QueryStringSearch):
                     raise
                 finally:
                     # restore config
-                    self.config = yaml.load(
-                        plugin_config_backup, self.config.yaml_loader
-                    )
+                    self.config = plugin_config_backup
 
                 return eo_products
 
@@ -1932,9 +1936,7 @@ class PostJsonSearch(QueryStringSearch):
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
             # numeric page token
-            if (
-                next_page_token_key == "page" or next_page_token_key == "skip"
-            ) and limit is not None:
+            if (next_page_token_key in ["page", "skip"]) and limit is not None:
                 if token is None and next_page_token_key == "skip":
                     # first page & next_page_token_key == skip
                     token = max(
@@ -2108,24 +2110,29 @@ class StacSearch(PostJsonSearch):
     :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` in the
     :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
 
-    Plugins inheriting from ``StacSearch`` have to be referenced in :const:`~eodag.utils.STAC_SEARCH_PLUGINS`
-    to be correctly initialized with the expected STAC configuration and features.
+    Plugins inheriting from ``StacSearch`` are initialized with STAC defaults
+    through :meth:`normalize_config`.
     """
 
+    @classmethod
+    def normalize_config(cls, provider: str, config: PluginConfig) -> PluginConfig:
+        """Normalize plugin config defaults for STAC-based search plugins."""
+        stac_search_default_conf = load_stac_provider_config()
+
+        if stac_search_default_conf is not None:
+            per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
+            config.__dict__ = update_nested_dict(
+                per_provider_stac_provider_config["search"],
+                config.__dict__,
+                allow_empty_values=True,
+            )
+
+        return config
+
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        try:
-            # backup results_entry overwritten by init
-            results_entry = config.results_entry
-        except AttributeError:
-            plugin_name = self.__class__.__name__
-            if plugin_name not in STAC_SEARCH_PLUGINS:
-                raise MisconfiguredError(
-                    "Missing results_entry in %s configuration. If %s is expected to be used as "
-                    "a STAC plugin, it must be referenced in STAC_SEARCH_PLUGINS."
-                    % (provider, plugin_name)
-                )
-            else:
-                raise
+        config = self.normalize_config(provider, config)
+        # backup results_entry overwritten by init
+        results_entry = config.results_entry
 
         super(StacSearch, self).__init__(provider, config)
 
@@ -2284,7 +2291,9 @@ class StacSearch(PostJsonSearch):
                 # convert provider json field definition to python
                 default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
-                    json_mtd, default_value=default
+                    json_mtd,
+                    default_value=default,
+                    required=json_param in resp_as_json.get("required", []),
                 )
                 field_definition = get_args(annotated_def)
 

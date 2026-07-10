@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import os
-import tempfile
 import traceback
 from collections import UserDict
 from inspect import isclass
@@ -41,15 +40,13 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.config import PluginConfig, credentials_in_auth, load_stac_provider_config
+from eodag.config import PluginConfig, credentials_in_auth
 from eodag.utils import (
     GENERIC_COLLECTION,
-    STAC_SEARCH_PLUGINS,
     cast_scalar_value,
     deepcopy,
     merge_mappings,
     slugify,
-    update_nested_dict,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -90,6 +87,10 @@ class ProviderConfig(yaml.YAMLObject):
     :param kwargs: Additional configuration variables for this provider
     """
 
+    yaml_loader = yaml.Loader
+    yaml_dumper = yaml.SafeDumper
+    yaml_tag = "!provider"
+
     name: str
     group: str
     priority: int = 0
@@ -104,10 +105,6 @@ class ProviderConfig(yaml.YAMLObject):
     search_auth: PluginConfig
     download_auth: PluginConfig
 
-    yaml_loader = yaml.Loader
-    yaml_dumper = yaml.SafeDumper
-    yaml_tag = "!provider"
-
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Apply defaults when building from yaml."""
         self.__dict__.update(state)
@@ -118,9 +115,11 @@ class ProviderConfig(yaml.YAMLObject):
         return key in self.__dict__
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[Self]:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from Yaml"""
-        cls.validate(tuple(node_key.value for node_key, _ in node.value))
+        cls.validate(
+            tuple(node_key.value for node_key, _ in node.value), check_name=False
+        )
         for node_key, node_value in node.value:
             if node_key.value == "name":
                 node_value.value = slugify(node_value.value).replace("-", "_")
@@ -136,13 +135,17 @@ class ProviderConfig(yaml.YAMLObject):
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> Self:
         """Build a :class:`~eodag.api.provider.ProviderConfig` from a mapping"""
-        cls.validate(mapping)
+        cls.validate(mapping, check_name=True)
         # Create a deep copy to avoid modifying the input dict or its nested structures
         mapping_copy = deepcopy(mapping)
+        # Slugify the provider name (normalize spaces and special characters)
+        if "name" in mapping_copy:
+            mapping_copy["name"] = slugify(mapping_copy["name"]).replace("-", "_")
         for key in PLUGINS_TOPICS_KEYS:
-            if not (_mapping := mapping_copy.get(key)):
+            if key not in mapping_copy or mapping_copy[key] is None:
                 continue
 
+            _mapping = mapping_copy[key]
             if not isinstance(_mapping, dict):
                 _mapping = _mapping.__dict__
 
@@ -153,12 +156,15 @@ class ProviderConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys: Union[tuple[str, ...], dict[str, Any]]) -> None:
+    def validate(
+        config_keys: Union[tuple[str, ...], dict[str, Any]], check_name: bool = True
+    ) -> None:
         """Validate a :class:`~eodag.api.provider.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
+        :param check_name: Whether to require 'name' key (default True). Set to False for legacy YAML tag parsing.
         """
-        if "name" not in config_keys:
+        if check_name and "name" not in config_keys:
             raise ValidationError("Provider config must have name key")
         if not any(k in config_keys for k in PLUGINS_TOPICS_KEYS):
             raise ValidationError("A provider must implement at least one plugin")
@@ -224,33 +230,45 @@ class ProviderConfig(yaml.YAMLObject):
 
     def _apply_defaults(self: Self) -> None:
         """Applies some default values to provider config."""
-        stac_search_default_conf = load_stac_provider_config()
+        plugin_topics: tuple[tuple[str, str], ...] = (
+            ("search", "eodag.plugins.search.base"),
+            ("api", "eodag.plugins.apis.base"),
+            ("download", "eodag.plugins.download.base"),
+            ("auth", "eodag.plugins.authentication.base"),
+            ("search_auth", "eodag.plugins.authentication.base"),
+            ("download_auth", "eodag.plugins.authentication.base"),
+        )
+        topic_class_names = {
+            "search": "Search",
+            "api": "Api",
+            "download": "Download",
+            "auth": "Authentication",
+            "search_auth": "Authentication",
+            "download_auth": "Authentication",
+        }
 
-        # For the provider, set the default output_dir of its download plugin
-        # as tempdir in a portable way
-        for download_topic_key in ("download", "api"):
-            if download_topic_key in vars(self):
-                download_conf = getattr(self, download_topic_key)
-                if not getattr(download_conf, "output_dir", None):
-                    download_conf.output_dir = tempfile.gettempdir()
-                if not getattr(download_conf, "delete_archive", None):
-                    download_conf.delete_archive = True
+        for plugin_key, topic_module in plugin_topics:
+            plugin_conf = getattr(self, plugin_key, None)
+            plugin_type = getattr(plugin_conf, "type", None)
+            if plugin_conf is None or not plugin_type:
+                continue
 
-        try:
-            if (
-                stac_search_default_conf is not None
-                and self.search
-                and self.search.type in STAC_SEARCH_PLUGINS
-            ):
-                # search config set to stac defaults overriden with provider config
-                per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
-                self.search.__dict__ = update_nested_dict(
-                    per_provider_stac_provider_config["search"],
-                    self.search.__dict__,
-                    allow_empty_values=True,
+            try:
+                topic_class_name = topic_class_names[plugin_key]
+                topic_class = getattr(
+                    __import__(topic_module, fromlist=[topic_class_name]),
+                    topic_class_name,
                 )
-        except AttributeError:
-            pass
+                topic_class.ensure_plugins_loaded()
+                plugin_cls = topic_class.get_plugin_by_class_name(plugin_type)
+                if normalize_config := getattr(plugin_cls, "normalize_config", None):
+                    normalize_config(self.name, plugin_conf)
+            except Exception:
+                logger.debug(
+                    "Could not normalize %s config for provider %s",
+                    plugin_key,
+                    getattr(self, "name", None),
+                )
 
 
 class Provider:

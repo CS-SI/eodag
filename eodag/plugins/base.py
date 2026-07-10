@@ -17,7 +17,9 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
+
+import importlib_metadata
 
 from eodag.utils.exceptions import PluginNotFoundError
 
@@ -60,9 +62,29 @@ class EODAGPluginMount(type):
 class PluginTopic(metaclass=EODAGPluginMount):
     """Base of all plugin topics in eodag"""
 
+    entrypoint_group: Optional[str] = None
+
     def __init__(self, provider: str, config: PluginConfig) -> None:
         self.config = config
         self.provider = provider
+
+    @classmethod
+    def ensure_plugins_loaded(cls) -> None:
+        """Load plugin classes for this topic from entry points if needed."""
+        if getattr(cls, "_plugins_loaded", False):
+            return
+
+        topic_group = cls.entrypoint_group or cls.__name__.lower()
+
+        for entry_point in importlib_metadata.entry_points(
+            group=f"eodag.plugins.{topic_group}"
+        ):
+            try:
+                entry_point.load()
+            except (ModuleNotFoundError, ImportError):
+                continue
+
+        setattr(cls, "_plugins_loaded", True)
 
     def __repr__(self) -> str:
         config = getattr(self, "config", None)

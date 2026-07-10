@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy as copy_deepcopy
 from typing import Annotated, Any, Literal, Optional, Type, Union, get_args, get_origin
 
 from annotated_types import Gt, Lt
@@ -29,7 +30,6 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema, PydanticUndefined
 from typing_extensions import TypedDict
 
-from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
 
 # Types mapping from JSON Schema and OpenAPI 3.1.0 specifications to Python
@@ -252,15 +252,10 @@ def json_field_definition_to_python(
     else:
         field_default = default_value
 
-    metadata = [
-        python_type,
-        Field(field_default, **field_type_kwargs),
-    ]
-
+    field = Field(field_default, **field_type_kwargs)
     if required:
-        metadata.append("json_schema_required")
-
-    return Annotated[tuple(metadata)]
+        field.metadata.append("json_schema_required")
+    return Annotated[python_type, field]
 
 
 def python_field_definition_to_json(

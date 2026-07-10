@@ -17,18 +17,18 @@
 # limitations under the License.
 
 import os
-import pathlib
 import tempfile
 import unittest
-from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
+import pytest
 import yaml
 
-from eodag.api.provider import ProvidersDict
+from eodag.api.provider import ProviderConfig, ProvidersDict
 from eodag.config import PluginConfig
 from eodag.utils import deepcopy
+from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
@@ -41,6 +41,28 @@ from tests.context import (
     load_stac_provider_config,
     mock,
 )
+
+
+def load_provider_config_from_string(yaml_string: str) -> ProviderConfig:
+    """Load a provider config from a YAML string using legacy-aware YAML tags."""
+    with pytest.warns(
+        FutureWarning,
+        match=r".*deprecated YAML tag '!(provider|plugin)'.*",
+    ):
+        data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
+    mapping = data.__dict__ if isinstance(data, ProviderConfig) else data
+    return ProviderConfig.from_mapping(mapping)
+
+
+def load_plugin_config_from_string(yaml_string: str) -> PluginConfig:
+    """Load a plugin config from a YAML string using legacy-aware YAML tags."""
+    with pytest.warns(
+        FutureWarning,
+        match=r".*deprecated YAML tag '!plugin'.*",
+    ):
+        data = yaml.load(StringIO(yaml_string), Loader=LegacyAwareLoader)
+    mapping = data.__dict__ if isinstance(data, PluginConfig) else data
+    return PluginConfig.from_mapping(mapping)
 
 
 class TestProviderConfig(unittest.TestCase):
@@ -60,7 +82,7 @@ class TestProviderConfig(unittest.TestCase):
                 unslugified_provider_name
             )
         )
-        provider_config = yaml.load(stream, Loader=yaml.Loader)
+        provider_config = load_provider_config_from_string(stream.getvalue())
         self.assertEqual(provider_config.name, slugified_provider_name)
 
     def test_provider_config_valid(self):
@@ -68,7 +90,7 @@ class TestProviderConfig(unittest.TestCase):
         # Not defining any plugin at all
         invalid_stream = StringIO("""!provider\nname: my_provider""")
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
+            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
         )
 
         # Not defining a class for a plugin
@@ -80,7 +102,7 @@ class TestProviderConfig(unittest.TestCase):
             """
         )
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
+            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
         )
 
         # Not giving a name to the provider
@@ -91,7 +113,7 @@ class TestProviderConfig(unittest.TestCase):
             """
         )
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
+            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
         )
 
         # Specifying an api plugin and a search or download or auth plugin at the same
@@ -121,13 +143,19 @@ class TestProviderConfig(unittest.TestCase):
             """
         )
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream1, Loader=yaml.Loader
+            ValidationError,
+            load_provider_config_from_string,
+            invalid_stream1.getvalue(),
         )
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream2, Loader=yaml.Loader
+            ValidationError,
+            load_provider_config_from_string,
+            invalid_stream2.getvalue(),
         )
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream3, Loader=yaml.Loader
+            ValidationError,
+            load_provider_config_from_string,
+            invalid_stream3.getvalue(),
         )
 
     def test_provider_config_update(self):
@@ -142,7 +170,7 @@ class TestProviderConfig(unittest.TestCase):
                     pluginParam2: value2
         """
         )
-        provider_config = yaml.load(valid_stream, Loader=yaml.Loader)
+        provider_config = load_provider_config_from_string(valid_stream.getvalue())
         overrides = {
             "provider_param": "new val",
             "api": {"pluginparam2": "newVal", "newParam": "val"},
@@ -176,8 +204,8 @@ class TestProviderConfig(unittest.TestCase):
                     pluginParam2: value3
         """
         )
-        provider1_config1 = yaml.load(config_stream1, Loader=yaml.Loader)
-        provider1_config2 = yaml.load(config_stream2, Loader=yaml.Loader)
+        provider1_config1 = load_provider_config_from_string(config_stream1.getvalue())
+        provider1_config2 = load_provider_config_from_string(config_stream2.getvalue())
 
         provider2_config1 = deepcopy(provider1_config1.__dict__)
         provider2_config1.update({"name": "provider2"})
@@ -217,7 +245,7 @@ class TestPluginConfig(unittest.TestCase):
         """
         )
         self.assertRaises(
-            ValidationError, yaml.load, invalid_stream, Loader=yaml.Loader
+            ValidationError, load_plugin_config_from_string, invalid_stream.getvalue()
         )
 
         valid_stream = StringIO(
@@ -226,7 +254,9 @@ class TestPluginConfig(unittest.TestCase):
                     param1: value
         """
         )
-        self.assertIsInstance(yaml.load(valid_stream, Loader=yaml.Loader), PluginConfig)
+        self.assertIsInstance(
+            load_plugin_config_from_string(valid_stream.getvalue()), PluginConfig
+        )
 
     def test_plugin_config_update(self):
         """A plugin config must be update-able by a dict"""
@@ -239,7 +269,7 @@ class TestPluginConfig(unittest.TestCase):
                         subParam_2: v2
         """
         )
-        plugin_config = yaml.load(valid_stream, Loader=yaml.Loader)
+        plugin_config = load_plugin_config_from_string(valid_stream.getvalue())
         overrides = {
             "type": "MyOtherPlugin",
             "new_plugin_param": "a value",
@@ -522,18 +552,12 @@ class TestStacProviderConfig(unittest.TestCase):
 
     def test_existing_stac_provider_conf(self):
         """Existing / pre-configured STAC providers conf should mix providers.yml and  stac_provider.yml infos."""
+        # Load raw provider configs (without stac_provider.yml defaults applied).
         with mock.patch(
-            "eodag.api.provider.ProviderConfig.__setstate__",
-            lambda self, state: self.__dict__.update(state),
+            "eodag.api.provider.ProviderConfig._apply_defaults",
+            lambda self: None,
         ):
-            providers_dir = pathlib.Path(
-                str(res_files("eodag") / "resources" / "providers")
-            )
-            providers_configs = {}
-            for provider_conf_file in providers_dir.glob("*.yml"):
-                with open(provider_conf_file, "r") as fh:
-                    provider_conf = yaml.load(fh, Loader=yaml.Loader)
-                    providers_configs[provider_conf.name] = provider_conf
+            providers_configs = config.load_default_config()
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]

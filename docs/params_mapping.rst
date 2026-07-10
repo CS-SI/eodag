@@ -56,25 +56,3 @@ The :meth:`~eodag.api.core.EODataAccessGateway.list_queryables` method will help
 parameters are queryable for a given provider or collection.
 See `Python API User Guide / Queryables <notebooks/api_user_guide/4_queryables.ipynb>`_
 for more information and examples.
-
-The following static tables list the parameters supported by providers, and if they are queryable or not.
-
-OpenSearch parameters (`CSV <_static/params_mapping_opensearch.csv>`__)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. role:: green
-.. csv-table::
-   :file: _static/params_mapping_opensearch.csv
-   :header-rows: 1
-   :stub-columns: 1
-   :class: params
-
-Provider/eodag specific parameters (`CSV <_static/params_mapping_extra.csv>`__)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. role:: green
-.. csv-table::
-   :file: _static/params_mapping_extra.csv
-   :header-rows: 1
-   :stub-columns: 1
-   :class: params

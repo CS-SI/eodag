@@ -15,13 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-!provider
+foo_provider:
   name: foo_provider
   priority: 2
   roles:
     - host
   description: provider for test
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: https://foo.bar/search
   products:
@@ -31,6 +31,6 @@
       _collection: TEST_PRODUCT_2
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
     base_uri: https://foo.bar

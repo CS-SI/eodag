@@ -1,11 +1,10 @@
-!provider # MARK: theia
-  name: theia
+theia:
   priority: 0
   description: Data Terra Theia, environmental thematic hub for land data access.
   roles:
     - host
   url: https://api.datastore-mtd.theia.data-terra.org/
-  search: !plugin
+  search:
     type: StacSearch
     api_endpoint: 'https://api.datastore-mtd.theia.data-terra.org/search'
     timeout: 90
@@ -18,7 +17,7 @@
         platform: '{$.summaries.platform#csv_list}'
     sort:
       sort_by_default:
-        - !!python/tuple [start_datetime, ASC]
+        -  [start_datetime, ASC]
       sort_param_mapping:
         id: id
         start_datetime: properties.datetime
@@ -28,9 +27,9 @@
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
-  download: !plugin
+  download:
     type: HTTPDownload
-  auth: !plugin
+  auth:
     type: SASAuth
     matching_url: https://s3-data.meso.umontpellier.fr
     auth_uri: 'https://signing.stac.teledetection.fr/sign?url={url}'
