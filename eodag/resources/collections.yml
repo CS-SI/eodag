@@ -910,6 +910,135 @@ S3_ERR_BC002:
   title: OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-04-25T00:00:00Z", "2019-10-29T00:00:00Z"]]}}
 
+S3_EFRBC004:
+  description: "OLCI (Ocean and Land Colour Instrument) Full Resolution: 300m at nadir.\
+    \ Level 1 products are calibrated Top Of Atmosphere radiance values at OLCI 21\
+    \ spectral bands. Radiances are computed from the instrument digital counts by\
+    \ applying geo-referencing, spectral calibration adjusted for wavelength evolution\
+    \ with time, radiometric processing (non-linearity correction, smear correction,\
+    \ dark offset correction, absolute calibration adjusted for radiometric evolution\
+    \ with time), and the correction for straylight effects in OLCI cameras’ spectrometer\
+    \ and ground imager. Per-pixel uncertainties are included in the reprocessed timeseries.\
+    \  Additionally, spatial resampling of OLCI pixels to the 'ideal' cross-track\
+    \ grid, initial pixel classification, and annotation at tie points with auxiliary\
+    \ meteorological data and acquisition geometry are provided. The radiance parameters\
+    \ are accompanied by error estimate parameters. The Solar Irradiance Reference\
+    \ Spectrum is based on TSIS-1 (Coddington et al, 2021) and was updated for this\
+    \ reprocessing from Thuillier et al, 2003. \nSentinel-3 is part of a series of\
+    \ Sentinel satellites, under the umbrella of the EU Copernicus programme.\n\n\
+    This collection contains reprocessed data from baseline collection 004. Operational\
+    \ data can be found in the corresponding collection."
+  instruments: ["OLCI"]
+  constellation: Sentinel-3
+  platform: Sentinel-3A,Sentinel-3B
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: OLCI Level 1B Full Resolution (version BC004) - Sentinel-3 - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/data/satellites/sentinel-3/ocean-colour-service
+    title: Ocean colour service
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/S3_IPF_PDS_004_1_i2r5_Product_Data_Format_Specification_OLCI_Level_1_0_0bf0cba45c.pdf
+    type: application/pdf
+    title: Product Data Format Specification - OLCI Level 1 & Level 2 Instrument Products
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_s3_pfs_ps_26af097fd5.pdf
+    type: application/pdf
+    title: Product Data Format Specification - Product Structures
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-3-olci-ocean-colour-processing-baseline
+    title: Sentinel-3 OLCI ocean colour processing baseline
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-3"],"service":["LEO%7COcean%20colour"],"contentTypes":["Resources%7CDocuments"]}
+    title: OLCI Documents (ATBD etc)
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0100
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0100'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/S3_OLCI_Level_1_B_Reprocessed_BC_004_Product_User_Guide_3fd1fa3787.pdf
+    type: application/pdf
+    title: Product User Guide - OLCI L1B BC004 reprocessed
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0885
+    type: text/html
+    title: OLCI Level 1B Full Resolution (version BC004) - Sentinel-3 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2016-04-06T00:00:00Z","2024-07-25T00:00:00Z"]]}}
+S3_ERRBC004:
+  description: "OLCI (Ocean and Land Colour Instrument) Reduced Resolution: 1200m\
+    \ at nadir. Level 1 products are calibrated Top Of Atmosphere radiance values\
+    \ at OLCI 21 spectral bands. Radiances are computed from the instrument digital\
+    \ counts by applying geo-referencing, spectral calibration adjusted for wavelength\
+    \ evolution with time, radiometric processing (non-linearity correction, smear\
+    \ correction, dark offset correction, absolute calibration adjusted for radiometric\
+    \ evolution with time), and the correction for straylight effects in OLCI cameras’\
+    \ spectrometer and ground imager. Per-pixel uncertainties are included in the\
+    \ reprocessed timeseries. Additionally, spatial resampling of OLCI pixels to the\
+    \ 'ideal' instrument grid, initial pixel classification, and annotation at tie\
+    \ points with auxiliary meteorological data and acquisition geometry are provided.\
+    \ The radiance parameters are accompanied by error estimate parameters. The Solar\
+    \ Irradiance Reference Spectrum is based on TSIS-1 (Coddington et al, 2021) and\
+    \ was updated for this reprocessing from Thuillier et al, 2003. \nSentinel-3 is\
+    \ part of a series of Sentinel satellites, under the umbrella of the EU Copernicus\
+    \ programme.\n\nThis collection contains reprocessed data from baseline collection\
+    \ 004. Operational data can be found in the corresponding collection."
+  instruments: ["OLCI"]
+  constellation: Sentinel-3
+  platform: Sentinel-3A,Sentinel-3B
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: OLCI Level 1B Reduced Resolution (version BC004) - Sentinel-3 - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/data/satellites/sentinel-3/ocean-colour-service
+    title: Ocean colour service
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/S3_IPF_PDS_004_1_i2r5_Product_Data_Format_Specification_OLCI_Level_1_0_0bf0cba45c.pdf
+    type: application/pdf
+    title: Product Data Format Specification - OLCI Level 1 & Level 2 Instrument Products
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_s3_pfs_ps_26af097fd5.pdf
+    type: application/pdf
+    title: Product Data Format Specification - Product Structures
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-3-olci-ocean-colour-processing-baseline
+    title: Sentinel-3 OLCI ocean colour processing baseline
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-3"],"service":["LEO%7COcean%20colour"],"contentTypes":["Resources%7CDocuments"]}
+    title: OLCI Documents (ATBD etc)
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0101
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0101'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/S3_OLCI_Level_1_B_Reprocessed_BC_004_Product_User_Guide_0bb998eb53.pdf
+    type: application/pdf
+    title: Product User Guide - OLCI L1B BC004 reprocessed
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0886
+    type: text/html
+    title: OLCI Level 1B Reduced Resolution (version BC004) - Sentinel-3 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2016-04-06T00:00:00Z","2024-07-25T00:00:00Z"]]}}
+
 S3_RAC:
   description: |
     Sentinel 3 OLCI products output during Radiometric Calibration mode
@@ -1054,25 +1183,6 @@ S3_OLCI_L4BALTIC:
   license: other
   title: SENTINEL3 OLCI Baltic Sea Surface Ocean Colour Plankton
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2023-04-10T00:00:00Z", null]]}}
-
-S3_OL_2_WFRBC003:
-  description: |
-    OLCI Level 2 Marine products provide spectral information on the colour of the oceans (water reflectances).
-    These radiometric products are used to estimate geophysical parameters e.g. estimates of phytoplankton biomass
-    through determining the Chlorophyll-a (Chl) concentration.  In coastal areas, they also allow monitoring of
-    the sediment load via the Total Suspended Matter (TSM) product.  Full resolution products are at a nominal
-    300m resolution. This collection contains reprocessed data from baseline collection 003. Operational data
-    can be found in the corresponding collection.
-  instruments: ["OLCI"]
-  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
-  constellation: SENTINEL3
-  platform: S3A,S3B
-  processing:level: L2
-  keywords: ["OLCI", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "Radiation", "Ocean", "Ocean Colour"]
-  eodag:sensor_type: OPTICAL
-  license: proprietary
-  title: OLCI Level 2 Ocean Colour Full Resolution (version BC003) - Sentinel-3 - Reprocessed
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-04-25T00:00:00Z", "2021-04-28T00:00:00Z"]]}}
 
 # MARK: S3 SLSTR
 S3_SLSTR_L1RBT:
@@ -1300,25 +1410,6 @@ S3_SRA_BS:
   title: SENTINEL3 SRAL Level-1 SRA_BS
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
 
-S3_SRA_1A_BC004:
-  description: |
-    SRAL Level 1A Unpacked L0 Complex Echoes (version BC004) - Sentinel-3 - Reprocessed
-    Fundamental science and engineering product development supporting operational users. This product is most
-    relevant to SAR processing specialists allowing fundamental studies on SAR processing such as Doppler beam
-    formation and for calibration studies using ground-based Transponders. Sentinel-3 is part of a series of Sentinel
-    satellites, under the umbrella of the EU Copernicus programme. This collection contains reprocessed data from
-    baseline collection 004. Operational data can be found in the corresponding collection.
-  instruments: ["SRAL"]
-  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
-  constellation: SENTINEL3
-  platform: S3A,S3B
-  processing:level: L1A
-  keywords: ["SRA", "SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L1", "L1A", "REPROCESSED", "BC004"]
-  eodag:sensor_type: RADAR
-  license: other
-  title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed from BC004
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-03-01T00:00:00Z", null]]}}
-
 S3_SRA_1A_BC005:
   description: |
     Fundamental science and engineering product development supporting operational users. This product is most relevant
@@ -1441,28 +1532,6 @@ S3_WAT:
   license: other
   title: SENTINEL3 SRAL Level-2 WAT
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-02-16T00:00:00Z", null]]}}
-
-S3_WAT_BC004:
-  description: |
-    The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
-    speed, significant wave height and all required geophysical corrections and related flags. Also the sea Ice
-    freeboard measurement is included. The measurements in the standard data file provide the measurements in low
-    (1 Hz = approx. 7km) and high resolution (20 Hz = approx. 300 m), in LRM mode or in SAR mode, for both C-band and
-    Ku band. The SAR mode is the default mode. The reduced measurement data file contains 1 Hz measurements only. The
-    enhanced measurement data file contains also the waveforms and associated parameters and the pseudo LRM
-    measurements when in SAR mode. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU
-    Copernicus programme. This collection contains reprocessed data from baseline collection 004. Operational data can
-    be found in the corresponding collection.
-  instruments: ["SRAL"]
-  providers: [{"url":"https://earth.esa.int","name":"European Space Agency (ESA)","roles":["producer","processor","licensor"]}]
-  constellation: SENTINEL3
-  platform: S3A,S3B
-  processing:level: L2
-  keywords: ["SRAL", "SENTINEL", "SENTINEL3", "S3", "S3A", "S3B", "L2", "WAT", "REPROCESSED", "BC004"]
-  eodag:sensor_type: RADAR
-  license: other
-  title: SRAL Level 2 Altimetry Global - Reprocessed from BC004
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2016-03-01T00:00:00Z", "2019-12-31T00:00:00Z"]]}}
 
 S3_WAT_BC005:
   description: |
@@ -1613,6 +1682,207 @@ MFG_GSA_63:
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1998-07-10T00:00:00Z", "2007-04-10T23:59:59Z"]]}}
 
+MFG_MFGAMV570IODC1:
+  description: This is the first release of the reprocessed Meteosat First Generation
+    (MFG) Atmospheric Motion Vectors (AMV) Thematic Climate Data Record (TCDR) for
+    the Indian Ocean Data Coverage (IODC) region. It contains AMV at all heights below
+    the tropopause, derived from images in 2 channels (Water Vapor 6.2, Infrared 10.8)
+    of the instrument MVIRI on board MFG. Vectors are retrieved by tracking the motion
+    of clouds and other atmospheric constituents such as water vapor patterns. The
+    height assignment of the AMVs is calculated using the Cross-Correlation Contribution
+    (CCC) function to determine the height using the pixels that contribute the most
+    to the vectors. The final vector is estimated averaging the speed and height over
+    4 consecutive images. A quality indicator is derived for each vector to assess
+    the reliability of the retrieval. Products are stored in netCDF4 format and generated
+    fromMeteosat-7 satellite, covering the period from November 2006 to March 2017.
+  instruments: ["MVIRI"]
+  constellation: MFG
+  platform: METEOSAT07
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Thematic Climate Data Record","Wind"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Atmospheric Motion Vectors Climate Data Record Release 1 - MFG - Indian Ocean 57 degrees E
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_msg_met_prod_atbd_15e4917e25.pdf
+    type: application/pdf
+    title: MSG Meteorological Products ATBD
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Atmospheric_Motion_Vectors_IODC_Release_1_Product_Users_Guide_1f9262fa84.pdf
+    type: application/pdf
+    title: Atmospheric Motion Vectors IODC Release 1 Product Users Guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Atmospheric_Motion_Vectors_IODC_Release_1_Validation_Report_452b06c393.pdf
+    type: application/pdf
+    title: Atmospheric Motion Vectors IODC Release 1 Validation Report
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0021
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0021'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0894
+    type: text/html
+    title: Atmospheric Motion Vectors Climate Data Record Release 1 - MFG - Indian
+      Ocean 57 degrees E
+  extent: {"spatial":{"bbox":[[-8.0,-65.0,122.0,65.0]]},"temporal":{"interval":[["2006-11-28T00:00:00Z","2017-03-31T00:00:00Z"]]}}
+MFG_MFGAMV630IODC1:
+  description: This is the first release of the reprocessed Meteosat First Generation
+    (MFG) Atmospheric Motion Vectors (AMV) Thematic Climate Data Record (TCDR) for
+    the Indian Ocean Data Coverage (IODC) region. It contains AMV at all heights below
+    the tropopause, derived from images in 2 channels (Water Vapor 6.2, Infrared 10.8)
+    of the instrument MVIRI on board MFG. Vectors are retrieved by tracking the motion
+    of clouds and other atmospheric constituents such as water vapor patterns. The
+    height assignment of the AMVs is calculated using the Cross-Correlation Contribution
+    (CCC) function to determine the height using the pixels that contribute the most
+    to the vectors. The final vector is estimated averaging the speed and height over
+    4 consecutive images. A quality indicator is derived for each vector to assess
+    the reliability of the retrieval. Products are stored in netCDF4 format and generated
+    from Meteosat-5 satellite, covering the period from July1998 to April 2007.
+  instruments: ["MVIRI"]
+  constellation: MFG
+  platform: METEOSAT05
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Thematic Climate
+    Data Record","Wind"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: Atmospheric Motion Vectors Climate Data Record Release 1 - MFG - Indian Ocean
+    63 degrees E
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_msg_met_prod_atbd_15e4917e25.pdf
+    type: application/pdf
+    title: MSG Meteorological Products ATBD
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Atmospheric_Motion_Vectors_IODC_Release_1_Product_Users_Guide_1f9262fa84.pdf
+    type: application/pdf
+    title: Atmospheric Motion Vectors IODC Release 1 Product Users Guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Atmospheric_Motion_Vectors_IODC_Release_1_Validation_Report_452b06c393.pdf
+    type: application/pdf
+    title: Atmospheric Motion Vectors IODC Release 1 Validation Report
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0022
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0022'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0895
+    type: text/html
+    title: Atmospheric Motion Vectors Climate Data Record Release 1 - MFG - Indian
+      Ocean 63 degrees E
+  extent: {"spatial":{"bbox":[[-133.0,-70.0,7.0,70.0]]},"temporal":{"interval":[["1998-07-01T00:00:00Z","2007-04-16T00:00:00Z"]]}}
+MFG_MTP15EASY0200_0DEG:
+  description: 'Release 2 of the Fundamental Climate Data Record (FCDR) of the Meteosat
+    Visible and Infrared Imager (MVIRI) onboard the Meteosat First Generation (MFG)
+    provides georectified, recalibrated, anomaly qualified, and consolidated Level
+    1.5 data of the visible (VIS), infrared (IR) and water vapor (WV) bands along
+    with all metadata, spectral response functions (reconstructed for the VIS channel),
+    as well as calibration information to compute radiance, brightness temperature
+    and reflectance. The VIS band data are provided along with detailed measurement
+    uncertainties and error correlation information. The data are available in netCDF4
+    format.
+    The computed “toa_bidirectional_reflectance_vis” from the recalibrated  visible
+    channel radiances are stored as unsigned short integers with a scaling factor
+    3.05176e-05 so that the maximum float value that can be stored in the integer
+    of 65535 is 1.99997. BRF values of 2.0 and higher are consequently overflowing
+    the bit depth, and are presented as valid values, lower than the maximum. For
+    high solar angles in combination with high viewing angles, cloud tops were observed
+    with BRF values that exceed the bit depth. They are wrongly presented as dark
+    and cannot be distinguished from pixels that actually are dark. This will be mitigated
+    in the next release of MVIRI FCDR. If users would like to circumvent this issue,
+    they can contact EUMETSAT to obtain the FULL version of the FCDR data that contain
+    original count values and recalibration coefficients which allow for the computation
+    of “toa_bidirectional_reflectance_vis” without running into the aforementioned
+    issue.'
+  instruments: ["MVIRI"]
+  constellation: MFG
+  platform: METEOSAT7,METEOSAT2,METEOSAT4,METEOSAT5,METEOSAT6,METEOSAT3
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: MVIRI Level 1.5 Climate Data Record Release 2 - MFG - 0 degree
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0057
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0057'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T4_2_D4_3_MVIRI_FCDR_Release_2_Quality_Evaluation_Report_d0f47ca28e.pdf
+    type: application/pdf
+    title: MVIRI FCDR Release 2 Quality Evaluation Report
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T4_2_D4_3_MVIRI_FCDR_Release_2_PUG_1b77ce07a9.pdf
+    type: application/pdf
+    title: MVIRI FCDR Release 2 Product User Guide
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0880
+    type: text/html
+    title: MVIRI Level 1.5 Climate Data Record Release 2 - MFG - 0 degree
+  - rel: license
+    href: https://user.eumetsat.int/resources/user-guides/data-registration-and-licensing#ID-Data-Licensing
+    type: text/html
+    title: EUMETSAT Meteosat >1hr latency & Metop
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-81.08,-81.08,81.08,81.08]]},"temporal":{"interval":[["1982-08-11T00:00:00Z","2006-07-19T00:00:00Z"]]}}
+MFG_MTP15EASY0200_57DEG:
+  description: 'Release 2 of the Fundamental Climate Data Record (FCDR) of the Meteosat
+    Visible and Infrared Imager (MVIRI) onboard the Meteosat First Generation (MFG)
+    provides georectified, recalibrated, anomaly qualified, and consolidated Level
+    1.5 data of the visible (VIS), infrared (IR) and water vapor (WV) bands along
+    with all metadata, spectral response functions (reconstructed for the VIS channel),
+    as well as calibration information to compute radiance, brightness temperature
+    and reflectance. The VIS band data are provided along with detailed measurement
+    uncertainties and error correlation information. The data are available in netCDF4
+    format.
+    The computed “toa_bidirectional_reflectance_vis” from the recalibrated  visible
+    channel radiances are stored as unsigned short integers with a scaling factor
+    3.05176e-05 so that the maximum float value that can be stored in the integer
+    of 65535 is 1.99997. BRF values of 2.0 and higher are consequently overflowing
+    the bit depth, and are presented as valid values, lower than the maximum. For
+    high solar angles in combination with high viewing angles, cloud tops were observed
+    with BRF values that exceed the bit depth. They are wrongly presented as dark
+    and cannot be distinguished from pixels that actually are dark. This will be mitigated
+    in the next release of MVIRI FCDR. If users would like to circumvent this issue,
+    they can contact EUMETSAT to obtain the FULL version of the FCDR data that contain
+    original count values and recalibration coefficients which allow for the computation
+    of “toa_bidirectional_reflectance_vis” without running into the aforementioned
+    issue.'
+  instruments: ["MVIRI"]
+  constellation: MFG
+  platform: METEOSAT7
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: MVIRI Level 1.5 Climate Data Record Release 2 - MFG - 57 degree
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0058
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0058'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T4_2_D4_3_MVIRI_FCDR_Release_2_PUG_1b77ce07a9.pdf
+    type: application/pdf
+    title: MVIRI FCDR Release 2 Product User Guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T4_2_D4_3_MVIRI_FCDR_Release_2_Quality_Evaluation_Report_d0f47ca28e.pdf
+    type: application/pdf
+    title: MVIRI FCDR Release 2 Quality Evaluation Report
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0881
+    type: text/html
+    title: MVIRI Level 1.5 Climate Data Record Release 2 - MFG - 57 degree
+  - rel: license
+    href: https://user.eumetsat.int/resources/user-guides/data-registration-and-licensing#ID-Data-Licensing
+    type: text/html
+    title: EUMETSAT Meteosat >1hr latency & Metop
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-81.08,-81.08,81.08,81.08]]},"temporal":{"interval":[["2006-11-01T00:00:00Z","2017-04-04T00:00:00Z"]]}}
+
 HIRS_FDR_1_MULTI:
   description: |
     This is Release 2 of the Fundamental Data Record (FDR) brightness temperatures
@@ -1649,6 +1919,571 @@ S6_RADIO_OCCULTATION:
   license: other
   title: Radio Occultation Level 1B Products - Sentinel-6
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2021-11-19T00:00:00Z", null]]}}
+
+S6_MW_2_AMR_F08:
+  description: "This is a reprocessed dataset at baseline F08, which is continued\
+    \ by the NTC data stream from 09/Feb/2023 onwards.\n\nAMR-C Level 2 Products as\
+    \ generated by the AMR-C CFI Processor.\n\nThese products include antenna and\
+    \ brightness temperatures, wet tropospheric correction, water vapour content,\
+    \ and a rain flag. \n\nSentinel-6 is part of a series of Sentinel satellites,\
+    \ under the umbrella of the EU Copernicus programme. It is a collaborative Copernicus\
+    \ mission, implemented and co-funded by the European Commission, ESA, EUMETSAT\
+    \ and the USA, through NASA and the National Oceanic and Atmospheric Administration\
+    \ (NOAA)."
+  instruments: ["AMR-C"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Climate-quality Advanced Microwave Radiometer Level 2 Products (baseline version F08) - Sentinel-6 - Reprocessed
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0092
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0092'
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-6"],"service":["LEO%7CAltimetry"],"contentTypes":["Resources%7CDocuments"]}
+    title: Altimetry resources Sentinel-6
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0837
+    type: text/html
+    title: Climate-quality Advanced Microwave Radiometer Level 2 Products (baseline version F08) - Sentinel-6 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-18T00:00:00Z","2023-02-09T00:00:00Z"]]}}
+S6_MW_2_AMR:
+  description: This is a reprocessed dataset at baseline G01, which is continued by
+    the NTC data stream from 20 April 2025 onwards. AMR-C Level 2 Products as generated
+    by the AMR-C CFI Processor. These products include antenna and brightness temperatures,
+    wet tropospheric correction, water vapour content, and a rain flag. Sentinel-6
+    is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus
+    programme. It is a collaborative Copernicus mission, implemented and co-funded
+    by the European Commission, ESA, EUMETSAT and the USA, through NASA and the National
+    Oceanic and Atmospheric Administration (NOAA).
+  instruments: ["AMR-C"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Advanced Microwave Radiometer (AMR-C) Level 2 Products (baseline version G01) - Sentinel-6 - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-level-2-data-guide
+    title: Sentinel-6 altimetry level 2 data guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-processing-baseline
+    title: Sentinel-6 processing baseline guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/service-statuses/sentinel-6-reports
+    title: Sentinel-6 quality reports
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/ope-eup-strapi-media/Sentinel_6_MF_G01_Reprocessing_Calval_Assessment_7e75a56d93.pdf
+    type: application/pdf
+    title: 'Sentinel-6 MF: G01 Reprocessing Calval Assessment'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1073
+    type: text/html
+    title: Advanced Microwave Radiometer (AMR-C) Level 2 Products (baseline version G01) - Sentinel-6 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2025-04-20T00:00:00Z"]]}}
+S6_P4_1A_HR:
+  description: 'This is a reprocessed dataset at baseline G01, which is continued
+    by the NTC data stream from 20 April 2025 onwards.
+    The Level-1A product contains Level 1 intermediate output of the HR processor
+    (RAW and RMC). It includes geo-located bursts of Ku echoes (at ~9 kHz) with all
+    instrument calibrations applied. It includes the full rate complex waveforms input
+    to the delay/Doppler or SAR processor.
+    This product is most relevant to altimetry specialists, working on fundamental
+    SAR processing techniques and calibration studies.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 1A High Resolution (baseline version G01) - Sentinel-6
+    - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-processing-baseline
+    title: Sentinel-6 processing baseline guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/service-statuses/sentinel-6-reports
+    title: Sentinel-6 quality reports
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-level-1-data-guide
+    title: Sentinel-6 altimetry level 1 data guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/ope-eup-strapi-media/Sentinel_6_MF_G01_Reprocessing_Calval_Assessment_7e75a56d93.pdf
+    type: application/pdf
+    title: 'Sentinel-6 MF: G01 Reprocessing Calval Assessment'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1069
+    type: text/html
+    title: Poseidon-4 Altimetry Level 1A High Resolution (baseline version G01) - Sentinel-6 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2025-04-20T00:00:00Z"]]}}
+S6_P4_1B_HR_F08:
+  description: 'This is a reprocessed dataset at baseline F08, which is continued
+    by the NTC data stream from 09/Feb/2023 onwards.
+    The Level-1B HR product is output of the HR processor. It includes geo-located,
+    and fully calibrated multi-looked high-resolution Ku-band waveforms.
+    This product is most relevant to geophysical retrieval algorithm developers (over
+    ocean, land and ice surfaces), surface characterisations studies (e.g. impact
+    of sea state bias, wave directional effects etc.) and Quality Control systems.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 1B High Resolution (baseline version F08) - Sentinel-6 - Reprocessed
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0094
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0094'
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-6"],"service":["LEO%7CAltimetry"],"contentTypes":["Resources%7CDocuments"]}
+    title: Altimetry resources Sentinel-6
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0839
+    type: text/html
+    title: Poseidon-4 Altimetry Level 1B High Resolution (baseline version F08) -
+      Sentinel-6 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2023-02-09T00:00:00Z"]]}}
+S6_P4_1B_HR_G01:
+  description: 'This is a reprocessed dataset at baseline G01, which is continued
+    by the NTC data stream from 20 April 2025 onwards.
+    The Level-1B HR product is output of the HR processor. It includes geo-located,
+    and fully calibrated multi-looked high-resolution Ku-band waveforms.
+    This product is most relevant to geophysical retrieval algorithm developers (over
+    ocean, land and ice surfaces), surface characterisations studies (e.g. impact
+    of sea state bias, wave directional effects etc.) and Quality Control systems.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 1B High Resolution (baseline version G01) - Sentinel-6 - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-processing-baseline
+    title: Sentinel-6 processing baseline guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/service-statuses/sentinel-6-reports
+    title: Sentinel-6 quality reports
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-level-1-data-guide
+    title: Sentinel-6 altimetry level 1 data guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/ope-eup-strapi-media/Sentinel_6_MF_G01_Reprocessing_Calval_Assessment_7e75a56d93.pdf
+    type: application/pdf
+    title: 'Sentinel-6 MF: G01 Reprocessing Calval Assessment'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1070
+    type: text/html
+    title: Poseidon-4 Altimetry Level 1B High Resolution (baseline version G01) -
+      Sentinel-6 - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2025-04-20T00:00:00Z"]]}}
+S6_P4_1B_LR_F08:
+  description: 'This is a reprocessed dataset at baseline F08, which is continued
+    by the NTC data stream from 09/Feb/2023 onwards.
+    The Level-1B LR product is output of the LR processor. It includes geo-located,
+    and fully calibrated pulse-limited low-resolution Ku-band and C-band waveforms.
+    This product is most relevant to geophysical retrieval algorithm developers (over
+    ocean, land and ice surfaces), surface characterisations studies (e.g. impact
+    of sea state bias, wave directional effects etc) and Quality Control systems.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 1B Low Resolution (baseline version F08) - Sentinel-6 - Reprocessed
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0095
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0095'
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-6"],"service":["LEO%7CAltimetry"],"contentTypes":["Resources%7CDocuments"]}
+    title: Altimetry resources Sentinel-6
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0840
+    type: text/html
+    title: Poseidon-4 Altimetry Level 1B Low Resolution (baseline version F08) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2023-02-09T00:00:00Z"]]}}
+S6_P4_1B_LR:
+  description: 'This is a reprocessed dataset at baseline G01, which is continued
+    by the NTC data stream from 20 April 2025 onwards.
+    The Level-1B LR product is output of the LR processor. It includes geo-located,
+    and fully calibrated pulse-limited low-resolution Ku-band and C-band waveforms.
+    This product is most relevant to geophysical retrieval algorithm developers (over
+    ocean, land and ice surfaces), surface characterisations studies (e.g. impact
+    of sea state bias, wave directional effects etc) and Quality Control systems.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 1B Low Resolution (baseline version G01) - Sentinel-6
+    - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-processing-baseline
+    title: Sentinel-6 processing baseline guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/service-statuses/sentinel-6-reports
+    title: Sentinel-6 quality reports
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-level-1-data-guide
+    title: Sentinel-6 altimetry level 1 data guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/ope-eup-strapi-media/Sentinel_6_MF_G01_Reprocessing_Calval_Assessment_7e75a56d93.pdf
+    type: application/pdf
+    title: 'Sentinel-6 MF: G01 Reprocessing Calval Assessment'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1071
+    type: text/html
+    title: Poseidon-4 Altimetry Level 1B Low Resolution (baseline version G01) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2025-04-20T00:00:00Z"]]}}
+S6_P4_2_HR_F08:
+  description: "This is a reprocessed dataset at baseline F08, which is continued\
+    \ by the NTC data stream from 9 Feb 2023 onwards. \n\nThe level-2 high resolution\
+    \ products contain the altimeter range, the sea surface height, the wind speed,\
+    \ significant wave height and all required geophysical corrections and related\
+    \ flags derived either from RAW or RMC, or the combination of both. Two measurement\
+    \ data files are available (standard and reduced), each with a different number\
+    \ of variables. The standard data file includes 1 Hz and 20 Hz measurements for\
+    \ the Ku- band as well as geophysical corrections at 1 Hz and some at 20 Hz. The\
+    \ reduced data file contains only 1 Hz measurements for the Ku- and C-bands as\
+    \ well as geophysical corrections at 1 Hz. Note that the HR data products only\
+    \ contain Ku-band measurements. \n\nThese products are suitable for users seeking\
+    \ information on sea state and those creating downstream added value products\
+    \ from multiple altimeters. Particularly for those seeking the highest resolution\
+    \ measurements.\n\nSentinel-6 is part of a series of Sentinel satellites, under\
+    \ the umbrella of the EU Copernicus programme. It is a collaborative Copernicus\
+    \ mission, implemented and co-funded by the European Commission, ESA, EUMETSAT\
+    \ and the USA, through NASA and the National Oceanic and Atmospheric Administration\
+    \ (NOAA)."
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Ocean Surface
+    Wind","Sea Surface Height"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 2 High Resolution (baseline version F08) - Sentinel-6 - Reprocessed
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0096
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0096'
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-6"],"service":["LEO%7CAltimetry"],"contentTypes":["Resources%7CDocuments"]}
+    title: Altimetry resources Sentinel-6
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0841
+    type: text/html
+    title: Poseidon-4 Altimetry Level 2 High Resolution (baseline version F08) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2023-02-09T00:00:00Z"]]}}
+S6_P4_2_HR:
+  description: "This is a reprocessed dataset at baseline G01, which is continued\
+    \ by the NTC data stream from 20 April 2025 onwards. \n\nThe level-2 high resolution\
+    \ products contain the altimeter range, the sea surface height, the wind speed,\
+    \ significant wave height and all required geophysical corrections and related\
+    \ flags derived either from RAW or RMC, or the combination of both. Two measurement\
+    \ data files are available (standard and reduced), each with a different number\
+    \ of variables. The standard data file includes 1 Hz and 20 Hz measurements for\
+    \ the Ku- band as well as geophysical corrections at 1 Hz and some at 20 Hz. The\
+    \ reduced data file contains only 1 Hz measurements for the Ku- and C-bands as\
+    \ well as geophysical corrections at 1 Hz. Note that the HR data products only\
+    \ contain Ku-band measurements. \n\nThese products are suitable for users seeking\
+    \ information on sea state and those creating downstream added value products\
+    \ from multiple altimeters. Particularly for those seeking the highest resolution\
+    \ measurements.\n\nSentinel-6 is part of a series of Sentinel satellites, under\
+    \ the umbrella of the EU Copernicus programme. It is a collaborative Copernicus\
+    \ mission, implemented and co-funded by the European Commission, ESA, EUMETSAT\
+    \ and the USA, through NASA and the National Oceanic and Atmospheric Administration\
+    \ (NOAA)."
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Ocean Surface
+    Wind","Sea Surface Height"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 2 High Resolution (baseline version G01) - Sentinel-6 - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-level-2-data-guide
+    title: Sentinel-6 altimetry level 2 data guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-processing-baseline
+    title: Sentinel-6 processing baseline guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/service-statuses/sentinel-6-reports
+    title: Sentinel-6 quality reports
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/ope-eup-strapi-media/Sentinel_6_MF_G01_Reprocessing_Calval_Assessment_7e75a56d93.pdf
+    type: application/pdf
+    title: 'Sentinel-6 MF: G01 Reprocessing Calval Assessment'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1072
+    type: text/html
+    title: Poseidon-4 Altimetry Level 2 High Resolution (baseline version G01) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2025-04-20T00:00:00Z"]]}}
+S6_P4_2_LR_F08:
+  description: 'This is a reprocessed dataset at baseline F08, which is continued
+    by the NTC data stream from 9 Feb 2023 onwards.
+    The level 2 low resolution products contains the altimeter range, the sea surface
+    height, the wind speed, significant wave height and all required geophysical corrections
+    and related flags derived from LR. Two measurement data files are available (standard
+    and reduced), each with a different number of variables. The standard data file
+    includes 1 Hz and 20 Hz measurements for the Ku- and C-bands as well as geophysical
+    corrections at 1 Hz and some at 20 Hz. The reduced data file contains only 1 Hz
+    measurements for the Ku- and C-bands as well as geophysical corrections at 1 Hz.
+    These products are suitable for users seeking information on sea state and those
+    creating downstream added value products from multiple altimeters.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Ocean Surface
+    Wind","Sea Surface Height","Wind"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 2 Low Resolution (baseline version F08) - Sentinel-6 - Reprocessed
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0097
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0097'
+  - rel: describedby
+    href: https://user.eumetsat.int/search-view?facets={"org-satellite-sensor":["EUMETSAT%7CSentinel-6"],"service":["LEO%7CAltimetry"],"contentTypes":["Resources%7CDocuments"]}
+    title: Altimetry resources Sentinel-6
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0842
+    type: text/html
+    title: Poseidon-4 Altimetry Level 2 Low Resolution (baseline version F08) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2023-02-09T00:00:00Z"]]}}
+S6_P4_2_LR_G01:
+  description: 'This is a reprocessed dataset at baseline G01, which is continued
+    by the NTC data stream from 20 April 2025 onwards.
+    The level 2 low resolution products contains the altimeter range, the sea surface
+    height, the wind speed, significant wave height and all required geophysical corrections
+    and related flags derived from LR. Two measurement data files are available (standard
+    and reduced), each with a different number of variables. The standard data file
+    includes 1 Hz and 20 Hz measurements for the Ku- and C-bands as well as geophysical
+    corrections at 1 Hz and some at 20 Hz. The reduced data file contains only 1 Hz
+    measurements for the Ku- and C-bands as well as geophysical corrections at 1 Hz.
+    These products are suitable for users seeking information on sea state and those
+    creating downstream added value products from multiple altimeters.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Ocean Surface
+    Wind","Sea Surface Height","Wind"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Altimetry Level 2 Low Resolution (baseline version G01) - Sentinel-6 - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-level-2-data-guide
+    title: Sentinel-6 altimetry level 2 data guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/user-guides/sentinel-6-altimetry-processing-baseline
+    title: Sentinel-6 processing baseline guide
+  - rel: describedby
+    href: https://user.eumetsat.int/resources/service-statuses/sentinel-6-reports
+    title: Sentinel-6 quality reports
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/ope-eup-strapi-media/Sentinel_6_MF_G01_Reprocessing_Calval_Assessment_7e75a56d93.pdf
+    type: application/pdf
+    title: 'Sentinel-6 MF: G01 Reprocessing Calval Assessment'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1074
+    type: text/html
+    title: Poseidon-4 Altimetry Level 2 Low Resolution (baseline version G01) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2020-12-17T00:00:00Z","2025-04-20T00:00:00Z"]]}}
+S6_P4_3_LR:
+  description: 'This is a reprocessed Level-3 (L3) dataset at DT-2024 baseline, which
+    covers from 29 December 2021 to 31 December 2023.
+    The L3 LR products contain global valid 1Hz subsampled along-track sea level anomaly
+    multi-mission intercalibrated (orbit error and long wave-length error) over water,
+    based on LR Level 2P products.
+    The reference mission used for the altimeter inter-calibration processing is Topex/Poseidon
+    between 01-01-1993 and 23-04-2002, Jason-1 between 24-04-2002 and 18-10-2008,
+    OSTM/Jason-2 between 19-10-2008 and 25-06-2016, Jason-3 between 25-06-2016 and
+    09-02-2022, and Sentinel-6A from 10-02-2022.
+    These products are suitable for users seeking information on downstream sea level
+    added value products.
+    Sentinel-6 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme. It is a collaborative Copernicus mission, implemented
+    and co-funded by the European Commission, ESA, EUMETSAT and the USA, through NASA
+    and the National Oceanic and Atmospheric Administration (NOAA).'
+  instruments: ["Poseidon-4"]
+  constellation: Sentinel-6
+  platform: Sentinel-6A
+  processing:level: L3
+  keywords: ["Atmosphere","climatology","Level 3 Data","Meteorology","Sea Surface
+    Height"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Poseidon-4 Level 3 Altimetry Low Resolution (baseline DT2024) - Sentinel-6
+    - Reprocessed
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Along_track_Level_2_L2_P_SLA_Sentinel_3_Product_Handbook_3_3_9425e2580c.pdf
+    type: application/pdf
+    title: Along-track Level-2+ (L2P) SLA Sentinel-3 / Jason-CS-Sentinel-6 Product
+      Handbook
+  - rel: describedby
+    href: https://documentation.marine.copernicus.eu/PUM/CMEMS-SL-PUM-008-032-068.pdf
+    type: application/pdf
+    title: Product User Manual for Sea Level Altimetry Products
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1015
+    type: text/html
+    title: Poseidon-4 Level 3 Altimetry Low Resolution (baseline DT2024) - Sentinel-6
+      - Reprocessed
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-66.15,180.0,66.15]]},"temporal":{"interval":[["2021-12-29T00:00:00Z","2023-12-31T00:00:00Z"]]}}
 
 MTG_LI_AF:
   description: |
@@ -2119,6 +2954,7 @@ MTG_FCI_ACTIVE_FIRE_L2_V1:
   title: Active Fire Monitoring (netCDF) - MTG - 0 degree
   extent: {"spatial": {"bbox": [[-67.5, -67.5, 67.5, 67.5]]}, "temporal": {"interval": [["2025-07-03T00:00:00Z", null]]}}
 
+# multi-platform
 MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
   description: |
     The GIRAFE v1 climate data record (CDR) provides precipitation estimates
@@ -2155,6 +2991,178 @@ MULT_PMW_IR_GIRAFE_PRECIP_CDR_V001:
   license: CC-BY-4.0
   title: "GIRAFE v1: CM SAF Global Interpolated RAinFall Estimation version 1"
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2002-01-01T00:00:00Z", "2022-12-31T00:00:00Z"]]}}
+
+MULT_AVHGAC1C0100:
+  description: This AVHRR Fundamental Data Record (FDR) consists of reflectance and
+    brightness temperatures. The FDR was homogeneously produced for a period ranging
+    from 1978 – 2021 using PyGAC (a Python software package to read, calibrate and
+    navigate AVHRR data in GAC format). It is based on observations from 17 AVHRR
+    instruments on board NOAA satellites TIROS-N to NOAA-19, as well as EUMETSAT satellites
+    Metop-A, -B, and -C. For calibration the PATMOS-X calibration coefficients have
+    been applied to visible channels and the nominal operational calibration has been
+    used for the infrared channels. The polygons, required for the data tailoring
+    (area of interest selection), show problems with non-continues data. Some polygons
+    of the data record are found to be incorrect. This only affects the geographical
+    area selection, but does not affect the correctness of the data itself. On the
+    28 October 2024, the dataset was extended to cover the period of 2022 until June
+    2024 (satellites Metop-B, Metop-C, NOAA-15, NOAA-18, NOAA-19). Note that as part
+    of this extension, the entire Metop-C record was reprocessed with improved calibration
+    coefficients from PATMOS-X.
+  instruments: ["AVHRR"]
+  constellation: NOAA,Metop,TIROS
+  platform: NOAA-15,Metop-B,NOAA-18,Metop-A,NOAA-19,NOAA-16,NOAA-17,NOAA-14,NOAA-12,NOAA-11,Metop-C,NOAA-10,NOAA-09,NOAA-07,NOAA-06,TIROS-N,NOAA-08
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: AVHRR Fundamental Data Record - Release 1 - Multimission
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0060
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0060'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Py_GAC_FDR_ATBD_e7d9b988c2.pdf
+    type: application/pdf
+    title: PyGAC FDR ATBD
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Py_GAC_AVHRR_FDR_Release_1_Product_Users_Guide_89d400fc49.pdf
+    type: application/pdf
+    title: PyGAC AVHRR FDR Release 1 Product Users Guide
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Py_GAC_AVHRR_FDR_Release_1_Validation_Report_e5b0df726e.pdf
+    type: application/pdf
+    title: PyGAC AVHRR FDR Release 1 Validation Report
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Py_GAC_AVHRR_FDR_Release_1_1_extension_Report_ID_1426909_v1_B_01b495ba70.pdf
+    type: application/pdf
+    title: PyGAC AVHRR FDR Release 1.1 extension Report
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0862
+    type: text/html
+    title: AVHRR Fundamental Data Record - Release 1 - Multimission
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1978-11-05T00:00:00Z","2024-06-30T00:00:00Z"]]}}
+MULT_MHSMWHS0100:
+  description: Release 1 of the Fundamental Climate Data Record (FCDR) of the Microwave
+    Humidity Sounder  (MHS) onboard NOAA satellites N18 and N19 and EUMETSAT satellites
+    Metop-A and Metop-B. The FCDR provides recalibrated brightness temperatures with
+    detailed uncertainty estimates and error correlation information. The FCDR was
+    generated in the EU Horizon2020 Fidelity and uncertainty in climate data records
+    from Earth Observations (FIDUCEO) project and as further elaborated in the Product
+    User Guide, the FCDR files are provided in FIDUCEO EASY netCDF4 formats.
+  instruments: []
+  constellation: NOAA,Metop
+  platform: NOAA-18,Metop-A,NOAA-19,Metop-B
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Fundamental Climate Data Record","Level
+    1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: MHS Microwave Humidity Sounder Climate Data Record Release 1 - Metop and
+    NOAA
+  links:
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_mhs_fcdr_pug_c054e15879.pdf
+    type: application/pdf
+    title: Product user guide - Microwave FCDR release 4.1
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_d4_6_ass_fid_fcdr_5c08d60543.pdf
+    type: application/pdf
+    title: Meteorological assessment of consistency stability and uncertainty of FIDUCEO
+      FCDRs
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_d2_2_mw_fcdr_f98a9e3b07.pdf
+    type: application/pdf
+    title: 'D2.2(Microwave): Report on the MW FCDR: Uncertainty'
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0045
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0045'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0305
+    type: text/html
+    title: MHS Microwave Humidity Sounder Climate Data Record Release 1 - Metop and
+      NOAA
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2005-08-30T00:00:00Z","2017-12-31T00:00:00Z"]]}}
+MULT_OLR_CM_11342_CM_6321:
+  description: 'The CLARA-A3 record provides cloud properties and radiation parameters
+    derived from the AVHRR sensor onboard polar orbiting NOAA and METOP satellites.
+    CLARA-A3 is the latest edition of CLARA with previous editions documented in Karlsson
+    et al. (2013) and Karlsson et al. (2017). CLARA-A3 covers the time period 1979/01/01
+    until 2020/12/31 as climate data record (CDR), but is operationally extended as
+    interim climate data record (ICDR) to the present with a latency of 10 days. The
+    AVHRR measurement input to the CLARA-A3 retrieval algorithms is the EUMETSAT PyGAC
+    AVHRR Fundamental Data Record (FDR) Release 1 (DOI:10.15770/EUM_SEC_CLM_0060).
+    CLARA-A3 features a range of cloud products: cloud mask, cloud top temperature/pressure/height,
+    cloud thermodynamic phase, and (for liquid and ice clouds separately) cloud optical
+    thickness, particle effective radius and cloud water path. Additionally, cloud
+    droplet number concentration and cloud geometrical thickness are provided for
+    liquid clouds. Furthermore, a range of radiation products are included in CLARA-A3:
+    surface black-sky, white-sky and blue-sky albedo; surface downwelling short- and
+    longwave radiation as well as surface net radiation; top-of-atmosphere (TOA) upwelling
+    short- and longwave radiation. Cloud products are available as monthly and daily
+    averages and histograms, as well as daily resampled global products (Level 2b)
+    for individual satellites. Surface albedo is presented as monthly and pentad (5
+    day) averages. Surface and TOA radiation products are provided as daily and monthly
+    averages. All averages are available on a 0.25° x 0.25° global grid. Surface albedo
+    and selected cloud products are also provided on two equal area grids with a resolution
+    of 25 km x 25 km covering the polar regions. Daily resampled cloud products (level
+    2b) are provided in a global grid with a resolution of 0.05°x0.05°. CLARA-A3 features
+    a comprehensive set of documentation including User Manuals, Validation Reports
+    and Algorithms Theoretical Baseline Documents. This is a Thematic Climate Data
+    Record (TCDR).'
+  instruments: ["AVHRR"]
+  constellation: NOAA,Metop
+  platform: NOAA-07,NOAA-09,NOAA-11,NOAA-12,NOAA-14,NOAA-15,NOAA-16,NOAA-17,NOAA-18,NOAA-19,Metop-A,Metop-B,Metop-C
+  processing:level:
+  keywords: ["Atmosphere","climatology","Clouds","Meteorology","Radiation","Surface
+    radiation & albedo","Surface radiation albedo"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: 'CLARA-A3: CM SAF cLoud, Albedo and surface RAdiation dataset from AVHRR
+    data - Edition 3'
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.5676/EUM_SAF_CM/CLARA_AVHRR/V003
+    title: DOI page with documentation
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0874
+    type: text/html
+    title: 'CLARA-A3: CM SAF cLoud, Albedo and surface RAdiation dataset from AVHRR
+      data - Edition 3'
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1979-01-01T00:00:00Z",null]]}}
+MULT_UTH_CM_14712:
+  description: The second edition of the CM SAF Upper Tropospheric Humidity (UTH)
+    is a satellite-based climate data record. It is a near-global 1°x1° latitude-longitude
+    dataset that is produced with both hourly and daily time steps. The dataset is
+    based on data from twelve passive microwave (MW) sounders operating at 183 GHz
+    in polar orbit that are combined into a single time series covering the period
+    6 July 1994 to 31 December 2018. The UTH provided typically represents a broad
+    atmospheric layer between 500 and 200 hPa. However, the exact height of this layer
+    depends on the atmospheric conditions at the time of the observation. An optional
+    fixed layer approximation adjustment is supplied that users can apply to provide
+    an estimated mean relative humidity (RH) between ±60° latitude for a fixed layer
+    between 500 and 200 hPa (mean_RH). However, users are advised to take care using
+    this correction, especially outside of the tropics where the mean_RH is of lower
+    quality. Users are also advised to take care using UTH observations above ±60°
+    latitude as the retrieval is sometimes less reliable at high latitudes. Further
+    information describing the dataset in detail can be found in the available product
+    documentation. This is a Thematic Climate Data Record (TCDR).
+  instruments: []
+  constellation: Metop, JPSS, NOAA, DMSP
+  platform: Metop-A,Metop-B,Metop-C,NOAA-07,NOAA-09,NOAA-11,NOAA-12,NOAA-14,NOAA-15,NOAA-16,NOAA-17,NOAA-18,NOAA-19,JPSS-1
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Level 3 Data","Meteorology","Temperature", "humidity","Temperature humidity"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: CM SAF Passive Microwave Upper Tropospheric Humidity (UTH) Data Record - Edition 2
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.5676/EUM_SAF_CM/UTH/V002
+    title: 'Digital Object Identifier (DOI): 10.5676/EUM_SAF_CM/UTH/V002'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0910
+    type: text/html
+    title: CM SAF Passive Microwave Upper Tropospheric Humidity (UTH) Data Record - Edition 2
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["1994-07-05T00:00:00Z","2018-12-31T00:00:00Z"]]}}
 
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
@@ -6740,28 +7748,444 @@ METOP_HIRSL1:
   license: other
   title: HIRS Level 1B - Metop - Global
   extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["2009-03-23T00:00:00Z", null]]}}
+METOP_AVHRDUAL0100:
+  description: 'Tropospheric winds derived globally using the tandem configuration
+    of METOP-A and METOP-B AVHRR instruments. Two complementary products are generated
+    considering either Metop-A or Metop-B as the reference platform.
+    This is the first release of the global atmospheric wind vectors data record.
+    Data are accessible from the EUMETSAT Data Centre. This uses the version 3.1.1
+    of the EUMETSAT operational algorithm and forecast from ERA-Interim reanalyses
+    as auxiliary data. The data record includes products generated using IR images
+    (channel 4) taken from two AVHRR/3 imager on-board the Metop-A and Metop-B polar
+    satellites. Each product contains several wind vectors with their associated speed,
+    direction, height, and several quality indicators. The dataset covers the period
+    from the 24 April 2013 until December 2017.
+    The coverage is global. The dataset is available in two formats: the EUMETSAT
+    EPS native format and the BUFR format.
+    Atmospheric motion vectors (AMVs) are a valuable observation type for providing
+    dynamical information for forecast models.
+    This is a Thematic Climate Data Record (TCDR) produced for the Copernicus Climate
+    Change Service.'
+  instruments: ["AVHRR"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Wind"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: AVHRR Global (dual) Atmospheric Motion Vectors Climate Data Record Release 1 - Metop-A/B and -B/A
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0038
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0038'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_cs3_311b_t5_1_pug_metop_avhrr_amv_ecb7f27f2e.pdf
+    type: application/pdf
+    title: Product User Guide for the Atmospheric Motion Vectors generated from Metop-AVHRR
+      for the period 2007-2017
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_cs3_311b_t5_1_evalrep_metop_avhrr_amv_4a141b5253.pdf
+    type: application/pdf
+    title: 'Validation Report: Quality Evaluation Report for Atmospheric Motion Vectors
+      generated with Metop-AVHRR data for the period 2007-2017'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_avhrr_l2_wind_product_atbd_877b0c8836.pdf
+    type: application/pdf
+    title: AVHRR L2 Wind product ATBD
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0151
+    type: text/html
+    title: AVHRR Global (dual) Atmospheric Motion Vectors Climate Data Record Release 1 - Metop-A/B and -B/A
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2013-04-24T00:00:00Z","2017-12-31T00:00:00Z"]]}}
+METOP_AVHRPWE0200:
+  description: "Tropospheric satellite winds at all heights below the tropopause in\
+    \ the polar regions (latitudes higher than 45º), derived from the infrared channel\
+    \ of the Metop AVHRR instrument.\n\nThis is the second release of the polar atmospheric\
+    \ motion vectors data record. Data are accessible from the EUMETSAT Data Centre.\
+    \ This uses the version 3.1.1 of the EUMETSAT operational algorithm and forecast\
+    \ from ERA-Interim reanalyses as auxiliary data. The data record includes products\
+    \ generated using IR images (channel 4) taken from the AVHRR/3 imager on-board\
+    \ Metop-A and Metop-B polar satellites. Polar AMVs are derived using 2 AVHRR orbits\
+    \ leading to one product every 100 minutes. Each product contains several wind\
+    \ vectors with their associated speed, direction, height, and several quality\
+    \ indicators. The dataset covers the period from 1 March 2007 until 31 December\
+    \ 2017 for Metop-A, and from 24 April 2013 until 31 December 2017 for Metop-B.\
+    \ \n\nThe coverage boundaries are polar caps poleward of 45 degrees. The dataset\
+    \ is available in two formats: the EUMETSAT EPS native format and the BUFR format.\n\
+    \nSee Related Products tab for Release 1.\n\nThis is a Thematic Climate Data Record\
+    \ (TCDR) produced for the Copernicus Climate Change Service."
+  instruments: ["AVHRR"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology","Wind"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: AVHRR Polar Atmospheric Motion Vectors Climate Data Record Release 2 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0037
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0037'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_cs3_311b_t5_1_pug_metop_avhrr_amv_ecb7f27f2e.pdf
+    type: application/pdf
+    title: Product User Guide for the Atmospheric Motion Vectors generated from Metop-AVHRR
+      for the period 2007-2017
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_cs3_311b_t5_1_evalrep_metop_avhrr_amv_4a141b5253.pdf
+    type: application/pdf
+    title: 'Validation Report: Quality Evaluation Report for Atmospheric Motion Vectors
+      generated with Metop-AVHRR data for the period 2007-2017'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/pdf_avhrr_l2_wind_product_atbd_877b0c8836.pdf
+    type: application/pdf
+    title: AVHRR L2 Wind product ATBD
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0152
+    type: text/html
+    title: AVHRR Polar Atmospheric Motion Vectors Climate Data Record Release 2 - Metop-A and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-03-01T00:00:00Z","2017-12-31T00:00:00Z"]]}}
+METOP_GOMPMA020100:
+  description: The Polar Multi-sensor Aerosol optical properties product (PMAp) Climate
+    Data Record covering 2007-2019 provides aerosol optical depth (AOD, aerosol total
+    load in the vertical column) at 550nm and aerosol type (fine mode, coarse mode
+    (dust), volcanic ash, biomass) over ocean and land surfaces. The PMAp retrieval
+    algorithm (v2.2.3) uses a multi-sensor approach combining Global Ozone Monitoring
+    Experiment-2 (GOME-2), Advanced Very High Resolution Radiometer (AVHRR) and Infrared
+    Atmospheric Sounding Interferometer (IASI) instrument data.  Metop-A and –B data
+    have been utilised for the data record. The product is delivered with the spatial
+    resolution of the GOME-2 Polarization Monitoring Devices (PMDs). Product granules
+    contain data for one single orbit with respect to the receiving station (Svalbard
+    to Svalbard).
+  instruments: []
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L2
+  keywords: ["Aerosol","Atmosphere","climatology","Clouds","Level 2 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: Polar Multi-Sensor Aerosol Optical Properties Climate Data Record Release 1 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0053
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0053'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T6_2_Product_User_Guide_PM_Ap_v1_0425e6db0e.pdf
+    type: application/pdf
+    title: Product User Guide for the Polar Multi-sensor Aerosol product (PMAp) Release 1
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T6_2_Quality_Evaluation_Report_PM_Ap_4c1986dd76.pdf
+    type: application/pdf
+    title: Quality Evaluation Report for the Polar Multi-sensor Aerosol product (PMAp) Release 1
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Polar_Multi_Sensor_Aerosol_Product_ATBD_v3_F_38565a2d0c.pdf
+    type: application/pdf
+    title: 'Polar Multi-Sensor Aerosol Product: Algorithm Theoretical Basis Document'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0579
+    type: text/html
+    title: Polar Multi-Sensor Aerosol Optical Properties Climate Data Record Release 1 - Metop-A and -B
+  - rel: license
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Copernicus_Data_Usage_Terms_and_Condition_05ee8142ce.pdf
+    type: application/pdf
+    title: Copernicus Data Usage Terms and Conditions
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-07-10T00:00:00Z","2019-08-31T00:00:00Z"]]}}
+METOP_IASI_NCM_L1:
+  description: The instrument noise covariance matrix (NCM) is an important characteristic
+    of the instrument as it provides the precision of the measurements, as well as
+    the correlation between the error on the different channels. The noise covariance
+    matrix file consists in a series of binary records. The matrices are used in data
+    assimilation and numerical weather prediction.
+  instruments: ["IASI"]
+  constellation: Metop
+  platform: Metop-A,Metop-B,Metop-C
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: proprietary
+  title: IASI Noise Covariance Matrix - Metop
+  links:
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1099
+    type: text/html
+    title: IASI Noise Covariance Matrix - Metop
+  - rel: license
+    href: https://user.eumetsat.int/resources/user-guides/data-registration-and-licensing#ID-Data-Licensing
+    type: text/html
+    title: Third-partyLicence TODO
+  - rel: license
+    href: https://www.eumetsat.int/data-policy/eumetsat-data-policy.pdf
+    type: application/pdf
+    title: EUMETSAT Data Policy - PDF
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2025-09-01T00:00:00Z",null]]}}
+METOP_IASPCS1C0100:
+  description: 'This is release 1 of the IASI Principal Component Scores (PCS) Fundamental
+    Data Record (FDR) from Metop-A and -B. Principal component compression (PCC) is
+    applied to the IASI Level 1c radiance spectra. PCC works by representing multidimensional
+    data, like IASI spectra, in a lower dimensional space, which accounts for most
+    of the variance seen in the data. The PCC is applied individually to each of the
+    three IASI spectral bands and reduces the size of the measurement files of up
+    to a factor of 50. With the use of Eigenvector files the spectra can be reconstructed
+    from the PCS files for downstream applications.
+    On the 30 August 2023, year 2022 was added to the FDR. On the 20 January 2025,
+    year 2023 was added to the FDR. On the 21 November 2025, year 2024 was added to
+    the FDR.'
+  instruments: ["IASI"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: IASI Principal Components Scores Fundamental Data Record Release 1 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0084
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0084'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Product_User_Guide_IASI_PCS_release_1_382d1df483.pdf
+    type: application/pdf
+    title: Product User Guide - IASI PCS release 1
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0758
+    type: text/html
+    title: IASI Principal Components Scores Fundamental Data Record Release 1 - Metop-A
+      and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-07-10T00:00:00Z","2024-12-31T00:00:00Z"]]}}
+METOP_IASSO22X0100:
+  description: The IASI SO2 Climate Data Record (CDR) has been processed using the
+    Brescia algorithm using the IASI Level 1C as input. It was processed using IASI
+    instruments onboard Metop-A and Metop-B polar orbiting satellites and covers the
+    period  from 2007 until the end of 2023. It includes several Brescia SO2 variables
+    and auxiliary variables (mainly meteorological) used to build the atmospheric
+    pressure profiles associated with SO2 observations. The SO2 information is provided
+    on 5 vertical atmospheric levels.
+  instruments: ["IASI"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L2
+  keywords: ["Atmosphere","Climate","climatology","Level 2 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: IASI SO2 Climate Data Record Release 1 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SAF_AC_0046
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SAF_AC_0046'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/AC_SAF_IASI_SO_2_CDR_PUM_25012024_09821d33ba.pdf
+    type: application/pdf
+    title: Product User Manual IASI Reprocessed L2 SO2 CDR (O3M-540)
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/AC_SAF_IASI_repro_SO_2_VR_final_d8a711af86.pdf
+    type: application/pdf
+    title: ACSAF validation report on the EUMETSAT IASI/Metop CDR R1 SO2 datasets
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0960
+    type: text/html
+    title: IASI SO2 Climate Data Record Release 1 - Metop-A and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-07-10T00:00:00Z","2023-12-31T00:00:00Z"]]}}
+METOP_IASXXX1C0200:
+  description: 'The main objective of the Infrared Atmospheric Sounding Interferometer
+    (IASI) is to provide high-resolution atmospheric emission spectra to derive temperature
+    and humidity profiles with high spectral and vertical resolution and accuracy.
+    Additionally it is used for the determination of trace gases such as ozone, nitrous
+    oxide, carbon dioxide and methane, as well as land and sea surface temperature,
+    emissivity and cloud properties. The IASI L1c product contains infrared radiance
+    spectra at 0.25cm-1 resolution. The product has for each sounded pixel 8461 spectral
+    samples covering the range between 645.0 cm-1 and 2760 cm-1 wavenumbers.
+    This is the Metop-A and -B IASI level 1c Release 2 data record. It corrects a
+    residual non-linearity error of the order 0.1-0.2 K in the long wave part of the
+    spectra thus improving the time and inter-instrument radiance consistencies. This
+    release comprises level 1c data from Metop-A and -B satellites for the period
+    ranging from the 10th of July 2007 until the 30th of September 2019. This is a
+    Fundamental Climate Data Record (FCDR), i.e., a long-term data record of calibrated
+    and quality-controlled sensor data designed to allow the generation of homogeneous
+    products that are accurate and stable enough for climate monitoring and data assimilation
+    for re-analysis of the recent climate.'
+  instruments: ["IASI"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L1
+  keywords: ["Atmosphere","climatology","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: IASI Level 1C Climate Data Record Release 2 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: http://doi.org/10.15770/EUM_SEC_CLM_0064
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0064'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Product_User_Guide_IASI_Level_1c_FCDR_release_2_v1_A_d32efe2626.pdf
+    type: application/pdf
+    title: Product User Guide – IASI Level 1c FCDR release 2
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Validation_Report_IASI_A_and_B_Level_1_C_FCDR_release_2_v1_E_ed5667aa26.pdf
+    type: application/pdf
+    title: Validation Report – IASI-A and -B Level 1C FCDR release 2
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0590
+    type: text/html
+    title: IASI Level 1C Climate Data Record Release 2 - Metop-A and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-07-10T00:00:00Z","2019-09-30T00:00:00Z"]]}}
+METOP_MHSMWHS0200:
+  description: Release 2 of the Fundamental Climate Data Record (FCDR) of the Microwave
+    Humidity Sounder  (MHS) onboard EUEMTSAT satellites MetopA and MetopB. The FCDR
+    provides recalibrated brightness temperatures with detailed uncertainty estimates
+    and error correlation information. The FCDR was generated for the Copernicus Climate
+    Change Service (C3S) and as further elaborated in the Product User Guide, the
+    FCDR files are provided in netCDF4 format.
+  instruments: ["MHS"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L1
+  keywords: ["Atmosphere","Brightness Temperature","Climate","climatology","Fundamental
+    Climate Data Record","Level 1 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: MHS Microwave Humidity Sounder Climate Data Record Release 2 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SEC_CLM_0033
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SEC_CLM_0033'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T1_1_Microwave_FCDR_ATBD_D1_1_D1_2_D1_3_aabeff8d77.pdf
+    type: application/pdf
+    title: Algorithm Theoretical Baseline Document (ATBD) for the Fundamental Climate Data Record of Microwave Humidity Sounder
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T1_1_Microwave_FCDR_Quality_Evaluation_Report_D1_1_D1_2_D1_3_81adc4b958.pdf
+    type: application/pdf
+    title: Quality Evaluation Report - Fundamental Climate Data Record of Microwave Humidity Sounder
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/C3_S_311b_T1_1_Microwave_FCDR_PUG_D1_1_D1_2_D1_3_v2_c42a773678.pdf
+    type: application/pdf
+    title: Product User Guide - Fundamental Climate Data Record of Microwave Humidity Sounder
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0344
+    type: text/html
+    title: MHS Microwave Humidity Sounder Climate Data Record Release 2 - Metop-A and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2006-10-31T00:00:00Z","2018-12-31T00:00:00Z"]]}}
+METOP_MXI_DR_O3:
+  description: The IASI ozone data record is generated using the reprocessed ozone
+    data from Metop-A and -B, with FORLI version 20151001 and EUMETSAT Level-1C and
+    -2 Product Processing Facility (PPF) version 6.5. The file contain both total
+    (O3M-520.1) and profile values (O3M-521.1).
+  instruments: ["IASI"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Level 2 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: IASI Ozone (O3) Climate Data Record (CDR) Release 1 - Metop-A and -B
+  links:
+  - rel: describedby
+    href: https://acsaf.org/atbds.php
+    title: Product documentation on the AC SAF website
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/IASI_O3_CDR_R1_README_Jun2025_f7f5f336c9.pdf
+    type: application/pdf
+    title: IASI 03 CDR R1 README
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:1027
+    type: text/html
+    title: IASI Ozone (O3) Climate Data Record (CDR) Release 1 - Metop-A and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-07-10T00:00:00Z","2023-12-31T00:00:00Z"]]}}
+METOP_O3M_517:
+  description: The IASI Carbon Monoxide (CO) Climate Data Record (CDR) has been produced
+    using the FORLI algorithm using the IASI Level 1C as input. It was processed using
+    IASI instruments onboard Metop-A and Metop-B polar orbiting satellites and covers
+    the period from 2007 until the end of 2023. It includes several variables but
+    the principal product  is the vertical profile of CO provided on 18 atmospheric
+    layers from the ground to 18 km with an additional layer from 18 km to the top
+    of the atmosphere.
+  instruments: ["IASI"]
+  constellation: Metop
+  platform: Metop-A,Metop-B
+  processing:level: L2
+  keywords: ["Atmosphere","Climate","climatology","Level 2 Data","Meteorology"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: IASI Carbon Monoxide Profiles FORLI-CO Climate Data Record Release 1 - Metop-A and -B
+  links:
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SAF_AC_0047
+    title: 'Digital Object Identifier (DOI): 10.15770/EUM_SAF_AC_0047'
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/Validation_Report_CO_Metop_AB_20231130_v2_255bce4c37.pdf
+    type: application/pdf
+    title: Validation report of reprocessed IASI L2 CO CDR for Metop-A and B
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/AC_SAF_IASI_CO_CDR_PUM_08042024_c42c579912.pdf
+    type: application/pdf
+    title: Product User Manual IASI Reprocessed L2 CO CDR (O3M-517) Metop-A&B
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:0959
+    type: text/html
+    title: IASI Carbon Monoxide Profiles FORLI-CO Climate Data Record Release 1 -
+      Metop-A and -B
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2007-07-10T00:00:00Z","2023-12-31T00:00:00Z"]]}}
+METOP_OAS025:
+  description: "This ASCAT Multi-parameter product contains surface wind vectors over\
+    \ ocean and soil moisture index over land. Additionally, the backscatter values\
+    \ involved in the retrieval of the geophysical parameters above are also included,\
+    \ as well as several quality flags to facilitate the use of the data. For NWP\
+    \ users this product is provided in BUFR format. The netCDF version of this product\
+    \ contains Winds ONLY. For users interested in either ASCAT backscatter, wind\
+    \ or soil moisture index data in other formats, please refer to the relevant product\
+    \ entries available for the specific parameters. Finally, note that although the\
+    \ OSI SAF is identified as the originating centre for this product, it is not\
+    \ responsible for the processing of soil moisture index values, which is currently\
+    \ carried out at EUMETSAT. \n\nThese data are only available in the Data Centre\
+    \ as of 28/02/2011. Archived NRT data before that date can be requested from the\
+    \ OSI SAF helpdesk. Even more important: for Metop-A it is recommended that the\
+    \ reprocessed ASCAT winds data records (10.15770/EUM_SAF_OSI_0006) are used instead\
+    \ of this archived NRT product for the period before 1 April 2014.\n\nMetop-A\
+    \ data are available in the Data Centre up to 15/11/2021."
+  instruments: ["ASCAT"]
+  constellation: Metop
+  platform: Metop-B,Metop-A,Metop-C
+  processing:level: L2
+  keywords: ["Atmosphere","climatology","Land","Level 2 Data","Meteorology","Ocean","Ocean
+    Surface Wind","Radar Backscatter NRCS","Soil Moisture"]
+  eodag:sensor_type:
+  license: CC-BY-4.0
+  title: ASCAT Winds and Soil Moisture at 25 km Swath Grid - Metop
+  links:
+  - rel: describedby
+    href: https://www.eumetsat.int/osi-saf
+    title: EUMETSAT OSI SAF page
+  - rel: describedby
+    href: https://user.eumetsat.int/s3/eup-strapi-media/ASCAT_User_Guide_1618a3d741.pdf
+    type: application/pdf
+    title: ASCAT User Guide
+  - rel: describedby
+    href: https://library.wmo.int/records/item/35713-manual-on-codes-volume-i-1-international-codes
+    title: WMO operational formats descriptions
+  - rel: describedby
+    href: https://scatterometer.knmi.nl/publications/pdf/ASCAT_Product_Manual.pdf
+    type: application/pdf
+    title: ASCAT Wind Product User Manual
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SAF_OSI_NRT_2020
+    title: 'ASCAT Winds and Soil Moisture at 25 km Swath Grid - Metop-A (DOI: 10.15770/EUM_SAF_OSI_NRT_2020)'
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SAF_OSI_NRT_2021
+    title: 'ASCAT Winds and Soil Moisture at 25 km Swath Grid - Metop-B (DOI: 10.15770/EUM_SAF_OSI_NRT_2021)'
+  - rel: cite-as
+    href: https://doi.org/10.15770/EUM_SAF_OSI_NRT_2022
+    title: 'ASCAT Winds and Soil Moisture at 25 km Swath Grid - Metop-C (DOI: 10.15770/EUM_SAF_OSI_NRT_2022)'
+  - rel: describedby
+    href: https://data.eumetsat.int/product/EO:EUM:DAT:METOP:OAS025
+    type: text/html
+    title: ASCAT Winds and Soil Moisture at 25 km Swath Grid - Metop
+  extent: {"spatial":{"bbox":[[-180.0,-90.0,180.0,90.0]]},"temporal":{"interval":[["2011-02-28T00:00:00Z",null]]}}
 
 # MARK: MSG --------------------------------------------------------------------------
-MSG_MFG_GSA_0:
-  description: |
-    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
-    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
-    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
-    albedo (WSA) with the corresponding uncertainties as explained in the
-    Product User Guide (PUM). The data record validation and limitations are
-    provided in the Validation Report (VR). The products are available in
-    netCDF4 format. This release contains products generated with Meteosat-2 to
-    Meteosat-10.
-  instruments: ["MVIRI", "SEVIRI"]
-  constellation: MFG,MSG
-  platform: MFG,MSG
-  processing:level: L2
-  keywords: ["MVIRI", "SEVIRI", "L2", "MFG", "MSG", "Climate", "Thematic", "Meteosat", "TCDR"]
-  eodag:sensor_type: OPTICAL
-  license: other
-  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
-  extent: {"spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]}, "temporal": {"interval": [["1982-02-10T00:00:00Z", "2017-12-31T23:59:59Z"]]}}
-
 MSG_OCA_CDR:
   description: |
     The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
