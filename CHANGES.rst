@@ -6,10 +6,21 @@ Release history
 v4.5.0 (2026-07-10)
 ===================
 
+Features
+--------
+
+* **conf**: Split providers.yml file (`#2228`_, `2e6ac19`_)
+
+* **config**: Removed yaml tags and faster loader (`#2251`_, `bd74e12`_)
+
+* **plugins**: New OGC API Records search plugin (`#2250`_, `0563530`_)
+
+* **plugins**: normalize_config method for pre-build conf init (`#2266`_, `2669f17`_)
+
+* **providers**: Eumetsat datastore collections update (`#2256`_, `071c06b`_)
+
 Bug Fixes
 ---------
-
-* Download_link for GHSL_ESM with 10 tile_size (`#2238`_, `3166496`_)
 
 * **core**: Expose config module through lazy imports (`#2246`_, `a907691`_)
 
@@ -20,6 +31,8 @@ Bug Fixes
 * **plugins**: Dedl required queryables (`#2241`_, `719b2ab`_)
 
 * **plugins**: Do no sort query parameters content (`#2259`_, `a88b1e4`_)
+
+* **plugins**: GHS_ESM download_link in CopGhslSearch (`#2238`_, `3166496`_)
 
 * **plugins**: Handle queryables with empty details in form (`#2270`_, `03c3c64`_)
 
@@ -40,19 +53,6 @@ Documentation
 * Add Docker quickstart (`#2240`_, `8aa461b`_)
 
 * Remove stale params mapping CSV tables (`#2239`_, `e6cbe8b`_)
-
-Features
---------
-
-* **conf**: Split providers.yml file (`#2228`_, `2e6ac19`_)
-
-* **config**: Removed yaml tags and faster loader (`#2251`_, `bd74e12`_)
-
-* **plugins**: New OGC API Records search plugin (`#2250`_, `0563530`_)
-
-* **plugins**: Normalize_config method for pre-build conf init (`#2266`_, `2669f17`_)
-
-* **providers**: Eumetsat datastore collections update (`#2256`_, `071c06b`_)
 
 Testing
 -------
