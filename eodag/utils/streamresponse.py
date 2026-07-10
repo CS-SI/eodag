@@ -1,8 +1,37 @@
+# -*- coding: utf-8 -*-
+# Copyright 2026, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from __future__ import annotations
+
 import os
 import signal
 import threading
 from dataclasses import dataclass, field
-from typing import Iterable, Iterator, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, Optional, Union
+
+if TYPE_CHECKING:
+    from requests.structures import CaseInsensitiveDict
+
+
+def _new_case_insensitive_dict(headers: Optional[Mapping[str, str]] = None):
+    """Create headers mapping with a local import to avoid import-time overhead."""
+    from requests.structures import CaseInsensitiveDict
+
+    return CaseInsensitiveDict(headers) if headers else CaseInsensitiveDict()
 
 
 class StreamResponseContent(Iterable[bytes]):
@@ -86,7 +115,9 @@ class StreamResponse:
     content: StreamResponseContent
     _filename: Optional[str] = field(default=None, repr=False, init=False)
     _size: Optional[int] = field(default=None, repr=False, init=False)
-    headers: dict[str, str] = field(default_factory=dict)
+    headers: CaseInsensitiveDict[str] = field(
+        default_factory=_new_case_insensitive_dict
+    )
     media_type: Optional[str] = None
     status_code: Optional[int] = None
     arcname: Optional[str] = None
@@ -102,7 +133,7 @@ class StreamResponse:
         arcname: Optional[str] = None,
     ):
         self.content = StreamResponseContent(content)
-        self.headers = dict(headers) if headers else {}
+        self.headers = _new_case_insensitive_dict(headers)
         self.media_type = media_type
         self.status_code = status_code
         self.arcname = arcname
