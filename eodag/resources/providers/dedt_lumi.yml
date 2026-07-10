@@ -33,11 +33,11 @@ dedt_lumi:
   products:
     DT_CLIMATE_ADAPTATION:
       discover_queryables:
-        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
       dataset: climate-dt
     DT_EXTREMES:
       discover_queryables:
-        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+        constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_lumi/{dataset}.json"
       dataset: extremes-dt
       class: d1
       expver: "0001"
