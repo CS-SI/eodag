@@ -492,6 +492,7 @@ class FederationExtension(BaseStacExtension):
 
     FIELDS: type[BaseModel] = FederationFields
 
+    schema_href: str = "https://api.openeo.org/extensions/federation/0.2.0"
     field_name_prefix: Optional[str] = "federation"
 
 
