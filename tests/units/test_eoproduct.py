@@ -789,12 +789,26 @@ class TestEOProduct(EODagTestBase):
 
     def test_eoproduct_as_pystac_object(self):
         """eoproduct.as_pystac_object must return a pystac.Item"""
+        from pystac.validation.stac_validator import JsonSchemaSTACValidator
+
+        class OfflineValidator(JsonSchemaSTACValidator):
+            """Skip extension schemas that are not already cached locally."""
+
+            def validate_extension(
+                self, stac_dict, stac_object_type, stac_version, extension_id, href=None
+            ):
+                if extension_id not in self.schema_cache:
+                    return None
+                return super().validate_extension(
+                    stac_dict, stac_object_type, stac_version, extension_id, href
+                )
+
         product = self._dummy_product(
             properties={"id": "dummy_id", "datetime": "2021-01-01T00:00:00Z"}
         )
         pystac_item = product.as_pystac_object()
         self.assertIsInstance(pystac_item, Item)
-        pystac_item.validate()
+        pystac_item.validate(validator=OfflineValidator())
 
     def test_eoproduct_from_pystac(self):
         """eoproduct.from_pystac must return an EOProduct instance from a pystac.Item"""
