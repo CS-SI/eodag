@@ -189,6 +189,7 @@ class HTTPDownload(Download):
             "OrderKwargs", {"json": dict[str, Union[Any, list[str]]]}, total=False
         )
         order_kwargs: OrderKwargs = {}
+        # TODO use search parameters from cahce in case of search by id
         if order_method == "POST":
             # separate url & parameters
             parts = urlparse(str(product.properties["eodag:order_link"]))
