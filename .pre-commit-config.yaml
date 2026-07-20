@@ -26,7 +26,7 @@ repos:
           - flake8-eradicate
 
 -   repo: 'https://github.com/ambv/black'
-    rev: 22.12.0
+    rev: 25.11.0
     hooks:
     -   id: black
         args: ['--safe']

@@ -27,13 +27,14 @@ from zipfile import ZIP_STORED, ZipFile
 
 import botocore
 import botocore.exceptions
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED, ThreadPoolExecutor, wait
 from zipstream import ZipStream
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import (
     DEFAULT_MIME,
     StreamResponse,
+    deepcopy,
     get_bucket_name_and_prefix,
     guess_file_type,
     parse_le_uint16,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct  # type: ignore
 
 logger = logging.getLogger("eodag.utils.s3")
+MAX_DOWNLOAD_BUFFER_LENGTH = 8
 
 
 def fetch_range(
@@ -228,8 +230,12 @@ def _chunks_from_s3_objects(
     all_futures = {
         fut: (f_info, start, end)
         for f_info in (files_info[i] for i in active_indices)
-        for fut, (start, end) in f_info.futures.items()
+        for fut, (start, end) in deepcopy(f_info.futures).items()
     }
+
+    for f_info in files_info:
+        # Clear futures in FileInfo to avoid circular references using a lot of memory
+        f_info.futures = {}
 
     def make_chunks_generator(target_info: S3FileInfo) -> Iterator[bytes]:
         """Create a generator bound to a specific file info (no late-binding bug)."""
@@ -262,9 +268,23 @@ def _chunks_from_s3_objects(
                 # No more incoming data anywhere; stop to avoid waiting on an empty set
                 break
 
-            done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+            if len(info.buffers) >= MAX_DOWNLOAD_BUFFER_LENGTH:
+                # if the buffer is already quite big, wait for the next chunk to be yielded instead of random futures
+                if info.next_yield not in info.buffers:
+                    next_future = list(
+                        filter(
+                            lambda k: all_futures[k][1]
+                            == info.next_yield + f_info.data_start_offset,
+                            all_futures.keys(),
+                        )
+                    )
+                done, _ = wait(next_future, return_when=ALL_COMPLETED)
+            else:
+                done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+
             for fut in done:
                 f_info, start, end = all_futures.pop(fut)
+
                 data = fut.result()
                 # Store buffer with a key relative to the start of the file data
                 rel_start = start - f_info.data_start_offset
