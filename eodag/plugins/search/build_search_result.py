@@ -428,7 +428,10 @@ class ECMWFSearch(PostJsonSearch):
             if "/to/" in _dc_qp.get("date", ""):
                 params[START], params[END] = _dc_qp["date"].split("/to/")
             elif "/" in _dc_qp.get("date", ""):
-                (params[START], params[END],) = _dc_qp[
+                (
+                    params[START],
+                    params[END],
+                ) = _dc_qp[
                     "date"
                 ].split("/")
             elif _dc_qp.get("date"):

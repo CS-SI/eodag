@@ -292,9 +292,9 @@ def python_field_definition_to_json(
         if isinstance(type_data, str):
             json_field_definition["type"] = type_data
         elif type_data is None:
-            json_field_definition["type"] = json_field_definition[
-                "min"
-            ] = json_field_definition["max"] = None
+            json_field_definition["type"] = json_field_definition["min"] = (
+                json_field_definition["max"]
+            ) = None
         else:
             json_field_definition["type"] = [row["type"] for row in type_data]
             json_field_definition["min"] = [
@@ -310,9 +310,9 @@ def python_field_definition_to_json(
         if isinstance(field_type, str):
             json_field_definition["type"] = field_type
         elif field_type is None:
-            json_field_definition["type"] = json_field_definition[
-                "min"
-            ] = json_field_definition["max"] = None
+            json_field_definition["type"] = json_field_definition["min"] = (
+                json_field_definition["max"]
+            ) = None
         else:
             json_field_definition["type"] = [row["type"] for row in field_type]
             json_field_definition["min"] = [

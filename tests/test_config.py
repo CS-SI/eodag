@@ -476,9 +476,9 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__USGS__API__CREDENTIALS__PASSWORD"] = "pwd"
         os.environ["EODAG__AWS_EOS__SEARCH__PRODUCT_LOCATION_SCHEME"] = "file"
         os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "api-key"
-        os.environ[
-            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
-        ] = "access-key-id"
+        os.environ["EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"] = (
+            "access-key-id"
+        )
         os.environ[
             "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"

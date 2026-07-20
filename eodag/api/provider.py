@@ -473,9 +473,9 @@ class Provider:
             if provider_auth_config and not credentials_in_auth(provider_auth_config):
                 for conf_with_creds in auth_confs_with_creds:
                     if conf_with_creds.matches_target_auth(provider_auth_config):
-                        getattr(
-                            self.config, key
-                        ).credentials = conf_with_creds.credentials
+                        getattr(self.config, key).credentials = (
+                            conf_with_creds.credentials
+                        )
                         return
 
     def delete_collection(self, name: str) -> None:

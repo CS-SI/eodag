@@ -3311,9 +3311,9 @@ class TestCoreSearch(TestCoreBase):
         type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
             return_value=mock_config
         )
-        type(
-            mock_get_search_plugins.return_value[0]
-        ).next_page_query_obj = mock.PropertyMock(return_value={})
+        type(mock_get_search_plugins.return_value[0]).next_page_query_obj = (
+            mock.PropertyMock(return_value={})
+        )
         # mocked search result id
         type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}

@@ -582,12 +582,12 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
 
         with responses.RequestsMock(
@@ -667,16 +667,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
-        search_plugin.config.discover_collections[
-            "single_collection_fetch_qs"
-        ] = "foo=bar"
+        search_plugin.config.discover_collections["single_collection_fetch_qs"] = (
+            "foo=bar"
+        )
 
         with responses.RequestsMock(
             assert_all_requests_are_fired=True
@@ -736,9 +736,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, provider)
         discover_collections_conf = search_plugin.config.discover_collections
         search_plugin.config.discover_collections.pop("fetch_url")
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
         result = search_plugin.discover_collections_per_page()
         assert result is None
@@ -5394,7 +5394,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 
     def test_plugins_search_cop_ghsl_get_available_values_from_constraints(self):
         """test if get_available_values_from_contraints returns the available values for
-        the given filters based on the given constraints and throws an error if no values are available"""
+        the given filters based on the given constraints and throws an error if no values are available
+        """
         # invalid parameter in filter
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(

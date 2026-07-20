@@ -1330,7 +1330,7 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeomet
 
 
 def get_geometry_from_ecmwf_area(
-    area: Union[str, list[float]]
+    area: Union[str, list[float]],
 ) -> Optional[BaseGeometry]:
     """
     Creates a ``shapely.geometry`` from bounding box in area format.

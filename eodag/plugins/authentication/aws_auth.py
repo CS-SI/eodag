@@ -247,9 +247,9 @@ class AwsAuth(Authentication):
                         break
                 try:
                     # connect to aws s3 and get bucket auhenticated objects
-                    authenticated_objects[
-                        bucket_name
-                    ] = self._get_authenticated_objects(bucket_name, common_prefix)
+                    authenticated_objects[bucket_name] = (
+                        self._get_authenticated_objects(bucket_name, common_prefix)
+                    )
 
                 except AuthenticationError as e:
                     logger.warning("Unexpected error: %s" % e)
