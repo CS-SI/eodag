@@ -3433,6 +3433,28 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         eoproduct = results.data[0]
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
 
+    def test_plugins_search_ecmwfsearch_by_id_restores_cached_search_params(self):
+        """ECMWFSearch id-based search must keep id and expose parameters from previous regular search."""
+        initial_results = self.search_plugin.query(
+            collection=self.collection,
+            **self.query_dates,
+            **self.custom_query_params,
+        )
+        initial_product = initial_results.data[0]
+        initial_id = initial_product.properties["id"]
+
+        by_id_results = self.search_plugin.query(
+            collection=self.collection,
+            id=initial_id,
+        )
+        by_id_product = by_id_results.data[0]
+
+        self.assertEqual(by_id_product.properties["id"], initial_id)
+        self.assertEqual(by_id_product.properties["title"], initial_id)
+
+        for param in self.custom_query_params:
+            self.assertIn(param, by_id_product.properties)
+
     def test_plugins_search_ecmwfsearch_with_area_keeps_qs(self):
         """ECMWFSearch.query with ``area`` must expose geometry in properties and keep ``area`` in qs."""
         # string format: "max_lat/min_lon/min_lat/max_lon"
