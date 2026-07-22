@@ -2286,6 +2286,7 @@ class TestCore(TestCoreBase):
                     "eo:cloud_cover",
                 ],
                 "max_sort_params": None,
+            },
             "desp_cache": {
                 "max_sort_params": None,
                 "sortables": [
