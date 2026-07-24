@@ -81,7 +81,7 @@ dedt_leonardo:
       on_success:
         result_type: json
         metadata_mapping:
-          eodag:download_link: $.headers.location
+          eodag:download_link: $.json.location
     no_auth_download: True
   auth:
     type: OIDCAuthorizationCodeFlowAuth

@@ -257,7 +257,7 @@ dedt_lumi:
       on_success:
         result_type: json
         metadata_mapping:
-          eodag:download_link: $.headers.Location
+          eodag:download_link: $.json.location
     no_auth_download: True
   auth:
     type: OIDCAuthorizationCodeFlowAuth
