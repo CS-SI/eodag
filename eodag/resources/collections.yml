@@ -6622,6 +6622,10 @@ DT_CLIMATE_G2_BASELINE_CONT_ICON_R1:
     the pages [Climate DT Phase2 CLTE Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clte+Parameters) and
     [Climate DT Phase2 CLMN Parameters](https://confluence.ecmwf.int/display/DDCZ/DestinE+ClimateDT+Phase+2+clmn+Parameters)".
     This Generation-2 Collection gives access to 'Control Simulation' data based on the 'ICON' model.
+  instruments: []
+  constellation: Digital Twin
+  platform: DT
+  processing:level:
   keywords: ["DT", "DE", "LUMI", "Destination-Earth", "Digital-Twin", "Climate Change", "baseline", "ICON", "cont", "Phase 2"]
   eodag:sensor_type: ATMOSPHERIC
   license: CC-BY-4.0
