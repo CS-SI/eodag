@@ -153,8 +153,8 @@ class TestCore(TestCoreBase):
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
-        "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1": ["dedt_mn5"],
+        "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1": ["dedt_leonardo"],
+        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1": ["dedt_leonardo"],
         "DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1": ["dedt_mn5"],
         "DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1": ["dedt_mn5"],
         "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_NEMO_R1": ["dedt_mn5"],
@@ -919,6 +919,7 @@ class TestCore(TestCoreBase):
         "creodias",
         "creodias_s3",
         "dedl",
+        "dedt_leonardo",
         "dedt_lumi",
         "dedt_mn5",
         "dlr_eoc_geoservice",
@@ -2275,6 +2276,7 @@ class TestCore(TestCoreBase):
                 ],
             },
             "dedt_lumi": None,
+            "dedt_leonardo": None,
             "dedt_mn5": None,
             "dlr_eoc_geoservice": {
                 "sortables": [
