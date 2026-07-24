@@ -440,6 +440,186 @@ dedl:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_ICON
       metadata_mapping:
         assets: $.assets
+    DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.CMIP6_HIST_ICON.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.CMIP6_HIST_IFS-NEMO.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.HIGHRESMIP_CONT_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.HIGHRESMIP_CONT_IFS-NEMO.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_ICON.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-NEMO.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_CONT_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_HIST_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.NG.DT_CLIMATE.G1.CMIP6_HIST_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
+      _collection: EO.ECMWF.DAT.NG.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-FESOM.R2
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_BASELINE_CONT_ICON_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_CONT_ICON.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_BASELINE_CONT_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_CONT_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_CONT_IFS-NEMO.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_BASELINE_HIST_ICON_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_HIST_ICON.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_HIST_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_HIST_IFS-NEMO.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_ICON_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.PROJECTIONS_SSP3-7.0_ICON.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.PROJECTIONS_SSP3-7.0_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_NEMO_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.PROJECTIONS_SSP3-7.0_IFS-NEMO.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R2:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R2
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R3:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R3
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R4:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R4
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R5:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R5
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R2:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R2
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R3:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R3
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R4:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R4
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R5:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R5
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R1
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R2:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R2
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R3:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R3
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R4:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R4
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
+    DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R5:
+      _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R5
+      metadata_mapping:
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
+        <<: *orderable_mm
     # AERIS
     AERIS_IAGOS:
       _collection: EO.AERIS.DAT.IAGOS
