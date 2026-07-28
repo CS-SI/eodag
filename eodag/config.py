@@ -48,7 +48,6 @@ from eodag.utils import (
     AUTH_TOPIC_KEYS,
     HTTP_REQ_TIMEOUT,
     PLUGINS_TOPIC_KEYS,
-    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     CredsStoreType,
     cast_scalar_value,
@@ -58,7 +57,6 @@ from eodag.utils import (
     slugify,
     sort_dict,
     string_to_jsonpath,
-    update_nested_dict,
     uri_to_path,
 )
 from eodag.utils.exceptions import MisconfiguredError, ValidationError
@@ -642,16 +640,7 @@ class PluginConfig(yaml.YAMLObject):
         :param check_type: Whether to require 'type' or 'credentials' key (default True).
         Set to False for legacy YAML tag parsing.
         """
-        # A plugin config must specify either:
-        # - a `type` (the plugin class to instantiate), OR
-        # - `credentials` only, which is valid for credentials-only overrides from user
-        #   conf for any plugin section (api, search, auth, search_auth, download_auth,
-        #   …). Users commonly set only credentials in their config (e.g.
-        #   ``ecmwf.api.credentials``, ``aws_eos.search_auth.credentials``) without
-        #   repeating the `type` that is already defined in the default providers.yml.
-        #   Without this exception any such user config entry would be rejected.
-        # Note: a search config (api/search) with credentials but no type will be caught later by
-        # disable_providers() if no matching plugin with a type exists in the DB.
+        # credentials may be set without type when the provider uses search_auth plugin.
         if (
             check_type
             and "type" not in config_keys
@@ -1462,30 +1451,10 @@ def disable_providers(
                     name,
                 )
 
-        # Disable providers with no functional search/api plugin ---
-        # This catches two distinct situations:
-        # 1. The provider has neither an `api` nor a `search` key at all.
-        # 2. The provider has an `api`/`search` key but with no `type` — typically a
-        #    credentials-only entry from the user conf (e.g. ecmwf/usgs with only
-        #    `api.credentials`). Such entries pass PluginConfig.validate() because
-        #    credentials are present, but the PluginConfig cannot be instantiated
-        #    without a `type`. We emit a distinct log message for each sub-case so
-        #    users can tell whether they forgot the plugin key entirely or forgot to
-        #    set the plugin type.
-        elif (not hasattr(conf, "api") or getattr(conf.api, "type", None) is None) and (
-            not hasattr(conf, "search") or getattr(conf.search, "type", None) is None
-        ):
+        # Disable providers with no functional search/api plugin
+        elif not hasattr(conf, "api") and not hasattr(conf, "search"):
             conf.enabled = False
-            has_plugin_key = hasattr(conf, "api") or hasattr(conf, "search")
-            if has_plugin_key:
-                # Plugin section exists but no type is set (credentials-only stub)
-                logger.info(
-                    "%s: provider has been disabled because its api or search plugin has no type configured",
-                    name,
-                )
-            else:
-                # No api or search section at all
-                logger.info(
-                    "%s: provider has been disabled because no api or search plugin could be found",
-                    name,
-                )
+            logger.info(
+                "%s: provider has been disabled because no api or search plugin could be found",
+                name,
+            )
