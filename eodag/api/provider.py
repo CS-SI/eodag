@@ -45,7 +45,6 @@ class PrunedProviderReason(TypedDict):
         "missing_credentials",
         "missing_auth_plugin",
         "missing_search_plugin",
-        "missing_search_plugin_type"
     ]
 
 
