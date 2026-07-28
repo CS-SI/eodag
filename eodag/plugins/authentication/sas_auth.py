@@ -134,7 +134,10 @@ class SASAuth(Authentication):
         if matching_url := getattr(self.config, "matching_url", None):
             matching_url = re.compile(matching_url)
         if credentials:
-            headers_update = format_dict_items(self.config.headers, **credentials)
+            not_empty_credentials = {k: v for k, v in credentials.items() if v}
+            headers_update = format_dict_items(
+                self.config.headers, **not_empty_credentials
+            )
             headers.update(headers_update)
 
         return RequestsSASAuth(
