@@ -19,8 +19,8 @@
 import os
 import tempfile
 import unittest
-from io import StringIO
 from importlib.resources import files as res_files
+from io import StringIO
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -182,6 +182,7 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_validation_missing_plugins_type(self):
         """Test ProviderConfig validation with plugins with missing type."""
+        # Test that a plugin config with neither type nor credentials is invalid
         with self.assertRaisesRegex(
             ValidationError,
             "A Plugin config must specify the type of Plugin it configures",
@@ -189,6 +190,12 @@ class TestProviderConfig(unittest.TestCase):
             ProviderConfig.from_mapping(
                 {"name": "test_provider", "search": {"param": "value"}}
             )
+
+        # Test that a plugin config with no type but with credentials is valid
+        # for plugin sections supporting credentials (e.g. api, auth, search_auth and download_auth)
+        ProviderConfig.from_mapping(
+            {"name": "test_provider", "api": {"credentials": {"username": "foo"}}}
+        )
 
     def test_provider_config_validation_api_exclusivity(self):
         """Test that API plugin cannot coexist with other plugin types."""
@@ -751,32 +758,105 @@ class TestDisableProviders(unittest.TestCase):
         self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    def test_disable_providers(self):
-        """Providers needing auth for search but without credentials must be disabled on init"""
+    def test_disable_providers_not_disabled(self):
+        """Providers not needing auth for search (and having api/search plugin)
+        or needing it for search but with credentials must not be disabled"""
         empty_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
+
         try:
-            # Default conf: no auth needed for search
+            # auth not required for search
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "false"
+            os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "false"
+            os.environ["EODAG__USGS__API__NEED_AUTH"] = "false"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert not dag.db.get_fb_config("sara")["search"].get("need_auth", False)
 
-            # auth needed for search without credentials
-            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
-            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert "sara" not in dag.providers.names
+            # case with a provider with a search and an auth plugin (sara)
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(hasattr(sara_config_obj, "auth"))
 
-            # auth needed for search with credentials
+            # case with a provider with a search plugin and a search auth plugin (aws_eos)
+            aws_eos_config = dag.db.get_fb_config("aws_eos")
+            aws_eos_config_obj = ProviderConfig.from_mapping(aws_eos_config)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(hasattr(aws_eos_config_obj, "search_auth"))
+
+            # case with a provider with an api plugin (usgs)
+            usgs_config = dag.db.get_fb_config("usgs")
+            usgs_config_obj = ProviderConfig.from_mapping(usgs_config)
+            self.assertTrue(usgs_config_obj.enabled)
+            self.assertTrue(hasattr(usgs_config_obj, "api"))
+
+            disable_providers(
+                {
+                    "sara": sara_config_obj,
+                    "aws_eos": aws_eos_config_obj,
+                    "usgs": usgs_config_obj,
+                },
+                dag._plugins_manager.skipped_plugins,
+            )
+            # check that providers have not been disabled
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(usgs_config_obj.enabled)
+
+            # auth needed for search with need_auth and credentials
             os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
             os.environ["EODAG__SARA__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "bar"
+            os.environ["EODAG__USGS__API__NEED_AUTH"] = "true"
+            os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "baz"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert "sara" in dag.providers.names
-            assert dag.db.get_fb_config("sara")["search"].get("need_auth", False)
 
+            # in each case, restore credentials in configs, as they are not stored in DB for security reason
+
+            # case with a provider with a search and an auth plugin (sara)
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config["auth"].update({"credentials": dag._creds_store["sara"]})
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(hasattr(sara_config_obj.auth, "credentials"))
+
+            # case with a provider with a search plugin and a search auth plugin (aws_eos)
+            aws_eos_config = dag.db.get_fb_config("aws_eos")
+            aws_eos_config["search_auth"].update(
+                {"credentials": dag._creds_store["aws_eos"]}
+            )
+            aws_eos_config_obj = ProviderConfig.from_mapping(aws_eos_config)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(hasattr(aws_eos_config_obj.search_auth, "credentials"))
+
+            # case with a provider with an api plugin (usgs)
+            usgs_config = dag.db.get_fb_config("usgs")
+            usgs_config["api"].update({"credentials": dag._creds_store["usgs"]})
+            usgs_config_obj = ProviderConfig.from_mapping(usgs_config)
+            self.assertTrue(usgs_config_obj.enabled)
+            self.assertTrue(hasattr(usgs_config_obj.api, "credentials"))
+
+            disable_providers(
+                {
+                    "sara": sara_config_obj,
+                    "aws_eos": aws_eos_config_obj,
+                    "usgs": usgs_config_obj,
+                },
+                dag._plugins_manager.skipped_plugins,
+            )
+            # check that providers have not been disabled
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(usgs_config_obj.enabled)
         # Teardown
         finally:
             os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
+            os.environ.pop("EODAG__AWS_EOS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY", None)
+            os.environ.pop("EODAG__USGS__API__NEED_AUTH", None)
+            os.environ.pop("EODAG__USGS__API__CREDENTIALS__USERNAME", None)
 
     @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
     def test_disable_providers_skipped_plugin(self, mock_iter_ep):
@@ -795,50 +875,106 @@ class TestDisableProviders(unittest.TestCase):
         mock_iter_ep.side_effect = skip_qssearch
 
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        original_skipped_plugins = dag._plugins_manager.skipped_plugins
         self.assertNotIn("sara", dag.providers.names)
         self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
-        dag._plugins_manager.skipped_plugins = []
 
-    def test_disable_providers_for_search_without_auth(self):
+        # restore original skipped plugins to avoid side effects on other tests
+        dag._plugins_manager.skipped_plugins = original_skipped_plugins
+
+    def test_disable_providers_without_credentials(self):
+        """Providers needing auth for search but without credentials must be disabled"""
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
+        )
+
+        try:
+            # auth needed for search with need_auth but without credentials
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__USGS__API__NEED_AUTH"] = "true"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+
+            # case with a provider with a search and an auth plugin (sara)
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertFalse(hasattr(sara_config_obj.auth, "credentials"))
+
+            # case with a provider with a search plugin and a search auth plugin (aws_eos)
+            aws_eos_config = dag.db.get_fb_config("aws_eos")
+            aws_eos_config_obj = ProviderConfig.from_mapping(aws_eos_config)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertFalse(hasattr(aws_eos_config_obj.search_auth, "credentials"))
+
+            # case with a provider with an api plugin (usgs)
+            usgs_config = dag.db.get_fb_config("usgs")
+            usgs_config_obj = ProviderConfig.from_mapping(usgs_config)
+            self.assertTrue(usgs_config_obj.enabled)
+            self.assertFalse(hasattr(usgs_config_obj.api, "credentials"))
+
+            with self.assertLogs(level="INFO") as cm:
+                disable_providers(
+                    {
+                        "sara": sara_config_obj,
+                        "aws_eos": aws_eos_config_obj,
+                        "usgs": usgs_config_obj,
+                    },
+                    dag._plugins_manager.skipped_plugins,
+                )
+                self.assertIn(
+                    "sara: provider needing auth for search has been disabled because no credentials could be found",
+                    str(cm.output),
+                )
+                self.assertIn(
+                    "aws_eos: provider needing auth for search has been disabled because no credentials could be found",
+                    str(cm.output),
+                )
+                self.assertIn(
+                    "usgs: provider needing auth for search has been disabled because no credentials could be found",
+                    str(cm.output),
+                )
+                # check that providers have been disabled
+                self.assertFalse(sara_config_obj.enabled)
+                self.assertFalse(aws_eos_config_obj.enabled)
+                self.assertFalse(usgs_config_obj.enabled)
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__AWS_EOS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__USGS__API__NEED_AUTH", None)
+
+    def test_disable_providers_without_auth(self):
         """Providers needing auth for search but without auth plugin must be disabled"""
         empty_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
-        # Save original sara config from shared instance before modifying shared DB
-        original_sara_config = self.dag.db.get_fb_config("sara")
         try:
             # auth needed for search with need_auth but without auth plugin
             os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
-            os.environ["EODAG__SARA__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            # Remove auth from the DB record directly
-            full_config = dag.db.get_fb_config("sara")
-            full_config.pop("auth", None)
-            dag.db.upsert_fb_configs([ProviderConfig.from_mapping(full_config)])
-            assert "sara" in dag.providers.names
-            assert dag.db.get_fb_config("sara")["search"].get("need_auth", False)
-            assert "auth" not in dag.db.get_fb_config("sara")
+
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config.pop("auth", None)
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(getattr(sara_config_obj, "search"))
+            self.assertFalse(hasattr(sara_config_obj, "auth"))
 
             with self.assertLogs(level="INFO") as cm:
-                sara_config = ProviderConfig.from_mapping(dag.db.get_fb_config("sara"))
                 disable_providers(
-                    {"sara": sara_config}, dag._plugins_manager.skipped_plugins
+                    {"sara": sara_config_obj}, dag._plugins_manager.skipped_plugins
                 )
-                dag.db.upsert_fb_configs([sara_config])
-                self.assertNotIn("sara", dag.providers)
                 self.assertIn(
                     "sara: provider needing auth for search has been disabled because no auth plugin could be found",
                     str(cm.output),
                 )
-
+                # check that the provider has been disabled
+                self.assertFalse(sara_config_obj.enabled)
         # Teardown
         finally:
             os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
-            os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
-            # Restore sara to original state in shared DB to avoid contaminating other tests
-            self.dag.db.upsert_fb_configs(
-                [ProviderConfig.from_mapping(original_sara_config)]
-            )
 
     def test_disable_providers_without_api_or_search_plugin(self):
         """Providers without api or search plugin must be disabled"""
@@ -846,68 +982,26 @@ class TestDisableProviders(unittest.TestCase):
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        # Save original sara config to restore after test
-        original_sara_config = dag.db.get_fb_config("sara")
-        try:
-            # Remove search plugin from DB record directly
-            full_config = dag.db.get_fb_config("sara")
-            full_config.pop("search", None)
-            dag.db.upsert_fb_configs([ProviderConfig.from_mapping(full_config)])
-            assert "sara" in dag.providers.names
-            assert "api" not in dag.db.get_fb_config("sara")
-            assert "search" not in dag.db.get_fb_config("sara")
 
-            with self.assertLogs(level="INFO") as cm:
-                sara_config = ProviderConfig.from_mapping(dag.db.get_fb_config("sara"))
-                disable_providers(
-                    {"sara": sara_config}, dag._plugins_manager.skipped_plugins
-                )
-                dag.db.upsert_fb_configs([sara_config])
-                self.assertNotIn("sara", dag.providers)
-                self.assertIn(
-                    "sara: provider has been disabled because no api or search plugin could be found",
-                    str(cm.output),
-                )
-        finally:
-            # Restore sara to original state in shared DB to avoid contaminating other tests
-            self.dag.db.upsert_fb_configs(
-                [ProviderConfig.from_mapping(original_sara_config)]
+        # get sara config and remove its search plugin to simulate a provider without api or search plugin
+        sara_config = dag.db.get_fb_config("sara")
+        sara_config.pop("search", None)
+        sara_config_obj = ProviderConfig.from_mapping(sara_config)
+
+        self.assertTrue(sara_config_obj.enabled)
+        self.assertFalse(hasattr(sara_config_obj, "api"))
+        self.assertFalse(hasattr(sara_config_obj, "search"))
+
+        with self.assertLogs(level="INFO") as cm:
+            disable_providers(
+                {"sara": sara_config_obj}, dag._plugins_manager.skipped_plugins
             )
-
-    def test_disable_providers_with_plugin_but_no_type(self):
-        """Providers with a plugin section but no type (credentials-only stub)
-        must be disabled with a specific message"""
-        empty_conf_file = str(
-            res_files("eodag") / "resources" / "user_conf_template.yml"
-        )
-        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-        # Save original sara config to restore after test
-        original_sara_config = dag.db.get_fb_config("sara")
-        try:
-            # Replace sara search plugin with a credentials-only stub (no type)
-            full_config = dag.db.get_fb_config("sara")
-            full_config["search"] = {"credentials": {"username": "foo"}}
-            dag.db.upsert_fb_configs([ProviderConfig.from_mapping(full_config)])
-            assert "sara" in dag.providers.names
-            assert "search" in dag.db.get_fb_config("sara")
-            assert "type" not in dag.db.get_fb_config("sara")["search"]
-
-            with self.assertLogs(level="INFO") as cm:
-                sara_config = ProviderConfig.from_mapping(dag.db.get_fb_config("sara"))
-                disable_providers(
-                    {"sara": sara_config}, dag._plugins_manager.skipped_plugins
-                )
-                dag.db.upsert_fb_configs([sara_config])
-                self.assertNotIn("sara", dag.providers)
-                self.assertIn(
-                    "sara: provider has been disabled because its api or search plugin has no type configured",
-                    str(cm.output),
-                )
-        finally:
-            # Restore sara to original state in shared DB to avoid contaminating other tests
-            self.dag.db.upsert_fb_configs(
-                [ProviderConfig.from_mapping(original_sara_config)]
+            self.assertIn(
+                "sara: provider has been disabled because no api or search plugin could be found",
+                str(cm.output),
             )
+            # check that the provider has been disabled
+            self.assertFalse(sara_config_obj.enabled)
 
 
 class TestDisableProvidersExternalAuth(unittest.TestCase):
