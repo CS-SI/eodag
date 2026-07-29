@@ -80,6 +80,7 @@ from tests.context import (
     NotAvailableError,
     PluginConfig,
     PreparedSearch,
+    ProviderConfig,
     QueryablesDict,
     QueryStringSearch,
     RequestError,
@@ -368,7 +369,8 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         provider_name, mundi_config = next(iter(mundi_config_dict.items()))
         if "name" not in mundi_config:
             mundi_config["name"] = provider_name
-        add_provider_to_pm(self.plugins_manager, mundi_config)
+        mundi_config_obj = ProviderConfig.from_mapping(mundi_config)
+        add_provider_to_pm(self.plugins_manager, mundi_config_obj)
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         self.mundi_search_plugin = self.get_search_plugin(self.collection, provider)
@@ -2014,7 +2016,8 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         provider_name, onda_config = next(iter(onda_config_dict.items()))
         if "name" not in onda_config:
             onda_config["name"] = provider_name
-        add_provider_to_pm(self.plugins_manager, onda_config)
+        onda_config_obj = ProviderConfig.from_mapping(onda_config)
+        add_provider_to_pm(self.plugins_manager, onda_config_obj)
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
@@ -7062,7 +7065,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
     def test_plugins_search_cop_ghsl_discover_queryables(self, mock_fetch_constraints):
         """test that the correct queryables are returned"""
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
-        plugin = self.get_search_plugin(collection="GHS_BUILT_S", provider="cop_ghsl")
+        plugin = self.get_search_plugin(provider="cop_ghsl")
         kwargs = {"collection": "GHS_BUILT_S"}
         collection_config = {
             key: value
