@@ -19,23 +19,33 @@
 import os
 import tempfile
 import unittest
+from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
 import pytest
 import yaml
 
-from eodag.api.provider import ProviderConfig, ProvidersDict
-from eodag.config import PluginConfig
+from eodag.config import (
+    PluginConfig,
+    ProviderConfig,
+    _has_matching_external_auth,
+    _parse_env_provider_configs,
+    disable_providers,
+    merge_provider_configs,
+)
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import deepcopy
 from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
+    PLUGINS_TOPIC_KEYS,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     EODataAccessGateway,
     ValidationError,
+    build_provider_configs,
     config,
     get_ext_collections_conf,
     load_stac_provider_config,
@@ -66,8 +76,44 @@ def load_plugin_config_from_string(yaml_string: str) -> PluginConfig:
 
 
 class TestProviderConfig(unittest.TestCase):
-    def test_provider_config_name(self):
-        """Name config parameter must be slugified"""
+    def test_provider_config_from_yaml_called(self):
+        """yaml.load must invoke the registered !provider YAML constructor,
+        which means ProviderConfig.from_yaml is called."""
+        provider_name = "provider"
+
+        stream = StringIO(
+            """!provider
+            name: {}
+            api: !plugin
+                type: MyPluginClass
+            products:
+                EODAG_COLLECTION: provider_collection
+            """.format(
+                provider_name
+            ),
+        )
+
+        # load_provider_config_from_string uses LegacyAwareLoader, which registers
+        # its own constructor for "!provider" (provider_constructor, which calls
+        # ProviderConfig.from_yaml). We must spy on LegacyAwareLoader's table,
+        # not yaml.Loader's, because each loader class caches constructors independently.
+        self.assertEqual(ProviderConfig.yaml_tag, "!provider")
+        real_constructor = LegacyAwareLoader.yaml_constructors[ProviderConfig.yaml_tag]
+        constructor_spy = mock.Mock(wraps=real_constructor)
+
+        with mock.patch.dict(
+            LegacyAwareLoader.yaml_constructors,
+            {ProviderConfig.yaml_tag: constructor_spy},
+        ):
+            provider_config = load_provider_config_from_string(stream.getvalue())
+
+        constructor_spy.assert_called_once()
+        _, node = constructor_spy.call_args.args
+        self.assertEqual(node.tag, ProviderConfig.yaml_tag)
+        self.assertIsInstance(provider_config, ProviderConfig)
+
+    def test_provider_config_creation_from_yaml(self):
+        """ProviderConfig.from_yaml must create a correct provider config instance"""
         unslugified_provider_name = "some $provider-name. Really ugly"
         slugified_provider_name = "some_provider_name_really_ugly"
 
@@ -80,102 +126,114 @@ class TestProviderConfig(unittest.TestCase):
                 EODAG_COLLECTION: provider_collection
             """.format(
                 unslugified_provider_name
-            )
+            ),
         )
+
+        # yaml.load uses from_yaml internally when it encounters !provider tag
         provider_config = load_provider_config_from_string(stream.getvalue())
+
+        # Verify the object is created correctly
+        self.assertIsInstance(provider_config, ProviderConfig)
+        # name config parameter must be slugified
         self.assertEqual(provider_config.name, slugified_provider_name)
-
-    def test_provider_config_valid(self):
-        """Provider config must be valid"""
-        # Not defining any plugin at all
-        invalid_stream = StringIO("""!provider\nname: my_provider""")
-        self.assertRaises(
-            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
+        self.assertIsInstance(provider_config.api, PluginConfig)
+        self.assertEqual(provider_config.api.type, "MyPluginClass")
+        self.assertIsInstance(provider_config.products, dict)
+        self.assertIn("EODAG_COLLECTION", provider_config.products)
+        self.assertEqual(
+            provider_config.products["EODAG_COLLECTION"], "provider_collection"
         )
 
-        # Not defining a class for a plugin
-        invalid_stream = StringIO(
-            """!provider
-                name: my_provider
-                search: !plugin
-                    param: value
-            """
-        )
-        self.assertRaises(
-            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
+    def test_provider_config_creation_from_mapping(self):
+        """ProviderConfig.from_mapping must create a correct provider config instance"""
+        unslugified_provider_name = "some $provider-name. Really ugly"
+        slugified_provider_name = "some_provider_name_really_ugly"
+
+        mapping = {
+            "name": unslugified_provider_name,
+            "api": {"type": "MyPluginClass"},
+            "products": {"EODAG_COLLECTION": "provider_collection"},
+        }
+
+        provider_config = ProviderConfig.from_mapping(mapping)
+
+        # Verify the object is created correctly
+        self.assertIsInstance(provider_config, ProviderConfig)
+        # name config parameter is not slugified
+        self.assertEqual(provider_config.name, slugified_provider_name)
+        self.assertIsInstance(provider_config.api, PluginConfig)
+        self.assertEqual(provider_config.api.type, "MyPluginClass")
+        self.assertIsInstance(provider_config.products, dict)
+        self.assertIn("EODAG_COLLECTION", provider_config.products)
+        self.assertEqual(
+            provider_config.products["EODAG_COLLECTION"], "provider_collection"
         )
 
-        # Not giving a name to the provider
-        invalid_stream = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-            """
-        )
-        self.assertRaises(
-            ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
-        )
+    def test_provider_config_validation_missing_name(self):
+        """Test ProviderConfig validation with missing name."""
+        with self.assertRaisesRegex(
+            ValidationError, "Provider config must have name key"
+        ):
+            ProviderConfig.from_mapping({"search": {"type": "StacSearch"}})
 
-        # Specifying an api plugin and a search or download or auth plugin at the same
-        # type
-        invalid_stream1 = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-                search: !plugin
-                    type: MyPluginClass2
-            """
-        )
-        invalid_stream2 = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-                download: !plugin
-                    type: MyPluginClass3
-            """
-        )
-        invalid_stream3 = StringIO(
-            """!provider
-                api: !plugin
-                    type: MyPluginClass
-                auth: !plugin
-                    type: MyPluginClass4
-            """
-        )
-        self.assertRaises(
+    def test_provider_config_validation_missing_plugins(self):
+        """Test ProviderConfig validation with missing plugins."""
+        with self.assertRaisesRegex(
+            ValidationError, "A provider must implement at least one plugin"
+        ):
+            ProviderConfig.from_mapping({"name": "test_provider"})
+
+    def test_provider_config_validation_missing_plugins_type(self):
+        """Test ProviderConfig validation with plugins with missing type."""
+        # Test that a plugin config with neither type nor credentials is invalid
+        with self.assertRaisesRegex(
             ValidationError,
-            load_provider_config_from_string,
-            invalid_stream1.getvalue(),
+            "A Plugin config must specify the type of Plugin it configures",
+        ):
+            ProviderConfig.from_mapping(
+                {"name": "test_provider", "search": {"param": "value"}}
+            )
+
+        # Test that a plugin config with no type but with credentials is valid
+        # for plugin sections supporting credentials (e.g. api, auth, search_auth and download_auth)
+        ProviderConfig.from_mapping(
+            {"name": "test_provider", "api": {"credentials": {"username": "foo"}}}
         )
-        self.assertRaises(
-            ValidationError,
-            load_provider_config_from_string,
-            invalid_stream2.getvalue(),
-        )
-        self.assertRaises(
-            ValidationError,
-            load_provider_config_from_string,
-            invalid_stream3.getvalue(),
-        )
+
+    def test_provider_config_validation_api_exclusivity(self):
+        """Test that API plugin cannot coexist with other plugin types."""
+        for plugin_topic in PLUGINS_TOPIC_KEYS:
+            if plugin_topic != "api":
+                config = {
+                    "name": "test_provider",
+                    "api": {"type": "SomeApi"},
+                    plugin_topic: {"type": "SomeOtherPlugin"},
+                }
+                with self.assertRaisesRegex(
+                    ValidationError, "Api plugin must not implement any other type"
+                ):
+                    ProviderConfig.from_mapping(config)
 
     def test_provider_config_update(self):
-        """A provider config must be update-able with a dict"""
-        valid_stream = StringIO(
-            """!provider
-                name: provider
-                provider_param: val
-                api: !plugin
-                    type: MyPluginClass
-                    plugin_param1: value1
-                    pluginParam2: value2
-        """
+        """Test ProviderConfig update operation."""
+        provider_config = ProviderConfig.from_mapping(
+            {
+                "name": "provider",
+                "provider_param": "val",
+                "api": {
+                    "type": "MyPluginClass",
+                    "plugin_param1": "value1",
+                    "pluginParam2": "value2",
+                },
+            }
         )
-        provider_config = load_provider_config_from_string(valid_stream.getvalue())
         overrides = {
             "provider_param": "new val",
             "api": {"pluginparam2": "newVal", "newParam": "val"},
         }
+
         provider_config.update(overrides)
+
         self.assertEqual(provider_config.provider_param, "new val")
         self.assertEqual(provider_config.api.pluginParam2, "newVal")
         self.assertTrue(hasattr(provider_config.api, "newParam"))
@@ -210,29 +268,30 @@ class TestProviderConfig(unittest.TestCase):
         provider2_config1 = deepcopy(provider1_config1.__dict__)
         provider2_config1.update({"name": "provider2"})
 
-        provider3_config2 = deepcopy(provider1_config2.__dict__)
-        provider3_config2.update({"name": "provider3"})
+        provider3_config1 = deepcopy(provider1_config1.__dict__)
+        provider3_config1.update({"name": "provider3"})
 
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "provider1": provider1_config1,
                 "provider2": provider2_config1,
             }
         )
 
-        providers.update_from_configs(
+        merge_provider_configs(
+            providers,
             {
                 "provider1": provider1_config2,
-                "provider3": provider3_config2,
-            }
+                "provider3": provider3_config1,
+            },
         )
 
-        self.assertEqual(len(providers.configs), 3)
-        self.assertEqual(providers["provider1"].config.provider_param, "val1")
-        self.assertEqual(providers["provider1"].config.provider_param2, "val2")
-        self.assertEqual(providers["provider1"].config.provider_param3, "val3")
-        self.assertEqual(providers["provider1"].config.api.plugin_param1, "value1")
-        self.assertEqual(providers["provider1"].config.api.pluginParam2, "value3")
+        self.assertEqual(len(providers), 3)
+        self.assertEqual(providers["provider1"].provider_param, "val1")
+        self.assertEqual(providers["provider1"].provider_param2, "val2")
+        self.assertEqual(providers["provider1"].provider_param3, "val3")
+        self.assertEqual(providers["provider1"].api.plugin_param1, "value1")
+        self.assertEqual(providers["provider1"].api.pluginParam2, "value3")
 
 
 class TestPluginConfig(unittest.TestCase):
@@ -296,6 +355,27 @@ class TestConfigFunctions(unittest.TestCase):
         # stop os.environ
         cls.mock_os_environ.stop()
 
+    @mock.patch.dict("os.environ", {"EODAG_PROVIDERS_WHITELIST": "provider1"})
+    def test_providers_dict_whitelist(self):
+        """Test whitelist filtering via standalone function."""
+        from eodag.config import _get_whitelisted_configs
+
+        sample = {
+            "provider1": {"name": "provider1", "search": {"type": "StacSearch"}},
+            "provider2": {"name": "provider2", "search": {"type": "StacSearch"}},
+        }
+        filtered = _get_whitelisted_configs(sample)
+        self.assertEqual(set(filtered.keys()), {"provider1"})
+
+    def test_providers_dict_invalid_config_handling(self):
+        """Test build_provider_configs handles invalid configurations."""
+        invalid_configs = {"invalid": {"description": "Missing required fields"}}
+
+        with mock.patch("eodag.config.logger") as mock_logger:
+            providers = build_provider_configs(invalid_configs)
+            mock_logger.warning.assert_called()
+            self.assertEqual(len(providers), 0)
+
     def test_load_default_config(self):
         """Default config must be successfully loaded"""
         conf = config.load_default_config()
@@ -315,7 +395,7 @@ class TestConfigFunctions(unittest.TestCase):
         """Config must be loaded with only the selected whitelist of providers"""
         try:
             os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
-            providers = ProvidersDict.from_configs(config.load_default_config())
+            providers = build_provider_configs(config.load_default_config())
 
             self.assertEqual({"creodias"}, set(providers.keys()))
         finally:
@@ -324,8 +404,9 @@ class TestConfigFunctions(unittest.TestCase):
     def test_override_config_from_str(self):
         """Default configuration must be overridden from a yaml conf str"""
 
-        providers = ProvidersDict.from_configs(config.load_default_config())
-        providers.update_from_configs(
+        providers = build_provider_configs(config.load_default_config())
+        merge_provider_configs(
+            providers,
             yaml.safe_load(
                 """
                 my_new_provider:
@@ -347,10 +428,10 @@ class TestConfigFunctions(unittest.TestCase):
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
                 """
-            )
+            ),
         )
 
-        my_new_provider_conf = providers["my_new_provider"].config
+        my_new_provider_conf = providers["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)
         self.assertIsInstance(my_new_provider_conf.search, PluginConfig)
         self.assertEqual(
@@ -409,19 +490,20 @@ class TestConfigFunctions(unittest.TestCase):
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
         """
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = build_provider_configs(config.load_default_config())
         file_path_override = os.path.join(
             os.path.dirname(__file__), "resources", "file_config_override.yml"
         )
-        providers.update_from_config_file(file_path_override)
+        with open(file_path_override) as fh:
+            merge_provider_configs(providers, yaml.safe_load(fh))
 
-        usgs_conf = providers["usgs"].config
+        usgs_conf = providers["usgs"]
         self.assertEqual(usgs_conf.priority, 5)
         self.assertEqual(usgs_conf.api.extract, False)
         self.assertEqual(usgs_conf.api.credentials["username"], "usr")
         self.assertEqual(usgs_conf.api.credentials["password"], "pwd")
 
-        aws_conf = providers["aws_eos"].config
+        aws_conf = providers["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
         self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
@@ -432,10 +514,10 @@ class TestConfigFunctions(unittest.TestCase):
             "secret-access-key",
         )
 
-        cop_dataspace_conf = providers["cop_dataspace"].config
+        cop_dataspace_conf = providers["cop_dataspace"]
         self.assertEqual(cop_dataspace_conf.download.output_dir, "/data")
 
-        my_new_provider_conf = providers["my_new_provider"].config
+        my_new_provider_conf = providers["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)
         self.assertIsInstance(my_new_provider_conf.search, PluginConfig)
         self.assertEqual(my_new_provider_conf.search.type, "StacSearch")
@@ -469,7 +551,7 @@ class TestConfigFunctions(unittest.TestCase):
 
     def test_override_config_from_env(self):
         """Default configuration must be overridden by environment variables"""
-        providers = ProvidersDict.from_configs(config.load_default_config())
+        providers = build_provider_configs(config.load_default_config())
         os.environ["EODAG__USGS__PRIORITY"] = "5"
         os.environ["EODAG__USGS__API__EXTRACT"] = "false"
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
@@ -484,19 +566,17 @@ class TestConfigFunctions(unittest.TestCase):
         ] = "secret-access-key"
         os.environ["EODAG__COP_DATASPACE__DOWNLOAD__OUTPUT_DIR"] = "/data"
         # check a parameter that has not been set yet
-        self.assertFalse(
-            hasattr(providers["cop_dataspace"].search_config, "start_page")
-        )
-        os.environ["EODAG__COP_DATASPACE__SEARCH__START_PAGE"] = "2"
+        self.assertNotIn("start_page", providers["cop_dataspace"].search.pagination)
+        os.environ["EODAG__COP_DATASPACE__SEARCH__PAGINATION__START_PAGE"] = "2"
 
-        providers.update_from_env()
-        usgs_conf = providers["usgs"].config
+        merge_provider_configs(providers, _parse_env_provider_configs())
+        usgs_conf = providers["usgs"]
         self.assertEqual(usgs_conf.priority, 5)
         self.assertEqual(usgs_conf.api.extract, False)
         self.assertEqual(usgs_conf.api.credentials["username"], "usr")
         self.assertEqual(usgs_conf.api.credentials["password"], "pwd")
 
-        aws_conf = providers["aws_eos"].config
+        aws_conf = providers["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
         self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
@@ -507,9 +587,9 @@ class TestConfigFunctions(unittest.TestCase):
             "secret-access-key",
         )
 
-        cop_dataspace_conf = providers["cop_dataspace"].config
+        cop_dataspace_conf = providers["cop_dataspace"]
         self.assertEqual(cop_dataspace_conf.download.output_dir, "/data")
-        self.assertEqual(cop_dataspace_conf.search.start_page, "2")
+        self.assertEqual(cop_dataspace_conf.search.pagination["start_page"], 2)
 
     @mock.patch("requests.get", autospec=True)
     def test_get_ext_collections_conf(self, mock_get):
@@ -541,6 +621,12 @@ class TestStacProviderConfig(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         self.dag = EODataAccessGateway()
 
@@ -548,22 +634,21 @@ class TestStacProviderConfig(unittest.TestCase):
         super().tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
     def test_existing_stac_provider_conf(self):
         """Existing / pre-configured STAC providers conf should mix providers.yml and  stac_provider.yml infos."""
         # Load raw provider configs (without stac_provider.yml defaults applied).
         with mock.patch(
-            "eodag.api.provider.ProviderConfig._apply_defaults",
+            "eodag.config.ProviderConfig._finalize",
             lambda self: None,
         ):
             providers_configs = config.load_default_config()
 
         raw_provider_search_conf = providers_configs["usgs_satapi_aws"].search.__dict__
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag._providers[
-            "usgs_satapi_aws"
-        ].search_config.__dict__
+        provider_search_conf = self.dag.db.get_fb_config("usgs_satapi_aws")["search"]
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
         self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])
@@ -616,7 +701,7 @@ class TestStacProviderConfig(unittest.TestCase):
         ]["search"]
 
         common_stac_provider_search_conf = load_stac_provider_config()["search"]
-        provider_search_conf = self.dag._providers["foo"].search_config.__dict__
+        provider_search_conf = self.dag.db.get_fb_config("foo")["search"]
 
         # conf existing in common (stac_provider.yml) and not in raw_provider (providers.yml)
         self.assertIn("gsd", common_stac_provider_search_conf["metadata_mapping"])
@@ -646,3 +731,527 @@ class TestStacProviderConfig(unittest.TestCase):
                 )
             else:
                 self.assertEqual(v, provider_search_conf[k])
+
+
+class TestDisableProviders(unittest.TestCase):
+    """Integration tests for :func:`~eodag.config.disable_providers` that verify
+    provider disabling behaviour during :class:`EODataAccessGateway` initialisation."""
+
+    def setUp(self):
+        super().setUp()
+        self.tmp_home_dir = TemporaryDirectory()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        )
+        self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
+        self.dag = EODataAccessGateway()
+        self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        self.mock_os_environ.start()
+
+    def tearDown(self):
+        super().tearDown()
+        self.mock_os_environ.stop()
+        self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
+        self.tmp_home_dir.cleanup()
+
+    def test_disable_providers_not_disabled(self):
+        """Providers not needing auth for search (and having api/search plugin)
+        or needing it for search but with credentials must not be disabled"""
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
+        )
+
+        try:
+            # auth not required for search
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "false"
+            os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "false"
+            os.environ["EODAG__USGS__API__NEED_AUTH"] = "false"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+
+            # case with a provider with a search and an auth plugin (sara)
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(hasattr(sara_config_obj, "auth"))
+
+            # case with a provider with a search plugin and a search auth plugin (aws_eos)
+            aws_eos_config = dag.db.get_fb_config("aws_eos")
+            aws_eos_config_obj = ProviderConfig.from_mapping(aws_eos_config)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(hasattr(aws_eos_config_obj, "search_auth"))
+
+            # case with a provider with an api plugin (usgs)
+            usgs_config = dag.db.get_fb_config("usgs")
+            usgs_config_obj = ProviderConfig.from_mapping(usgs_config)
+            self.assertTrue(usgs_config_obj.enabled)
+            self.assertTrue(hasattr(usgs_config_obj, "api"))
+
+            disable_providers(
+                {
+                    "sara": sara_config_obj,
+                    "aws_eos": aws_eos_config_obj,
+                    "usgs": usgs_config_obj,
+                },
+                dag._plugins_manager.skipped_plugins,
+            )
+            # check that providers have not been disabled
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(usgs_config_obj.enabled)
+
+            # auth needed for search with need_auth and credentials
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__SARA__AUTH__CREDENTIALS__USERNAME"] = "foo"
+            os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "bar"
+            os.environ["EODAG__USGS__API__NEED_AUTH"] = "true"
+            os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "baz"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+
+            # in each case, restore credentials in configs, as they are not stored in DB for security reason
+
+            # case with a provider with a search and an auth plugin (sara)
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config["auth"].update({"credentials": dag._creds_store["sara"]})
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(hasattr(sara_config_obj.auth, "credentials"))
+
+            # case with a provider with a search plugin and a search auth plugin (aws_eos)
+            aws_eos_config = dag.db.get_fb_config("aws_eos")
+            aws_eos_config["search_auth"].update(
+                {"credentials": dag._creds_store["aws_eos"]}
+            )
+            aws_eos_config_obj = ProviderConfig.from_mapping(aws_eos_config)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(hasattr(aws_eos_config_obj.search_auth, "credentials"))
+
+            # case with a provider with an api plugin (usgs)
+            usgs_config = dag.db.get_fb_config("usgs")
+            usgs_config["api"].update({"credentials": dag._creds_store["usgs"]})
+            usgs_config_obj = ProviderConfig.from_mapping(usgs_config)
+            self.assertTrue(usgs_config_obj.enabled)
+            self.assertTrue(hasattr(usgs_config_obj.api, "credentials"))
+
+            disable_providers(
+                {
+                    "sara": sara_config_obj,
+                    "aws_eos": aws_eos_config_obj,
+                    "usgs": usgs_config_obj,
+                },
+                dag._plugins_manager.skipped_plugins,
+            )
+            # check that providers have not been disabled
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertTrue(usgs_config_obj.enabled)
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
+            os.environ.pop("EODAG__AWS_EOS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY", None)
+            os.environ.pop("EODAG__USGS__API__NEED_AUTH", None)
+            os.environ.pop("EODAG__USGS__API__CREDENTIALS__USERNAME", None)
+
+    @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
+    def test_disable_providers_skipped_plugin(self, mock_iter_ep):
+        """Providers needing skipped plugin must be disabled on init"""
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
+        )
+
+        def skip_qssearch(group):
+            ep = mock.MagicMock()
+            if group == "eodag.plugins.search":
+                ep.name = "QueryStringSearch"
+                ep.load = mock.MagicMock(side_effect=ModuleNotFoundError())
+            return [ep]
+
+        mock_iter_ep.side_effect = skip_qssearch
+
+        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        original_skipped_plugins = dag._plugins_manager.skipped_plugins
+        self.assertNotIn("sara", dag.providers.names)
+        self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
+
+        # restore original skipped plugins to avoid side effects on other tests
+        dag._plugins_manager.skipped_plugins = original_skipped_plugins
+
+    def test_disable_providers_without_credentials(self):
+        """Providers needing auth for search but without credentials must be disabled"""
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
+        )
+
+        try:
+            # auth needed for search with need_auth but without credentials
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__AWS_EOS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__USGS__API__NEED_AUTH"] = "true"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+
+            # case with a provider with a search and an auth plugin (sara)
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertFalse(hasattr(sara_config_obj.auth, "credentials"))
+
+            # case with a provider with a search plugin and a search auth plugin (aws_eos)
+            aws_eos_config = dag.db.get_fb_config("aws_eos")
+            aws_eos_config_obj = ProviderConfig.from_mapping(aws_eos_config)
+            self.assertTrue(aws_eos_config_obj.enabled)
+            self.assertFalse(hasattr(aws_eos_config_obj.search_auth, "credentials"))
+
+            # case with a provider with an api plugin (usgs)
+            usgs_config = dag.db.get_fb_config("usgs")
+            usgs_config_obj = ProviderConfig.from_mapping(usgs_config)
+            self.assertTrue(usgs_config_obj.enabled)
+            self.assertFalse(hasattr(usgs_config_obj.api, "credentials"))
+
+            with self.assertLogs(level="INFO") as cm:
+                disable_providers(
+                    {
+                        "sara": sara_config_obj,
+                        "aws_eos": aws_eos_config_obj,
+                        "usgs": usgs_config_obj,
+                    },
+                    dag._plugins_manager.skipped_plugins,
+                )
+                self.assertIn(
+                    "sara: provider needing auth for search has been disabled because no credentials could be found",
+                    str(cm.output),
+                )
+                self.assertIn(
+                    "aws_eos: provider needing auth for search has been disabled because no credentials could be found",
+                    str(cm.output),
+                )
+                self.assertIn(
+                    "usgs: provider needing auth for search has been disabled because no credentials could be found",
+                    str(cm.output),
+                )
+                # check that providers have been disabled
+                self.assertFalse(sara_config_obj.enabled)
+                self.assertFalse(aws_eos_config_obj.enabled)
+                self.assertFalse(usgs_config_obj.enabled)
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__AWS_EOS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__USGS__API__NEED_AUTH", None)
+
+    def test_disable_providers_without_auth(self):
+        """Providers needing auth for search but without auth plugin must be disabled"""
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
+        )
+        try:
+            # auth needed for search with need_auth but without auth plugin
+            os.environ["EODAG__SARA__SEARCH__NEED_AUTH"] = "true"
+            dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+
+            sara_config = dag.db.get_fb_config("sara")
+            sara_config.pop("auth", None)
+            sara_config_obj = ProviderConfig.from_mapping(sara_config)
+
+            self.assertTrue(sara_config_obj.enabled)
+            self.assertTrue(getattr(sara_config_obj, "search"))
+            self.assertFalse(hasattr(sara_config_obj, "auth"))
+
+            with self.assertLogs(level="INFO") as cm:
+                disable_providers(
+                    {"sara": sara_config_obj}, dag._plugins_manager.skipped_plugins
+                )
+                self.assertIn(
+                    "sara: provider needing auth for search has been disabled because no auth plugin could be found",
+                    str(cm.output),
+                )
+                # check that the provider has been disabled
+                self.assertFalse(sara_config_obj.enabled)
+        # Teardown
+        finally:
+            os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
+
+    def test_disable_providers_without_api_or_search_plugin(self):
+        """Providers without api or search plugin must be disabled"""
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
+        )
+        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+
+        # get sara config and remove its search plugin to simulate a provider without api or search plugin
+        sara_config = dag.db.get_fb_config("sara")
+        sara_config.pop("search", None)
+        sara_config_obj = ProviderConfig.from_mapping(sara_config)
+
+        self.assertTrue(sara_config_obj.enabled)
+        self.assertFalse(hasattr(sara_config_obj, "api"))
+        self.assertFalse(hasattr(sara_config_obj, "search"))
+
+        with self.assertLogs(level="INFO") as cm:
+            disable_providers(
+                {"sara": sara_config_obj}, dag._plugins_manager.skipped_plugins
+            )
+            self.assertIn(
+                "sara: provider has been disabled because no api or search plugin could be found",
+                str(cm.output),
+            )
+            # check that the provider has been disabled
+            self.assertFalse(sara_config_obj.enabled)
+
+
+class TestDisableProvidersExternalAuth(unittest.TestCase):
+    """Unit tests for cross-provider auth handling in
+    :func:`~eodag.config.disable_providers` and
+    :func:`~eodag.config._has_matching_external_auth`.
+
+    A provider needing auth but having no usable local credentials must stay
+    enabled when another enabled provider exposes a credentialed auth plugin
+    whose ``matching_url`` matches its search/api ``api_endpoint`` or whose
+    ``matching_conf`` is a subset of its search/api config. This mirrors the
+    runtime resolution done by ``PluginManager.get_auth_plugin``.
+    """
+
+    @staticmethod
+    def _provider(name, mapping):
+        return ProviderConfig.from_mapping({"name": name, **mapping})
+
+    @classmethod
+    def _credentialed_auth_provider(
+        cls,
+        name="extauth",
+        matching_url=None,
+        matching_conf=None,
+        with_credentials=True,
+    ):
+        """Build a provider exposing a search + an auth plugin matching by url/conf."""
+        auth = {
+            "type": "GenericAuth",
+            "credentials": (
+                {"username": "foo", "password": "bar"} if with_credentials else {}
+            ),
+        }
+        if matching_url is not None:
+            auth["matching_url"] = matching_url
+        if matching_conf is not None:
+            auth["matching_conf"] = matching_conf
+        return cls._provider(
+            name,
+            {
+                "search": {
+                    "type": "QueryStringSearch",
+                    "api_endpoint": "https://ext.example.com/search",
+                },
+                "auth": auth,
+            },
+        )
+
+    # --- api plugin branch ------------------------------------------------------
+
+    def test_api_need_auth_with_credentials_stays_enabled(self):
+        """An api provider with need_auth and embedded credentials stays enabled."""
+        provider = self._provider(
+            "myapi",
+            {
+                "api": {
+                    "type": "EcmwfApi",
+                    "need_auth": True,
+                    "api_endpoint": "https://api.example.com",
+                    "credentials": {"username": "x"},
+                }
+            },
+        )
+        disable_providers({"myapi": provider}, [])
+        self.assertTrue(provider.enabled)
+
+    def test_api_need_auth_no_credentials_no_external_auth_disabled(self):
+        """An api provider with need_auth, no credentials and no matching external
+        auth must be disabled."""
+        provider = self._provider(
+            "myapi",
+            {
+                "api": {
+                    "type": "EcmwfApi",
+                    "need_auth": True,
+                    "api_endpoint": "https://api.example.com",
+                    "credentials": {},
+                }
+            },
+        )
+        disable_providers({"myapi": provider}, [])
+        self.assertFalse(provider.enabled)
+
+    def test_api_need_auth_external_auth_url_match_stays_enabled(self):
+        """An api provider with need_auth and no credentials stays enabled when
+        another provider exposes a credentialed auth matching its api_endpoint."""
+        provider = self._provider(
+            "myapi",
+            {
+                "api": {
+                    "type": "EcmwfApi",
+                    "need_auth": True,
+                    "api_endpoint": "https://api.example.com/v1",
+                    "credentials": {},
+                }
+            },
+        )
+        ext = self._credentialed_auth_provider(matching_url="https://api.example.com")
+        disable_providers({"myapi": provider, "extauth": ext}, [])
+        self.assertTrue(provider.enabled)
+        self.assertTrue(ext.enabled)
+
+    def test_api_need_auth_external_auth_conf_match_stays_enabled(self):
+        """Same as above but the external auth matches by ``matching_conf``."""
+        provider = self._provider(
+            "myapi",
+            {
+                "api": {
+                    "type": "EcmwfApi",
+                    "need_auth": True,
+                    "api_endpoint": "https://api.example.com",
+                    "result_type": "json",
+                    "credentials": {},
+                }
+            },
+        )
+        ext = self._credentialed_auth_provider(matching_conf={"result_type": "json"})
+        disable_providers({"myapi": provider, "extauth": ext}, [])
+        self.assertTrue(provider.enabled)
+
+    def test_api_need_auth_external_auth_without_credentials_disabled(self):
+        """A matching external auth plugin without credentials does not rescue the
+        provider."""
+        provider = self._provider(
+            "myapi",
+            {
+                "api": {
+                    "type": "EcmwfApi",
+                    "need_auth": True,
+                    "api_endpoint": "https://api.example.com",
+                    "credentials": {},
+                }
+            },
+        )
+        ext = self._credentialed_auth_provider(
+            matching_url="https://api.example.com", with_credentials=False
+        )
+        disable_providers({"myapi": provider, "extauth": ext}, [])
+        self.assertFalse(provider.enabled)
+
+    # --- search plugin branch (no local auth plugin) ----------------------------
+
+    def test_search_no_auth_plugin_external_url_match_stays_enabled(self):
+        """A search provider with need_auth and no auth plugin stays enabled when
+        another provider exposes a credentialed auth matching its api_endpoint."""
+        provider = self._provider(
+            "mysearch",
+            {
+                "search": {
+                    "type": "QueryStringSearch",
+                    "need_auth": True,
+                    "api_endpoint": "https://search.example.com/api",
+                }
+            },
+        )
+        ext = self._credentialed_auth_provider(
+            matching_url="https://search.example.com"
+        )
+        disable_providers({"mysearch": provider, "extauth": ext}, [])
+        self.assertTrue(provider.enabled)
+
+    def test_search_no_auth_plugin_external_conf_match_stays_enabled(self):
+        """Same as above but the external auth matches by ``matching_conf``."""
+        provider = self._provider(
+            "mysearch",
+            {
+                "search": {
+                    "type": "QueryStringSearch",
+                    "need_auth": True,
+                    "api_endpoint": "https://search.example.com/api",
+                    "result_type": "json",
+                }
+            },
+        )
+        ext = self._credentialed_auth_provider(matching_conf={"result_type": "json"})
+        disable_providers({"mysearch": provider, "extauth": ext}, [])
+        self.assertTrue(provider.enabled)
+
+    def test_search_no_auth_plugin_no_external_match_disabled(self):
+        """A search provider with need_auth, no auth plugin and no matching external
+        auth must be disabled."""
+        provider = self._provider(
+            "mysearch",
+            {
+                "search": {
+                    "type": "QueryStringSearch",
+                    "need_auth": True,
+                    "api_endpoint": "https://search.example.com/api",
+                }
+            },
+        )
+        disable_providers({"mysearch": provider}, [])
+        self.assertFalse(provider.enabled)
+
+    # --- _has_matching_external_auth direct unit tests --------------------------
+
+    def test_has_matching_external_auth_ignores_self(self):
+        """A provider's own auth plugin must not be considered an external match."""
+        provider = self._provider(
+            "mysearch",
+            {
+                "search": {
+                    "type": "QueryStringSearch",
+                    "need_auth": True,
+                    "api_endpoint": "https://search.example.com/api",
+                },
+                "auth": {
+                    "type": "GenericAuth",
+                    "matching_url": "https://search.example.com",
+                    "credentials": {"username": "foo"},
+                },
+            },
+        )
+        self.assertFalse(
+            _has_matching_external_auth("mysearch", provider, {"mysearch": provider})
+        )
+
+    def test_has_matching_external_auth_ignores_disabled_providers(self):
+        """A disabled provider's auth plugin must not be considered."""
+        provider = self._provider(
+            "mysearch",
+            {
+                "search": {
+                    "type": "QueryStringSearch",
+                    "need_auth": True,
+                    "api_endpoint": "https://search.example.com/api",
+                }
+            },
+        )
+        ext = self._credentialed_auth_provider(
+            matching_url="https://search.example.com"
+        )
+        ext.enabled = False
+        self.assertFalse(
+            _has_matching_external_auth(
+                "mysearch", provider, {"mysearch": provider, "extauth": ext}
+            )
+        )
+
+    def test_has_matching_external_auth_no_search_or_api_returns_false(self):
+        """A provider with neither search nor api config has nothing to match."""
+        provider = self._provider("dlonly", {"download": {"type": "HTTPDownload"}})
+        ext = self._credentialed_auth_provider(
+            matching_url="https://anything.example.com"
+        )
+        self.assertFalse(
+            _has_matching_external_auth(
+                "dlonly", provider, {"dlonly": provider, "extauth": ext}
+            )
+        )

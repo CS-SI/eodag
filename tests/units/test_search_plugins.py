@@ -44,8 +44,8 @@ from shapely.geometry.base import BaseGeometry
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
-from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import RawSearchResult
+from eodag.config import build_provider_configs
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
     _convert_bbox_to_lonlat_mollweide,
@@ -69,25 +69,27 @@ from tests.context import (
     EOProduct,
     MisconfiguredError,
     NotAvailableError,
-    PluginManager,
     PreparedSearch,
+    ProviderConfig,
     QueryablesDict,
     QueryStringSearch,
     RequestError,
     TimeOutError,
+    add_provider_to_pm,
     cached_parse,
     cached_yaml_load_all,
     ecmwf_temporal_to_eodag,
     get_geometry_from_various,
     load_default_config,
+    make_plugins_manager,
 )
 
 
 class BaseSearchPluginTest(unittest.TestCase):
     def setUp(self):
         super(BaseSearchPluginTest, self).setUp()
-        providers = ProvidersDict.from_configs(load_default_config())
-        self.plugins_manager = PluginManager(providers)
+        providers = build_provider_configs(load_default_config())
+        self.plugins_manager = make_plugins_manager(providers)
         self.collection = "S2_MSI_L1C"
         geom = [137.772897, 13.134202, 153.749135, 23.885986]
         geometry = get_geometry_from_various([], geometry=geom)
@@ -144,8 +146,8 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         provider_name, mundi_config = next(iter(mundi_config_dict.items()))
         if "name" not in mundi_config:
             mundi_config["name"] = provider_name
-        self.plugins_manager.providers[provider] = Provider(mundi_config)
-        self.plugins_manager.rebuild()
+        mundi_config_obj = ProviderConfig.from_mapping(mundi_config)
+        add_provider_to_pm(self.plugins_manager, mundi_config_obj)
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         self.mundi_search_plugin = self.get_search_plugin(self.collection, provider)
@@ -246,7 +248,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         mock__request.return_value = mock.Mock()
         mock__request.return_value.content = mundi_resp_search
 
-        search_plugin = self.get_search_plugin(self.collection, "mundi")
+        search_plugin = self.get_search_plugin(provider="mundi")
 
         # update metadata_mapping only for S1_SAR_GRD
         search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
@@ -312,7 +314,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_count_and_search_cop_dataspace(
+    def test_plugins_search_querystringsearch_count_and_search_sara(
         self, mock__request
     ):
         self.maxDiff = None
@@ -355,7 +357,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_no_count_and_search_cop_dataspace(
+    def test_plugins_search_querystringsearch_no_count_and_search_sara(
         self, mock__request, mock_count_hits
     ):
         """A query with a QueryStringSearch (here sara) without a count"""
@@ -397,7 +399,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_plugins_search_querystringsearch_search_cloudcover_cop_dataspace(
+    def test_plugins_search_querystringsearch_search_cloudcover_sara(
         self, mock__request, mock_normalize_results
     ):
         """A query with a QueryStringSearch (here sara) must use cloudCover filtering when configured"""
@@ -406,7 +408,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         mock__request.assert_called()
         self.assertIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
-    def test_plugins_search_querystringsearch_search_cop_dataspace_ko(self):
+    def test_plugins_search_querystringsearch_search_sara_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
         # with raised error parameter set to True in the global config of the provider
@@ -1017,7 +1019,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin(self.collection, "sara")
+        search_plugin = self.get_search_plugin(provider="sara")
 
         # ensure metadata_mapping exists for S1_SAR_GRD and S1_SAR_SLC
         search_plugin.config.products["S1_SAR_GRD"].setdefault("metadata_mapping", {})
@@ -1051,10 +1053,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         side_effect=requests.exceptions.Timeout(),
     )
     def test_plugins_search_querystringseach_timeout(self, mock__request):
-        search_plugin = self.get_search_plugin(self.collection, "sara")
         with self.assertRaises(TimeOutError):
-            search_plugin.query(
-                collection="S1_SAR_SLC",
+            self.sara_search_plugin.query(
+                collection=self.collection,
                 auth=None,
             )
 
@@ -1222,6 +1223,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """A query with a PostJsonSearch (here aws_eos) must return a single EOProduct when search by id using specific_qssearch"""  # noqa
+        collection = "S2_MSI_L2A"
+        search_plugin = self.get_search_plugin(collection, "aws_eos")
 
         mock_values = []
         with open(self.provider_resp_dir / "s2l2a_tileInfo.json") as f:
@@ -1232,7 +1235,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = mock_values
 
-        products = self.awseos_search_plugin.query(
+        products = search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin, count=True),
             **{
                 "collection": "S2_MSI_L2A",
@@ -1298,8 +1301,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self, mock_requests_post, mock_normalize_results
     ):
         """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar collections"""  # noqa
+        search_plugin = self.get_search_plugin(provider="aws_eos")
 
-        self.awseos_search_plugin.query(
+        search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
             collection="S2_MSI_L1C",
             **{"eo:cloud_cover": 50},
@@ -1308,7 +1312,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.assertIn("cloudCoverage", str(mock_requests_post.call_args_list[-1][1]))
         mock_requests_post.reset_mock()
 
-        self.awseos_search_plugin.query(
+        search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
             collection="S1_SAR_GRD",
             **{"eo:cloud_cover": 50},
@@ -1323,6 +1327,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """The metadata mapping for PostJsonSearch should not mix specific collections metadata-mapping"""
+        search_plugin = self.get_search_plugin(provider="aws_eos")
+
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
@@ -1337,13 +1343,11 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock__request.return_value.json.side_effect = [result, result]
 
         # update metadata_mapping only for S1_SAR_GRD
-        self.awseos_search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"][
-            "bar"
-        ] = (
+        search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"]["bar"] = (
             None,
             "baz",
         )
-        products = self.awseos_search_plugin.query(
+        products = search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
             collection="S1_SAR_GRD",
         )
@@ -1353,9 +1357,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # search with another collection
         self.assertNotIn(
             "bar",
-            self.awseos_search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"],
+            search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"],
         )
-        products = self.awseos_search_plugin.query(
+        products = search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
             collection="S2_MSI_L1C",
         )
@@ -1369,13 +1373,15 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self, mock_normalize, mock_request
     ):
         provider = "wekeo_ecmwf"
-        search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
-        search_plugin = next(search_plugins)
+        collection = "ERA5_SL"
+        search_plugin = self.get_search_plugin(provider=provider)
+
         mock_request.return_value = MockResponse({"features": []}, 200)
+
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
             prep=PreparedSearch(),
-            collection="ERA5_SL",
+            collection=collection,
             **{
                 "ecmwf:year": "2020",
                 "ecmwf:month": ["02"],
@@ -1398,10 +1404,11 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
+
         # start date given and converted to year, month, day, time
         search_plugin.query(
             prep=PreparedSearch(),
-            collection="ERA5_SL",
+            collection=collection,
             start_datetime="2021-02-01T03:00:00Z",
         )
         mock_request.assert_called_with(
@@ -1419,10 +1426,11 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
+
         # no date info given -> default dates (extent.temporal.interval.0.0) which are
         # then converted to year, month, day, time
         col_conf = {
-            "id": "ERA5_SL",
+            "id": collection,
             "description": "ERA5 abstract",
             "instruments": [],
             "constellation": "ERA5",
@@ -1447,13 +1455,13 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
                 "temporal": {"interval": [["1940-01-01T00:00:00Z", None]]},
             },
-            "_id": "ERA5_SL",
+            "_id": collection,
         }
         search_plugin.config.collection_config = dict(
             col_conf,
-            **{"_collection": "ERA5_SL"},
+            **{"_collection": collection},
         )
-        search_plugin.query(collection="ERA5_SL", prep=PreparedSearch())
+        search_plugin.query(collection=collection, prep=PreparedSearch())
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
@@ -1465,10 +1473,12 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
+
         # collection with dates are query params -> use extent.temporal.interval.0.0 and today
+        collection = "CAMS_EAC4"
         col_conf = {
-            "id": "CAMS_EAC4",
-            "description": "CAMS_EAC4 abstract",
+            "id": collection,
+            "description": f"{collection} abstract",
             "instruments": [],
             "constellation": "CAMS",
             "platform": "CAMS",
@@ -1489,13 +1499,13 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
                 "temporal": {"interval": [["2003-01-01T00:00:00Z", None]]},
             },
-            "_id": "CAMS_EAC4",
+            "_id": collection,
         }
         search_plugin.config.collection_config = dict(
             col_conf,
-            **{"_collection": "CAMS_EAC4"},
+            **{"_collection": collection},
         )
-        search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
+        search_plugin.query(collection=collection, prep=PreparedSearch())
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
@@ -1620,8 +1630,8 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         provider_name, onda_config = next(iter(onda_config_dict.items()))
         if "name" not in onda_config:
             onda_config["name"] = provider_name
-        self.plugins_manager.providers["onda"] = Provider(onda_config)
-        self.plugins_manager.rebuild()
+        onda_config_obj = ProviderConfig.from_mapping(onda_config)
+        add_provider_to_pm(self.plugins_manager, onda_config_obj)
 
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
@@ -1764,7 +1774,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
         mock_get_ssl_context.assert_called_with(False)
 
-        # # Asserting that get_ssl_context has been called
+        # Asserting that get_ssl_context has been called
         self.assertEqual(mock_get_ssl_context.call_count, 2)
 
         # Asserting that urlopen has been called with the correct arguments
@@ -1923,22 +1933,20 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self, mock__request, mock_normalize_results
     ):
         """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar collections"""
-        # per_product_metadata_query parameter is updated to False if it is necessary
-        per_product_metadata_query = (
-            self.onda_search_plugin.config.per_product_metadata_query
-        )
-        if per_product_metadata_query:
-            self.onda_search_plugin.config.per_product_metadata_query = False
+        search_plugin = self.get_search_plugin(provider="onda")
 
-        self.onda_search_plugin.query(collection="S2_MSI_L1C", cloudCover=50)
+        # per_product_metadata_query parameter is updated to False if it is necessary
+        per_product_metadata_query = search_plugin.config.per_product_metadata_query
+        if per_product_metadata_query:
+            search_plugin.config.per_product_metadata_query = False
+
+        search_plugin.query(collection="S2_MSI_L1C", cloudCover=50)
         # restore per_product_metadata_query initial value if it is necessary
         if (
-            self.onda_search_plugin.config.per_product_metadata_query
+            search_plugin.config.per_product_metadata_query
             != per_product_metadata_query
         ):
-            self.onda_search_plugin.config.per_product_metadata_query = (
-                per_product_metadata_query
-            )
+            search_plugin.config.per_product_metadata_query = per_product_metadata_query
 
         mock__request.assert_called()
         self.assertIn(
@@ -1946,7 +1954,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         mock__request.reset_mock()
 
-        self.onda_search_plugin.query(collection="S1_SAR_GRD", cloudCover=50)
+        search_plugin.query(collection="S1_SAR_GRD", cloudCover=50)
         mock__request.assert_called()
         self.assertNotIn(
             "cloudCoverPercentage", mock__request.call_args_list[-1][0][1].url
@@ -2226,7 +2234,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             ],
         }
         mock__request.return_value.json.side_effect = [result, result]
-        search_plugin = self.get_search_plugin(self.collection, "earth_search")
+        search_plugin = self.get_search_plugin(provider="earth_search")
 
         # update metadata_mapping only for S2_MSI_L1C
         search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"]["bar"] = (
@@ -3065,6 +3073,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginCreodiasS3Search, self).setUp()
         self.provider = "creodias_s3"
+        self.collection = "S1_SAR_GRD"
+        self.search_plugin = self.get_search_plugin(
+            collection=self.collection, provider=self.provider
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_client", autospec=True
@@ -3074,7 +3086,6 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
     )
     def test_plugins_search_creodias_s3_links(self, mock_request, mock_s3_client):
         # s3 links should be added to products with register_downloader
-        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
         mock_s3_client.return_value = client
         stubber = Stubber(client)
@@ -3090,7 +3101,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             creodias_search_result = json.load(f)
         mock_request.return_value = MockResponse(creodias_search_result, 200)
 
-        res = search_plugin.query(collection="S1_SAR_GRD")
+        res = self.search_plugin.query(collection=self.collection)
         for product in res.data:
             download_plugin = self.plugins_manager.get_download_plugin(product)
             auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
@@ -3122,6 +3133,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         stubber.add_response("list_objects", {})
         download_plugin = self.plugins_manager.get_download_plugin(res.data[0])
         auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, res.data[0])
+        auth_plugin.config.credentials = {
+            "aws_access_key_id": "foo",
+            "aws_secret_access_key": "bar",
+        }
         res.data[0].driver = None
         res.data[0].assets = AssetsDict(res.data[0])
         res.data[0].register_downloader(download_plugin, auth_plugin)
@@ -3138,7 +3153,6 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self, mock_request, mock_s3_client
     ):
         # request error should be raised when there is an error when fetching data from the s3
-        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
         mock_s3_client.return_value = client
         stubber = Stubber(client)
@@ -3151,7 +3165,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         mock_request.return_value = MockResponse(creodias_search_result, 200)
 
         with self.assertRaises(NotAvailableError):
-            res = search_plugin.query(collection="S1_SAR_GRD")
+            res = self.search_plugin.query(collection=self.collection)
             for product in res.data:
                 download_plugin = self.plugins_manager.get_download_plugin(product)
                 auth_plugin = self.plugins_manager.get_auth_plugin(
@@ -3166,21 +3180,18 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 product.register_downloader(download_plugin, auth_plugin)
 
 
-class TestSearchPluginECMWFSearch(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(TestSearchPluginECMWFSearch, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
-        cls.plugins_manager = PluginManager(providers)
-
+class TestSearchPluginECMWFSearch(BaseSearchPluginTest):
     def setUp(self):
+        super(TestSearchPluginECMWFSearch, self).setUp()
         self.provider = "cop_ads"
-        self.search_plugin = self.get_search_plugin(provider=self.provider)
+        self.collection = "CAMS_EAC4"
+        self.search_plugin = self.get_search_plugin(
+            collection=self.collection, provider=self.provider
+        )
         self.query_dates = {
             "start_datetime": "2020-01-01",
             "end_datetime": "2020-01-02",
         }
-        self.collection = "CAMS_EAC4"
         self.product_dataset = "cams-global-reanalysis-eac4"
         self.collection_params = {
             "ecmwf:dataset": self.product_dataset,
@@ -3194,13 +3205,6 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "ecmwf:time": "00:00",
             "ecmwf:data_format": "grib",
         }
-
-    def get_search_plugin(self, collection=None, provider=None):
-        return next(
-            self.plugins_manager.get_search_plugins(
-                collection=collection, provider=provider
-            )
-        )
 
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """ECMWFSearch.query must adapt end date in certain cases"""
@@ -3311,9 +3315,14 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
-        results = self.search_plugin.query(
+        collection = "ERA5_SL"
+        search_plugin = self.get_search_plugin(
+            collection=collection, provider="cop_cds"
+        )
+
+        results = search_plugin.query(
             prep=PreparedSearch(),
-            collection="ERA5_SL",
+            collection=collection,
             **{
                 "ecmwf:year": "2020",
                 "ecmwf:month": ["02"],
@@ -3344,9 +3353,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ["20", "21"],
         )
         # month with one digit
-        results = self.search_plugin.query(
+        results = search_plugin.query(
             prep=PreparedSearch(),
-            collection="ERA5_SL",
+            collection=collection,
             **{
                 "ecmwf:year": "2020",
                 "ecmwf:month": ["2"],
@@ -3699,6 +3708,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         autospec=True,
     )
     def test_plugins_search_ecmwfsearch_discover_queryables_ok(self, mock__fetch_data):
+        collection = "CAMS_EU_AIR_QUALITY_RE"
+        search_plugin = self.get_search_plugin(
+            collection=collection, provider=self.provider
+        )
+
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
@@ -3714,7 +3728,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 "temporal": {"interval": [["2001-01-01T00:00:00Z", None]]},
             }
         }
-        setattr(self.search_plugin.config, "collection_config", collection_config)
+        setattr(search_plugin.config, "collection_config", collection_config)
 
         provider_queryables_from_constraints_file = [
             "ecmwf_year",
@@ -3727,15 +3741,13 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "ecmwf_product_type",
         ]
         default_values = deepcopy(
-            getattr(self.search_plugin.config, "products", {}).get(
-                "CAMS_EU_AIR_QUALITY_RE", {}
-            )
+            getattr(search_plugin.config, "products", {}).get(collection, {})
         )
         default_values.pop("metadata_mapping", None)
         # ECMWF-like providers don't have default values anymore: override a default value
         default_values["data_format"] = "grib"
         params = deepcopy(default_values)
-        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["collection"] = collection
         # set a parameter among the required ones of the form file with a default value in this form but not among the
         # ones of the constraints file to an empty value to check if its associated queryable has no default value
         eodag_formatted_data_format = "ecmwf:data_format"
@@ -3763,7 +3775,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # create parameters matching the first constraint
         params["variable"] = "nitrogen_dioxide"
 
-        queryables = self.search_plugin.discover_queryables(**params)
+        queryables = search_plugin.discover_queryables(**params)
         # no error was raised, as expected
         self.assertIsNotNone(queryables)
 
@@ -3787,15 +3799,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             provider_queryable = (
                 get_queryable_from_provider(
                     provider_queryable,
-                    self.search_plugin.get_metadata_mapping("CAMS_EU_AIR_QUALITY_RE"),
+                    search_plugin.get_metadata_mapping(collection),
                 )
                 or provider_queryable
             )
             self.assertIn(provider_queryable, queryables)
 
         # default properties in provider config are added and must be default values of the queryables
-        for property, default_value in self.search_plugin.config.products[
-            "CAMS_EU_AIR_QUALITY_RE"
+        for property, default_value in search_plugin.config.products[
+            collection
         ].items():
             queryable = queryables.get(property)
             # a special case for eodag_formatted_data_format queryable is required
@@ -3832,9 +3844,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         mock__fetch_data.side_effect = [constraints, form]
         # with additional param
         params = deepcopy(default_values)
-        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
+        params["collection"] = collection
         params["ecmwf:variable"] = "a"
-        queryables = self.search_plugin.discover_queryables(**params)
+        queryables = search_plugin.discover_queryables(**params)
         self.assertIsNotNone(queryables)
 
         # cached values are not used to make the set of unit tests work then the mock is called again
@@ -4213,8 +4225,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
         self, mock_requests_get
     ):
+        collection = "ERA5_SL_MONTHLY"
+
         # One of the providers that has discover_queryables() configured with QueryStringSearch
-        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+        search_plugin = self.get_search_plugin(
+            collection=collection, provider="wekeo_ecmwf"
+        )
         self.assertEqual("WekeoECMWFSearch", search_plugin.__class__.__name__)
         self.assertEqual(
             "ECMWFSearch",
@@ -4248,7 +4264,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         ]
 
         queryables = search_plugin._get_collection_queryables(
-            collection="ERA5_SL_MONTHLY", alias=None, filters={}
+            collection=collection, alias=None, filters={}
         )
         self.assertIsNotNone(queryables)
 
@@ -4275,7 +4291,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             provider_queryable = (
                 get_queryable_from_provider(
                     provider_queryable,
-                    search_plugin.get_metadata_mapping("ERA5_SL_MONTHLY"),
+                    search_plugin.get_metadata_mapping(collection),
                 )
                 or provider_queryable
             )
@@ -4283,7 +4299,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # default properties in provider config are added and must be default values of the queryables
         for property, default_value in search_plugin.config.products[
-            "ERA5_SL_MONTHLY"
+            collection
         ].items():
             queryable = queryables.get(property)
             if queryable is not None:
@@ -4315,7 +4331,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         # with additional param
         queryables = search_plugin.discover_queryables(
-            collection="ERA5_SL_MONTHLY",
+            collection=collection,
             dataset="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             **{"ecmwf:variable": "a"},
         )
@@ -5059,6 +5075,7 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
 
     def test_plugins_search_wekeosearch_init_wekeomain(self):
         """Check that the WekeoSearch plugin is initialized correctly for wekeo_main provider"""
+        search_plugin = self.get_search_plugin(provider="wekeo_main")
 
         default_config = load_default_config()["wekeo_main"]
         # "eodag:order_link" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
@@ -5077,12 +5094,8 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
 
         # check initialized plugin configuration
         self.assertDictEqual(
-            self.wekeomain_search_plugin.config.products["S1_SAR_GRD"][
-                "metadata_mapping"
-            ],
-            self.wekeomain_search_plugin.config.products["S1_SAR_SLC"][
-                "metadata_mapping"
-            ],
+            search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"],
+            search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"],
         )
 
         # S3_SRA_BS has both metadata_mapping_from_product and metadata_mapping
@@ -5100,10 +5113,10 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
             "S3_EFR",
         )
         self.assertNotEqual(
-            self.wekeomain_search_plugin.config.products["S3_SRA_BS"][
-                "metadata_mapping"
-            ]["eodag:order_link"],
-            self.wekeomain_search_plugin.config.products["S3_EFR"]["metadata_mapping"][
+            search_plugin.config.products["S3_SRA_BS"]["metadata_mapping"][
+                "eodag:order_link"
+            ],
+            search_plugin.config.products["S3_EFR"]["metadata_mapping"][
                 "eodag:order_link"
             ],
         )
@@ -5317,8 +5330,10 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginDedtLumi, self).setUp()
         self.provider = "dedt_lumi"
-        self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.collection = "DT_CLIMATE_ADAPTATION"
+        self.search_plugin = self.get_search_plugin(
+            collection=self.collection, provider=self.provider
+        )
 
     def test_plugins_apis_dedt_lumi_query_feature(self):
         """Test the proper handling of geom into ecmwf:feature"""
@@ -5913,11 +5928,7 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
     def test_plugins_search_cop_ghsl_discover_queryables(self, mock_fetch_constraints):
         """test that the correct queryables are returned"""
         mock_fetch_constraints.return_value = {"constraints": self.constraints}
-        plugin = next(
-            self.plugins_manager.get_search_plugins(
-                collection="GHS_BUILT_S", provider="cop_ghsl"
-            )
-        )
+        plugin = next(self.plugins_manager.get_search_plugins(provider="cop_ghsl"))
         kwargs = {"collection": "GHS_BUILT_S"}
         collection_config = plugin.config.products.get("GHS_BUILT_S", {})
         kwargs.update(collection_config)

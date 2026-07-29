@@ -35,6 +35,7 @@ from packaging import version
 
 from eodag.api.collection import Collection, CollectionsList
 from eodag.api.search_result import SearchResult
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import GENERIC_COLLECTION
 from eodag.utils.dates import to_iso_utc_string
 from eodag.utils.exceptions import UnsupportedProvider
@@ -75,12 +76,18 @@ class TestEodagCli(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         # create eodag conf dir in tmp home dir
         eodag_conf_dir = os.path.join(self.tmp_home_dir.name, ".config", "eodag")
         os.makedirs(eodag_conf_dir, exist_ok=False)
         # use empty config file with fake credentials in order to have full
-        # list for tests and prevent providers to be pruned
+        # list for tests and prevent providers to be disabled
         write_eodag_conf_with_fake_credentials(
             os.path.join(eodag_conf_dir, "eodag.yml")
         )
@@ -89,6 +96,7 @@ class TestEodagCli(unittest.TestCase):
         super(TestEodagCli, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
         # reset logging
         logger = logging.getLogger("eodag")
@@ -736,7 +744,7 @@ class TestEodagCli(unittest.TestCase):
             for col, provs in test_core.TestCore.SUPPORTED_COLLECTIONS.items()
             if len(provs) != 0 and col != GENERIC_COLLECTION
         ]
-        exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
+        exit_code, output, error = self.eodag_command(["list"])
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
         for col in all_supported_collections:
@@ -751,9 +759,7 @@ class TestEodagCli(unittest.TestCase):
                 if provider in provs
                 if col != GENERIC_COLLECTION
             ]
-            exit_code, output, error = self.eodag_command(
-                ["list", "-p", provider, "--no-fetch"]
-            )
+            exit_code, output, error = self.eodag_command(["list", "-p", provider])
             self.assertEqual(exit_code, 0)
             self.assertIsNone(error)
             for col in provider_supported_collections:
@@ -766,9 +772,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_list_collection_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa
         provider = "random"
-        exit_code, output, error = self.eodag_command(
-            ["list", "-p", provider, "--no-fetch"]
-        )
+        exit_code, output, error = self.eodag_command(["list", "-p", provider])
         self.assertEqual(exit_code, 1)
         self.assertIsInstance(error, SystemExit)
         self.assertIn("Unsupported provider. You may have a typo", output)
@@ -777,59 +781,31 @@ class TestEodagCli(unittest.TestCase):
             output,
         )
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_eodag_list_collection_fetch(self, mock_fetch_collections_list):
-        """Calling eodag list should fetch for new collections depending on passed option"""
-
-        exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
-        self.assertEqual(exit_code, 0)
-        self.assertIn("Listing available collections:", output)
-        self.assertIsNone(error)
-
-        assert not mock_fetch_collections_list.called
-
-        exit_code, output, error = self.eodag_command(["list"])
-        self.assertEqual(exit_code, 0)
-        self.assertIn("Listing available collections:", output)
-        self.assertIsNone(error)
-
-        mock_fetch_collections_list.assert_called_once_with(mock.ANY, provider=None)
-
-        exit_code, output, error = self.eodag_command(["list", "-p", "cop_dataspace"])
-        self.assertEqual(exit_code, 0)
-        self.assertIn("Listing available collections:", output)
-        self.assertIsNone(error)
-
-        mock_fetch_collections_list.assert_called_with(
-            mock.ANY, provider="cop_dataspace"
-        )
-        self.assertEqual(mock_fetch_collections_list.call_count, 2)
-
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_guess_collection_ok(self, dag):
         """Calling eodag list with one or several valid collection feature(s) should return
-        all supported collections with this (these) feature(s) among the ones of its provider
-        and with or without fetching provider according to the command.
+        all supported collections with this (these) feature(s) among the ones of its provider.
         """
         provider = "cop_dataspace"
 
-        dag.return_value.guess_collection.return_value = CollectionsList(
-            [
-                Collection.create_with_dag(dag=dag, id="foo", title="this is foo"),
-                Collection.create_with_dag(dag=dag, id="bar", title="this is bar"),
-            ]
-        )
-        dag.return_value.list_collections.return_value = CollectionsList(
-            [
-                Collection.create_with_dag(dag=dag, id="foo", title="this is foo"),
-                Collection.create_with_dag(dag=dag, id="bar", title="this is bar"),
-                Collection.create_with_dag(dag=dag, id="baz", title="this is baz"),
-            ]
-        )
+        dag.return_value.list_collections.side_effect = [
+            CollectionsList(
+                [
+                    Collection.create_with_dag(dag=dag, id="foo", title="this is foo"),
+                    Collection.create_with_dag(dag=dag, id="bar", title="this is bar"),
+                    Collection.create_with_dag(dag=dag, id="baz", title="this is baz"),
+                ]
+            ),
+            CollectionsList(
+                [
+                    Collection.create_with_dag(dag=dag, id="foo", title="this is foo"),
+                    Collection.create_with_dag(dag=dag, id="bar", title="this is bar"),
+                ]
+            ),
+        ]
+
         exit_code, output, error = self.eodag_command(
-            ["list", "-p", provider, "--platform", "S2A", "--no-fetch"]
+            ["list", "-p", provider, "--platform", "S2A"]
         )
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
@@ -838,9 +814,7 @@ class TestEodagCli(unittest.TestCase):
         self.assertIn("bar", output)
         self.assertNotIn("baz", output)
 
-        dag.return_value.list_collections.assert_called_with(
-            provider=provider, fetch_providers=False
-        )
+        dag.return_value.list_collections.assert_called_with(providers=[provider])
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.guess_collection",
@@ -852,7 +826,7 @@ class TestEodagCli(unittest.TestCase):
         'no matching' type message and return error code.
         """
         exit_code, output, error = self.eodag_command(
-            ["list", "--platform", "fake_identifier", "--no-fetch"]
+            ["list", "--platform", "fake_identifier"]
         )
         self.assertNotEqual(exit_code, 0)
         self.assertIsInstance(error, SystemExit)

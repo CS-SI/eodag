@@ -22,6 +22,7 @@ from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, MisconfiguredError
 
@@ -55,6 +56,12 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
         cls.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
         default_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
@@ -66,6 +73,7 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         super(TestEODagDownloadCredentialsNotSet, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
+        cls.sqlite_mock.stop()
         cls.tmp_home_dir.cleanup()
 
     @mock.patch(

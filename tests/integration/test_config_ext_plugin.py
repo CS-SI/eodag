@@ -25,6 +25,7 @@ from tempfile import TemporaryDirectory
 import pytest
 from pytest import MonkeyPatch
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, mock
 
@@ -44,16 +45,23 @@ class TestExternalPluginConfig(unittest.TestCase):
             "os.path.expanduser", return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
         super(TestExternalPluginConfig, self).tearDown()
 
-        self.dag._providers.pop("fakeplugin_provider", None)
-        self.dag._providers.pop("fakeplugin_provider2", None)
+        self.dag.db.delete_federation_backends(names=["fakeplugin_provider"])
+        self.dag.db.delete_federation_backends(names=["fakeplugin_provider2"])
 
         # stop Mock and remove tmp config dir
+        self.sqlite_mock.stop()
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
         # reset sys.path
@@ -63,7 +71,7 @@ class TestExternalPluginConfig(unittest.TestCase):
     def test_update_providers_from_ext_plugin(self):
         """Load fake external plugin and check if it updates providers config"""
 
-        default_providers_count = len(self.dag._providers)
+        default_providers_count = len(self.dag.providers)
 
         src = os.path.join(TEST_RESOURCES_PATH, "fake_ext_plugin")
         fakeplugin_location = os.path.join(self.tmp_home_dir.name, "fake_ext_plugin")
@@ -83,6 +91,6 @@ class TestExternalPluginConfig(unittest.TestCase):
                 match=r"Usage of deprecated (YAML tag|environment variable)",
             ):
                 self.dag = EODataAccessGateway()
-            self.assertEqual(len(self.dag._providers), default_providers_count + 2)
-            self.assertIn("fakeplugin_provider", self.dag._providers)
-            self.assertIn("fakeplugin_provider2", self.dag._providers)
+            self.assertEqual(len(self.dag.providers), default_providers_count + 2)
+            self.assertIn("fakeplugin_provider", self.dag.providers)
+            self.assertIn("fakeplugin_provider2", self.dag.providers)

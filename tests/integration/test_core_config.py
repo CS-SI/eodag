@@ -19,15 +19,13 @@
 import tempfile
 from unittest import TestCase, mock
 
-from jsonpath_ng.jsonpath import Child, Fields, Root
-
+from eodag.databases.sqlite import SQLiteDatabase
 from tests.context import (
     DEFAULT_SEARCH_TIMEOUT,
     USER_AGENT,
     AuthenticationError,
     EODataAccessGateway,
     HeaderAuth,
-    PluginConfig,
 )
 
 
@@ -40,25 +38,23 @@ class TestCoreProvidersConfig(TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
         super(TestCoreProvidersConfig, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
-    def test_core_providers_config_update(
-        self, mock__request, mock_fetch_collections_list, mock_auth_session_request
-    ):
+    def test_core_providers_config_update(self, mock__request):
         """Providers config must be updatable"""
         mock__request.return_value = mock.Mock()
         mock__request_side_effect = [
@@ -115,15 +111,14 @@ class TestCoreProvidersConfig(TestCase):
                     type: GenericAuth
             """
         )
-        self.assertIsInstance(
-            self.dag._providers["foo_provider"].config.auth, PluginConfig
-        )
         self.assertEqual(
-            self.dag._providers["foo_provider"].config.auth.type, "GenericAuth"
+            self.dag.db.get_fb_config("foo_provider")["auth"]["type"], "GenericAuth"
         )
 
-        # update pruned provider with credentials
-        self.assertNotIn("usgs", self.dag._providers)
+        # usgs is known as provider but disabled because it requires credentials which are not set
+        # update it with credentials and check that it is now enabled
+        self.assertIn("usgs", self.dag.get_providers())
+        self.assertNotIn("usgs", self.dag.providers)
         self.dag.update_providers_config(
             """
             usgs:
@@ -133,10 +128,12 @@ class TestCoreProvidersConfig(TestCase):
                         password: bar
             """
         )
-        self.assertIsInstance(self.dag._providers["usgs"].api_config, PluginConfig)
-        self.assertEqual(
-            self.dag._providers["usgs"].api_config.credentials["username"], "foo"
+        self.assertDictEqual(
+            self.dag._creds_store["usgs"]["api"],
+            {"username": "foo", "password": "bar"},
         )
+        # check that disabled provider is now enabled since it has credentials
+        self.assertIn("usgs", self.dag.providers)
 
         # add new provider that requires auth but without credentials
         self.dag.update_providers_config(
@@ -153,7 +150,8 @@ class TestCoreProvidersConfig(TestCase):
                         _collection: '{collection}'
             """
         )
-        self.assertIn("bar_provider", self.dag._providers)
+        self.assertIn("bar_provider", self.dag.get_providers())
+        self.assertNotIn("bar_provider", self.dag.providers)
 
         # update provider with credentials
         self.dag.update_providers_config(
@@ -165,13 +163,11 @@ class TestCoreProvidersConfig(TestCase):
                         password: foo
             """
         )
-        self.assertIsInstance(
-            self.dag._providers["bar_provider"].config.auth, PluginConfig
+        self.assertDictEqual(
+            self.dag._creds_store["bar_provider"]["auth"],
+            {"username": "bar", "password": "foo"},
         )
-        self.assertEqual(
-            self.dag._providers["bar_provider"].config.auth.credentials["username"],
-            "bar",
-        )
+        self.assertIn("bar_provider", self.dag.providers)
 
     def test_core_providers_shared_credentials(self):
         """credentials must be shared between plugins having the same matching settings"""
@@ -268,62 +264,46 @@ class TestCoreProvidersConfig(TestCase):
 
         # providers having same matching_url must share credentials if they do not have different matching_conf
         self.assertDictEqual(
-            self.dag._providers[
-                "a_provider_with_creds_matching_url"
-            ].config.auth.credentials,
+            self.dag._creds_store["a_provider_with_creds_matching_url"]["auth"],
             {"username": "bar", "password": "foo"},
         )
         self.assertDictEqual(
-            self.dag._providers[
-                "a_provider_with_creds_matching_url"
-            ].config.auth.credentials,
-            self.dag._providers[
-                "a_provider_without_creds_matching_url"
-            ].config.auth.credentials,
+            self.dag._creds_store["a_provider_with_creds_matching_url"]["auth"],
+            self.dag._creds_store["a_provider_without_creds_matching_url"]["auth"],
         )
         self.assertNotIn(
-            "credentials",
-            self.dag._providers[
-                "a_provider_without_creds_matching_url_matching_conf"
-            ].config.auth.__dict__,
+            "a_provider_without_creds_matching_url_matching_conf",
+            self.dag._creds_store,
         )
 
         # providers having same matching_conf must share credentials if they do not have different matching_url
         self.assertDictEqual(
-            self.dag._providers[
-                "a_provider_with_creds_matching_conf"
-            ].config.auth.credentials,
+            self.dag._creds_store["a_provider_with_creds_matching_conf"]["auth"],
             {"username": "baz", "password": "qux"},
         )
         self.assertDictEqual(
-            self.dag._providers[
-                "a_provider_with_creds_matching_conf"
-            ].config.auth.credentials,
-            self.dag._providers[
-                "a_provider_without_creds_matching_conf"
-            ].config.auth.credentials,
+            self.dag._creds_store["a_provider_with_creds_matching_conf"]["auth"],
+            self.dag._creds_store["a_provider_without_creds_matching_conf"]["auth"],
         )
         self.assertNotIn(
-            "credentials",
-            self.dag._providers[
-                "another_provider_without_creds_matching_url_matching_conf"
-            ].config.auth.__dict__,
+            "another_provider_without_creds_matching_url_matching_conf",
+            self.dag._creds_store,
         )
 
         # providers having same matching_url and matching_conf must share credentials
         self.assertDictEqual(
-            self.dag._providers[
-                "a_provider_with_creds_matching_url_matching_conf"
-            ].config.auth.credentials,
+            self.dag._creds_store["a_provider_with_creds_matching_url_matching_conf"][
+                "auth"
+            ],
             {"username": "foobar", "password": "quux"},
         )
         self.assertDictEqual(
-            self.dag._providers[
-                "a_provider_with_creds_matching_url_matching_conf"
-            ].config.auth.credentials,
-            self.dag._providers[
+            self.dag._creds_store["a_provider_with_creds_matching_url_matching_conf"][
+                "auth"
+            ],
+            self.dag._creds_store[
                 "a_third_provider_without_creds_matching_url_matching_conf"
-            ].config.auth.credentials,
+            ]["auth"],
         )
 
     def test_core_providers_add(self):
@@ -332,18 +312,18 @@ class TestCoreProvidersConfig(TestCase):
         # minimal STAC provider
         self.dag.add_provider("foo", "https://foo.bar/search")
         self.assertEqual(
-            self.dag._providers["foo"].search_config.type,
+            self.dag.db.get_fb_config("foo")["search"]["type"],
             "StacSearch",
         )
         self.assertEqual(
-            self.dag._providers["foo"].search_config.api_endpoint,
+            self.dag.db.get_fb_config("foo")["search"]["api_endpoint"],
             "https://foo.bar/search",
         )
         self.assertEqual(
-            self.dag._providers["foo"].download_config.type,
+            self.dag.db.get_fb_config("foo")["download"]["type"],
             "HTTPDownload",
         )
-        self.assertFalse(hasattr(self.dag._providers["foo"].config, "auth"))
+        self.assertNotIn("auth", self.dag.db.get_fb_config("foo"))
         self.assertEqual(
             self.dag.get_preferred_provider()[0],
             "foo",
@@ -362,23 +342,23 @@ class TestCoreProvidersConfig(TestCase):
             priority=0,
         )
         self.assertEqual(
-            self.dag._providers["bar"].search_config.type,
+            self.dag.db.get_fb_config("bar")["search"]["type"],
             "QueryStringSearch",
         )
         self.assertEqual(
-            self.dag._providers["bar"].search_config.api_endpoint,
+            self.dag.db.get_fb_config("bar")["search"]["api_endpoint"],
             "https://foo.bar/search",
         )
         self.assertEqual(
-            self.dag._providers["bar"].download_config.type,
+            self.dag.db.get_fb_config("bar")["download"]["type"],
             "AwsDownload",
         )
         self.assertEqual(
-            self.dag._providers["bar"].config.auth.type,
+            self.dag.db.get_fb_config("bar")["auth"]["type"],
             "AwsAuth",
         )
         self.assertDictEqual(
-            self.dag._providers["bar"].config.auth.credentials,
+            self.dag._creds_store["bar"]["auth"],
             {"aws_profile": "abc"},
         )
         self.assertNotEqual(
@@ -391,30 +371,25 @@ class TestCoreProvidersConfig(TestCase):
             "baz", api={"type": "UsgsApi", "some_parameter": "some_value"}
         )
         self.assertEqual(
-            self.dag._providers["baz"].api_config.type,
+            self.dag.db.get_fb_config("baz")["api"]["type"],
             "UsgsApi",
         )
         self.assertEqual(
-            self.dag._providers["baz"].api_config.some_parameter,
+            self.dag.db.get_fb_config("baz")["api"]["some_parameter"],
             "some_value",
         )
-        self.assertFalse(hasattr(self.dag._providers["baz"].config, "search"))
-        self.assertFalse(hasattr(self.dag._providers["baz"].config, "download"))
-        self.assertFalse(hasattr(self.dag._providers["baz"].config, "auth"))
+        self.assertNotIn("search", self.dag.db.get_fb_config("baz"))
+        self.assertNotIn("download", self.dag.db.get_fb_config("baz"))
+        self.assertNotIn("auth", self.dag.db.get_fb_config("baz"))
         self.assertEqual(
             self.dag.get_preferred_provider()[0],
             "baz",
         )
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
-    def test_core_providers_add_update(
-        self, mock__request, mock_fetch_collections_list
-    ):
+    def test_core_providers_add_update(self, mock__request):
         """add_provider method must add provider using given conf and update if exists"""
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = {}
@@ -429,15 +404,8 @@ class TestCoreProvidersConfig(TestCase):
             },
         )
         self.assertEqual(
-            self.dag._providers["foo"].search_config.metadata_mapping["bar"],
+            self.dag.db.get_fb_config("foo")["search"]["metadata_mapping"]["bar"],
             "$.properties.bar",
-        )
-
-        # search method must build metadata_mapping as jsonpath object
-        self.dag.search(provider="foo", collection="abc", raise_errors=True)
-        self.assertEqual(
-            self.dag._providers["foo"].search_config.metadata_mapping["bar"],
-            (None, Child(Child(Root(), Fields("properties")), Fields("bar"))),
         )
 
         # add provider again will update as already built
@@ -451,8 +419,8 @@ class TestCoreProvidersConfig(TestCase):
             },
         )
         self.assertEqual(
-            self.dag._providers["foo"].search_config.metadata_mapping["bar"],
-            (None, Child(Child(Root(), Fields("properties")), Fields("baz"))),
+            self.dag.db.get_fb_config("foo")["search"]["metadata_mapping"]["bar"],
+            "$.properties.baz",
         )
 
 
@@ -465,12 +433,19 @@ class TestCoreCollectionsConfig(TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
         super(TestCoreCollectionsConfig, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
@@ -501,9 +476,9 @@ class TestCoreCollectionsConfig(TestCase):
             ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
             )
-            self.assertIsNone(ext_collections_conf["foo_provider"])
+            self.assertNotIn("foo_provider", ext_collections_conf)
             self.assertIn(
-                "Could not authenticate on foo_provider for collections discovery",
+                "The requested provider is not enabled or not fetchable: foo_provider",
                 str(cm.output),
             )
 
@@ -522,9 +497,9 @@ class TestCoreCollectionsConfig(TestCase):
             ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
             )
-            self.assertIsNone(ext_collections_conf["foo_provider"])
+            self.assertNotIn("foo_provider", ext_collections_conf)
             self.assertIn(
-                "Could not authenticate on foo_provider: Missing credentials",
+                "The requested provider is not enabled or not fetchable: foo_provider",
                 str(cm.output),
             )
 
@@ -541,7 +516,7 @@ class TestCoreCollectionsConfig(TestCase):
 
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            self.dag._providers["foo_provider"].search_config.discover_collections[
+            self.dag.db.get_fb_config("foo_provider")["search"]["discover_collections"][
                 "fetch_url"
             ],
             auth=mock.ANY,

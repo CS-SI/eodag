@@ -367,11 +367,11 @@ class TestUtils(unittest.TestCase):
 
         # distant
         file_url = "https://foo.bar"
-        with unittest.mock.patch(
+        with mock.patch(
             "eodag.utils.requests.requests.sessions.Session.get",
             autospec=True,
         ) as mock_get:
-            mock_get.return_value = unittest.mock.Mock()
+            mock_get.return_value = mock.Mock()
             mock_get.return_value.json.return_value = {"foo": "bar"}
             file_content = fetch_json(file_url)
             self.assertEqual(file_content["foo"], "bar")
@@ -384,7 +384,7 @@ class TestUtils(unittest.TestCase):
             )
 
         # distant error
-        with unittest.mock.patch(
+        with mock.patch(
             "eodag.utils.requests.requests.sessions.Session.get",
             autospec=True,
             side_effect=RequestException,

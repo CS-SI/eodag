@@ -31,12 +31,14 @@ import pytest
 from stac_validator import stac_validator
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     GENERIC_COLLECTION,
     AuthenticationError,
     EODataAccessGateway,
     SearchResult,
+    mock,
     sanitize,
     uri_to_path,
 )
@@ -347,6 +349,13 @@ class TestEODagEndToEnd(EndToEndBase):
     def setUpClass(cls):
         super().setUpClass()
 
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
+
         # use tests/resources/user_conf.yml if exists else default file ~/.config/eodag/eodag.yml
         tests_user_conf = os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
         if os.path.isfile(tests_user_conf):
@@ -365,6 +374,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.sqlite_mock.stop()
         cls.tmp_download_dir.cleanup()
 
     def execute_download(
@@ -439,7 +449,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
-        self.eodag._providers.configs["creodias"].auth.credentials[
+        self.eodag.providers.configs["creodias"].auth.credentials[
             "totp"
         ] = "PLEASE_CHANGE_ME"
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -760,7 +770,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def test_end_to_end_complete_cop_dataspace(self):
         """Complete end-to-end test with cop_dataspace for download and download_all"""
 
-        self.eodag._providers.configs[
+        self.eodag.providers.configs[
             "cop_dataspace"
         ].download.output_dir = self.tmp_download_path
 
@@ -926,6 +936,12 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         tests_wrong_conf = os.path.join(
             TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
         )
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
         cls.eodag = EODataAccessGateway(user_conf_file_path=tests_wrong_conf)
         # backup os.environ as it will be modified by tests
         cls.eodag_env_pattern = re.compile(r"EODAG_\w+")
@@ -936,6 +952,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
     @classmethod
     def tearDownClass(cls):
         super(TestEODagEndToEndWrongCredentials, cls).tearDownClass()
+        cls.sqlite_mock.stop()
         # restore os.environ
         for k, v in os.environ.items():
             if cls.eodag_env_pattern.match(k):

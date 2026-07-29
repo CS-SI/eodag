@@ -19,6 +19,7 @@ import os
 import unittest
 from tempfile import TemporaryDirectory
 
+from eodag.databases.sqlite import SQLiteDatabase
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, mock
 
@@ -33,6 +34,12 @@ class TestSearchStacStatic(unittest.TestCase):
             "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
         )
         self.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        self.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        self.sqlite_mock.start()
 
         self.dag = EODataAccessGateway()
 
@@ -79,6 +86,7 @@ class TestSearchStacStatic(unittest.TestCase):
         super(TestSearchStacStatic, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
+        self.sqlite_mock.stop()
         self.tmp_home_dir.cleanup()
 
     def test_search_stac_static(self):
@@ -93,16 +101,7 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in search_result:
             self.assertEqual(item.provider, self.static_stac_provider)
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_search_stac_static_by_date(
-        self, mock_fetch_collections_list, mock_auth_session_request
-    ):
+    def test_search_stac_static_by_date(self):
         """Use StaticStacSearch plugin to search by date"""
         filtered_sr = self.dag.search(
             start="2018-01-01", end="2019-01-01", count=True, validate=False
@@ -112,16 +111,7 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in filtered_sr:
             self.assertIn("2018", item.properties["start_datetime"])
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_search_stac_static_by_geom(
-        self, mock_fetch_collections_list, mock_auth_session_request
-    ):
+    def test_search_stac_static_by_geom(self):
         """Use StaticStacSearch plugin to search by geometry"""
         search_result = self.dag.search(
             geom=self.extent_big, count=True, validate=False
@@ -129,16 +119,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_search_stac_static_by_property(
-        self, mock_fetch_collections_list, mock_auth_session_request
-    ):
+    def test_search_stac_static_by_property(self):
         """Use StaticStacSearch plugin to search by property"""
         search_result = self.dag.search(
             count=True, **{"sat:relative_orbit": 110}, validate=False
@@ -146,16 +127,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
-    def test_search_stac_static_by_cloudcover(
-        self, mock_fetch_collections_list, mock_auth_session_request
-    ):
+    def test_search_stac_static_by_cloudcover(self):
         """Use StaticStacSearch plugin to search by cloud cover"""
         search_result = self.dag.search(
             provider=self.static_stac_provider,

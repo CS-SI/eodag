@@ -26,7 +26,7 @@ import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
-from eodag.api.provider import ProvidersDict
+from eodag.databases.sqlite import SQLiteDatabase
 from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
@@ -37,13 +37,14 @@ from tests.context import (
     EODataAccessGateway,
     EOProduct,
     NotAvailableError,
-    PluginManager,
     PreparedSearch,
     SearchResult,
     USGSAuthExpiredError,
     USGSError,
+    build_provider_configs,
     get_geometry_from_various,
     load_default_config,
+    make_plugins_manager,
     path_to_uri,
     urlsplit,
 )
@@ -53,12 +54,12 @@ class BaseApisPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseApisPluginTest, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
-        cls.plugins_manager = PluginManager(providers)
+        providers = build_provider_configs(load_default_config())
+        cls.plugins_manager = make_plugins_manager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()
-        expanduser_mock_side_effect = (
-            lambda *x: x[0]
+        expanduser_mock_side_effect = lambda *x: (
+            x[0]
             .replace("~user", cls.tmp_home_dir.name)
             .replace("~", cls.tmp_home_dir.name)
         )
@@ -66,12 +67,19 @@ class BaseApisPluginTest(unittest.TestCase):
             "os.path.expanduser", autospec=True, side_effect=expanduser_mock_side_effect
         )
         cls.expanduser_mock.start()
+        # Use a fresh in-memory SQLite DB (faster and isolated between tests)
+        cls.sqlite_mock = mock.patch(
+            "eodag.api.core.SQLiteDatabase",
+            side_effect=lambda db_path: SQLiteDatabase(":memory:"),
+        )
+        cls.sqlite_mock.start()
 
     @classmethod
     def tearDownClass(cls):
         super(BaseApisPluginTest, cls).tearDownClass()
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
+        cls.sqlite_mock.stop()
         cls.tmp_home_dir.cleanup()
 
     def get_search_plugin(self, collection=None, provider=None):
@@ -85,12 +93,14 @@ class BaseApisPluginTest(unittest.TestCase):
 class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def setUp(self):
         self.provider = "ecmwf"
-        self.api_plugin = self.get_search_plugin(provider=self.provider)
+        self.collection = "TIGGE_CF_SFC"
+        self.api_plugin = self.get_search_plugin(
+            collection=self.collection, provider=self.provider
+        )
         self.query_dates = {
             "start_datetime": "2022-01-01T00:00:00.000Z",
             "end_datetime": "2022-01-02T00:00:00.000Z",
         }
-        self.collection = "TIGGE_CF_SFC"
         self.collection_params = {
             "ecmwf:dataset": "tigge",
         }
@@ -234,13 +244,6 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.auth_endpoint
         del self.api_plugin.config.credentials
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
@@ -249,10 +252,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
-        mock_fetch_collections_list,
-        mock_auth_session_request,
     ):
-        """EcmwfApi.download must call the appriate ecmwf api service"""
+        """EcmwfApi.download must call the appropriate ecmwf api service"""
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("ecmwf")
@@ -337,21 +338,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
-    )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
     def test_plugins_apis_ecmwf_download_all(
         self,
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
-        mock_fetch_collections_list,
-        mock_auth_session_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
 
