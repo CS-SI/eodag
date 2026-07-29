@@ -181,7 +181,9 @@ def make_plugins_manager(providers: Optional[dict[str, ProviderConfig]] = None):
     return pm
 
 
-def add_provider_to_pm(plugins_manager: PluginManager, provider_config: ProviderConfig) -> None:
+def add_provider_to_pm(
+    plugins_manager: PluginManager, provider_config: ProviderConfig
+) -> None:
     """Register an additional ``ProviderConfig`` in ``plugins_manager``'s DB.
 
     Mirrors what :meth:`EODataAccessGateway.add_provider` does at a low level:
