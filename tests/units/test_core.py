@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import copy
 import datetime as dt
 import glob
@@ -32,6 +34,7 @@ import yaml
 from concurrent.futures import ThreadPoolExecutor
 from lxml import html
 from pydantic import ValidationError as PydanticValidationError
+from requests import RequestException
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -1955,12 +1958,12 @@ class TestCore(TestCoreBase):
 
         # --- names ---
         # single name
-        result = self.dag.get_providers(names=["peps"])
-        self.assertEqual(list(result.keys()), ["peps"])
+        result = self.dag.get_providers(names=["sara"])
+        self.assertEqual(set(result.keys()), {"sara"})
 
         # multiple names
-        result = self.dag.get_providers(names=["peps", "creodias"])
-        self.assertSetEqual(set(result.keys()), {"peps", "creodias"})
+        result = self.dag.get_providers(names=["sara", "creodias"])
+        self.assertSetEqual(set(result.keys()), {"sara", "creodias"})
 
         # unknown name returns empty
         result = self.dag.get_providers(names=["does_not_exist"])
@@ -1969,7 +1972,7 @@ class TestCore(TestCoreBase):
         # --- collection ---
         # a known collection is served by a subset of providers
         result_s2 = self.dag.get_providers(collection="S2_MSI_L1C")
-        self.assertIn("peps", result_s2)
+        self.assertIn("sara", result_s2)
         self.assertLess(len(result_s2), len(all_names))
         # every returned provider must actually have that collection configured
         for provider_name in result_s2:
@@ -2033,8 +2036,8 @@ class TestCore(TestCoreBase):
 
         # --- combinations ---
         # names + enabled=True: known names, only the enabled one
-        result = self.dag.get_providers(names=["peps", disabled_name], enabled=True)
-        self.assertIn("peps", result)
+        result = self.dag.get_providers(names=["sara", disabled_name], enabled=True)
+        self.assertIn("sara", result)
         self.assertNotIn(disabled_name, result)
 
         # collection + limit: at most limit providers for that collection
@@ -2070,9 +2073,6 @@ class TestCore(TestCoreBase):
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 3))
 
         # check that the providers are correctly ordered by priority and name in "providers" property
-        # # self.assertListEqual(
-        # #     ["aws_eos", "cop_ads"], list(self.dag.providers.keys())[:2]
-        # # )
         self.assertListEqual(
             ["creodias", "cop_dataspace"], list(self.dag.providers.keys())[:2]
         )
@@ -2084,25 +2084,25 @@ class TestCore(TestCoreBase):
 
         # default (enabled_only=True): highest-priority enabled provider
         name, priority = self.dag.get_preferred_provider()
-        self.assertEqual(name, "peps")
-        self.assertEqual(priority, 1)
+        self.assertEqual(name, "aws_eos")
+        self.assertEqual(priority, 0)
 
         # disable the top provider to exercise the enabled_only flag
-        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config("peps"))
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config("aws_eos"))
         cfg.enabled = False
         self.dag.db.upsert_fb_configs([cfg])
         self.addCleanup(self.dag.db.restore_fbs)
 
-        # enabled_only=True (default): peps is skipped, the next highest-priority
+        # enabled_only=True (default): aws_eos is skipped, the next highest-priority
         # enabled provider is returned
         name_enabled, _ = self.dag.get_preferred_provider(enabled_only=True)
-        self.assertNotEqual(name_enabled, "peps")
+        self.assertNotEqual(name_enabled, "aws_eos")
 
-        # enabled_only=False: peps is included despite being disabled and wins
+        # enabled_only=False: aws_eos is included despite being disabled and wins
         # because it still holds the highest priority
         name_all, priority_all = self.dag.get_preferred_provider(enabled_only=False)
-        self.assertEqual(name_all, "peps")
-        self.assertEqual(priority_all, 1)
+        self.assertEqual(name_all, "aws_eos")
+        self.assertEqual(priority_all, 0)
 
         # error case: EodagError is raised when every provider is disabled
         for p_name in list(self.dag.get_providers(enabled=True).keys()):
@@ -2137,19 +2137,19 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
         # --- dict_conf: update an attribute of an existing provider ---
-        original_endpoint = self.dag.db.get_fb_config("peps")["search"]["api_endpoint"]
+        original_endpoint = self.dag.db.get_fb_config("sara")["search"]["api_endpoint"]
         self.dag.update_providers_config(
             dict_conf={
-                "peps": {"search": {"api_endpoint": "https://new-peps.fr/api/v1"}}
+                "sara": {"search": {"api_endpoint": "https://new-sara.fr/api/v1"}}
             }
         )
         self.assertEqual(
-            self.dag.db.get_fb_config("peps")["search"]["api_endpoint"],
-            "https://new-peps.fr/api/v1",
+            self.dag.db.get_fb_config("sara")["search"]["api_endpoint"],
+            "https://new-sara.fr/api/v1",
         )
         # restore original endpoint
         self.dag.update_providers_config(
-            dict_conf={"peps": {"search": {"api_endpoint": original_endpoint}}}
+            dict_conf={"sara": {"search": {"api_endpoint": original_endpoint}}}
         )
 
         # --- _creds_store: empty before credentials are added, populated after ---
@@ -2235,7 +2235,11 @@ class TestCore(TestCoreBase):
         # ...but the provider is still disabled
         self.assertNotIn(no_creds_provider, self.dag.providers)
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.Session.get",
+        autospec=True,
+        side_effect=RequestException,
+    )
     @mock.patch(
         "eodag.plugins.manager.PluginManager.get_auth_plugin",
         autospec=True,
@@ -2306,7 +2310,7 @@ class TestCore(TestCoreBase):
         # result should be the same if alias is used
         original_s1grd = self.dag.get_collection("S1_SAR_GRD")
         assert original_s1grd is not None
-        # add an alias to the collection in the DB (still linked to peps via internal_id S1_SAR_GRD)
+        # add an alias to the collection in the DB (still linked to cop_dataspace via internal_id S1_SAR_GRD)
         self.dag.db.upsert_collections(
             CollectionsDict(
                 [
@@ -2410,7 +2414,8 @@ class TestCore(TestCoreBase):
                     ),
                     "collection": "S2_MSI_L1C",
                 }
-            },)
+            },
+        )
         self.assertEqual(call_args[0][4], "S2_MSI_L1C")
         self.assertEqual(call_args[0][5], "S2_MSI_L1C")
 
@@ -3003,7 +3008,8 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 5))
             # cop_dataspace outputs prefix is set to /data
             self.assertEqual(
-                self.dag.db.get_fb_config("cop_dataspace")["download"]["output_dir"], "/data"
+                self.dag.db.get_fb_config("cop_dataspace")["download"]["output_dir"],
+                "/data",
             )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
@@ -3394,6 +3400,10 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L1C",
+            "GHS_LAND",
+            "GHS_BUILT_V",
+            "GHS_BUILT_H",
+            "GHS_BUILT_C",
             "EEA_HRL_TCF",
             "CLMS_HRVPP_ST",
             "CLMS_HRVPP_ST_LAEA",
@@ -4719,27 +4729,45 @@ class TestCoreSearch(TestCoreBase):
     )
     def test_search_all_request_error(self, mock_get_auth):
         """search_all must stop iteration and move to next provider when error occurs"""
+        from collections import Counter
 
         collection = "S2_MSI_L1C"
         dag = EODataAccessGateway()
 
-        for plugin in dag._plugins_manager.get_search_plugins(collection=collection):
-            plugin.discover_queryables = mock.MagicMock()
-            plugin.query = mock.MagicMock()
-            plugin.query.side_effect = RequestError
+        # Build the list once using the real implementation.
+        plugins = list(dag._plugins_manager.get_search_plugins(collection=collection))
+        expected_providers = [plugin.provider for plugin in plugins]
 
-        results = dag.search_all(collection="S2_MSI_L1C")
+        queried_providers = []
+
+        def get_search_plugins_side_effect(*args, **kwargs):
+            for plugin in plugins:
+                plugin.discover_queryables = mock.MagicMock()
+
+                provider = plugin.provider
+
+                def query_side_effect(*_args, _provider=provider, **_kwargs):
+                    queried_providers.append(_provider)
+                    raise RequestError
+
+                plugin.query = mock.MagicMock(side_effect=query_side_effect)
+
+                yield plugin
+
+        with mock.patch.object(
+            dag._plugins_manager,
+            "get_search_plugins",
+            side_effect=get_search_plugins_side_effect,
+        ):
+            results = dag.search_all(collection=collection)
 
         self.assertEqual(len(results), 0)
 
-        for plugin in dag._plugins_manager.get_search_plugins(collection=collection):
-            self.assertEqual(
-                plugin.query.call_count,
-                1,
-                "Expected to be called once, {} call count = {}".format(
-                    plugin, plugin.query.call_count
-                ),
-            )
+        self.assertEqual(
+            Counter(queried_providers),
+            Counter(expected_providers),
+            f"Expected query() to be called exactly once for each provider having {collection}",
+        )
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",

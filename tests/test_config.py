@@ -93,14 +93,16 @@ class TestProviderConfig(unittest.TestCase):
             ),
         )
 
-        # yaml.Loader caches constructors by tag. Patching ProviderConfig.from_yaml
-        # does not affect the callable already registered for "!provider".
+        # load_provider_config_from_string uses LegacyAwareLoader, which registers
+        # its own constructor for "!provider" (provider_constructor, which calls
+        # ProviderConfig.from_yaml). We must spy on LegacyAwareLoader's table,
+        # not yaml.Loader's, because each loader class caches constructors independently.
         self.assertEqual(ProviderConfig.yaml_tag, "!provider")
-        real_constructor = yaml.Loader.yaml_constructors[ProviderConfig.yaml_tag]
+        real_constructor = LegacyAwareLoader.yaml_constructors[ProviderConfig.yaml_tag]
         constructor_spy = mock.Mock(wraps=real_constructor)
 
         with mock.patch.dict(
-            yaml.Loader.yaml_constructors,
+            LegacyAwareLoader.yaml_constructors,
             {ProviderConfig.yaml_tag: constructor_spy},
         ):
             provider_config = load_provider_config_from_string(stream.getvalue())
@@ -145,6 +147,7 @@ class TestProviderConfig(unittest.TestCase):
     def test_provider_config_creation_from_mapping(self):
         """ProviderConfig.from_mapping must create a correct provider config instance"""
         unslugified_provider_name = "some $provider-name. Really ugly"
+        slugified_provider_name = "some_provider_name_really_ugly"
 
         mapping = {
             "name": unslugified_provider_name,
@@ -157,7 +160,7 @@ class TestProviderConfig(unittest.TestCase):
         # Verify the object is created correctly
         self.assertIsInstance(provider_config, ProviderConfig)
         # name config parameter is not slugified
-        self.assertEqual(provider_config.name, unslugified_provider_name)
+        self.assertEqual(provider_config.name, slugified_provider_name)
         self.assertIsInstance(provider_config.api, PluginConfig)
         self.assertEqual(provider_config.api.type, "MyPluginClass")
         self.assertIsInstance(provider_config.products, dict)

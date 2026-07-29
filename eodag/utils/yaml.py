@@ -36,7 +36,7 @@ class LegacyAwareLoader(yaml.CSafeLoader):
 # from ProviderConfig and keep deprecation warnings.
 def provider_constructor(loader, node):
     if isinstance(node, yaml.MappingNode):
-        from eodag.api.provider import ProviderConfig
+        from eodag.config import ProviderConfig
 
         warnings.warn(
             "Usage of deprecated YAML tag '!provider' for provider configuration "

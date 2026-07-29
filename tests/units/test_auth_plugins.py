@@ -31,7 +31,6 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.api.product._product import EOProduct
-from eodag.api.provider import ProvidersDict
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
@@ -887,7 +886,7 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        providers = ProvidersDict.from_configs(
+        providers = build_provider_configs(
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
@@ -898,7 +897,7 @@ class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):
                 },
             }
         )
-        cls.plugins_manager = PluginManager(providers)
+        cls.plugins_manager = make_plugins_manager(providers)
 
     def test_plugins_auth_eoiam_validate_credentials_empty(self):
         """EOIAMAuth.validate_config_credentials must raise an error on empty credentials"""

@@ -31,7 +31,6 @@ from stac_pydantic.collection import Collection as StacCollection
 from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
 from stac_pydantic.shared import SEMVER_REGEX, StacBaseModel
 
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 from eodag.utils import STAC_VERSION
