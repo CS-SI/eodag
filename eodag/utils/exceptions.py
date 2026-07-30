@@ -172,4 +172,3 @@ class QuotaExceededError(RequestError):
 
 class DatasetCreationError(EodagError):
     """An error indicating that :class:`xarray.Dataset` or :class:`eodag_cube.types.XarrayDict` could not be created"""
-
