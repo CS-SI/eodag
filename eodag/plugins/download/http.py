@@ -1375,6 +1375,8 @@ class HTTPDownload(Download):
         self._check_auth_exception(e)
         QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
         logger.error("Unexpected error at download of asset %s: %s", asset["href"], e)
+        if e and e.response is not None and e.response.status_code == 404:
+            raise NotAvailableError("Asset {asset['href'] not found.}")
         raise DownloadError(e)
 
     def _get_asset_sizes(
