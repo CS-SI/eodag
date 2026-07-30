@@ -748,14 +748,6 @@ class EOProduct:
 
         return {"path": url}
 
-    def request_asset(
-        self,
-        url: str,
-    ) -> requests.Response:
-        """Perform a GET request to the given URL using product's authentication headers."""
-        headers = self.get_storage_options().get("headers", {})
-        return requests.get(url, headers=headers, stream=True)
-
     def _init_progress_bar(
         self,
         progress_callback: Optional[ProgressCallback],

@@ -558,44 +558,6 @@ class TestEOProduct(EODagTestBase):
         product_zip_file = "{}.zip".format(product_dir_path)
         self.assertTrue(os.path.isfile(product_zip_file))
 
-    @mock.patch("eodag.api.product._product.requests.get")
-    def test_eoproduct_request_asset(self, mock_get):
-        """EOProduct.request_asset must perform a GET request with storage options headers."""
-        product = self._dummy_product()
-
-        product.request_asset("https://example.com/zarr/.zmetadata")
-
-        mock_get.assert_called_once_with(
-            "https://example.com/zarr/.zmetadata",
-            headers={},
-            stream=True,
-        )
-
-    @mock.patch("eodag.api.product._product.requests.get")
-    def test_eoproduct_request_asset_with_auth_headers(self, mock_get):
-        """EOProduct.request_asset must forward authentication headers from get_storage_options."""
-        product = self._dummy_product()
-        # Mock downloader and auth
-        mock_downloader = mock.MagicMock()
-        mock_auth = mock.MagicMock()
-        product.register_downloader(mock_downloader, mock_auth)
-
-        # Mock get_storage_options to return auth headers
-        product.get_storage_options = mock.MagicMock(
-            return_value={
-                "path": "https://example.com/zarr/.zmetadata",
-                "headers": {"Authorization": "Bearer token123"},
-            }
-        )
-
-        product.request_asset("https://example.com/zarr/.zmetadata")
-
-        mock_get.assert_called_once_with(
-            "https://example.com/zarr/.zmetadata",
-            headers={"Authorization": "Bearer token123"},
-            stream=True,
-        )
-
     @responses.activate
     def test_eoproduct_download_progress_bar(self):
         """eoproduct.download must show a progress bar"""
