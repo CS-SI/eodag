@@ -345,13 +345,11 @@ class QueryStringSearch(Search):
             self.config.discover_collections["results_entry"] = string_to_jsonpath(
                 self.config.discover_collections["results_entry"], force=True
             )
-            self.config.discover_collections[
-                "generic_collection_id"
-            ] = mtd_cfg_as_conversion_and_querypath(
-                {"foo": self.config.discover_collections["generic_collection_id"]}
-            )[
-                "foo"
-            ]
+            self.config.discover_collections["generic_collection_id"] = (
+                mtd_cfg_as_conversion_and_querypath(
+                    {"foo": self.config.discover_collections["generic_collection_id"]}
+                )["foo"]
+            )
             self.config.discover_collections[
                 "generic_collection_parsable_properties"
             ] = mtd_cfg_as_conversion_and_querypath(
@@ -359,10 +357,12 @@ class QueryStringSearch(Search):
                     "generic_collection_parsable_properties"
                 ]
             )
-            self.config.discover_collections[
-                "generic_collection_parsable_metadata"
-            ] = mtd_cfg_as_conversion_and_querypath(
-                self.config.discover_collections["generic_collection_parsable_metadata"]
+            self.config.discover_collections["generic_collection_parsable_metadata"] = (
+                mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_collections[
+                        "generic_collection_parsable_metadata"
+                    ]
+                )
             )
             if (
                 "single_collection_parsable_metadata"
@@ -432,10 +432,10 @@ class QueryStringSearch(Search):
             # metadata_mapping from current product
             if "metadata_mapping" in self.config.products[collection].keys():
                 # parse mapping to apply
-                self.config.products[collection][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[collection]["metadata_mapping"]
+                self.config.products[collection]["metadata_mapping"] = (
+                    mtd_cfg_as_conversion_and_querypath(
+                        self.config.products[collection]["metadata_mapping"]
+                    )
                 )
 
                 # from current product, updated mapping at the end
@@ -622,14 +622,14 @@ class QueryStringSearch(Search):
                             ].items():
                                 merged_metadata_mapping.pop(metadata, None)
                                 merged_metadata_mapping[metadata] = mapping
-                            unparsable_properties[
-                                "metadata_mapping"
-                            ] = merged_metadata_mapping
-                        conf_update_dict["providers_config"][
-                            generic_collection_id
-                        ] = dict(
-                            extracted_mapping,
-                            **unparsable_properties,
+                            unparsable_properties["metadata_mapping"] = (
+                                merged_metadata_mapping
+                            )
+                        conf_update_dict["providers_config"][generic_collection_id] = (
+                            dict(
+                                extracted_mapping,
+                                **unparsable_properties,
+                            )
                         )
                         # collections_config extraction
                         collection_properties = properties_from_json(
@@ -1782,12 +1782,12 @@ class PostJsonSearch(QueryStringSearch):
                 plugin_config_backup = copy_deepcopy(self.config)
 
                 self.config.api_endpoint = query_value
-                self.config.products[collection][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[collection]["specific_qssearch"][
-                        "metadata_mapping"
-                    ]
+                self.config.products[collection]["metadata_mapping"] = (
+                    mtd_cfg_as_conversion_and_querypath(
+                        self.config.products[collection]["specific_qssearch"][
+                            "metadata_mapping"
+                        ]
+                    )
                 )
                 self.config.results_entry = self.config.products[collection][
                     "specific_qssearch"

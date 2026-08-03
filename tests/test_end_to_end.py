@@ -760,9 +760,9 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def test_end_to_end_complete_cop_dataspace(self):
         """Complete end-to-end test with cop_dataspace for download and download_all"""
 
-        self.eodag._providers.configs[
-            "cop_dataspace"
-        ].download.output_dir = self.tmp_download_path
+        self.eodag._providers.configs["cop_dataspace"].download.output_dir = (
+            self.tmp_download_path
+        )
 
         # Search for products that are online and as small as possible (smallest area first)
         today = dt.date.today()
@@ -961,12 +961,12 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.skipTest("user_conf.yml file with credentials not found.")
         # But we set the access key id and the secret to wrong values
         try:
-            os.environ[
-                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
-            ] = "badaccessid"
-            os.environ[
-                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
-            ] = "badsecret"
+            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"] = (
+                "badaccessid"
+            )
+            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"] = (
+                "badsecret"
+            )
             os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_PROFILE"] = "badsecret"
 
             eodag = EODataAccessGateway(

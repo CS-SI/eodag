@@ -555,9 +555,9 @@ class EODataAccessGateway:
         already_fetched = True
         for provider_to_fetch in self._providers.filter_by_name_or_group(provider):
             if provider_to_fetch.fetchable and provider_to_fetch.search_config:
-                providers_discovery_configs_fetchable[
-                    provider_to_fetch.name
-                ] = provider_to_fetch.search_config.discover_collections
+                providers_discovery_configs_fetchable[provider_to_fetch.name] = (
+                    provider_to_fetch.search_config.discover_collections
+                )
                 if not provider_to_fetch.collections_fetched:
                     already_fetched = False
 
@@ -792,9 +792,9 @@ class EODataAccessGateway:
                                 )
                             else:
                                 # to provider_products_config
-                                provider_products_config[
-                                    new_collection
-                                ] = new_collection_conf
+                                provider_products_config[new_collection] = (
+                                    new_collection_conf
+                                )
                                 ext_collections_conf[provider] = new_collections_conf
                                 new_collections.append(new_collection)
                                 # increase the increment if the new collection had
@@ -2276,9 +2276,9 @@ class EODataAccessGateway:
             for search_param, field_info in queryables_fields.items():
                 if search_param in kwargs and field_info.alias:
                     if isinstance(field_info.alias, AliasChoices):
-                        kwargs_alias[
-                            str(field_info.alias.choices[0])
-                        ] = kwargs_alias.pop(search_param)
+                        kwargs_alias[str(field_info.alias.choices[0])] = (
+                            kwargs_alias.pop(search_param)
+                        )
                     else:
                         kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
 

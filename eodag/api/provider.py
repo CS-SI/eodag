@@ -473,9 +473,9 @@ class Provider:
             if provider_auth_config and not credentials_in_auth(provider_auth_config):
                 for conf_with_creds in auth_confs_with_creds:
                     if conf_with_creds.matches_target_auth(provider_auth_config):
-                        getattr(
-                            self.config, key
-                        ).credentials = conf_with_creds.credentials
+                        getattr(self.config, key).credentials = (
+                            conf_with_creds.credentials
+                        )
                         return
 
     def delete_collection(self, name: str) -> None:
@@ -655,9 +655,7 @@ class ProvidersDict(UserDict[str, Provider]):
         tr_style = "style='background-color: transparent;'" if embeded else ""
         return (
             f"<table>{thead}"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
                 <details><summary style='color: grey;'>
                     <span style='color: black; font-family: monospace;'>{k}:{'&nbsp;' * (longest_name - len(k))}</span>
                     Provider(
@@ -672,10 +670,7 @@ class ProvidersDict(UserDict[str, Provider]):
                     {v._repr_html_(embedded=True)}
                 </details>
                 </td></tr>
-                """
-                    for k, v in self.items()
-                ]
-            )
+                """ for k, v in self.items()])
             + "</table>"
         )
 

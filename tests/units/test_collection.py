@@ -73,7 +73,8 @@ class TestCollection(unittest.TestCase):
 
     def test_collection_enable_validation(self):
         """Collection validation is enabled by an environment variable.
-        It allows to log warnings on bad formatted attributes spotted during collection initialization"""
+        It allows to log warnings on bad formatted attributes spotted during collection initialization
+        """
         try:
             # ensure validation is enabled for collections
             os.environ["EODAG_VALIDATE_COLLECTIONS"] = "True"
