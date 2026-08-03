@@ -400,9 +400,7 @@ class CollectionsList(UserList[Collection]):
 
         return (
             f"{mock_thead}<table><tbody>"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
                         <details>
                         <summary style='color: grey; font-family: monospace;'>
                         {i}&ensp;
@@ -411,9 +409,6 @@ class CollectionsList(UserList[Collection]):
                     {re.sub(r"(<thead>.*|.*</thead>)", "", col._repr_html_())}
                     </details>
                     </td></tr>
-                    """
-                    for i, col in enumerate(self)
-                ]
-            )
+                    """ for i, col in enumerate(self)])
             + "</tbody></table></details>"
         )

@@ -252,16 +252,10 @@ class QueryablesDict(UserDict[str, Any]):
             if self.additional_information
             else ""
         )
-        thead = (
-            f"""<thead><tr><td style='text-align: left; color: grey;'>
+        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
                 {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={
                 self.additional_properties}
-            """
-            + add_info
-            + "</td></tr></thead>"
-            if not embedded
-            else ""
-        )
+            """ + add_info + "</td></tr></thead>" if not embedded else ""
         tr_style = "style='background-color: transparent;'" if embedded else ""
         table = f"<table>{thead}<tbody>"
         table_rows = []

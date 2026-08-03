@@ -1204,15 +1204,13 @@ class TestCore(TestCoreBase):
         self.assertNotIn("bar", self.dag.collections_config)
 
         # update existing provider conf and check that update_collections_list() is launched for it
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             ecmwf:
                 api:
                     discover_collections:
                         fetch_url: 'http://new-endpoint'
                     need_auth: False
-            """
-        )
+            """)
 
         self.dag.update_collections_list(ext_collections_conf)
 
@@ -1372,15 +1370,13 @@ class TestCore(TestCoreBase):
         self, mock_plugin_discover_collections
     ):
         """Core api must fetch providers with api plugin for collections"""
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             ecmwf:
                 api:
                     discover_collections:
                         fetch_url: 'http://new-endpoint'
                     need_auth: False
-            """
-        )
+            """)
         ext_collections_conf = self.dag.discover_collections(provider="ecmwf")
         self.assertEqual(
             ext_collections_conf["ecmwf"]["providers_config"]["foo"]["_collection"],
@@ -1451,14 +1447,12 @@ class TestCore(TestCoreBase):
 
         # update existing provider conf and check that discover_collections() is launched for it
         self.assertEqual(mock_discover_collections.call_count, 0)
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             earth_search:
                 search:
                     discover_collections:
                         fetch_url: 'http://new-endpoint'
-            """
-        )
+            """)
         self.dag.fetch_collections_list()
         mock_discover_collections.assert_called_once_with(
             self.dag, provider="earth_search"
@@ -1466,8 +1460,7 @@ class TestCore(TestCoreBase):
 
         # add new provider conf and check that discover_collections() is launched for it
         self.assertEqual(mock_discover_collections.call_count, 1)
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 search:
                     type: StacSearch
@@ -1475,8 +1468,7 @@ class TestCore(TestCoreBase):
                 products:
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
-            """
-        )
+            """)
         self.dag.fetch_collections_list()
         mock_discover_collections.assert_called_with(self.dag, provider="foo_provider")
         # discover_collections() should have been called 2 more times
@@ -1564,8 +1556,7 @@ class TestCore(TestCoreBase):
         mock_discover_collections.assert_not_called()
 
         # only user-defined providers must be fetched
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             earth_search:
                 search:
                     discover_collections:
@@ -1577,8 +1568,7 @@ class TestCore(TestCoreBase):
                 products:
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
-            """
-        )
+            """)
         self.dag.fetch_collections_list()
         self.assertEqual(mock_discover_collections.call_count, 2)
 
@@ -4701,14 +4691,12 @@ class TestCoreProviderGroup(TestCoreBase):
                 provider_search_config_key = (
                     "search" if hasattr(provider.config, "search") else "api"
                 )
-                self.dag.update_providers_config(
-                    f"""
+                self.dag.update_providers_config(f"""
                     {provider}:
                         {provider_search_config_key}:
                             discover_collections:
                                 fetch_url: 'http://new-{provider}-endpoint'
-                            """
-                )
+                            """)
 
         self.dag.fetch_collections_list(provider=self.group_name)
 

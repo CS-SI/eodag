@@ -358,22 +358,15 @@ class SearchResult(UserList[EOProduct]):
                  {type(self).__name__}&ensp;({len(self)}{total_count})
                 </td></tr></thead>
             """
-            + "".join(
-                [
-                    f"""<tr><td style='text-align: left;'>
+            + "".join([f"""<tr><td style='text-align: left;'>
                 <details><summary style='color: grey; font-family: monospace;'>
                     {i}&ensp;
-                    {type(p).__name__}(id=<span style='color: black;'>{
-                        p.properties["id"]
-                    }</span>, provider={p.provider})
+                    {type(p).__name__}(id=<span style='color: black'>{p.properties["id"]}</span>, provider={p.provider})
                 </summary>
                 {p._repr_html_()}
                 </details>
                 </td></tr>
-                """
-                    for i, p in enumerate(self)
-                ]
-            )
+                """ for i, p in enumerate(self)])
             + "</table>"
         )
 

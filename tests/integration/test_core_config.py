@@ -75,8 +75,7 @@ class TestCoreProvidersConfig(TestCase):
         mock__request.return_value.json.side_effect = mock__request_side_effect
 
         # add new provider and search on it
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 search:
                     type: StacSearch
@@ -87,34 +86,29 @@ class TestCoreProvidersConfig(TestCase):
                 download:
                     type: HTTPDownload
                     base_uri: https://foo.bar
-            """
-        )
+            """)
         self.dag.set_preferred_provider("foo_provider")
 
         prods = self.dag.search(raise_errors=True, validate=False)
         self.assertEqual(prods[0].properties["title"], "foo")
 
         # update provider which have metadata_mapping already built as jsonpath by search()
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 search:
                     metadata_mapping:
                         title: '$.bar'
-            """
-        )
+            """)
         mock__request.return_value.json.side_effect = mock__request_side_effect
         prods = self.dag.search(raise_errors=True, validate=False)
         self.assertEqual(prods[0].properties["title"], "baz")
 
         # update provider with new plugin entry
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 auth:
                     type: GenericAuth
-            """
-        )
+            """)
         self.assertIsInstance(
             self.dag._providers["foo_provider"].config.auth, PluginConfig
         )
@@ -124,23 +118,20 @@ class TestCoreProvidersConfig(TestCase):
 
         # update pruned provider with credentials
         self.assertNotIn("usgs", self.dag._providers)
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             usgs:
                 api:
                     credentials:
                         username: foo
                         password: bar
-            """
-        )
+            """)
         self.assertIsInstance(self.dag._providers["usgs"].api_config, PluginConfig)
         self.assertEqual(
             self.dag._providers["usgs"].api_config.credentials["username"], "foo"
         )
 
         # add new provider that requires auth but without credentials
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             bar_provider:
                 search:
                     type: StacSearch
@@ -151,20 +142,17 @@ class TestCoreProvidersConfig(TestCase):
                 products:
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
-            """
-        )
+            """)
         self.assertIn("bar_provider", self.dag._providers)
 
         # update provider with credentials
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             bar_provider:
                 auth:
                     credentials:
                         username: bar
                         password: foo
-            """
-        )
+            """)
         self.assertIsInstance(
             self.dag._providers["bar_provider"].config.auth, PluginConfig
         )
@@ -202,8 +190,7 @@ class TestCoreProvidersConfig(TestCase):
             },
         )
 
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             a_provider_with_creds_matching_conf:
                 search:
                     type: StacSearch
@@ -243,8 +230,7 @@ class TestCoreProvidersConfig(TestCase):
                     matching_url: http://foo.bar.baz
                     matching_conf:
                         something: special
-            """
-        )
+            """)
 
         self.dag.add_provider(
             "a_third_provider_without_creds_matching_url_matching_conf",
@@ -483,8 +469,7 @@ class TestCoreCollectionsConfig(TestCase):
         self, mock_requests_get, mock_urlopen, mock_build_response
     ):
         # without auth plugin
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 search:
                     type: StacSearch
@@ -495,8 +480,7 @@ class TestCoreCollectionsConfig(TestCase):
                 products:
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
-            """
-        )
+            """)
         with self.assertLogs(level="DEBUG") as cm:
             ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
@@ -508,16 +492,14 @@ class TestCoreCollectionsConfig(TestCase):
             )
 
         # with auth plugin but without credentials
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 auth:
                     type: HTTPHeaderAuth
                     matching_url: https://foo.bar
                     headers:
                         Authorization: "Apikey {apikey}"
-            """
-        )
+            """)
         with self.assertLogs(level="DEBUG") as cm:
             ext_collections_conf = self.dag.discover_collections(
                 provider="foo_provider"
@@ -529,14 +511,12 @@ class TestCoreCollectionsConfig(TestCase):
             )
 
         # succeeds with auth plugin and credentials
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 auth:
                     credentials:
                         apikey: my-api-key
-            """
-        )
+            """)
         self.dag.discover_collections(provider="foo_provider")
 
         mock_requests_get.assert_called_once_with(
@@ -554,15 +534,13 @@ class TestCoreCollectionsConfig(TestCase):
         mock_build_response.return_value.json.return_value = {}
 
         # succeeds with dont_quote attribute
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 search:
                     dont_quote:
                         - '['
                         - ']'
-            """
-        )
+            """)
         self.dag.discover_collections(provider="foo_provider")
 
         mock_urlopen.assert_called_once()

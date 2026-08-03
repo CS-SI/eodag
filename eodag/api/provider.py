@@ -655,9 +655,7 @@ class ProvidersDict(UserDict[str, Provider]):
         tr_style = "style='background-color: transparent;'" if embeded else ""
         return (
             f"<table>{thead}"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
                 <details><summary style='color: grey;'>
                     <span style='color: black; font-family: monospace;'>{k}:{'&nbsp;' * (longest_name - len(k))}</span>
                     Provider(
@@ -672,10 +670,7 @@ class ProvidersDict(UserDict[str, Provider]):
                     {v._repr_html_(embedded=True)}
                 </details>
                 </td></tr>
-                """
-                    for k, v in self.items()
-                ]
-            )
+                """ for k, v in self.items()])
             + "</table>"
         )
 

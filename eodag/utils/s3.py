@@ -234,7 +234,6 @@ def _chunks_from_s3_objects(
     def make_chunks_generator(target_info: S3FileInfo) -> Iterator[bytes]:
         """Create a generator bound to a specific file info (no late-binding bug)."""
         info = target_info  # bind
-        nonlocal all_futures
         while info.next_yield < info.size:
             # First, try to flush anything already buffered for this file
             next_start = info.next_yield

@@ -118,9 +118,7 @@ class AssetsDict(UserDict):
         tr_style = "style='background-color: transparent;'" if embeded else ""
         return (
             f"<table>{thead}"
-            + "".join(
-                [
-                    f"""<tr {tr_style}><td style='text-align: left;'>
+            + "".join([f"""<tr {tr_style}><td style='text-align: left;'>
                 <details><summary style='color: grey;'>
                     <span style='color: black'>'{k}'</span>:&ensp;
                     {{
@@ -136,10 +134,7 @@ class AssetsDict(UserDict):
                     {dict_to_html_table(v, depth=2)}
                 </details>
                 </td></tr>
-                """
-                    for k, v in self.items()
-                ]
-            )
+                """ for k, v in self.items()])
             + "</table>"
         )
 
