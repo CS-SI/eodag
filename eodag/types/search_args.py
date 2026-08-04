@@ -27,7 +27,7 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 
 from eodag.types.bbox import BBox
-from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
+from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE, _deprecated_class
 from eodag.utils.exceptions import ValidationError
 
 NumType = Union[float, int]
@@ -37,8 +37,15 @@ PositiveInt = conint(gt=0)
 SortByList = Annotated[list[tuple[str, str]], MinLen(1)]
 
 
+@_deprecated_class(
+    reason="SearchArgs is deprecated and will be removed in a future version"
+)
 class SearchArgs(BaseModel):
-    """Represents an EODAG search"""
+    """Represents an EODAG search.
+
+    .. deprecated::
+        SearchArgs is deprecated and will be removed in a future version.
+    """
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
