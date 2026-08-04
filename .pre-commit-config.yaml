@@ -29,7 +29,7 @@ repos:
     rev: 26.5.1
     hooks:
     -   id: black
-        args: ['--safe']
+        args: ['--safe', '--target-version=py39']
 
 -   repo: https://github.com/pycqa/pydocstyle
     rev: 6.1.1
