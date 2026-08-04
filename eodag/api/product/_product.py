@@ -64,6 +64,7 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
+    OFFLINE_STATUS,
     ONLINE_STATUS,
     normalize_bands,
 )
@@ -671,13 +672,41 @@ class EOProduct:
     def get_storage_options(
         self,
         asset_key: Optional[str] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> dict[str, Any]:
-        """
-        Get fsspec storage_options keyword arguments
+        """Build ``fsspec`` ``storage_options`` for this product or one of its assets.
+
+        The returned mapping always contains a ``path`` key and may include
+        authentication-related keys, depending on the downloader/authenticator in use:
+
+        - for AWS/S3 authentication, credentials and S3 client options are returned
+        - for HTTP authentication, request headers and a potentially signed URL are returned
+
+        If the product is offline, an order request is sent before generating access
+        options.
+
+        :param asset_key: (optional) Asset key to target. If ``None``, the product
+                          location is used.
+        :param wait: (optional) If order is needed, wait time in minutes between two
+                     order status checks.
+        :param timeout: (optional) If order is needed, maximum time in minutes before
+                        stopping order status checks.
+        :returns: Keyword arguments suitable for ``fsspec`` access, including at
+                  least ``path`` when a downloader is registered, or an empty dict
+                  otherwise.
+        :raises: :class:`~eodag.utils.exceptions.AddressNotFound` if ``asset_key`` is
+                 provided but does not exist in product assets.
         """
         auth = self.downloader_auth.authenticate() if self.downloader_auth else None
         if self.downloader is None:
             return {}
+
+        # order if product is offline
+        if self.properties.get("order:status") == OFFLINE_STATUS and hasattr(
+            self.downloader, "order"
+        ):
+            self.downloader.order(self, auth, wait=wait, timeout=timeout)
 
         # default url and headers
         try:

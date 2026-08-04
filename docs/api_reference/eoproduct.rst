@@ -45,6 +45,7 @@ Interface
 ---------
 
 .. autoproperty:: EOProduct.__geo_interface__
+.. automethod:: EOProduct.get_storage_options
 
 Pixel access
 ------------
