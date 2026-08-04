@@ -37,12 +37,16 @@ from typing import (
 import geojson
 import orjson
 import requests
+from boto3 import Session
+from boto3.resources.base import ServiceResource
 from pystac import Item
-from requests import RequestException
+from requests import PreparedRequest, RequestException
 from requests.auth import AuthBase
+from requests.structures import CaseInsensitiveDict
 from shapely import geometry
 from shapely.errors import ShapelyError
 
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 
@@ -60,6 +64,7 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
+    OFFLINE_STATUS,
     ONLINE_STATUS,
     normalize_bands,
 )
@@ -83,12 +88,16 @@ from eodag.utils.deserialize import (
     _import_stac_item_from_known_provider,
     _import_stac_item_from_unknown_provider,
 )
-from eodag.utils.exceptions import DownloadError, MisconfiguredError, ValidationError
+from eodag.utils.exceptions import (
+    AddressNotFound,
+    DownloadError,
+    MisconfiguredError,
+    ValidationError,
+)
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
-    from requests.structures import CaseInsensitiveDict
     from shapely.geometry.base import BaseGeometry
 
     from eodag import EODataAccessGateway
@@ -659,6 +668,85 @@ class EOProduct:
             timeout=timeout,
             **kwargs,
         )
+
+    def get_storage_options(
+        self,
+        asset_key: Optional[str] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> dict[str, Any]:
+        """Build ``fsspec`` ``storage_options`` for this product or one of its assets.
+
+        The returned mapping always contains a ``path`` key and may include
+        authentication-related keys, depending on the downloader/authenticator in use:
+
+        - for AWS/S3 authentication, credentials and S3 client options are returned
+        - for HTTP authentication, request headers and a potentially signed URL are returned
+
+        If the product is offline, an order request is sent before generating access
+        options.
+
+        :param asset_key: (optional) Asset key to target. If ``None``, the product
+                          location is used.
+        :param wait: (optional) If order is needed, wait time in minutes between two
+                     order status checks.
+        :param timeout: (optional) If order is needed, maximum time in minutes before
+                        stopping order status checks.
+        :returns: Keyword arguments suitable for ``fsspec`` access, including at
+                  least ``path`` when a downloader is registered, or an empty dict
+                  otherwise.
+        :raises: :class:`~eodag.utils.exceptions.AddressNotFound` if ``asset_key`` is
+                 provided but does not exist in product assets.
+        """
+        auth = self.downloader_auth.authenticate() if self.downloader_auth else None
+        if self.downloader is None:
+            return {}
+
+        # order if product is offline
+        if self.properties.get("order:status") == OFFLINE_STATUS and hasattr(
+            self.downloader, "order"
+        ):
+            self.downloader.order(self, auth, wait=wait, timeout=timeout)
+
+        # default url and headers
+        try:
+            url = self.assets[asset_key]["href"] if asset_key else self.location
+        except KeyError as e:
+            raise AddressNotFound(f"{asset_key} not found in {self} assets") from e
+        headers = {**USER_AGENT}
+
+        if isinstance(auth, ServiceResource) and isinstance(
+            self.downloader_auth, AwsAuth
+        ):
+            auth_kwargs: dict[str, Any] = dict()
+            # AwsAuth
+            if s3_endpoint := getattr(self.downloader_auth.config, "s3_endpoint", None):
+                auth_kwargs["client_kwargs"] = {"endpoint_url": s3_endpoint}
+            if creds := cast(
+                Session, self.downloader_auth.s3_session
+            ).get_credentials():
+                auth_kwargs["key"] = creds.access_key
+                auth_kwargs["secret"] = creds.secret_key
+                if creds.token:
+                    auth_kwargs["token"] = creds.token
+                if requester_pays := getattr(
+                    self.downloader_auth.config, "requester_pays", False
+                ):
+                    auth_kwargs["requester_pays"] = requester_pays
+            else:
+                auth_kwargs["anon"] = True
+            return {"path": url, **auth_kwargs}
+
+        if isinstance(auth, AuthBase):
+            # update url and headers with auth
+            req = PreparedRequest()
+            req.url = url
+            req.headers = CaseInsensitiveDict(headers)
+            if auth:
+                auth(req)
+            return {"path": req.url, "headers": dict(req.headers)}
+
+        return {"path": url}
 
     def _init_progress_bar(
         self,
