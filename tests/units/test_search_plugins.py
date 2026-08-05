@@ -3092,9 +3092,10 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
 
 
 class MockResponse:
-    def __init__(self, json_data, status_code):
+    def __init__(self, json_data, status_code, headers=None):
         self.json_data = json_data
         self.status_code = status_code
+        self.headers = headers
 
     def json(self):
         return self.json_data
@@ -3102,6 +3103,9 @@ class MockResponse:
     def raise_for_status(self):
         if self.status_code != 200:
             raise RequestError
+
+    def headers(self):
+        return self.headers
 
 
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
@@ -3600,6 +3604,86 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ecmwf_temporal_to_eodag(dict(date=["20220215"])),
             ("2022-02-15T00:00:00.000Z", "2022-02-15T00:00:00.000Z"),
         )
+
+    def test_plugins_search_ecmwfsearch_normalize_results(self):
+        """ECMWFSearch should add request params to properties and set
+        start/end datetime if year/month/day/time are present in normalize_results"""
+        params = {
+            "year": "2020",
+            "month": ["2"],
+            "day": ["20", "21"],
+            "time": ["01:00"],
+            "collection": "ERA5_SL",
+        }
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = params
+        raw_search_results.query_params = params
+        raw_search_results.collection_def_params = (
+            self.search_plugin.get_collection_def_params("ERA5_SL")
+        )
+        normalized_result = self.search_plugin.normalize_results(
+            raw_search_results, **params
+        )
+        product = normalized_result[0]
+        self.assertEqual(
+            product.properties["start_datetime"], "2020-02-20T01:00:00.000Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2020-02-21T01:00:00.000Z")
+        self.assertEqual(product.properties["ecmwf:year"], "2020")
+        self.assertEqual(product.properties["ecmwf:month"], ["2"])
+        self.assertEqual(product.properties["ecmwf:day"], ["20", "21"])
+        self.assertEqual(product.properties["ecmwf:time"], ["01:00"])
+        self.assertEqual(product.collection, "ERA5_SL")
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_search_ecmwfsearch_normalize_results_check_id(self, mock_requests):
+        """ECMWFSearch should add params from status request to properties"""
+        params = {"collection": "ERA5_SL", "id": "123"}
+        status_response = {
+            "processID": "era5-sl",
+            "type": "process",
+            "created": "2026-08-05T16:05:34.935629",
+            "started": "2026-08-05T16:05:51.203071",
+            "finished": "2026-08-05T16:05:56.188265",
+            "updated": "2026-08-05T16:05:56.188265",
+            "jobID": "123",
+            "status": "accepted",
+            "metadata": {
+                "request": {
+                    "ids": {
+                        "time": ["00:00"],
+                        "year": ["2020"],
+                        "month": ["01"],
+                        "day": ["01"],
+                        "variable": ["carbon_dioxide"],
+                    }
+                }
+            },
+        }
+        mock_requests.return_value = MockResponse(
+            status_response, 200, {"Content-Type": "application/json"}
+        )
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = params
+        raw_search_results.query_params = params
+        raw_search_results.collection_def_params = (
+            self.search_plugin.get_collection_def_params("ERA5_SL")
+        )
+        normalized_result = self.search_plugin.normalize_results(
+            raw_search_results, **params
+        )
+        product = normalized_result[0]
+        download_plugin = self.plugins_manager.get_download_plugin(product)
+        product.register_downloader(download_plugin, None)
+        self.assertEqual(
+            product.properties["start_datetime"], "2020-01-01T00:00:00.000Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2020-01-01T00:00:00.000Z")
+        self.assertEqual(product.properties["ecmwf:year"], ["2020"])
+        self.assertEqual(product.properties["ecmwf:month"], ["01"])
+        self.assertEqual(product.properties["ecmwf:day"], ["01"])
+        self.assertEqual(product.properties["ecmwf:time"], ["00:00"])
+        self.assertEqual(product.collection, "ERA5_SL")
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""
