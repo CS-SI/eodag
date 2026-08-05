@@ -1208,7 +1208,8 @@ class HTTPDownload(Download):
                     exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
                 ) from exc
             except RequestException as e:
-                self._handle_asset_exception(e, asset)
+                is_single_asset = len(assets_values) == 1
+                self._handle_asset_exception(e, asset, is_single_asset)
 
         assets_stream_list = []
 
@@ -1370,11 +1371,20 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(self, e: RequestException, asset: Asset) -> None:
+    def _handle_asset_exception(
+        self, e: RequestException, asset: Asset, is_single_asset: bool
+    ) -> None:
         # check if error is identified as auth_error or quota_exceeded in provider conf
         self._check_auth_exception(e)
         QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
         logger.error("Unexpected error at download of asset %s: %s", asset["href"], e)
+        if (
+            e
+            and e.response is not None
+            and e.response.status_code == 404
+            and is_single_asset
+        ):
+            raise NotAvailableError("Asset {asset['href'] not found.}")
         raise DownloadError(e)
 
     def _get_asset_sizes(

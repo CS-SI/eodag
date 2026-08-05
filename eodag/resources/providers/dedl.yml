@@ -432,6 +432,14 @@ dedl:
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
+    DT_CLIMATE_ADAPTATION_IFS_NEMO:
+      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_IFS-NEMO
+      metadata_mapping:
+        assets: $.assets
+    DT_CLIMATE_ADAPTATION_ICON:
+      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_ICON
+      metadata_mapping:
+        assets: $.assets
     # AERIS
     AERIS_IAGOS:
       _collection: EO.AERIS.DAT.IAGOS

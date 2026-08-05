@@ -32,19 +32,19 @@ from lxml import html
 from pystac import Item
 from shapely import geometry
 
-from eodag.config import PluginConfig
-from eodag.plugins.authentication.aws_auth import AwsAuth
-from eodag.plugins.authentication.header import HTTPHeaderAuth
-from eodag.plugins.authentication.qsauth import HttpQueryStringAuth
-from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import AddressNotFound
 from tests import EODagTestBase
 from tests.context import (
     DEFAULT_SHAPELY_GEOMETRY,
     NOT_AVAILABLE,
+    USER_AGENT,
+    AddressNotFound,
+    AwsAuth,
     DatasetDriver,
     Download,
     EOProduct,
+    HTTPHeaderAuth,
+    HttpQueryStringAuth,
+    PluginConfig,
     ProgressCallback,
     mock,
 )

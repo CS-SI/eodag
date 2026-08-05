@@ -189,6 +189,8 @@ class TestCore(TestCoreBase):
         "DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1": ["dedt_lumi"],
         "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_ICON_R1": ["dedt_lumi"],
         "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_FESOM_R1": ["dedt_lumi"],
+        "DT_CLIMATE_ADAPTATION_IFS_NEMO": ["dedl"],
+        "DT_CLIMATE_ADAPTATION_ICON": ["dedl"],
         "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
