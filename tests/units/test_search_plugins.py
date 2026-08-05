@@ -129,6 +129,49 @@ class BaseSearchPluginTest(unittest.TestCase):
         self.assertEqual("Two", asset_mappings["two"]["title"])
         self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
 
+    def test_get_metadata_mapping_without_collection(self):
+        """Test that the provider metadata_mapping is returned when no collection is specified"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        provider_mapping = search_plugin.config.metadata_mapping
+
+        metadata_mapping = search_plugin.get_metadata_mapping()
+
+        self.assertEqual(provider_mapping, metadata_mapping)
+        self.assertEqual(
+            provider_mapping["_collection"], metadata_mapping["_collection"]
+        )
+
+    def test_get_metadata_mapping_with_collection(self):
+        """Test that the collection metadata_mapping is returned when a collection is specified"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        collection = "S1_SAR_GRD"
+        provider_mapping = search_plugin.config.metadata_mapping
+        collection_mapping = search_plugin.config.products[collection][
+            "metadata_mapping"
+        ]
+
+        metadata_mapping = search_plugin.get_metadata_mapping(collection)
+
+        self.assertEqual(
+            collection_mapping["eo:cloud_cover"],
+            metadata_mapping["eo:cloud_cover"],
+        )
+        self.assertNotEqual(
+            provider_mapping["eo:cloud_cover"],
+            metadata_mapping["eo:cloud_cover"],
+        )
+        self.assertEqual(
+            (None, search_plugin.config.products[collection]["_collection"]),
+            metadata_mapping["_collection"][1],
+        )
+
+        # Check that original mappings are still intact and not modified
+        self.assertEqual(provider_mapping, search_plugin.config.metadata_mapping)
+        self.assertEqual(
+            collection_mapping,
+            search_plugin.config.products[collection]["metadata_mapping"],
+        )
+
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
