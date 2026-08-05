@@ -168,7 +168,3 @@ class QuotaExceededError(RequestError):
             raise QuotaExceededError(
                 f"Too many requests on provider {provider}, please check your quota."
             )
-
-
-class DatasetCreationError(EodagError):
-    """An error indicating that :class:`xarray.Dataset` or :class:`eodag_cube.types.XarrayDict` could not be created"""
