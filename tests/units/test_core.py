@@ -2378,7 +2378,10 @@ class TestCore(TestCoreBase):
             },
             "usgs": None,
             "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},
-            "wekeo_cmems": None,
+            "wekeo_cmems": {
+                "sortables": [],
+                "max_sort_params": None,
+            },
             "wekeo_ecmwf": None,
             "wekeo_main": {
                 "sortables": [
