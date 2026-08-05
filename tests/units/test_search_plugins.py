@@ -890,7 +890,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # One of the providers that has discover_collections() configured with QueryStringSearch
         provider = "wekeo_cmems"
         search_plugin = self.get_search_plugin(provider=provider)
-        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual("WekeoSearch", search_plugin.__class__.__name__)
         self.assertEqual(
             "QueryStringSearch",
             search_plugin.discover_collections.__func__.__qualname__.split(".")[0],
@@ -964,7 +964,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("1a2b3c4d", conf_update_dict["providers_config"])
         self.assertNotIn("1a2b3c4d", conf_update_dict["collections_config"])
         self.assertEqual(
-            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            conf_update_dict["providers_config"]["foo_collection"]["_collection"],
             "1a2b3c4d",
         )
         self.assertNotIn("id", conf_update_dict["collections_config"]["foo_collection"])
