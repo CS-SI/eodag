@@ -3919,18 +3919,19 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             form = json.load(f)
         mock__fetch_data.side_effect = [constraints, form]
 
-        default_values = deepcopy(
-            getattr(self.search_plugin.config, "products", {}).get(
-                "CAMS_EU_AIR_QUALITY_RE", {}
-            )
+        queryables = self.search_plugin.list_queryables(
+            filters={
+                "datetime": "2001-06-01/2001-06-01",
+                "variable": "e",
+            },
+            collection="CAMS_EU_AIR_QUALITY_RE",
+            available_collections=["CAMS_EU_AIR_QUALITY_RE"],
+            collection_configs={
+                "CAMS_EU_AIR_QUALITY_RE": self.search_plugin.config.products[
+                    "CAMS_EU_AIR_QUALITY_RE"
+                ]
+            },
         )
-        default_values.pop("metadata_mapping", None)
-        params = deepcopy(default_values)
-        params["collection"] = "CAMS_EU_AIR_QUALITY_RE"
-        params["datetime"] = "2001-06-01/2001-06-01"
-        params["variable"] = "e"
-
-        queryables = self.search_plugin.discover_queryables(**params)
 
         self.assertNotIn("datetime", queryables)
         self.assertIn("start", queryables)
@@ -3946,6 +3947,9 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "2001-06-01T00:00:00.000Z",
             end_args[1].default,
         )
+
+        self.assertIn("ecmwf_variable", queryables)
+        self.assertEqual("e", get_args(queryables["ecmwf_variable"])[1].default)
 
         mock__fetch_data.assert_has_calls(
             [
