@@ -292,7 +292,7 @@ dedt_mn5:
     order_method: POST
     order_on_response:
       metadata_mapping:
-        eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
+        eodag:order_id: '{$.headers.Location#replace_str(r".*\W(\w+)$",r"\1")}'
         _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
         eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
         eodag:status_link: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
