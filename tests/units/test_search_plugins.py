@@ -4137,6 +4137,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         self.assertIsNotNone(queryables)
         self.assertIn("ecmwf_download_format", queryables)
+        self.assertEqual(
+            get_args(queryables["ecmwf_download_format"])[0],
+            str,
+            "Type of keyword ecmwf_download_format must be extracted from form element",
+        )
         self.assertTrue(
             get_args(queryables["ecmwf_download_format"])[1].is_required(),
             "Keyword ecmwf_download_format must be required when details are missing",

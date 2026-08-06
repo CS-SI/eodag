@@ -956,12 +956,11 @@ class ECMWFSearch(PostJsonSearch):
             values = (
                 available_values[name]
                 if name in available_values
-                else details.get("values")
+                else details.get("values", [])
             )
 
             # updates the properties with the values given based on the information from the element
-            if values is not None:
-                _update_properties_from_element(prop, element, values)
+            _update_properties_from_element(prop, element, values)
 
             # default value is set with the following priority:
             # input default values > form details default value > no default value
