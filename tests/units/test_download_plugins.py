@@ -1665,6 +1665,42 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         run()
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_status_from_head_headers(self, mock_request):
+        """HTTPDownload._order_status() must not parse an empty HEAD response"""
+        plugin = HTTPDownload(
+            provider=self.product.provider,
+            config=PluginConfig.from_mapping(
+                {
+                    "type": "HTTPDownload",
+                    "order_status": {
+                        "success": {"http_code": 200},
+                        "on_success": {
+                            "metadata_mapping": {
+                                "eodag:download_link": "$.headers.location",
+                            },
+                        },
+                    },
+                },
+            ),
+        )
+        self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
+        response = mock_request.return_value
+        response.status_code = 200
+        response.headers = {
+            "Content-Type": "application/json",
+            "location": "http://somewhere/download",
+        }
+        response.json.side_effect = ValueError("empty response")
+
+        plugin._order_status(self.product)
+
+        self.assertEqual(
+            self.product.properties["eodag:download_link"],
+            "http://somewhere/download",
+        )
+        response.json.assert_not_called()
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_status_get_raises_if_request_500(
         self, mock_request
     ):

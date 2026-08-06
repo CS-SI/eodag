@@ -557,9 +557,12 @@ class HTTPDownload(Download):
             else:
                 json_response = (
                     response.json()
-                    if "application/json" in response.headers.get("Content-Type", "")
-                    or "application/geo+json"
-                    in response.headers.get("Content-Type", "")
+                    if status_response_content_needed
+                    and (
+                        "application/json" in response.headers.get("Content-Type", "")
+                        or "application/geo+json"
+                        in response.headers.get("Content-Type", "")
+                    )
                     else {}
                 )
                 if result_entry:
