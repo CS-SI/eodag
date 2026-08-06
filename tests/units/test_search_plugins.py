@@ -3907,6 +3907,69 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
     )
+    def test_plugins_search_ecmwfsearch_discover_queryables_datetime(
+        self, mock__fetch_data
+    ):
+        """ECMWFSearch.discover_queryables must convert `datetime` into `start` and `end`."""
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        queryables = self.search_plugin.list_queryables(
+            filters={
+                "datetime": "2001-06-01/2001-06-01",
+                "variable": "e",
+            },
+            collection="CAMS_EU_AIR_QUALITY_RE",
+            available_collections=["CAMS_EU_AIR_QUALITY_RE"],
+            collection_configs={
+                "CAMS_EU_AIR_QUALITY_RE": self.search_plugin.config.products[
+                    "CAMS_EU_AIR_QUALITY_RE"
+                ]
+            },
+        )
+
+        self.assertNotIn("datetime", queryables)
+        self.assertIn("start", queryables)
+        self.assertIn("end", queryables)
+
+        start_args = get_args(queryables["start"])
+        end_args = get_args(queryables["end"])
+        self.assertEqual(
+            "2001-06-01T00:00:00.000Z",
+            start_args[1].default,
+        )
+        self.assertEqual(
+            "2001-06-01T00:00:00.000Z",
+            end_args[1].default,
+        )
+
+        self.assertIn("ecmwf_variable", queryables)
+        self.assertEqual("e", get_args(queryables["ecmwf_variable"])[1].default)
+
+        mock__fetch_data.assert_has_calls(
+            [
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/constraints.json",
+                ),
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/form.json",
+                ),
+            ]
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
     def test_plugins_search_ecmwfsearch_discover_queryables_ko(self, mock__fetch_data):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
