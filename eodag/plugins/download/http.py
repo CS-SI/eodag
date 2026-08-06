@@ -264,7 +264,7 @@ class HTTPDownload(Download):
         json_response = response.json()
 
         properties_update = properties_from_json(
-            {"json": json_response, "headers": {**response.headers}},
+            {"json": json_response, "headers": response.headers},
             on_response_mm_jsonpath,
         )
         product.properties.update(
@@ -442,7 +442,7 @@ class HTTPDownload(Download):
             )
             logger.debug("Parsing order status response")
             status_dict = properties_from_json(
-                {"json": response.json(), "headers": {**response.headers}},
+                {"json": response.json(), "headers": response.headers},
                 status_mm_jsonpath,
             )
 
@@ -578,7 +578,7 @@ class HTTPDownload(Download):
                         "Parsing on-success metadata-mapping using order status response"
                     )
                     properties_update = properties_from_json(
-                        {"json": json_response, "headers": {**response.headers}},
+                        {"json": json_response, "headers": response.headers},
                         on_success_mm_querypath,
                     )
                     # only keep properties to update (remove product.properties added for parsing)
