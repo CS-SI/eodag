@@ -46,6 +46,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+from eodag.utils.dates import get_datetime
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -393,6 +394,13 @@ class Search(PluginTopic):
         )
         discover_metadata = getattr(self.config, "discover_metadata", {})
         auto_discovery = discover_metadata.get("auto_discovery", False)
+
+        if "datetime" in filters:
+            datetimes = get_datetime(filters)
+            if "start_datetime" not in filters:
+                filters["start_datetime"] = datetimes[0]
+            if "end_datetime" not in filters:
+                filters["end_datetime"] = datetimes[1]
 
         if collection or getattr(self.config, "discover_queryables", {}).get(
             "fetch_url", ""
