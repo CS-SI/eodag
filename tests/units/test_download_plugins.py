@@ -51,7 +51,6 @@ from tests.context import (
     NotAvailableError,
     PluginConfig,
     PluginManager,
-    ProvidersDict,
     build_provider_configs,
     load_default_config,
     path_to_uri,
@@ -1579,10 +1578,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["eodag:status_link"] = "http://somewhere/order-status"
         response = mock_request.return_value
         response.status_code = 200
-        response.headers = {
-            "Content-Type": "application/json",
-            "location": "http://somewhere/download",
-        }
+        # Use different case for header keys to test that case-insensitivity is preserved
+        response.headers = CaseInsensitiveDict(
+            {
+                "Content-Type": "application/json",
+                "Location": "http://somewhere/download",
+            }
+        )
         response.json.side_effect = ValueError("empty response")
 
         plugin._order_status(self.product)
