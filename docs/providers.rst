@@ -933,9 +933,9 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a support ticket to request
-  upgraded access for accessing the Digital Twin data. Then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
@@ -966,9 +966,9 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a support ticket to request
-  upgraded access for accessing the Digital Twin data. Then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
@@ -999,9 +999,9 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a support ticket to request
-  upgraded access for accessing the Digital Twin data. Then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
