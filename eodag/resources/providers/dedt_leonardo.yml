@@ -2,7 +2,7 @@ dedt_leonardo:
   priority: 0
   roles:
     - host
-  description: Destination Earth Digital Twin Outputs from marenostrum through Polytope API
+  description: Destination Earth Digital Twin Outputs from Leonardo HPC through Polytope API
   url: https://polytope.leonardo.apps.dte.destination-earth.eu/openapi
   search:
     type: ECMWFSearch
