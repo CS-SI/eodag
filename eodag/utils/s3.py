@@ -216,15 +216,15 @@ def _chunks_from_s3_objects(
     # Combine all futures to wait on globally (initially empty)
     all_futures = {}
 
-    # Track outstanding chunks and next file index
-    total_outstanding_chunks = 0
+    # Track pending chunks and next file index
+    total_pending_chunks = 0
     next_file_index = 0  # Track which file to submit from next
 
     def submit_tasks_to_limit() -> bool:
         """Submit S3 chunk download tasks up to the global backpressure limit, prioritizing files sequentially."""
-        nonlocal total_outstanding_chunks, next_file_index
+        nonlocal total_pending_chunks, next_file_index
 
-        while total_outstanding_chunks < BACKPRESSURE_DOWNLOAD_CHUNKS:
+        while total_pending_chunks < BACKPRESSURE_DOWNLOAD_CHUNKS:
             if next_file_index >= len(files_info):
                 break  # No more files with pending ranges
 
@@ -240,7 +240,7 @@ def _chunks_from_s3_objects(
                     s3_client,
                 )
                 all_futures[future] = (f_info, start, end)
-                total_outstanding_chunks += 1
+                total_pending_chunks += 1
 
                 if not f_info.pending_ranges:
                     next_file_index += 1  # Move to next file when current is exhausted
@@ -253,7 +253,7 @@ def _chunks_from_s3_objects(
     def make_chunks_generator(target_info: S3FileInfo) -> Iterator[bytes]:
         """Create a generator bound to a specific file info (no late-binding bug)."""
         info = target_info  # bind
-        nonlocal total_outstanding_chunks, pending_chunks_count
+        nonlocal total_pending_chunks, pending_chunks_count
         while info.next_yield < info.size:
             # First, try to flush anything already buffered for this file
             next_start = info.next_yield
@@ -270,7 +270,7 @@ def _chunks_from_s3_objects(
                 next_start += chunk_len
                 info.next_yield = next_start
                 flushed = True
-                total_outstanding_chunks -= 1
+                total_pending_chunks -= 1
                 pending_chunks_count -= 1
 
             if info.next_yield >= info.size:
