@@ -933,8 +933,9 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
@@ -965,8 +966,42 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
+
+----
+
+**DEDT Leonardo**
+--------------------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Destination Earth Digital Twin output on Leonardo HPC.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://polytope.leonardo.apps.dte.destination-earth.eu/openapi
+        :color: primary
+        :outline:
+        :tooltip: DEDT Leonardo OpenAPI
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
