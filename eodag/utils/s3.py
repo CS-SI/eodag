@@ -56,8 +56,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.utils.s3")
 
-MIME_OCTET_STREAM = "application/octet-stream"
-
 # Backpressure configuration
 BACKPRESSURE_DOWNLOAD_CHUNKS = 10  # Total chunks (downloading + buffered) per file
 
