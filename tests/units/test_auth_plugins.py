@@ -332,12 +332,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
@@ -430,12 +430,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
         # token request should be sent
         mock_requests_post.assert_called_once_with(
@@ -454,7 +454,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         mock_requests_post.reset_mock()
         # second call should use existing token
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
         mock_requests_post.assert_not_called()
 
         # reset expiration -> token should be fetched again
@@ -468,10 +468,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         }
         auth = auth_plugin.authenticate()
 
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_a_refreshed_token"
+        self.assertEqual(
+            req.headers["Authorization"], "Bearer this_is_a_refreshed_token"
+        )
 
         mock_requests_post.assert_called_once_with(
             mock.ANY,
@@ -1681,18 +1683,18 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if the full signed url and the subscription key are integrated to the request
         url = "url"
         req = mock.Mock(headers={}, url=url)
         auth(req)
-        assert req.url == "this_is_test_full_signed_url"
-        assert req.headers["Ocp-Apim-Subscription-Key"] == "foo"
+        self.assertEqual(req.url, "this_is_test_full_signed_url")
+        self.assertEqual(req.headers["Ocp-Apim-Subscription-Key"], "foo")
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        assert args[0] == auth_plugin.config.auth_uri.format(url=url)
+        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
         auth_plugin_headers = {"Ocp-Apim-Subscription-Key": "foo"}
         self.assertDictEqual(kwargs["headers"], dict(auth_plugin_headers, **USER_AGENT))
 
@@ -1705,7 +1707,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         """
         auth_plugin = self.get_auth_plugin("foo_provider")
 
-        auth_plugin.config.credentials = {}
+        auth_plugin.config.credentials = {"apikey": None}
 
         # mock full signed url get request response
         mock_requests_get.return_value = mock.Mock()
@@ -1716,19 +1718,19 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if only the full signed url is integrated to the request
         url = "url"
         req = mock.Mock(headers={}, url=url)
         auth(req)
-        assert req.url == "this_is_test_full_signed_url"
+        self.assertEqual(req.url, "this_is_test_full_signed_url")
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        assert args[0] == auth_plugin.config.auth_uri.format(url=url)
+        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
         # check if headers only has the user agent as a request call argument
-        assert kwargs["headers"] == USER_AGENT
+        self.assertEqual(kwargs["headers"], USER_AGENT)
 
     @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
     def test_plugins_auth_sasauth_request_error(self, mock_requests_get):
@@ -1742,7 +1744,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         req = mock.Mock(headers={}, url="url")
         with self.assertRaises(AuthenticationError):
@@ -1874,7 +1876,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "obtained-token")
             self.assertEqual(auth.where, "qs")
@@ -1885,7 +1887,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         # check that stored token is used if available
         auth = auth_plugin.authenticate()
         # check if returned auth object is an instance of requests.AuthBase
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
         self.assertEqual(auth.key, "totoken")
         self.assertEqual(auth.token, "obtained-token")
         self.assertEqual(auth.where, "qs")
@@ -1913,7 +1915,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
 
             # check if query string is integrated to the request
             req = Request("GET", "https://httpbin.org/get").prepare()
@@ -1954,7 +1956,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
 
             # check if token header is integrated to the request
             req = Request("GET", "https://httpbin.org/get").prepare()
@@ -2006,7 +2008,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "obtained-token")
             self.assertEqual(auth.where, "qs")
@@ -2039,7 +2041,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "new-token")
             self.assertEqual(auth.where, "qs")

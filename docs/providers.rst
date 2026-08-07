@@ -1179,8 +1179,8 @@ No credentials are needed
   Most datasets are anonymously accessible, but a subscription key may be needed to increase `rate limits and access
   private datasets <https://planetarycomputer.microsoft.com/docs/concepts/sas/#rate-limits-and-access-restrictions>`_.
 
-  Create an account `here <https://planetarycomputer.microsoft.com/account/request>`__, then view your keys by signing in
-  with your Microsoft account `here <https://planetarycomputer.developer.azure-api.net/>`__.
+  Create an Azure account and subscription `here <https://azure.microsoft.com/pricing/purchase-options/azure-account>`__, then
+  retrieve your subscription keys from Azure API Management.
 
 ----
 
