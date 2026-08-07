@@ -3679,6 +3679,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             product.properties["start_datetime"], "2020-01-01T00:00:00.000Z"
         )
         self.assertEqual(product.properties["end_datetime"], "2020-01-01T00:00:00.000Z")
+        self.assertEqual(product.properties["datetime"], "2020-01-01T00:00:00.000Z")
         self.assertEqual(product.properties["ecmwf:year"], ["2020"])
         self.assertEqual(product.properties["ecmwf:month"], ["01"])
         self.assertEqual(product.properties["ecmwf:day"], ["01"])
