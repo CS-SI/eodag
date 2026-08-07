@@ -6,7 +6,7 @@ from unittest import TestCase
 from unittest.mock import call, patch
 
 import boto3
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from moto import mock_aws
 
 from tests import TEST_RESOURCES_PATH
@@ -425,6 +425,44 @@ class TestUtilsS3(TestCase):
 
             self.assertEqual(mock_fetch.call_count, 6)
             mock_fetch.assert_has_calls(expected_calls, any_order=True)
+
+    def test_chunks_from_s3_objects_respects_backpressure_download_chunks(self):
+        """Test that chunk submissions are capped by BACKPRESSURE_DOWNLOAD_CHUNKS."""
+
+        range_size = 10
+
+        # Use file metadata only: fetch_range is mocked, so S3 object content is irrelevant.
+        fi = make_mock_fileinfo("file1", 50)
+        fi.data_start_offset = 0
+
+        class ImmediateExecutor:
+            def submit(self, fn, *args, **kwargs):
+                fut = Future()
+                fut.set_result(fn(*args, **kwargs))
+                return fut
+
+        with patch("eodag.utils.s3.BACKPRESSURE_DOWNLOAD_CHUNKS", 2):
+            with patch(
+                "eodag.utils.s3.fetch_range", return_value=b"X" * range_size
+            ) as mock_fetch:
+                executor = ImmediateExecutor()
+                result = _chunks_from_s3_objects(
+                    self.s3_client,
+                    [fi],
+                    byte_range=(None, None),
+                    range_size=range_size,
+                    executor=executor,
+                )
+
+                # First iteration triggers initial submissions, capped by backpressure.
+                _, gen = next(result)
+                self.assertEqual(mock_fetch.call_count, 2)
+
+                # Consuming the stream releases slots and allows remaining chunk submissions.
+                chunks = b"".join(gen)
+                self.assertEqual(chunks, b"X" * fi.size)
+
+            self.assertEqual(mock_fetch.call_count, 5)
 
     def test_prepare_file_in_zip(self):
         """Test _prepare_file_in_zip to ensure it sets the correct attributes for retrieving a file inside a ZIP."""
