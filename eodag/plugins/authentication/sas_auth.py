@@ -133,7 +133,7 @@ class SASAuth(Authentication):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         if matching_url := getattr(self.config, "matching_url", None):
             matching_url = re.compile(matching_url)
-        if credentials:
+        if any(credentials.values()):
             not_empty_credentials = {k: v for k, v in credentials.items() if v}
             headers_update = format_dict_items(
                 self.config.headers, **not_empty_credentials
