@@ -1294,6 +1294,50 @@ def _check_id(product: EOProduct) -> EOProduct:
     return product
 
 
+def _request_params_to_properties(
+    product: EOProduct,
+) -> None:
+    """Apply ``eodag:request_params`` from the order status response to the product.
+
+    :param product: The product to which the request parameters should be applied
+    """
+    eodag_request_params = product.properties.get("eodag:request_params", {})
+    if not eodag_request_params:
+        return
+    # item properties
+    properties = deepcopy(eodag_request_params)
+    properties.pop("feature", None)
+    properties.pop("area", None)
+    properties.pop("location", None)
+    start_datetime, end_datetime = ecmwf_temporal_to_eodag(properties)
+    properties = {
+        f"ecmwf:{k}": v for k, v in properties.items() if k in ALLOWED_KEYWORDS
+    }
+    datetime_value = start_datetime or end_datetime
+    if datetime_value:
+        properties["datetime"] = datetime_value
+    if start_datetime:
+        properties[START] = start_datetime
+    if end_datetime:
+        properties[END] = end_datetime
+    product.properties.update(properties)
+
+    # geometry
+    """Extract EODAG geometry from an EOProduct"""
+    geometry = None
+    # ECMWF Polytope uses non-geojson structure for features
+    if "feature" in eodag_request_params:
+        geometry = get_geometry_from_ecmwf_feature(eodag_request_params["feature"])
+    # bounding box in area format
+    if geometry is None and "area" in eodag_request_params:
+        geometry = get_geometry_from_ecmwf_area(eodag_request_params["area"])
+    # single location
+    if geometry is None and "location" in eodag_request_params:
+        geometry = get_geometry_from_ecmwf_location(eodag_request_params["location"])
+    if geometry:
+        product.geometry = geometry
+
+
 def patched_register_downloader(self, downloader, authenticator):
     """Register product donwloader and update properties if searched by id.
 
@@ -1308,6 +1352,7 @@ def patched_register_downloader(self, downloader, authenticator):
     self.register_downloader_only(downloader, authenticator)
     # and also update properties
     _check_id(self)
+    _request_params_to_properties(self)
 
 
 class MeteoblueSearch(ECMWFSearch):
