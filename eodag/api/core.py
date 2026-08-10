@@ -804,9 +804,9 @@ class EODataAccessGateway:
                                 # to new collections list to be added to DB
                                 all_new_collections.append(new_coll_obj)
                                 # to provider config for this collection
-                                new_provider_products_config[
-                                    new_collection
-                                ] = new_collection_conf
+                                new_provider_products_config[new_collection] = (
+                                    new_collection_conf
+                                )
 
                                 new_collections += 1
 
@@ -877,11 +877,6 @@ class EODataAccessGateway:
                         "name": provider,
                         "products": new_provider_products_config,
                     }
-
-                # TODO: keep last fetch only for fetchable providers
-                # self.db.set_federation_backend_last_fetch(
-                #     provider, dt.datetime.now(dt.timezone.utc).isoformat()
-                # )
 
         # if there are new collections, update collections and providers config in DB
         if all_new_collections:
@@ -1547,19 +1542,19 @@ class EODataAccessGateway:
                     **kwargs,
                 ):
                     results.data.extend(page_results.data)
+                    # try using crunch to get unique result and stop if found, to avoid unnecessary requests
+                    if (
+                        len(results) > 1
+                        and len(filtered := results.filter_property(id=uid)) == 1
+                    ):
+                        results = filtered
+                        break
             except Exception as e:
                 if kwargs.get("raise_errors"):
                     raise
                 logger.warning(e)
                 results.errors.append((plugin.provider, e))
                 continue
-
-            # try using crunch to get unique result
-            if (
-                len(results) > 1
-                and len(filtered := results.filter_property(id=uid)) == 1
-            ):
-                results = filtered
 
             if len(results) == 1:
                 if not results[0].collection:
@@ -1839,7 +1834,9 @@ class EODataAccessGateway:
 
             # Add collections_config to plugin config. This dict contains product
             # type metadata that will also be stored in each product's properties.
-            self._attach_collection_config(search_plugin, search_params.get("collection"))
+            self._attach_collection_config(
+                search_plugin, search_params.get("collection")
+            )
 
             if validate:
                 search_plugin.validate(search_params, prep.auth)
@@ -2242,9 +2239,9 @@ class EODataAccessGateway:
             for search_param, field_info in queryables_fields.items():
                 if search_param in kwargs and field_info.alias:
                     if isinstance(field_info.alias, AliasChoices):
-                        kwargs_alias[
-                            str(field_info.alias.choices[0])
-                        ] = kwargs_alias.pop(search_param)
+                        kwargs_alias[str(field_info.alias.choices[0])] = (
+                            kwargs_alias.pop(search_param)
+                        )
                     else:
                         kwargs_alias[field_info.alias] = kwargs_alias.pop(search_param)
 
