@@ -344,6 +344,13 @@ wekeo_main:
       _collection: EO:ESA:DAT:COP-DEM
       product:type: DGE_30
       metadata_mapping:
+        id:
+          - |
+            {{
+              "startdate": "{id#replace_str(r'^.*?_(\d\d\d\d)(\d\d)(\d\d)T\d\d\d\d\d\d_.*$',r'\1-\2-\3T00%3A00%3A00Z')}",
+              "enddate": "{id#replace_str(r'^.*_(\d\d\d\d)(\d\d)(\d\d)T\d\d\d\d\d\d_.*$',r'\1-\2-\3T23%3A59%3A59Z')}"
+            }}
+          - '{$.id#remove_extension}'
         gsd:
           - '{{"spatialResolution": "{gsd}"}}'
           - '$.null'
