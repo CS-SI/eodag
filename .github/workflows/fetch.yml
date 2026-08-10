@@ -28,6 +28,10 @@ jobs:
         uv pip install ".[all-providers]"
     - name: Fetch external collections data
       env:
+        # collections discovery is public for dedl
+        EODAG__DEDL__SEARCH__NEED_AUTH: false
+        # disable eocat fetch until provider is fixed
+        EODAG__EOCAT__SEARCH__NEED_AUTH: true
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
         JSON_OUTPUT_FILE: "eodag/resources/ext_collections.json"
@@ -177,6 +181,10 @@ jobs:
         cd /tmp && uv pip install "eodag[all-providers]~=3.0"
     - name: Fetch external product-types data
       env:
+        # collections discovery is public for dedl
+        EODAG__DEDL__SEARCH__NEED_AUTH: false
+        # disable eocat fetch until provider is fixed
+        EODAG__EOCAT__SEARCH__NEED_AUTH: true
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
         JSON_OUTPUT_FILE: "eodag/resources/ext_product_types.json"
