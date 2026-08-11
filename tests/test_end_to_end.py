@@ -217,14 +217,6 @@ FEDEO_CEDA_SEARCH_ARGS = [
     None,
 ]
 
-EOCAT_SEARCH_ARGS = [
-    "eocat",
-    "GOCE_Thermosphere_Data",
-    "2010-03-17",
-    "2010-03-18",
-    None,
-]
-
 COP_GHSL_SEARCH_ARGS = [
     "cop_ghsl",
     "GHS_BUILT_S",
@@ -469,12 +461,6 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_eocat(self):
-        self.eodag.discover_collections(provider="eocat")
-        products = self.execute_search(*EOCAT_SEARCH_ARGS, check_product=False)
-        expected_filename = "{}.TGZ".format(products[0].properties["title"])
-        self.execute_download(products[0], expected_filename)
-
     def test_end_to_end_search_download_fedeo_ceda(self):
         self.eodag.discover_collections(provider="fedeo_ceda")
         products = self.execute_search(*FEDEO_CEDA_SEARCH_ARGS, check_product=False)
@@ -705,12 +691,6 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "earth_search_gcs"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertDictEqual(ext_collections_conf, {})
-
-    def test_end_to_end_discover_collections_eocat(self):
-        """discover_collections() must return an external collections configuration for eocat"""
-        provider = "eocat"
-        ext_collections_conf = self.eodag.discover_collections(provider=provider)
-        self.assertIsNotNone(ext_collections_conf[provider])
 
     def test_end_to_end_discover_collections_fedeo_ceda(self):
         """discover_collections() must return an external collections configuration for fedeo ceda"""
