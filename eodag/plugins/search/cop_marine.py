@@ -69,7 +69,7 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[dt.datetim
 
 
 def _get_dates_from_dataset_data(
-    dataset_item: dict[str, Any]
+    dataset_item: dict[str, Any],
 ) -> Optional[dict[str, str]]:
     dates = {}
     if "start_datetime" in dataset_item["properties"]:
@@ -517,9 +517,9 @@ class CopMarineSearch(StaticStacSearch):
 
                             owner_displayname = obj.get("Owner", {}).get("DisplayName")
                             if owner_displayname is not None:
-                                asset_properties[
-                                    "cop_marine:owner_name"
-                                ] = owner_displayname
+                                asset_properties["cop_marine:owner_name"] = (
+                                    owner_displayname
+                                )
 
                             product = self._create_product(
                                 collection,

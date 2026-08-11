@@ -59,8 +59,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.extent_small = {"lonmin": -55, "lonmax": -54.5, "latmin": 2, "latmax": 2.5}
 
         self.static_stac_provider = "foo_static"
-        self.dag.update_providers_config(
-            f"""
+        self.dag.update_providers_config(f"""
             {self.static_stac_provider}:
                 search:
                     type: StaticStacSearch
@@ -71,8 +70,7 @@ class TestSearchStacStatic(unittest.TestCase):
                 download:
                     type: HTTPDownload
                     base_uri: https://fake-endpoint
-        """
-        )
+        """)
         self.dag.set_preferred_provider(self.static_stac_provider)
 
     def tearDown(self):

@@ -129,6 +129,49 @@ class BaseSearchPluginTest(unittest.TestCase):
         self.assertEqual("Two", asset_mappings["two"]["title"])
         self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
 
+    def test_get_metadata_mapping_without_collection(self):
+        """Test that the provider metadata_mapping is returned when no collection is specified"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        provider_mapping = search_plugin.config.metadata_mapping
+
+        metadata_mapping = search_plugin.get_metadata_mapping()
+
+        self.assertEqual(provider_mapping, metadata_mapping)
+        self.assertEqual(
+            provider_mapping["_collection"], metadata_mapping["_collection"]
+        )
+
+    def test_get_metadata_mapping_with_collection(self):
+        """Test that the collection metadata_mapping is returned when a collection is specified"""
+        search_plugin = self.get_search_plugin(provider="geodes")
+        collection = "S1_SAR_GRD"
+        provider_mapping = search_plugin.config.metadata_mapping
+        collection_mapping = search_plugin.config.products[collection][
+            "metadata_mapping"
+        ]
+
+        metadata_mapping = search_plugin.get_metadata_mapping(collection)
+
+        self.assertEqual(
+            collection_mapping["eo:cloud_cover"],
+            metadata_mapping["eo:cloud_cover"],
+        )
+        self.assertNotEqual(
+            provider_mapping["eo:cloud_cover"],
+            metadata_mapping["eo:cloud_cover"],
+        )
+        self.assertEqual(
+            (None, search_plugin.config.products[collection]["_collection"]),
+            metadata_mapping["_collection"][1],
+        )
+
+        # Check that original mappings are still intact and not modified
+        self.assertEqual(provider_mapping, search_plugin.config.metadata_mapping)
+        self.assertEqual(
+            collection_mapping,
+            search_plugin.config.products[collection]["metadata_mapping"],
+        )
+
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
@@ -582,12 +625,12 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
 
         with responses.RequestsMock(
@@ -667,16 +710,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # change configuration for this test to filter out some collections
         discover_collections_conf = search_plugin.config.discover_collections
-        search_plugin.config.discover_collections[
-            "fetch_url"
-        ] = "https://foo.bar/collections"
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["fetch_url"] = (
+            "https://foo.bar/collections"
+        )
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
-        search_plugin.config.discover_collections[
-            "single_collection_fetch_qs"
-        ] = "foo=bar"
+        search_plugin.config.discover_collections["single_collection_fetch_qs"] = (
+            "foo=bar"
+        )
 
         with responses.RequestsMock(
             assert_all_requests_are_fired=True
@@ -736,9 +779,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         search_plugin = self.get_search_plugin(self.collection, provider)
         discover_collections_conf = search_plugin.config.discover_collections
         search_plugin.config.discover_collections.pop("fetch_url")
-        search_plugin.config.discover_collections[
-            "next_page_url_tpl"
-        ] = "{url}?page={page}"
+        search_plugin.config.discover_collections["next_page_url_tpl"] = (
+            "{url}?page={page}"
+        )
         search_plugin.config.discover_collections["start_page"] = 0
         result = search_plugin.discover_collections_per_page()
         assert result is None
@@ -847,7 +890,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # One of the providers that has discover_collections() configured with QueryStringSearch
         provider = "wekeo_cmems"
         search_plugin = self.get_search_plugin(provider=provider)
-        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual("WekeoSearch", search_plugin.__class__.__name__)
         self.assertEqual(
             "QueryStringSearch",
             search_plugin.discover_collections.__func__.__qualname__.split(".")[0],
@@ -921,7 +964,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("1a2b3c4d", conf_update_dict["providers_config"])
         self.assertNotIn("1a2b3c4d", conf_update_dict["collections_config"])
         self.assertEqual(
-            conf_update_dict["providers_config"]["foo_collection"]["collection"],
+            conf_update_dict["providers_config"]["foo_collection"]["_collection"],
             "1a2b3c4d",
         )
         self.assertNotIn("id", conf_update_dict["collections_config"]["foo_collection"])
@@ -3049,9 +3092,10 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
 
 
 class MockResponse:
-    def __init__(self, json_data, status_code):
+    def __init__(self, json_data, status_code, headers=None):
         self.json_data = json_data
         self.status_code = status_code
+        self.headers = headers
 
     def json(self):
         return self.json_data
@@ -3059,6 +3103,9 @@ class MockResponse:
     def raise_for_status(self):
         if self.status_code != 200:
             raise RequestError
+
+    def headers(self):
+        return self.headers
 
 
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
@@ -3558,6 +3605,87 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ("2022-02-15T00:00:00.000Z", "2022-02-15T00:00:00.000Z"),
         )
 
+    def test_plugins_search_ecmwfsearch_normalize_results(self):
+        """ECMWFSearch should add request params to properties and set
+        start/end datetime if year/month/day/time are present in normalize_results"""
+        params = {
+            "year": "2020",
+            "month": ["2"],
+            "day": ["20", "21"],
+            "time": ["01:00"],
+            "collection": "ERA5_SL",
+        }
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = params
+        raw_search_results.query_params = params
+        raw_search_results.collection_def_params = (
+            self.search_plugin.get_collection_def_params("ERA5_SL")
+        )
+        normalized_result = self.search_plugin.normalize_results(
+            raw_search_results, **params
+        )
+        product = normalized_result[0]
+        self.assertEqual(
+            product.properties["start_datetime"], "2020-02-20T01:00:00.000Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2020-02-21T01:00:00.000Z")
+        self.assertEqual(product.properties["ecmwf:year"], "2020")
+        self.assertEqual(product.properties["ecmwf:month"], ["2"])
+        self.assertEqual(product.properties["ecmwf:day"], ["20", "21"])
+        self.assertEqual(product.properties["ecmwf:time"], ["01:00"])
+        self.assertEqual(product.collection, "ERA5_SL")
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_search_ecmwfsearch_normalize_results_check_id(self, mock_requests):
+        """ECMWFSearch should add params from status request to properties"""
+        params = {"collection": "ERA5_SL", "id": "123"}
+        status_response = {
+            "processID": "era5-sl",
+            "type": "process",
+            "created": "2026-08-05T16:05:34.935629",
+            "started": "2026-08-05T16:05:51.203071",
+            "finished": "2026-08-05T16:05:56.188265",
+            "updated": "2026-08-05T16:05:56.188265",
+            "jobID": "123",
+            "status": "accepted",
+            "metadata": {
+                "request": {
+                    "ids": {
+                        "time": ["00:00"],
+                        "year": ["2020"],
+                        "month": ["01"],
+                        "day": ["01"],
+                        "variable": ["carbon_dioxide"],
+                    }
+                }
+            },
+        }
+        mock_requests.return_value = MockResponse(
+            status_response, 200, {"Content-Type": "application/json"}
+        )
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = params
+        raw_search_results.query_params = params
+        raw_search_results.collection_def_params = (
+            self.search_plugin.get_collection_def_params("ERA5_SL")
+        )
+        normalized_result = self.search_plugin.normalize_results(
+            raw_search_results, **params
+        )
+        product = normalized_result[0]
+        download_plugin = self.plugins_manager.get_download_plugin(product)
+        product.register_downloader(download_plugin, None)
+        self.assertEqual(
+            product.properties["start_datetime"], "2020-01-01T00:00:00.000Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2020-01-01T00:00:00.000Z")
+        self.assertEqual(product.properties["datetime"], "2020-01-01T00:00:00.000Z")
+        self.assertEqual(product.properties["ecmwf:year"], ["2020"])
+        self.assertEqual(product.properties["ecmwf:month"], ["01"])
+        self.assertEqual(product.properties["ecmwf:day"], ["01"])
+        self.assertEqual(product.properties["ecmwf:time"], ["00:00"])
+        self.assertEqual(product.collection, "ERA5_SL")
+
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""
         constraints = [
@@ -3864,6 +3992,69 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
     )
+    def test_plugins_search_ecmwfsearch_discover_queryables_datetime(
+        self, mock__fetch_data
+    ):
+        """ECMWFSearch.discover_queryables must convert `datetime` into `start` and `end`."""
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        queryables = self.search_plugin.list_queryables(
+            filters={
+                "datetime": "2001-06-01/2001-06-01",
+                "variable": "e",
+            },
+            collection="CAMS_EU_AIR_QUALITY_RE",
+            available_collections=["CAMS_EU_AIR_QUALITY_RE"],
+            collection_configs={
+                "CAMS_EU_AIR_QUALITY_RE": self.search_plugin.config.products[
+                    "CAMS_EU_AIR_QUALITY_RE"
+                ]
+            },
+        )
+
+        self.assertNotIn("datetime", queryables)
+        self.assertIn("start", queryables)
+        self.assertIn("end", queryables)
+
+        start_args = get_args(queryables["start"])
+        end_args = get_args(queryables["end"])
+        self.assertEqual(
+            "2001-06-01T00:00:00.000Z",
+            start_args[1].default,
+        )
+        self.assertEqual(
+            "2001-06-01T00:00:00.000Z",
+            end_args[1].default,
+        )
+
+        self.assertIn("ecmwf_variable", queryables)
+        self.assertEqual("e", get_args(queryables["ecmwf_variable"])[1].default)
+
+        mock__fetch_data.assert_has_calls(
+            [
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/constraints.json",
+                ),
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/form.json",
+                ),
+            ]
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
     def test_plugins_search_ecmwfsearch_discover_queryables_ko(self, mock__fetch_data):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
@@ -4031,6 +4222,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
         self.assertIsNotNone(queryables)
         self.assertIn("ecmwf_download_format", queryables)
+        self.assertEqual(
+            get_args(queryables["ecmwf_download_format"])[0],
+            str,
+            "Type of keyword ecmwf_download_format must be extracted from form element",
+        )
         self.assertTrue(
             get_args(queryables["ecmwf_download_format"])[1].is_required(),
             "Keyword ecmwf_download_format must be required when details are missing",
@@ -5394,7 +5590,8 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
 
     def test_plugins_search_cop_ghsl_get_available_values_from_constraints(self):
         """test if get_available_values_from_contraints returns the available values for
-        the given filters based on the given constraints and throws an error if no values are available"""
+        the given filters based on the given constraints and throws an error if no values are available
+        """
         # invalid parameter in filter
         with self.assertRaises(ValidationError):
             _get_available_values_from_constraints(

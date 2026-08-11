@@ -47,6 +47,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+from eodag.utils.dates import get_datetime
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -232,15 +233,38 @@ class Search(PluginTopic):
     def get_metadata_mapping(
         self, collection: Optional[str] = None
     ) -> dict[str, Union[str, list[Optional[str]]]]:
-        """Get the plugin metadata mapping configuration (collection specific if exists)
+        """Get plugin metadata mapping configuration (collection-specific if set).
 
-        :param collection: the desired collection
-        :returns: The collection specific metadata-mapping
+        Uses collection metadata mapping when available, otherwise falls back to
+        provider-level metadata mapping.
+        If provider collection  is available, updates ``"_collection"`` property value
+        in returned metadata mapping.
+
+        :param collection: Optional eodag collection identifier.
+        :returns: Collection-specific metadata mapping, or provider-level mapping.
         """
         if collection:
-            return self.config.products.get(collection, {}).get(
-                "metadata_mapping", self.config.metadata_mapping
+            metadata_mapping = deepcopy(
+                self.config.products.get(collection, {}).get(
+                    "metadata_mapping", self.config.metadata_mapping
+                )
             )
+
+            # update _collection value in metadata_mapping if provider collection is available
+            provider_collection = self.config.products.get(collection, {}).get(
+                "_collection"
+            )
+            if provider_collection and "_collection" in metadata_mapping:
+                if (
+                    isinstance(metadata_mapping["_collection"], list)
+                    and len(metadata_mapping["_collection"]) == 2
+                ):
+                    metadata_mapping["_collection"][1] = (None, provider_collection)
+                else:
+                    metadata_mapping["_collection"] = (None, provider_collection)
+
+            return metadata_mapping
+
         return self.config.metadata_mapping
 
     def get_sort_by_arg(self, kwargs: dict[str, Any]) -> Optional[SortByList]:
@@ -419,6 +443,13 @@ class Search(PluginTopic):
         )
         discover_metadata = getattr(self.config, "discover_metadata", {})
         auto_discovery = discover_metadata.get("auto_discovery", False)
+
+        if "datetime" in filters:
+            datetimes = get_datetime(filters)
+            if "start_datetime" not in filters:
+                filters["start_datetime"] = datetimes[0]
+            if "end_datetime" not in filters:
+                filters["end_datetime"] = datetimes[1]
 
         if collection or getattr(self.config, "discover_queryables", {}).get(
             "fetch_url", ""

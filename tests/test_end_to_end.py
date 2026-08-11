@@ -217,14 +217,6 @@ FEDEO_CEDA_SEARCH_ARGS = [
     None,
 ]
 
-EOCAT_SEARCH_ARGS = [
-    "eocat",
-    "GOCE_Thermosphere_Data",
-    "2010-03-17",
-    "2010-03-18",
-    None,
-]
-
 COP_GHSL_SEARCH_ARGS = [
     "cop_ghsl",
     "GHS_BUILT_S",
@@ -469,12 +461,6 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_eocat(self):
-        self.eodag.discover_collections(provider="eocat")
-        products = self.execute_search(*EOCAT_SEARCH_ARGS, check_product=False)
-        expected_filename = "{}.TGZ".format(products[0].properties["title"])
-        self.execute_download(products[0], expected_filename)
-
     def test_end_to_end_search_download_fedeo_ceda(self):
         self.eodag.discover_collections(provider="fedeo_ceda")
         products = self.execute_search(*FEDEO_CEDA_SEARCH_ARGS, check_product=False)
@@ -706,12 +692,6 @@ class TestEODagEndToEnd(EndToEndBase):
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertDictEqual(ext_collections_conf, {})
 
-    def test_end_to_end_discover_collections_eocat(self):
-        """discover_collections() must return an external collections configuration for eocat"""
-        provider = "eocat"
-        ext_collections_conf = self.eodag.discover_collections(provider=provider)
-        self.assertIsNotNone(ext_collections_conf[provider])
-
     def test_end_to_end_discover_collections_fedeo_ceda(self):
         """discover_collections() must return an external collections configuration for fedeo ceda"""
         provider = "fedeo_ceda"
@@ -760,9 +740,9 @@ class TestEODagEndToEndComplete(EndToEndBase):
     def test_end_to_end_complete_cop_dataspace(self):
         """Complete end-to-end test with cop_dataspace for download and download_all"""
 
-        self.eodag._providers.configs[
-            "cop_dataspace"
-        ].download.output_dir = self.tmp_download_path
+        self.eodag._providers.configs["cop_dataspace"].download.output_dir = (
+            self.tmp_download_path
+        )
 
         # Search for products that are online and as small as possible (smallest area first)
         today = dt.date.today()
@@ -961,12 +941,12 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             self.skipTest("user_conf.yml file with credentials not found.")
         # But we set the access key id and the secret to wrong values
         try:
-            os.environ[
-                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
-            ] = "badaccessid"
-            os.environ[
-                "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
-            ] = "badsecret"
+            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"] = (
+                "badaccessid"
+            )
+            os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"] = (
+                "badsecret"
+            )
             os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_PROFILE"] = "badsecret"
 
             eodag = EODataAccessGateway(

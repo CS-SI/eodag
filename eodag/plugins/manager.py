@@ -493,7 +493,7 @@ class PluginManager:
         plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
             provider, plugin_conf
         )
-        self._built_plugins_cache[
-            (provider, topic_class.__name__, auth_match_md5)
-        ] = plugin
+        self._built_plugins_cache[(provider, topic_class.__name__, auth_match_md5)] = (
+            plugin
+        )
         return plugin

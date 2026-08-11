@@ -5,6 +5,12 @@ on:
   schedule:
     - cron: "0 6 * * *"
 
+env:
+  # collections discovery is public for dedl
+  EODAG__DEDL__SEARCH__NEED_AUTH: false
+  EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
+  EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
+
 jobs:
   fetch-collections:
     name: Fetch providers for new collections
@@ -28,8 +34,6 @@ jobs:
         uv pip install ".[all-providers]"
     - name: Fetch external collections data
       env:
-        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
-        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
         JSON_OUTPUT_FILE: "eodag/resources/ext_collections.json"
       run: |
         source .venv/bin/activate
@@ -177,8 +181,6 @@ jobs:
         cd /tmp && uv pip install "eodag[all-providers]~=3.0"
     - name: Fetch external product-types data
       env:
-        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
-        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
         JSON_OUTPUT_FILE: "eodag/resources/ext_product_types.json"
       run: |
         source .venv/bin/activate

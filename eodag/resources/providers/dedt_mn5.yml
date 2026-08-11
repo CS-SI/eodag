@@ -31,28 +31,6 @@ dedt_mn5:
       qs: $.qs
       eodag:order_link: 'https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
-    DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
-      dataset: climate-dt
-      class: d1
-      generation: "1"
-      expver: "0001"
-      stream: clte
-      type: fc
-      activity: HighResMIP
-      experiment: cont
-      realization: "1"
-      model: IFS-FESOM
-    DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
-      class: d1
-      dataset: climate-dt
-      generation: "1"
-      expver: "0001"
-      stream: clte
-      type: fc
-      activity: ScenarioMIP
-      experiment: SSP3-7.0
-      realization: "1"
-      model: IFS-FESOM
     DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
       discover_queryables:
         form_url: "https://s3.central.data.destination-earth.eu/swift/v1/constraints/dedt_mn5/form_climate-dt-phase2.json"
@@ -292,7 +270,7 @@ dedt_mn5:
     order_method: POST
     order_on_response:
       metadata_mapping:
-        eodag:order_id: '{$.headers.Location#slice_str(-36,,1)}'
+        eodag:order_id: '{$.headers.Location#replace_str(r".*\W(\w+)$",r"\1")}'
         _previous_order_id: '{$.json.eodag:order_id#replace_str("Not Available","")}'
         eodag:combined_order_id: '{eodag:order_id#replace_str("Not Available","")}{_previous_order_id}'
         eodag:status_link: "https://polytope.mn5.apps.dte.destination-earth.eu/api/v1/requests/{eodag:combined_order_id#replace_str(r'^$','Not Available')}"
@@ -311,7 +289,7 @@ dedt_mn5:
       on_success:
         result_type: json
         metadata_mapping:
-          eodag:download_link: $.headers.Location
+          eodag:download_link: $.json.location
     no_auth_download: True
   auth:
     type: OIDCAuthorizationCodeFlowAuth

@@ -292,6 +292,50 @@ def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[...
     return decorator
 
 
+def _deprecated_class(
+    reason: str = "", version: Optional[str] = None
+) -> Callable[[type[Any]], type[Any]]:
+    """Decorator to deprecate classes while preserving class identity.
+
+    Unlike :func:`_deprecated`, this decorator keeps the class object intact and
+    emits deprecation warnings when class construction helpers are used.
+    """
+
+    def decorator(cls: type[Any]) -> type[Any]:
+        cname = cls.__name__
+        reason_ = f"({reason})" if reason else ""
+        version_ = f" -- Deprecated since v{version}" if version else ""
+        warning_message = f"Call to deprecated eodag class {cname} {reason_}{version_}"
+
+        def _wrap_with_warning(callable: Callable[..., Any]) -> Callable[..., Any]:
+            @functools.wraps(callable)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                warnings.warn(
+                    warning_message,
+                    category=DeprecationWarning,
+                    stacklevel=2,
+                )
+                return callable(*args, **kwargs)
+
+            return wrapper
+
+        original_init = cls.__init__
+        cls.__init__ = _wrap_with_warning(original_init)
+
+        # Warn on common Pydantic class constructors used without instantiation.
+        for method_name in ("model_validate", "model_validate_json", "model_construct"):
+            method = cls.__dict__.get(method_name)
+            if isinstance(method, classmethod):
+                original_method = method.__func__
+                setattr(
+                    cls, method_name, classmethod(_wrap_with_warning(original_method))
+                )
+
+        return cls
+
+    return decorator
+
+
 def slugify(value: Any, allow_unicode: bool = False) -> str:
     """Copied from Django Source code, only modifying last line (no need for safe
     strings).
@@ -1330,7 +1374,7 @@ def get_geometry_from_ecmwf_feature(geom: dict[str, Any]) -> Optional[BaseGeomet
 
 
 def get_geometry_from_ecmwf_area(
-    area: Union[str, list[float]]
+    area: Union[str, list[float]],
 ) -> Optional[BaseGeometry]:
     """
     Creates a ``shapely.geometry`` from bounding box in area format.
@@ -1842,6 +1886,7 @@ __all__ = [
     "MockResponse",
     "Unpack",
     "_deprecated",
+    "_deprecated_class",
     "slugify",
     "sanitize",
     "strip_accents",

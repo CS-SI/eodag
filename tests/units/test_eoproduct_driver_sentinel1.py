@@ -36,7 +36,6 @@ class TestEOProductDriverSentinel1Driver(EODagTestCase):
         )
 
     def test_driver_s1_init(self):
-
         """The appropriate driver must have been set"""
         self.assertIsInstance(self.product.driver, Sentinel1Driver)
 

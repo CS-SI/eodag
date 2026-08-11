@@ -264,7 +264,7 @@ class HTTPDownload(Download):
         json_response = response.json()
 
         properties_update = properties_from_json(
-            {"json": json_response, "headers": {**response.headers}},
+            {"json": json_response, "headers": response.headers},
             on_response_mm_jsonpath,
         )
         product.properties.update(
@@ -442,7 +442,7 @@ class HTTPDownload(Download):
             )
             logger.debug("Parsing order status response")
             status_dict = properties_from_json(
-                {"json": response.json(), "headers": {**response.headers}},
+                {"json": response.json(), "headers": response.headers},
                 status_mm_jsonpath,
             )
 
@@ -557,9 +557,12 @@ class HTTPDownload(Download):
             else:
                 json_response = (
                     response.json()
-                    if "application/json" in response.headers.get("Content-Type", "")
-                    or "application/geo+json"
-                    in response.headers.get("Content-Type", "")
+                    if status_response_content_needed
+                    and (
+                        "application/json" in response.headers.get("Content-Type", "")
+                        or "application/geo+json"
+                        in response.headers.get("Content-Type", "")
+                    )
                     else {}
                 )
                 if result_entry:
@@ -575,7 +578,7 @@ class HTTPDownload(Download):
                         "Parsing on-success metadata-mapping using order status response"
                     )
                     properties_update = properties_from_json(
-                        {"json": json_response, "headers": {**response.headers}},
+                        {"json": json_response, "headers": response.headers},
                         on_success_mm_querypath,
                     )
                     # only keep properties to update (remove product.properties added for parsing)
@@ -1208,7 +1211,8 @@ class HTTPDownload(Download):
                     exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
                 ) from exc
             except RequestException as e:
-                self._handle_asset_exception(e, asset)
+                is_single_asset = len(assets_values) == 1
+                self._handle_asset_exception(e, asset, is_single_asset)
 
         assets_stream_list = []
 
@@ -1370,11 +1374,20 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(self, e: RequestException, asset: Asset) -> None:
+    def _handle_asset_exception(
+        self, e: RequestException, asset: Asset, is_single_asset: bool
+    ) -> None:
         # check if error is identified as auth_error or quota_exceeded in provider conf
         self._check_auth_exception(e)
         QuotaExceededError.raise_if_quota_exceeded(e, self.provider)
         logger.error("Unexpected error at download of asset %s: %s", asset["href"], e)
+        if (
+            e
+            and e.response is not None
+            and e.response.status_code == 404
+            and is_single_asset
+        ):
+            raise NotAvailableError("Asset {asset['href'] not found.}")
         raise DownloadError(e)
 
     def _get_asset_sizes(

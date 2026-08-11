@@ -19,6 +19,7 @@
 import datetime as dt
 import pickle
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import boto3
@@ -331,12 +332,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
@@ -429,12 +430,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
         # token request should be sent
         mock_requests_post.assert_called_once_with(
@@ -453,7 +454,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         mock_requests_post.reset_mock()
         # second call should use existing token
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
         mock_requests_post.assert_not_called()
 
         # reset expiration -> token should be fetched again
@@ -467,10 +468,12 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         }
         auth = auth_plugin.authenticate()
 
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_a_refreshed_token"
+        self.assertEqual(
+            req.headers["Authorization"], "Bearer this_is_a_refreshed_token"
+        )
 
         mock_requests_post.assert_called_once_with(
             mock.ANY,
@@ -1680,18 +1683,18 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if the full signed url and the subscription key are integrated to the request
         url = "url"
         req = mock.Mock(headers={}, url=url)
         auth(req)
-        assert req.url == "this_is_test_full_signed_url"
-        assert req.headers["Ocp-Apim-Subscription-Key"] == "foo"
+        self.assertEqual(req.url, "this_is_test_full_signed_url")
+        self.assertEqual(req.headers["Ocp-Apim-Subscription-Key"], "foo")
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        assert args[0] == auth_plugin.config.auth_uri.format(url=url)
+        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
         auth_plugin_headers = {"Ocp-Apim-Subscription-Key": "foo"}
         self.assertDictEqual(kwargs["headers"], dict(auth_plugin_headers, **USER_AGENT))
 
@@ -1704,7 +1707,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
         """
         auth_plugin = self.get_auth_plugin("foo_provider")
 
-        auth_plugin.config.credentials = {}
+        auth_plugin.config.credentials = {"apikey": None}
 
         # mock full signed url get request response
         mock_requests_get.return_value = mock.Mock()
@@ -1715,19 +1718,19 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         # check if only the full signed url is integrated to the request
         url = "url"
         req = mock.Mock(headers={}, url=url)
         auth(req)
-        assert req.url == "this_is_test_full_signed_url"
+        self.assertEqual(req.url, "this_is_test_full_signed_url")
 
         # check SAS get request call arguments
         args, kwargs = mock_requests_get.call_args
-        assert args[0] == auth_plugin.config.auth_uri.format(url=url)
+        self.assertEqual(args[0], auth_plugin.config.auth_uri.format(url=url))
         # check if headers only has the user agent as a request call argument
-        assert kwargs["headers"] == USER_AGENT
+        self.assertEqual(kwargs["headers"], USER_AGENT)
 
     @mock.patch("eodag.plugins.authentication.sas_auth.requests.get", autospec=True)
     def test_plugins_auth_sasauth_request_error(self, mock_requests_get):
@@ -1741,7 +1744,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
 
         req = mock.Mock(headers={}, url="url")
         with self.assertRaises(AuthenticationError):
@@ -1873,7 +1876,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "obtained-token")
             self.assertEqual(auth.where, "qs")
@@ -1884,7 +1887,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         # check that stored token is used if available
         auth = auth_plugin.authenticate()
         # check if returned auth object is an instance of requests.AuthBase
-        assert isinstance(auth, AuthBase)
+        self.assertIsInstance(auth, AuthBase)
         self.assertEqual(auth.key, "totoken")
         self.assertEqual(auth.token, "obtained-token")
         self.assertEqual(auth.where, "qs")
@@ -1912,7 +1915,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
 
             # check if query string is integrated to the request
             req = Request("GET", "https://httpbin.org/get").prepare()
@@ -1953,7 +1956,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
 
             # check if token header is integrated to the request
             req = Request("GET", "https://httpbin.org/get").prepare()
@@ -2005,7 +2008,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "obtained-token")
             self.assertEqual(auth.where, "qs")
@@ -2038,7 +2041,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
             # check if returned auth object is an instance of requests.AuthBase
             auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
+            self.assertIsInstance(auth, AuthBase)
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "new-token")
             self.assertEqual(auth.where, "qs")
@@ -2186,12 +2189,18 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "jwks_uri": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/certs",
                 "id_token_signing_alg_values_supported": ["RS256", "HS512"],
             }
-            mock_request.return_value.json.side_effect = [oidc_config, oidc_config]
+            mock_request.return_value.json.return_value = oidc_config
             auth_plugin = super(
                 TestAuthPluginOIDCAuthorizationCodeFlowAuth, self
             ).get_auth_plugin(provider)
-            # reset token info
-            auth_plugin.token_info = {}
+            auth_plugin.access_token = ""
+            auth_plugin.refresh_token = ""
+            auth_plugin.access_token_expiration = datetime.min.replace(
+                tzinfo=timezone.utc
+            )
+            auth_plugin.refresh_token_expiration = datetime.min.replace(
+                tzinfo=timezone.utc
+            )
             return auth_plugin
 
     def test_plugins_auth_codeflowauth_validate_credentials(self):
@@ -2202,7 +2211,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         with self.assertRaises(MisconfiguredError) as context:
             auth_plugin.validate_config_credentials()
         self.assertTrue(
-            '"token_provision" must be one of "qs" or "header"'
+            '"token_provision" must be one of "qs", "header", or "basic"'
             in str(context.exception)
         )
         # `token_provision=="qs"` but `token_qs_key` is missing
@@ -2437,6 +2446,40 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertEqual(auth.token, json_response["access_token"])
         self.assertEqual(auth.where, "qs")
         self.assertEqual(auth.key, auth_plugin.config.token_qs_key)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._request_new_token",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_authenticate_basic_ok(
+        self,
+        mock_request_new_token,
+        mock_decode,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate must return a basic auth object with the refresh token."""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.token_provision = "basic"
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "7200",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_request_new_token.return_value = json_response
+        mock_decode.return_value = {
+            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+        }
+
+        auth = auth_plugin.authenticate()
+
+        self.assertIsInstance(auth, CodeAuthorizedAuth)
+        self.assertEqual(auth.token, json_response["access_token"])
+        self.assertEqual(auth.where, "basic")
+        self.assertEqual(auth.refresh_token, json_response["refresh_token"])
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",

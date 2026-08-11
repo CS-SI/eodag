@@ -159,9 +159,9 @@ class StreamResponse:
         self._filename = value
         if value:
             outputs_filename = os.path.basename(value)
-            self.headers[
-                "Content-Disposition"
-            ] = f'attachment; filename="{outputs_filename}"'
+            self.headers["Content-Disposition"] = (
+                f'attachment; filename="{outputs_filename}"'
+            )
         elif "Content-Disposition" in self.headers:
             del self.headers["Content-Disposition"]
 

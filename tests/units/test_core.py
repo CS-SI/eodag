@@ -153,42 +153,44 @@ class TestCore(TestCoreBase):
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
-        "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_NEMO_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R2": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R3": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R4": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R5": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R2": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R3": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R4": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R5": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R2": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R3": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R4": ["dedt_mn5"],
-        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R5": ["dedt_mn5"],
-        "DT_CLIMATE_G1_CMIP6_HIST_ICON_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2": ["dedt_lumi"],
-        "DT_CLIMATE_G2_BASELINE_CONT_ICON_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G2_BASELINE_CONT_IFS_FESOM_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G2_BASELINE_HIST_ICON_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_ICON_R1": ["dedt_lumi"],
-        "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_FESOM_R1": ["dedt_lumi"],
+        "DT_CLIMATE_ADAPTATION_IFS_NEMO": ["dedl"],
+        "DT_CLIMATE_ADAPTATION_ICON": ["dedl"],
+        "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1": ["dedl", "dedt_leonardo"],
+        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1": ["dedl", "dedt_leonardo"],
+        "DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_NEMO_R1": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R1": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R2": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R3": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R4": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R5": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R1": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R2": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R3": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R4": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R5": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R2": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R3": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R4": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R5": ["dedl", "dedt_mn5"],
+        "DT_CLIMATE_G1_CMIP6_HIST_ICON_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G2_BASELINE_CONT_ICON_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G2_BASELINE_CONT_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G2_BASELINE_HIST_ICON_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_ICON_R1": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_FESOM_R1": ["dedl", "dedt_lumi"],
         "EEA_HRL_TCF": ["wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
@@ -917,13 +919,13 @@ class TestCore(TestCoreBase):
         "creodias",
         "creodias_s3",
         "dedl",
+        "dedt_leonardo",
         "dedt_lumi",
         "dedt_mn5",
         "dlr_eoc_geoservice",
         "earth_search",
         "earth_search_gcs",
         "ecmwf",
-        "eocat",
         "eumetsat_ds",
         "fedeo_ceda",
         "geodes",
@@ -1204,15 +1206,13 @@ class TestCore(TestCoreBase):
         self.assertNotIn("bar", self.dag.collections_config)
 
         # update existing provider conf and check that update_collections_list() is launched for it
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             ecmwf:
                 api:
                     discover_collections:
                         fetch_url: 'http://new-endpoint'
                     need_auth: False
-            """
-        )
+            """)
 
         self.dag.update_collections_list(ext_collections_conf)
 
@@ -1372,15 +1372,13 @@ class TestCore(TestCoreBase):
         self, mock_plugin_discover_collections
     ):
         """Core api must fetch providers with api plugin for collections"""
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             ecmwf:
                 api:
                     discover_collections:
                         fetch_url: 'http://new-endpoint'
                     need_auth: False
-            """
-        )
+            """)
         ext_collections_conf = self.dag.discover_collections(provider="ecmwf")
         self.assertEqual(
             ext_collections_conf["ecmwf"]["providers_config"]["foo"]["_collection"],
@@ -1451,14 +1449,12 @@ class TestCore(TestCoreBase):
 
         # update existing provider conf and check that discover_collections() is launched for it
         self.assertEqual(mock_discover_collections.call_count, 0)
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             earth_search:
                 search:
                     discover_collections:
                         fetch_url: 'http://new-endpoint'
-            """
-        )
+            """)
         self.dag.fetch_collections_list()
         mock_discover_collections.assert_called_once_with(
             self.dag, provider="earth_search"
@@ -1466,8 +1462,7 @@ class TestCore(TestCoreBase):
 
         # add new provider conf and check that discover_collections() is launched for it
         self.assertEqual(mock_discover_collections.call_count, 1)
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             foo_provider:
                 search:
                     type: StacSearch
@@ -1475,8 +1470,7 @@ class TestCore(TestCoreBase):
                 products:
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
-            """
-        )
+            """)
         self.dag.fetch_collections_list()
         mock_discover_collections.assert_called_with(self.dag, provider="foo_provider")
         # discover_collections() should have been called 2 more times
@@ -1564,8 +1558,7 @@ class TestCore(TestCoreBase):
         mock_discover_collections.assert_not_called()
 
         # only user-defined providers must be fetched
-        self.dag.update_providers_config(
-            """
+        self.dag.update_providers_config("""
             earth_search:
                 search:
                     discover_collections:
@@ -1577,8 +1570,7 @@ class TestCore(TestCoreBase):
                 products:
                     GENERIC_COLLECTION:
                         _collection: '{collection}'
-            """
-        )
+            """)
         self.dag.fetch_collections_list()
         self.assertEqual(mock_discover_collections.call_count, 2)
 
@@ -2283,6 +2275,7 @@ class TestCore(TestCoreBase):
                 ],
             },
             "dedt_lumi": None,
+            "dedt_leonardo": None,
             "dedt_mn5": None,
             "dlr_eoc_geoservice": {
                 "sortables": [
@@ -2319,7 +2312,6 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
             },
             "ecmwf": None,
-            "eocat": {"max_sort_params": None, "sortables": []},
             "eumetsat_ds": {
                 "sortables": [
                     "start_datetime",
@@ -2388,7 +2380,10 @@ class TestCore(TestCoreBase):
             },
             "usgs": None,
             "usgs_satapi_aws": {"max_sort_params": None, "sortables": []},
-            "wekeo_cmems": None,
+            "wekeo_cmems": {
+                "sortables": [],
+                "max_sort_params": None,
+            },
             "wekeo_ecmwf": None,
             "wekeo_main": {
                 "sortables": [
@@ -3311,9 +3306,9 @@ class TestCoreSearch(TestCoreBase):
         type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
             return_value=mock_config
         )
-        type(
-            mock_get_search_plugins.return_value[0]
-        ).next_page_query_obj = mock.PropertyMock(return_value={})
+        type(mock_get_search_plugins.return_value[0]).next_page_query_obj = (
+            mock.PropertyMock(return_value={})
+        )
         # mocked search result id
         type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
@@ -4701,14 +4696,12 @@ class TestCoreProviderGroup(TestCoreBase):
                 provider_search_config_key = (
                     "search" if hasattr(provider.config, "search") else "api"
                 )
-                self.dag.update_providers_config(
-                    f"""
+                self.dag.update_providers_config(f"""
                     {provider}:
                         {provider_search_config_key}:
                             discover_collections:
                                 fetch_url: 'http://new-{provider}-endpoint'
-                            """
-                )
+                            """)
 
         self.dag.fetch_collections_list(provider=self.group_name)
 

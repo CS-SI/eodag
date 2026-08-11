@@ -6,7 +6,7 @@ wekeo_cmems:
   description: WEkEO - Copernicus Marine Service
   url: https://www.wekeo.eu/
   search:
-    type: PostJsonSearch
+    type: WekeoSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
     need_auth: true
     timeout: 60
@@ -17,14 +17,14 @@ wekeo_cmems:
       next_page_query_obj: '{{"itemsPerPage":{limit},"startIndex":{next_page_token}}}'
       next_page_token_key: skip
     discover_collections:
-      fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
+      fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO*
       single_collection_fetch_qs: q={_collection}
       single_collection_fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/{_collection}
       result_type: json
       results_entry: 'features'
       generic_collection_id: '$.dataset_id'
       generic_collection_parsable_properties:
-        collection: '$.dataset_id'
+        _collection: '$.dataset_id'
       generic_collection_parsable_metadata:
         description: '$.metadata.description'
         license: '$.terms'
@@ -40,13 +40,13 @@ wekeo_cmems:
         keywords: '$.metadata._source.keywords'
     discover_queryables:
       fetch_url: null
-      collection_fetch_url: null
-      constraints_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
-      constraints_entry: constraints
+      collection_fetch_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{provider_collection}'
+      result_type: json
+      results_entry: '$.properties[*]'
     metadata_mapping:
-      product:type:
-        - '{{"dataset_id": "{product:type}"}}'
-        - '$.null'
+      _collection:
+        - '{{"dataset_id": "{_collection}"}}'
+        - '{_collection}'
       id:
         - '{{"min_date": {id#dates_from_cmems_id}["min_date"], "max_date": {id#dates_from_cmems_id}["max_date"]}}'
         - '$.id'
@@ -54,18 +54,18 @@ wekeo_cmems:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
       start_datetime:
-        - '{{"min_date": "{start_datetime#to_iso_utc_datetime}"}}'
+        - '{{"startdate": "{start_datetime#to_iso_utc_datetime}"}}'
         - '$.properties.startdate'
       end_datetime:
-        - '{{"max_date": "{end_datetime#to_iso_utc_datetime}"}}'
+        - '{{"enddate": "{end_datetime#to_iso_utc_datetime}"}}'
         - '$.properties.enddate'
-      variable:
-        - '{{"variable": "{variable}"}}'
+      variables:
+        - '{{"variables": "{variables}"}}'
         - '{$.properties.location#get_variables_from_path}'
       eodag:download_link: '$.properties.location'
       title: '$.id'
       order:status: 'orderable'
-      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
+      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "cacheable": "true", "dataset_id": "{_collection}"}}'
   products:
     GENERIC_COLLECTION:
       _collection: '{collection}'
@@ -77,8 +77,11 @@ wekeo_cmems:
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
+    token_expiration_key: expires_in
   download:
     type: HTTPDownload
+    base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
+    flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
@@ -86,6 +89,7 @@ wekeo_cmems:
       metadata_mapping:
         eodag:order_id: '$.json.download_id'
         eodag:status_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={eodag:order_id}'
+        eodag:download_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{eodag:order_id}'
     order_status:
       request:
         method: GET

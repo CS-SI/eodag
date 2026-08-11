@@ -151,12 +151,10 @@ class TestMetadataFormatter(unittest.TestCase):
 
     def test_convert_to_bounds_lists(self):
         to_format = "{fieldname#to_bounds_lists}"
-        geom = get_geometry_from_various(
-            geometry="""MULTIPOLYGON (
+        geom = get_geometry_from_various(geometry="""MULTIPOLYGON (
                 ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)),
                 ((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))
-            )"""
-        )
+            )""")
         self.assertEqual(
             format_metadata(to_format, fieldname=geom),
             "[[2.23, 43.42, 3.68, 43.76], [1.23, 43.42, 1.68, 43.76]]",
@@ -175,12 +173,10 @@ class TestMetadataFormatter(unittest.TestCase):
     def test_convert_to_bounds(self):
         to_format = "{fieldname#to_bounds}"
         # multi-geometry
-        geom = get_geometry_from_various(
-            geometry="""MULTIPOLYGON (
+        geom = get_geometry_from_various(geometry="""MULTIPOLYGON (
                 ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)),
                 ((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))
-            )"""
-        )
+            )""")
         self.assertEqual(
             format_metadata(to_format, fieldname=geom),
             "[1.23, 43.42, 3.68, 43.76]",

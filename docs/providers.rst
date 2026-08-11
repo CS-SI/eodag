@@ -933,8 +933,9 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
@@ -965,8 +966,42 @@ No credentials are needed
   :color: muted
   :class-container: dropdown-fade-in slim-dropdown
 
-  Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
-  credentials.
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
+
+----
+
+**DEDT Leonardo**
+--------------------
+
+.. grid:: 2
+   :gutter: 2
+   :class-container: sd-d-flex sd-align-items-center
+
+   .. grid-item::
+      :columns: 10
+
+      Destination Earth Digital Twin output on Leonardo HPC.
+
+   .. grid-item::
+      :columns: 2
+      :class: sd-text-right
+
+      .. button-link:: https://polytope.leonardo.apps.dte.destination-earth.eu/openapi
+        :color: primary
+        :outline:
+        :tooltip: DEDT Leonardo OpenAPI
+
+        :fas:`external-link-alt`
+
+.. dropdown:: Registration info
+  :color: muted
+  :class-container: dropdown-fade-in slim-dropdown
+
+  Create an account on `DestinE <https://platform.destine.eu/>`__ and create a
+  `support ticket <https://platform.destine.eu/contact>`__ to request upgraded access for accessing the Digital Twin
+  data. Then use your ``username``, ``password`` in eodag credentials.
 
 ----
 
@@ -1040,43 +1075,6 @@ No credentials are needed
         :fas:`external-link-alt`
 
 No credentials are needed
-
-**eocat**
-----------
-
-.. grid:: 2
-   :gutter: 2
-   :class-container: sd-d-flex sd-align-items-center
-
-   .. grid-item::
-      :columns: 10
-
-      EOCAT (ESA Catalog) providing access to ESA Earth observation missions data, including Heritage and Third Party
-      missions.
-
-   .. grid-item::
-      :columns: 2
-      :class: sd-text-right
-
-      .. button-link:: https://eocat.esa.int/eo-catalogue?httpAccept=text/html
-        :color: primary
-        :outline:
-        :tooltip: EOCAT / ESA Catalog website
-
-        :fas:`external-link-alt`
-
-.. dropdown:: Registration info
-  :color: muted
-  :class-container: dropdown-fade-in slim-dropdown
-
-  Create an account `here <https://eoiam-idp.eo.esa.int>`__.
-
-  Then use *email* as ``username`` and ``password`` in eodag credentials.
-
-  .. note:: **Additional consent**
-
-     Some collections will require additional consent for download. If so, a form URL will be will be provided in the
-     authentication error message. You will need to open the URL, fill in the form and try again.
 
 ----
 
@@ -1179,8 +1177,8 @@ No credentials are needed
   Most datasets are anonymously accessible, but a subscription key may be needed to increase `rate limits and access
   private datasets <https://planetarycomputer.microsoft.com/docs/concepts/sas/#rate-limits-and-access-restrictions>`_.
 
-  Create an account `here <https://planetarycomputer.microsoft.com/account/request>`__, then view your keys by signing in
-  with your Microsoft account `here <https://planetarycomputer.developer.azure-api.net/>`__.
+  Create an Azure account and subscription `here <https://azure.microsoft.com/pricing/purchase-options/azure-account>`__, then
+  retrieve your subscription keys from Azure API Management.
 
 ----
 

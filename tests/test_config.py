@@ -71,17 +71,13 @@ class TestProviderConfig(unittest.TestCase):
         unslugified_provider_name = "some $provider-name. Really ugly"
         slugified_provider_name = "some_provider_name_really_ugly"
 
-        stream = StringIO(
-            """!provider
+        stream = StringIO("""!provider
             name: {}
             api: !plugin
                 type: MyPluginClass
             products:
                 EODAG_COLLECTION: provider_collection
-            """.format(
-                unslugified_provider_name
-            )
-        )
+            """.format(unslugified_provider_name))
         provider_config = load_provider_config_from_string(stream.getvalue())
         self.assertEqual(provider_config.name, slugified_provider_name)
 
@@ -94,54 +90,44 @@ class TestProviderConfig(unittest.TestCase):
         )
 
         # Not defining a class for a plugin
-        invalid_stream = StringIO(
-            """!provider
+        invalid_stream = StringIO("""!provider
                 name: my_provider
                 search: !plugin
                     param: value
-            """
-        )
+            """)
         self.assertRaises(
             ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
         )
 
         # Not giving a name to the provider
-        invalid_stream = StringIO(
-            """!provider
+        invalid_stream = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
-            """
-        )
+            """)
         self.assertRaises(
             ValidationError, load_provider_config_from_string, invalid_stream.getvalue()
         )
 
         # Specifying an api plugin and a search or download or auth plugin at the same
         # type
-        invalid_stream1 = StringIO(
-            """!provider
+        invalid_stream1 = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
                 search: !plugin
                     type: MyPluginClass2
-            """
-        )
-        invalid_stream2 = StringIO(
-            """!provider
+            """)
+        invalid_stream2 = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
                 download: !plugin
                     type: MyPluginClass3
-            """
-        )
-        invalid_stream3 = StringIO(
-            """!provider
+            """)
+        invalid_stream3 = StringIO("""!provider
                 api: !plugin
                     type: MyPluginClass
                 auth: !plugin
                     type: MyPluginClass4
-            """
-        )
+            """)
         self.assertRaises(
             ValidationError,
             load_provider_config_from_string,
@@ -160,16 +146,14 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_update(self):
         """A provider config must be update-able with a dict"""
-        valid_stream = StringIO(
-            """!provider
+        valid_stream = StringIO("""!provider
                 name: provider
                 provider_param: val
                 api: !plugin
                     type: MyPluginClass
                     plugin_param1: value1
                     pluginParam2: value2
-        """
-        )
+        """)
         provider_config = load_provider_config_from_string(valid_stream.getvalue())
         overrides = {
             "provider_param": "new val",
@@ -183,8 +167,7 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_merge(self):
         """Merge 2 providers configs"""
-        config_stream1 = StringIO(
-            """!provider
+        config_stream1 = StringIO("""!provider
                 name: provider1
                 provider_param: val
                 provider_param2: val2
@@ -192,18 +175,15 @@ class TestProviderConfig(unittest.TestCase):
                     type: MyPluginClass
                     plugin_param1: value1
                     pluginParam2: value2
-        """
-        )
-        config_stream2 = StringIO(
-            """!provider
+        """)
+        config_stream2 = StringIO("""!provider
                 name: provider1
                 provider_param: val1
                 provider_param3: val3
                 api: !plugin
                     type: MyPluginClass
                     pluginParam2: value3
-        """
-        )
+        """)
         provider1_config1 = load_provider_config_from_string(config_stream1.getvalue())
         provider1_config2 = load_provider_config_from_string(config_stream2.getvalue())
 
@@ -239,36 +219,30 @@ class TestPluginConfig(unittest.TestCase):
     def test_plugin_config_valid(self):
         """A plugin config must specify a valid plugin type"""
         # A stream configuring a plugin without specifying the "type" key
-        invalid_stream = StringIO(
-            """!plugin
+        invalid_stream = StringIO("""!plugin
                     param: value
-        """
-        )
+        """)
         self.assertRaises(
             ValidationError, load_plugin_config_from_string, invalid_stream.getvalue()
         )
 
-        valid_stream = StringIO(
-            """!plugin
+        valid_stream = StringIO("""!plugin
                     type: MySearchPlugin
                     param1: value
-        """
-        )
+        """)
         self.assertIsInstance(
             load_plugin_config_from_string(valid_stream.getvalue()), PluginConfig
         )
 
     def test_plugin_config_update(self):
         """A plugin config must be update-able by a dict"""
-        valid_stream = StringIO(
-            """!plugin
+        valid_stream = StringIO("""!plugin
                     type: MyPluginClass
                     plugin_param1: value1
                     pluginParam2:
                         sub_param1: v1
                         subParam_2: v2
-        """
-        )
+        """)
         plugin_config = load_plugin_config_from_string(valid_stream.getvalue())
         overrides = {
             "type": "MyOtherPlugin",
@@ -325,9 +299,7 @@ class TestConfigFunctions(unittest.TestCase):
         """Default configuration must be overridden from a yaml conf str"""
 
         providers = ProvidersDict.from_configs(config.load_default_config())
-        providers.update_from_configs(
-            yaml.safe_load(
-                """
+        providers.update_from_configs(yaml.safe_load("""
                 my_new_provider:
                     priority: 4
                     search:
@@ -346,9 +318,7 @@ class TestConfigFunctions(unittest.TestCase):
                         credentials:
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
-                """
-            )
-        )
+                """))
 
         my_new_provider_conf = providers["my_new_provider"].config
         self.assertEqual(my_new_provider_conf.priority, 4)
@@ -476,9 +446,9 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__USGS__API__CREDENTIALS__PASSWORD"] = "pwd"
         os.environ["EODAG__AWS_EOS__SEARCH__PRODUCT_LOCATION_SCHEME"] = "file"
         os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "api-key"
-        os.environ[
-            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
-        ] = "access-key-id"
+        os.environ["EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"] = (
+            "access-key-id"
+        )
         os.environ[
             "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"

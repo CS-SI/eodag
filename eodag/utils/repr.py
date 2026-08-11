@@ -80,33 +80,19 @@ def dict_to_html_table(
     if depth is None or depth >= 0:
         return (
             f"{opening_bracket}<table style='margin: 0;'>"
-            + "".join(
-                [
-                    f"""<tr style='background-color: transparent;'>
+            + "".join([f"""<tr style='background-color: transparent;'>
                     <td style='padding: 5px 0 0 {indent}; text-align: left; color: grey; vertical-align:top;'>{k}:</td>
-                    <td style='padding: 5px 0 0 10px; text-align: left;'>{
-                        html_table(v, depth=depth)
-                    },</td>
+                    <td style='padding: 5px 0 0 10px; text-align: left;'>{html_table(v, depth=depth)},</td>
                 </tr>
-                """
-                    for k, v in input_dict.items()
-                    if v is not None
-                ]
-            )
+                """ for k, v in input_dict.items() if v is not None])
             + f"</table>{closing_bracket}"
         )
     else:
         return (
             f"{opening_bracket}"
-            + ", ".join(
-                [
-                    f"""<span style='text-align: left;'>
+            + ", ".join([f"""<span style='text-align: left;'>
                     '{k}': {html_table(v, depth=depth)}
-                </span>"""
-                    for k, v in input_dict.items()
-                    if v is not None
-                ]
-            )
+                </span>""" for k, v in input_dict.items() if v is not None])
             + f"{closing_bracket}"
         )
 
@@ -131,13 +117,8 @@ def list_to_html_table(
     return (
         "<span style='color: grey;'>[</span>"
         + separator.join(
-            [
-                f"""<span style='text-align: left;'>{
-                    html_table(v, depth=depth)
-                }</span>
-            """
-                for v in input_list
-            ]
+            [f"""<span style='text-align: left;'>{html_table(v, depth=depth)}</span>
+            """ for v in input_list]
         )
         + "<span style='color: grey;'>]</span>"
     )
