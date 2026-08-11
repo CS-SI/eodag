@@ -20,10 +20,13 @@ jobs:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
     - name: Install the latest version of uv with cache enabled
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@v9
       with:
         version: "latest"
         enable-cache: true
+        cache-dependency-glob: |
+          pyproject.toml
+          tox.ini
     - name: Run linters with tox
       run: uvx --python 3.9 --with tox-uv tox -e linters
 
@@ -41,10 +44,13 @@ jobs:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
     - name: Install the latest version of uv with cache enabled
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@v9
       with:
         version: "latest"
         enable-cache: true
+        cache-dependency-glob: |
+          pyproject.toml
+          tox.ini
     - name: Test with tox
       run: uvx --python ${{ matrix.python-version }} --with tox-uv --with tox-gh-actions tox
     - name: Upload Unit Test Results
@@ -191,10 +197,13 @@ jobs:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
     - name: Install the latest version of uv with cache enabled
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@v9
       with:
         version: "latest"
         enable-cache: true
+        cache-dependency-glob: |
+          pyproject.toml
+          tox.ini
     - name: Install pandoc
       run: |
         curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep -o "https.*amd64.deb" | wget -O pandoc.deb -qi -
@@ -212,9 +221,12 @@ jobs:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
     - name: Install the latest version of uv with cache enabled
-      uses: astral-sh/setup-uv@v3
+      uses: astral-sh/setup-uv@v9
       with:
         version: "latest"
         enable-cache: true
+        cache-dependency-glob: |
+          pyproject.toml
+          tox.ini
     - name: Testing with tox and sphinx (to have rst2html.py utility available)
       run: uvx --with tox-uv --with sphinx tox -e pypi
