@@ -26,7 +26,6 @@ jobs:
       with:
         version: "latest"
         enable-cache: true
-        cache-dependency-glob: ""
     - name: Install python-semantic-release in venv
       run: |
         uv venv

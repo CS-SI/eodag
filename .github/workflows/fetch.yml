@@ -26,7 +26,6 @@ jobs:
       with:
         version: "latest"
         enable-cache: true
-        cache-dependency-glob: ""
     - name: Install eodag in venv
       run: |
         uv venv
@@ -172,7 +171,6 @@ jobs:
       with:
         version: "latest"
         enable-cache: true
-        cache-dependency-glob: ""
     - name: Install eodag v3 in venv
       run: |
         uv venv

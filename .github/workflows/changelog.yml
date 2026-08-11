@@ -20,7 +20,6 @@ jobs:
       with:
         version: "latest"
         enable-cache: true
-        cache-dependency-glob: ""
     - name: Install python-semantic-release and packaging in venv
       run: |
         uv venv

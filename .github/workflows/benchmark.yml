@@ -23,7 +23,6 @@ jobs:
       with:
         version: "latest"
         enable-cache: true
-        cache-dependency-glob: ""
     - name: Run benchmark on develop and current ref, then compare
       shell: bash
       run: |

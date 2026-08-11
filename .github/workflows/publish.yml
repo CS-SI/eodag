@@ -23,7 +23,6 @@ jobs:
         with:
           version: "latest"
           enable-cache: true
-          cache-dependency-glob: ""
       - name: Check that the current version isn't already on PyPi
         run: |
           if [ "$(./utils/get_pypi_latest_version.sh)" != "$(git describe --tags)" ]
