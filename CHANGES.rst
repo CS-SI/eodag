@@ -6,6 +6,25 @@ Release history
 v4.6.0 (2026-08-11)
 ===================
 
+Features
+--------
+
+* **core**: Get ffspec storage options from EOProduct (`#2276`_, `ef76038`_)
+
+* **plugins**: Basic auth support for OIDC-protected assets and 404 error handling (`#2112`_,
+  `66581d4`_)
+
+* **plugins**: Expose provider collection in metadata mapping (`#2288`_, `ea79adc`_)
+
+* **providers**: Add dt climate collections to dedl provider (`#2280`_, `ee17213`_)
+
+* **providers**: Add provider dedt_leonardo and update other dedt providers (`#2277`_, `398ee73`_)
+
+Performance Improvements
+------------------------
+
+* **s3**: Reduce stream memory footprint and add backpressure limit (`#1822`_, `078e629`_)
+
 Bug Fixes
 ---------
 
@@ -33,25 +52,6 @@ Continuous Integration
 * Common env vars for all fetch collections jobs (`#2295`_, `d9f7f7b`_)
 
 * Update pre-commit hooks versions (`#2274`_, `9532f7e`_)
-
-Features
---------
-
-* **core**: Get ffspec storage options from EOProduct (`#2276`_, `ef76038`_)
-
-* **plugins**: Basic auth support for OIDC-protected assets and 404 error handling (`#2112`_,
-  `66581d4`_)
-
-* **plugins**: Expose provider collection in metadata mapping (`#2288`_, `ea79adc`_)
-
-* **providers**: Add dt climate collections to dedl provider (`#2280`_, `ee17213`_)
-
-* **providers**: Add provider dedt_leonardo and update other dedt providers (`#2277`_, `398ee73`_)
-
-Performance Improvements
-------------------------
-
-* **s3**: Reduce stream memory footprint and add backpressure limit (`#1822`_, `078e629`_)
 
 Refactoring
 -----------
