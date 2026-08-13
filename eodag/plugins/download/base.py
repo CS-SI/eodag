@@ -240,9 +240,7 @@ class Download(PluginTopic):
         _, statement_dir = self._prepare_directories(**kwargs)
         statement_file = self._get_statement_path(asset, statement_dir)
         logger.debug(
-            "Asset {} statements updated at {} with data".format(
-                asset.key, statement_file
-            )
+            "Asset {} statements recorded at {}".format(asset.key, statement_file)
         )
         with open(statement_file, "wb") as f:
             f.write(orjson.dumps(status))
@@ -299,6 +297,12 @@ class Download(PluginTopic):
         if not os.path.isdir(product_dir):
             os.makedirs(product_dir)
 
+        statement_local_path = str(statements.get("file:local_path", ""))
+        if statement_local_path and (
+            os.path.isfile(statement_local_path) or os.path.isdir(statement_local_path)
+        ):
+            return statements
+
         # Generate expected local path
         local_path = os.path.join(product_dir, sanitize(asset.key))
         if not os.path.isdir(local_path):
@@ -336,7 +340,6 @@ class Download(PluginTopic):
                             break
 
         # If an old cache exists and way to generate path changed, move cached file (file only)
-        statement_local_path: str = str(statements.get("file:local_path", ""))
         if (
             statement_local_path != ""
             and os.path.isfile(statement_local_path)
