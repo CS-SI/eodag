@@ -1246,7 +1246,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         executor: Optional[ThreadPoolExecutor] = None,
-        **kwargs: Unpack[DownloadConf],
+        **kwargs: Any,
     ) -> str:
         """Download product assets if they exist"""
         if progress_callback is None:
@@ -1265,7 +1265,16 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = product.assets.get_values(kwargs.get("asset") or "")
+        all_assets_values = product.assets.get_values(kwargs.get("asset") or "")
+
+        # only keep assets that need to be downloaded (not cached)
+        assets_values: list[Asset] = []
+        for asset in all_assets_values:
+            if statements := self.check_cache(asset, **kwargs):
+                # update asset with cached statements
+                asset.update(statements)
+            else:
+                assets_values.append(asset)
 
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
