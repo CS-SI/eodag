@@ -10,7 +10,8 @@ This section introduces the featured providers that are already integrated, so y
 easily start searching, accessing, and downloading products.
 
 Some providers are completely open, while others require an account to access their data.
-If credentials are needed, check the :doc:`registration guide <providers>` for details.
+Check provider `Registration info` in this page to see if credentials are expected and how to
+get them.
 
 .. admonition::  EODAG is not limited to the providers listed here
    :class: note
