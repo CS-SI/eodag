@@ -1269,8 +1269,9 @@ class HTTPDownload(Download):
 
         # only keep assets that need to be downloaded (not cached)
         assets_values: list[Asset] = []
+        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
         for asset in all_assets_values:
-            if statements := self.check_cache(asset, **kwargs):
+            if statements := self.check_cache(asset, **per_asset_kwargs):
                 # update asset with cached statements
                 asset.update(statements)
             else:
@@ -1279,6 +1280,7 @@ class HTTPDownload(Download):
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
         )
+        assets_downloads = list(zip(assets_values, assets_stream_list))
 
         # remove existing incomplete file
         if os.path.isfile(fs_dir_path):
@@ -1300,7 +1302,7 @@ class HTTPDownload(Download):
                 local_assets_count += 1
                 continue
 
-        def download_asset(asset_stream: StreamResponse) -> None:
+        def download_asset(asset: Asset, asset_stream: StreamResponse) -> None:
             asset_chunks = asset_stream.content
             asset_path = cast(str, asset_stream.arcname)
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
@@ -1329,6 +1331,16 @@ class HTTPDownload(Download):
                     "Asset already exists at '%s', skipping download", asset_abs_path
                 )
                 progress_callback(skipped_size)
+
+            if not asset["href"].startswith("file:"):
+                self.set_statements(
+                    asset,
+                    {
+                        **asset.as_dict(),
+                        "file:local_path": asset_abs_path,
+                    },
+                    **per_asset_kwargs,
+                )
             return
 
         # use parallelization if possible
@@ -1338,12 +1350,12 @@ class HTTPDownload(Download):
             executor._thread_name_prefix == "eodag-download-all"
             and executor._max_workers == 1
         ):
-            for asset_stream in assets_stream_list:
-                download_asset(asset_stream)
+            for asset, asset_stream in assets_downloads:
+                download_asset(asset, asset_stream)
         else:
             futures = (
-                executor.submit(download_asset, asset_stream)
-                for asset_stream in assets_stream_list
+                executor.submit(download_asset, asset, asset_stream)
+                for asset, asset_stream in assets_downloads
             )
             [f.result() for f in as_completed(futures)]
 
