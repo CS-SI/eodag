@@ -18,9 +18,29 @@
 from __future__ import annotations
 
 import logging.config
-from typing import Optional
+from typing import Any, Optional
 
 disable_tqdm = False
+
+
+class TqdmLoggingHandler(logging.StreamHandler):
+    """Logging handler writing through :func:`tqdm.write` to avoid breaking progress bars"""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Emit a record using ``tqdm.write()`` if progress bars are enabled
+
+        :param record: The log record to emit
+        """
+        if disable_tqdm:
+            super().emit(record)
+            return
+        try:
+            from tqdm.auto import tqdm
+
+            tqdm.write(self.format(record), file=self.stream, end=self.terminator)
+            self.flush()
+        except Exception:
+            self.handleError(record)
 
 
 def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
@@ -45,10 +65,10 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
 
     level = "DEBUG" if verbose == 3 else "INFO"
 
-    handlers = {
+    handlers: dict[str, dict[str, Any]] = {
         "console": {
             "level": level,
-            "class": "logging.StreamHandler",
+            "class": "eodag.utils.logging.TqdmLoggingHandler",
             "formatter": "standard",
         },
         "null": {"level": level, "class": "logging.NullHandler"},
