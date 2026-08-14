@@ -34,6 +34,7 @@ from requests.exceptions import RequestException
 from shapely.geometry import Point, Polygon
 
 from eodag.utils import get_geometry_from_ecmwf_area, get_geometry_from_ecmwf_feature
+from eodag.utils.logging import TqdmLoggingHandler
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -202,6 +203,56 @@ class TestUtils(unittest.TestCase):
             with ProgressCallback(total=2, file=tqdm_out, disable=True) as bar:
                 bar(1)
             self.assertEqual(tqdm_out.getvalue(), "")
+
+    @mock.patch("tqdm.auto.tqdm.write")
+    def test_tqdm_logging_handler_uses_tqdm_write(self, tqdm_write):
+        """Test logging through tqdm preserves the progress bar output."""
+        handler = TqdmLoggingHandler(stream=StringIO())
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        record = logging.LogRecord(
+            name="eodag",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=1,
+            msg="log message",
+            args=(),
+            exc_info=None,
+        )
+
+        handler.emit(record)
+
+        tqdm_write.assert_called_once_with(
+            "log message", file=handler.stream, end=handler.terminator
+        )
+
+    @mock.patch("tqdm.auto.tqdm.write")
+    def test_tqdm_logging_handler_falls_back_to_stream(self, tqdm_write):
+        """Test disabled progress bars use the regular stream handler."""
+        setup_logging(verbose=2, no_progress_bar=True)
+        output = StringIO()
+        handler = TqdmLoggingHandler(stream=output)
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        record = logging.LogRecord(
+            name="eodag",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=1,
+            msg="log message",
+            args=(),
+            exc_info=None,
+        )
+
+        handler.emit(record)
+
+        self.assertEqual(output.getvalue(), "log message\n")
+        tqdm_write.assert_not_called()
+
+    def test_setup_logging_installs_tqdm_handler(self):
+        """Test console logging uses the handler that cooperates with tqdm."""
+        setup_logging(verbose=2)
+
+        logger = logging.getLogger("eodag")
+        self.assertIsInstance(logger.handlers[0], TqdmLoggingHandler)
 
     def test_merge_mappings(self):
         """Test merge_mappings merges configuration mappings correctly."""
