@@ -1385,13 +1385,20 @@ class HTTPDownload(Download):
 
         # flatten directory structure
         if flatten_top_dirs:
-            flatten_top_directories(fs_dir_path)
-
-        if kwargs.get("asset") is None:
-            # save hash/record file
-            with open(record_filename, "w") as fh:
-                fh.write(product.remote_location)
-            logger.debug("Download recorded in %s", record_filename)
+            old_dir, new_dir = flatten_top_directories(fs_dir_path)
+            # update asset local paths in cache
+            for asset in assets_values:
+                new_asset_path = asset.get("file:local_path", "").replace(
+                    old_dir, new_dir, 1
+                )
+                self.set_statements(
+                    asset,
+                    {
+                        **asset.as_dict(),
+                        "file:local_path": new_asset_path,
+                    },
+                    **per_asset_kwargs,
+                )
 
         return fs_dir_path
 
