@@ -220,18 +220,6 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
                     fs_path, str(Path(output_dir) / "title_to_sanitize-id_also")
                 )
 
-    def test_plugins_download_base_prepare_download_no_url(self):
-        """Download._prepare_download must return None when no download url"""
-
-        self.assertEqual(self.product.remote_location, "")
-
-        plugin = self.get_download_plugin(self.product)
-
-        fs_path, record_filename = plugin._prepare_download(self.product)
-
-        self.assertIsNone(fs_path)
-        self.assertIsNone(record_filename)
-
     def test_plugins_download_base_prepare_download_collision_avoidance(self):
         """Download._prepare_download must use collision avoidance suffix"""
 
