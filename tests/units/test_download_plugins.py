@@ -28,6 +28,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from typing import Any
 from unittest import mock
 
+import orjson
 import responses
 from requests.structures import CaseInsensitiveDict
 
