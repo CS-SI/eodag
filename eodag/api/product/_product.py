@@ -755,7 +755,7 @@ class EOProduct:
     ) -> tuple[ProgressCallback, bool]:
         # determine position of the progress bar with a counter of executor passings
         # to avoid bar overwriting in case of parallel downloads
-        count = executor._counter() if executor is not None else 1  # type: ignore
+        count = executor._counter() if executor is not None else 0  # type: ignore
 
         # progress bar init
         if progress_callback is None:
