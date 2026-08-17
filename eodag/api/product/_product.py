@@ -611,17 +611,6 @@ class EOProduct:
 
         if fs_path is None:
             raise DownloadError("Missing file location returned by download process")
-        logger.debug(
-            "Product location updated from '%s' to '%s'",
-            self.remote_location,
-            self.location,
-        )
-        if self.remote_location != NOT_AVAILABLE:
-            logger.info(
-                "Remote location of the product is still available through its "
-                "'remote_location' property: %s",
-                self.remote_location,
-            )
 
         return fs_path
 

@@ -404,14 +404,6 @@ class Download(PluginTopic):
                 return fs_path, None
 
         url = product.remote_location
-        if not url:
-            logger.debug(
-                f"Unable to get download url for {product}, skipping download",
-            )
-            return None, None
-        logger.info(
-            f"Download url: {url}",
-        )
 
         output_dir = (
             kwargs.pop("output_dir", None)
