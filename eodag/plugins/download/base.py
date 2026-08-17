@@ -244,6 +244,8 @@ class Download(PluginTopic):
         )
         with open(statement_file, "wb") as f:
             f.write(orjson.dumps(status))
+        # update asset with current status
+        asset.update(status)
 
     @final
     def get_statements(
