@@ -354,7 +354,10 @@ class TestUtils(unittest.TestCase):
             open(os.path.join(nested_dir_root, "a", "b", "c2", "bar"), "a").close()
             open(os.path.join(nested_dir_root, "a", "b", "c2", "baz"), "a").close()
 
-            flatten_top_directories(nested_dir_root)
+            old_dir, new_dir = flatten_top_directories(nested_dir_root)
+
+            self.assertEqual(old_dir, os.path.join(nested_dir_root, "a", "b"))
+            self.assertEqual(new_dir, nested_dir_root)
 
             dir_content = list(Path(nested_dir_root).glob("**/*"))
 
@@ -372,7 +375,10 @@ class TestUtils(unittest.TestCase):
             # create empty file
             open(os.path.join(nested_dir_root, "a", "b", "c1", "foo"), "a").close()
 
-            flatten_top_directories(nested_dir_root)
+            old_dir, new_dir = flatten_top_directories(nested_dir_root)
+
+            self.assertEqual(old_dir, os.path.join(nested_dir_root, "a", "b", "c1"))
+            self.assertEqual(new_dir, nested_dir_root)
 
             dir_content = list(Path(nested_dir_root).glob("**/*"))
 
@@ -389,7 +395,12 @@ class TestUtils(unittest.TestCase):
             open(os.path.join(nested_dir_root, "a", "b", "c2", "bar"), "a").close()
             open(os.path.join(nested_dir_root, "a", "b", "c2", "baz"), "a").close()
 
-            flatten_top_directories(nested_dir_root, os.path.join(nested_dir_root, "a"))
+            old_dir, new_dir = flatten_top_directories(
+                nested_dir_root, os.path.join(nested_dir_root, "a")
+            )
+
+            self.assertEqual(old_dir, os.path.join(nested_dir_root, "a"))
+            self.assertEqual(new_dir, nested_dir_root)
 
             dir_content = list(Path(nested_dir_root).glob("**/*"))
 
