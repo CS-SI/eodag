@@ -28,6 +28,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from typing import Any
 from unittest import mock
 
+import orjson
 import responses
 from requests.structures import CaseInsensitiveDict
 
@@ -113,6 +114,27 @@ class BaseDownloadPluginTest(unittest.TestCase):
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
+    def test_plugins_download_base_set_statements_updates_asset(self):
+        """Download.set_statements must update the asset and persist its statements"""
+
+        self.product.assets.update({"foo": {"href": "http://somewhere/asset"}})
+        asset = self.product.assets["foo"]
+        status = {
+            "order:status": "ONLINE",
+            "file:local_path": os.path.join(self.output_dir, "asset"),
+        }
+        plugin = self.get_download_plugin(self.product)
+
+        plugin.set_statements(asset, status, output_dir=self.output_dir)
+
+        self.assertEqual(asset["order:status"], status["order:status"])
+        self.assertEqual(asset["file:local_path"], status["file:local_path"])
+        statement_dir = Path(self.output_dir) / ".downloaded"
+        statement_files = list(statement_dir.glob("*.json"))
+        self.assertEqual(len(statement_files), 1)
+        with statement_files[0].open("rb") as file:
+            self.assertEqual(orjson.loads(file.read()), status)
+
     def test_plugins_download_base_prepare_download_existing(self):
         """Download._prepare_download must detect if product destination already exists"""
 
