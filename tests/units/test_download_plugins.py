@@ -795,6 +795,38 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(statements["href"], "http://somewhere/something")
         self.assertEqual(statements["file:local_path"], asset_local_path)
 
+    @mock.patch("eodag.plugins.download.http.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._raw_stream_download_assets",
+        autospec=True,
+    )
+    def test_plugins_download_http_updates_asset_path_after_flatten(
+        self, mock_raw_stream_download_assets, mock_flatten_top_directories
+    ):
+        """HTTPDownload._download_assets() must update cached paths after flattening"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/nested/file"}})
+        fs_dir_path = os.path.join(self.output_dir, "dummy_product")
+        old_dir = os.path.join(fs_dir_path, "nested")
+        mock_flatten_top_directories.return_value = old_dir, fs_dir_path
+        mock_raw_stream_download_assets.return_value = [
+            StreamResponse(content=iter([b"some content"]), arcname="nested/file")
+        ]
+
+        result = plugin._download_assets(
+            self.product,
+            fs_dir_path,
+            None,
+            progress_callback=ProgressCallback(disable=True),
+        )
+
+        asset = self.product.assets["foo"]
+        self.assertEqual(result, fs_dir_path)
+        self.assertEqual(asset["file:local_path"], os.path.join(fs_dir_path, "file"))
+        mock_flatten_top_directories.assert_called_once_with(fs_dir_path)
+
     @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
