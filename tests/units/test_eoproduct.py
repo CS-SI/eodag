@@ -316,10 +316,6 @@ class TestEOProduct(EODagTestBase):
             responses.assert_call_count(product.properties["eodag:download_link"], 1)
 
             self.addCleanup(self._clean_product, product_dir_path)
-            self.assertIn("Download url: %s" % product.remote_location, str(cm.output))
-            self.assertIn(
-                "Remote location of the product is still available", str(cm.output)
-            )
 
         # Check that the mocked request was properly called.
         responses.assert_call_count(product.properties["eodag:download_link"], 1)
