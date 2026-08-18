@@ -4,13 +4,6 @@ dedl:
     - host
   description: DEDL STAC
   url: https://hda.data.destination-earth.eu/stac/v2/
-  # anchors to avoid duplications
-  anchor_orderable_mm: &orderable_mm
-    _order_href: '$.links[?rel=="retrieve"].href'
-    _order_body: '$.links[?rel=="retrieve"].body'
-    eodag:order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
-    eodag:download_link: '$.null'
-    assets: '$.null'
   search:
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/v2/search
@@ -173,88 +166,67 @@ dedl:
           order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     ERA5_SL_MONTHLY:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     ERA5_PL:
       _collection: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     ERA5_PL_MONTHLY:
       _collection: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     ERA5_LAND:
       _collection: EO.ECMWF.DAT.ERA5_LAND_HOURLY
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     ERA5_LAND_MONTHLY:
       _collection: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     UERRA_EUROPE_SL:
       _collection: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     GRIDDED_GLACIERS_MASS_CHANGE:
       _collection: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     GLACIERS_DIST_RANDOLPH:
       _collection: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SATELLITE_CARBON_DIOXIDE:
       _collection: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SATELLITE_METHANE:
       _collection: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SEASONAL_POSTPROCESSED_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SATELLITE_SEA_LEVEL_GLOBAL:
       _collection: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SATELLITE_SEA_ICE_EDGE_TYPE:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SATELLITE_SEA_ICE_THICKNESS:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_THICKNESS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SATELLITE_SEA_ICE_CONCENTRATION:
       _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_CONCENTRATION
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SEASONAL_POSTPROCESSED_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SEASONAL_ORIGINAL_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SEASONAL_ORIGINAL_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SEASONAL_MONTHLY_PL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SEASONAL_MONTHLY_SL:
       _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     SIS_HYDRO_MET_PROJ:
       _collection: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     # ECMWF - CEMS
     FIRE_HISTORICAL:
       _collection: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
@@ -281,56 +253,43 @@ dedl:
     # COPERNICUS ADS
     CAMS_GAC_FORECAST:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_EU_AIR_QUALITY_FORECAST:
       _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GFE_GFAS:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_SOLAR_RADIATION:
       _collection: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GREENHOUSE_INVERSION:
       _collection: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_EAC4_MONTHLY:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_EU_AIR_QUALITY_RE:
       _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_EAC4:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GRF_AUX:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GRF:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GREENHOUSE_EGG4:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     CAMS_GLOBAL_EMISSIONS:
       _collection: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping_from_product: ERA5_SL
     # COPERNICUS ADS - Digital Elevation Model
     COP_DEM_GLO30_DGED:
       _collection: EO.DEM.DAT.COP-DEM_GLO-30-DGED
@@ -445,202 +404,130 @@ dedl:
     # DT Output
     DT_EXTREMES:
       _collection: EO.ECMWF.DAT.DT_EXTREMES
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping:
+        download_link:
+          href: '$.null'
+          _order_href: '$.links[?rel=="retrieve"].href'
+          _order_body: '$.links[?rel=="retrieve"].body'
+          order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
+          order:status: '{$.null#replace_str("Not Available","orderable")}'
     DT_CLIMATE_ADAPTATION:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_ADAPTATION_IFS_NEMO:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_IFS-NEMO
-      metadata_mapping:
-        assets: $.assets
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_ADAPTATION_ICON:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION_ICON
-      metadata_mapping:
-        assets: $.assets
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_CMIP6_HIST_ICON_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.CMIP6_HIST_ICON.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_CMIP6_HIST_IFS_NEMO_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.CMIP6_HIST_IFS-NEMO.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.HIGHRESMIP_CONT_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_HIGHRESMIP_CONT_IFS_NEMO_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.HIGHRESMIP_CONT_IFS-NEMO.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_ICON_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_ICON.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_NEMO_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-NEMO.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_STORY_NUDGING_CONT_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_CONT_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_STORY_NUDGING_HIST_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_HIST_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G1.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_CMIP6_HIST_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.NG.DT_CLIMATE.G1.CMIP6_HIST_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G1_SCENARIOMIP_SSP3_7_0_IFS_FESOM_R2:
       _collection: EO.ECMWF.DAT.NG.DT_CLIMATE.G1.SCENARIOMIP_SSP3-7.0_IFS-FESOM.R2
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_BASELINE_CONT_ICON_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_CONT_ICON.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_BASELINE_CONT_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_CONT_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_BASELINE_CONT_IFS_NEMO_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_CONT_IFS-NEMO.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_BASELINE_HIST_ICON_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_HIST_ICON.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_BASELINE_HIST_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_HIST_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_BASELINE_HIST_IFS_NEMO_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.BASELINE_HIST_IFS-NEMO.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_ICON_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.PROJECTIONS_SSP3-7.0_ICON.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.PROJECTIONS_SSP3-7.0_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_PROJECTIONS_SSP3_7_0_IFS_NEMO_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.PROJECTIONS_SSP3-7.0_IFS-NEMO.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R2:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R2
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R3:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R3
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R4:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R4
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_CONT_IFS_FESOM_R5:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_CONT_IFS-FESOM.R5
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R2:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R2
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R3:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R3
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R4:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R4
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_HIST_IFS_FESOM_R5:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_HIST_IFS-FESOM.R5
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R1:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R1
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R2:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R2
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R3:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R3
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R4:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R4
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     DT_CLIMATE_G2_STORY_NUDGING_TPLUS2_0K_IFS_FESOM_R5:
       _collection: EO.ECMWF.DAT.D1.DT_CLIMATE.G2.STORY-NUDGING_TPLUS2.0K_IFS-FESOM.R5
-      metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","orderable")}'
-        <<: *orderable_mm
+      assets_mapping_from_product: DT_EXTREMES
     # AERIS
     AERIS_IAGOS:
       _collection: EO.AERIS.DAT.IAGOS

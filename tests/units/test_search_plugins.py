@@ -4701,7 +4701,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # with additional param
         queryables = search_plugin.discover_queryables(
             collection="ERA5_SL_MONTHLY",
-            dataset="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
+            _collection="EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             **{"ecmwf:variable": "a"},
         )
         self.assertIsNotNone(queryables)

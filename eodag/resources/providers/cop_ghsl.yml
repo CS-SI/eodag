@@ -137,8 +137,6 @@ cop_ghsl:
       _collection: ENACT_POP
       grouped_by: month
       year: '2011'
-      metadata_mapping:
-        eodag:download_link: https://jeodpp.jrc.ec.europa.eu
       assets_mapping:
         day:
           href: 'https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/ENACT/ENACT_POP_2011_EU28_R2020A/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}/V1-0/ENACT_POP_D{month}2011_EU28_R2020A_{proj_code}_{tile_size}_V1_0.zip'
