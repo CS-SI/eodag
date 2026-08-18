@@ -321,6 +321,14 @@ class Search(PluginTopic):
                 )
             assets_mapping.update(collection_asset_mapping)
 
+            # update _collection value in assets_mapping if provider collection is available
+            provider_collection = self.config.products.get(collection, {}).get(
+                "_collection"
+            )
+            if provider_collection:
+                for asset_key, one_asset_mapping in assets_mapping.items():
+                    assets_mapping[asset_key]["_collection"] = provider_collection
+
         return assets_mapping
 
     def get_sort_by_arg(self, kwargs: dict[str, Any]) -> Optional[SortByList]:

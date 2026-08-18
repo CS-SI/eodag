@@ -108,6 +108,8 @@ class BaseSearchPluginTest(unittest.TestCase):
     def get_auth_plugin(self, search_plugin):
         return self.plugins_manager.get_auth_plugin(search_plugin)
 
+
+class TestSearchPluginBaseSearch(BaseSearchPluginTest):
     def test_build_assets_from_mapping(self):
         search_plugin = self.get_search_plugin(provider="geodes")
         search_plugin.config.assets_mapping = {
@@ -173,6 +175,46 @@ class BaseSearchPluginTest(unittest.TestCase):
         self.assertEqual(
             collection_mapping,
             search_plugin.config.products[collection]["metadata_mapping"],
+        )
+
+    def test_get_assets_mapping_without_collection(self):
+        """Test that the provider assets_mapping is returned when no collection is specified"""
+        search_plugin = self.get_search_plugin(provider="dedl")
+        provider_mapping = search_plugin.config.assets_mapping
+        self.assertNotIn("_collection", provider_mapping)
+
+        assets_mapping = search_plugin.get_assets_mapping()
+
+        self.assertEqual(provider_mapping, assets_mapping)
+        self.assertNotIn("_collection", assets_mapping)
+
+    def test_get_assets_mapping_with_collection(self):
+        """Test that the collection assets_mapping is returned when a collection is specified"""
+        search_plugin = self.get_search_plugin(provider="dedl")
+        collection = "ERA5_SL"
+        provider_mapping = search_plugin.config.assets_mapping
+        collection_mapping = search_plugin.config.products[collection]["assets_mapping"]
+
+        assets_mapping = search_plugin.get_assets_mapping(collection)
+
+        self.assertEqual(
+            collection_mapping["download_link"],
+            assets_mapping["download_link"],
+        )
+        self.assertNotEqual(
+            provider_mapping["download_link"],
+            assets_mapping["download_link"],
+        )
+        self.assertEqual(
+            search_plugin.config.products[collection]["_collection"],
+            assets_mapping["download_link"]["_collection"],
+        )
+
+        # Check that original mappings are still intact and not modified
+        self.assertEqual(provider_mapping, search_plugin.config.assets_mapping)
+        self.assertEqual(
+            collection_mapping,
+            search_plugin.config.products[collection]["assets_mapping"],
         )
 
     def test_get_assets_mapping_from_product_inherits(self):

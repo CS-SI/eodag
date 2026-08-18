@@ -165,8 +165,12 @@ dedl:
     # ECMWF - COPERNICUS CDS
     ERA5_SL:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
-      metadata_mapping:
-        <<: *orderable_mm
+      assets_mapping:
+        download_link:
+          href: '$.null'
+          _order_href: '$.links[?rel=="retrieve"].href'
+          _order_body: '$.links[?rel=="retrieve"].body'
+          order_link: "{_order_href}?{{{_order_body#replace_str(\"'\", '\"')}}}"
     ERA5_SL_MONTHLY:
       _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
       metadata_mapping:
