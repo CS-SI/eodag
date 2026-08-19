@@ -359,13 +359,31 @@ class TestCQL2JsonToSql(unittest.TestCase):
     # -- A.2 - Advanced Comparison (like, between, in) --------------------
 
     def test_a2_advanced_comparison(self):
-        """A.2 - like, between, in operators."""
+        """A.2 - combined "and" and "or", like, between, in operators."""
         cases = [
+            (
+                "and_or",
+                {
+                    "op": "and",
+                    "args": [
+                        _cmp("=", "datetime", "2020-01-01T00:00:00Z"),
+                        {
+                            "op": "or",
+                            "args": [
+                                _cmp("=", "id", "ONE"),
+                                _cmp("=", "id", "TWO"),
+                            ],
+                        },
+                    ],
+                },
+                ["ONE"],
+                "datetime = '2020-01-01T00:00:00Z' AND (id = 'ONE' OR id = 'TWO')",
+            ),
             (
                 "like",
                 {"op": "like", "args": [{"property": "id"}, "T%"]},
                 ["THREE", "TWO"],
-                "id LIKE 'T%'",
+                "id LIKE 'T%' ESCAPE '\\'",
             ),
             (
                 "between",
