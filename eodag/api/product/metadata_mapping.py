@@ -56,7 +56,7 @@ from eodag.utils import (
     update_nested_dict,
 )
 from eodag.utils.dates import get_timestamp, parse_to_utc, to_iso_utc_string
-from eodag.utils.exceptions import ValidationError
+from eodag.utils.exceptions import MisconfiguredError, ValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -1281,10 +1281,11 @@ def properties_from_json(
     for metadata, template in templates.items():
         try:
             properties[metadata] = format_string(metadata, template, **properties)
-        except ValueError:
+        except (ValueError, AttributeError, KeyError, MisconfiguredError) as e:
             logger.warning(
-                f"Could not parse {metadata} ({template}) using product properties"
+                f"Could not parse {metadata} ({template}) using available properties"
             )
+            logger.debug(repr(e))
             logger.debug(f"available properties: {properties}")
             properties[metadata] = NOT_AVAILABLE
 
