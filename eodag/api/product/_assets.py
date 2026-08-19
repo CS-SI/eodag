@@ -21,6 +21,8 @@ import re
 from collections import UserDict
 from typing import TYPE_CHECKING, Any, Optional
 
+from typing_extensions import override
+
 from eodag.utils.exceptions import NotAvailableError
 from eodag.utils.repr import dict_to_html_table
 
@@ -60,12 +62,45 @@ class AssetsDict(UserDict):
         self.product = product
         super(AssetsDict, self).__init__(*args, **kwargs)
 
-    def update(self, data: dict[str, Any]) -> None:  # type: ignore
-        """Update assets"""
-        super().update(data)
-
     def __setitem__(self, key: str, value: dict[str, Any]) -> None:
-        super().__setitem__(key, Asset(self.product, key, value))
+        super().__setitem__(key, self._make_asset(key, value))
+        self.sort()
+
+    def _make_asset(self, key: str, value: dict[str, Any]) -> Asset:
+        """Build the :class:`Asset` to store for the given key/value pair.
+
+        Subclasses (e.g. eodag_cube) can override this to use an extended
+        :class:`Asset` subclass without duplicating the sorting and other
+        logic implemented in :meth:`__setitem__`/:meth:`update`.
+
+        :param key: Asset key
+        :param value: Already-validated asset dictionary
+        :returns: The :class:`Asset` instance to store
+        """
+        return Asset(self.product, key, value)
+
+    @override
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """Used to self update with external value"""
+        incoming = dict(*args, **kwargs)
+
+        if not incoming:
+            return
+
+        super().update(incoming)
+        self.sort()
+
+    def sort(self):
+        """Used to self sort"""
+        sorted_assets = {}
+        # Sort assets
+        for key in sorted(self.data):
+            sorted_asset = self.data[key]
+            # delete private asset fields (fields starting with '_')
+            for private_field in [k for k in sorted_asset if k.startswith("_")]:
+                del sorted_asset[private_field]
+            sorted_assets[key] = sorted_asset
+        self.data = sorted_assets
 
     def as_dict(self) -> dict[str, Any]:
         """Builds a representation of AssetsDict to enable its serialization
