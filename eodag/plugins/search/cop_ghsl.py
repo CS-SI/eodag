@@ -283,7 +283,8 @@ class CopGhslSearch(Search):
         if the bbox is given in metres, it is transformed to longitude and latitude
         """
         products = []
-        metadata_mapping = params.pop("metadata_mapping", {})
+        metadata_mapping = self.get_metadata_mapping(collection)
+        metadata_mapping.pop("eodag:default_geometry", None)
         parsed_metadata_mapping = mtd_cfg_as_conversion_and_querypath(metadata_mapping)
 
         filter_geometry = params.pop("geometry", None)
@@ -293,9 +294,13 @@ class CopGhslSearch(Search):
         end_index = start_index + per_page - 1
 
         # parameters that need formatting
-        dataset = metadata_mapping.get("dataset", None)
+        dataset = metadata_mapping.get("dataset")
         if not dataset:
             raise MisconfiguredError(f"dataset mapping not available for {collection}")
+        elif not isinstance(dataset, str):
+            msg = f"dataset mapping for {collection} is not a string: {dataset}"
+            raise MisconfiguredError(msg)
+
         id_params = deepcopy(params)
         id_params["proj:code"] = id_params["proj:code"].replace("EPSG:", "")
         if "tile_size" in parsed_metadata_mapping:
@@ -370,13 +375,30 @@ class CopGhslSearch(Search):
                 # create id
                 product_id = f"{product_id_base}__{tile['tileID']}"
                 properties["id"] = properties["title"] = product_id
-                download_link = metadata_mapping.get("eodag:download_link").format(
-                    dataset=dataset, tile_id=tile["tileID"]
+
+                # assets & download link
+                assets_mapping = self.get_assets_mapping(collection)
+                download_link_template = assets_mapping.get("download_link", {}).get(
+                    "href"
                 )
-                properties["eodag:download_link"] = download_link
+                if download_link_template is None:
+                    msg = (
+                        "Required download link configuration by CopGhslSearch._create_products_from_tiles"
+                        f" missing for collection {collection}"
+                    )
+                    raise MisconfiguredError(msg)
+                else:
+                    assets_mapping["download_link"]["href"] = (
+                        download_link_template.format(
+                            dataset=dataset, tile_id=tile["tileID"]
+                        )
+                    )
                 product = EOProduct(
                     provider="cop_ghsl", properties=properties, collection=collection
                 )
+                # apply assets & download link
+                product.assets.update(assets_mapping)
+
                 if not filter_geometry or filter_geometry.intersects(product.geometry):
                     if current_index >= start_index and current_index <= end_index:
                         products.append(product)
@@ -398,17 +420,20 @@ class CopGhslSearch(Search):
         properties["order:status"] = "succeeded"
         if "proj:code" in filters:
             filters["proj:code"] = filters["proj:code"].replace("EPSG:", "")
-        collection_config = self.config.products.get(collection, {})
-        download_link = collection_config.get("metadata_mapping", {}).get(
-            "eodag:download_link", None
-        )
-        if not download_link:
-            raise MisconfiguredError(
-                f"Download link configuration missing for collection {collection}"
+        # assets & download link
+        assets_mapping = self.get_assets_mapping(collection)
+        download_link_template = assets_mapping.get("download_link", {}).get("href")
+        if not assets_mapping or (
+            assets_mapping.keys() == {"download_link"}
+            and download_link_template is None
+        ):
+            msg = (
+                f"Download link asset configuration missing for collection {collection}"
             )
+            raise MisconfiguredError(msg)
 
-        # collection with assets mapping
-        assets_mapping = filters.pop("assets_mapping", None)
+        # collection with several assets mapping
+        assets_mapping = self.get_assets_mapping(collection)
         products = []
         per_page = getattr(prep, "limit", DEFAULT_LIMIT)
         page = getattr(prep, "PAGE", 1)
@@ -417,7 +442,6 @@ class CopGhslSearch(Search):
         grouped_by = filters.pop("grouped_by", None)
         if grouped_by:  # dataset with several files differentiated by one parameter
             format_params = {k: str(v) for k, v in filters.items() if v}
-            format_params.pop("metadata_mapping", None)
             grouped_by_values = filters[grouped_by]
             if isinstance(grouped_by_values, str) or isinstance(grouped_by_values, int):
                 grouped_by_values = [grouped_by_values]
@@ -431,9 +455,10 @@ class CopGhslSearch(Search):
                 properties.update(format_params)
                 if "proj:code" in filter_params:
                     properties["proj:code"] = filter_params["proj:code"]
-                properties["eodag:download_link"] = download_link.format(
-                    **format_params
-                )
+                if download_link_template is not None:
+                    assets_mapping["download_link"]["href"] = (
+                        download_link_template.format(**format_params)
+                    )
                 datetimes = self._get_start_and_end_from_properties(format_params)
                 properties["start_datetime"] = datetimes["start_date"]
                 properties["end_datetime"] = datetimes["end_date"]
@@ -441,9 +466,15 @@ class CopGhslSearch(Search):
                 product = EOProduct(
                     provider="cop_ghsl", properties=properties, collection=collection
                 )
+                if download_link_template is not None:
+                    product.assets.update(
+                        {"download_link": assets_mapping["download_link"]}
+                    )
                 if assets_mapping:  # item with several assets
                     assets = AssetsDict(product=product)
                     for key, mapping in assets_mapping.items():
+                        if key == "download_link":
+                            continue
                         filters = {k.replace(":", "_"): v for k, v in filters.items()}
                         download_link = mapping["href"].format(**filters)
                         assets.update(
@@ -455,7 +486,7 @@ class CopGhslSearch(Search):
                                 }
                             }
                         )
-                    product.assets = assets
+                    product.assets.update(assets)
                 products.append(product)
                 if i == end_index:
                     break
@@ -465,10 +496,10 @@ class CopGhslSearch(Search):
             datetimes = self._get_start_and_end_from_properties(properties)
             properties["start_datetime"] = datetimes["start_date"]
             properties["end_datetime"] = datetimes["end_date"]
-            properties["eodag:download_link"] = download_link
             product = EOProduct(
                 provider="cop_ghsl", properties=properties, collection=collection
             )
+            product.assets.update({"download_link": assets_mapping["download_link"]})
             products.append(product)
             num_products = 1
         if prep.count:
@@ -490,7 +521,11 @@ class CopGhslSearch(Search):
         available_values = _get_available_values_from_constraints(
             constraints_values, {}, collection
         )
-        collection_config = deepcopy(self.config.products.get(collection, {}))
+        collection_config = {
+            key: value
+            for key, value in self.config.products.get(collection, {}).items()
+            if "_mapping" not in key
+        }
         for key, values in available_values.items():
             for value in values:
                 param_value = value
@@ -530,8 +565,6 @@ class CopGhslSearch(Search):
 
         params.pop("geometry", None)
         params.update(collection_config)
-        params.pop("metadata_mapping", None)
-        params.pop("assets_mapping", None)
 
         self._check_input_parameters_valid(collection, params)
         # update parameters based on changes during validation
@@ -608,7 +641,11 @@ class CopGhslSearch(Search):
             collection = kwargs["collection"] = prep.collection
         if not isinstance(collection, str):
             raise MisconfiguredError("invalid collection %s", collection)
-        collection_config = deepcopy(self.config.products.get(collection, {}))
+        collection_config = {
+            key: value
+            for key, value in self.config.products.get(collection, {}).items()
+            if "_mapping" not in key
+        }
         if "id" in kwargs and "ALL" not in kwargs["id"]:
             tiles_or_none = self._get_tile_from_product_id(kwargs)
         else:
@@ -630,7 +667,6 @@ class CopGhslSearch(Search):
             )
 
         # create products from tiles
-        kwargs.update(collection_config)
         kwargs["page"] = page
         kwargs["per_page"] = limit
         constraints_filters = self._fetch_constraints(collection)

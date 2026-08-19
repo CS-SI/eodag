@@ -34,7 +34,10 @@ from tests.context import (
     HTTP_REQ_TIMEOUT,
     TEST_RESOURCES_PATH,
     USER_AGENT,
+    ECMWFSearch,
     EODataAccessGateway,
+    PluginManager,
+    StacSearch,
     ValidationError,
     config,
     get_ext_collections_conf,
@@ -284,6 +287,60 @@ class TestConfigFunctions(unittest.TestCase):
                 self.assertEqual(download_plugin.output_dir, tempfile.gettempdir())
             # priority is set to 0 for all providers
             self.assertEqual(value.priority, 0)
+
+    def test_default_providers_use_assets(self):
+        """Default providers must expose assets without legacy product properties."""
+        providers_config = config.load_default_config()
+
+        def find_legacy_download_link(value, path):
+            if isinstance(value, dict):
+                for key, nested_value in value.items():
+                    nested_path = f"{path}.{key}"
+                    if key == "eodag:download_link":
+                        return nested_path
+                    if legacy_path := find_legacy_download_link(
+                        nested_value, nested_path
+                    ):
+                        return legacy_path
+            elif isinstance(value, list):
+                for index, nested_value in enumerate(value):
+                    if legacy_path := find_legacy_download_link(
+                        nested_value, f"{path}[{index}]"
+                    ):
+                        return legacy_path
+            return None
+
+        for provider_name, provider_config in providers_config.items():
+            search_config = getattr(provider_config, "search", None) or getattr(
+                provider_config, "api", None
+            )
+            self.assertIsNone(
+                find_legacy_download_link(
+                    getattr(search_config, "metadata_mapping", {}), "metadata_mapping"
+                ),
+                f"{provider_name} uses eodag:download_link in its metadata_mapping config",
+            )
+
+        for provider_name, provider_config in providers_config.items():
+            self.assertIsNone(
+                find_legacy_download_link(provider_config.products, "products"),
+                f"{provider_name} uses eodag:download_link in its products config",
+            )
+
+        plugins_manager = PluginManager(ProvidersDict.from_configs(providers_config))
+        for provider_name in plugins_manager.providers:
+            search_plugin = next(
+                plugins_manager.get_search_plugins(provider=provider_name)
+            )
+            has_assets_mapping = all(
+                search_plugin.get_assets_mapping(collection)
+                for collection in search_plugin.config.products
+            )
+            self.assertTrue(
+                has_assets_mapping
+                or isinstance(search_plugin, (StacSearch, ECMWFSearch)),
+                f"{provider_name} is not configured to return assets",
+            )
 
     def test_load_config_providers_whitelist(self):
         """Config must be loaded with only the selected whitelist of providers"""

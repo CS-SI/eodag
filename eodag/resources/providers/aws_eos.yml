@@ -175,9 +175,6 @@ aws_eos:
           - '$.onAmazon'
         _path: '$.path'
         _row: '$.row'
-        eodag:download_link: 's3://landsat-pds/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/'
-        eodag:thumbnail: '$.thumbnail'
-        eodag:quicklook: 'https://landsat-pds.s3.amazonaws.com/c1/L8/{_path:03.0f}/{_row:03.0f}/{title}/{title}_thumb_large.jpg'
         id:
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
@@ -356,9 +353,7 @@ aws_eos:
           - '{{"search":{{"zenithAngle":"{view:incidence_angle}" }} }}'
           - '$.zenithAngle'
         # Custom parameters (not defined in the base document referenced above)
-        eodag:thumbnail: '{$.thumbnail#replace_str("sentinel-s2-l1c.s3.amazonaws.com","roda.sentinel-hub.com/sentinel-s2-l1c")}'
         _aws_path: '$.awsPath'
-        eodag:download_link: 's3://sentinel-s2-l1c/{_aws_path}'
         eodag:product_path: '$.productPath'
         id:
           - '{{"search":{{"productName":"{id}" }} }}'
@@ -403,7 +398,6 @@ aws_eos:
             - 'title'
             - '{title}'
           _aws_path_l2a: '$.tiles[0].path'
-          eodag:download_link: 's3://sentinel-s2-l2a/{_aws_path_l2a}'
           eodag:product_path: '$.path'
           start_datetime: '$.timestamp'
           end_datetime: '$.timestamp'
