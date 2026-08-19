@@ -6,6 +6,11 @@ Release history
 v4.7.0 (2026-08-19)
 ===================
 
+Features
+--------
+
+* **core**: Sort assets and remove private fields (`#2309`_, `3e97a4d`_)
+
 Bug Fixes
 ---------
 
@@ -20,11 +25,6 @@ Documentation
 -------------
 
 * Update provider registration introduction (`#2302`_, `cb4e4d6`_)
-
-Features
---------
-
-* **core**: Sort assets and remove private fields (`#2309`_, `3e97a4d`_)
 
 .. _#1640: https://github.com/CS-SI/eodag/pull/1640
 .. _#2300: https://github.com/CS-SI/eodag/pull/2300
