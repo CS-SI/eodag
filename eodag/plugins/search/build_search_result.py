@@ -639,6 +639,7 @@ class ECMWFSearch(PostJsonSearch):
                 START,
                 END,
                 "geometry",
+                "_collection",
             } and not self._is_discoverable_metadata_key(key):
                 raise ValidationError(
                     f"'{key}' is not a queryable parameter for {self.provider}", {key}

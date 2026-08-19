@@ -99,11 +99,13 @@ wekeo_main:
       sortOrder: '$.null'
     assets_mapping:
       download_link:
-        href: ''
+        href: '$.null'
         roles: '["archive", "data"]'
         type: 'application/octet-stream'
         order:status: 'orderable'
-        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location}","product_id":"{id}", "dataset_id": "{_collection}"}'
+        _location: '$.properties.location'
+        _id: '{$.id#remove_extension}'
+        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{_location}","product_id":"{_id}", "dataset_id": "{_collection}"}}'
       quicklook:
         href: '$.properties.thumbnail'
         title: "quicklook"

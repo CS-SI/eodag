@@ -53,39 +53,39 @@ wekeo_ecmwf:
       fetch_url: null
     dynamic_discover_queryables:
       - collection_selector: # cop_ads
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:CAMS
         discover_queryables:
           fetch_url: null
           collection_fetch_url: null
-          constraints_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
-          form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+          constraints_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{_collection#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{_collection#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
       - collection_selector: # cop_cds
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:SATELLITE
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:SEASONAL
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:INSITU
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:DERIVED
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:REANALYSIS
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:SIS
         discover_queryables:
           fetch_url: null
           collection_fetch_url: null
-          constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
-          form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+          constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{_collection#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{_collection#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
       - collection_selector: # cop_ewds
-          - field: dataset
+          - field: _collection
             prefix: EO:ECMWF:DAT:CEMS
         discover_queryables:
           fetch_url: null
           collection_fetch_url: null
-          constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
-          form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
+          constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{_collection#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/constraints.json
+          form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{_collection#wekeo_to_cop_collection(EO:ECMWF:DAT:)}/form.json
     metadata_mapping:
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
@@ -97,28 +97,25 @@ wekeo_ecmwf:
         # map 'date' to validate request against copernicus queryables
         - '{{"enddate": "{end_datetime#to_iso_utc_datetime}", "date": "{start_datetime#to_iso_date}/{end_datetime#to_iso_date}"}}'
         - $.properties.enddate
-      product:type:
-        - dataset_id
-        - $.dataset
-      dataset:
-        - dataset_id
-        - $.dataset
-      eodag:download_link: $.properties.location
-      eodag:order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{eodag:download_link}","product_id":"{id}", "dataset_id": "{dataset}"}}'
+      _collection:
+        - '{{"dataset_id": "{_collection}"}}'
+        - '$.null'
     assets_mapping:
       download_link:
-        href: ''
+        href: '$.null'
         roles: '["archive", "data"]'
-        type: '$.ContentType'
-        "order_link": 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{"location": "{$.properties.location#url_decode}","product_id":"{id}", "dataset_id": "{dataset}"}'
+        type: 'application/octet-stream'
         order:status: 'orderable'
+        _location: '$.properties.location'
+        _id: '{$.id#remove_extension}'
+        order_link: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{_location}","product_id":"{_id}", "dataset_id": "{_collection}"}}'
   products:
     SATELLITE_CARBON_DIOXIDE:
-      dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
+      _collection: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
-      dataset: EO:ECMWF:DAT:SATELLITE_FIRE_BURNED_AREA
+      _collection: EO:ECMWF:DAT:SATELLITE_FIRE_BURNED_AREA
       metadata_mapping:
         start_datetime:
           - |
@@ -130,59 +127,59 @@ wekeo_ecmwf:
           - $.properties.startdate
         end_datetime: $.properties.enddate
     SATELLITE_METHANE:
-      dataset: EO:ECMWF:DAT:SATELLITE_METHANE
+      _collection: EO:ECMWF:DAT:SATELLITE_METHANE
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
-      dataset: EO:ECMWF:DAT:SATELLITE_SEA_ICE_EDGE_TYPE
+      _collection: EO:ECMWF:DAT:SATELLITE_SEA_ICE_EDGE_TYPE
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_THICKNESS:
-      dataset: EO:ECMWF:DAT:SATELLITE_SEA_ICE_THICKNESS
+      _collection: EO:ECMWF:DAT:SATELLITE_SEA_ICE_THICKNESS
       metadata_mapping:
         <<: *month_year
     SATELLITE_SEA_ICE_CONCENTRATION:
-      dataset: EO:ECMWF:DAT:SATELLITE_SEA_ICE_CONCENTRATION
+      _collection: EO:ECMWF:DAT:SATELLITE_SEA_ICE_CONCENTRATION
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_LEVEL_GLOBAL:
-      dataset: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL
+      _collection: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_SL:
-      dataset: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
+      _collection: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_PL:
-      dataset: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
+      _collection: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_SL:
-      dataset: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
+      _collection: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
       metadata_mapping:
         <<: *month_year
     SEASONAL_POSTPROCESSED_PL:
-      dataset: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
+      _collection: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_SL:
-      dataset: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
+      _collection: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_PL:
-      dataset: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
+      _collection: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
       metadata_mapping:
         <<: *month_year
     GLACIERS_DIST_RANDOLPH:
-      dataset: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
+      _collection: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
       metadata_mapping:
         <<: *day_month_year
     FIRE_HISTORICAL:
-      dataset: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
+      _collection: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
       metadata_mapping:
         <<: *day_month_year
     GRIDDED_GLACIERS_MASS_CHANGE:
-      dataset: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
+      _collection: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
       metadata_mapping:
         start_datetime:
           - |
@@ -192,23 +189,23 @@ wekeo_ecmwf:
           - $.properties.startdate
         end_datetime: $.properties.enddate
     UERRA_EUROPE_SL:
-      dataset: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      _collection: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
       metadata_mapping:
         <<: *time_day_month_year
     AG_ERA5:
-      dataset: EO:ECMWF:DAT:SIS_AGROMETEOROLOGICAL_INDICATORS
+      _collection: EO:ECMWF:DAT:SIS_AGROMETEOROLOGICAL_INDICATORS
       metadata_mapping:
         <<: *day_month_year
     ERA5_SL:
-      dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
+      _collection: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL:
-      dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
+      _collection: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_SL_MONTHLY:
-      dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
+      _collection: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
       metadata_mapping:
         start_datetime:
           - |
@@ -220,19 +217,19 @@ wekeo_ecmwf:
           - $.properties.startdate
         end_datetime: $.properties.enddate
     ERA5_PL_MONTHLY:
-      dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
+      _collection: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
       metadata_mapping_from_product: ERA5_SL_MONTHLY
     ERA5_LAND:
-      dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
+      _collection: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_LAND_MONTHLY:
-      dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
+      _collection: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
       metadata_mapping_from_product: ERA5_SL_MONTHLY
     CAMS_EAC4:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4
     CAMS_GLOBAL_EMISSIONS:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES
       metadata_mapping:
         start_datetime:
           - |
@@ -242,39 +239,39 @@ wekeo_ecmwf:
           - $.properties.startdate
         end_datetime: $.properties.enddate
     CAMS_EAC4_MONTHLY:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_INVERSION:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GREENHOUSE_GAS_INVERSION
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_GREENHOUSE_GAS_INVERSION
       metadata_mapping:
         <<: *month_year
     CAMS_EU_AIR_QUALITY_RE:
-      dataset: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES
+      _collection: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES
       metadata_mapping:
         <<: *month_year
     CAMS_GRF:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS
       metadata_mapping:
         <<: *month_year
     CAMS_GRF_AUX:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_EGG4:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4
     CAMS_GREENHOUSE_EGG4_MONTHLY:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY
       metadata_mapping:
         <<: *month_year
     CAMS_EU_AIR_QUALITY_FORECAST:
-      dataset: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS
+      _collection: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS
     CAMS_GAC_FORECAST:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
     CAMS_GFE_GFAS:
-      dataset: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
+      _collection: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
     CAMS_SOLAR_RADIATION:
-      dataset: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
+      _collection: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
       altitude: "-999"
       metadata_mapping:
         geometry:
