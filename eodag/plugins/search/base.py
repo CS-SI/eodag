@@ -245,8 +245,8 @@ class Search(PluginTopic):
         if collection is not None:
             # Special overload for collection config
             # "metadata_mapping_from_product" overloaded by "current"
-            collection_metadata_mapping: dict[str, Union[str, list[str]]] = {}
-            target_collection: Optional[str] = collection
+            collection_metadata_mapping: dict[str, str | list[str]] = {}
+            target_collection: str | None = collection
             visited: set[str] = set()
             while target_collection is not None and target_collection not in visited:
                 visited.add(target_collection)
@@ -285,8 +285,8 @@ class Search(PluginTopic):
         return metadata_mapping
 
     def get_assets_mapping(
-        self, collection: Optional[str] = None
-    ) -> Union[Any, dict[str, dict[str, Any]]]:
+        self, collection: str | None = None
+    ) -> Any | dict[str, dict[str, Any]]:
         """Get the plugin asset mapping configuration (collection specific if exists)
 
         :param collection: the desired collection
@@ -297,8 +297,8 @@ class Search(PluginTopic):
         if collection is not None:
             # Special overload for collection config
             # "assets_mapping_from_product" overloaded by "current"
-            collection_asset_mapping: dict[str, Union[str, list[str]]] = {}
-            target_collection: Optional[str] = collection
+            collection_asset_mapping: dict[str, str | list[str]] = {}
+            target_collection: str | None = collection
             visited: set[str] = set()
             while target_collection is not None and target_collection not in visited:
                 visited.add(target_collection)
@@ -320,6 +320,14 @@ class Search(PluginTopic):
                     target_collection,
                 )
             assets_mapping.update(collection_asset_mapping)
+
+            # update _collection value in assets_mapping if provider collection is available
+            provider_collection = self.config.products.get(collection, {}).get(
+                "_collection"
+            )
+            if provider_collection:
+                for one_asset_mapping in assets_mapping.values():
+                    one_asset_mapping["_collection"] = provider_collection
 
         return assets_mapping
 
@@ -628,8 +636,8 @@ class Search(PluginTopic):
         return queryables
 
     def build_assets_from_mapping(
-        self, provider_item: dict[str, Any], product: Optional[EOProduct] = None
-    ) -> Union[AssetsDict, dict[str, Any]]:
+        self, provider_item: dict[str, Any], product: EOProduct | None = None
+    ) -> AssetsDict | dict[str, Any]:
         """
         Create assets based on the assets_mapping in the provider's config
         and an item returned by the provider
