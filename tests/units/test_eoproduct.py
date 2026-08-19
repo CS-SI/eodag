@@ -706,6 +706,18 @@ class TestEOProduct(EODagTestBase):
         self.assertEqual(len(product.assets.get_values("foo?o,o")), 1)
         self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")
 
+    def test_eoproduct_assets_strip_private_keys(self):
+        """EOProduct.assets must not keep private (``_``-prefixed) keys such as ``_collection``"""
+        product = self._dummy_product()
+
+        product.assets.update(
+            {"foo": {"href": "foo.href", "_collection": "COLLECTION_A"}}
+        )
+        self.assertNotIn("_collection", product.assets["foo"])
+
+        product.assets["bar"] = {"href": "bar.href", "_collection": "COLLECTION_B"}
+        self.assertNotIn("_collection", product.assets["bar"])
+
     def test_eoproduct_sorted_properties(self):
         """EOProduct.properties must be sorted"""
         product = self._dummy_product(

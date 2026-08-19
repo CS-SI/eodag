@@ -73,9 +73,22 @@ class AssetsDict(UserDict):
     def __setitem__(self, key: str, value: dict[str, Any]) -> None:
         if not self._check(key, value):
             return
-        super().__setitem__(key, Asset(self.product, key, value))
+        super().__setitem__(key, self._make_asset(key, value))
         self.sort()
         self._update_product_location()
+
+    def _make_asset(self, key: str, value: dict[str, Any]) -> Asset:
+        """Build the :class:`Asset` to store for the given key/value pair.
+
+        Subclasses (e.g. eodag_cube) can override this to use an extended
+        :class:`Asset` subclass without duplicating the validation, sorting and
+        location-update logic implemented in :meth:`__setitem__`/:meth:`update`.
+
+        :param key: Asset key
+        :param value: Already-validated asset dictionary
+        :returns: The :class:`Asset` instance to store
+        """
+        return Asset(self.product, key, value)
 
     @override
     def update(self, *args: Any, **kwargs: Any) -> None:
@@ -117,6 +130,10 @@ class AssetsDict(UserDict):
         :param asset_value: Mutable asset dictionary (modified in place)
         :returns: ``True`` if the asset is valid and can be inserted, ``False`` otherwise
         """
+        # delete private asset properties (keys starting with '_')
+        for private_key in [k for k in asset_value if k.startswith("_")]:
+            del asset_value[private_key]
+
         # Asset must have href or order_link
         href = asset_value.pop("href", None)
         if href not in [None, "", NOT_AVAILABLE]:
