@@ -19,12 +19,18 @@ dlr_eoc_geoservice:
   products:
     S2_MSI_L2A_MAJA:
       _collection: S2_L2A_MAJA
-      metadata_mapping:
-        eodag:download_link: '$.assets.data.href'
+      assets_mapping:
+        download_link:
+          href: '$.assets.data.href'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
     SUPERSITES:
       _collection: SUPERSITES
-      metadata_mapping:
-        eodag:download_link: '$.assets.data.href'
+      assets_mapping:
+        download_link:
+          href: '$.assets.data.href'
+          roles: '["archive", "data"]'
+          type: 'application/octet-stream'
     GENERIC_COLLECTION:
       _collection: '{collection}'
   download:
@@ -33,10 +39,6 @@ dlr_eoc_geoservice:
       - 401
       - 403
     products:
-      S2_MSI_L2A_MAJA:
-        ignore_assets: true
-      SUPERSITES:
-        ignore_assets: true
   auth:
     type: GenericAuth
     matching_url: https://download.geoservice.dlr.de
