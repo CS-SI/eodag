@@ -27,7 +27,7 @@ from eodag.plugins.search.qssearch import QueryStringSearch
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
 
-logger = logging.getLogger("eodag.search.geodes")
+logger = logging.getLogger("eodag.search.eumetsat_ds")
 
 
 class EumetsatDsSearch(QueryStringSearch):
@@ -48,9 +48,6 @@ class EumetsatDsSearch(QueryStringSearch):
             result = processed_results[index]
             if hasattr(result, "assets"):
                 for asset in result.assets.values():
-                    if "type" in asset:
-                        asset["eumesat_ds:type"] = asset["type"]
-                        del asset["type"]
                     if "mediaType" in asset:
                         asset["type"] = asset["mediaType"]
                         del asset["mediaType"]
