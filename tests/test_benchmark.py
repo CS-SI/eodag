@@ -22,6 +22,7 @@ import sys
 from tempfile import TemporaryDirectory
 
 from tests import EODagTestBase, test_cli
+from tests.context import EOProduct
 from tests.integration import test_core_search_results
 from tests.units import test_stac_reader
 from tests.utils import write_eodag_conf_with_fake_credentials
@@ -144,6 +145,21 @@ def test_benchmark_stac_reader_fetch_recursive(benchmark):
             "test_stac_reader_fetch_root_recursive",
         )
     )
+
+
+def test_benchmark_eoproduct_instantiation(benchmark):
+    test_case = EODagTestBase()
+    test_case.setUp()
+    try:
+        benchmark(
+            lambda: EOProduct(
+                test_case.provider,
+                test_case.eoproduct_props,
+                collection=test_case.collection,
+            )
+        )
+    finally:
+        test_case.tearDown()
 
 
 def test_benchmark_eoproduct_assets_population(benchmark):
