@@ -47,14 +47,13 @@ class EumetsatDsSearch(QueryStringSearch):
         for index in range(0, len(processed_results)):
             result = processed_results[index]
             if hasattr(result, "assets"):
-                for name, asset in result.assets.items():
+                for asset in result.assets.values():
                     if "type" in asset:
                         asset["eumesat_ds:type"] = asset["type"]
                         del asset["type"]
                     if "mediaType" in asset:
                         asset["type"] = asset["mediaType"]
                         del asset["mediaType"]
-                    result.assets[name] = asset
             processed_results[index] = result
 
         return processed_results
