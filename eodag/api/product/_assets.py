@@ -87,19 +87,24 @@ class AssetsDict(UserDict):
         if not incoming:
             return
 
-        super().update(incoming)
+        if type(self).__setitem__ is not AssetsDict.__setitem__:
+            # Preserve custom __setitem__ behavior implemented by subclasses.
+            super().update(incoming)
+        else:
+            # Avoid sorting after every insertion in the base implementation.
+            for key, value in incoming.items():
+                self.data[key] = self._make_asset(key, value)
         self.sort()
 
     def sort(self):
         """Used to self sort"""
         sorted_assets = {}
-        # Sort assets
         for key in sorted(self.data):
-            sorted_asset = self.data[key]
+            asset = self.data[key]
             # delete private asset fields (fields starting with '_')
-            for private_field in [k for k in sorted_asset if k.startswith("_")]:
-                del sorted_asset[private_field]
-            sorted_assets[key] = sorted_asset
+            for private_field in [k for k in asset if k[0] == "_"]:
+                del asset[private_field]
+            sorted_assets[key] = asset
         self.data = sorted_assets
 
     def as_dict(self) -> dict[str, Any]:
@@ -206,7 +211,8 @@ class Asset(UserDict):
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
         self.product = product
         self.key = key
-        super(Asset, self).__init__(*args, **kwargs)
+        # Faster than UserDict.__init__, which goes through MutableMapping.update()
+        self.data = dict(*args, **kwargs)
 
     def as_dict(self) -> dict[str, Any]:
         """Builds a representation of Asset to enable its serialization
