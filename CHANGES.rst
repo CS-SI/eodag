@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v4.7.1 (2026-08-20)
+===================
+
+Performance Improvements
+------------------------
+
+* **core**: Optimize AssetsDict batch updates (`#2314`_, `4783588`_)
+
+.. _#2314: https://github.com/CS-SI/eodag/pull/2314
+.. _4783588: https://github.com/CS-SI/eodag/commit/4783588f865255124671af8e2fec45ffbfaac3d5
+
+
 v4.7.0 (2026-08-19)
 ===================
 
