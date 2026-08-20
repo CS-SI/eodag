@@ -2,7 +2,6 @@ name: Run benchmark
 
 on:
   pull_request:
-    branches: [develop, v5_download_link_asset]
 
 permissions:
   contents: read
@@ -26,15 +25,17 @@ jobs:
         cache-dependency-glob: |
           pyproject.toml
           tox.ini
-    - name: Run benchmark on develop and current ref, then compare
+    - name: Run benchmark on target branch and current ref, then compare
       shell: bash
+      env:
+        TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
       run: |
         set -euo pipefail
 
         CURRENT_SHA="$(git rev-parse HEAD)"
 
-        echo "Running benchmark on develop"
-        git checkout --detach origin/develop
+        echo "Running benchmark on ${TARGET_BRANCH}"
+        git checkout --detach "origin/${TARGET_BRANCH}"
         uvx --python 3.14 --with tox-uv tox -e benchmark -- --benchmark-json baseline.json
 
         echo "Running benchmark on current ref"
@@ -51,7 +52,7 @@ jobs:
         {
           echo "## Benchmark comparison"
           echo
-          echo "Compared baseline: \`origin/develop\`"
+          echo "Compared baseline: \`origin/${TARGET_BRANCH}\`"
           echo "Compared candidate: ${CURRENT_SHA}"
           echo
           echo '```text'
