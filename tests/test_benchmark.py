@@ -21,7 +21,8 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 
-from tests import test_cli
+from tests import EODagTestBase, test_cli
+from tests.context import EOProduct
 from tests.integration import test_core_search_results
 from tests.units import test_stac_reader
 from tests.utils import write_eodag_conf_with_fake_credentials
@@ -144,3 +145,36 @@ def test_benchmark_stac_reader_fetch_recursive(benchmark):
             "test_stac_reader_fetch_root_recursive",
         )
     )
+
+
+def test_benchmark_eoproduct_instantiation(benchmark):
+    test_case = EODagTestBase()
+    test_case.setUp()
+    try:
+        benchmark(
+            lambda: EOProduct(
+                test_case.provider,
+                test_case.eoproduct_props,
+                collection=test_case.collection,
+            )
+        )
+    finally:
+        test_case.tearDown()
+
+
+def test_benchmark_eoproduct_assets_population(benchmark):
+    test_case = EODagTestBase()
+    test_case.setUp()
+    try:
+        product = test_case._dummy_product()
+        assets = {
+            f"band{i}": {"href": f"http://example.com/band{i}.tif"} for i in range(20)
+        }
+
+        def _populate_assets():
+            product.assets.update(assets)
+            return len(product.assets)
+
+        benchmark(_populate_assets)
+    finally:
+        test_case.tearDown()

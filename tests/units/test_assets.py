@@ -29,6 +29,16 @@ class CustomAssetsDict(AssetsDict):
         return CustomAsset(self.product, key, value)
 
 
+class HookedAssetsDict(AssetsDict):
+    def __init__(self, product):
+        self.setitem_keys = []
+        super().__init__(product)
+
+    def __setitem__(self, key, value):
+        self.setitem_keys.append(key)
+        super().__setitem__(key, value)
+
+
 class TestAssetsDict(unittest.TestCase):
     @mock.patch.object(AssetsDict, "sort")
     def test_update_and_setitem_use_asset_factory_override(self, mock_sort):
@@ -48,6 +58,14 @@ class TestAssetsDict(unittest.TestCase):
         self.assertTrue(
             all(isinstance(asset, CustomAsset) for asset in assets.values())
         )
+
+    def test_update_preserves_overridden_setitem(self):
+        """Use an overridden __setitem__ when updating a subclass."""
+        assets = HookedAssetsDict(object())
+
+        assets.update({"z": {"href": "z"}, "a": {"href": "a"}})
+
+        self.assertEqual(assets.setitem_keys, ["z", "a"])
 
     def test_update_and_setitem_sort_assets_and_remove_private_fields(self):
         """Sort assets and remove private fields after updates."""

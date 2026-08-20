@@ -1307,9 +1307,9 @@ class QueryStringSearch(Search):
             product = EOProduct(self.provider, properties, **product_kwargs)
 
             additional_assets = self.get_assets_from_mapping(result)
-            product.assets.update(additional_assets)
 
             # move assets from properties to product's attr, normalize keys & roles
+            normalized_assets: dict[str, Any] = {}
             for key, asset in product.properties.pop("assets", {}).items():
                 url = asset.get("href", "")
                 norm_key, roles = product.driver.guess_asset_key_and_roles(
@@ -1319,13 +1319,13 @@ class QueryStringSearch(Search):
                 if norm_key is not None:
                     asset["title"] = norm_key
                     asset["roles"] = roles
-                    product.assets[norm_key] = asset
+                    normalized_assets[norm_key] = asset
                 else:
                     asset["title"] = asset.get("title", key)
-                    product.assets[key] = asset
+                    normalized_assets[key] = asset
 
-            # sort assets
-            product.assets.data = dict(sorted(product.assets.data.items()))
+            # batch-update once to avoid assets sort and clean up  on every update
+            product.assets.update({**additional_assets, **normalized_assets})
             product._normalize_bands()
             products.append(product)
         return products

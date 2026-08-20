@@ -605,12 +605,12 @@ def update_assets_from_s3(
 
                     assets_data[key] = asset_data
 
-        for key in assets_data:
-            if key not in product.assets:
-                product.assets[key] = assets_data[key]
-
-        # sort assets
-        product.assets.data = dict(sorted(product.assets.data.items()))
+        new_assets = {
+            key: asset_data
+            for key, asset_data in assets_data.items()
+            if key not in product.assets
+        }
+        product.assets.update(new_assets)
 
         # update driver
         product.driver = product.get_driver()
