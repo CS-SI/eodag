@@ -28,6 +28,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
+    TypeAdapter,
     ValidationInfo,
     model_validator,
 )
@@ -39,7 +40,6 @@ from stac_pydantic.links import Links
 from stac_pydantic.shared import SEMVER_REGEX
 from typing_extensions import LiteralString
 
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 from eodag.utils import STAC_VERSION
@@ -62,6 +62,7 @@ RFC3339_PATTERN = (
     r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
     r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
 )
+STAC_EXTENSIONS_ADAPTER = TypeAdapter(list[AnyUrl])
 
 
 class Collection(StacCollection):
@@ -540,13 +541,16 @@ class Collection(StacCollection):
         )
 
         # update directly the instance as the called method is applied on it
-        self.stac_extensions = cast(
-            list[AnyUrl], summaries_validated.get_conformance_classes()
+        self.stac_extensions = STAC_EXTENSIONS_ADAPTER.validate_python(
+            summaries_validated.get_conformance_classes()
         )
 
         collection_dict = super().model_dump(
             by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
         )
+        collection_dict["stac_extensions"] = [
+            str(extension) for extension in collection_dict["stac_extensions"]
+        ]
 
         # restore to default value
         self.stac_extensions = Collection.model_fields["stac_extensions"].get_default()
@@ -574,8 +578,8 @@ class Collection(StacCollection):
         )
 
         # update directly the instance as the called method is applied on it
-        self.stac_extensions = cast(
-            list[AnyUrl], summaries_validated.get_conformance_classes()
+        self.stac_extensions = STAC_EXTENSIONS_ADAPTER.validate_python(
+            summaries_validated.get_conformance_classes()
         )
 
         collection_str = super().model_dump_json(

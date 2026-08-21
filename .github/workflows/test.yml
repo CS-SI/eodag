@@ -2,9 +2,8 @@ name: Run Tests
 
 on:
   push:
-    branches: [master, develop, v5_download_link_asset]
+    branches: [master, develop, v5.x.x]
   pull_request:
-    branches: [master, develop, v5_download_link_asset]
   schedule:
     - cron: "0 7 * * 1"
   workflow_dispatch:
