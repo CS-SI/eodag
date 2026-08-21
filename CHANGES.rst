@@ -3,6 +3,25 @@ Release history
 ===============
 
 
+v4.7.1 (2026-08-21)
+===================
+
+Continuous Integration
+----------------------
+
+* Always use PR target branch as benchmark reference (`#2317`_, `fafcb36`_)
+
+Refactoring
+-----------
+
+* **config**: Simplify user config template (`#2321`_, `c808210`_)
+
+.. _#2317: https://github.com/CS-SI/eodag/pull/2317
+.. _#2321: https://github.com/CS-SI/eodag/pull/2321
+.. _c808210: https://github.com/CS-SI/eodag/commit/c8082108834159c83b21fda94048ddcc952dc4b7
+.. _fafcb36: https://github.com/CS-SI/eodag/commit/fafcb3663925e5fd8b85d5d8845b787bc00b81c3
+
+
 v4.7.1 (2026-08-20)
 ===================
 
