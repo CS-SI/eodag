@@ -22,7 +22,7 @@ import re
 from collections import UserDict, UserList
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, cast
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, PrivateAttr, TypeAdapter
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import model_validator
 from pydantic_core import InitErrorDetails, PydanticCustomError
@@ -31,7 +31,6 @@ from stac_pydantic.collection import Extent, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
 from stac_pydantic.shared import SEMVER_REGEX
 
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 from eodag.utils import STAC_VERSION
@@ -55,6 +54,7 @@ RFC3339_PATTERN = (
     r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
     r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
 )
+STAC_EXTENSIONS_ADAPTER = TypeAdapter(list[AnyUrl])
 
 
 class Collection(StacCollection):
@@ -440,9 +440,9 @@ class Collection(StacCollection):
                                 default_json is not None
                                 and error["loc"][1] in default_json
                             ):
-                                values_dict[wrong_field][
-                                    error["loc"][1]
-                                ] = default_json[error["loc"][1]]
+                                values_dict[wrong_field][error["loc"][1]] = (
+                                    default_json[error["loc"][1]]
+                                )
                         else:
                             try:
                                 values_dict[wrong_field].remove(error["input"])
@@ -508,13 +508,16 @@ class Collection(StacCollection):
         )
 
         # update directly the instance as the called method is applied on it
-        self.stac_extensions = cast(
-            list[AnyUrl], summaries_validated.get_conformance_classes()
+        self.stac_extensions = STAC_EXTENSIONS_ADAPTER.validate_python(
+            summaries_validated.get_conformance_classes()
         )
 
         collection_dict = super().model_dump(
             by_alias=by_alias, exclude_unset=exclude_unset, **kwargs
         )
+        collection_dict["stac_extensions"] = [
+            str(extension) for extension in collection_dict["stac_extensions"]
+        ]
 
         # restore to default value
         self.stac_extensions = Collection.model_fields["stac_extensions"].get_default()
@@ -542,8 +545,8 @@ class Collection(StacCollection):
         )
 
         # update directly the instance as the called method is applied on it
-        self.stac_extensions = cast(
-            list[AnyUrl], summaries_validated.get_conformance_classes()
+        self.stac_extensions = STAC_EXTENSIONS_ADAPTER.validate_python(
+            summaries_validated.get_conformance_classes()
         )
 
         collection_str = super().model_dump_json(
