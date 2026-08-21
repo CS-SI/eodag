@@ -1305,7 +1305,7 @@ class HTTPDownload(Download):
         def download_asset(asset: Asset, asset_stream: StreamResponse) -> None:
             asset_chunks = asset_stream.content
             asset_path = cast(str, asset_stream.arcname)
-            asset_abs_path = os.path.join(fs_dir_path, asset_path)
+            asset_abs_path = os.path.join(fs_dir_path, os.path.normpath(asset_path))
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
             asset_abs_path_dir = os.path.dirname(asset_abs_path)
