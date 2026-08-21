@@ -1617,6 +1617,22 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__SARA__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__SARA__AUTH__CREDENTIALS__USERNAME", None)
 
+    def test_user_conf_template_keeps_priority_and_credentials(self):
+        """The user configuration template should not include runtime settings."""
+        template_path = res_files("eodag") / "resources" / "user_conf_template.yml"
+        with template_path.open(encoding="utf-8") as file:
+            user_conf = yaml.safe_load(file)
+
+        for provider_conf in user_conf.values():
+            self.assertIn("priority", provider_conf)
+            self.assertTrue(
+                set(provider_conf).issubset(
+                    {"priority", "auth", "search_auth", "download_auth", "api"}
+                )
+            )
+            if "api" in provider_conf:
+                self.assertEqual(set(provider_conf["api"]), {"credentials"})
+
     @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
