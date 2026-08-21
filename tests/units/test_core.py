@@ -3165,15 +3165,18 @@ class TestCoreSearch(TestCoreBase):
             self.dag.guess_collection()
 
     def test_guess_collection_has_no_limit(self):
-        """guess_collection must run a whoosh search without any limit"""
+        """guess_collection must run all found collections without any limit"""
         # Filter that should give more than 10 products referenced in the catalog.
-        opt_prods = [
+        optical_collections = [
             c
             for c in self.dag.list_collections(fetch_providers=False)
-            if c.eodag_sensor_type == "OPTICAL"
+            if c.eodag_sensor_type == ["OPTICAL"]
         ]
-        if len(opt_prods) <= 10:
-            self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
+        self.assertGreater(
+            len(optical_collections),
+            10,
+            "This test requires that more than 10 products are 'OPTICAL'",
+        )
         guesses = self.dag.guess_collection(
             sensor_type="OPTICAL",
         )
