@@ -27,9 +27,20 @@ import tempfile
 import zipfile
 from abc import abstractmethod
 from pathlib import Path
+from threading import Lock
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    final,
+)
 
+import orjson
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
@@ -37,8 +48,10 @@ from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
+    DEFAULT_MIME,
     ProgressCallback,
     StreamResponse,
+    guess_extension,
     sanitize,
     uri_to_path,
 )
@@ -53,7 +66,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
-    from eodag.api.product._product import EOProduct
+    from eodag.api.product import Asset, EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
@@ -98,6 +111,8 @@ class Download(PluginTopic):
     :param provider: An eodag providers configuration dictionary
     :param config: Path to the user configuration file
     """
+
+    directories_mutex = Lock()
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Download, self).__init__(provider, config)
@@ -179,6 +194,195 @@ class Download(PluginTopic):
             "Download streaming must be implemented using a method named stream_download"
         )
 
+    def _prepare_directories(self, **kwargs: Unpack[DownloadConf]) -> tuple[str, str]:
+        """Prepare output and statement directories."""
+        # output dir
+        output_dir = kwargs.get("output_dir")
+        if output_dir is None:
+            output_dir = getattr(self.config, "output_dir", None)
+        if output_dir is None:
+            output_dir = tempfile.gettempdir()
+        output_dir = os.path.abspath(output_dir)
+
+        # statement dir
+        statement_dir = os.path.join(output_dir, ".downloaded")
+
+        Download.directories_mutex.acquire()
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+        if not os.path.isdir(statement_dir):
+            try:
+                os.makedirs(statement_dir)
+            except OSError:
+                import traceback as tb
+
+                logger.warning(
+                    "Unable to create download directory:\n" + tb.format_exc()
+                )
+        Download.directories_mutex.release()
+
+        return output_dir, statement_dir
+
+    def _get_statement_path(self, asset: Asset, statement_dir: str) -> str:
+        """Get the path to the statement file for the given asset."""
+        asset_hash = "{}-{}-{}".format(
+            str(asset.product.collection),
+            str(asset.product.properties.get("id")),
+            asset.key,
+        )
+        return "{}/{}.json".format(
+            statement_dir, hashlib.md5(asset_hash.encode("utf-8")).hexdigest()
+        )
+
+    @final
+    def set_statements(self, asset: Asset, status: dict[str, Any], **kwargs):
+        """update asset statement"""
+        _, statement_dir = self._prepare_directories(**kwargs)
+        statement_file = self._get_statement_path(asset, statement_dir)
+        logger.debug(
+            "Asset {} statements recorded at {}".format(asset.key, statement_file)
+        )
+        with open(statement_file, "wb") as f:
+            f.write(orjson.dumps(status))
+        # update asset with current status
+        asset.update(status)
+
+    @final
+    def get_statements(
+        self,
+        asset: Asset,
+        **kwargs,
+    ) -> dict[str, Any]:
+        """Check if file has already been downloaded, and prepare asset download
+
+        :param asset: The Asset to download
+        :param kwargs: Additional download keyword arguments,`output_dir` (str), `extract` (bool),
+                       `delete_archive` (bool)
+        :returns: The asset statements if they exist, otherwise an empty dictionary
+        """
+        output_dir, statement_dir = self._prepare_directories(**kwargs)
+        statement_file = self._get_statement_path(asset, statement_dir)
+
+        # Try load statement file
+        statements = {
+            "href": "",
+            "order:status": "",
+            "file:local_path": "",
+        }
+
+        if os.path.isfile(statement_file):
+            try:
+                with open(statement_file, "r") as f:
+                    imported_statements = orjson.loads(f.read())
+
+                # Keep existing statements only if href hasn't changed since last download
+                # means: old and new are defined and different
+                if asset.get("href", "") in ["", imported_statements.get("href", "")]:
+                    statements = imported_statements
+                else:
+                    raise Exception("Out-dated statement (href changed)")
+            except Exception as e:
+                logger.debug(
+                    "Asset {} fail to load statement file: {}".format(asset.key, str(e))
+                )
+                # Corrupted or out-dated file
+                try:
+                    os.remove(statement_file)
+                except Exception as e:
+                    logger.debug(
+                        "Remove corrupted asset {} statements: {}".format(asset.key, e)
+                    )
+
+        product_dir = os.path.join(
+            output_dir, sanitize(asset.product.properties.get("title", ""))
+        )
+        if not os.path.isdir(product_dir):
+            os.makedirs(product_dir)
+
+        statement_local_path = str(statements.get("file:local_path", ""))
+        if statement_local_path and (
+            os.path.isfile(statement_local_path) or os.path.isdir(statement_local_path)
+        ):
+            return statements
+
+        # Generate expected local path
+        local_path = os.path.join(product_dir, sanitize(asset.key))
+        if not os.path.isdir(local_path):
+            computed_extension: Optional[str] = None
+            if asset.get("type") not in [None, "", DEFAULT_MIME]:
+                computed_extension = guess_extension(asset.get("type") or DEFAULT_MIME)
+            if computed_extension is None:
+                computed_extension = ""
+            output_extension: str = kwargs.get(
+                "output_extension",
+                getattr(self.config, "output_extension", computed_extension),
+            )
+            if (
+                not isinstance(output_extension, str)
+                or len(output_extension) == 0
+                or not output_extension.startswith(".")
+            ):
+                logger.debug("Malformed output extension {}".format(computed_extension))
+                output_extension = ""
+
+            if not os.path.isdir(local_path) and not local_path.endswith(
+                output_extension
+            ):
+                local_path = "{}{}".format(local_path.rstrip("/\\"), output_extension)
+                if not os.path.isfile(local_path):
+                    # Find matching file, excluding extension restriction
+                    # When asset is a directory, result could be an archive
+                    base_path = os.path.join(product_dir, sanitize(asset.key))
+                    for file in os.listdir(product_dir):
+                        path = os.path.join(product_dir.rstrip("/\\"), file)
+                        if os.path.isfile(path) and path.startswith(f"{base_path}."):
+                            local_path = path
+                            statements["file:local_path"] = local_path
+                            self.set_statements(asset, statements, **kwargs)
+                            break
+
+        # If an old cache exists and way to generate path changed, move cached file (file only)
+        if (
+            statement_local_path != ""
+            and os.path.isfile(statement_local_path)
+            and statement_local_path != local_path
+        ):
+            os.rename(statement_local_path, local_path)
+            logger.debug(
+                "Asset {} local_path moved from {} to {}",
+                asset.key,
+                statement_local_path,
+                local_path,
+            )
+            statements["file:local_path"] = local_path
+            self.set_statements(asset, statements, **kwargs)
+        else:
+            statements["file:local_path"] = local_path
+
+        return statements
+
+    @final
+    def check_cache(self, asset: Asset, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Get asset cached download path
+
+        :param asset: The asset to check in the download cache
+        :param kwargs: Additional keyword arguments
+        :returns: The asset statements if local path exists and is valid, otherwise None
+        """
+        # Gather current asset statements
+        statements = self.get_statements(asset, **kwargs)
+
+        local_path = statements.get("file:local_path")
+        if isinstance(local_path, str) and (
+            os.path.isfile(local_path) or os.path.isdir(local_path)
+        ):
+            logger.debug(
+                "Asset {} already downloaded at {}".format(asset.key, local_path)
+            )
+            return statements
+
+        return None
+
     def _prepare_download(
         self,
         product: EOProduct,
@@ -202,14 +406,6 @@ class Download(PluginTopic):
                 return fs_path, None
 
         url = product.remote_location
-        if not url:
-            logger.debug(
-                f"Unable to get download url for {product}, skipping download",
-            )
-            return None, None
-        logger.info(
-            f"Download url: {url}",
-        )
 
         output_dir = (
             kwargs.pop("output_dir", None)
