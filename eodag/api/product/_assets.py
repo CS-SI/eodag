@@ -119,11 +119,21 @@ class AssetsDict(UserDict):
         if dl is None:
             return
         href = dl.get("href") or ""
-        if href:
-            if not self.product.location:
-                self.product.location = href
-            if not self.product.remote_location:
-                self.product.remote_location = href
+        if not href:
+            return
+
+        product = getattr(self, "product", None)
+        if product is None:
+            return
+        if not hasattr(product, "location"):
+            return
+        product_location = getattr(product, "location", None)
+        product_remote_location = getattr(product, "remote_location", None)
+
+        if not product_location:
+            product.location = href
+        if not product_remote_location:
+            product.remote_location = href
 
     def _check(self, asset_key: str, asset_value: dict[str, Any]) -> bool:
         """Validate an asset before insertion.
@@ -169,20 +179,26 @@ class AssetsDict(UserDict):
 
         return True
 
+    @staticmethod
+    def _remove_private_fields(asset: Asset) -> None:
+        """Delete private asset fields (fields starting with '_')"""
+        for private_field in [key for key in asset if key.startswith("_")]:
+            del asset[private_field]
+
     def sort(self):
         """Used to self sort"""
         sorted_assets = {}
         # Keep technical assets first
         for key in TECHNICAL_ASSET_KEYS:
             if key in self.data:
-                sorted_assets[key] = self.data.pop(key)
+                asset = self.data.pop(key)
+                self._remove_private_fields(asset)
+                sorted_assets[key] = asset
 
         # Sort and add others
         for key in sorted(self.data):
             asset = self.data[key]
-            # delete private asset fields (fields starting with '_')
-            for private_field in [k for k in asset if k[0] == "_"]:
-                del asset[private_field]
+            self._remove_private_fields(asset)
             sorted_assets[key] = asset
         self.data = sorted_assets
 
