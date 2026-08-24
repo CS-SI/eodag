@@ -2981,11 +2981,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "availability": [
                     {
-                        "href": p1.properties["eodag:download_link"],
+                        "href": p1.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                     {
-                        "href": p2.properties["eodag:download_link"],
+                        "href": p2.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                 ]
@@ -3032,7 +3032,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertEqual(len(prep.query_params["availability"]), 1)
         self.assertEqual(
             prep.query_params["availability"][0]["href"],
-            p_ok.properties["eodag:download_link"],
+            p_ok.assets["download_link"]["href"],
         )
 
     @mock.patch(
@@ -3181,6 +3181,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                             "https://s3.datalake.cnes.fr/sentinel2-l1c/14/U/LD/2025/04/02/"
                             "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
                         ),
+                        "description": "Link to product in datalake",
                         "alternate:name": "s3",
                     },
                     "order:status": "succeeded",
