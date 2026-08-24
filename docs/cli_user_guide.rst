@@ -119,11 +119,18 @@ Collections
 
 .. command-output:: eodag list --help
 
-* To list all available collections and supported providers:
+* To list all available collection identifiers, one per line:
 
 .. code-block:: console
 
         eodag list
+
+* To include full collection information, use ``--json`` or ``--yaml``:
+
+.. code-block:: console
+
+        eodag list --json
+        eodag list --yaml
 
 * To list available collections on a specified supported provider:
 
