@@ -88,3 +88,18 @@ class TestAssetsDict(unittest.TestCase):
                 "z": {"href": "z", "title": "z", "type": "application/zip"},
             },
         )
+
+    def test_remove_private_fields_from_technical_assets(self):
+        """Remove private fields from technical assets while sorting them first."""
+        assets = AssetsDict(object())
+
+        assets.update(
+            {
+                "thumbnail": {"href": "thumbnail", "_internal": "remove"},
+                "download_link": {"href": "download", "_internal": "remove"},
+                "quicklook": {"href": "quicklook", "_internal": "remove"},
+            }
+        )
+
+        self.assertEqual(list(assets), ["download_link", "quicklook", "thumbnail"])
+        self.assertTrue(all("_internal" not in asset for asset in assets.values()))
