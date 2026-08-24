@@ -85,12 +85,17 @@ geodes:
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
       sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
+      endpoint_url: '$.null'
+      endpoint_description: '$.null'
     assets_mapping:
       download_link:
         title: 'downloadlink'
         href: '$.assets[?(@.roles[0] == "data") & (@.type == "application/zip")].href'
         roles: '["archive", "data"]'
         order:status: 'succeeded'
+        _endpoint_url: '$.properties.endpoint_url'
+        _endpoint_description: '$.properties.endpoint_description'
+        alternate: '{{"href": "{_endpoint_url}", "description": "{_endpoint_description}", "alternate:name": "s3"}}'
       quicklook:
         href: '$.assets[?(@.roles[0] == "overview")].href'
         title: "quicklook"
