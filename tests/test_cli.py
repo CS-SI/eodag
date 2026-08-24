@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime as dt
+import json
 import logging
 import os
 import re
@@ -29,6 +30,7 @@ from typing import Optional, Tuple
 import click
 import responses
 import shapely
+import yaml
 from click.testing import CliRunner
 from faker import Faker
 from packaging import version
@@ -739,8 +741,8 @@ class TestEodagCli(unittest.TestCase):
         exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
-        for col in all_supported_collections:
-            self.assertIn(col, output)
+        self.assertNotIn("Listing available collections:", output)
+        self.assertCountEqual(output.splitlines(), all_supported_collections)
 
     def test_eodag_list_collection_with_provider_ok(self):
         """Calling eodag list with provider should return all supported collections of specified provider"""  # noqa
@@ -756,12 +758,9 @@ class TestEodagCli(unittest.TestCase):
             )
             self.assertEqual(exit_code, 0)
             self.assertIsNone(error)
-            for col in provider_supported_collections:
-                self.assertIn(
-                    col,
-                    output,
-                    f"{col} was not found in {provider} supported collections",
-                )
+            self.assertNotIn("Listing available collections:", output)
+            for collection in provider_supported_collections:
+                self.assertIn(collection, output)
 
     def test_eodag_list_collection_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa
@@ -785,27 +784,79 @@ class TestEodagCli(unittest.TestCase):
 
         exit_code, output, error = self.eodag_command(["list", "--no-fetch"])
         self.assertEqual(exit_code, 0)
-        self.assertIn("Listing available collections:", output)
+        self.assertNotIn("Listing available collections:", output)
         self.assertIsNone(error)
 
         assert not mock_fetch_collections_list.called
 
         exit_code, output, error = self.eodag_command(["list"])
         self.assertEqual(exit_code, 0)
-        self.assertIn("Listing available collections:", output)
+        self.assertNotIn("Listing available collections:", output)
         self.assertIsNone(error)
 
         mock_fetch_collections_list.assert_called_once_with(mock.ANY, provider=None)
 
         exit_code, output, error = self.eodag_command(["list", "-p", "cop_dataspace"])
         self.assertEqual(exit_code, 0)
-        self.assertIn("Listing available collections:", output)
+        self.assertNotIn("Listing available collections:", output)
         self.assertIsNone(error)
 
         mock_fetch_collections_list.assert_called_with(
             mock.ANY, provider="cop_dataspace"
         )
         self.assertEqual(mock_fetch_collections_list.call_count, 2)
+
+    @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
+    def test_eodag_list_collection_formatted_output(self, dag):
+        """Calling eodag list with a format option should return collection metadata."""
+        collections = CollectionsList(
+            [
+                Collection.create_with_dag(
+                    dag=dag,
+                    id="foo",
+                    title="Foo collection",
+                    description="Foo description",
+                    keywords=["foo", "bar"],
+                ),
+                Collection.create_with_dag(
+                    dag=dag,
+                    id="bar",
+                    title="Bar collection",
+                    description="Donn\u00e9es bar",
+                ),
+            ]
+        )
+        dag.return_value.list_collections.return_value = collections
+        dag.return_value.guess_collection.return_value = CollectionsList([])
+        expected_collections = {
+            collection.id: collection.model_dump(
+                mode="json", exclude_none=True, exclude={"id"}
+            )
+            for collection in collections
+        }
+
+        exit_code, output, error = self.eodag_command(["list", "--json", "--no-fetch"])
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertEqual(json.loads(output), expected_collections)
+
+        exit_code, output, error = self.eodag_command(["list", "--yaml", "--no-fetch"])
+        self.assertEqual(exit_code, 0)
+        self.assertIsNone(error)
+        self.assertNotIn("Listing available collections:", output)
+        self.assertEqual(yaml.safe_load(output), expected_collections)
+        self.assertIn("  keywords:\n    - foo\n    - bar\n", output)
+        self.assertIn("Donn\u00e9es bar", output)
+        self.assertNotIn("\\xE9", output)
+
+    def test_eodag_list_collection_format_options_are_mutually_exclusive(self):
+        """Calling eodag list with both output formats should fail."""
+        exit_code, output, error = self.eodag_command(
+            ["list", "--json", "--yaml", "--no-fetch"]
+        )
+        self.assertNotEqual(exit_code, 0)
+        self.assertIsInstance(error, SystemExit)
+        self.assertIn("mutually exclusive", output)
 
     @mock.patch("eodag.api.core.EODataAccessGateway", autospec=True)
     def test_eodag_guess_collection_ok(self, dag):
