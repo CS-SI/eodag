@@ -30,6 +30,7 @@ from typing import Optional, Tuple
 import click
 import responses
 import shapely
+import yaml
 from click.testing import CliRunner
 from faker import Faker
 from packaging import version
@@ -815,6 +816,7 @@ class TestEodagCli(unittest.TestCase):
                     id="foo",
                     title="Foo collection",
                     description="Foo description",
+                    keywords=["foo", "bar"],
                 ),
                 Collection.create_with_dag(
                     dag=dag,
@@ -826,31 +828,24 @@ class TestEodagCli(unittest.TestCase):
         )
         dag.return_value.list_collections.return_value = collections
         dag.return_value.guess_collection.return_value = CollectionsList([])
+        expected_collections = {
+            collection.id: collection.model_dump(
+                mode="json", exclude_none=True, exclude={"id"}
+            )
+            for collection in collections
+        }
 
         exit_code, output, error = self.eodag_command(["list", "--json", "--no-fetch"])
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
-        self.assertEqual(
-            json.loads(output),
-            {
-                collection.id: collection.model_dump(
-                    mode="json", exclude_none=True, exclude={"id"}
-                )
-                for collection in collections
-            },
-        )
+        self.assertEqual(json.loads(output), expected_collections)
 
         exit_code, output, error = self.eodag_command(["list", "--yaml", "--no-fetch"])
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
         self.assertNotIn("Listing available collections:", output)
-        for collection in collections:
-            self.assertIn(f"* {collection.id}:\n", output)
-            for prop, value in collection.model_dump().items():
-                if prop != "id" and value is not None:
-                    self.assertIn(f"  - {prop}: ", output)
-        self.assertIn("  - title: Foo collection\n", output)
-        self.assertIn("  - description: Bar description\n", output)
+        self.assertEqual(yaml.safe_load(output), expected_collections)
+        self.assertIn("  keywords:\n    - foo\n    - bar\n", output)
 
     def test_eodag_list_collection_format_options_are_mutually_exclusive(self):
         """Calling eodag list with both output formats should fail."""

@@ -42,12 +42,12 @@ from __future__ import annotations
 import functools
 import json
 import sys
-import textwrap
 from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
 from urllib.parse import parse_qs
 
 import click
+import yaml
 
 from eodag.utils import DEFAULT_LIMIT, DEFAULT_PAGE
 
@@ -62,6 +62,14 @@ CRUNCHERS = [
     "FilterProperty",
     "FilterDate",
 ]
+
+
+class IndentedSafeDumper(yaml.SafeDumper):
+    """PyYAML dumper that indents block sequence items under their mapping key."""
+
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
+        """Force indentation for block sequence items."""
+        return super().increase_indent(flow, False)
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -506,28 +514,20 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
             collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
+        formatted_collections = {
+            collection.id: collection.model_dump(
+                mode="json", exclude_none=True, exclude={"id"}
+            )
+            for collection in collections
+        }
         if json_output:
+            click.echo(json.dumps(formatted_collections))
+        elif yaml_output:
             click.echo(
-                json.dumps(
-                    {
-                        collection.id: collection.model_dump(
-                            mode="json", exclude_none=True, exclude={"id"}
-                        )
-                        for collection in collections
-                    }
+                yaml.dump(
+                    formatted_collections, Dumper=IndentedSafeDumper, sort_keys=False
                 )
             )
-        elif yaml_output:
-            text_wrapper = textwrap.TextWrapper()
-            for collection in collections:
-                click.echo("* {}:".format(collection.id))
-                for prop, value in collection.model_dump().items():
-                    if prop != "id" and value is not None:
-                        text_wrapper.initial_indent = "  - {}: ".format(prop)
-                        text_wrapper.subsequent_indent = " " * len(
-                            text_wrapper.initial_indent
-                        )
-                        click.echo(text_wrapper.fill(str(value)))
         elif collections:
             click.echo("\n".join(collection.id for collection in collections))
     except UnsupportedProvider:
