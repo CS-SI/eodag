@@ -3170,15 +3170,18 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self, identifier, checksum, endpoint_url="https://geodes.example/data"
     ):
         download_link = f"https://geodes.example/data/{identifier}/file_{checksum}.tif"
-        return EOProduct(
+        product = EOProduct(
             self.provider,
             {
                 "id": identifier,
                 "geometry": "POINT (0 0)",
-                "eodag:download_link": download_link,
-                "geodes:endpoint_url": endpoint_url,
             },
         )
+        product.assets["download_link"] = {
+            "href": download_link,
+            "alternate": {"href": endpoint_url},
+        }
+        return product
 
     @mock.patch("eodag.plugins.search.geodes.GeodesSearch._request", autospec=True)
     def test_plugins_search_geodes_get_availability(self, mock__request):
@@ -3208,11 +3211,11 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
             {
                 "availability": [
                     {
-                        "href": p1.properties["eodag:download_link"],
+                        "href": p1.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                     {
-                        "href": p2.properties["eodag:download_link"],
+                        "href": p2.assets["download_link"]["href"],
                         "endpointURL": "https://geodes.example/data",
                     },
                 ]
@@ -3238,6 +3241,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                 "eodag:download_link": "https://geodes.example/data/PROD2/file.tif",
             },
         )
+        p_no_url.assets["download_link"] = {
+            "href": "https://geodes.example/data/PROD2/file.tif"
+        }
         p_no_link = EOProduct(
             self.provider,
             {
@@ -3246,6 +3252,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                 "geodes:endpoint_url": "https://geodes.example/data",
             },
         )
+        p_no_link.assets["download_link"] = {
+            "alternate": {"href": "https://geodes.example/data"}
+        }
 
         self.search_plugin._get_availability([p_ok, p_no_url, p_no_link])
 
@@ -3253,7 +3262,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         self.assertEqual(len(prep.query_params["availability"]), 1)
         self.assertEqual(
             prep.query_params["availability"][0]["href"],
-            p_ok.properties["eodag:download_link"],
+            p_ok.assets["download_link"]["href"],
         )
 
     @mock.patch(
@@ -3275,7 +3284,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], ONLINE_STATUS)
+        self.assertEqual(product.assets["download_link"]["order:status"], ONLINE_STATUS)
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -3298,7 +3307,9 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
 
         self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], OFFLINE_STATUS)
+        self.assertEqual(
+            product.assets["download_link"]["order:status"], OFFLINE_STATUS
+        )
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._get_availability", autospec=True
@@ -3309,14 +3320,14 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         """When no matching product/asset is found in the availability response,
         order:status must be left unchanged and a warning must be logged"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         # no matching id in response
         mock_get_availability.return_value = {"products": []}
 
         with self.assertLogs("eodag.search.geodes", level="WARNING") as log_ctx:
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
         self.assertTrue(
             any("Could not update availability" in m for m in log_ctx.output)
         )
@@ -3329,7 +3340,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
     ):
         """Products whose checksum matches more than one file must be skipped"""
         product = self._build_product("PROD1", "abc")
-        product.properties["order:status"] = "untouched"
+        product.assets["download_link"]["order:status"] = "untouched"
         mock_get_availability.return_value = {
             "products": [
                 {
@@ -3345,7 +3356,7 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
         with self.assertLogs("eodag.search.geodes", level="WARNING"):
             self.search_plugin._set_availability([product])
 
-        self.assertEqual(product.properties["order:status"], "untouched")
+        self.assertEqual(product.assets["download_link"]["order:status"], "untouched")
 
     @mock.patch(
         "eodag.plugins.search.geodes.GeodesSearch._set_availability", autospec=True
@@ -3395,6 +3406,14 @@ class TestSearchPluginGeodesSearch(BaseSearchPluginTest):
                         "URN:FEATURE:DATA:gdh:25416e3f-1a7f-379a-9b65-a6539b1fd95b:V1"
                         "/files/86f828c4c7e921615d1cd0476604f780"
                     ),
+                    "alternate": {
+                        "href": (
+                            "https://s3.datalake.cnes.fr/sentinel2-l1c/14/U/LD/2025/04/02/"
+                            "S2A_MSIL1C_20250402T175741_N0511_R141_T14ULD_20250403T022035.zip"
+                        ),
+                        "description": "Link to product in datalake",
+                        "alternate:name": "s3",
+                    },
                     "order:status": "succeeded",
                     "roles": ["archive", "data"],
                     "title": "downloadlink",
