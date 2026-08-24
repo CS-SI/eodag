@@ -822,7 +822,7 @@ class TestEodagCli(unittest.TestCase):
                     dag=dag,
                     id="bar",
                     title="Bar collection",
-                    description="Bar description",
+                    description="Donn\u00e9es bar",
                 ),
             ]
         )
@@ -846,6 +846,8 @@ class TestEodagCli(unittest.TestCase):
         self.assertNotIn("Listing available collections:", output)
         self.assertEqual(yaml.safe_load(output), expected_collections)
         self.assertIn("  keywords:\n    - foo\n    - bar\n", output)
+        self.assertIn("Donn\u00e9es bar", output)
+        self.assertNotIn("\\xE9", output)
 
     def test_eodag_list_collection_format_options_are_mutually_exclusive(self):
         """Calling eodag list with both output formats should fail."""

@@ -525,7 +525,10 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
         elif yaml_output:
             click.echo(
                 yaml.dump(
-                    formatted_collections, Dumper=IndentedSafeDumper, sort_keys=False
+                    formatted_collections,
+                    Dumper=IndentedSafeDumper,
+                    sort_keys=False,
+                    allow_unicode=True,
                 )
             )
         elif collections:
