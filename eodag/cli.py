@@ -511,7 +511,7 @@ def list_col(ctx: Context, **kwargs: Any) -> None:
                 json.dumps(
                     {
                         collection.id: collection.model_dump(
-                            mode="json", exclude={"id"}
+                            mode="json", exclude_none=True, exclude={"id"}
                         )
                         for collection in collections
                     }

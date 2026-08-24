@@ -833,7 +833,9 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(
             json.loads(output),
             {
-                collection.id: collection.model_dump(mode="json", exclude={"id"})
+                collection.id: collection.model_dump(
+                    mode="json", exclude_none=True, exclude={"id"}
+                )
                 for collection in collections
             },
         )
