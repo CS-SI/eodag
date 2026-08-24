@@ -169,20 +169,26 @@ class AssetsDict(UserDict):
 
         return True
 
+    @staticmethod
+    def _remove_private_fields(asset: Asset) -> None:
+        """Delete private asset fields (fields starting with '_')"""
+        for private_field in [key for key in asset if key.startswith("_")]:
+            del asset[private_field]
+
     def sort(self):
         """Used to self sort"""
         sorted_assets = {}
         # Keep technical assets first
         for key in TECHNICAL_ASSET_KEYS:
             if key in self.data:
-                sorted_assets[key] = self.data.pop(key)
+                asset = self.data.pop(key)
+                self._remove_private_fields(asset)
+                sorted_assets[key] = asset
 
         # Sort and add others
         for key in sorted(self.data):
             asset = self.data[key]
-            # delete private asset fields (fields starting with '_')
-            for private_field in [k for k in asset if k[0] == "_"]:
-                del asset[private_field]
+            self._remove_private_fields(asset)
             sorted_assets[key] = asset
         self.data = sorted_assets
 
