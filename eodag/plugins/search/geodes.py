@@ -47,11 +47,13 @@ class GeodesSearch(StacSearch):
         """Get availability information for the products from the provider's 'fastavailability' endpoint."""
         body: dict[str, list] = {"availability": []}
         for product in products:
-            download_link = product.properties.get("eodag:download_link")
-            endpoint_url = product.properties.get("geodes:endpoint_url")
-            if download_link and endpoint_url:
+            if (download_link_asset := product.assets.get("download_link")) is None:
+                continue
+            download_link_href = download_link_asset.get("href")
+            download_link_s3 = download_link_asset.get("alternate", {}).get("href")
+            if download_link_href and download_link_s3:
                 body["availability"].append(
-                    {"href": download_link, "endpointURL": endpoint_url}
+                    {"href": download_link_href, "endpointURL": download_link_s3}
                 )
 
         url = self.config.api_endpoint.replace("api/stac/search", "fastavailability")
@@ -69,15 +71,15 @@ class GeodesSearch(StacSearch):
         updated = 0
 
         for product in products:
-            download_link = product.properties.get("eodag:download_link")
-            if download_link is None:
+            if (download_link_asset := product.assets.get("download_link")) is None:
                 continue
+            download_link_href = download_link_asset.get("href")
 
             # find matching product
             product_availability_list = [
                 a
                 for a in availability_dict.get("products", [])
-                if a.get("id") in download_link
+                if a.get("id") in download_link_href
             ]
             if len(product_availability_list) != 1:
                 continue
@@ -87,14 +89,14 @@ class GeodesSearch(StacSearch):
             asset_availability_list = [
                 a.get("available")
                 for a in product_availability.get("files", {})
-                if a.get("checksum") in download_link
+                if a.get("checksum") in download_link_href
             ]
             if len(asset_availability_list) != 1:
                 continue
             asset_availability = asset_availability_list[0]
 
             # set status
-            product.properties["order:status"] = (
+            download_link_asset["order:status"] = (
                 ONLINE_STATUS if asset_availability else OFFLINE_STATUS
             )
 
