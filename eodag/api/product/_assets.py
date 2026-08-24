@@ -119,11 +119,21 @@ class AssetsDict(UserDict):
         if dl is None:
             return
         href = dl.get("href") or ""
-        if href:
-            if not self.product.location:
-                self.product.location = href
-            if not self.product.remote_location:
-                self.product.remote_location = href
+        if not href:
+            return
+
+        product = getattr(self, "product", None)
+        if product is None:
+            return
+        if not hasattr(product, "location"):
+            return
+        product_location = getattr(product, "location", None)
+        product_remote_location = getattr(product, "remote_location", None)
+
+        if not product_location:
+            product.location = href
+        if not product_remote_location:
+            product.remote_location = href
 
     def _check(self, asset_key: str, asset_value: dict[str, Any]) -> bool:
         """Validate an asset before insertion.
