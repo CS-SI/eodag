@@ -25,6 +25,7 @@ import unittest
 from copy import deepcopy as copy_deepcopy
 from importlib import import_module
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Annotated, Literal, Union, get_args, get_origin
 from unittest import mock
 from unittest.mock import call
@@ -6213,3 +6214,83 @@ class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
                 },
             },
         )
+
+
+class TestSearchPluginCSWSearch(unittest.TestCase):
+    def _get_plugin(self, search_definition):
+        from eodag.config import PluginConfig
+        from eodag.plugins.search.csw import CSWSearch
+
+        return CSWSearch(
+            "provider",
+            PluginConfig.from_mapping(
+                {
+                    "type": "CSWSearch",
+                    "search_definition": search_definition,
+                    "metadata_mapping": {"title": "//title/text()"},
+                    "products": {"collection": {"collection": "provider-collection"}},
+                }
+            ),
+        )
+
+    def test_csw_query_constraints_cover_matching_geometry_and_dates(self):
+        """CSW constraints support matching modes, geometry, and date filters."""
+        plugin = self._get_plugin(
+            {
+                "collection_tags": [],
+                "date_tags": {"start": "begin", "end": "finish"},
+            }
+        )
+        for matching, expected in (
+            ("prefix", "collection%"),
+            ("postfix", "%collection"),
+            ("exact", "collection"),
+            ("unknown", "%collection%"),
+        ):
+            constraints = plugin._CSWSearch__convert_query_params(
+                {"name": "title", "matching": matching}, "collection", {}
+            )
+            self.assertEqual(constraints[0].literal, expected)
+        constraints = plugin._CSWSearch__convert_query_params(
+            {"name": "title"},
+            "collection",
+            {
+                "geometry": {"lonmin": 1, "latmin": 2, "lonmax": 3, "latmax": 4},
+                "start_datetime": "2020-01-01",
+                "end_datetime": "2020-01-02",
+            },
+        )
+        self.assertEqual(len(constraints), 1)
+        self.assertEqual(len(constraints[0]), 4)
+
+    @mock.patch("eodag.plugins.search.csw.properties_from_xml")
+    def test_csw_build_product_selects_filtered_reference_and_download_link(
+        self, properties_from_xml
+    ):
+        """CSW products select filtered references and expose download links."""
+        plugin = self._get_plugin(
+            {"collection_tags": [], "resource_location_filter": "preferred"}
+        )
+        properties_from_xml.return_value = {"geometry": None}
+        record = SimpleNamespace(
+            xml=b"<record />",
+            bbox_wgs84=(1, 2, 3, 4),
+            references=[
+                {"scheme": "WWW:DOWNLOAD-1.0-http--download", "url": "other"},
+                {"scheme": "WWW:DOWNLOAD-1.0-http--download", "url": "preferred"},
+            ],
+        )
+        product = plugin._CSWSearch__build_product(record, "collection")
+        self.assertEqual(product.location, "preferred")
+        self.assertEqual(product.properties["eodag:download_link"], "preferred")
+        self.assertEqual(product.geometry.bounds, (1.0, 2.0, 3.0, 4.0))
+
+    def test_csw_constraints_accept_shapely_geometry(self):
+        """CSW constraints accept Shapely geometry bounds."""
+        from shapely.geometry import box
+
+        plugin = self._get_plugin({"collection_tags": []})
+        constraints = plugin._CSWSearch__convert_query_params(
+            {"name": "title"}, "collection", {"geometry": box(1, 2, 3, 4)}
+        )
+        self.assertEqual(constraints[0][1].bbox, (1.0, 2.0, 3.0, 4.0))
