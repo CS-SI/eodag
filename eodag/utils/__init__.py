@@ -424,6 +424,11 @@ def mutate_dict_in_place(func: Callable[[Any], Any], mapping: dict[Any, Any]) ->
     allowing to also modify values of nested dicts that may be level-1 values of
     mapping.
 
+    >>> mapping = {"a": 1, "nested": {"b": 2}}
+    >>> mutate_dict_in_place(lambda value: value * 10, mapping)
+    >>> mapping
+    {'a': 10, 'nested': {'b': 20}}
+
     :param func: A function to apply to each value of mapping which is not a dict object
     :param mapping: A Python dict object
     :returns: None
@@ -506,7 +511,14 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
 
 def maybe_generator(obj: Any) -> Iterator[Any]:
     """Generator function that get an arbitrary object and generate values from it if
-    the object is a generator."""
+    the object is a generator.
+
+    >>> list(maybe_generator(value for value in (1, 2, 3)))
+    [1, 2, 3]
+    >>> list(maybe_generator("value"))
+    ['value']
+    """
+
     if isinstance(obj, types.GeneratorType):
         for elt in obj:
             yield elt
@@ -1003,6 +1015,8 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     ...     Slice(start=None, end=None, step=None),
     ... )
     True
+    >>> string_to_jsonpath("$.foo[bar]")
+    Child(Child(Root(), Fields('foo')), Fields('bar'))
 
     :param args: Last arg as input string value, to be converted
     :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
@@ -1655,6 +1669,8 @@ def guess_file_type(file: str) -> str:
     'image/tiff'
     >>> guess_file_type('foo.grib')
     'application/x-grib'
+    >>> guess_file_type('foo.unknown_eodag_extension')
+    'application/octet-stream'
 
     :param file: file url or path
     :returns: guessed mime type
@@ -1827,6 +1843,9 @@ def get_collection_dates(
     ('2017-10-13T00:00:00Z', None)
 
     >>> get_collection_dates({})
+    (None, None)
+
+    >>> get_collection_dates({"extent": {"temporal": {"interval": []}}})
     (None, None)
     """
     extent_interval = (
