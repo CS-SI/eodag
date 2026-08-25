@@ -29,6 +29,7 @@ from types import SimpleNamespace
 from typing import Annotated, Literal, Union, get_args, get_origin
 from unittest import mock
 from unittest.mock import call
+from urllib.parse import quote_plus
 
 import boto3
 import botocore
@@ -62,6 +63,7 @@ from eodag.utils.exceptions import (
 )
 from tests.context import (
     DEFAULT_SEARCH_TIMEOUT,
+    GENERIC_COLLECTION,
     HTTP_REQ_TIMEOUT,
     NOT_AVAILABLE,
     TEST_RESOURCES_PATH,
@@ -1165,6 +1167,119 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             with pytest.raises(MisconfiguredError):
                 search_plugin.count_hits("http://fake.url")
 
+    def test_plugins_search_querystringsearch_request_without_exception_message_logs_and_raises(
+        self,
+    ):
+        """QueryStringSearch._request must log the default fallback message and raise RequestError."""
+        prep = PreparedSearch(url="https://example.test/search")
+        prep.query_params = {}
+        with mock.patch(
+            "eodag.plugins.search.qssearch.requests.Session.get",
+            side_effect=requests.RequestException("boom"),
+        ):
+            with self.assertLogs("eodag.search.qssearch", level="ERROR") as cm:
+                with self.assertRaises(RequestError):
+                    self.sara_search_plugin._request(prep)
+        self.assertIn("Skipping error while requesting", "\n".join(cm.output))
+
+    def test_plugins_search_querystringsearch_build_raw_search_results_sets_next_page_token(
+        self,
+    ):
+        """Raw search result building must extract the next page marker from a `next_page_query_obj` response."""
+        prep = PreparedSearch(limit=2, next_page_token_key="page")
+        prep.query_params = {"foo": "bar"}
+        prep.collection_def_params = {}
+        prep.next_page_token = 2
+        self.sara_search_plugin.config.pagination["next_page_query_obj_key_path"] = (
+            "$.data.next"
+        )
+        raw = self.sara_search_plugin._build_raw_search_results(
+            results=[{"id": "A"}],
+            resp_as_json={"data": {"next": {"page": 3}}},
+            search_kwargs={},
+            limit=2,
+            prep=prep,
+        )
+        self.assertEqual(raw.next_page_token, 3)
+        self.assertEqual(raw.next_page_token_key, "page")
+
+    def test_plugins_search_querystringsearch_init_raises_on_empty_metadata_mapping_from_product(
+        self,
+    ):
+        """QueryStringSearch.__init__ must reject an empty metadata_mapping inherited from another product."""
+        provider = "earth_search"
+        plugin_cfg = copy_deepcopy(self.get_search_plugin(provider=provider).config)
+        plugin_cfg.products["S1_SAR_GRD"][
+            "metadata_mapping_from_product"
+        ] = "S2_MSI_L1C"
+        plugin_cfg.products["S2_MSI_L1C"]["metadata_mapping"] = {}
+
+        with self.assertRaises(MisconfiguredError):
+            QueryStringSearch(provider, plugin_cfg)
+
+    def test_plugins_search_querystringsearch_clear_resets_pagination_state(self):
+        """QueryStringSearch.clear must reset URLs, parameters, and page state."""
+        self.sara_search_plugin.search_urls = ["https://example.test"]
+        self.sara_search_plugin.query_params = {"foo": "bar"}
+        self.sara_search_plugin.query_string = "foo=bar"
+        self.sara_search_plugin.next_page_url = "https://example.test/next"
+        self.sara_search_plugin.next_page_query_obj = {"page": 2}
+        self.sara_search_plugin.next_page_merge = {"features": []}
+
+        self.sara_search_plugin.clear()
+
+        self.assertEqual(self.sara_search_plugin.search_urls, [])
+        self.assertEqual(self.sara_search_plugin.query_params, {})
+        self.assertEqual(self.sara_search_plugin.query_string, "")
+        self.assertIsNone(self.sara_search_plugin.next_page_url)
+        self.assertIsNone(self.sara_search_plugin.next_page_query_obj)
+        self.assertIsNone(self.sara_search_plugin.next_page_merge)
+
+    def test_plugins_search_querystringsearch_generic_collection_returns_empty(self):
+        """QueryStringSearch must not search the internal generic collection."""
+        result = self.sara_search_plugin.query(
+            prep=PreparedSearch(count=True), collection=GENERIC_COLLECTION
+        )
+        self.assertEqual(result.data, [])
+        self.assertEqual(result.number_matched, 0)
+
+    def test_plugins_search_querystringsearch_collect_urls_requires_template(self):
+        """Numeric pagination must reject configurations without a URL template."""
+        self.assertEqual(
+            self.sara_search_plugin.config.pagination["next_page_url_tpl"],
+            "{url}?{search}&maxRecords={limit}&page={next_page_token}",
+        )
+        self.sara_search_plugin.config.pagination.pop("next_page_url_tpl", None)
+        prep = PreparedSearch(limit=2, count=False)
+        prep.query_string = ""
+        prep.query_params = {}
+        with self.assertRaises(MisconfiguredError):
+            self.sara_search_plugin.collect_search_urls(
+                prep, collection=self.collection
+            )
+
+    def test_plugins_search_querystringsearch_collect_urls_formats_collection_endpoint(
+        self,
+    ):
+        """Pagination URL formatting must substitute the provider collection."""
+        self.assertEqual(
+            self.sara_search_plugin.config.api_endpoint,
+            "https://copernicus.nci.org.au/sara.server/1.0/api/collections/{_collection}/search.json",
+        )
+        prep = PreparedSearch(limit=None)
+        prep.query_string = ""
+        prep.query_params = {}
+        urls, _ = self.sara_search_plugin.collect_search_urls(
+            prep, collection=self.collection
+        )
+        self.assertEqual(
+            urls,
+            [
+                "https://copernicus.nci.org.au/sara.server/1.0/api/collections/"
+                "S2_MSI_L1C/search.json"
+            ],
+        )
+
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
@@ -1653,6 +1768,70 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         }
         _test_query_params(search_criteria, raw_result, expected_query_params)
 
+    def test_plugins_search_postjsonsearch_request_rejects_empty_url(self):
+        """PostJsonSearch must reject requests without a URL."""
+        with self.assertRaises(ValidationError):
+            self.awseos_search_plugin._request(PreparedSearch())
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_postjsonsearch_request_translates_errors(self, mock_post):
+        """PostJsonSearch must translate timeout, auth, quota, and generic request errors."""
+        response = requests.Response()
+        response.status_code = 403
+        response._content = b"forbidden"
+        mock_post.return_value = response
+        self.assertEqual(
+            self.awseos_search_plugin.config.auth_error_code,
+            [402, 403],
+        )
+        prep = PreparedSearch(url=self.awseos_url)
+        prep.query_params = {}
+        with self.assertRaises(AuthenticationError):
+            self.awseos_search_plugin._request(prep)
+
+        response.status_code = 429
+        with self.assertRaises(QuotaExceededError):
+            self.awseos_search_plugin._request(prep)
+
+        mock_post.side_effect = requests.exceptions.RequestException("boom")
+        with self.assertRaises(RequestError):
+            self.awseos_search_plugin._request(prep)
+
+        mock_post.side_effect = requests.exceptions.Timeout()
+        with self.assertRaises(TimeOutError):
+            self.awseos_search_plugin._request(prep)
+
+    def test_plugins_search_postjsonsearch_collect_search_urls_missing_api_format_key_raises(
+        self,
+    ):
+        """PostJsonSearch.collect_search_urls must reject a missing API endpoint format key."""
+        prep = PreparedSearch(limit=2, count=False, auth_plugin=self.awseos_auth_plugin)
+        prep.query_params = {}
+        self.awseos_search_plugin.config.api_endpoint = "https://example.test/{missing}"
+        with self.assertRaises(MisconfiguredError):
+            self.awseos_search_plugin.collect_search_urls(
+                prep, collection=self.collection
+            )
+
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_plugins_search_postjsonsearch_query_accepts_dc_qs_payload(
+        self, mock_request
+    ):
+        """_dc_qs should decode serialized provider payloads and send them as the request body."""
+        payload = {"foo": "bar", "page": 1}
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.return_value = {"features": []}
+
+        self.awseos_search_plugin.query(
+            prep=PreparedSearch(count=False),
+            collection=self.collection,
+            _dc_qs=quote_plus(json.dumps(payload)),
+        )
+
+        query_params = mock_request.call_args[0][1].query_params
+        self.assertEqual(query_params["foo"], payload["foo"])
+        self.assertIn("page", query_params)
+
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
@@ -1902,12 +2081,27 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.do_search", autospec=True
+    )
+    def test_plugins_search_odatav4search_do_search_timeout(
+        self, mock_parent_do_search, mock_requests_get
+    ):
+        """ODataV4Search.do_search must raise TimeOutError when metadata fetch times out."""
+        self.onda_search_plugin.config.per_product_metadata_query = True
+        mock_parent_do_search.return_value = [{"id": "product-1"}]
+        mock_requests_get.side_effect = requests.exceptions.Timeout()
+
+        with self.assertRaises(TimeOutError):
+            self.onda_search_plugin.do_search(PreparedSearch())
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_odatav4search_count_and_search_onda_per_product_metadata_query_request_error(
         self, mock__request, mock_requests_get
     ):
-        """A query with a ODataV4Search (here onda) must handle requests errors for query per product metadata"""  # noqa
+        """A query with a ODataV4Search (here onda) must handle requests errors for query per product metadata, including quota responses."""  # noqa
         # per_product_metadata_query parameter is updated to True if it is necessary
         per_product_metadata_query = (
             self.onda_search_plugin.config.per_product_metadata_query
@@ -1928,7 +2122,10 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         mock_requests_get.return_value.json.return_value = dict(
             value=[dict(id="dummy_metadata", value="dummy_metadata_val")]
         )
-        mock_requests_get.side_effect = RequestException()
+        mock_requests_get.side_effect = [
+            RequestException(response=mock.Mock(status_code=429)),
+            RequestException(),
+        ]
 
         with self.assertLogs(level="ERROR") as cm:
             self.onda_search_plugin.query(
@@ -1955,8 +2152,9 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             error_message_indexes_list = [
                 i.start() for i in re.finditer(error_message, str(cm.output))
             ]
-            # we check that two errors have been logged, one per product
+            # we check that two errors have been logged, one per product, including a quota warning for 429s
             self.assertEqual(len(error_message_indexes_list), 2)
+            self.assertIn("Too many requests on provider", str(cm.output))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
@@ -2328,6 +2526,28 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products.data[0].properties["grid:code"],
             "MGRS-31TCJ",
         )
+
+    def test_plugins_search_stacsearch_discover_queryables_requires_fetch_url(self):
+        """StacSearch.discover_queryables must reject configurations without a queryables URL."""
+        plugin = self.get_search_plugin(provider="wekeo_main")
+        plugin.config.discover_queryables = {
+            "fetch_url": None,
+            "collection_fetch_url": None,
+        }
+        with self.assertRaises(NotImplementedError):
+            plugin.discover_queryables(collection="COP_DEM_GLO90_DGED")
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_stacsearch_discover_queryables_request_error(
+        self, mock_request
+    ):
+        """StacSearch.discover_queryables must raise RequestError on provider request failure."""
+        mock_request.side_effect = RequestError("boom")
+        plugin = self.get_search_plugin(provider="wekeo_main")
+        with self.assertRaises(RequestError):
+            plugin.discover_queryables(collection="COP_DEM_GLO90_DGED")
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
