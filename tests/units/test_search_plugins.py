@@ -6390,3 +6390,50 @@ class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
                 },
             },
         )
+
+
+class TestSearchPluginStacListAssets(BaseSearchPluginTest):
+    @mock.patch("eodag.plugins.search.stac_list_assets.update_assets_from_s3")
+    def test_plugins_search_stac_list_assets_register_downloader_updates_assets(
+        self, mock_update_assets_from_s3
+    ):
+        """StacListAssets must patch the product downloader registration to refresh S3 assets."""
+        search_plugin = self.get_search_plugin(provider="geodes_s3")
+
+        products = search_plugin.normalize_results(
+            [
+                {
+                    "id": "foo",
+                    "geometry": {"type": "Point", "coordinates": [0.0, 0.0]},
+                    "properties": {
+                        "identifier": "foo",
+                        "start_datetime": "2020-01-01T00:00:00Z",
+                        "end_datetime": "2020-01-02T00:00:00Z",
+                    },
+                    "assets": {
+                        "data": {
+                            "href": "s3://bucket/path/data.tif",
+                            "roles": ["data"],
+                            "title": "data",
+                        }
+                    },
+                }
+            ]
+        )
+
+        self.assertEqual(len(products), 1)
+        product = products[0]
+        self.assertTrue(hasattr(product, "register_downloader_only"))
+        self.assertIsNot(product.register_downloader, product.register_downloader_only)
+
+        downloader = mock.Mock()
+        downloader.config = mock.Mock(s3_endpoint="https://s3.example.com")
+        authenticator = mock.Mock()
+
+        product.register_downloader(downloader, authenticator)
+
+        self.assertIs(product.downloader, downloader)
+        self.assertIs(product.downloader_auth, authenticator)
+        mock_update_assets_from_s3.assert_called_once_with(
+            product, authenticator, "https://s3.example.com"
+        )
