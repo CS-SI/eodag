@@ -20,6 +20,7 @@ import datetime as dt
 import pickle
 import unittest
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest import mock
 
 import boto3
@@ -34,16 +35,19 @@ from requests.exceptions import RequestException
 from eodag.api.product._product import EOProduct
 from eodag.api.provider import ProvidersDict
 from eodag.plugins.authentication.eoiam import _EOIAMSessionAuth
-from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
-from eodag.utils.exceptions import RequestError
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     AuthenticationError,
+    CodeAuthorizedAuth,
     HeaderAuth,
     MisconfiguredError,
+    OIDCTokenExchangeAuth,
     PluginManager,
+    RequestError,
+    TimeOutError,
+    raise_if_auth_error,
 )
 
 
@@ -883,6 +887,59 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         self.assertIn("https://s3.abc.test.com/b1/a1/a1.json", url)
         self.assertIn("AWSAccessKeyId=my_access_key", url)
         self.assertIn("Expires", url)
+
+
+class TestAuthPluginTokenExchange(unittest.TestCase):
+    def test_plugins_auth_oidc_token_exchange_success_and_timeout(self):
+        """OIDC token exchange returns a token and closes sessions on timeout."""
+        plugin = OIDCTokenExchangeAuth.__new__(OIDCTokenExchangeAuth)
+        response = mock.Mock()
+        response.json.return_value = {"access_token": "target-token"}
+        session = mock.Mock()
+        session.post.return_value = response
+        plugin.subject = mock.Mock(
+            session=session,
+            authenticate=mock.Mock(
+                return_value=CodeAuthorizedAuth("subject-token", where="header")
+            ),
+        )
+        plugin.config = SimpleNamespace(
+            subject_issuer="issuer",
+            token_uri="https://token.test",
+            client_id="client",
+            audience="audience",
+            token_key="access_token",
+            ssl_verify=False,
+        )
+        result = plugin.authenticate()
+        self.assertEqual(result.token, "target-token")
+        session.close.assert_called_once_with()
+        self.assertEqual(
+            session.post.call_args.kwargs["data"]["grant_type"], plugin.GRANT_TYPE
+        )
+
+        session.post.side_effect = requests.exceptions.Timeout()
+        with self.assertRaises(TimeOutError):
+            plugin.authenticate()
+        self.assertEqual(session.close.call_count, 2)
+
+
+class TestAwsAuthHelpers(unittest.TestCase):
+    def test_plugins_auth_aws_auth_error_only_for_known_credential_errors(self):
+        """AWS credential errors raise only for recognized credential messages."""
+        from botocore.exceptions import ClientError
+
+        error = ClientError(
+            {
+                "Error": {"Code": "AccessDenied", "Message": "bad key"},
+                "ResponseMetadata": {"HTTPStatusCode": 403},
+            },
+            "GetObject",
+        )
+        with self.assertRaises(AuthenticationError):
+            raise_if_auth_error(error, "provider")
+        error.response["Error"]["Message"] = "not a credential problem"
+        raise_if_auth_error(error, "provider")
 
 
 class TestAuthPluginEOIAMAuth(BaseAuthPluginTest):

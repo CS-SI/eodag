@@ -67,9 +67,11 @@ from tests.context import (
     TEST_RESOURCES_PATH,
     USER_AGENT,
     AuthenticationError,
+    CSWSearch,
     EOProduct,
     MisconfiguredError,
     NotAvailableError,
+    PluginConfig,
     PluginManager,
     PreparedSearch,
     QueryablesDict,
@@ -6218,14 +6220,12 @@ class TestSearchPluginEumetsatDsSearch(BaseSearchPluginTest):
 
 class TestSearchPluginCSWSearch(unittest.TestCase):
     def _get_plugin(self, search_definition):
-        from eodag.config import PluginConfig
-        from eodag.plugins.search.csw import CSWSearch
-
         return CSWSearch(
             "provider",
             PluginConfig.from_mapping(
                 {
                     "type": "CSWSearch",
+                    "api_endpoint": "https://csw.example",
                     "search_definition": search_definition,
                     "metadata_mapping": {"title": "//title/text()"},
                     "products": {"collection": {"collection": "provider-collection"}},
@@ -6294,3 +6294,133 @@ class TestSearchPluginCSWSearch(unittest.TestCase):
             {"name": "title"}, "collection", {"geometry": box(1, 2, 3, 4)}
         )
         self.assertEqual(constraints[0][1].bbox, (1.0, 2.0, 3.0, 4.0))
+
+    def test_csw_clear_resets_catalog(self):
+        """CSW clear resets the cached catalog."""
+        plugin = self._get_plugin({"collection_tags": []})
+        plugin.catalog = object()
+        plugin.clear()
+        self.assertIsNone(plugin.catalog)
+
+    def test_csw_query_without_collection_returns_empty_result(self):
+        """CSW query without a collection returns an empty counted result."""
+        plugin = self._get_plugin({"collection_tags": []})
+        result = plugin.query(prep=PreparedSearch(count=True))
+        self.assertEqual(result.data, [])
+        self.assertEqual(result.number_matched, 0)
+
+    @mock.patch("eodag.plugins.search.csw.CatalogueServiceWeb")
+    def test_csw_init_catalog_uses_credentials_and_caches_result(
+        self, catalogue_service
+    ):
+        """CSW catalog initialization passes credentials and avoids recreation."""
+        plugin = self._get_plugin({"collection_tags": []})
+        plugin.config.api_endpoint = "https://csw.example"
+        plugin.config.version = "2.0.2"
+        plugin._CSWSearch__init_catalog("user", "password")
+        catalogue_service.assert_called_once_with(
+            "https://csw.example",
+            version="2.0.2",
+            username="user",
+            password="password",
+        )
+        plugin._CSWSearch__init_catalog("other", "credentials")
+        catalogue_service.assert_called_once()
+
+    @mock.patch(
+        "eodag.plugins.search.csw.CatalogueServiceWeb",
+        side_effect=RuntimeError("catalog unavailable"),
+    )
+    def test_csw_init_catalog_failure_leaves_catalog_unset(self, catalogue_service):
+        """CSW catalog initialization failures are logged and leave no catalog."""
+        plugin = self._get_plugin({"collection_tags": []})
+        plugin.config.api_endpoint = "https://csw.example"
+        with self.assertLogs("eodag.search.csw", level="WARNING"):
+            plugin._CSWSearch__init_catalog()
+        self.assertIsNone(plugin.catalog)
+
+    @mock.patch("eodag.plugins.search.csw.CatalogueServiceWeb")
+    def test_csw_query_continues_after_exception_report(self, catalogue_service):
+        """CSW query skips failed collection tags and returns remaining results."""
+        from owslib.ows import ExceptionReport
+
+        plugin = self._get_plugin(
+            {"collection_tags": [{"name": "title"}, {"name": "alternate"}]}
+        )
+        exception_report = ExceptionReport.__new__(ExceptionReport)
+        catalog = mock.Mock(records={})
+        catalog.getrecords2.side_effect = [exception_report, None]
+        catalogue_service.return_value = catalog
+        result = plugin.query(collection="collection")
+        self.assertEqual(result.data, [])
+        self.assertEqual(catalog.getrecords2.call_count, 2)
+
+
+class TestSearchPluginStacListAssets(BaseSearchPluginTest):
+    @mock.patch("eodag.plugins.search.stac_list_assets.update_assets_from_s3")
+    def test_plugins_search_stac_list_assets_register_downloader_updates_assets(
+        self, mock_update_assets_from_s3
+    ):
+        """StacListAssets must patch the product downloader registration to refresh S3 assets."""
+        search_plugin = self.get_search_plugin(provider="geodes_s3")
+
+        products = search_plugin.normalize_results(
+            [
+                {
+                    "id": "foo",
+                    "geometry": {"type": "Point", "coordinates": [0.0, 0.0]},
+                    "properties": {
+                        "identifier": "foo",
+                        "start_datetime": "2020-01-01T00:00:00Z",
+                        "end_datetime": "2020-01-02T00:00:00Z",
+                    },
+                    "assets": {
+                        "data": {
+                            "href": "s3://bucket/path/data.tif",
+                            "roles": ["data"],
+                            "title": "data",
+                        }
+                    },
+                }
+            ]
+        )
+
+        self.assertEqual(len(products), 1)
+        product = products[0]
+        self.assertTrue(hasattr(product, "register_downloader_only"))
+        self.assertIsNot(product.register_downloader, product.register_downloader_only)
+
+        downloader = mock.Mock()
+        downloader.config = mock.Mock(s3_endpoint="https://s3.example.com")
+        authenticator = mock.Mock()
+
+        product.register_downloader(downloader, authenticator)
+
+        self.assertIs(product.downloader, downloader)
+        self.assertIs(product.downloader_auth, authenticator)
+        mock_update_assets_from_s3.assert_called_once_with(
+            product, authenticator, "https://s3.example.com"
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.stac_list_assets.update_assets_from_s3",
+        side_effect=botocore.exceptions.BotoCoreError(),
+    )
+    def test_plugins_search_stac_list_assets_register_downloader_request_error(
+        self, mock_update_assets_from_s3
+    ):
+        """S3 asset refresh failures are exposed as RequestError."""
+        search_plugin = self.get_search_plugin(provider="geodes_s3")
+        product = search_plugin.normalize_results(
+            [
+                {
+                    "id": "foo",
+                    "geometry": {"type": "Point", "coordinates": [0.0, 0.0]},
+                    "properties": {"identifier": "foo"},
+                }
+            ]
+        )[0]
+        downloader = mock.Mock(config=mock.Mock(s3_endpoint="https://s3.example.com"))
+        with self.assertRaises(RequestError):
+            product.register_downloader(downloader, mock.Mock())
+        mock_update_assets_from_s3.assert_called_once()

@@ -18,10 +18,12 @@
 
 import copy
 import datetime as dt
+import json
 import logging
 import os
 import ssl
 import sys
+import tempfile
 import unittest
 from contextlib import closing
 from io import StringIO
@@ -29,26 +31,35 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+import requests
 from dateutil import parser as dateutil_parser
 from requests.exceptions import RequestException
 from shapely.geometry import Point, Polygon
 
-from eodag.utils import get_geometry_from_ecmwf_area, get_geometry_from_ecmwf_feature
 from eodag.utils.logging import TqdmLoggingHandler
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     DownloadedCallback,
+    LocalFileAdapter,
+    NotebookWidgets,
     ProgressCallback,
     RequestError,
+    TimeOutError,
+    check_ipython,
+    check_notebook,
     deepcopy,
     fetch_json,
     flatten_top_directories,
     get_bucket_name_and_prefix,
+    get_geometry_from_ecmwf_area,
+    get_geometry_from_ecmwf_feature,
     get_ssl_context,
     get_timestamp,
+    import_all_modules,
     is_env_var_true,
     merge_mappings,
+    patch_owslib_requests,
     path_to_uri,
     setup_logging,
     uri_to_path,
@@ -522,3 +533,87 @@ class TestUtils(unittest.TestCase):
         # invalid string: non-numeric content
         with self.assertRaises(ValueError):
             get_geometry_from_ecmwf_area("a/b/c/d")
+
+    def test_patch_owslib_requests_restores_functions(self):
+        """OWSLib request patches apply verification and restore originals."""
+        import owslib.util
+
+        original_request = owslib.util.requests.request
+        original_post = owslib.util.requests.post
+        with patch_owslib_requests(verify=False):
+            self.assertFalse(owslib.util.requests.request.keywords["verify"])
+            self.assertFalse(owslib.util.requests.post.keywords["verify"])
+        self.assertIs(owslib.util.requests.request, original_request)
+        self.assertIs(owslib.util.requests.post, original_post)
+        with self.assertRaisesRegex(RuntimeError, "boom"):
+            with patch_owslib_requests():
+                raise RuntimeError("boom")
+        self.assertIs(owslib.util.requests.request, original_request)
+
+    def test_import_all_modules_honors_exclude(self):
+        """Module discovery skips excluded entries."""
+        from types import SimpleNamespace
+
+        package = SimpleNamespace(__name__="test_package", __path__=["unused"])
+        modules = [
+            (None, "module", False),
+            (None, "subpackage", True),
+            (None, "excluded", False),
+        ]
+        with (
+            mock.patch(
+                "eodag.utils.import_system.pkgutil.iter_modules", return_value=modules
+            ),
+            mock.patch(
+                "eodag.utils.import_system.importlib.import_module"
+            ) as import_module,
+        ):
+            import_all_modules(package, depth=1, exclude=("excluded",))
+        import_module.assert_called_once_with(".module", package="test_package")
+
+    def test_notebook_detection_and_non_notebook_widgets(self):
+        """Notebook widgets are no-ops outside a notebook."""
+        self.assertFalse(check_ipython())
+        self.assertFalse(check_notebook())
+        widgets = NotebookWidgets()
+        self.assertIsNone(widgets.display_html("ignored"))
+        self.assertIsNone(widgets.clear_html())
+
+    def test_notebook_detection_shells(self):
+        """Notebook detection distinguishes Jupyter and terminal IPython shells."""
+        with mock.patch("eodag.utils.notebook.get_ipython", create=True) as get_ipython:
+            get_ipython.return_value.__class__.__name__ = "ZMQInteractiveShell"
+            self.assertTrue(check_notebook())
+            get_ipython.return_value.__class__.__name__ = "TerminalInteractiveShell"
+            self.assertFalse(check_notebook())
+
+    def test_local_file_adapter_statuses_and_fetch_json(self):
+        """Local file requests return expected statuses and parse JSON."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as file:
+            json.dump({"value": 1}, file)
+            path = file.name
+        try:
+            self.assertEqual(fetch_json(path), {"value": 1})
+            self.assertEqual(LocalFileAdapter._chkpath("put", path)[0], 501)
+            self.assertEqual(LocalFileAdapter._chkpath("patch", path)[0], 405)
+            self.assertEqual(LocalFileAdapter._chkpath("get", path)[0], 200)
+            self.assertEqual(
+                LocalFileAdapter._chkpath("get", path + "-missing")[0], 404
+            )
+            self.assertEqual(
+                LocalFileAdapter._chkpath("get", os.path.dirname(path))[0], 400
+            )
+        finally:
+            os.unlink(path)
+
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
+    def test_fetch_json_timeout_and_request_error(self, mock_get):
+        """fetch_json translates timeout and request failures to EODAG errors."""
+        mock_get.side_effect = requests.exceptions.Timeout()
+        with self.assertRaises(TimeOutError):
+            fetch_json("https://example.test")
+        mock_get.side_effect = requests.exceptions.RequestException()
+        with self.assertRaises(RequestError):
+            fetch_json("https://example.test")

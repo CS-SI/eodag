@@ -17,6 +17,7 @@
 # limitations under the License.
 import os
 import unittest
+from unittest import mock
 
 from tests import TEST_RESOURCES_PATH
 from tests.context import STACOpenerError, _TextOpener, fetch_stac_items
@@ -79,3 +80,10 @@ class TestStacReader(unittest.TestCase):
             "http://data.example.org/",
             True,
         )
+
+    def test_stac_reader_text_opener_falls_back_to_http(self):
+        """The STAC text opener falls back when local reading fails."""
+        opener = _TextOpener(timeout=3, ssl_verify=True)
+        opener.openers[0] = mock.Mock(side_effect=STACOpenerError("not local"))
+        opener.openers[1] = mock.Mock(return_value={"id": "item"})
+        self.assertEqual(opener("file.json", as_json=True), {"id": "item"})

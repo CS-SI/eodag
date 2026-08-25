@@ -45,21 +45,21 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag_cli, list_col, search_crunch
+from eodag.api.provider import Provider, ProviderConfig, ProvidersDict
 from eodag.config import (
-    load_default_config,
-    load_stac_provider_config,
-    get_ext_collections_conf,
     AUTH_TOPIC_KEYS,
     EXT_COLLECTIONS_CONF_URI,
+    PluginConfig,
+    get_ext_collections_conf,
+    load_default_config,
+    load_stac_provider_config,
 )
-from eodag.api.provider import ProviderConfig, ProvidersDict, Provider
-from eodag.config import PluginConfig
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
-from eodag.plugins.authentication.aws_auth import AwsAuth
-from eodag.plugins.authentication.header import HeaderAuth
+from eodag.plugins.authentication.aws_auth import AwsAuth, raise_if_auth_error
+from eodag.plugins.authentication.header import HeaderAuth, HTTPHeaderAuth
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
-from eodag.plugins.authentication.header import HTTPHeaderAuth
+from eodag.plugins.authentication.token_exchange import OIDCTokenExchangeAuth
 from eodag.plugins.authentication.qsauth import HttpQueryStringAuth
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
@@ -73,10 +73,12 @@ from eodag.plugins.download.base import (
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
-from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import ecmwf_temporal_to_eodag
+from eodag.plugins.search.csw import CSWSearch
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import QueryStringSearch
+from eodag.types.bbox import BBox
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.utils import (
@@ -109,7 +111,9 @@ from eodag.utils import (
 from eodag.utils.yaml import cached_yaml_load_all
 from eodag.utils.dates import get_timestamp, to_iso_utc_string
 from eodag.utils.env import is_env_var_true
-from eodag.utils.requests import fetch_json
+from eodag.utils.requests import LocalFileAdapter, fetch_json
+from eodag.utils.import_system import import_all_modules, patch_owslib_requests
+from eodag.utils.notebook import NotebookWidgets, check_ipython, check_notebook
 from eodag.utils.s3 import (
     list_files_in_s3_zipped_object,
     update_assets_from_s3,
@@ -142,5 +146,5 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
-from usgs.api import USGSAuthExpiredError, USGSError
 from usgs.api import TMPFILE as USGS_TMPFILE
+from usgs.api import USGSAuthExpiredError, USGSError

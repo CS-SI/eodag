@@ -25,6 +25,7 @@ from typing_extensions import get_args, get_origin
 
 from eodag.types import json_field_definition_to_python, queryables, search_args
 from eodag.utils.exceptions import ValidationError as EodagValidationError
+from tests.context import BBox
 
 
 class TestStacSearch(unittest.TestCase):
@@ -98,6 +99,38 @@ class TestStacSearch(unittest.TestCase):
             "orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
             str(e.exception.message),
         )
+
+
+class TestBBox(unittest.TestCase):
+    def test_bbox_valid_inputs_and_polygon(self):
+        """BBox accepts supported inputs and produces the expected polygon."""
+        values = (
+            [1, 2, 3, 4],
+            (1, 2, 3, 4),
+            {"lonmin": 1, "latmin": 2, "lonmax": 3, "latmax": 4},
+        )
+        for value in values:
+            bbox = BBox(value)
+            self.assertEqual(
+                (bbox.lonmin, bbox.latmin, bbox.lonmax, bbox.latmax),
+                (1, 2, 3, 4),
+            )
+            self.assertEqual(bbox.to_polygon().bounds, (1.0, 2.0, 3.0, 4.0))
+
+    def test_bbox_rejects_invalid_shape_and_coordinates(self):
+        """BBox rejects invalid dimensions, coordinate ranges, and ordering."""
+        with self.assertRaises(ValueError):
+            BBox([1, 2, 3])
+        for value in (
+            [-181, 0, 1, 1],
+            [0, -91, 1, 1],
+            [0, 0, 181, 1],
+            [0, 0, 1, 91],
+            [2, 0, 1, 1],
+            [0, 2, 1, 1],
+        ):
+            with self.assertRaises(ValidationError):
+                BBox(value)
 
 
 class TestQueryables(unittest.TestCase):
