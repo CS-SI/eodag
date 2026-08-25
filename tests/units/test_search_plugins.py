@@ -5319,6 +5319,122 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
 
+    def test_plugins_search_cop_marine_query_pagination_disabled(self):
+        """CopMarineSearch.query must only return one page when pagination is disabled"""
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+
+        for prep in [
+            mock.Mock(limit=1, page=None, next_page_token=None, count=True),
+            mock.Mock(limit=None, page=1, next_page_token=None, count=True),
+            mock.Mock(limit=0, page=2, next_page_token=None, count=True),
+        ]:
+            result = search_plugin.query(prep=prep, collection="PRODUCT_A")
+
+            self.assertEqual([], result.data)
+            self.assertEqual(0, result.number_matched)
+
+    def test_plugins_search_cop_marine_query_skips_invalid_s3_url(self):
+        """CopMarineSearch.query must skip datasets with invalid bucket or prefix"""
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+
+        with (
+            mock.patch.object(
+                search_plugin,
+                "_get_collection_info",
+                return_value=(self.product_data, [self.dataset1_data]),
+            ),
+            mock.patch(
+                "eodag.plugins.search.cop_marine.get_bucket_name_and_prefix",
+                return_value=(None, None),
+            ),
+            mock.patch(
+                "eodag.plugins.search.cop_marine._get_s3_client"
+            ) as mock_get_s3_client,
+            self.assertLogs("eodag.search.cop_marine", level="WARNING") as cm,
+        ):
+            result = search_plugin.query(
+                prep=PreparedSearch(limit=1, count=True), collection="PRODUCT_A"
+            )
+
+        self.assertEqual([], result.data)
+        self.assertEqual(0, result.number_matched)
+        mock_get_s3_client.assert_not_called()
+        self.assertIn("Unable to get bucket and prefix", str(cm.output))
+
+    def test_plugins_search_cop_marine_query_direct_nc_asset(self):
+        """CopMarineSearch.query must create a product when the collection path is a nc file"""
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        dataset_item = deepcopy(self.dataset1_data)
+        dataset_item["assets"]["native"]["href"] = (
+            "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one/"
+            "item_20200102_20200103_direct_20210101.nc"
+        )
+        s3_client = mock.Mock()
+        s3_client.head_object.return_value = {
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200,
+                "HTTPHeaders": {
+                    "content-length": "123",
+                    "etag": '"d41d8cd98f00b204e9800998ecf8427e"',
+                    "last-modified": dt.datetime(2020, 1, 4, tzinfo=dt.timezone.utc),
+                },
+            }
+        }
+
+        with (
+            mock.patch.object(
+                search_plugin,
+                "_get_collection_info",
+                return_value=(self.product_data, [dataset_item]),
+            ),
+            mock.patch(
+                "eodag.plugins.search.cop_marine._get_s3_client",
+                return_value=s3_client,
+            ),
+        ):
+            result = search_plugin.query(
+                prep=PreparedSearch(limit=1, count=True),
+                collection="PRODUCT_A",
+                start_datetime="2020-01-01T00:00:00Z",
+                end_datetime="2020-01-31T00:00:00Z",
+            )
+
+        self.assertEqual(1, result.number_matched)
+        self.assertEqual(1, len(result.data))
+        product = result.data[0]
+        self.assertEqual(
+            "item_20200102_20200103_direct_20210101", product.properties["id"]
+        )
+        self.assertEqual("native", next(iter(product.assets.keys())))
+        asset = product.assets["native"]
+        self.assertEqual(123, asset["file:size"])
+        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", asset["file:checksum"])
+        self.assertEqual("2020-01-04T00:00:00.000Z", asset["updated"])
+
+    def test_plugins_search_cop_marine_query_returns_empty_without_s3_contents(self):
+        """CopMarineSearch.query must return an empty counted result if S3 has no Contents"""
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        s3_client = mock.Mock()
+        s3_client.list_objects.return_value = {}
+
+        with (
+            mock.patch.object(
+                search_plugin,
+                "_get_collection_info",
+                return_value=(self.product_data, [self.dataset1_data]),
+            ),
+            mock.patch(
+                "eodag.plugins.search.cop_marine._get_s3_client",
+                return_value=s3_client,
+            ),
+        ):
+            result = search_plugin.query(
+                prep=PreparedSearch(limit=1, count=True), collection="PRODUCT_A"
+            )
+
+        self.assertEqual([], result.data)
+        self.assertEqual(0, result.number_matched)
+
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_normalize_results(self, mock_requests_get):
         """Normalized query results must include asset information fetched from S3"""
