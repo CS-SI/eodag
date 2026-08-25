@@ -86,6 +86,8 @@ geodes_s3:
         - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"MGRS-\1")}'
       sci:doi: '{$.properties.sci:doi#replace_str(r"^\[\]$","Not Available")}'
       published: '$.properties.datetime'
+      endpoint_url: '$.null'
+      endpoint_description: '$.null'
     assets_mapping:
       download_link:
         href: '$.properties.endpoint_url'
