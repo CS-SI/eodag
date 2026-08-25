@@ -806,8 +806,10 @@ class AwsDownload(Download):
                 if flatten_top_dirs:
                     rel_path = os.path.join(
                         product.properties["title"],
-                        re.sub(rf"^{common_path}/?", "", rel_path),
+                        re.sub(rf"^{re.escape(common_path)}/?", "", rel_path),
                     )
+                    # Normalize to forward slashes for S3 path consistency across platforms
+                    rel_path = rel_path.replace("\\", "/")
 
                 asset_match = assets_by_path.get(f"{obj.bucket_name}/{obj.key}")
                 data_type = asset_match.get("type") if asset_match else None
@@ -847,7 +849,8 @@ class AwsDownload(Download):
             chunk_paths.append(
                 self.get_chunk_dest_path(product, product_chunk, build_safe=build_safe)
             )
-        return os.path.commonpath(chunk_paths)
+        # Normalize to forward slashes for S3 path consistency across platforms
+        return os.path.commonpath(chunk_paths).replace("\\", "/")
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None
