@@ -231,8 +231,6 @@ cop_dataspace_s3:
       geometry:
         - null
         - '{$.Footprint#from_ewkt}'
-      # order:status: must be one of succeeded, ordered, orderable
-      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
