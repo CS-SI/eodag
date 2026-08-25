@@ -5913,6 +5913,20 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         self.assertIn("month", params)
         self.assertListEqual(["08", "09", "10", "11"], params["month"])
 
+    def test_plugins_search_cop_ghsl_get_start_and_end_from_year(self):
+        """_get_start_and_end_from_properties must use a full year date interval"""
+        plugin = next(self.plugins_manager.get_search_plugins(provider="cop_ghsl"))
+
+        datetimes = plugin._get_start_and_end_from_properties({"year": "2020"})
+
+        self.assertDictEqual(
+            datetimes,
+            {
+                "start_date": "2020-01-01T00:00:00.000Z",
+                "end_date": "2020-12-31T23:59:59.000Z",
+            },
+        )
+
     @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
     def test_plugins_search_cop_ghsl_check_input_parameters_valid(
         self, mock_fetch_constraints
@@ -6058,6 +6072,152 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
                 ),
             ]
         )
+
+    @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
+    @mock.patch("eodag.plugins.search.cop_ghsl.requests.get")
+    def test_plugins_search_cop_ghsl_get_tiles_for_filters_exceptions(
+        self, mock_requests_get, mock_fetch_constraints
+    ):
+        """_get_tiles_for_filters must handle missing config and request errors"""
+        mock_fetch_constraints.return_value = {"constraints": self.constraints}
+        collection = "GHS_BUILT_S"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                collection=collection, provider="cop_ghsl"
+            )
+        )
+        params = {
+            "year": "2000",
+            "proj:code": "EPSG:4326",
+            "tile_size": "3ss",
+            "collection": collection,
+        }
+
+        with self.assertRaises(MisconfiguredError):
+            plugin._get_tiles_for_filters({}, deepcopy(params))
+
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        mock_requests_get.return_value = MockResponse({}, status_code=404)
+        self.assertIsNone(
+            plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
+        )
+
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        mock_requests_get.side_effect = requests.exceptions.Timeout()
+        with self.assertRaises(TimeOutError):
+            plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
+
+        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        mock_requests_get.side_effect = requests.exceptions.RequestException("boom")
+        with self.assertRaises(RequestError):
+            plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
+
+    @mock.patch("eodag.plugins.search.cop_ghsl.requests.get")
+    def test_plugins_search_cop_ghsl_fetch_constraints(self, mock_requests_get):
+        """_fetch_constraints must return provider constraints and handle failures"""
+        plugin = next(self.plugins_manager.get_search_plugins(provider="cop_ghsl"))
+        constraints = {"constraints": self.constraints}
+
+        mock_requests_get.return_value = MockResponse(constraints, status_code=200)
+        self.assertDictEqual(plugin._fetch_constraints("TEST_CONSTRAINTS"), constraints)
+        mock_requests_get.assert_called_once_with(
+            "https://s3.central.data.destination-earth.eu/swift/v1/constraints/cop_ghsl_dev/TEST_CONSTRAINTS.json",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+        )
+
+        mock_requests_get.reset_mock()
+        mock_requests_get.return_value = MockResponse({}, status_code=404)
+        self.assertDictEqual(
+            plugin._fetch_constraints("TEST_CONSTRAINTS_404"), {"constraints": {}}
+        )
+
+        mock_requests_get.side_effect = requests.exceptions.Timeout()
+        with self.assertRaises(TimeOutError):
+            plugin._fetch_constraints("TEST_CONSTRAINTS_TIMEOUT")
+
+        mock_requests_get.side_effect = requests.exceptions.RequestException("boom")
+        with self.assertRaises(RequestError):
+            plugin._fetch_constraints("TEST_CONSTRAINTS_ERROR")
+
+    def test_plugins_search_cop_ghsl_query(self):
+        """query must create SearchResult for tiled and non-tiled Cop GHSL products"""
+        collection = "GHS_BUILT_S"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                collection=collection, provider="cop_ghsl"
+            )
+        )
+        product = EOProduct(
+            "cop_ghsl",
+            {"id": "product-id", "geometry": "POINT (0 0)", "title": "product-id"},
+            collection=collection,
+        )
+        tiles = {"2000": [{"tileID": "R3_C3", "BBox": [0, 0, 1, 1]}]}
+
+        with (
+            mock.patch.object(
+                plugin,
+                "_get_tiles_for_filters",
+                return_value=(tiles, "lat/lon"),
+            ) as mock_get_tiles,
+            mock.patch.object(
+                plugin,
+                "_fetch_constraints",
+                return_value={"additional_filter": "classification"},
+            ) as mock_fetch_constraints,
+            mock.patch.object(
+                plugin,
+                "_create_products_from_tiles",
+                return_value=([product], 1),
+            ) as mock_create_products_from_tiles,
+        ):
+            result = plugin.query(
+                prep=PreparedSearch(limit=1, count=True),
+                collection=collection,
+                year="2000",
+                classification="TOTAL",
+            )
+
+        self.assertEqual([product], result.data)
+        self.assertEqual(1, result.number_matched)
+        self.assertEqual("page", result.next_page_token_key)
+        self.assertEqual("2", result.next_page_token)
+        self.assertTrue(result.raise_errors)
+        mock_get_tiles.assert_called_once()
+        mock_fetch_constraints.assert_called_once_with(collection)
+        mock_create_products_from_tiles.assert_called_once_with(
+            tiles,
+            "lat/lon",
+            collection,
+            mock.ANY,
+            additional_filter="classification",
+            need_count=True,
+        )
+
+        with (
+            mock.patch.object(
+                plugin,
+                "_get_tiles_for_filters",
+                return_value=None,
+            ),
+            mock.patch.object(
+                plugin,
+                "_create_products_without_tiles",
+                return_value=([product], 1),
+            ) as mock_create_products_without_tiles,
+        ):
+            result = plugin.query(
+                prep=PreparedSearch(collection=collection, limit=1, count=True),
+                year="2000",
+            )
+
+        self.assertEqual([product], result.data)
+        self.assertEqual(1, result.number_matched)
+        mock_create_products_without_tiles.assert_called_once()
+
+        with self.assertRaises(MisconfiguredError):
+            plugin.query(prep=PreparedSearch(), collection=[collection])
 
     @mock.patch("eodag.plugins.search.cop_ghsl.CopGhslSearch._fetch_constraints")
     @mock.patch("eodag.plugins.search.cop_ghsl.requests.get")
@@ -6232,6 +6392,61 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
             geometry=["-160.008", "69.100", "-150.008", "59.100"]
         )
         self.assertEqual(geometry, products[0].geometry)
+
+    def test_plugins_search_cop_ghsl_create_products_from_tiles_mollweide_bbox(self):
+        """_create_products_from_tiles must convert Mollweide metre bboxes"""
+        bbox = ["-6 041 000", "7 000 000", "-5 041 000", "6 000 000"]
+        tiles = {"2000": [{"tileID": "R3_C3", "BBox": bbox}]}
+        collection = "GHS_BUILT_S"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                collection=collection, provider="cop_ghsl"
+            )
+        )
+        params = deepcopy(plugin.config.products.get(collection, {}))
+        params["year"] = "2000"
+        params["proj:code"] = "EPSG:54009"
+        params["tile_size"] = "10m"
+        params["classification"] = "TOTAL"
+        params["per_page"] = 5
+        params["page"] = 1
+
+        products, count = plugin._create_products_from_tiles(
+            tiles, "metres", collection, params, "classification", need_count=True
+        )
+
+        self.assertEqual(count, 1)
+        self.assertEqual(len(products), 1)
+        expected_geometry = get_geometry_from_various(
+            geometry=_convert_bbox_to_lonlat_mollweide(bbox)
+        )
+        self.assertEqual(expected_geometry, products[0].geometry)
+
+    def test_plugins_search_cop_ghsl_create_products_from_tiles_epsg3035_bbox(self):
+        """_create_products_from_tiles must convert EPSG:3035 metre bboxes"""
+        bbox = ["1,944,000", "1,042,000", "2,044,000", "942,000"]
+        tiles = {"2015": [{"tileID": "R3_C3", "BBox_3035": bbox}]}
+        collection = "GHS_ESM"
+        plugin = next(
+            self.plugins_manager.get_search_plugins(
+                collection=collection, provider="cop_ghsl"
+            )
+        )
+        params = deepcopy(plugin.config.products.get(collection, {}))
+        params["tile_size"] = "10m"
+        params["per_page"] = 5
+        params["page"] = 1
+
+        products, count = plugin._create_products_from_tiles(
+            tiles, "metres", collection, params, need_count=True
+        )
+
+        self.assertEqual(count, 1)
+        self.assertEqual(len(products), 1)
+        expected_geometry = get_geometry_from_various(
+            geometry=_convert_bbox_to_lonlat_EPSG3035(bbox)
+        )
+        self.assertEqual(expected_geometry, products[0].geometry)
 
     def test_plugins_search_cop_ghsl_create_products_without_tiles(self):
         """test if products are created correctly for product types without tiles"""
