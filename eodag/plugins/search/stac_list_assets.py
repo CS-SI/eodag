@@ -17,7 +17,7 @@
 # limitations under the License.
 import logging
 from types import MethodType
-from typing import Any, List
+from typing import Any
 
 from botocore.exceptions import BotoCoreError
 
@@ -69,7 +69,7 @@ class StacListAssets(StacSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
 
         products = super(StacSearch, self).normalize_results(results, **kwargs)
