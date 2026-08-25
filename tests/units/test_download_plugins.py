@@ -52,6 +52,8 @@ from tests.context import (
     PluginConfig,
     PluginManager,
     ProvidersDict,
+    S3FileInfo,
+    StreamResponse,
     load_default_config,
     path_to_uri,
     uri_to_path,
@@ -2076,6 +2078,104 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             self.product, url="/somewhere/else"
         )
         self.assertEqual((bucket, prefix), ("default_bucket", "somewhere/else"))
+
+    def test_plugins_download_aws_get_commonpath(self):
+        """AwsDownload._get_commonpath() must return common chunk destination path"""
+        plugin = self.get_download_plugin(self.product)
+        product_chunks = {
+            mock.Mock(key="path/to/some/product/file1.tif"),
+            mock.Mock(key="path/to/some/product/sub/file2.tif"),
+        }
+
+        common_path = plugin._get_commonpath(
+            self.product, product_chunks, build_safe=False
+        )
+
+        self.assertEqual(common_path, "path/to/some/product")
+
+    @mock.patch("eodag.plugins.download.aws.stream_download_from_s3", autospec=True)
+    def test_plugins_download_aws_stream_download(self, mock_stream_download_from_s3):
+        """AwsDownload.stream_download() must stream S3 objects with flattened paths"""
+        expected_response = StreamResponse(iter([b"content"]))
+        mock_stream_download_from_s3.return_value = expected_response
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.flatten_top_dirs = True
+        plugin.config.products[self.product.collection]["build_safe"] = False
+        plugin.config.products[self.product.collection]["complementary_url_key"] = []
+        s3_client = mock.Mock()
+        s3_resource = mock.Mock()
+        s3_resource.meta.client = s3_client
+        product_chunks = [
+            mock.Mock(
+                bucket_name="somebucket",
+                key="path/to/some/product/file1.tif",
+                size=1,
+            ),
+            mock.Mock(
+                bucket_name="somebucket",
+                key="path/to/some/product/sub/file2.tif",
+                size=2,
+            ),
+        ]
+        authenticated_objects = {"somebucket": mock.Mock()}
+        authenticated_objects["somebucket"].filter.side_effect = lambda Prefix: [
+            chunk for chunk in product_chunks if chunk.key.startswith(Prefix)
+        ]
+        auth_plugin = mock.Mock()
+        auth_plugin.authenticate_objects.return_value = authenticated_objects
+        self.product.downloader_auth = auth_plugin
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "file1": {
+                    "href": "s3://somebucket/path/to/some/product/file1.tif",
+                    "type": "image/tiff",
+                },
+                "file2": {
+                    "href": "s3://somebucket/path/to/some/product/sub/file2.tif",
+                },
+            }
+        )
+
+        response = plugin.stream_download(
+            self.product,
+            auth=s3_resource,
+            byte_range=(0, 10),
+            compress="zip",
+        )
+
+        self.assertIs(response, expected_response)
+        auth_plugin.authenticate_objects.assert_called_once_with(
+            [
+                ("somebucket", "path/to/some/product/file1.tif"),
+                ("somebucket", "path/to/some/product/sub/file2.tif"),
+            ]
+        )
+        mock_stream_download_from_s3.assert_called_once()
+        args = mock_stream_download_from_s3.call_args.args
+        self.assertIs(args[0], s3_client)
+        files_info = sorted(args[1], key=lambda file_info: file_info.key)
+        self.assertEqual(
+            files_info,
+            [
+                S3FileInfo(
+                    key="path/to/some/product/file1.tif",
+                    size=1,
+                    bucket_name="somebucket",
+                    rel_path="dummy_product/file1.tif",
+                    data_type="image/tiff",
+                ),
+                S3FileInfo(
+                    key="path/to/some/product/sub/file2.tif",
+                    size=2,
+                    bucket_name="somebucket",
+                    rel_path="dummy_product/sub/file2.tif",
+                ),
+            ],
+        )
+        self.assertEqual(args[2], (0, 10))
+        self.assertEqual(args[3], "zip")
+        self.assertEqual(args[4], "dummy_product")
 
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload._get_unique_products", autospec=True
