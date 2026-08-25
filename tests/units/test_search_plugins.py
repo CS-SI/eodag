@@ -33,6 +33,7 @@ from urllib.parse import quote_plus
 
 import boto3
 import botocore
+import geojson
 import pytest
 import requests
 import responses
@@ -48,6 +49,11 @@ from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import RawSearchResult
+from eodag.plugins.search.build_search_result import (
+    _check_id,
+    _request_params_to_properties,
+    _update_properties_from_element,
+)
 from eodag.plugins.search.cop_ghsl import (
     _convert_bbox_to_lonlat_EPSG3035,
     _convert_bbox_to_lonlat_mollweide,
@@ -56,6 +62,7 @@ from eodag.plugins.search.cop_ghsl import (
 )
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
+    DownloadError,
     PluginImplementationError,
     QuotaExceededError,
     UnsupportedCollection,
@@ -3827,6 +3834,232 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ecmwf_temporal_to_eodag(dict(date=["20220215"])),
             ("2022-02-15T00:00:00.000Z", "2022-02-15T00:00:00.000Z"),
         )
+
+    def test_plugins_search_ecmwfsearch_update_properties_from_element(self):
+        """_update_properties_from_element must build JSON schema fragments"""
+        prop = {}
+        _update_properties_from_element(
+            prop,
+            {"type": "StringListWidget", "help": "Choose several values"},
+            ["b", "a"],
+        )
+        self.assertDictEqual(
+            prop,
+            {
+                "type": "array",
+                "items": {"type": "string", "enum": ["a", "b"]},
+                "description": "Choose several values",
+            },
+        )
+
+        prop = {}
+        _update_properties_from_element(
+            prop,
+            {"type": "DateRangeWidget"},
+            ["2020-01-01/2020-01-31"],
+        )
+        self.assertEqual(prop["type"], "string")
+        self.assertEqual(prop["enum"], ["2020-01-01/2020-01-31"])
+        self.assertEqual(
+            prop["description"], "date formatted like yyyy-mm-dd/yyyy-mm-dd"
+        )
+
+        prop = {}
+        _update_properties_from_element(prop, {"type": "GeographicExtentWidget"}, [])
+        self.assertEqual(prop["type"], "array")
+        self.assertEqual(prop["minItems"], 4)
+        self.assertEqual(len(prop["items"]), 4)
+
+        prop = {}
+        _update_properties_from_element(prop, {"type": "GeographicLocationWidget"}, [])
+        self.assertEqual(prop["type"], "object")
+        self.assertIn("longitude", prop["properties"])
+        self.assertIn("latitude", prop["properties"])
+
+    def test_plugins_search_ecmwfsearch_queryables_by_values(self):
+        """queryables_by_values must expose defaults, aliases and required fields"""
+        queryables = self.search_plugin.queryables_by_values(
+            {"variable": ["a", "b"], "product_type": ["analysis"]},
+            ["variable"],
+            {"product_type": "analysis"},
+        )
+
+        self.assertIn("ecmwf_variable", queryables)
+        self.assertIn("ecmwf_product_type", queryables)
+        variable_field = get_args(queryables["ecmwf_variable"])[1]
+        product_type_field = get_args(queryables["ecmwf_product_type"])[1]
+        self.assertTrue(variable_field.is_required())
+        self.assertFalse(product_type_field.is_required())
+        self.assertEqual("analysis", product_type_field.get_default())
+        self.assertEqual("ecmwf:variable", variable_field.serialization_alias)
+
+    def test_plugins_search_wekeo_ecmwf_build_query_string_with_empty_dc_qs(self):
+        """WekeoECMWFSearch.build_query_string must ignore _dc_qs=None"""
+        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+
+        query_params, query_string = search_plugin.build_query_string(
+            "ERA5_SL",
+            {
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "_dc_qs": None,
+            },
+        )
+
+        self.assertNotIn("_dc_qs", query_params)
+        self.assertNotIn("_dc_qs", query_string)
+
+    def test_plugins_search_ecmwfsearch_preprocess_search_params_with_dc_qs(self):
+        """_preprocess_search_params must decode date and area from _dc_qs"""
+        dc_query_params = {
+            "date": "2020-01-01/to/2020-01-02",
+            "area": "44/1/43/2",
+        }
+        dc_qs = quote_plus(geojson.dumps(dc_query_params))
+
+        params = self.search_plugin._preprocess_search_params(
+            {
+                "_dc_qs": dc_qs,
+                "ecmwf:variable": "temperature",
+            }
+        )
+
+        self.assertEqual(params["start_datetime"], "2020-01-01")
+        self.assertEqual(params["end_datetime"], "2020-01-02")
+        self.assertEqual(params["variable"], "temperature")
+        self.assertEqual(params["_dc_qs"], dc_qs)
+        self.assertEqual(params["geometry"].bounds, (43.0, 1.0, 44.0, 2.0))
+
+    def test_plugins_search_ecmwfsearch_normalize_results_with_dc_qs_and_result(self):
+        """normalize_results must use _dc_qs while preserving non-empty result properties"""
+        dc_query_params = {
+            "variable": "temperature",
+            "area": [44.0, 1.0, 43.0, 2.0],
+            "format": "grib",
+        }
+        raw_search_results = RawSearchResult(
+            [
+                {
+                    "dataset": self.product_dataset,
+                    "date": "2020-01-01/2020-01-02",
+                    "time": "00:00",
+                    "area": [90.0, -180.0, -90.0, 180.0],
+                    "__hidden": "ignored",
+                    "eodag:request_params": {"product_type": "analysis"},
+                }
+            ]
+        )
+        raw_search_results.query_params = {"page": 1}
+        raw_search_results.collection_def_params = {}
+
+        product = self.search_plugin.normalize_results(
+            raw_search_results,
+            collection=self.collection,
+            _dc_qs=quote_plus(geojson.dumps(dc_query_params)),
+        )[0]
+
+        self.assertEqual(product.properties["ecmwf:dataset"], self.product_dataset)
+        self.assertEqual(product.properties["ecmwf:product_type"], "analysis")
+        self.assertNotIn("__hidden", product.properties)
+        self.assertEqual(product.geometry.bounds, (1.0, 43.0, 2.0, 44.0))
+        self.assertEqual(
+            product.properties["start_datetime"], "2020-01-01T00:00:00.000Z"
+        )
+        self.assertEqual(product.properties["end_datetime"], "2020-01-02T00:00:00.000Z")
+        self.assertNotIn("_dc_qs", product.properties)
+        self.assertNotIn("ecmwf:area", product.properties)
+
+    def test_plugins_search_ecmwfsearch_check_id_error_handling(self):
+        """_check_id must translate order status errors into ValidationError"""
+        product = EOProduct("cop_ads", {"id": "generated", "geometry": "POINT (0 0)"})
+        product.search_kwargs = {"id": "123"}
+        product.collection = "ERA5_SL"
+        downloader = mock.Mock()
+        downloader.config.order_on_response = {"metadata_mapping": {}}
+        product.downloader = downloader
+
+        self.assertIs(_check_id(product), product)
+        downloader._order_status.assert_not_called()
+
+        downloader.config.order_on_response = {"metadata_mapping": {"foo": "bar"}}
+        downloader._order_status.side_effect = DownloadError(
+            "order status could not be checked"
+        )
+
+        with self.assertRaises(ValidationError) as context:
+            _check_id(product)
+
+        self.assertIn(
+            "Requested data is not available on cop_ads (123).",
+            context.exception.message,
+        )
+
+        downloader._order_status.side_effect = RuntimeError("boom")
+        with self.assertRaises(ValidationError) as context:
+            _check_id(product)
+
+        self.assertEqual("boom", context.exception.message)
+
+    def test_plugins_search_ecmwfsearch_request_params_to_properties_geometries(self):
+        """_request_params_to_properties must convert supported ECMWF geometry request params"""
+        cases = [
+            (
+                "feature",
+                {
+                    "type": "polygon",
+                    "shape": [[1, 43], [1, 44], [2, 44], [2, 43], [1, 43]],
+                },
+                (43.0, 1.0, 44.0, 2.0),
+            ),
+            ("area", [44.0, 1.0, 43.0, 2.0], (1.0, 43.0, 2.0, 44.0)),
+            ("location", {"latitude": 43.5, "longitude": 1.5}, (1.5, 43.5, 1.5, 43.5)),
+        ]
+
+        for key, geometry_value, expected_bounds in cases:
+            product = EOProduct(
+                "cop_ads",
+                {
+                    "id": key,
+                    "geometry": "POINT (0 0)",
+                    "eodag:request_params": {
+                        key: geometry_value,
+                        "date": "2020-01-01/2020-01-02",
+                        "variable": "temperature",
+                    },
+                },
+            )
+
+            _request_params_to_properties(product)
+
+            self.assertEqual(product.geometry.bounds, expected_bounds)
+            self.assertEqual(product.properties["ecmwf:variable"], "temperature")
+            self.assertEqual(
+                product.properties["start_datetime"], "2020-01-01T00:00:00.000Z"
+            )
+            self.assertEqual(
+                product.properties["end_datetime"], "2020-01-02T00:00:00.000Z"
+            )
+
+    def test_plugins_search_wekeo_ecmwf_do_search_with_order_id(self):
+        """WekeoECMWFSearch.do_search must fake raw results for non-ORDERABLE ids"""
+        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+        prep = PreparedSearch()
+        prep.query_params = {"foo": "bar"}
+        prep.collection_def_params = {
+            "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS"
+        }
+
+        with mock.patch.object(search_plugin, "_request") as mock_request:
+            raw_results = search_plugin.do_search(
+                prep=prep, id="123", collection="ERA5_SL"
+            )
+
+        self.assertEqual([{}], raw_results.data)
+        self.assertEqual(
+            {"id": "123", "collection": "ERA5_SL"}, raw_results.search_params
+        )
+        self.assertEqual(prep.query_params, raw_results.query_params)
+        self.assertEqual(prep.collection_def_params, raw_results.collection_def_params)
+        mock_request.assert_not_called()
 
     def test_plugins_search_ecmwfsearch_normalize_results(self):
         """ECMWFSearch should add request params to properties and set
