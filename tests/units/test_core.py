@@ -47,6 +47,7 @@ from tests import TEST_RESOURCES_PATH, TEST_RESOURCES_PROVIDERS_PATH
 from tests.context import (
     DEFAULT_LIMIT,
     DEFAULT_MAX_LIMIT,
+    AuthenticationError,
     CommonQueryables,
     EODataAccessGateway,
     EOProduct,
@@ -1186,6 +1187,28 @@ class TestCore(TestCoreBase):
         self.dag.update_collections_list(ext_collections_conf)
         self.assertNotIn("earth_search", self.dag._providers)
 
+    def test_update_collections_list_unsupported_provider(self):
+        """Core api.update_collections_list must ignore providers raising UnsupportedProvider"""
+        with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
+            ext_collections_conf = json.load(f)
+        provider_conf = self.dag._providers.configs["earth_search"]
+        with (
+            mock.patch.object(
+                self.dag._providers.__class__,
+                "__getitem__",
+                side_effect=UnsupportedProvider("earth_search"),
+            ),
+            mock.patch.object(
+                self.dag._plugins_manager,
+                "build_collection_to_provider_config_map",
+            ),
+        ):
+            self.dag.update_collections_list(ext_collections_conf)
+
+        self.assertIs(self.dag._providers.configs["earth_search"], provider_conf)
+        self.assertNotIn("foo", self.dag.collections_config)
+        self.assertNotIn("bar", self.dag.collections_config)
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
         autospec=True,
@@ -2210,6 +2233,50 @@ class TestCore(TestCoreBase):
             self.assertIn(original_url, constraints_url)
             self.assertIn(original_url, form_url)
             mock__fetch_data.reset_mock()
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
+        autospec=True,
+        return_value={},
+    )
+    @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
+    def test_list_queryables_logs_authentication_error(
+        self, mock_get_auth_plugin, mock_discover_queryables
+    ):
+        """list_queryables must ignore auth errors and log them at debug level"""
+        search_plugin = mock.Mock(provider="dummy_provider")
+        search_plugin.config.need_auth = True
+        search_plugin.list_queryables.return_value = QueryablesDict(
+            additional_properties=False
+        )
+        auth_plugin = mock.Mock()
+        auth_plugin.authenticate.side_effect = AuthenticationError("auth failed")
+        mock_get_auth_plugin.return_value = auth_plugin
+
+        with (
+            mock.patch.object(
+                self.dag,
+                "list_collections",
+                return_value=[mock.Mock(id="S2_MSI_L1C")],
+            ),
+            mock.patch.object(
+                self.dag,
+                "_attach_collection_config",
+            ),
+            mock.patch.object(
+                self.dag._plugins_manager,
+                "get_search_plugins",
+                return_value=[search_plugin],
+            ),
+            self.assertLogs("eodag.core", level="DEBUG") as cm,
+        ):
+            queryables = self.dag.list_queryables(provider="dummy_provider")
+
+        self.assertIsInstance(queryables, QueryablesDict)
+        self.assertIn(
+            "queryables from provider dummy_provider could not be fetched due to an authentication error",
+            str(cm.output),
+        )
 
     def test_queryables_repr(self):
         """The HTML representation of queryables must be correct"""
@@ -3382,6 +3449,83 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(found.number_matched, 1)
         self.assertEqual(len(found), 1)
 
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_search_plugins",
+        autospec=True,
+    )
+    def test__search_by_id_handles_plugin_exceptions(self, mock_get_search_plugins):
+        """_search_by_id must store plugin exceptions and return empty results"""
+        search_plugin = mock.Mock(provider="dummy_provider")
+        search_plugin.config.pagination = {"max_limit": 100}
+        mock_get_search_plugins.return_value = [search_plugin]
+
+        with mock.patch.object(
+            self.dag,
+            "search_iter_page_plugin",
+            side_effect=RequestError("search failed"),
+        ):
+            found = self.dag._search_by_id(uid="foo", provider="dummy_provider")
+
+        self.assertEqual(len(found), 0)
+        self.assertEqual(found.number_matched, 0)
+        self.assertEqual(len(found.errors), 1)
+        self.assertEqual(found.errors[0][0], "dummy_provider")
+        self.assertIsInstance(found.errors[0][1], RequestError)
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_search_plugins",
+        autospec=True,
+    )
+    def test__search_by_id_raises_plugin_exceptions(self, mock_get_search_plugins):
+        """_search_by_id must raise plugin exceptions when raise_errors is True"""
+        search_plugin = mock.Mock(provider="dummy_provider")
+        search_plugin.config.pagination = {"max_limit": 100}
+        mock_get_search_plugins.return_value = [search_plugin]
+
+        with mock.patch.object(
+            self.dag,
+            "search_iter_page_plugin",
+            side_effect=RequestError("search failed"),
+        ):
+            with self.assertRaises(RequestError):
+                self.dag._search_by_id(
+                    uid="foo", provider="dummy_provider", raise_errors=True
+                )
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_search_plugins",
+        autospec=True,
+    )
+    def test__search_by_id_guesses_collection_and_resets_driver(
+        self, mock_get_search_plugins
+    ):
+        """_search_by_id must guess missing collection and reset product driver"""
+        search_plugin = mock.Mock(provider="dummy_provider")
+        search_plugin.config.pagination = {"max_limit": 100}
+        mock_get_search_plugins.return_value = [search_plugin]
+        product = EOProduct("dummy_provider", {"id": "foo"})
+        product.collection = None
+        initial_driver = product.driver
+
+        with (
+            mock.patch.object(
+                self.dag,
+                "search_iter_page_plugin",
+                return_value=iter([SearchResult([product], 1)]),
+            ),
+            mock.patch.object(
+                self.dag,
+                "guess_collection",
+                return_value=[mock.Mock(id="S2_MSI_L1C")],
+            ) as mock_guess_collection,
+        ):
+            found = self.dag._search_by_id(uid="foo", provider="dummy_provider")
+
+        self.assertEqual(found.number_matched, 1)
+        self.assertEqual(found[0].collection, "S2_MSI_L1C")
+        self.assertIsNot(found[0].driver, initial_driver)
+        mock_guess_collection.assert_called_once_with(**product.properties)
+
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
         """_do_search must support itemsperpage higher than maximum"""
@@ -3737,6 +3881,132 @@ class TestCoreSearch(TestCoreBase):
             limit=2,
             number_matched=1,
             validate=False,
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
+    def test_search_warns_on_deprecated_page_and_items_per_page(
+        self, mock_prepare_search, mock_do_search
+    ):
+        """search must warn when deprecated page and items_per_page are used"""
+        search_plugin = mock.Mock(provider="cop_dataspace")
+        search_plugin.config.pagination = {}
+        mock_prepare_search.return_value = (
+            [search_plugin],
+            {"collection": "S2_MSI_L1C"},
+        )
+        mock_do_search.return_value = self.search_results
+
+        with pytest.warns(DeprecationWarning) as warnings_records:
+            self.dag.search(
+                page=2,
+                items_per_page=3,
+                validate=False,
+                collection="S2_MSI_L1C",
+            )
+
+        warning_messages = [str(record.message) for record in warnings_records]
+        self.assertTrue(
+            any("deprecated search parameter 'page'" in msg for msg in warning_messages)
+        )
+        self.assertTrue(
+            any(
+                "deprecated search parameter 'items_per_page'" in msg
+                for msg in warning_messages
+            )
+        )
+        mock_do_search.assert_called_once_with(
+            self.dag,
+            search_plugin,
+            count=False,
+            raise_errors=False,
+            validate=False,
+            collection="S2_MSI_L1C",
+            page=2,
+            limit=3,
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")
+    @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search")
+    def test_search_iter_page_warns_on_deprecated_items_per_page(
+        self, mock_prepare_search, mock_search_iter_page_plugin
+    ):
+        """search_iter_page must warn when deprecated items_per_page is used"""
+        search_plugin = mock.Mock(provider="cop_dataspace")
+        mock_prepare_search.return_value = (
+            [search_plugin],
+            {"collection": "S2_MSI_L1C"},
+        )
+        mock_search_iter_page_plugin.return_value = iter([self.search_results])
+
+        with pytest.warns(
+            DeprecationWarning, match="deprecated search parameter 'items_per_page'"
+        ):
+            page_iterator = self.dag.search_iter_page(
+                items_per_page=3, collection="S2_MSI_L1C"
+            )
+
+        self.assertEqual(list(page_iterator), [self.search_results])
+        mock_search_iter_page_plugin.assert_called_once_with(
+            limit=3,
+            search_plugin=search_plugin,
+            collection="S2_MSI_L1C",
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway.search")
+    def test_search_all_warns_on_deprecated_items_per_page(self, mock_search):
+        """search_all must warn when deprecated items_per_page is used"""
+        mock_search.return_value = SearchResult([])
+
+        with pytest.warns(
+            DeprecationWarning, match="deprecated search parameter 'items_per_page'"
+        ):
+            results = self.dag.search_all(
+                items_per_page=3,
+                collection="S2_MSI_L1C",
+            )
+
+        self.assertEqual(len(results), 0)
+        mock_search.assert_called_once_with(
+            limit=3,
+            start=None,
+            end=None,
+            geom=None,
+            locations=None,
+            collection="S2_MSI_L1C",
+        )
+
+    @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
+    def test_search_iter_page_plugin_warns_on_deprecated_items_per_page(
+        self, mock_do_search
+    ):
+        """search_iter_page_plugin must warn when deprecated items_per_page is used"""
+        search_plugin = mock.Mock(provider="cop_dataspace")
+        mock_do_search.return_value = SearchResult([])
+
+        with pytest.warns(DeprecationWarning) as warnings_records:
+            list(
+                self.dag.search_iter_page_plugin(
+                    search_plugin=search_plugin,
+                    items_per_page=3,
+                    collection="S2_MSI_L1C",
+                )
+            )
+
+        warning_messages = [str(record.message) for record in warnings_records]
+        self.assertTrue(
+            any(
+                "deprecated search parameter 'items_per_page'" in msg
+                for msg in warning_messages
+            )
+        )
+        mock_do_search.assert_called_once_with(
+            self.dag,
+            search_plugin,
+            raise_errors=True,
+            collection="S2_MSI_L1C",
+            page=1,
+            limit=3,
         )
 
     @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page_plugin")
@@ -4323,6 +4593,23 @@ class TestCoreSearch(TestCoreBase):
                 ),
             )
 
+    @mock.patch("eodag.api.search_result.SearchResult.next_page")
+    @mock.patch("eodag.api.core.EODataAccessGateway.search")
+    def test_search_all_ignores_next_page_request_error(
+        self, mock_search, mock_next_page
+    ):
+        """search_all must return partial results when pagination raises RequestError"""
+        mock_search.return_value = SearchResult([self.search_results.data[0]], 1)
+        mock_next_page.side_effect = RequestError("next page failed")
+
+        with self.assertLogs("eodag.core", level="WARNING") as cm:
+            results = self.dag.search_all(collection="S2_MSI_L1C")
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results.number_matched, 1)
+        self.assertTrue(results.raise_errors)
+        self.assertIn("but it may be incomplete", str(cm.output))
+
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
         autospec=True,
@@ -4626,6 +4913,20 @@ class TestCoreProductAlias(TestCoreBase):
         with self.assertRaises(NoMatchingCollection):
             self.dag.get_collection_from_alias("JUST_A_TYPE")
 
+    def test_get_collection_from_alias_multiple_matches(self):
+        """get_collection_from_alias must raise NoMatchingCollection if alias is ambiguous"""
+        products = self.dag.collections_config
+        products["S2_MSI_L2A_ALIAS"] = Collection.create_with_dag(
+            self.dag,
+            alias="S2_MSI_ALIAS",
+            **products["S2_MSI_L2A"].model_dump(exclude={"alias"}),
+        )
+
+        with self.assertRaises(NoMatchingCollection):
+            self.dag.get_collection_from_alias("S2_MSI_ALIAS")
+
+        products.pop("S2_MSI_L2A_ALIAS")
+
 
 class TestCoreProviderGroup(TestCoreBase):
     # create a group with a provider which has collection discovery mechanism
@@ -4659,6 +4960,17 @@ class TestCoreProviderGroup(TestCoreBase):
                 providers.remove(provider)
 
         self.assertCountEqual(self.dag.providers.groups, providers)
+
+    def test_available_providers(self) -> None:
+        """available_providers must list available provider names sorted like providers"""
+        self.assertEqual(self.dag.available_providers(), self.dag.providers.names)
+
+    def test_available_providers_for_collection(self) -> None:
+        """available_providers must filter providers by collection"""
+        self.assertEqual(
+            self.dag.available_providers(collection="S2_MSI_L1C"),
+            self.dag.providers.filter("S2_MSI_L1C").names,
+        )
 
     def test_list_collections(self) -> None:
         """
