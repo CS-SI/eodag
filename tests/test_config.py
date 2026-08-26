@@ -45,13 +45,13 @@ from tests.context import (
     USER_AGENT,
     ECMWFSearch,
     EODataAccessGateway,
-    PluginManager,
     StacSearch,
     ValidationError,
     build_provider_configs,
     config,
     get_ext_collections_conf,
     load_stac_provider_config,
+    make_plugins_manager,
     mock,
 )
 
@@ -91,9 +91,7 @@ class TestProviderConfig(unittest.TestCase):
                 type: MyPluginClass
             products:
                 EODAG_COLLECTION: provider_collection
-            """.format(
-                provider_name
-            ),
+            """.format(provider_name),
         )
 
         # load_provider_config_from_string uses LegacyAwareLoader, which registers
@@ -419,8 +417,9 @@ class TestConfigFunctions(unittest.TestCase):
                 f"{provider_name} uses eodag:download_link in its products config",
             )
 
-        plugins_manager = PluginManager(ProvidersDict.from_configs(providers_config))
-        for provider_name in plugins_manager.providers:
+        providers = build_provider_configs(providers_config)
+        plugins_manager = make_plugins_manager(providers)
+        for provider_name in providers:
             search_plugin = next(
                 plugins_manager.get_search_plugins(provider=provider_name)
             )
@@ -450,8 +449,7 @@ class TestConfigFunctions(unittest.TestCase):
         providers = build_provider_configs(config.load_default_config())
         merge_provider_configs(
             providers,
-            yaml.safe_load(
-                """
+            yaml.safe_load("""
                 my_new_provider:
                     priority: 4
                     search:
@@ -470,7 +468,8 @@ class TestConfigFunctions(unittest.TestCase):
                         credentials:
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
-                """))
+                """),
+        )
 
         my_new_provider_conf = providers["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)

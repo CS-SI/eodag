@@ -3655,9 +3655,7 @@ class TestSearchPluginECMWFSearch(BaseSearchPluginTest):
         super(TestSearchPluginECMWFSearch, self).setUp()
         self.provider = "cop_ads"
         self.collection = "CAMS_EAC4"
-        self.search_plugin = self.get_search_plugin(
-            collection=self.collection, provider=self.provider
-        )
+        self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
             "start_datetime": "2020-01-01",
             "end_datetime": "2020-01-02",

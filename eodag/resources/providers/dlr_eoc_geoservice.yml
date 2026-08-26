@@ -38,7 +38,6 @@ dlr_eoc_geoservice:
     auth_error_code:
       - 401
       - 403
-    products:
   auth:
     type: GenericAuth
     matching_url: https://download.geoservice.dlr.de

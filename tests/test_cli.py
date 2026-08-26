@@ -809,12 +809,12 @@ class TestEodagCli(unittest.TestCase):
             for collection in collections
         }
 
-        exit_code, output, error = self.eodag_command(["list", "--json", "--no-fetch"])
+        exit_code, output, error = self.eodag_command(["list", "--json"])
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
         self.assertEqual(json.loads(output), expected_collections)
 
-        exit_code, output, error = self.eodag_command(["list", "--yaml", "--no-fetch"])
+        exit_code, output, error = self.eodag_command(["list", "--yaml"])
         self.assertEqual(exit_code, 0)
         self.assertIsNone(error)
         self.assertNotIn("Listing available collections:", output)
@@ -825,9 +825,7 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_list_collection_format_options_are_mutually_exclusive(self):
         """Calling eodag list with both output formats should fail."""
-        exit_code, output, error = self.eodag_command(
-            ["list", "--json", "--yaml", "--no-fetch"]
-        )
+        exit_code, output, error = self.eodag_command(["list", "--json", "--yaml"])
         self.assertNotEqual(exit_code, 0)
         self.assertIsInstance(error, SystemExit)
         self.assertIn("mutually exclusive", output)

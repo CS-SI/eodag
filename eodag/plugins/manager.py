@@ -61,7 +61,6 @@ AuthCacheKey = tuple[str, str, str]  # (provider, auth_type, conf_hash)
 class PluginManager:
     """Entry-point loader for eodag plugins.
 
-
     The role of instances of this class (normally only one instance exists,
     created during instantiation of :class:`~eodag.api.core.EODataAccessGateway`.
     But nothing is done to enforce this) is to instantiate the plugins
