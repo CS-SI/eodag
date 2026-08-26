@@ -552,6 +552,9 @@ class CopGhslSearch(Search):
         """fetch the tiles matching the given filters from the provider"""
 
         logger.debug(f"get tiles for filter parameters {params}")
+        collection_config = {
+            k: v for k, v in collection_config.items() if "_mapping" not in k
+        }
         collection = params.pop("collection")
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
