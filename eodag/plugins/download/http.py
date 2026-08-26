@@ -1246,7 +1246,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         executor: Optional[ThreadPoolExecutor] = None,
-        **kwargs: Unpack[DownloadConf],
+        **kwargs: Any,
     ) -> str:
         """Download product assets if they exist"""
         if progress_callback is None:
@@ -1265,11 +1265,22 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = product.assets.get_values(kwargs.get("asset") or "")
+        all_assets_values = product.assets.get_values(kwargs.get("asset") or "")
+
+        # only keep assets that need to be downloaded (not cached)
+        assets_values: list[Asset] = []
+        per_asset_kwargs = {k: v for k, v in kwargs.items() if k != "asset"}
+        for asset in all_assets_values:
+            if statements := self.check_cache(asset, **per_asset_kwargs):
+                # update asset with cached statements
+                asset.update(statements)
+            else:
+                assets_values.append(asset)
 
         assets_stream_list = self._raw_stream_download_assets(
             product, executor, auth, progress_callback, assets_values, **kwargs
         )
+        assets_downloads = list(zip(assets_values, assets_stream_list))
 
         # remove existing incomplete file
         if os.path.isfile(fs_dir_path):
@@ -1291,10 +1302,10 @@ class HTTPDownload(Download):
                 local_assets_count += 1
                 continue
 
-        def download_asset(asset_stream: StreamResponse) -> None:
+        def download_asset(asset: Asset, asset_stream: StreamResponse) -> None:
             asset_chunks = asset_stream.content
             asset_path = cast(str, asset_stream.arcname)
-            asset_abs_path = os.path.join(fs_dir_path, asset_path)
+            asset_abs_path = os.path.join(fs_dir_path, os.path.normpath(asset_path))
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
             asset_abs_path_dir = os.path.dirname(asset_abs_path)
@@ -1320,6 +1331,16 @@ class HTTPDownload(Download):
                     "Asset already exists at '%s', skipping download", asset_abs_path
                 )
                 progress_callback(skipped_size)
+
+            if not asset["href"].startswith("file:"):
+                self.set_statements(
+                    asset,
+                    {
+                        **asset.as_dict(),
+                        "file:local_path": asset_abs_path,
+                    },
+                    **per_asset_kwargs,
+                )
             return
 
         # use parallelization if possible
@@ -1329,12 +1350,12 @@ class HTTPDownload(Download):
             executor._thread_name_prefix == "eodag-download-all"
             and executor._max_workers == 1
         ):
-            for asset_stream in assets_stream_list:
-                download_asset(asset_stream)
+            for asset, asset_stream in assets_downloads:
+                download_asset(asset, asset_stream)
         else:
             futures = (
-                executor.submit(download_asset, asset_stream)
-                for asset_stream in assets_stream_list
+                executor.submit(download_asset, asset, asset_stream)
+                for asset, asset_stream in assets_downloads
             )
             [f.result() for f in as_completed(futures)]
 
@@ -1364,13 +1385,20 @@ class HTTPDownload(Download):
 
         # flatten directory structure
         if flatten_top_dirs:
-            flatten_top_directories(fs_dir_path)
-
-        if kwargs.get("asset") is None:
-            # save hash/record file
-            with open(record_filename, "w") as fh:
-                fh.write(product.remote_location)
-            logger.debug("Download recorded in %s", record_filename)
+            old_dir, new_dir = flatten_top_directories(fs_dir_path)
+            # update asset local paths in cache
+            for asset in assets_values:
+                new_asset_path = asset.get("file:local_path", "").replace(
+                    old_dir, new_dir, 1
+                )
+                self.set_statements(
+                    asset,
+                    {
+                        **asset.as_dict(),
+                        "file:local_path": new_asset_path,
+                    },
+                    **per_asset_kwargs,
+                )
 
         return fs_dir_path
 

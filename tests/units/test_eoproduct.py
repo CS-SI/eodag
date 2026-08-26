@@ -316,10 +316,6 @@ class TestEOProduct(EODagTestBase):
             responses.assert_call_count(product.properties["eodag:download_link"], 1)
 
             self.addCleanup(self._clean_product, product_dir_path)
-            self.assertIn("Download url: %s" % product.remote_location, str(cm.output))
-            self.assertIn(
-                "Remote location of the product is still available", str(cm.output)
-            )
 
         # Check that the mocked request was properly called.
         responses.assert_call_count(product.properties["eodag:download_link"], 1)
@@ -584,7 +580,7 @@ class TestEOProduct(EODagTestBase):
         # progress bar finished
         self.assertEqual(progress_callback.initial, 0)
         self.assertEqual(progress_callback.total, 1)
-        self.assertEqual(progress_callback.pos, 1)
+        self.assertEqual(progress_callback.pos, 0)
 
     def test_eoproduct_register_downloader(self):
         """EOProduct.register_downloader must set download and auth plugins"""

@@ -611,17 +611,6 @@ class EOProduct:
 
         if fs_path is None:
             raise DownloadError("Missing file location returned by download process")
-        logger.debug(
-            "Product location updated from '%s' to '%s'",
-            self.remote_location,
-            self.location,
-        )
-        if self.remote_location != NOT_AVAILABLE:
-            logger.info(
-                "Remote location of the product is still available through its "
-                "'remote_location' property: %s",
-                self.remote_location,
-            )
 
         return fs_path
 
@@ -755,7 +744,7 @@ class EOProduct:
     ) -> tuple[ProgressCallback, bool]:
         # determine position of the progress bar with a counter of executor passings
         # to avoid bar overwriting in case of parallel downloads
-        count = executor._counter() if executor is not None else 1  # type: ignore
+        count = executor._counter() if executor is not None else 0  # type: ignore
 
         # progress bar init
         if progress_callback is None:
