@@ -94,9 +94,7 @@ class TestProviderConfig(unittest.TestCase):
                 type: MyPluginClass
             products:
                 EODAG_COLLECTION: provider_collection
-            """.format(
-                provider_name
-            ),
+            """.format(provider_name),
         )
 
         # load_provider_config_from_string uses LegacyAwareLoader, which registers
@@ -466,7 +464,7 @@ class TestConfigFunctions(unittest.TestCase):
 
         providers = build_provider_configs(providers_config)
         plugins_manager = make_plugins_manager(providers)
-        for provider_name in plugins_manager._db.get_federation_backends():
+        for provider_name in providers:
             search_plugin = next(
                 plugins_manager.get_search_plugins(provider=provider_name)
             )
@@ -515,7 +513,8 @@ class TestConfigFunctions(unittest.TestCase):
                         credentials:
                             aws_access_key_id: access-key-id
                             aws_secret_access_key: secret-access-key
-                """))
+                """),
+        )
 
         my_new_provider_conf = providers["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)
