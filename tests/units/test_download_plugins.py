@@ -2306,6 +2306,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
                     size=2,
                     bucket_name="somebucket",
                     rel_path="dummy_product/sub/file2.tif",
+                    data_type="image/tiff",
                 ),
             ],
         )
