@@ -1381,10 +1381,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertEqual(raw.next_page_token, 3)
         self.assertEqual(raw.next_page_token_key, "page")
 
-    def test_plugins_search_querystringsearch_init_raises_on_empty_metadata_mapping_from_product(
+    def test_plugins_search_querystringsearch_init_accepts_empty_metadata_mapping_from_product(
         self,
     ):
-        """QueryStringSearch.__init__ must reject an empty metadata_mapping inherited from another product."""
+        """Empty inherited mappings fall back to the provider metadata mapping."""
         provider = "earth_search"
         plugin_cfg = copy_deepcopy(self.get_search_plugin(provider=provider).config)
         plugin_cfg.products["S1_SAR_GRD"]["metadata_mapping_from_product"] = (
@@ -1392,8 +1392,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         )
         plugin_cfg.products["S2_MSI_L1C"]["metadata_mapping"] = {}
 
-        with self.assertRaises(MisconfiguredError):
-            QueryStringSearch(provider, plugin_cfg)
+        plugin = QueryStringSearch(provider, plugin_cfg)
+        mapping = plugin.get_metadata_mapping("S1_SAR_GRD")
+        self.assertIn("id", mapping)
+        self.assertIn("geometry", mapping)
 
     def test_plugins_search_querystringsearch_clear_resets_pagination_state(self):
         """QueryStringSearch.clear must reset URLs, parameters, and page state."""
@@ -6059,8 +6061,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.assertEqual(
             "item_20200102_20200103_direct_20210101", product.properties["id"]
         )
-        self.assertEqual("native", next(iter(product.assets.keys())))
-        asset = product.assets["native"]
+        self.assertEqual("download_link", next(iter(product.assets.keys())))
+        asset = product.assets["download_link"]
         self.assertEqual(123, asset["file:size"])
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e", asset["file:checksum"])
         self.assertEqual("2020-01-04T00:00:00.000Z", asset["updated"])
@@ -6851,18 +6853,16 @@ class TestSearchPluginCopGhslSearch(BaseSearchPluginTest):
         with self.assertRaises(MisconfiguredError):
             plugin._get_tiles_for_filters({}, deepcopy(params))
 
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
+        product_type_config = plugin.config.products.get(collection, {})
         mock_requests_get.return_value = MockResponse({}, status_code=404)
         self.assertIsNone(
             plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
         )
 
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         mock_requests_get.side_effect = requests.exceptions.Timeout()
         with self.assertRaises(TimeOutError):
             plugin._get_tiles_for_filters(product_type_config, deepcopy(params))
 
-        product_type_config = deepcopy(plugin.config.products.get(collection, {}))
         mock_requests_get.side_effect = requests.exceptions.RequestException("boom")
         with self.assertRaises(RequestError):
             plugin._get_tiles_for_filters(product_type_config, deepcopy(params))

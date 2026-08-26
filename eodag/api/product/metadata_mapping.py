@@ -1593,6 +1593,9 @@ def mtd_cfg_as_conversion_and_querypath(
     if dest_dict is None:
         dest_dict = {}
 
+    if not src_dict and not dest_dict:
+        return dest_dict
+
     # check if the configuration has already been converted
     some_configured_value = (
         next(iter(dest_dict.values())) if dest_dict else next(iter(src_dict.values()))
