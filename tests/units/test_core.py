@@ -917,7 +917,6 @@ class TestCore(TestCoreBase):
             "earth_search",
             "earth_search_gcs",
             "ecmwf",
-            "eocat",
             "eumetsat_ds",
             "fedeo_ceda",
             "geodes",
@@ -3622,9 +3621,7 @@ class TestCoreSearch(TestCoreBase):
         """guess_collection must run all found collections without any limit"""
         # Filter that should give more than 10 products referenced in the catalog.
         optical_collections = [
-            c
-            for c in self.dag.list_collections()
-            if c.eodag_sensor_type == ["OPTICAL"]
+            c for c in self.dag.list_collections() if c.eodag_sensor_type == ["OPTICAL"]
         ]
         self.assertGreater(
             len(optical_collections),
