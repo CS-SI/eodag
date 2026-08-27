@@ -1168,8 +1168,14 @@ def merge_provider_configs(
         except Exception:
             import traceback
 
-            operation = "updating" if name in configs else "creating"
-            logger.warning("%s: skipped %s due to invalid config", name, operation)
+            if name in configs:
+                logger.warning(
+                    "%s: skipped updating provider due to invalid config", name
+                )
+            else:
+                logger.warning(
+                    "%s: could not create provider from scratch using config", name
+                )
             logger.debug("Traceback:\n%s", traceback.format_exc())
 
     _share_credentials(configs)
@@ -1253,10 +1259,10 @@ def parse_discovery_config_jsonpath(
 
     # parse jsonpath expressions for optional discovery configuration entries if they exist
     if "single_collection_parsable_metadata" in discovery_conf:
-        discovery_conf_parsed[
-            "single_collection_parsable_metadata"
-        ] = mtd_cfg_as_conversion_and_querypath(
-            discovery_conf["single_collection_parsable_metadata"]
+        discovery_conf_parsed["single_collection_parsable_metadata"] = (
+            mtd_cfg_as_conversion_and_querypath(
+                discovery_conf["single_collection_parsable_metadata"]
+            )
         )
 
     if "metadata_mapping" in discovery_conf.get(
