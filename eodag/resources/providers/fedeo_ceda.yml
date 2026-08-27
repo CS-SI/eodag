@@ -9,6 +9,7 @@ fedeo_ceda:
     api_endpoint: 'https://fedeo.ceos.org/search'
     ssl_verify: true
     timeout: 60
+    retry_status_forcelist: [400, 401, 429, 500, 502, 503, 504]
     pagination:
       next_page_url_tpl: '{url}?startRecord={next_page_token}'
       next_page_query_obj: '{{"limit":{limit}}}'
