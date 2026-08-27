@@ -1322,6 +1322,27 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
         run()
 
+    def test_plugins_search_postjsonsearch_retries_status_errors(self):
+        """A PostJsonSearch request must retry configured status errors."""
+        search_plugin = self.get_search_plugin(provider="fedeo_ceda")
+        search_plugin.config.retry_total = 1
+        search_plugin.config.retry_backoff_factor = 0
+        url = search_plugin.config.api_endpoint
+        prep = PreparedSearch(url=url)
+        prep.query_params = {}
+
+        @responses.activate(registry=responses.registries.FirstMatchRegistry)
+        def run():
+            responses.add(responses.POST, url, status=400)
+            responses.add(responses.POST, url, status=200)
+
+            response = search_plugin._request(prep)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(responses.calls), 2)
+
+        run()
+
     def test_plugins_search_postjsonsearch_request_auth_error(self):
         """A query with a PostJsonSearch must handle auth errors"""
 
@@ -1343,7 +1364,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 
         run()
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.post", autospec=True)
     def test_plugins_search_postjsonsearch_search_quota_exceeded(self, mock__request):
         """A query with a PostJsonSearch must handle a 429 response returned by the provider"""
 
@@ -1461,7 +1482,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
         autospec=True,
     )
-    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.post", autospec=True)
     def test_plugins_search_postjsonsearch_search_cloudcover_awseos(
         self, mock_requests_post, mock_normalize_results
     ):
@@ -1529,7 +1550,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         self.assertNotIn("bar", products.data[0].properties)
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.post", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch.normalize_results", autospec=True
     )
@@ -1552,6 +1573,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             },
         )
         mock_request.assert_called_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "year": "2020",
@@ -1573,6 +1595,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             start_datetime="2021-02-01T03:00:00Z",
         )
         mock_request.assert_called_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "year": ["2021"],
@@ -1623,6 +1646,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         search_plugin.query(collection="ERA5_SL", prep=PreparedSearch())
         mock_request.assert_called_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
@@ -1665,6 +1689,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         search_plugin.query(collection="CAMS_EAC4", prep=PreparedSearch())
         mock_request.assert_called_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
@@ -1780,7 +1805,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         with self.assertRaises(ValidationError):
             self.awseos_search_plugin._request(PreparedSearch())
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.post", autospec=True)
     def test_plugins_search_postjsonsearch_request_translates_errors(self, mock_post):
         """PostJsonSearch must translate timeout, auth, quota, and generic request errors."""
         response = requests.Response()
@@ -2422,7 +2447,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertIn("some-asset", products[0].assets)
         self.assertEqual(products[0].assets["some-asset"]["title"], "My custom title")
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.post", autospec=True)
     def test_plugins_search_stacsearch_opened_time_intervals(self, mock_requests_post):
         """Opened time intervals must be handled by StacSearch plugin"""
         mock_requests_post.return_value = mock.Mock()
@@ -3270,7 +3295,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         self.auth_plugin.config.credentials = {"cred": "entials"}
         self.auth = self.auth_plugin.authenticate()
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.post", autospec=True)
     def test_plugins_search_buildpostsearchresult_count_and_search(
         self, mock_requests_post
     ):
@@ -3286,6 +3311,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
         )
 
         mock_requests_post.assert_called_with(
+            mock.ANY,
             self.search_plugin.config.api_endpoint,
             json=mock.ANY,
             headers=USER_AGENT,

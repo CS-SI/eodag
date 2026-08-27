@@ -2025,6 +2025,13 @@ class PostJsonSearch(QueryStringSearch):
         exception_message = prep.exception_message
         timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+        retry_backoff_factor = getattr(
+            self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+        )
+        retry_status_forcelist = getattr(
+            self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
+        )
         try:
             # auth if needed
             RequestsKwargs = TypedDict(
@@ -2054,7 +2061,16 @@ class PostJsonSearch(QueryStringSearch):
                 logger.debug("Query kwargs: %s" % geojson.dumps(kwargs))
             except TypeError:
                 logger.debug("Query kwargs: %s" % kwargs)
-            response = requests.post(
+            session = requests.Session()
+            retries = Retry(
+                total=retry_total,
+                backoff_factor=retry_backoff_factor,
+                status_forcelist=retry_status_forcelist,
+                allowed_methods={"POST"},
+                raise_on_status=False,
+            )
+            session.mount(url, HTTPAdapter(max_retries=retries))
+            response = session.post(
                 url,
                 json=prep.query_params,
                 headers=USER_AGENT,

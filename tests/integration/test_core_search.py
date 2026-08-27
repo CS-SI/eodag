@@ -95,7 +95,7 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.requests.Session.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -127,7 +127,7 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.requests.Session.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -230,7 +230,7 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.requests.Session.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -272,7 +272,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.requests.Session.post",
         autospec=True,
         side_effect=RequestException,
     )
@@ -822,7 +822,7 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.post",
+        "eodag.plugins.search.qssearch.requests.Session.post",
         autospec=True,
     )
     @mock.patch(
