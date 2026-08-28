@@ -647,7 +647,11 @@ class PluginConfig(yaml.YAMLObject):
         )
 
     def matches_target_auth(self, target_config: Self):
-        """Check if the target auth configuration matches this one"""
+        """Check whether this auth configuration can share credentials with another.
+
+        Matching criteria must be identical: when both ``matching_url`` and
+        ``matching_conf`` are configured, both must match.
+        """
         target_matching_conf = getattr(target_config, "matching_conf", {})
         target_matching_url = getattr(target_config, "matching_url", None)
 

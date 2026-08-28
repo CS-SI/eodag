@@ -251,8 +251,7 @@ cop_dataspace_s3:
     auth_error_code: 403
     s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
     support_presign_url: False
-    matching_conf:
-      s3_endpoint: 'https://eodata.dataspace.copernicus.eu'
+    matching_url: 's3://eodata'
   products:
     # S2
     S2_MSI_L1C:

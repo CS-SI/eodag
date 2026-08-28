@@ -18,37 +18,58 @@
 
 import copy
 import datetime as dt
+import json
 import logging
 import os
 import ssl
 import sys
+import tempfile
 import unittest
+import warnings
 from contextlib import closing
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
+import requests
+from click.exceptions import BadParameter
 from dateutil import parser as dateutil_parser
 from requests.exceptions import RequestException
 from shapely.geometry import Point, Polygon
 
-from eodag.utils import get_geometry_from_ecmwf_area, get_geometry_from_ecmwf_feature
+import eodag.utils as utils
+from eodag.utils import (
+    _build_float_range_cls,
+    _deprecated_class,
+    format_string,
+    nested_pairs2dict,
+)
+from eodag.utils.exceptions import MisconfiguredError
 from eodag.utils.logging import TqdmLoggingHandler
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     DownloadedCallback,
+    LocalFileAdapter,
+    NotebookWidgets,
     ProgressCallback,
     RequestError,
+    TimeOutError,
+    check_ipython,
+    check_notebook,
     deepcopy,
     fetch_json,
     flatten_top_directories,
     get_bucket_name_and_prefix,
+    get_geometry_from_ecmwf_area,
+    get_geometry_from_ecmwf_feature,
     get_ssl_context,
     get_timestamp,
+    import_all_modules,
     is_env_var_true,
     merge_mappings,
+    patch_owslib_requests,
     path_to_uri,
     setup_logging,
     uri_to_path,
@@ -70,6 +91,79 @@ class TestUtils(unittest.TestCase):
         logger = logging.getLogger("eodag")
         logger.handlers = []
         logger.level = 0
+
+    def test_build_float_range_cls(self):
+        """Test FloatRange conversion and range validation."""
+        float_range = _build_float_range_cls()
+        parameter_type = float_range(0, 100)
+
+        self.assertEqual(parameter_type.convert("42.5", None, None), 42.5)
+        with self.assertRaises(BadParameter):
+            parameter_type.convert("-1", None, None)
+        with self.assertRaises(BadParameter):
+            parameter_type.convert("101", None, None)
+
+        self.assertEqual(float_range(max=100).convert(42, None, None), 42.0)
+        self.assertEqual(float_range(min=0).convert(42, None, None), 42.0)
+
+    def test_utils_getattr_float_range(self):
+        """Test __getattr__ lazily creates and caches FloatRange."""
+        previous_float_range = utils.__dict__.pop("FloatRange", None)
+        try:
+            float_range = getattr(utils, "FloatRange")
+            self.assertIs(getattr(utils, "FloatRange"), float_range)
+            self.assertEqual(float_range(0, 1).convert("0.5", None, None), 0.5)
+            with self.assertRaises(AttributeError):
+                getattr(utils, "missing_attribute")
+        finally:
+            utils.__dict__.pop("FloatRange", None)
+            if previous_float_range is not None:
+                utils.__dict__["FloatRange"] = previous_float_range
+
+    def test_deprecated_class(self):
+        """Test _deprecated_class preserves identity and warns on constructors."""
+
+        class Example:
+            def __init__(self, value):
+                self.value = value
+
+            @classmethod
+            def model_validate(cls, value):
+                return cls(value)
+
+        decorated_class = _deprecated_class(reason="legacy", version="3.0")(Example)
+        self.assertIs(decorated_class, Example)
+
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            instance = Example("value")
+        self.assertEqual(instance.value, "value")
+        self.assertEqual(len(caught_warnings), 1)
+        self.assertIn(
+            "Example (legacy) -- Deprecated since v3.0", str(caught_warnings[0].message)
+        )
+
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            validated = Example.model_validate("validated")
+        self.assertEqual(validated.value, "validated")
+        self.assertEqual(len(caught_warnings), 2)
+
+    def test_format_string_exception_handling(self):
+        """Test format_string handles malformed and colon-containing formats."""
+        with self.assertRaisesRegex(MisconfiguredError, "Unable to format"):
+            format_string(None, "{invalid", value="unused")
+
+        self.assertEqual(
+            format_string(None, "{foo:bar}", **{"foo:bar": "value"}),
+            "value",
+        )
+
+    def test_nested_pairs2dict_value_error(self):
+        """Test nested_pairs2dict returns malformed pairs unchanged."""
+        pairs = [["valid", "pair"], ["invalid"]]
+
+        self.assertIs(nested_pairs2dict(pairs), pairs)
 
     def test_utils_get_timestamp(self):
         """Test get_timestamp returns correct UNIX timestamp for various date formats"""
@@ -500,6 +594,33 @@ class TestUtils(unittest.TestCase):
             )
         )
 
+    def test_get_geometry_from_ecmwf_feature_exceptions(self):
+        """ECMWF feature validation raises TypeError for invalid geometries."""
+        invalid_geometries = [
+            None,
+            {},
+            {"type": "polygon"},
+            {"type": "polygon", "shape": "invalid"},
+            {"type": "boundingbox"},
+            {"type": "boundingbox", "points": "invalid"},
+            {"type": "position"},
+            {"type": "position", "points": []},
+            {"type": "trajectory"},
+            {"type": "trajectory", "points": [[43.0, 1.0]]},
+            {
+                "type": "trajectory",
+                "points": [[43.0, 1.0], [43.5, 1.5]],
+            },
+            {"type": "circle"},
+            {"type": "circle", "center": [43.5, 1.5]},
+            {"type": "unsupported"},
+        ]
+
+        for geometry in invalid_geometries:
+            with self.subTest(geometry=geometry):
+                with self.assertRaises(TypeError):
+                    get_geometry_from_ecmwf_feature(geometry)
+
     def test_get_geometry_from_ecmwf_area_accepts_list_and_string(self):
         """``get_geometry_from_ecmwf_area`` must accept both list and slash-separated string formats."""
         # list format: [max_lat, min_lon, min_lat, max_lon]
@@ -522,3 +643,87 @@ class TestUtils(unittest.TestCase):
         # invalid string: non-numeric content
         with self.assertRaises(ValueError):
             get_geometry_from_ecmwf_area("a/b/c/d")
+
+    def test_patch_owslib_requests_restores_functions(self):
+        """OWSLib request patches apply verification and restore originals."""
+        import owslib.util
+
+        original_request = owslib.util.requests.request
+        original_post = owslib.util.requests.post
+        with patch_owslib_requests(verify=False):
+            self.assertFalse(owslib.util.requests.request.keywords["verify"])
+            self.assertFalse(owslib.util.requests.post.keywords["verify"])
+        self.assertIs(owslib.util.requests.request, original_request)
+        self.assertIs(owslib.util.requests.post, original_post)
+        with self.assertRaisesRegex(RuntimeError, "boom"):
+            with patch_owslib_requests():
+                raise RuntimeError("boom")
+        self.assertIs(owslib.util.requests.request, original_request)
+
+    def test_import_all_modules_honors_exclude(self):
+        """Module discovery skips excluded entries."""
+        from types import SimpleNamespace
+
+        package = SimpleNamespace(__name__="test_package", __path__=["unused"])
+        modules = [
+            (None, "module", False),
+            (None, "subpackage", True),
+            (None, "excluded", False),
+        ]
+        with (
+            mock.patch(
+                "eodag.utils.import_system.pkgutil.iter_modules", return_value=modules
+            ),
+            mock.patch(
+                "eodag.utils.import_system.importlib.import_module"
+            ) as import_module,
+        ):
+            import_all_modules(package, depth=1, exclude=("excluded",))
+        import_module.assert_called_once_with(".module", package="test_package")
+
+    def test_notebook_detection_and_non_notebook_widgets(self):
+        """Notebook widgets are no-ops outside a notebook."""
+        self.assertFalse(check_ipython())
+        self.assertFalse(check_notebook())
+        widgets = NotebookWidgets()
+        self.assertIsNone(widgets.display_html("ignored"))
+        self.assertIsNone(widgets.clear_html())
+
+    def test_notebook_detection_shells(self):
+        """Notebook detection distinguishes Jupyter and terminal IPython shells."""
+        with mock.patch("eodag.utils.notebook.get_ipython", create=True) as get_ipython:
+            get_ipython.return_value.__class__.__name__ = "ZMQInteractiveShell"
+            self.assertTrue(check_notebook())
+            get_ipython.return_value.__class__.__name__ = "TerminalInteractiveShell"
+            self.assertFalse(check_notebook())
+
+    def test_local_file_adapter_statuses_and_fetch_json(self):
+        """Local file requests return expected statuses and parse JSON."""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as file:
+            json.dump({"value": 1}, file)
+            path = file.name
+        try:
+            self.assertEqual(fetch_json(path), {"value": 1})
+            self.assertEqual(LocalFileAdapter._chkpath("put", path)[0], 501)
+            self.assertEqual(LocalFileAdapter._chkpath("patch", path)[0], 405)
+            self.assertEqual(LocalFileAdapter._chkpath("get", path)[0], 200)
+            self.assertEqual(
+                LocalFileAdapter._chkpath("get", path + "-missing")[0], 404
+            )
+            self.assertEqual(
+                LocalFileAdapter._chkpath("get", os.path.dirname(path))[0], 400
+            )
+        finally:
+            os.unlink(path)
+
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
+    def test_fetch_json_timeout_and_request_error(self, mock_get):
+        """fetch_json translates timeout and request failures to EODAG errors."""
+        mock_get.side_effect = requests.exceptions.Timeout()
+        with self.assertRaises(TimeOutError):
+            fetch_json("https://example.test")
+        mock_get.side_effect = requests.exceptions.RequestException()
+        with self.assertRaises(RequestError):
+            fetch_json("https://example.test")

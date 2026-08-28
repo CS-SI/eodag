@@ -57,12 +57,13 @@ class TestEodagCli(unittest.TestCase):
     @contextmanager
     def user_conf(self, conf_file="user_conf.yml", content=b"key: to unused conf"):
         """Utility method"""
-        with self.runner.isolated_filesystem():
-            with open(conf_file, "wb") as fd:
+        with TemporaryDirectory() as tmp_dir:
+            conf_file_path = os.path.join(tmp_dir, conf_file)
+            with open(conf_file_path, "wb") as fd:
                 fd.write(
                     content if isinstance(content, bytes) else content.encode("utf-8")
                 )
-            yield conf_file
+            yield conf_file_path
 
     def setUp(self):
         super(TestEodagCli, self).setUp()

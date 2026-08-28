@@ -199,14 +199,16 @@ class CSWSearch(Search):
             self.config.search_definition.get("resource_location_filter", "")
         )
         for ref in rec.references:
-            if ref["scheme"] in SUPPORTED_REFERENCE_SCHEMES:
-                if resource_filter.pattern and resource_filter.search(ref["url"]):
-                    download_url = ref["url"]
-                else:
-                    download_url = ref["url"]  # noqa
-                break
+            if ref["scheme"] not in SUPPORTED_REFERENCE_SCHEMES:
+                continue
+            if resource_filter.pattern and not resource_filter.search(ref["url"]):
+                continue
+            download_url = ref["url"]
+            break
         properties = properties_from_xml(rec.xml, self.config.metadata_mapping)
-        if not properties["geometry"]:
+        if download_url:
+            properties.setdefault("eodag:download_link", download_url)
+        if not properties.get("geometry"):
             bbox = rec.bbox_wgs84
             if not bbox:
                 code = "EPSG:4326"
@@ -262,9 +264,11 @@ class CSWSearch(Search):
         # `footprint`
         fp = params.get("geometry")
         if fp:
-            constraints.append(
-                BBox([fp["lonmin"], fp["latmin"], fp["lonmax"], fp["latmax"]])
-            )
+            if hasattr(fp, "bounds"):
+                bbox = fp.bounds
+            else:
+                bbox = [fp["lonmin"], fp["latmin"], fp["lonmax"], fp["latmax"]]
+            constraints.append(BBox(bbox))
 
         # dates
         start, end = (
