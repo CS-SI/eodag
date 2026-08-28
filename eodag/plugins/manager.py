@@ -319,13 +319,16 @@ class PluginManager:
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
     ) -> Iterator[Authentication]:
-        """Build and return the authentication plugin for the given collection and
-        provider
+        """Build and return authentication plugins matching the given criteria.
+
+        An auth plugin matches when either its ``matching_url`` pattern matches
+        ``matching_url`` or its ``matching_conf`` is a subset of ``matching_conf``.
+        The requested provider is considered first, followed by other providers.
 
         :param provider: The provider for which to get the authentication plugin
         :param matching_url: url to compare with plugin matching_url pattern
         :param matching_conf: configuration to compare with plugin matching_conf
-        :returns: All the Authentication plugins for the given criteria
+        :returns: Authentication plugins matching the given criteria
         """
         auth_conf: Optional[PluginConfig] = None
 
