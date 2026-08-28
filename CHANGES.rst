@@ -3,6 +3,55 @@ Release history
 ===============
 
 
+v4.7.2 (2026-08-28)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: CSWSearch products build and supported geometries (`#2325`_, `a00249b`_)
+
+* **plugins**: Retry PostJsonSearch requests (`#2328`_, `8edf378`_)
+
+* **providers**: Cop_dataspace_s3 and creodias_s3 auth matching url (`#2332`_, `f368e7c`_)
+
+* **providers**: Disable ssl verify on fedeo_ceda (`#2331`_, `5ddd4e4`_)
+
+Continuous Integration
+----------------------
+
+* Always use PR target branch as benchmark reference (`#2317`_, `fafcb36`_)
+
+* Empty fetched product types fix (`#2333`_, `8239d4b`_)
+
+Refactoring
+-----------
+
+* **config**: Simplify user config template (`#2321`_, `c808210`_)
+
+Testing
+-------
+
+* Add more tests for core, plugins and utils (`#2326`_, `df8bb25`_)
+
+.. _#2317: https://github.com/CS-SI/eodag/pull/2317
+.. _#2321: https://github.com/CS-SI/eodag/pull/2321
+.. _#2325: https://github.com/CS-SI/eodag/pull/2325
+.. _#2326: https://github.com/CS-SI/eodag/pull/2326
+.. _#2328: https://github.com/CS-SI/eodag/pull/2328
+.. _#2331: https://github.com/CS-SI/eodag/pull/2331
+.. _#2332: https://github.com/CS-SI/eodag/pull/2332
+.. _#2333: https://github.com/CS-SI/eodag/pull/2333
+.. _5ddd4e4: https://github.com/CS-SI/eodag/commit/5ddd4e41011bc74488eef6f6f2e6382f22db72e3
+.. _8239d4b: https://github.com/CS-SI/eodag/commit/8239d4b2e2a00c1208fb61e800a40c16772078a7
+.. _8edf378: https://github.com/CS-SI/eodag/commit/8edf378467ce7e20af7acf6582923e78121bdef6
+.. _a00249b: https://github.com/CS-SI/eodag/commit/a00249b42fbec89345f902b3ecf1560a0b576052
+.. _c808210: https://github.com/CS-SI/eodag/commit/c8082108834159c83b21fda94048ddcc952dc4b7
+.. _df8bb25: https://github.com/CS-SI/eodag/commit/df8bb2590f8edcc673200f135bb2c46d1bf834d1
+.. _f368e7c: https://github.com/CS-SI/eodag/commit/f368e7c11f8017a0247903b667afe369b0ceb91a
+.. _fafcb36: https://github.com/CS-SI/eodag/commit/fafcb3663925e5fd8b85d5d8845b787bc00b81c3
+
+
 v4.7.1 (2026-08-20)
 ===================
 
