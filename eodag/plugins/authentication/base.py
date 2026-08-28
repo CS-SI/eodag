@@ -36,10 +36,13 @@ class Authentication(PluginTopic):
     :param provider: provider name
     :param config: Authentication plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with search plugin endpoint or
-          download link
+        * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with a search plugin endpoint
+            or product download link
         * :attr:`~eodag.config.PluginConfig.matching_conf` (``dict[str, Any]``): Part of the search or download plugin
-          configuration that needs authentication and helps identifying it
+            configuration that needs authentication and helps identifying it.
+
+        At runtime, an auth plugin matches when either criterion matches.
+        When credentials are shared between provider configurations, all configured matching criteria must be identical.
     """
 
     entrypoint_group = "auth"

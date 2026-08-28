@@ -251,8 +251,7 @@ creodias_s3:
     auth_error_code: 403
     s3_endpoint: 'https://eodata.cloudferro.com'
     support_presign_url: False
-    matching_conf:
-      s3_endpoint: 'https://eodata.cloudferro.com'
+    matching_url: 's3://eodata'
   products:
       # S1
     S1_AUX_GNSSRD:
