@@ -681,6 +681,7 @@ class EODataAccessGateway:
         """
         # New collections to insert in the DB, gathered from the considered providers
         all_new_collections: list[Collection] = []
+        p_names = self.db.get_federation_backends(enabled=True).keys()
         fetchable_p_names = self.db.get_federation_backends(
             enabled=True, fetchable=True
         ).keys()
@@ -688,6 +689,12 @@ class EODataAccessGateway:
         confs_dict: dict[str, Any] = {}
 
         for p_name, new_collections_conf in ext_collections_conf.items():
+            if new_collections_conf and p_name not in p_names:
+                logger.debug(
+                    "Ignoring external collections for unknown provider %s", p_name
+                )
+                continue
+
             if new_collections_conf and p_name in fetchable_p_names:
                 p_collections_id: set[str] = set(
                     c["id"]
@@ -875,13 +882,10 @@ class EODataAccessGateway:
         :param alias_or_id: Alias of the collection. If an existing id is given, this
                             method will directly return the given value.
         :returns: Internal name of the collection.
+        :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection` if no collection
+                 could be found for the given alias or id.
         """
         collections = self.list_collections(ids=[alias_or_id])
-
-        if len(collections) > 1:
-            raise NoMatchingCollection(
-                f"Too many matching collections for alias {alias_or_id}: {collections}"
-            )
 
         if len(collections) == 0:
             raise NoMatchingCollection(
@@ -1555,9 +1559,7 @@ class EODataAccessGateway:
                     collections_filter = self._build_collections_filter(
                         results[0].properties
                     )
-                    matching_ids = self.list_collections(
-                        **collections_filter
-                    ).ids
+                    matching_ids = self.list_collections(**collections_filter).ids
                     if matching_ids:
                         results[0].collection = matching_ids[0]
                         # reset driver
@@ -1618,7 +1620,9 @@ class EODataAccessGateway:
         if collection is None:
             try:
                 collections_filter = self._build_collections_filter(kwargs)
-                matching_ids: list[str] = self.list_collections(**collections_filter).ids
+                matching_ids: list[str] = self.list_collections(
+                    **collections_filter
+                ).ids
             except NoMatchingCollection:
                 matching_ids = []
             if matching_ids:
@@ -1837,9 +1841,7 @@ class EODataAccessGateway:
                         collections_filter = self._build_collections_filter(
                             eo_product.properties
                         )
-                        matching_ids = self.list_collections(
-                            **collections_filter
-                        ).ids
+                        matching_ids = self.list_collections(**collections_filter).ids
                     except NoMatchingCollection:
                         matching_ids = []
                     if matching_ids:
