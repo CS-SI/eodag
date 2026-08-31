@@ -815,6 +815,7 @@ class TestEodagCli(unittest.TestCase):
         and with or without fetching provider according to the command.
         """
         provider = "cop_dataspace"
+        dag.settings = mock.Mock(validate_collections=False)
 
         dag.return_value.guess_collection.return_value = CollectionsList(
             [

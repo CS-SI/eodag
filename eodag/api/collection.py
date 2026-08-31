@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
-from pydantic import model_validator
+from pydantic import ValidationInfo, model_validator
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from stac_pydantic.collection import Extent, Provider, SpatialExtent, TimeInterval
 from stac_pydantic.links import Links
@@ -33,7 +33,6 @@ from eodag.api.product.metadata_mapping import NOT_AVAILABLE
 from eodag.types.queryables import CommonStacMetadata
 from eodag.types.stac_metadata import create_stac_metadata_model
 from eodag.utils import STAC_VERSION
-from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import ValidationError
 from eodag.utils.repr import dict_to_html_table
 
@@ -113,13 +112,24 @@ class Collection(BaseModel):
         self._id = self.id
 
     @classmethod
+    def create(cls, validate_collections: bool = False, **kwargs: Any) -> Collection:
+        """Create a Collection with optional validation warning logging."""
+        return cls.model_validate(
+            kwargs,
+            context={"validate_collections": validate_collections},
+        )
+
+    @classmethod
     def create_with_dag(cls, dag: EODataAccessGateway, **kwargs) -> Collection:
         """Create a Collection with a EODataAccessGateway instance.
 
         :param dag: The gateway instance to use to search products and to list queryables of the collection instance
         :param kwargs: The collection attributes
         """
-        instance = cls(**kwargs)
+        instance = cls.create(
+            validate_collections=dag.settings.validate_collections,
+            **kwargs,
+        )
         instance._dag = dag
         return instance
 
@@ -148,14 +158,20 @@ class Collection(BaseModel):
     @model_validator(mode="wrap")
     @classmethod
     def validate_collection(
-        cls, values: dict[str, Any] | Self, handler: ModelWrapValidatorHandler[Self]
+        cls,
+        values: dict[str, Any] | Self,
+        handler: ModelWrapValidatorHandler[Self],
+        info: ValidationInfo,
     ) -> Self:
         """Allow to create a collection instance with bad formatted attributes (except ``id``).
         Set incorrectly formatted attributes to ``None`` and ignore extra attributes.
-        Log a warning about validation errors if ``EODAG_VALIDATE_COLLECTIONS`` environment variable is set to ``True``.
+        Log a warning about validation errors when validation logging is enabled.
         """
         errors: list[ErrorDetails] = []
         continue_validation: bool = True
+        validate_collections = bool(
+            info.context and info.context.get("validate_collections", False)
+        )
 
         # iterate over each step of validation where error(s) raise(s)
         while continue_validation:
@@ -189,8 +205,8 @@ class Collection(BaseModel):
             else:
                 continue_validation = False
 
-        # log a warning if there were validation errors and the env var is set to True
-        if errors and is_env_var_true("EODAG_VALIDATE_COLLECTIONS"):
+        # log a warning if there were validation errors and logging is enabled
+        if errors and validate_collections:
             # log all errors at once
             error_title = f"collection {values_dict['id']}"
             init_errors: list[InitErrorDetails] = [

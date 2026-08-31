@@ -45,6 +45,7 @@ dependencies = [
     "lxml",
     "orjson",
     "pydantic >= 2.13.0",
+    "pydantic-settings>=2.11.0",
     "pydantic_core",
     "PyJWT[crypto] >= 2.5.0",
     "pyproj >= 2.1.0",
