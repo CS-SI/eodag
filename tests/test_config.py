@@ -40,7 +40,6 @@ from eodag.utils.yaml import LegacyAwareLoader
 from tests.context import (
     EXT_COLLECTIONS_CONF_URI,
     HTTP_REQ_TIMEOUT,
-    PLUGINS_TOPIC_KEYS,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     ECMWFSearch,
@@ -199,6 +198,8 @@ class TestProviderConfig(unittest.TestCase):
 
     def test_provider_config_validation_api_exclusivity(self):
         """Test that API plugin cannot coexist with other plugin types."""
+        from eodag.utils import PLUGINS_TOPIC_KEYS
+
         for plugin_topic in PLUGINS_TOPIC_KEYS:
             if plugin_topic != "api":
                 config = {

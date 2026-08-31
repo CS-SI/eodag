@@ -1308,26 +1308,35 @@ class TestCore(TestCoreBase):
         self.assertNotIn("earth_search", self.dag.providers)
 
     def test_update_collections_list_unsupported_provider(self):
-        """Core api.update_collections_list must ignore providers raising UnsupportedProvider"""
+        """Core api.update_collections_list must ignore unknown providers"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_collections.json")) as f:
             ext_collections_conf = json.load(f)
-        provider_conf = self.dag._providers.configs["earth_search"]
-        with (
-            mock.patch.object(
-                self.dag._providers.__class__,
-                "__getitem__",
-                side_effect=UnsupportedProvider("earth_search"),
-            ),
-            mock.patch.object(
-                self.dag._plugins_manager,
-                "build_collection_to_provider_config_map",
-            ),
-        ):
+
+        provider = "earth_search"
+
+        # disable the provider for the duration of this sub-test
+        cfg = ProviderConfig.from_mapping(self.dag.db.get_fb_config(provider))
+        cfg.enabled = False
+        self.dag.db.upsert_fb_configs([cfg])
+        self.addCleanup(self.dag.db.restore_fbs)
+
+        provider_conf = self.dag.db.get_fb_config(provider, {"foo", "bar"})
+
+        with self.assertLogs(level="DEBUG") as cm:
             self.dag.update_collections_list(ext_collections_conf)
 
-        self.assertIs(self.dag._providers.configs["earth_search"], provider_conf)
-        self.assertNotIn("foo", self.dag.collections_config)
-        self.assertNotIn("bar", self.dag.collections_config)
+        # check that a log message has been emitted to tell that the provider is unknown
+        self.assertIn(
+            f"Ignoring external collections for unknown provider {provider}",
+            str(cm.output),
+        )
+
+        # check that the provider config has not been updated
+        self.assertDictEqual(
+            self.dag.db.get_fb_config(provider, {"foo", "bar"}), provider_conf
+        )
+        self.assertIsNone(self.dag.get_collection("foo"))
+        self.assertIsNone(self.dag.get_collection("bar"))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_collections",
@@ -1822,7 +1831,7 @@ class TestCore(TestCoreBase):
         self, mock_discover_collections, mock_get_ext_collections_conf
     ):
         """fetch_collections_list must launch collections discovery for new system-wide providers"""
-        from eodag.config import PLUGINS_TOPIC_KEYS
+        from eodag.utils import PLUGINS_TOPIC_KEYS
         from tests.context import PluginConfig
 
         # add a new system-wide provider not listed in ext-conf
@@ -1945,6 +1954,8 @@ class TestCore(TestCoreBase):
 
     def test_user_conf_template_keeps_priority_and_credentials(self):
         """The user configuration template should not include runtime settings."""
+        from importlib.resources import files as res_files
+
         template_path = res_files("eodag") / "resources" / "user_conf_template.yml"
         with template_path.open(encoding="utf-8") as file:
             user_conf = yaml.safe_load(file)
@@ -2093,7 +2104,11 @@ class TestCore(TestCoreBase):
         """available_providers must filter providers by collection"""
         self.assertEqual(
             self.dag.available_providers(collection="S2_MSI_L1C"),
-            list(self.dag.db.get_federation_backends(enabled=True, collection="S2_MSI_L1C")),
+            list(
+                self.dag.db.get_federation_backends(
+                    enabled=True, collection="S2_MSI_L1C"
+                )
+            ),
         )
 
     def test_set_preferred_provider(self):
@@ -2737,7 +2752,7 @@ class TestCore(TestCoreBase):
             mock.patch.object(
                 self.dag,
                 "list_collections",
-                return_value=[mock.Mock(id="S2_MSI_L1C")],
+                return_value=CollectionsList([Collection(id="S2_MSI_L1C")]),
             ),
             mock.patch.object(
                 self.dag,
@@ -3959,8 +3974,10 @@ class TestCoreSearch(TestCoreBase):
         search_plugin = mock.Mock(provider="dummy_provider")
         search_plugin.config.pagination = {"max_limit": 100}
         mock_get_search_plugins.return_value = [search_plugin]
-        product = EOProduct("dummy_provider", {"id": "foo"})
+        product = EOProduct("dummy_provider", properties={"id": "foo"})
         product.collection = None
+        product.properties |= {"instruments": ["MSI"]}
+
         initial_driver = product.driver
 
         with (
@@ -3971,16 +3988,16 @@ class TestCoreSearch(TestCoreBase):
             ),
             mock.patch.object(
                 self.dag,
-                "guess_collection",
-                return_value=[mock.Mock(id="S2_MSI_L1C")],
-            ) as mock_guess_collection,
+                "list_collections",
+                return_value=CollectionsList([Collection(id="S2_MSI_L1C")]),
+            ) as mock_list_collection,
         ):
             found = self.dag._search_by_id(uid="foo", provider="dummy_provider")
 
         self.assertEqual(found.number_matched, 1)
         self.assertEqual(found[0].collection, "S2_MSI_L1C")
         self.assertIsNot(found[0].driver, initial_driver)
-        mock_guess_collection.assert_called_once_with(**product.properties)
+        mock_list_collection.assert_called_once_with(q="['MSI']")
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
@@ -5357,19 +5374,55 @@ class TestCoreProductAlias(TestCoreBase):
         with self.assertRaises(NoMatchingCollection):
             self.dag.get_collection_from_alias("JUST_A_TYPE")
 
+    # TODO: move this test with tests of the DB methods, when testing upsert_collections()
     def test_get_collection_from_alias_multiple_matches(self):
-        """get_collection_from_alias must raise NoMatchingCollection if alias is ambiguous"""
-        products = self.dag.collections_config
-        products["S2_MSI_L2A_ALIAS"] = Collection.create_with_dag(
-            self.dag,
-            alias="S2_MSI_ALIAS",
-            **products["S2_MSI_L2A"].model_dump(exclude={"alias"}),
+        """get_collection_from_alias must return the most recent collection if alias is ambiguous.
+
+        Two collections with the same alias can not be created in the DB,
+        then the most recent one overwrites the existing one.
+        """
+        s2_msi_l1c = self.dag.get_collection("S2_MSI_L1C")
+
+        self.assertEqual(
+            "S2_MSI_L1C", self.dag.get_collection_from_alias("S2_MSI_ALIAS")
         )
 
-        with self.assertRaises(NoMatchingCollection):
-            self.dag.get_collection_from_alias("S2_MSI_ALIAS")
+        s2msil2a = self.dag.get_collection("S2_MSI_L2A")
+        assert s2msil2a is not None
+        # add the same alias as S2_MSI_L1C to a new collection in the DB
+        self.dag.db.upsert_collections(
+            CollectionsDict(
+                [
+                    Collection(
+                        id="S2_MSI_L2A_ALIAS",
+                        alias="S2_MSI_ALIAS",
+                        **s2msil2a.model_dump(exclude={"id", "alias"}),
+                    )
+                ]
+            )
+        )
 
-        products.pop("S2_MSI_L2A_ALIAS")
+        # check that the alias now returns the new collection id
+        self.assertEqual(
+            "S2_MSI_L2A_ALIAS", self.dag.get_collection_from_alias("S2_MSI_ALIAS")
+        )
+
+        # not existing collection anymore, since the alias was overwritten by the new collection
+        with self.assertRaises(NoMatchingCollection):
+            self.dag.get_alias_from_collection(s2_msi_l1c._id)
+
+        # restore the original state of the DB to avoid side effects on other tests
+        self.dag.db.upsert_collections(
+            CollectionsDict(
+                [
+                    Collection(
+                        id=s2_msi_l1c._id,
+                        alias="S2_MSI_ALIAS",
+                        **s2_msi_l1c.model_dump(exclude={"id", "alias"}),
+                    )
+                ]
+            )
+        )
 
 
 class TestCoreStrictMode(TestCoreBase):
