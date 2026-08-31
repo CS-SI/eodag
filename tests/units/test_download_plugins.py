@@ -54,7 +54,7 @@ from tests.context import (
     ProvidersDict,
     S3FileInfo,
     StreamResponse,
-    load_default_config,
+    load_provider_configs,
     path_to_uri,
     uri_to_path,
 )
@@ -64,7 +64,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseDownloadPluginTest, cls).setUpClass()
-        providers = ProvidersDict.from_configs(load_default_config())
+        providers = ProvidersDict.from_configs(load_provider_configs())
         cls.plugins_manager = PluginManager(providers)
         # Mock home and eodag conf directory to tmp dir
         cls.tmp_home_dir = TemporaryDirectory()

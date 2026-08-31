@@ -59,12 +59,39 @@ class TestEodagInit(unittest.TestCase):
 
         # Test all existing lazy imports
         self.assertTrue(hasattr(eodag, "EODataAccessGateway"))
+        self.assertTrue(hasattr(eodag, "EODAGSettings"))
         self.assertTrue(hasattr(eodag, "EOProduct"))
         self.assertTrue(hasattr(eodag, "SearchResult"))
         self.assertTrue(hasattr(eodag, "setup_logging"))
 
         # These should be callable/usable
         self.assertIsNotNone(eodag.EODataAccessGateway)
+        self.assertIsNotNone(eodag.EODAGSettings)
         self.assertIsNotNone(eodag.EOProduct)
         self.assertIsNotNone(eodag.SearchResult)
         self.assertIsNotNone(eodag.setup_logging)
+
+    def test_eodag_settings_importable_from_top_level(self):
+        """Test that EODAGSettings is importable from top-level eodag package."""
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "from eodag import EODataAccessGateway, EODAGSettings;"
+                    " print(EODataAccessGateway.__name__, EODAGSettings.__name__)"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"Command failed with stderr: {result.stderr}",
+        )
+        self.assertEqual(
+            result.stdout.strip(),
+            "EODataAccessGateway EODAGSettings",
+        )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2025, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -593,6 +592,8 @@ class ProvidersDict(UserDict[str, Provider]):
     :param providers: Initial providers to populate the dictionary.
     """
 
+    whitelist: Optional[list[str]] = None
+
     def __contains__(self, item: object) -> bool:
         """
         Check if a provider is in the dictionary by name or :class:`~eodag.api.provider.Provider` instance.
@@ -862,6 +863,7 @@ class ProvidersDict(UserDict[str, Provider]):
     @staticmethod
     def _get_whitelisted_configs(
         configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+        whitelist: Optional[list[str]] = None,
     ) -> Mapping[str, Union[ProviderConfig, dict[str, Any]]]:
         """
         Filter configs according to the EODAG_PROVIDERS_WHITELIST environment variable, if set.
@@ -869,8 +871,14 @@ class ProvidersDict(UserDict[str, Provider]):
         :param configs: The dictionary of provider configurations.
         :return: Filtered configurations.
         """
-        whitelist = set(os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(","))
-        if not whitelist or whitelist == {""}:
+        if whitelist is None:
+            whitelist = [
+                provider
+                for provider in os.getenv("EODAG_PROVIDERS_WHITELIST", "").split(",")
+                if provider
+            ]
+
+        if not whitelist:
             return configs
         return {name: conf for name, conf in configs.items() if name in whitelist}
 
@@ -883,7 +891,10 @@ class ProvidersDict(UserDict[str, Provider]):
 
         :param configs: A dictionary mapping provider names to configurations.
         """
-        configs = self._get_whitelisted_configs(configs)
+        configs = self._get_whitelisted_configs(
+            configs,
+            getattr(self, "whitelist", None),
+        )
         for name, conf in configs.items():
             if isinstance(conf, dict) and conf.get("name") != name:
                 if "name" in conf:
@@ -1003,7 +1014,9 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @classmethod
     def from_configs(
-        cls, configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]]
+        cls,
+        configs: Mapping[str, Union[ProviderConfig, dict[str, Any]]],
+        whitelist: Optional[list[str]] = None,
     ) -> Self:
         """
         Build a ProvidersDict from a configuration mapping.
@@ -1013,5 +1026,6 @@ class ProvidersDict(UserDict[str, Provider]):
         :return: An instance of :class:`~eodag.api.provider.ProvidersDict` populated with the given configurations.
         """
         providers = cls()
+        providers.whitelist = whitelist
         providers.update_from_configs(configs)
         return providers

@@ -51,7 +51,7 @@ from eodag.config import (
     EXT_COLLECTIONS_CONF_URI,
     PluginConfig,
     get_ext_collections_conf,
-    load_default_config,
+    load_provider_configs,
     load_stac_provider_config,
 )
 from eodag.plugins.apis.ecmwf import EcmwfApi

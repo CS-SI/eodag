@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -19,9 +18,11 @@ from __future__ import annotations
 
 import logging
 import os
-import pathlib
+import shutil
+import tempfile
 import warnings
 from importlib.resources import files as res_files
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
 import orjson
@@ -30,6 +31,8 @@ import yaml
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
+from pydantic import BeforeValidator, Field, computed_field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import TypedDict
 
 from eodag.utils import (
@@ -46,7 +49,7 @@ from eodag.utils.exceptions import ValidationError
 from eodag.utils.yaml import cached_yaml_load, cached_yaml_load_all
 
 if TYPE_CHECKING:
-    from typing import ItemsView, Iterator, ValuesView
+    from collections.abc import ItemsView, Iterator, ValuesView
 
     from typing_extensions import Self
 
@@ -57,6 +60,233 @@ logger = logging.getLogger("eodag.config")
 EXT_COLLECTIONS_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_collections.json"
 )
+
+# Bundled resources
+RESOURCES_DIR = Path(str(res_files("eodag") / "resources"))
+DEFAULT_COLLECTIONS_FILE = RESOURCES_DIR / "collections.yml"
+DEFAULT_PROVIDERS_DIR = RESOURCES_DIR / "providers"
+USER_CONFIG_TEMPLATE_FILE = RESOURCES_DIR / "user_conf_template.yml"
+LOCATIONS_CONFIG_TEMPLATE_FILE = RESOURCES_DIR / "locations_conf_template.yml"
+SHAPEFILES_TEMPLATE_DIR = RESOURCES_DIR / "shp"
+
+
+def default_config_dir() -> Path:
+    """Get the default EODAG configuration directory path."""
+    return Path(os.path.expanduser("~")) / ".config" / "eodag"
+
+
+def comma_separated_str_to_list(value: object) -> object:
+    """Convert a comma-separated string to a list."""
+
+    if not isinstance(value, str):
+        return value
+
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+class EODAGSettings(BaseSettings):
+    """Global EODAG configuration parameters."""
+
+    cfg_dir: Path = Field(
+        default_factory=default_config_dir,
+        description=(
+            "Base EODAG configuration directory. "
+            "Created automatically if it does not exist."
+        ),
+    )
+
+    cfg_file: Optional[Path] = Field(
+        default=None,
+        description="Path to the main EODAG user configuration file. If not set, defaults to '<cfg_dir>/eodag.yml'.",
+    )
+
+    locations_cfg_file: Optional[Path] = Field(
+        default=None,
+        validation_alias="EODAG_LOCS_CFG_FILE",
+        description="Path to the locations configuration file. If not set, defaults to '<cfg_dir>/locations.yml'.",
+    )
+
+    collections_cfg_file: Path = Field(
+        default=DEFAULT_COLLECTIONS_FILE,
+        description=(
+            "Path to the collections configuration file. "
+            "Defaults to the bundled EODAG collections definition."
+        ),
+    )
+
+    providers_cfg_file: Optional[Path] = Field(
+        default=None,
+        deprecated=("Deprecated since v4.5.0. Use EODAG_PROVIDERS_CFG_DIR instead."),
+        description=("Legacy single provider configuration file."),
+    )
+
+    providers_cfg_dir: Path = Field(
+        default=DEFAULT_PROVIDERS_DIR,
+        description=(
+            "Directory containing provider configuration files. "
+            "All '*.yml' files in this directory are loaded. "
+            "Ignored if providers_cfg_file is set."
+        ),
+    )
+
+    ext_collections_cfg_uri: str = Field(
+        default=EXT_COLLECTIONS_CONF_URI,
+        validation_alias="EODAG_EXT_COLLECTIONS_CFG_FILE",
+        description=(
+            "URI of the external collections configuration. "
+            "Supports HTTP(S), file:// URIs and local filesystem paths."
+        ),
+    )
+
+    strict_collections: bool = Field(
+        default=False,
+        description=("Enable strict collection synchronization."),
+    )
+
+    providers_whitelist: Annotated[
+        list[str], BeforeValidator(comma_separated_str_to_list)
+    ] = Field(
+        default_factory=list,
+        description=(
+            "List of provider names to whitelist. "
+            "Can be set as a comma-separated string."
+        ),
+    )
+
+    validate_collections: bool = Field(
+        default=False, description="Log collections validation errors as warning."
+    )
+
+    @computed_field
+    @property
+    def resolved_cfg_file(self) -> Path:
+        """Get the resolved path to the main EODAG user configuration file."""
+        return self.cfg_file or self.cfg_dir / "eodag.yml"
+
+    @computed_field
+    @property
+    def resolved_locations_cfg_file(self) -> Path:
+        """Get the resolved path to the locations configuration file."""
+        return self.locations_cfg_file or self.cfg_dir / "locations.yml"
+
+    model_config = SettingsConfigDict(
+        env_prefix="EODAG_",
+        validate_by_name=True,
+    )
+
+    @model_validator(mode="after")
+    def warn_deprecated_settings(self) -> Self:
+        """Warn about deprecated settings."""
+        if "providers_cfg_file" in self.model_fields_set:
+            warnings.warn(
+                "EODAG_PROVIDERS_CFG_FILE is deprecated since v4.5.0. "
+                "Use EODAG_PROVIDERS_CFG_DIR instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self
+
+
+def ensure_user_config_exists(config_file: Path) -> None:
+    """Create a default user configuration file if it does not exist.
+
+    The file is initialized from the bundled EODAG template.
+
+    :param config_file: Path to the user configuration file to create.
+    """
+    if config_file.exists():
+        return
+
+    if not USER_CONFIG_TEMPLATE_FILE.is_file():
+        raise FileNotFoundError(
+            f"Missing bundled resource {USER_CONFIG_TEMPLATE_FILE} "
+            "to create user configuration file"
+        )
+
+    config_file.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    shutil.copy(
+        USER_CONFIG_TEMPLATE_FILE,
+        config_file,
+    )
+
+
+def ensure_cfg_dir_exists(config_dir: Path) -> Path:
+    """Ensure the EODAG configuration directory exists.
+
+    If the configured directory cannot be created, fall back to a
+    temporary directory.
+    """
+    try:
+        config_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.debug(exc)
+
+        requested_dir = config_dir
+        fallback_dir = Path(tempfile.gettempdir()) / ".config" / "eodag"
+
+        logger.warning(
+            "Cannot create configuration directory %s. "
+            "Falling back to temporary directory %s.",
+            requested_dir,
+            fallback_dir,
+        )
+
+        fallback_dir.mkdir(parents=True, exist_ok=True)
+
+        config_dir = fallback_dir
+
+    return config_dir
+
+
+def ensure_locations_config_exists(
+    locations_cfg_file: Path,
+    cfg_dir: Path,
+) -> None:
+    """Create the default locations configuration if it does not exist.
+
+    The generated configuration is initialized from the bundled EODAG
+    locations template. Sample shapefiles are copied to ``<cfg_dir>/shp``
+    and template paths are rewritten accordingly.
+
+    :param locations_cfg_file: Target locations configuration file.
+    :param cfg_dir: EODAG configuration directory.
+    """
+    if locations_cfg_file.exists():
+        return
+
+    if not LOCATIONS_CONFIG_TEMPLATE_FILE.is_file():
+        raise FileNotFoundError(
+            f"Missing bundled resource: {LOCATIONS_CONFIG_TEMPLATE_FILE}"
+        )
+
+    if not SHAPEFILES_TEMPLATE_DIR.is_dir():
+        raise FileNotFoundError(
+            f"Missing bundled resource directory: {SHAPEFILES_TEMPLATE_DIR}"
+        )
+
+    locations_cfg_file.parent.mkdir(parents=True, exist_ok=True)
+
+    shapefiles_dir = cfg_dir / "shp"
+
+    with (
+        LOCATIONS_CONFIG_TEMPLATE_FILE.open(encoding="utf-8") as infile,
+        locations_cfg_file.open("w", encoding="utf-8") as outfile,
+    ):
+        for line in infile:
+            outfile.write(
+                line.replace(
+                    "/path/to/locations/",
+                    f"{shapefiles_dir}{os.path.sep}",
+                )
+            )
+
+    shutil.copytree(SHAPEFILES_TEMPLATE_DIR, shapefiles_dir, dirs_exist_ok=True)
+
+
 AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
 PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
 
@@ -68,9 +298,9 @@ class SimpleYamlProxyConfig:
     def __init__(self, conf_file_path: str) -> None:
         try:
             self.source: dict[str, Any] = cached_yaml_load(conf_file_path)
-        except yaml.parser.ParserError as e:
+        except yaml.parser.ParserError:
             print("Unable to load user configuration file")
-            raise e
+            raise
 
     def __getitem__(self, item: Any) -> Any:
         return self.source[item]
@@ -89,10 +319,10 @@ class SimpleYamlProxyConfig:
         """Iterate over values of source"""
         return self.source.values()
 
-    def update(self, other: "SimpleYamlProxyConfig") -> None:
+    def update(self, other: SimpleYamlProxyConfig) -> None:
         """Update a :class:`~eodag.config.SimpleYamlProxyConfig`"""
         if not isinstance(other, self.__class__):
-            raise ValueError("'{}' must be of type {}".format(other, self.__class__))
+            raise TypeError(f"'{other}' must be of type {self.__class__}")
         self.source.update(other.source)
 
 
@@ -697,37 +927,62 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     )
 
 
-def load_default_config() -> dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionary.
+def load_locations_config(location_cfg_file: str) -> dict[str, Any]:
+    """Load locations configuration.
 
-    Load from eodag `resources/providers` files or `EODAG_PROVIDERS_CFG_DIR` environment
-    variable if exists.
+    This configuration (YML format) will contain a shapefile list associated
+    to a name and attribute parameters needed to identify the needed geometry.
+    You can also configure parent attributes, which can be used for creating
+    a catalogs path when using eodag as a REST server.
+    Example of locations configuration file content:
 
-    For backwards compatibility, if `EODAG_PROVIDERS_CFG_FILE` environment variable is set, load from it instead of
-    `EODAG_PROVIDERS_CFG_DIR`.
+    .. code-block:: yaml
 
-    :returns: The default provider's configuration
+        shapefiles:
+            - name: country
+                path: /path/to/countries_list.shp
+                attr: ISO3
+            - name: department
+                path: /path/to/FR_departments.shp
+                attr: code_insee
+                parent:
+                name: country
+                attr: FRA
     """
-    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE")
-    eodag_providers_cfg_dir = os.getenv("EODAG_PROVIDERS_CFG_DIR")
+    locations_config = load_yml_config(location_cfg_file)
 
-    if eodag_providers_cfg_file:
-        warnings.warn(
-            "Usage of deprecated environment variable EODAG_PROVIDERS_CFG_FILE. "
-            "(Please use EODAG_PROVIDERS_CFG_DIR instead)"
-            " -- Deprecated since v4.5.0",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        return load_config(eodag_providers_cfg_file)
+    locations_config = next(iter(locations_config.values()))
 
-    config_dir = eodag_providers_cfg_dir or str(
-        res_files("eodag") / "resources" / "providers"
+    logger.info(
+        "Locations configuration loaded from %s",
+        location_cfg_file,
     )
+
+    return locations_config
+
+
+def load_provider_configs(
+    providers_cfg_file: Optional[Path] = None,
+    providers_cfg_dir: Path = DEFAULT_PROVIDERS_DIR,
+) -> dict[str, ProviderConfig]:
+    """Load provider configurations.
+
+    Provider definitions are loaded from the source configured in
+    EODAG settings.
+
+    EODAG_PROVIDERS_CFG_FILE takes precedence over
+    EODAG_PROVIDERS_CFG_DIR for backward compatibility.
+    """
+
+    if providers_cfg_file is not None:
+        return load_config(str(providers_cfg_file))
+
     providers: dict[str, ProviderConfig] = {}
-    for f in pathlib.Path(config_dir).glob("*.yml"):
-        if f.is_file():
-            providers.update(load_config(str(f)))
+
+    for config_file in providers_cfg_dir.glob("*.yml"):
+        if config_file.is_file():
+            providers.update(load_config(str(config_file)))
+
     return dict(sorted(providers.items()))
 
 
@@ -755,7 +1010,7 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     from eodag.api.provider import ProviderConfig as ProviderConfigClass
 
     providers_configs: list[ProviderConfig] = []
-    default_provider_name = pathlib.Path(config_path).stem
+    default_provider_name = Path(config_path).stem
     for provider_dict in providers_configs_dicts:
         if provider_dict is not None:
             if isinstance(provider_dict, ProviderConfigClass):
@@ -796,7 +1051,7 @@ def load_stac_config() -> dict[str, Any]:
 
     :returns: The stac configuration
     """
-    return load_yml_config(str(res_files("eodag") / "resources" / "stac.yml"))
+    return load_yml_config(RESOURCES_DIR / "stac.yml")
 
 
 def load_stac_api_config() -> dict[str, Any]:
@@ -804,7 +1059,7 @@ def load_stac_api_config() -> dict[str, Any]:
 
     :returns: The stac API configuration
     """
-    return load_yml_config(str(res_files("eodag") / "resources" / "stac_api.yml"))
+    return load_yml_config(RESOURCES_DIR / "stac_api.yml")
 
 
 def load_stac_provider_config() -> dict[str, Any]:
@@ -812,9 +1067,7 @@ def load_stac_provider_config() -> dict[str, Any]:
 
     :returns: The stac provider configuration
     """
-    return SimpleYamlProxyConfig(
-        str(res_files("eodag") / "resources" / "stac_provider.yml")
-    ).source
+    return SimpleYamlProxyConfig(str(RESOURCES_DIR / "stac_provider.yml")).source
 
 
 def get_ext_collections_conf(

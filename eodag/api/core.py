@@ -20,18 +20,15 @@ from __future__ import annotations
 import datetime as dt
 import itertools
 import logging
-import os
 import re
-import shutil
-import tempfile
 import warnings
 from collections import deque
+from collections.abc import Iterator
 from copy import deepcopy
 from importlib.metadata import version
-from importlib.resources import files as res_files
 from operator import attrgetter, itemgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import geojson
 import yaml
@@ -44,12 +41,16 @@ from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
+    EODAGSettings,
     PluginConfig,
     SimpleYamlProxyConfig,
     credentials_in_auth,
+    ensure_cfg_dir_exists,
+    ensure_locations_config_exists,
+    ensure_user_config_exists,
     get_ext_collections_conf,
-    load_default_config,
-    load_yml_config,
+    load_locations_config,
+    load_provider_configs,
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
@@ -67,13 +68,11 @@ from eodag.utils import (
     GENERIC_STAC_PROVIDER,
     _deprecated,
     get_geometry_from_various,
-    makedirs,
     sort_dict,
     string_to_jsonpath,
     uri_to_path,
 )
 from eodag.utils.dates import get_datetime, rfc3339_str_to_datetime
-from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingCollection,
@@ -98,6 +97,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.core")
 
 
+def ensure_config_files(
+    settings: EODAGSettings,
+) -> EODAGSettings:
+    """Ensure EODAG configuration files and directories exist."""
+
+    settings.cfg_dir = ensure_cfg_dir_exists(settings.cfg_dir)
+
+    ensure_user_config_exists(settings.resolved_cfg_file)
+
+    ensure_locations_config_exists(
+        settings.resolved_locations_cfg_file,
+        settings.cfg_dir,
+    )
+
+    return settings
+
+
 class EODataAccessGateway:
     """An API for downloading a wide variety of geospatial products originating
     from different types of providers.
@@ -108,83 +124,80 @@ class EODataAccessGateway:
 
     def __init__(
         self,
-        user_conf_file_path: Optional[str] = None,
-        locations_conf_path: Optional[str] = None,
+        user_conf_file_path: str | None = None,
+        locations_conf_path: str | None = None,
+        settings: EODAGSettings | None = None,
     ) -> None:
-        collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
-            res_files("eodag") / "resources" / "collections.yml"
+        if user_conf_file_path is not None:
+            warnings.warn(
+                "'user_conf_file_path' is deprecated. "
+                "Use EODAGSettings(cfg_file=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        if locations_conf_path is not None:
+            warnings.warn(
+                "'locations_conf_path' is deprecated. "
+                "Use EODAGSettings(locations_cfg_file=...) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        settings_kwargs: dict[str, Any] = {}
+
+        if user_conf_file_path is not None:
+            settings_kwargs["cfg_file"] = Path(user_conf_file_path)
+
+        if locations_conf_path is not None:
+            settings_kwargs["locations_cfg_file"] = Path(locations_conf_path)
+
+        if settings is not None and settings_kwargs:
+            raise ValueError(
+                "'settings' cannot be used together with "
+                "'user_conf_file_path' or 'locations_conf_path'."
+            )
+
+        self.settings = ensure_config_files(
+            settings or EODAGSettings(**settings_kwargs)
         )
-        collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
+
+        collections_config_dict = SimpleYamlProxyConfig(
+            str(self.settings.collections_cfg_file)
+        ).source
+
         self.collections_config = self._collections_config_init(collections_config_dict)
 
-        self._providers = ProvidersDict.from_configs(load_default_config())
-
-        env_var_cfg_dir = "EODAG_CFG_DIR"
-        self.conf_dir = os.getenv(
-            env_var_cfg_dir,
-            default=os.path.join(os.path.expanduser("~"), ".config", "eodag"),
+        self._providers = ProvidersDict.from_configs(
+            load_provider_configs(
+                self.settings.providers_cfg_file, self.settings.providers_cfg_dir
+            ),
+            whitelist=self.settings.providers_whitelist,
         )
-        try:
-            makedirs(self.conf_dir)
-        except OSError as e:
-            logger.debug(e)
-            tmp_conf_dir = os.path.join(tempfile.gettempdir(), ".config", "eodag")
-            logger.warning(
-                f"Cannot create configuration directory {self.conf_dir}. "
-                + f"Falling back to temporary directory {tmp_conf_dir}."
-            )
-            if os.getenv(env_var_cfg_dir) is None:
-                logger.warning(
-                    "You can set the path of the configuration directory "
-                    + f"with the environment variable {env_var_cfg_dir}"
-                )
-            self.conf_dir = tmp_conf_dir
-            makedirs(self.conf_dir)
 
         self._plugins_manager = PluginManager(self._providers)
         self._providers = self._plugins_manager.providers
 
-        # First level override: From a user configuration file
-        if user_conf_file_path is None:
-            env_var_name = "EODAG_CFG_FILE"
-            standard_configuration_path = os.path.join(self.conf_dir, "eodag.yml")
-            user_conf_file_path = os.getenv(env_var_name)
-            if user_conf_file_path is None:
-                user_conf_file_path = standard_configuration_path
-                source = str(
-                    res_files("eodag") / "resources" / "user_conf_template.yml"
-                )
-                if os.path.isfile(source) and not os.path.isfile(
-                    standard_configuration_path
-                ):
-                    shutil.copy(
-                        source,
-                        standard_configuration_path,
-                    )
-        self._providers.update_from_config_file(user_conf_file_path)
+        # Update with user configuration
+        self._providers.update_from_config_file(str(self.settings.resolved_cfg_file))
 
-        # Second level override: From environment variables
+        # Environment overrides still apply to providers
         self._providers.update_from_env()
 
-        # init updated providers conf
-        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-
         for provider in self._providers.values():
-            provider.sync_collections(self, strict_mode)
+            provider.sync_collections(self, self.settings.strict_collections)
 
-        # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self._providers)
 
-        # store pruned providers configs
         self._pruned_providers_config: dict[str, Any] = {}
 
-        # filter out providers needing auth that have no credentials set
         self._prune_providers_list()
 
-        # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
 
-        self.set_locations_conf(locations_conf_path)
+        self.locations_config = load_locations_config(
+            str(self.settings.resolved_locations_cfg_file)
+        )
 
     def _collections_config_init(
         self, collections_config_dict: dict[str, Any]
@@ -425,74 +438,6 @@ class EODataAccessGateway:
             # rebuild _plugins_manager with updated providers list
             self._plugins_manager.rebuild(self._providers)
 
-    def set_locations_conf(self, locations_conf_path: Optional[str]) -> None:
-        """Set locations configuration.
-        This configuration (YML format) will contain a shapefile list associated
-        to a name and attribute parameters needed to identify the needed geometry.
-        You can also configure parent attributes, which can be used for creating
-        a catalogs path when using eodag as a REST server.
-        Example of locations configuration file content:
-
-        .. code-block:: yaml
-
-            shapefiles:
-                - name: country
-                  path: /path/to/countries_list.shp
-                  attr: ISO3
-                - name: department
-                  path: /path/to/FR_departments.shp
-                  attr: code_insee
-                  parent:
-                    name: country
-                    attr: FRA
-
-        :param locations_conf_path: Path to the locations configuration file
-        """
-        if locations_conf_path is None:
-            locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
-            if locations_conf_path is None:
-                locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
-                if not os.path.isfile(locations_conf_path):
-                    # Ensure the directory exists
-                    os.makedirs(os.path.dirname(locations_conf_path), exist_ok=True)
-
-                    # copy locations conf file and replace path example
-                    locations_conf_template = str(
-                        res_files("eodag") / "resources" / "locations_conf_template.yml"
-                    )
-                    with (
-                        open(locations_conf_template) as infile,
-                        open(locations_conf_path, "w") as outfile,
-                    ):
-                        # The template contains paths in the form of:
-                        # /path/to/locations/file.shp
-                        path_template = "/path/to/locations/"
-                        for line in infile:
-                            line = line.replace(
-                                path_template,
-                                os.path.join(self.conf_dir, "shp") + os.path.sep,
-                            )
-                            outfile.write(line)
-                    # copy sample shapefile dir
-                    shutil.copytree(
-                        str(res_files("eodag") / "resources" / "shp"),
-                        os.path.join(self.conf_dir, "shp"),
-                    )
-
-        if os.path.isfile(locations_conf_path):
-            locations_config = load_yml_config(locations_conf_path)
-
-            main_key = next(iter(locations_config))
-            main_locations_config = locations_config[main_key]
-
-            logger.info("Locations configuration loaded from %s" % locations_conf_path)
-            self.locations_config: list[dict[str, Any]] = main_locations_config
-        else:
-            logger.info(
-                "Could not load locations configuration from %s" % locations_conf_path
-            )
-            self.locations_config = []
-
     def list_collections(
         self, provider: Optional[str] = None, fetch_providers: bool = True
     ) -> CollectionsList:
@@ -543,8 +488,7 @@ class EODataAccessGateway:
         :param provider: The name of a provider or provider-group for which collections
                          list should be updated. Defaults to all providers (None value).
         """
-        strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        if strict_mode:
+        if self.settings.strict_collections:
             return
 
         # providers discovery confs that are fetchable
@@ -563,19 +507,15 @@ class EODataAccessGateway:
 
         if not already_fetched:
             # get ext_collections conf
-            ext_collections_cfg_file = os.getenv("EODAG_EXT_COLLECTIONS_CFG_FILE")
-            if ext_collections_cfg_file is not None:
-                ext_collections_conf = get_ext_collections_conf(
-                    ext_collections_cfg_file
-                )
-            else:
-                ext_collections_conf = get_ext_collections_conf()
+            ext_collections_conf = get_ext_collections_conf(
+                self.settings.ext_collections_cfg_uri
+            )
 
-                if not ext_collections_conf:
-                    # empty ext_collections conf
-                    ext_collections_conf = (
-                        self.discover_collections(provider=provider) or {}
-                    )
+            if not ext_collections_conf:
+                # empty ext_collections conf
+                ext_collections_conf = (
+                    self.discover_collections(provider=provider) or {}
+                )
 
             # update eodag collections list with new conf
             self.update_collections_list(ext_collections_conf)
@@ -584,7 +524,7 @@ class EODataAccessGateway:
         # and collections list would need to be fetched
 
         # get ext_collections conf for user modified providers
-        default_providers = ProvidersDict.from_configs(load_default_config())
+        default_providers = ProvidersDict.from_configs(load_provider_configs())
         for (
             provider,
             user_discovery_conf,
@@ -607,31 +547,25 @@ class EODataAccessGateway:
                         PluginConfig.DiscoverCollections,
                         dict(
                             default_discovery_conf,
-                            **{
-                                "results_entry": string_to_jsonpath(
-                                    default_discovery_conf["results_entry"], force=True
-                                )
-                            },
+                            results_entry=string_to_jsonpath(
+                                default_discovery_conf["results_entry"], force=True
+                            ),
                             **mtd_cfg_as_conversion_and_querypath(
-                                dict(
-                                    generic_collection_id=default_discovery_conf[
+                                {
+                                    "generic_collection_id": default_discovery_conf[
                                         "generic_collection_id"
                                     ]
-                                )
+                                }
                             ),
-                            **dict(
-                                generic_collection_parsable_properties=mtd_cfg_as_conversion_and_querypath(
-                                    default_discovery_conf[
-                                        "generic_collection_parsable_properties"
-                                    ]
-                                )
+                            generic_collection_parsable_properties=mtd_cfg_as_conversion_and_querypath(
+                                default_discovery_conf[
+                                    "generic_collection_parsable_properties"
+                                ]
                             ),
-                            **dict(
-                                generic_collection_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
-                                    default_discovery_conf[
-                                        "generic_collection_parsable_metadata"
-                                    ]
-                                )
+                            generic_collection_parsable_metadata=mtd_cfg_as_conversion_and_querypath(
+                                default_discovery_conf[
+                                    "generic_collection_parsable_metadata"
+                                ]
                             ),
                         ),
                     )

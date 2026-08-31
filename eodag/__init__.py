@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -33,16 +32,18 @@ except PackageNotFoundError:  # pragma: no cover
 
 # exportable content
 __all__ = [
+    "EODAGSettings",
     "EODataAccessGateway",
     "EOProduct",
     "SearchResult",
-    "setup_logging",
     "config",
+    "setup_logging",
 ]
 
 # Lazy imports (PEP 562) — avoid loading heavy dependencies on ``import eodag``
 _LAZY_IMPORTS: dict[str, tuple[str, Optional[str]]] = {
     "EODataAccessGateway": (".api.core", "EODataAccessGateway"),
+    "EODAGSettings": (".config", "EODAGSettings"),
     "EOProduct": (".api.product", "EOProduct"),
     "SearchResult": (".api.search_result", "SearchResult"),
     "setup_logging": (".utils.logging", "setup_logging"),
