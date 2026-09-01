@@ -99,8 +99,7 @@ class SQLiteDatabase(Database):
             self._con.close()
 
     def _execute(self, sql: str, parameters: Optional[_Parameters] = None) -> Cursor:
-        """
-        Return the cursor from a SQLite query ``execute()`` and rollback the connection if the query failed
+        """Return the cursor from a SQLite query ``execute()`` and rollback the connection if the query failed
 
         :param sql: A single SQL statement
         :param parameters: Python values to bind to placeholders in ``sql``
@@ -118,8 +117,7 @@ class SQLiteDatabase(Database):
             raise e
 
     def _executemany(self, sql: str, parameters: Iterable[_Parameters]) -> Cursor:
-        """
-        Return the cursor from a SQLite query ``execute_all()`` and rollback the connection if the query failed
+        """Return the cursor from a SQLite query ``execute_all()`` and rollback the connection if the query failed
 
         :param sql: A single SQL statement
         :param parameters: Python values to bind to placeholders in ``sql``
@@ -148,7 +146,7 @@ class SQLiteDatabase(Database):
         # (collections_federation_backends.collection_id
         # stores the internal id, not the alias)
         self._execute(
-            f"DELETE FROM collections_federation_backends WHERE collection IN "
+            f"DELETE FROM collections_federation_backends WHERE collection_id IN "
             f"(SELECT internal_id FROM collections WHERE {match_clause})",
             params + params,
         )
@@ -232,8 +230,7 @@ class SQLiteDatabase(Database):
             tuple[str, dict[str, dict[str, Any]], int, dict[str, Any], bool]
         ],
     ) -> None:
-        """
-        Add or update federation backend configs (providers) in the database.
+        """Add or update federation backend configs (providers) in the database.
         Each config must contain: name, plugins_config, priority, metadata, enabled.
         """
         if not fb_configs:
@@ -255,9 +252,7 @@ class SQLiteDatabase(Database):
     def _upsert_collections_federation_backends(
         self, coll_fb_configs: list[tuple[str, str, dict[str, Any]]]
     ) -> None:
-        """
-        Upsert collection-specific federation backend configs.
-        """
+        """Upsert collection-specific federation backend configs."""
         if not coll_fb_configs:
             return
 
@@ -275,30 +270,25 @@ class SQLiteDatabase(Database):
         logger.debug("Upserted %d collection-provider config(s)", len(coll_fb_configs))
 
     def _refresh_collections_denorm(self, changed_fbs: list[str]) -> None:
-        """
-        Refresh the denormalized ``federation_backends`` and ``priority`` column
+        """Refresh the denormalized ``federation_backends`` and ``priority`` column
         on affected collections.
         """
         if not changed_fbs:
             return
         fb_qmarks = ", ".join(["?"] * len(changed_fbs))
 
-        self._execute(
-            """
+        self._execute("""
             CREATE TEMP TABLE IF NOT EXISTS tmp_affected (
                 collection_id TEXT PRIMARY KEY
             ) WITHOUT ROWID;
-            """
-        )
-        self._execute(
-            f"""
+            """)
+        self._execute(f"""
             CREATE TEMP TABLE IF NOT EXISTS tmp_agg (
                 collection_id TEXT PRIMARY KEY,
                 federation_backends {_CONTENT_TYPE} NOT NULL,
                 priority INTEGER NOT NULL
             ) WITHOUT ROWID;
-            """
-        )
+            """)
         self._execute("DELETE FROM tmp_affected;")
         self._execute("DELETE FROM tmp_agg;")
 
@@ -311,8 +301,7 @@ class SQLiteDatabase(Database):
             """,
             tuple(changed_fbs),
         )
-        self._execute(
-            f"""
+        self._execute(f"""
            INSERT INTO tmp_agg(collection_id, federation_backends, priority)
             SELECT
                 cfb.collection_id,
@@ -332,10 +321,8 @@ class SQLiteDatabase(Database):
             ) fb
                 ON fb.name = cfb.federation_backend_name
             GROUP BY cfb.collection_id;
-            """
-        )
-        self._execute(
-            f"""
+            """)
+        self._execute(f"""
             UPDATE collections
             SET
                 federation_backends = COALESCE(
@@ -351,8 +338,7 @@ class SQLiteDatabase(Database):
                     0
                 )
             WHERE internal_id IN (SELECT collection_id FROM tmp_affected);
-            """
-        )
+            """)
 
     def upsert_fb_configs(self, configs: list[ProviderConfig]) -> None:
         """Add or update federation backend configs (providers) in the database."""
@@ -444,9 +430,7 @@ class SQLiteDatabase(Database):
             self._refresh_collections_denorm(sorted(changed_fbs))
 
     def restore_fbs(self) -> None:
-        """
-        Restore federation backends which have been disabled.
-        """
+        """Restore federation backends which have been disabled."""
         with self._con:
             restored = [
                 row["name"]
@@ -460,9 +444,7 @@ class SQLiteDatabase(Database):
             self._refresh_collections_denorm(restored)
 
     def set_priority(self, name: str, priority: int) -> None:
-        """
-        Set the priority of a federation backend.
-        """
+        """Set the priority of a federation backend."""
         with self._con:
             self._execute(
                 "UPDATE federation_backends SET priority = ? WHERE name = ?",
@@ -507,7 +489,7 @@ class SQLiteDatabase(Database):
 
         from_clause = "FROM collections c"
         where_parts = (
-            [where]
+            [f"({where})"]
             + [
                 "c.federation_backends IS NOT NULL",
                 f"{_JSON_EXTRACT}(c.federation_backends, '$[0]') IS NOT NULL",
@@ -571,8 +553,8 @@ class SQLiteDatabase(Database):
         fetchable: Optional[bool] = None,
         limit: Optional[int] = None,
     ) -> dict[str, dict[str, Any]]:
-        """
-        Return federation backends according to filters.
+        """Return federation backends according to filters.
+
         Results are sorted by priority DESC then name ASC.
         """
         sql = (
@@ -692,7 +674,8 @@ class SQLiteDatabase(Database):
 
 def _adapt_collection(collection: Collection) -> str:
     """An adapter to automatically convert from a ``Collection`` instance
-    to an SQLite-compatible type (here a string) when injected to queries"""
+    to an SQLite-compatible type (here a string) when injected to queries
+    """
     data = collection.model_dump(mode="json")
     data["_id"] = collection._id
     # remove "federation:backends" from the stored content as it is computed in a separate column
@@ -717,7 +700,8 @@ def _convert_collection(coll_bytes: bytes) -> dict[str, Any]:
 
 def _adapt_dict(data: dict[str, Any]) -> str:
     """An adapter to automatically convert from a dictionary to an
-    SQLite-compatible type (here a string) when injected to queries"""
+    SQLite-compatible type (here a string) when injected to queries
+    """
     data_bytes = orjson.dumps(data)
     return data_bytes if _HAS_JSONB else data_bytes.decode()
 
@@ -811,8 +795,7 @@ def register_custom_functions(con: sqlite3.Connection) -> None:
 def create_collections_table(con: sqlite3.Connection) -> None:
     """Create the core collections table and FTS5 index for STAC payload and metadata."""
     cur = con.cursor()
-    cur.execute(
-        f"""
+    cur.execute(f"""
         CREATE TABLE IF NOT EXISTS collections (
             key INTEGER PRIMARY KEY,
             content {_CONTENT_TYPE} NOT NULL CHECK ({_JSON_VALID_CHECK}),
@@ -864,23 +847,19 @@ def create_collections_table(con: sqlite3.Connection) -> None:
             federation_backends {_CONTENT_TYPE},
             priority INTEGER
         );
-        """
-    )
+        """)
 
     # R-tree spatial index on collection bounding boxes
-    cur.execute(
-        """
+    cur.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS collections_rtree USING rtree(
             id,
             minx, maxx,
             miny, maxy
         );
-        """
-    )
+        """)
 
     # Triggers to keep R-tree in sync with collections table
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TRIGGER IF NOT EXISTS collections_rtree_ai AFTER INSERT ON collections
         WHEN json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array'
         BEGIN
@@ -892,18 +871,14 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL)
             );
         END;
-        """
-    )
-    cur.execute(
-        """
+        """)
+    cur.execute("""
         CREATE TRIGGER IF NOT EXISTS collections_rtree_ad AFTER DELETE ON collections
         BEGIN
             DELETE FROM collections_rtree WHERE id = OLD.key;
         END;
-        """
-    )
-    cur.execute(
-        """
+        """)
+    cur.execute("""
         CREATE TRIGGER IF NOT EXISTS collections_rtree_au AFTER UPDATE OF content ON collections
         BEGIN
             DELETE FROM collections_rtree WHERE id = OLD.key;
@@ -916,8 +891,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 CAST(json_extract(NEW.content, '$.extent.spatial.bbox[0][3]') AS REAL)
             WHERE json_type(NEW.content, '$.extent.spatial.bbox[0]') = 'array';
         END;
-        """
-    )
+        """)
 
     # B-tree indexes on temporal columns for range queries
     cur.execute(
@@ -928,8 +902,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
     )
 
     # FTS5 virtual table for full-text search on id, title, keywords, description
-    cur.execute(
-        """
+    cur.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS collections_fts USING fts5(
             id,
             title,
@@ -938,8 +911,7 @@ def create_collections_table(con: sqlite3.Connection) -> None:
             content='',
             tokenize='unicode61 remove_diacritics 2'
         );
-        """
-    )
+        """)
 
     # Helper: FTS extraction values for a given row reference (NEW/OLD/bare column)
     def _fts_vals(ref: str) -> str:
@@ -956,32 +928,26 @@ def create_collections_table(con: sqlite3.Connection) -> None:
                 COALESCE(json_extract({r}content, '$.description'), '')"""
 
     # Triggers to keep FTS index in sync with collections table
-    cur.execute(
-        f"""
+    cur.execute(f"""
         CREATE TRIGGER IF NOT EXISTS collections_ai AFTER INSERT ON collections BEGIN
             INSERT INTO collections_fts(rowid, id, title, keywords, description)
             VALUES ({_fts_vals("NEW")});
         END;
-    """
-    )
-    cur.execute(
-        f"""
+    """)
+    cur.execute(f"""
         CREATE TRIGGER IF NOT EXISTS collections_ad AFTER DELETE ON collections BEGIN
             INSERT INTO collections_fts(collections_fts, rowid, id, title, keywords, description)
             VALUES ('delete', {_fts_vals("OLD")});
         END;
-    """
-    )
-    cur.execute(
-        f"""
+    """)
+    cur.execute(f"""
         CREATE TRIGGER IF NOT EXISTS collections_au AFTER UPDATE OF content ON collections BEGIN
             INSERT INTO collections_fts(collections_fts, rowid, id, title, keywords, description)
             VALUES ('delete', {_fts_vals("OLD")});
             INSERT INTO collections_fts(rowid, id, title, keywords, description)
             VALUES ({_fts_vals("NEW")});
         END;
-    """
-    )
+    """)
 
 
 def create_federation_backends_table(con: sqlite3.Connection) -> None:
@@ -1015,9 +981,7 @@ def create_collections_federation_backends_table(con: sqlite3.Connection) -> Non
         );
         """,
     )
-    cur.execute(
-        """
+    cur.execute("""
         CREATE INDEX IF NOT EXISTS idx_cfb_backend_collection
         ON collections_federation_backends (federation_backend_name, collection_id);
-        """
-    )
+        """)
