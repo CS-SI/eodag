@@ -58,10 +58,6 @@ cop_ghsl:
     priority: # Lower value means lower priority (Default: 0)
 cop_marine:
     priority: # Lower value means lower priority (Default: 0)
-    auth:
-        credentials:
-            username:
-            password:
 creodias:
     priority: # Lower value means lower priority (Default: 0)
     auth:
